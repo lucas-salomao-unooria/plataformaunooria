@@ -4,16 +4,18 @@ Missão do **6º ano do Fundamental**, unidade 1, no Unoovista (a rede social de
 fotos que a missão imita). A criança recebe o crachá de jurada de uma mostra
 científica estadual e avalia, num feed, os estandes das escolas concorrentes. As
 curtidas dela afunilam o feed em silêncio: depois de dez posts, ela vota numa
-cédula lacrada e espera a plenária (o professor projeta a dispersão de votos da
+cédula lacrada, separa nas quatro áreas os estandes que viu (EF06CO01, desde a
+0.6.0) e espera a plenária (o professor projeta a dispersão de votos da
 turma). Liberada a **Galeria Oculta**, ela vê os estandes que nunca chegaram ao
 feed dela ("X de Y estandes", os números REAIS da sessão), quantos viu de cada
 área e o feed que teria tido SEM as curtidas, busca por hashtag e mantém ou revisa
 o voto. Desde a 0.5.0 a mostra tem quarenta estandes (dez por área) e o feed,
 dez posts sem repetição.
-Depois monta a cadeia Interações → Dados → Algoritmo → Bolha (EF06CO03), numa
-tela que abre com a frase do Léo, resolve o caso Mariana e responde a três
-enquetes nos Stories (a primeira é a da EF06CO10, o foco primário). A tela dos
-pacotes da curtida (EF06CO07) saiu na 0.2.0, a pedido do PO.
+Depois monta a regra SE … ENTÃO que o aplicativo seguiu (EF06CO03), numa tela
+que abre com a frase do Léo e, depois do envio, mostra a regra certa ligada ao
+feed dela; e resolve o caso Mariana, que conclui a missão. A 0.6.0 (ADR-174, o
+Canal A puro) tirou a cadeia de quatro blocos, as três enquetes e a EF06CO10; a
+tela dos pacotes da curtida (EF06CO07) saiu na 0.2.0, a pedido do PO.
 
 A descoberta: *o feed que parecia a mostra inteira era a mostra que as minhas
 curtidas escolheram.*
@@ -56,8 +58,8 @@ pnpm --filter @edu/exp06ef1b build
 | A máquina de telas, o polling do gate, as ações, a fila do feed | `src/app/juri-app.tsx` |
 | Rede, sessão e a repetição das chamadas | `src/app/conexao.ts`, `src/lib/api.ts` |
 | Os avisos globais (sem conexão, credencial) | `src/app/avisos.tsx` |
-| As telas do clone | `src/app/clone/` (`credencial`, `feed`, `post-do-feed`, `cedula`, `espera`, `galeria`, `escolha`, `mariana`, `enquetes`, `fim`) |
-| As telas da escola | `src/app/escola/telas-da-escola.tsx` (cadeia, missão fechada) |
+| As telas do clone | `src/app/clone/` (`credencial`, `feed`, `post-do-feed`, `cedula`, `separacao`, `espera`, `galeria`, `escolha`, `fim`) |
+| As telas da escola | `src/app/escola/telas-da-escola.tsx` (a regra, o caso Mariana, missão fechada) |
 | A imagem dos estandes (foto ou arte) | `src/app/componentes/midia.tsx`, `src/lib/arte.ts` |
 | A permanência de 5 s num post | `src/lib/permanencia.ts` |
 | O aviso de inatividade da cédula (60 s) | `src/app/inatividade.ts` |
@@ -72,7 +74,7 @@ pnpm --filter @edu/exp06ef1b build
 
 `verbo:objeto` via `@edu/sdk`, com `resultado` e `contexto` como objetos —
 nunca texto de estudante (nem o texto buscado na galeria), nome, e-mail, o
-projeto votado ou a alternativa de uma enquete.
+projeto votado, a área de um estande na separação ou a peça escolhida na regra.
 
 | Verbo | Objeto | Quando | `resultado` / `contexto` |
 |---|---|---|---|
@@ -89,20 +91,19 @@ projeto votado ou a alternativa de uma enquete.
 | `interacted` | `cedula:abrir` | abriu a cédula | — |
 | `interacted` | `cedula:inatividade` | 60 s sem toque com a cédula ABERTA | — |
 | `attempted` | `cedula:votar` | o LATCH 1, confirmado | `resultado: { estandes }`, `contexto: { conviccao }` |
+| `attempted` | `separacao:enviar` | enviou a separação (EF06CO01) — quantos estandes, nunca quantos acertou | `resultado: { estandes }` |
 | `progressed` | `plenaria:espera` | entrou na espera do voto lacrado | — |
 | `progressed` | `galeria:abrir` | a galeria abriu ("X de Y", sem percentual desde a 0.5.0) | `resultado: { ocultos, total }` |
 | `interacted` | `galeria:inspecionar` | abriu a ficha de um estande | `contexto: { projetoId, oculto }` |
 | `interacted` | `galeria:buscar` | buscou (o TIPO, nunca o texto) | `contexto: { busca, area }` |
 | `progressed` | `galeria:revisar` | o LATCH 2, confirmado (`manter` ou `trocar`) | `contexto: { acao }` |
-| `attempted` | `cadeia:validar` | conferiu a cadeia (a errada é o 422) | `resultado: { correta, tentativas }` |
+| `attempted` | `regra:enviar` | enviou a regra SE … ENTÃO (EF06CO03) — sem a peça nem o acerto | — |
 | `progressed` | `mariana:cartoes` | registrou os cartões (sem dizer quais) | — |
-| `interacted` | `enquete:responder` | respondeu (a PERGUNTA) | `contexto: { perguntaId }` |
-| `interacted` | `enquete:pulada` | a enquete falhou | `contexto: { perguntaId, status }` |
-| `completed` | `missao:concluida` | depois do `POST concluir` | `resultado: { enquetes }` |
+| `completed` | `missao:concluida` | os cartões concluíram (ou o `POST concluir` de uma sessão antiga) | — |
 | `interacted` | `conexao:aviso` | aviso de rede ou de credencial | `contexto: { motivo }` |
 
 Onde cada medida é LIDA: `exp06ef1b_sessoes` (curtidas, permanências, voto,
-auditoria, revisão, tentativas, cartões) e a ficha de evidência
+separação, auditoria, revisão, regra, cartões) e a ficha de evidência
 (`apps/api/src/evidencias/fichas/exp06ef1b.ts`), no painel do professor.
 
 ## A copy escrita aqui
@@ -116,4 +117,7 @@ nomes dos grupos de cartões, o título da consulta nos Stories, os rótulos de
 leitor de tela e os avisos da escola. Na 0.5.0: a lâmina "Bastidores do estande",
 o badge "X de Y estandes nunca chegaram ao seu feed", a contagem por área
 ("Tecnologia: você viu 7 de 10"), o contraste "Sem as suas curtidas, o seu feed
-teria trazido:" e o subtítulo da área sem ocultos. Para o PO revisar.
+teria trazido:" e o subtítulo da área sem ocultos. Na 0.6.0 (ADR-174): a tela
+da separação ("Organize o que você viu") e a da regra (as instruções, os nomes
+dos grupos SE e ENTÃO e as três frases da revelação); as seis peças da regra
+moram na api (`conteudo.ts`). Para o PO revisar.

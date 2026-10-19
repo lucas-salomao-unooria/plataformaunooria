@@ -26,7 +26,11 @@ o histórico (`evidencias_eventos.para.motivo`), para todas as missões.
 nenhuma pergunta e nenhum resolvedor de contexto. O marcador parcial tem teto
 em "em processo" e o final grava o COMBINADO: é assim que uma régua "A só com
 as duas" cabe no "vale o melhor" desta porta, sem regra nova na plataforma.
-A quarta é o Júri Estadual (`exp06ef1b`, ADR-151/152).
+**A quarta é o Júri Estadual (`exp06ef1b`)**: `fichas/exp06ef1b.ts` v5
+(ADR-174, que tirou as enquetes P1–P3 e a EF06CO10): só ações rotuladas, cada
+uma na transação do próprio envio — `classificacao`, a separação (EF06CO01, a
+principal; < 4 estandes vistos = sem marca), e `regra`, a SE … ENTÃO (EF06CO03,
+id novo: a `cadeia` da v4 fica no histórico). Sem resolvedor.
 **A quinta é o Unoovista (`exp08ef1b`)**: `fichas/exp08ef1b.ts` v2 (ADR-167,
 que tirou as três perguntas da ADR-153): toda habilidade por AÇÃO — `raio-x` e
 `reflexao` (EF08CO11), `termos` (EF08CO09), `envio` e `envio-sem-confiabilidade`
@@ -100,8 +104,8 @@ com `escola_id` + RLS forçada:
   não na tela: o bundle é público e a tela é de cada missão; aqui a regra vale
   para todas sem nenhuma lembrar. A tela responde pelo `id`, nunca pela
   posição. O teste de Postgres lê 60 vezes e cobra mais de uma ordem.
-  Ficha com `ordemDasAlternativas: "por-estudante"` (Júri): ordem fixa por
-  estudante (`regras.ts#aleatorioDe`).
+  Ficha com `ordemDasAlternativas: "por-estudante"` (o Júri até a v4): ordem
+  fixa por estudante (`regras.ts#aleatorioDe`).
 - **De onde veio o nível (ADR-166).** A evidência PRÓPRIA guarda o marcador
   que a deu (`evidencias.marcador`, `regras.ts#marcadorDoNivel`): o da melhor
   marca; no empate, o que NÃO é `limitadoPelaAtividade`, depois a ordem da

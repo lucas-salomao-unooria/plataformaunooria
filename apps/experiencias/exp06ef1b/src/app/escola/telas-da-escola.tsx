@@ -1,37 +1,21 @@
 import { useState, type ReactNode } from "react";
-import {
-  AlertBox,
-  Button,
-  Card,
-  CardContent,
-  CardTitle,
-  Logo,
-  PuzzleBlock,
-  PuzzleTrack,
-  RadioGroup,
-  ScrollBar,
-  SectionHeader,
-  Tag,
-} from "@edu/ui/ds";
-import { tocarNoBloco } from "../../lib/regras";
+import { AlertBox, Button, Card, CardContent, CardTitle, Logo, RadioGroup, ScrollBar, SectionHeader } from "@edu/ui/ds";
+import { comCerquilha } from "../../lib/regras";
 import { E5, E6, ESCOLA } from "../../lib/textos";
-import type { BlocoDaCadeia, Cartao, Categoria, Historico, ParSimulado } from "../../lib/tipos";
+import type { Cartao, Categoria, PecaDaRegra, RevelacaoDaRegra } from "../../lib/tipos";
 
 /**
  * As telas em que a ESCOLA fala — a seção `unooria`, pela ponte `@edu/ui/ds`.
  *
  * **A fronteira do disfarce é QUEM FALA, não o momento.** Depois da galeria, a
- * missão sai do clone para EXPLICAR: montar a cadeia que controlou o feed
- * (EF06CO03) é a Unooria mostrando a engrenagem — dentro do app, a explicação
+ * missão sai do clone para EXPLICAR: montar a regra que guiou o feed
+ * (EF06CO03, ADR-174) é a Unooria mostrando a engrenagem — dentro do app, a explicação
  * voltaria para a ficção que a missão acabou de desmontar. O caso Mariana
  * (E6-ALU-01) também é da Unooria (PRD §10.1): é a transferência para a vida
- * da criança, fora da mostra. A consulta nos Stories volta ao clone.
+ * da criança, fora da mostra.
  *
  * A rolagem é o `ScrollBar` do DS: aqui a seção É a `unooria`, e a regra das
- * duas famílias (que tira o `ScrollBar` do clone) vale ao contrário. A calha é
- * o `PuzzleTrack` com os `PuzzleBlock` do Jornal da Escola: TOQUE SEQUENCIAL,
- * sem arrastar — tocar na bandeja encaixa na próxima vaga, tocar na vaga
- * devolve.
+ * duas famílias (que tira o `ScrollBar` do clone) vale ao contrário.
  */
 
 function Casca({ children }: { children: ReactNode }) {
@@ -45,207 +29,135 @@ function Casca({ children }: { children: ReactNode }) {
   );
 }
 
-interface ItemDaCalha {
-  id: string;
-  rotulo: string;
-  descricao?: string;
-  icone: string;
-}
+// ──────────────────────────────── E5-ALU-01: a regra SE … ENTÃO (EF06CO03)
 
-/**
- * A calha da cadeia. Quem diz se a ordem está certa é o SERVIDOR (os ids
- * são opacos e a ordem certa nunca desce); na errada, os blocos voltam para a
- * bandeja com o aviso escrito do DS ("Voltou para a bandeja") e a frase de
- * apoio — nunca qual vaga errou, nunca um "errado". A errada chega como o
- * **422 `ordem-incorreta`** da api, e a tentativa conta para a EF06CO03.
- */
-function Calha({
-  bandeja,
-  calha,
-  confirmar,
-  errada,
-  certa,
-  itens,
-  ordemInicial,
-  enviando,
-  aoMudarOrdem,
-  aoConferir,
-  aoContinuar,
-}: {
-  bandeja: string;
-  calha: string;
-  confirmar: string;
-  errada: string;
-  certa: string;
-  itens: readonly ItemDaCalha[];
-  ordemInicial: readonly string[];
-  enviando: boolean;
-  aoMudarOrdem: (ordem: string[]) => void;
-  aoConferir: (ordem: string[]) => Promise<boolean | null>;
-  aoContinuar: () => void;
-}) {
-  const vagas = itens.length;
-  const [ordem, setOrdem] = useState<string[]>(() => [...ordemInicial]);
-  const [devolvidos, setDevolvidos] = useState<ReadonlySet<string>>(new Set());
-  const [errou, setErrou] = useState(false);
-  const [certo, setCerto] = useState(false);
-  const porId = new Map(itens.map((i) => [i.id, i]));
-  const naBandeja = itens.filter((i) => !ordem.includes(i.id));
-
-  function tocar(id: string) {
-    if (certo || enviando) return;
-    const nova = tocarNoBloco(ordem, id, vagas);
-    setOrdem(nova);
-    setDevolvidos(new Set());
-    setErrou(false);
-    aoMudarOrdem(nova);
-  }
-
-  async function conferir() {
-    const resultado = await aoConferir(ordem);
-    if (resultado === true) {
-      setCerto(true);
-      return;
-    }
-    if (resultado === false) {
-      setDevolvidos(new Set(ordem));
-      setOrdem([]);
-      setErrou(true);
-      aoMudarOrdem([]);
-    }
-  }
-
-  const bloco = (i: ItemDaCalha, estado: "idle" | "placed" | "returned" | "locked") => (
-    <PuzzleBlock
-      key={i.id}
-      label={i.rotulo}
-      description={i.descricao}
-      icon={i.icone}
-      state={estado}
-      returnedLabel={E5.voltou}
-      theme="light"
-      onClick={() => tocar(i.id)}
-    />
-  );
-
+/** As duas peças de uma regra, numa linha: "SE … ENTÃO …". */
+function LinhaDaRegra({ titulo, se, entao }: { titulo: string; se: string; entao: string }) {
   return (
-    <>
-      {/* A frase de apoio da errada, À VISTA e acima da bandeja (a linha de status
-          da calha fica abaixo da dobra). Ela é a região anunciada: a calha fica
-          sem status nesse instante, para o leitor de tela não ouvir duas vezes. */}
-      {errou && <AlertBox variant="info" theme="light" device="mobile" title={errada} />}
-      {certo && <AlertBox variant="success" theme="light" device="mobile" title={certa} />}
-      {naBandeja.length > 0 && (
-        <section className="calha__bandeja" aria-label={bandeja}>
-          <p className="escola__rotulo">{bandeja}</p>
-          {naBandeja.map((i) => bloco(i, devolvidos.has(i.id) ? "returned" : "idle"))}
-        </section>
-      )}
-      <PuzzleTrack
-        label={calha}
-        theme="light"
-        slots={Array.from({ length: vagas }, (_, k) => {
-          const id = ordem[k];
-          const item = id ? porId.get(id) : undefined;
-          return item ? bloco(item, certo ? "locked" : "placed") : null;
-        })}
-        emptySlotLabel={E5.vagaVazia}
-        complete={certo}
-        completeLabel={E5.calha}
-        status={errou || certo ? "" : E5.preenchidas(ordem.length, vagas)}
-      />
-      {certo ? (
-        <Button fullWidth onClick={aoContinuar}>
-          {E5.avancar}
-        </Button>
-      ) : (
-        <Button fullWidth disabled={ordem.length < vagas || enviando} isLoading={enviando} onClick={() => void conferir()}>
-          {confirmar}
-        </Button>
-      )}
-    </>
-  );
-}
-
-// ──────────────────────────────────── E5-ALU-01: a cadeia (EF06CO03)
-
-/** Um lado do par simulado: quantas publicações de cada área chegaram, e o tema que mais apareceu. */
-function LadoDoPar({ titulo, historico, categorias }: { titulo: string; historico: Historico; categorias: readonly Categoria[] }) {
-  const nome = (area: string) => categorias.find((c) => c.area === area)?.nome ?? area;
-  return (
-    <Card variant="outlined" theme="light" className="par__lado">
+    <Card variant="outlined" theme="light" className="regra__linha">
       <CardContent>
-        <CardTitle as="h3" size="sm">
+        <CardTitle as="h2" size="sm">
           {titulo}
         </CardTitle>
-        {historico.areaPrincipal && (
-          <p className="par__principal">
-            {E5.maisVisto}: <Tag>{nome(historico.areaPrincipal)}</Tag>
-          </p>
-        )}
-        <ul className="par__areas">
-          {historico.porArea.map((a) => (
-            <li key={a.area}>
-              <span className="par__area">{nome(a.area)}</span>
-              <span className="par__numeros">
-                {E5.publicacoes(a.posts)} · {E5.curtidas(a.curtidas)}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <p className="regra__frase">
+          <strong>{E5.se}</strong> {se} <strong>{E5.entao}</strong> {entao}
+        </p>
       </CardContent>
     </Card>
   );
 }
 
 /**
- * E5-ALU-01 — a ponte do Léo (a ÚNICA exclamação da missão), a comparação
- * LADO A LADO com o par simulado do servidor (o perfil OPOSTO gerado das áreas
- * reais deste feed — nunca dado de colega, melhoria 7) e a calha dos quatro
- * blocos. Os rótulos dos blocos vêm da api SEM o número da copy ("1. ...",
- * "2. ..."): o número entregaria a ordem, que é o gabarito.
+ * E5-ALU-01 — a ponte do Léo (a ÚNICA exclamação da missão) e a REGRA: a
+ * criança escolhe a condição (SE) e a ação (ENTÃO) em dois `RadioGroup` da
+ * plataforma, com as peças que a api mandou embaralhadas e sem dizer qual é a
+ * certa. UMA tentativa: enviada, a tela mostra a regra que ela montou, a que o
+ * aplicativo seguiu e o que a regra fez no feed DELA (`revelacao`, da api).
+ * Nunca "certo" ou "errado": o nível é do professor (ADR-174).
  */
-export function Cadeia({
-  blocos,
-  parSimulado,
+export function Regra({
+  se,
+  entao,
   categorias,
-  ordemInicial,
+  inicial,
+  enviada,
+  revelacao,
   enviando,
-  aoMudarOrdem,
-  aoConferir,
+  aoMudar,
+  aoEnviar,
   aoContinuar,
 }: {
-  blocos: readonly BlocoDaCadeia[];
-  parSimulado: ParSimulado;
+  se: readonly PecaDaRegra[];
+  entao: readonly PecaDaRegra[];
   categorias: readonly Categoria[];
-  ordemInicial: readonly string[];
+  inicial: { se: string | null; entao: string | null };
+  enviada: boolean;
+  revelacao: RevelacaoDaRegra | null;
   enviando: boolean;
-  aoMudarOrdem: (ordem: string[]) => void;
-  aoConferir: (ordem: string[]) => Promise<boolean | null>;
+  aoMudar: (escolha: { se: string | null; entao: string | null }) => void;
+  aoEnviar: (escolha: { se: string; entao: string }) => void;
   aoContinuar: () => void;
 }) {
+  const [condicao, setCondicao] = useState<string | null>(
+    inicial.se && se.some((p) => p.id === inicial.se) ? inicial.se : null,
+  );
+  const [acao, setAcao] = useState<string | null>(
+    inicial.entao && entao.some((p) => p.id === inicial.entao) ? inicial.entao : null,
+  );
+  const texto = (lado: readonly PecaDaRegra[], id: string) => lado.find((p) => p.id === id)?.texto ?? "";
+
+  if (enviada) {
+    const hashtag = (area: string | null) => comCerquilha(categorias.find((c) => c.area === area)?.hashtag ?? "");
+    const contexto = !revelacao
+      ? null
+      : revelacao.motivo === "curtidas"
+        ? E5.revelacao.curtidas(hashtag(revelacao.area))
+        : revelacao.motivo === "permanencia"
+          ? E5.revelacao.permanencia(hashtag(revelacao.area))
+          : E5.revelacao.variado;
+    return (
+      <Casca>
+        <SectionHeader variant="mobile" title={E5.ponteLeo} />
+        {revelacao && (
+          <>
+            <LinhaDaRegra
+              titulo={E5.suaRegra}
+              se={texto(se, revelacao.escolha.se)}
+              entao={texto(entao, revelacao.escolha.entao)}
+            />
+            <LinhaDaRegra
+              titulo={E5.regraCerta}
+              se={texto(se, revelacao.certa.se)}
+              entao={texto(entao, revelacao.certa.entao)}
+            />
+          </>
+        )}
+        {contexto && <AlertBox variant="info" theme="light" device="mobile" title={contexto} />}
+        <Button fullWidth onClick={aoContinuar}>
+          {E5.avancar}
+        </Button>
+      </Casca>
+    );
+  }
+
   return (
     <Casca>
-      <SectionHeader variant="mobile" title={E5.ponteLeo} description={E5.comparacao} />
-      <div className="par">
-        <LadoDoPar titulo={E5.voce} historico={parSimulado.voce} categorias={categorias} />
-        <LadoDoPar titulo={E5.outroJurado} historico={parSimulado.outroJurado} categorias={categorias} />
-      </div>
-      <p className="escola__instrucao">{E5.instrucao}</p>
-      <Calha
-        bandeja={E5.bandeja}
-        calha={E5.calha}
-        confirmar={E5.validar}
-        errada={E5.erro}
-        certa={E5.correta}
-        /* O mesmo glifo para os quatro: um ícone por bloco viraria pista da posição. */
-        itens={blocos.map((b) => ({ id: b.id, rotulo: b.rotulo, icone: "settings" }))}
-        ordemInicial={ordemInicial}
-        enviando={enviando}
-        aoMudarOrdem={aoMudarOrdem}
-        aoConferir={aoConferir}
-        aoContinuar={aoContinuar}
+      <SectionHeader variant="mobile" title={E5.ponteLeo} description={E5.instrucao} />
+      <RadioGroup
+        name="regra-se"
+        label={E5.grupoDoSe}
+        theme="light"
+        disabled={enviando}
+        value={condicao ?? ""}
+        options={se.map((p) => ({ value: p.id, label: p.texto }))}
+        onChange={(v) => {
+          const id = String(v);
+          setCondicao(id);
+          aoMudar({ se: id, entao: acao });
+        }}
       />
+      <RadioGroup
+        name="regra-entao"
+        label={E5.grupoDoEntao}
+        theme="light"
+        disabled={enviando}
+        value={acao ?? ""}
+        options={entao.map((p) => ({ value: p.id, label: p.texto }))}
+        onChange={(v) => {
+          const id = String(v);
+          setAcao(id);
+          aoMudar({ se: condicao, entao: id });
+        }}
+      />
+      {condicao && acao && <LinhaDaRegra titulo={E5.suaRegra} se={texto(se, condicao)} entao={texto(entao, acao)} />}
+      <Button
+        fullWidth
+        disabled={!condicao || !acao || enviando}
+        isLoading={enviando}
+        onClick={() => condicao && acao && aoEnviar({ se: condicao, entao: acao })}
+      >
+        {E5.enviar}
+      </Button>
     </Casca>
   );
 }

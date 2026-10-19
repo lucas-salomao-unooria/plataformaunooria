@@ -10,10 +10,10 @@ import type { ExperienciaHandle } from "@edu/sdk";
  * `eventos.N.resultado: invalid_type`, e o único rastro é um 400 no console.
  *
  * **O que NUNCA sai daqui** (regra 6): nome, e-mail, o TEXTO buscado na
- * galeria (texto livre de menor — sai o tipo da busca, como na api). E das
- * enquetes sai QUAL pergunta foi respondida, nunca QUAL alternativa: o id da
- * alternativa é o nível da habilidade para quem conhece a ficha (regra 3). O
- * VOTO também não sai daqui: ele é dado de servidor, gravado no latch, e o
+ * galeria (texto livre de menor — sai o tipo da busca, como na api). Das duas
+ * tarefas do Canal A (ADR-174) sai SÓ que foram enviadas: nem a área de cada
+ * estande, nem a peça escolhida, nem quantos acertou — isso é o nível da
+ * habilidade, e é do servidor (regra 3). O VOTO também não sai daqui: ele é dado de servidor, gravado no latch, e o
  * painel do professor é que decide o que mostrar dele (e o que não mostra).
  *
  * Todo evento da missão nasce NESTE arquivo: é daqui que sai a tabela do
@@ -76,6 +76,8 @@ export const telemetria = {
   // E4
   /** Entrou na espera (o latch do voto). */
   esperou: () => track("progressed", "plenaria:espera"),
+  /** Enviou a separação dos estandes (EF06CO01). Quantos estandes; nunca quantos acertou. */
+  separou: (estandes: number) => track("attempted", "separacao:enviar", { resultado: { estandes } }),
   /**
    * A galeria abriu: "{ocultos} de {total}", os números REAIS da sessão (0.5.0:
    * sem percentual — com quarenta estandes o total escondido é o mesmo para
@@ -93,21 +95,15 @@ export const telemetria = {
   revisou: (acao: "manter" | "trocar") => track("progressed", "galeria:revisar", { contexto: { acao } }),
 
   // E5
-  /** Conferiu a cadeia (a errada é o 422 `ordem-incorreta`, e a tentativa conta). */
-  montouACadeia: (correta: boolean, tentativas: number) =>
-    track("attempted", "cadeia:validar", { resultado: { correta, tentativas } }),
+  /** Enviou a regra SE … ENTÃO. Sem a peça nem o acerto. */
+  enviouARegra: () => track("attempted", "regra:enviar"),
 
   // E6
   /** Registrou os dois cartões (sem dizer quais: não vira nota). */
   escolheuOsCartoes: () => track("progressed", "mariana:cartoes"),
-  /** Respondeu uma enquete. A PERGUNTA, nunca a alternativa — ver a nota do topo. */
-  respondeuEnquete: (perguntaId: string) => track("interacted", "enquete:responder", { contexto: { perguntaId } }),
-  /** A enquete falhou (409, rede, 404) e a tela pulou para o encerramento. */
-  pulouEnquete: (perguntaId: string, status: number) =>
-    track("interacted", "enquete:pulada", { contexto: { perguntaId, status } }),
 
-  /** O crachá homologado, depois do `POST /juri-estadual/concluir`. */
-  concluiu: (enquetes: number) => track("completed", "missao:concluida", { resultado: { enquetes } }),
+  /** A missão concluída: os cartões (0.6.0) ou o `POST concluir` de uma sessão antiga. */
+  concluiu: () => track("completed", "missao:concluida"),
 
   /** Um aviso global acendeu (rede ou sessão). Sem detalhe: é diagnóstico de sala. */
   caiu: (motivo: "rede" | "sessao") => track("interacted", "conexao:aviso", { contexto: { motivo } }),

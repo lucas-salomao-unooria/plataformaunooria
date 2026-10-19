@@ -1,4 +1,4 @@
-import type { Conviccao, IdDaEnquete } from "./tipos";
+import type { Conviccao } from "./tipos";
 
 /**
  * Só o que a TELA escreve — em português do Brasil, sempre (ADR-91). Dentro do
@@ -21,14 +21,17 @@ import type { Conviccao, IdDaEnquete } from "./tipos";
  * - **uma exclamação só na missão inteira**: a do Léo (`E5.ponteLeo`). O
  *   `textos.test.ts` conta.
  *
- * O CONTEÚDO da missão (os quarenta estandes, as categorias e hashtags, os
- * blocos da cadeia, o caso Mariana e os cartões, as perguntas das enquetes)
- * NÃO mora aqui: vem da api, e corrigir uma palavra dele não pode exigir
+ * O CONTEÚDO da missão (os quarenta estandes, as categorias e hashtags, as
+ * peças da regra, o caso Mariana e os cartões) NÃO mora aqui: vem da api, e corrigir uma palavra dele não pode exigir
  * republicar um caminho imutável no bucket.
  *
  * **Duas vozes**: a comissão da mostra dentro do Unoovista (crachá, feed,
- * cédula, espera, galeria, consulta, conclusão) e a Unooria (a cadeia com a
+ * cédula, separação, espera, galeria, conclusão) e a Unooria (a regra com a
  * ponte do Léo, o caso Mariana e o infográfico final — PRD §10.1).
+ *
+ * A 0.6.0 (ADR-174) tirou as enquetes e a cadeia de quatro blocos e pôs a
+ * SEPARAÇÃO e a REGRA SE … ENTÃO; os textos delas são ESCRITA AQUI, levados ao
+ * PO no card da missão.
  */
 
 function plural(n: number, um: string, varios: string): string {
@@ -162,6 +165,25 @@ export const E3 = {
   brasao: "Brasão da Comissão Estadual",
 } as const;
 
+// ─────────────────────────── a separação, depois do voto (clone, ADR-174)
+
+/**
+ * ESCRITA AQUI (0.6.0) — a EF06CO01: a criança põe cada estande que viu numa
+ * área. É ANTES da galeria, e quem pede é a comissão: nada aqui pode nomear a
+ * descoberta (o teste do "antes da galeria" cobra). Sem certo/errado depois do
+ * envio: o nível é do professor.
+ */
+export const SEPARACAO = {
+  titulo: "Organize o que você viu",
+  instrucao: "Antes da auditoria, a comissão quer saber como você organizaria a mostra.",
+  pedido: "Para cada estande que apareceu no seu feed, escolha a área dele.",
+  /** O nome acessível do grupo de áreas de cada estande. */
+  areaDo: (titulo: string) => `Área do estande ${titulo}`,
+  contador: (feitos: number, total: number) => `${feitos} de ${total} estandes separados`,
+  enviar: "Enviar Organização à Comissão",
+  enviada: "Organização registrada na ata do júri.",
+} as const;
+
 // ─────────────────────────────────────── E4: a Galeria Oculta (clone)
 
 export const E4 = {
@@ -223,37 +245,28 @@ export const E4 = {
   grupoDaRevisao: "Projetos da mostra",
 } as const;
 
-// ───────────────────────────────── E5: a cadeia (ESCOLA, unooria)
+// ──────────────────────── E5: a regra SE … ENTÃO (ESCOLA, unooria, ADR-174)
 
 export const E5 = {
   /** `e5.narrativa.ponte_leo` — a ÚNICA exclamação da missão. */
   ponteLeo: "Você viveu na prática o que Léo investigou no livro didático!",
-  /** `e5.instrucao.comparacao_historico` */
-  comparacao:
-    "Compare o resumo gerado pelas suas curtidas com o de outro jurado que curtiu temas diferentes.",
-  /** ESCRITA AQUI — os dois lados do par simulado. */
-  voce: "Você",
-  outroJurado: "Outro jurado",
-  publicacoes: (n: number) => `${n} ${plural(n, "publicação", "publicações")}`,
-  curtidas: (n: number) => `${n} ${plural(n, "curtida", "curtidas")}`,
-  maisVisto: "Tema que mais apareceu",
-  /**
-   * `e5.instrucao.arraste_blocos`. A calha do DS (`PuzzleTrack`) é de toque
-   * sequencial, sem arraste: "Ordene" serve aos dois.
-   */
-  instrucao: "Ordene as etapas da regra que o programa executou para montar a sua tela:",
-  /** ESCRITA AQUI — a bandeja e a calha, para o leitor de tela. */
-  bandeja: "Etapas da regra",
-  calha: "Cadeia lógica",
-  /** `e5.rotulo.btn_validar_cadeia` */
-  validar: "Validar Cadeia Lógica",
-  /** `e5.feedback.cadeia_correta` e `e5.feedback.cadeia_erro` — o 422 nunca diz qual vaga errou. */
-  correta: "Cadeia lógica confirmada. O sistema usou suas ações como dados para prever e limitar o que você via.",
-  erro: "A ordem das regras precisa de ajuste. Lembre-se: primeiro vêm suas ações, depois os dados registrados pela máquina.",
-  /** ESCRITA AQUI — a calha, vaga por vaga. */
-  vagaVazia: (i: number) => `Posição ${i + 1}, vazia`,
-  preenchidas: (n: number, total: number) => `${n} de ${total} posições preenchidas`,
-  voltou: "Voltou para a bandeja",
+  /** ESCRITA AQUI (0.6.0) — a regra no lugar da cadeia de quatro blocos. */
+  instrucao: "Monte a regra que o aplicativo seguiu para escolher os próximos posts do seu feed:",
+  se: "SE",
+  entao: "ENTÃO",
+  grupoDoSe: "SE — a condição",
+  grupoDoEntao: "ENTÃO — a ação",
+  enviar: "Enviar a Regra",
+  /** Depois do envio: a regra que ela montou, a certa e o que a regra fez no feed DELA. */
+  suaRegra: "A regra que você montou:",
+  regraCerta: "A regra que o aplicativo seguiu:",
+  revelacao: {
+    curtidas: (hashtag: string) =>
+      `Depois que você curtiu posts de ${hashtag}, o aplicativo passou a recomendar mais ${hashtag}. Uma regra simples assim pode deixar o feed menos variado.`,
+    permanencia: (hashtag: string) =>
+      `Você não curtiu dois posts do mesmo tema, mas parou mais tempo em ${hashtag}. O aplicativo também leva isso em conta.`,
+    variado: "Seu feed ficou variado: a regra não disparou, porque nenhum tema juntou curtidas suficientes.",
+  },
   /** `e5.rotulo.btn_avancar_reflexao` */
   avancar: "Continuar para a Reflexão",
 } as const;
@@ -270,24 +283,6 @@ export const E6 = {
   grupoDaAtitude: "Atitude para furar a bolha",
   /** `e6.rotulo.btn_submeter_analise` */
   submeter: "Submeter Análise do Júri",
-} as const;
-
-// ──────────────────────────────── E6-ALU-02: a consulta nos Stories (clone)
-
-export const ENQUETE = {
-  /** ESCRITA AQUI — o nome da consulta (o rodapé da história e o leitor de tela). */
-  titulo: "Consulta Oficial aos Jurados",
-  /** `e6.b1.feedback_submissao`, `e6.b2.feedback_submissao`, `e6.b3.feedback_submissao` */
-  confirmada: {
-    p1: "Resposta registrada na ata do júri",
-    p2: "Dados computados",
-    p3: "Regra conferida",
-  } satisfies Record<IdDaEnquete, string>,
-  /** ESCRITA AQUI — as zonas de toque do Story e o fecho da consulta. */
-  proxima: "Próxima pergunta",
-  anterior: "Pergunta anterior",
-  encerrar: "Encerrar consulta",
-  encerrada: "Consulta aos jurados encerrada.",
 } as const;
 
 // ─────────────────────────────────────────── E6-ALU-03: a conclusão

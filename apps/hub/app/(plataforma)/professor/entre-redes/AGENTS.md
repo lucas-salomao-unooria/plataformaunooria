@@ -216,8 +216,9 @@ A página da atividade é `resultados/resultados-juri-estadual.tsx`; a criação
 - **Podcast**: falas na FASE 1; recurso FIXO do fechamento, depois da Etapa 4
   (`avisoDoPodcast`, literal do one-pager).
 - **Um botão só**: "Liberar Auditoria", com a instrução de gatilho acima.
-- **A folha**: o ícone de ocioso ao lado do nome e "Categorias buscadas".
-  Sem voto, taxa, concentração nem nível.
+- **A folha**: o ícone de ocioso ao lado do nome e "Separação" (se separou,
+  nunca quantos acertou — ADR-174). Sem voto, taxa, concentração nem nível; o
+  acerto da separação e da regra é nível, e mora no painel de habilidades.
 - **A lousa mostra a CONCENTRAÇÃO** (`resumo.concentracao`, quem curtiu ×
   quem não curtiu, dois `MetricCard`) **só depois de Liberar Auditoria**: ela
   diz que o feed se adaptou, e a plenária do pico pede para não dizer ainda. A

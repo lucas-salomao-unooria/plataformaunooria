@@ -27,27 +27,31 @@ describe("a memória de F5 (sessionStorage, só ids e números)", () => {
     delete global.window;
   });
 
-  test("grava e lê de volta a calha, os cartões e as enquetes", () => {
-    gravarMemoria(CHAVE, { ordemDaCadeia: ["bl-a1b", "bl-c2d"], mecanismo: "m1", votos: { p1: "D2" } });
+  test("grava e lê de volta a separação, a regra e os cartões", () => {
+    gravarMemoria(CHAVE, { separacao: { "cl-a1b": "area_a" }, se: "rg-x1y", entao: "rg-z2w", mecanismo: "m1" });
     gravarMemoria(CHAVE, { gestoUsado: true });
     const m = lerMemoria(CHAVE);
-    expect(m.ordemDaCadeia).toEqual(["bl-a1b", "bl-c2d"]);
+    expect(m.separacao).toEqual({ "cl-a1b": "area_a" });
+    expect([m.se, m.entao]).toEqual(["rg-x1y", "rg-z2w"]);
     expect(m.mecanismo).toBe("m1");
-    expect(m.votos).toEqual({ p1: "D2" });
     expect(m.gestoUsado).toBe(true);
   });
 
   test("a rodada nova (e o estudante seguinte) não herdam nada", () => {
-    gravarMemoria(CHAVE, { ordemDaCadeia: ["bl-xyz"] });
-    expect(lerMemoria({ ...CHAVE, rodada: 2 }).ordemDaCadeia).toEqual([]);
-    expect(lerMemoria({ ...CHAVE, estudanteId: "e2" }).ordemDaCadeia).toEqual([]);
+    gravarMemoria(CHAVE, { separacao: { "cl-xyz": "area_b" } });
+    expect(lerMemoria({ ...CHAVE, rodada: 2 }).separacao).toEqual({});
+    expect(lerMemoria({ ...CHAVE, estudanteId: "e2" }).separacao).toEqual({});
   });
 
   test("o que não tem cara de id não entra — nem texto escrito por engano", () => {
-    armazenamento.setItem("exp06ef1b:e1:p1:1", JSON.stringify({ ordemDaCadeia: ["bl-a1b", "um texto com espaço"], mecanismo: 3 }));
+    armazenamento.setItem(
+      "exp06ef1b:e1:p1:1",
+      JSON.stringify({ separacao: { "cl-a1b": "area_a", "cl-c2d": "um texto com espaço" }, mecanismo: 3, se: "texto livre" }),
+    );
     const m = lerMemoria(CHAVE);
-    expect(m.ordemDaCadeia).toEqual(["bl-a1b"]);
+    expect(m.separacao).toEqual({ "cl-a1b": "area_a" });
     expect(m.mecanismo).toBeNull();
+    expect(m.se).toBeNull();
   });
 
   test("armazenamento bloqueado: memória vazia, nunca exceção", () => {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { SnackbarUnv } from "@edu/ui/ds-unoovista";
-import { api, concluir, enviarEstado, idDoEstudante, postSemResposta, reportarErro, statusDoErro, tipoDaFalha } from "../lib/api";
+import { api, concluir, enviarEstado, idDoEstudante, postSemResposta, reportarErro, tipoDaFalha } from "../lib/api";
 import { gravarMemoria, lerMemoria, type ChaveDaSessao } from "../lib/memoria";
 import {
   INTERVALO_DO_GATE_MS,
@@ -11,7 +11,6 @@ import {
   esperaAteEncerrar,
   estandesDoFeed,
   gateMudou,
-  ordemValida,
   protocoloDoVoto,
   vozDaTela,
 } from "../lib/regras";
@@ -19,27 +18,26 @@ import { telemetria } from "../lib/telemetria";
 import { E2 } from "../lib/textos";
 import {
   ROTA,
-  TOTAL_DE_BLOCOS,
   type AcaoDaGaleria,
+  type Area,
   type Conviccao,
   type Estado,
   type Feed as DadosDoFeed,
   type Galeria as DadosDaGaleria,
   type Gate,
-  type IdDaEnquete,
+  type RespostaDaRegra,
   type Sessao,
-  type Tentativa,
 } from "../lib/tipos";
 import { Avisos } from "./avisos";
 import { Cedula } from "./clone/cedula";
 import { Credencial } from "./clone/credencial";
-import { Enquetes } from "./clone/enquetes";
 import { Espera } from "./clone/espera";
 import { Feed } from "./clone/feed";
 import { Fim } from "./clone/fim";
 import { Galeria, type CorpoDaRevisao } from "./clone/galeria";
+import { Separacao } from "./clone/separacao";
 import type { Conexao } from "./conexao";
-import { Cadeia, Indisponivel, Mariana } from "./escola/telas-da-escola";
+import { Indisponivel, Mariana, Regra } from "./escola/telas-da-escola";
 import { useOciosidade } from "./inatividade";
 
 /** Junta curtidas, salvos e permanências por este tempo antes de ir à api (um toque duplo não vira duas idas). */
@@ -70,8 +68,8 @@ interface FilaDoFeed {
  *    otimista é o coração da curtida — que é estado, e o servidor devolve a
  *    lista inteira a cada ida.
  * 3. **Toda chamada passa por `conexao.executar`**, que repete a de rede e a de
- *    sessão com o aviso diegético aceso. As exceções são o polling do gate (que
- *    já se repete a cada 3 s) e as enquetes (que pulam para o fim).
+ *    sessão com o aviso diegético aceso. A exceção é o polling do gate (que
+ *    já se repete a cada 3 s).
  * 4. **409 e 400 relêem a sessão.** O voto já estava lacrado, a revisão já
  *    estava na ata, a rodada mudou: quem resolve é ler de novo o que o servidor
  *    diz. 403 é a porta fechada — exceto o da galeria antes da hora, que é o
@@ -415,6 +413,8 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
       setCedulaAberta(false);
       setSessao((s) => ({ ...s, voto: { projetoId, conviccao } }));
       aplicarEstado(estado);
+      /* Os estandes da separação só descem na sessão (ADR-174). */
+      await recarregar();
     } catch (erro) {
       setCedulaAberta(false);
       tratarFalha(erro);
@@ -424,9 +424,28 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
   }
 
   /**
+   * A SEPARAÇÃO (EF06CO01): uma vez só, e a resposta é só o estado — a criança
+   * não vê quantos acertou. Com a galeria já liberada, a api a põe direto nela.
+   */
+  async function separar(respostas: { itemId: string; area: Area }[]) {
+    setOcupado(true);
+    try {
+      const estado = await executar(() => api.post<Estado>(`${ROTA}/classificacao`, { respostas }));
+      telemetria.separou(respostas.length);
+      lembrar({ separacao: {} });
+      setSessao((s) => ({ ...s, classificacao: null }));
+      aplicarEstado(estado);
+    } catch (erro) {
+      tratarFalha(erro);
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  /**
    * As ações da galeria vão numa FILA, em ordem e sem bloquear a tela — e a
-   * revisão espera a fila esvaziar: a evidência da EF06CO01 é marcada no latch
-   * da revisão, sobre o que a api já gravou da galeria.
+   * revisão espera a fila esvaziar, para o painel do professor ver a
+   * exploração inteira antes do latch.
    */
   const filaDaGaleria = useRef<Promise<void>>(Promise.resolve());
   function registrarNaGaleria(acao: AcaoDaGaleria) {
@@ -445,9 +464,9 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
   }
 
   /**
-   * A revisão (LATCH 2) e, logo depois, o "avançar" para a cadeia (`POST passo
-   * {para:"cadeia"}`, PRD §6.3): a copy não tem tela entre os dois. A cadeia
-   * só desce do passo dela em diante, então a sessão é relida no fim.
+   * A revisão (LATCH 2) e, logo depois, o "avançar" para a regra (`POST passo
+   * {para:"cadeia"}`, PRD §6.3): a copy não tem tela entre os dois. As peças da
+   * regra só descem do passo dela em diante, então a sessão é relida no fim.
    */
   async function revisar(corpo: CorpoDaRevisao) {
     setOcupado(true);
@@ -484,23 +503,40 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tela]);
 
-  /** A cadeia: 200 é a certa; **422 `ordem-incorreta`** é a errada, e a tentativa conta. */
-  async function conferirACadeia(ordem: string[]): Promise<boolean | null> {
+  /**
+   * A REGRA (EF06CO03): uma vez só. A resposta traz a REVELAÇÃO, e a tela a
+   * mostra no lugar das peças ANTES de seguir: o estado novo (`mariana`) só é
+   * aplicado no "Continuar". Num F5 depois do envio a api já está em
+   * `mariana`, e a tela vai direto ao caso.
+   */
+  const estadoDepoisDaRegra = useRef<Estado | null>(null);
+  async function enviarRegra(escolha: { se: string; entao: string }) {
     setOcupado(true);
     try {
-      const t = await executar(() => api.post<Tentativa>(`${ROTA}/cadeia`, { ordem }));
-      telemetria.montouACadeia(true, t.tentativas);
-      return true;
+      const r = await executar(() => api.post<RespostaDaRegra>(`${ROTA}/regra`, escolha));
+      telemetria.enviouARegra();
+      lembrar({ se: null, entao: null });
+      estadoDepoisDaRegra.current = { passo: r.passo, etapa: r.etapa };
+      setSessao((s) =>
+        s.cadeia
+          ? {
+              ...s,
+              cadeia: { ...s.cadeia, enviada: true, revelacao: r.revelacao },
+            }
+          : s,
+      );
     } catch (erro) {
-      if (statusDoErro(erro) === 422) {
-        telemetria.montouACadeia(false, (sessaoRef.current.cadeia?.tentativas ?? 0) + 1);
-        return false;
-      }
       tratarFalha(erro);
-      return null;
     } finally {
       setOcupado(false);
     }
+  }
+
+  function seguirDaRegra() {
+    const estado = estadoDepoisDaRegra.current;
+    estadoDepoisDaRegra.current = null;
+    if (estado) aplicarEstado(estado);
+    void recarregar();
   }
 
   async function registrarCartoes(mecanismo: string, atitude: string) {
@@ -509,6 +545,8 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
       const estado = await executar(() => api.post<Estado>(`${ROTA}/cartoes`, { mecanismo, atitude }));
       telemetria.escolheuOsCartoes();
       aplicarEstado(estado);
+      /* Os cartões CONCLUEM desde a 0.6.0 (ADR-174): sem enquetes. */
+      if (estado.passo === "fim") avisarConclusao();
     } catch (erro) {
       tratarFalha(erro);
     } finally {
@@ -516,21 +554,31 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     }
   }
 
-  async function concluirMissao(respondidas: number) {
-    setOcupado(true);
-    try {
-      const estado = await executar(() => api.post<Estado>(`${ROTA}/concluir`));
-      aplicarEstado(estado);
-      telemetria.concluiu(respondidas);
-      /* Sem `score`: a missão não pontua criança. O nível das habilidades é do
-         servidor (a ficha da E14), e nenhum desses números aparece em tela. */
-      concluir({ votou: true, revisou: true, enquetes: respondidas });
-    } catch (erro) {
-      tratarFalha(erro);
-    } finally {
-      setOcupado(false);
-    }
+  /**
+   * A missão concluída, para a telemetria e para o hub. Sem `score`: a missão
+   * não pontua criança. O nível das habilidades é do servidor (a ficha da E14),
+   * e nenhum desses números aparece em tela.
+   */
+  function avisarConclusao() {
+    telemetria.concluiu();
+    concluir({ votou: true, revisou: true });
   }
+
+  /* Uma sessão ANTIGA parada nas enquetes (antes da 0.6.0): a tela conclui sozinha. */
+  const concluindo = useRef(false);
+  useEffect(() => {
+    if (tela !== "concluindo" || concluindo.current) return;
+    concluindo.current = true;
+    void executar(() => api.post<Estado>(`${ROTA}/concluir`))
+      .then((estado) => {
+        aplicarEstado(estado);
+        avisarConclusao();
+      })
+      .catch(tratarFalha)
+      .finally(() => {
+        concluindo.current = false;
+      });
+  }, [tela, executar, aplicarEstado, tratarFalha]);
 
   // ───────────────────── a cédula aberta: o aviso de 60 s e o batimento de 15 s
 
@@ -610,6 +658,23 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
           </>
         );
 
+      case "separacao":
+        return sessao.classificacao ? (
+          <Separacao
+            key={`${sessao.pacoteId}:${sessao.rodada}`}
+            itens={sessao.classificacao.itens}
+            categorias={sessao.categorias}
+            guardada={memoria.separacao}
+            enviando={ocupado}
+            aoMudar={(escolhas) => lembrar({ separacao: escolhas })}
+            aoEnviar={(respostas) => void separar(respostas)}
+          />
+        ) : (
+          <div className="tela" aria-busy="true">
+            <div className="esqueleto__topo" />
+          </div>
+        );
+
       case "espera":
         return (
           <Espera
@@ -641,18 +706,20 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
           </div>
         );
 
-      case "cadeia":
+      case "regra":
         return sessao.cadeia ? (
-          <Cadeia
+          <Regra
             key={`${sessao.pacoteId}:${sessao.rodada}`}
-            blocos={sessao.cadeia.blocos}
-            parSimulado={sessao.cadeia.parSimulado}
+            se={sessao.cadeia.se}
+            entao={sessao.cadeia.entao}
             categorias={sessao.categorias}
-            ordemInicial={ordemValida(memoria.ordemDaCadeia, sessao.cadeia.blocos.map((b) => b.id), TOTAL_DE_BLOCOS)}
+            inicial={{ se: memoria.se, entao: memoria.entao }}
+            enviada={sessao.cadeia.enviada}
+            revelacao={sessao.cadeia.revelacao}
             enviando={ocupado}
-            aoMudarOrdem={(ordem) => lembrar({ ordemDaCadeia: ordem })}
-            aoConferir={conferirACadeia}
-            aoContinuar={() => void recarregar()}
+            aoMudar={(escolha) => lembrar(escolha)}
+            aoEnviar={(escolha) => void enviarRegra(escolha)}
+            aoContinuar={seguirDaRegra}
           />
         ) : (
           <div className="escola" aria-busy="true" />
@@ -677,15 +744,11 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
           <div className="escola" aria-busy="true" />
         );
 
-      case "enquetes":
+      case "concluindo":
         return (
-          <Enquetes
-            key={`${sessao.pacoteId}:${sessao.rodada}`}
-            votosGuardados={memoria.votos}
-            concluindo={ocupado}
-            aoVotar={(id: IdDaEnquete, alternativa) => lembrar({ votos: { ...lerMemoria(chave).votos, [id]: alternativa } })}
-            aoConcluir={(n) => void concluirMissao(n)}
-          />
+          <div className="tela" aria-busy="true">
+            <div className="esqueleto__topo" />
+          </div>
         );
 
       case "fim":

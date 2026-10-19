@@ -388,22 +388,3 @@ export function postsPorArea(servidos: readonly string[]): Record<Area, number> 
   return total;
 }
 
-/**
- * A área que DOMINOU o feed: a de mais posts servidos (empate: a de mais
- * curtidas, depois a que apareceu primeiro). É a "bolha" de quem não chegou a
- * eleger líder — a régua da EF06CO01 a usa para dizer o que ficou fora.
- */
-export function areaDominante(estado: EstadoDoFeed): Area | null {
-  if (estado.servidos.length === 0) return null;
-  const lider = areaLider(estado);
-  if (lider) return lider;
-  const posts = postsPorArea(estado.servidos);
-  return (
-    [...AREAS].sort(
-      (x, y) =>
-        posts[y] - posts[x] ||
-        contagem(estado.curtidos, y) - contagem(estado.curtidos, x) ||
-        primeiraPosicao(estado, x) - primeiraPosicao(estado, y),
-    )[0] ?? null
-  );
-}

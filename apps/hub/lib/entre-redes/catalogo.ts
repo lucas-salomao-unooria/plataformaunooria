@@ -920,11 +920,12 @@ export const MISSAO_A_SELECAO: Missao = {
  * curte nada vê as quatro misturadas). Nenhum número cravado na copy, de
  * propósito.
  *
- * As habilidades são as da spec v1.5.2: EF06CO10 (o foco primário), EF06CO01
- * e EF06CO03, com o TEXTO OFICIAL de `apps/api/src/curriculo/dados/
- * habilidades-computacao.ts`. A decisão de 2026-10-02 (medir a EF06CO07, os
- * pacotes) foi revertida pelo PO em 2026-10-06: a tela dos pacotes saiu, e a
- * EF06CO10 se ancora no livro didático (o consumo crítico das plataformas).
+ * As habilidades são as da ficha 5 (ADR-174, o Canal A puro): EF06CO01 (o
+ * foco primário), pela separação dos estandes, e EF06CO03, pela regra SE …
+ * ENTÃO, com o TEXTO OFICIAL de `apps/api/src/curriculo/dados/
+ * habilidades-computacao.ts`. O PO, revisando com a equipe pedagógica contra o
+ * texto oficial, tirou a EF06CO10 (consumo, obsolescência e sustentabilidade
+ * não são o que a missão trabalha) e as enquetes; a EF06CO07 saiu antes.
  *
  * Tem ficha pedagógica (E14): a atividade é o PACOTE homologado e a rodada é o
  * "Zerar". Desde a 0.4.0 (PRD v2) tem BANCO PADRÃO: o professor usa a Feira
@@ -957,17 +958,14 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
     competencia:
       "Letramento digital — perceber que um feed que se adapta às curtidas esconde parte do que " +
       "existe, e que essa engrenagem é uma regra que se pode descrever. BNCC Computação, com o foco " +
-      "na EF06CO10 (analisar o consumo de tecnologia na sociedade, compreendendo criticamente o " +
-      "caminho da produção dos recursos bem como aspectos ligados à obsolescência e a " +
-      "sustentabilidade); e EF06CO01 (classificar informações, agrupando-as em coleções " +
-      "(conjuntos) e associando cada coleção a um ‘tipo de dados’) e EF06CO03 (descrever com " +
-      "precisão a solução de um problema, construindo o programa que implementa a solução " +
-      "descrita).",
+      "na EF06CO01 (classificar informações, agrupando-as em coleções (conjuntos) e associando " +
+      "cada coleção a um ‘tipo de dados’) e na EF06CO03 (descrever com precisão a solução de um " +
+      "problema, construindo o programa que implementa a solução descrita).",
     duracao: "1 aula de 50 min, 29 em tela (ou 2 sessões de 25 min)",
     formato:
       "Clone de rede social de fotos (o Unoovista): a credencial de jurado, o feed da mostra, a " +
-      "cédula lacrada, a Galeria Oculta com a busca por hashtag, o caso Mariana e as enquetes nos " +
-      "Stories. A cadeia do feed é numa tela da Unooria.",
+      "cédula lacrada, a separação dos estandes e a Galeria Oculta com a busca por hashtag. A " +
+      "regra do feed e o caso Mariana são numa tela da Unooria.",
     atos: [
       {
         rotulo: "1 — A credencial de jurado",
@@ -990,7 +988,8 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
           "Quatro elementos: o título, um dos estandes que ele viu, a certeza (as duas opções " +
           "afirmam certeza, de propósito) e o botão de confirmar. O voto é lacrado e não volta. Se a " +
           "cédula ficar parada mais de um minuto, a tela lembra que a comissão aguarda, e o seu " +
-          "painel mostra um alerta ao lado do nome.",
+          "painel mostra um alerta ao lado do nome. Logo depois do voto, a comissão pede que ele " +
+          "separe nas quatro áreas os estandes que viu, sem a hashtag — uma vez só.",
       },
       {
         rotulo: "4 — A lousa e a Galeria Oculta (o seu botão)",
@@ -1003,19 +1002,18 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
           "você mostra quanto do feed caiu numa área só para quem curtiu e para quem não curtiu.",
       },
       {
-        rotulo: "5 — A cadeia do feed",
+        rotulo: "5 — A regra do feed",
         texto:
-          "Numa tela da Unooria, ao lado do histórico de outro jurado simulado que curtiu temas " +
-          "opostos, o estudante monta a engrenagem que controlou o feed: interações do jurado, " +
-          "registro de dados e padrões, algoritmo de recomendação, formação de bolha temática.",
+          "Numa tela da Unooria, o estudante monta a regra que o aplicativo seguiu: a condição (SE) " +
+          "e a ação (ENTÃO), entre três peças cada, uma vez só. Depois, a tela mostra a regra certa " +
+          "e o que ela fez no feed dele.",
       },
       {
-        rotulo: "6 — Mariana e as enquetes",
+        rotulo: "6 — Mariana",
         texto:
           "O caso da eleição do grêmio da escola de Mariana leva a lição para fora da mostra: " +
-          "um cartão para o que aconteceu com o feed dela e outro para o que fazer. Por fim, três " +
-          "enquetes nos Stories, que alimentam o painel de habilidades, e o crachá homologado. O " +
-          "podcast de recapitulação fecha a aula, depois da Etapa 4.",
+          "um cartão para o que aconteceu com o feed dela e outro para o que fazer, e o crachá " +
+          "homologado. O podcast de recapitulação fecha a aula, depois da Etapa 4.",
       },
     ],
     preparo: [

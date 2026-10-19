@@ -10,9 +10,9 @@ import type { GuiaDaAula } from "./tipos";
  * - as QUATRO PERGUNTAS DA PLENÁRIA (`PERGUNTAS_DA_PLENARIA`, na api) — a
  *   mediação do pico, entre o voto e a galeria; o painel da aula mostra as
  *   mesmas frases ao lado do botão, e uma fonte só não diverge;
- * - a REGRA do feed (os pesos e o limiar que o motor executou), a ordem da
- *   cadeia e os cartões do caso Mariana COM o gabarito — é o que a turma lê e monta na tela, e descrever também é
- *   copiar.
+ * - a REGRA do feed (os pesos e o limiar que o motor executou), as peças da
+ *   regra SE … ENTÃO e os cartões do caso Mariana COM o gabarito — é o que a
+ *   turma lê e monta na tela, e descrever também é copiar.
  *
  * Por isso as perguntas de `debate.perguntas` abaixo NÃO são as da plenária:
  * são a escada do FECHAMENTO, depois do caso Mariana.
@@ -31,16 +31,14 @@ import type { GuiaDaAula } from "./tipos";
  * computador segue no próprio ritmo. Um botão só: Liberar Auditoria. O
  * roteiro segue a tabela do one-pager (§10): 50 min, 29 em tela, e o corte de
  * 25 + 25 depois do Passo 3. Sem rodízio de quem toca a tela (o one-pager diz
- * por quê). O podcast é o recurso fixo do fechamento, depois da Etapa 4. A
- * nota pedagógica da EF06CO10 é LITERAL do PRD (Anexo §9).
+ * por quê). O podcast é o recurso fixo do fechamento, depois da Etapa 4.
  *
  * Fontes: o PRD v2 (§5, as seis etapas; §7, as telas; Anexo §9–§11), o
- * one-pager pedagógico e a copy revisada (`design/06-copy-strings-revisada.md`). As habilidades são as da spec
- * v1.5.2, como na ficha da api: EF06CO10 (a principal), EF06CO01 e EF06CO03. A
- * EF06CO07 (os pacotes da curtida) saiu com a tela dela, a pedido do PO
- * (2026-10-06). A EF06CO10 é ancorada no livro didático da coleção (Rodrigo
- * Assis, Entre Redes, cap. 1): o consumo crítico das plataformas, a mediação
- * algorítmica e o afunilamento informacional.
+ * one-pager pedagógico e a copy revisada (`design/06-copy-strings-revisada.md`). As habilidades são as da
+ * ficha 5 da api (ADR-174, o Canal A puro, revisado pelo PO com a equipe pedagógica contra o TEXTO OFICIAL):
+ * EF06CO01 (a principal), pela separação dos estandes, e EF06CO03, pela regra SE … ENTÃO. A EF06CO10 saiu —
+ * o texto oficial (consumo, obsolescência, sustentabilidade) não é o que a missão trabalha —, e a EF06CO07
+ * (os pacotes da curtida) saiu antes, com a tela dela (2026-10-06).
  */
 export const GUIA_EXP06EF1B: GuiaDaAula = {
   expId: "exp06ef1b",
@@ -64,16 +62,9 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       texto:
         "Na página da atividade, projete o Painel Coletivo de Votos da Turma, conduza as quatro perguntas da " +
         "plenária e só então aperte Liberar Auditoria: as telas da turma inteira destravam a Galeria Oculta. " +
-        "Daí em diante cada computador segue no próprio ritmo — galeria, revisão do voto, cadeia, caso Mariana " +
-        "e enquetes. Quem ainda não votou continua no feed e entra na auditoria depois de votar.",
-    },
-    {
-      tom: "info",
-      titulo: "Nota pedagógica",
-      texto:
-        "Esta missão trabalha EF06CO10 com ampliação deliberada do objeto — o foco em sistemas de recomendação e " +
-        "economia da atenção constitui uma expansão prática do conceito de ‘consumo de tecnologia’, que no texto " +
-        "oficial da BNCC enfatiza obsolescência e sustentabilidade de recursos.",
+        "Daí em diante cada computador segue no próprio ritmo — galeria, revisão do voto, regra do feed e caso " +
+        "Mariana. Quem ainda não votou continua no feed; quem votou e ainda separa os estandes termina a separação " +
+        "e entra na auditoria em seguida.",
     },
     {
       tom: "info",
@@ -89,46 +80,32 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
 
   objetivos: [
     "Reconhecer que um feed que se adapta às curtidas mostra só uma parte do que existe, mesmo quando parece completo.",
-    "Explicar que o aplicativo classificou cada curtida pela área do estande, agrupando os dados para decidir o que mostrar.",
-    "Descrever com precisão a regra que o feed executou, na forma “se… então…”, e montar a cadeia interações, dados, algoritmo, bolha.",
+    "Classificar os estandes que viu, agrupando cada um na coleção (a área) a que pertence — como o aplicativo fez com cada curtida.",
+    "Descrever com precisão a regra que o feed executou, montando-a na forma “se… então…”: a condição e a ação.",
     "Auditar a Galeria Oculta e buscar de propósito outras áreas antes de manter ou revisar a própria decisão.",
-    "Analisar criticamente o consumo de uma plataforma: perceber que o que se vê nela é mediado por um algoritmo e se afunila a cada interação, e auditar o que ficou de fora antes de decidir.",
     "Propor uma atitude para ver o que o feed esconde: buscar de propósito outros assuntos e conversar fora da rede antes de decidir.",
   ],
 
   bncc: [
     {
-      /* A PRINCIPAL (o foco primário da spec), verbatim do complemento de
-         Computação à BNCC — a mesma linha de
+      /* A PRINCIPAL desde a ficha 5 (ADR-174), verbatim do complemento de
+         Computação à BNCC (sem ponto final, como lá) — a mesma linha de
          `apps/api/src/curriculo/dados/habilidades-computacao.ts`. A ficha a
-         mede pela auditoria da Galeria Oculta e pela enquete `p1` (a frase do
-         jurado). O texto oficial fala em consumo de tecnologia; a missão o
-         recorta como no livro didático da coleção. */
-      codigo: "EF06CO10",
-      texto:
-        "Analisar o consumo de tecnologia na sociedade, compreendendo criticamente o caminho da produção dos recursos bem como aspectos ligados à obsolescência e a sustentabilidade.",
-      eixo: "Cultura Digital",
-      principal: true,
-      ondeAcontece:
-        "Na Galeria Oculta e na enquete da frase do jurado. É o recorte do livro didático da coleção (Rodrigo Assis, Entre Redes, cap. 1): consumir uma plataforma de forma crítica, percebendo a mediação algorítmica — o feed escolhe o que chega à tela — e o afunilamento informacional que as próprias curtidas produzem. A criança audita os estandes que o feed escondeu antes de manter ou trocar o voto; o painel de habilidades lê quantos concorrentes ocultos ela foi ver e a resposta da enquete.",
-    },
-    {
-      /* Verbatim do mesmo documento (sem ponto final, como lá). A ficha a mede
-         pela busca por categoria na galeria e pela enquete `p2`. */
+         mede pela SEPARAÇÃO, logo depois do voto. */
       codigo: "EF06CO01",
       texto: "Classificar informações, agrupando-as em coleções (conjuntos) e associando cada coleção a um ‘tipo de dados’",
       eixo: "Pensamento Computacional",
+      principal: true,
       ondeAcontece:
-        "Na Galeria Oculta: os quarenta estandes aparecem agrupados pelas quatro áreas da mostra, cada uma com a sua hashtag e com a contagem do que chegou ao feed, e a busca por hashtag é a chave de cada coleção. O painel de habilidades lê se a criança buscou a hashtag de outra área e abriu um estande que o feed escondeu dela, e a enquete sobre como o aplicativo organizou as curtidas.",
+        "Logo depois do voto, antes da Galeria Oculta: a criança separa nas quatro áreas da mostra os estandes que viu no feed — só o título e a imagem, sem a hashtag. Cada área é uma coleção, e ela associa cada estande à sua, como o aplicativo fez com cada curtida. Uma tentativa; o painel de habilidades lê quantos ela separou certo (9 ou 10 de cada 10 atingem). A Galeria Oculta, em seguida, mostra o que ficou fora por área.",
     },
     {
-      /* Verbatim do mesmo documento. A ficha a mede pelas tentativas da cadeia
-         e pela enquete `p3`. */
+      /* Verbatim do mesmo documento. A ficha a mede pela REGRA SE … ENTÃO. */
       codigo: "EF06CO03",
       texto: "Descrever com precisão a solução de um problema, construindo o programa que implementa a solução descrita.",
       eixo: "Pensamento Computacional",
       ondeAcontece:
-        "Na cadeia do feed: a criança monta, com quatro blocos, a engrenagem que controlou o feed dela — interações do jurado, registro de dados e padrões, algoritmo de recomendação, formação de bolha temática — e, na enquete, escolhe a regra “se… então…” que o programa executou. Montar na primeira tentativa é o nível mais alto.",
+        "Depois da revisão do voto: a criança monta a regra que o programa do feed executou, escolhendo a condição (SE) e a ação (ENTÃO) entre três peças cada. Uma tentativa — as duas certas atingem, uma fica em processo. Depois do envio, a tela mostra a regra certa ligada ao feed dela.",
     },
   ],
 
@@ -169,7 +146,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       {
         titulo: "Leia a regra do feed e o gabarito antes",
         texto:
-          "Estão no bloco logo abaixo: quanto vale uma curtida, quando o feed se fecha numa área, a ordem da cadeia e os cartões do caso Mariana. Saber a regra é o que permite conduzir a plenária sem entregá-la.",
+          "Estão no bloco logo abaixo: quanto vale uma curtida, quando o feed se fecha numa área, as peças certas da regra e os cartões do caso Mariana. Saber a regra é o que permite conduzir a plenária sem entregá-la.",
       },
       {
         titulo: "Prepare a plenária do pico",
@@ -214,7 +191,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
         tempo: "13–18",
         momento: "Passo 3 — Decidir: a cédula lacrada",
         professor:
-          "Lembre que o voto é oficial e não volta. A cédula pede só o projeto e a certeza, e trava com o carimbo da comissão. Se alguém ficar com a cédula parada por mais de um minuto, a tela dele lembra que a comissão aguarda, e o ícone de alerta aparece no seu painel. Em tela: 4 min.",
+          "Lembre que o voto é oficial e não volta. A cédula pede só o projeto e a certeza, e trava com o carimbo da comissão. Logo depois, a comissão pede que cada um separe nas áreas os estandes que viu — sem ajuda, uma vez só. Se alguém ficar com a cédula parada por mais de um minuto, a tela dele lembra que a comissão aguarda, e o ícone de alerta aparece no seu painel. Em tela: 5 min.",
       },
       {
         tempo: "18–33",
@@ -225,19 +202,19 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       },
       {
         tempo: "33–41",
-        momento: "Passo 5 — Explicar: a cadeia do feed",
+        momento: "Passo 5 — Explicar: a regra do feed",
         professor:
-          "Cada computador no próprio ritmo. A tela compara o histórico dele com o de outro jurado simulado, que curtiu temas opostos, e pede a cadeia em quatro blocos. Quem trava recebe retorno na tela: pergunte o que veio primeiro, sem dizer a ordem. Ligue a cadeia ao livro didático (A Bolha do Léo). Em tela: 4 min; fora dela: 4.",
+          "Cada computador no próprio ritmo. A tela pede a regra que o aplicativo seguiu, em duas partes: a condição (SE) e a ação (ENTÃO). Uma tentativa só; depois, a tela mostra a regra certa e o que ela fez no feed de cada um. Ligue a regra ao livro didático (A Bolha do Léo). Em tela: 3 min; fora dela: 5.",
       },
       {
         tempo: "41–50",
-        momento: "Passo 6 — Refletir: Mariana, as enquetes e o fechamento",
+        momento: "Passo 6 — Refletir: Mariana e o fechamento",
         professor:
-          "O caso Mariana, os cinco cartões e as três enquetes nos Stories. Quem termina antes lê o infográfico em silêncio. Feche com a pergunta-ponte: “Em que outras situações da nossa vida a gente acha que ‘todo mundo concorda comigo’ só porque o nosso feed só mostra aquilo?” Depois, toque o podcast de recapitulação para a sala. Em tela: 5 min; fora dela: 4.",
+          "O caso Mariana e os cinco cartões, que encerram a missão. Quem termina antes lê o infográfico em silêncio. Feche com a pergunta-ponte: “Em que outras situações da nossa vida a gente acha que ‘todo mundo concorda comigo’ só porque o nosso feed só mostra aquilo?” Depois, toque o podcast de recapitulação para a sala. Em tela: 5 min; fora dela: 4.",
       },
     ],
     nota:
-      "Os 29 minutos em tela numa aula de 50 são a ressalva aceita pelo PO. Em duas aulas de 50 minutos: na primeira, os Passos 1 a 3 e uma roda sobre quem vocês acham que venceu, sem revelar o segredo; na segunda, a lousa, a auditoria, a cadeia e o caso Mariana. Em duas sessões de 25 minutos: corte depois do Passo 3 — o voto travado congela o progresso com segurança — e abra a segunda sessão projetando a lousa e liberando a auditoria.",
+      "Os 29 minutos em tela numa aula de 50 são a ressalva aceita pelo PO. Em duas aulas de 50 minutos: na primeira, os Passos 1 a 3 e uma roda sobre quem vocês acham que venceu, sem revelar o segredo; na segunda, a lousa, a auditoria, a regra e o caso Mariana. Em duas sessões de 25 minutos: corte depois do Passo 3 — o voto travado congela o progresso com segurança — e abra a segunda sessão projetando a lousa e liberando a auditoria.",
   },
 
   debate: {
@@ -255,19 +232,19 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
         nivel: "analise",
         pergunta: "O que vocês fizeram que fez o feed mudar? Em que momento ele parou de mostrar as outras áreas?",
         porQue:
-          "Liga a ação ao efeito. Cace a regra dita pela criança — “quando curti duas de robótica, só veio robótica” —, que é o “se… então…” da EF06CO03.",
+          "Liga a ação ao efeito. Cace a regra dita pela criança — “quando curti duas de robótica, só veio robótica” —, que é o “se… então…” que ela montou na tela (EF06CO03).",
       },
       {
         nivel: "analise",
         pergunta: "Um jurado disse que só viu robótica porque era a única área de verdade na feira. O que ele não percebeu sobre o aplicativo que usou?",
         porQue:
-          "É a frase da enquete da EF06CO10, agora em voz alta: confundir o que foi recomendado com tudo o que existe. Leva ao consumo crítico da plataforma, como no capítulo 1 do livro didático — quem consome sem auditar acha que o feed é o mundo.",
+          "Confundir o que foi recomendado com tudo o que existe. Leva ao uso crítico da plataforma, como no capítulo 1 do livro didático — quem não audita acha que o feed é o mundo.",
       },
       {
         nivel: "generalizacao",
         pergunta: "O aplicativo separou as curtidas por área. Por que separar em grupos ajuda um sistema a decidir o que mostrar?",
         porQue:
-          "Leva da mostra para a ideia de classificar dados em coleções (EF06CO01): sem saber de que área era cada curtida, o feed não teria como se fechar numa área só.",
+          "Leva da separação que a criança fez para a ideia de classificar dados em coleções (EF06CO01): sem saber de que área era cada curtida, o feed não teria como se fechar numa área só.",
       },
       {
         nivel: "transferencia",
@@ -334,10 +311,10 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       naoFaca: "Sugerir um projeto. O voto é dele, com o que o feed dele mostrou.",
     },
     {
-      quando: "Um computador erra a ordem da cadeia várias vezes",
+      quando: "Alguém pede ajuda para separar os estandes ou montar a regra",
       faca:
-        "Pergunte o que veio primeiro: o toque do jurado ou a resposta do aplicativo? E o que o aplicativo guardou antes de decidir?",
-      naoFaca: "Dizer a ordem. Cada envio conta no painel de habilidades, e a dica da tela já não pune o erro.",
+        "Devolva a pergunta: sobre o que era esse estande? Na regra, o que você fez antes de o feed mudar, e o que o aplicativo fez depois?",
+      naoFaca: "Dizer a área ou a peça certa. As duas tarefas são uma tentativa só, e o que a criança escolhe é o que vai para o painel de habilidades.",
     },
   ],
 
@@ -348,7 +325,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       "Para ver o resto, é preciso procurar de propósito — buscar outros assuntos e conversar fora da rede antes de decidir.",
     ],
     registro:
-      "As três enquetes nos Stories, respondidas por quem entrou no computador, depois do caso Mariana. A tela da criança não mostra nível nenhum; a auditoria da galeria, a busca por hashtag, a cadeia e as enquetes vão para o painel de habilidades, na página da atividade.",
+      "A separação dos estandes e a regra do feed, feitas por quem entrou no computador. A tela da criança não mostra nível nenhum: as duas vão para o painel de habilidades, na página da atividade.",
     produto: {
       titulo: "A mostra inteira, no mural da sala",
       itens: [
@@ -359,7 +336,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     },
     rubrica: {
       nota:
-        "Formativa, e sobre o RACIOCÍNIO — nunca sobre o voto nem sobre o que a Galeria Oculta contou. O painel de habilidades já traz a auditoria, a busca por hashtag, a cadeia e as enquetes; esta rubrica é para a conversa.",
+        "Formativa, e sobre o RACIOCÍNIO — nunca sobre o voto nem sobre o que a Galeria Oculta contou. O painel de habilidades já traz a separação dos estandes e a regra do feed; esta rubrica é para a conversa.",
       criterios: [
         {
           criterio: "Perceber o recorte",
@@ -392,10 +369,10 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
 
   cuidados: [
     "A contagem da Galeria Oculta — o que ficou fora do feed, área por área — é de cada computador: não a apresente como nota nem compare em voz alta quem viu menos. Na lousa vão só os votos por área e, depois da auditoria, a concentração da turma, sem nomes.",
-    "A folha da turma, com os nomes, é para a sua tela, não para o projetor. Ela não tem voto nem concentração — só quem já votou, abriu a galeria, buscou (e por quais categorias), revisou e concluiu, e o alerta de quem está parado na cédula.",
+    "A folha da turma, com os nomes, é para a sua tela, não para o projetor. Ela não tem voto, concentração nem acerto — só quem já votou, separou os estandes, abriu a galeria, buscou, revisou e concluiu, e o alerta de quem está parado na cédula.",
     "Os cartões do caso Mariana não viram nota nem nível: a criança escolhe cartões prontos; nada do que ela pensa é digitado.",
     "Os estandes, as escolas e os perfis da mostra são fictícios — os do banco padrão e os escritos pela inteligência artificial sobre o seu tema. Na mostra personalizada, revise para não sair pessoa real identificável, escola real nem marca de empresa.",
-    "Durante a aula o feed não usa inteligência artificial: é uma regra fixa, que roda no servidor e é a mesma que a cadeia ensina. A IA só escreve os estandes no preparo.",
+    "Durante a aula o feed não usa inteligência artificial: é uma regra fixa, que roda no servidor e é a mesma que a criança monta no fim. A IA só escreve os estandes no preparo.",
     "A busca da galeria não guarda o que a criança digita: fica só se buscou por hashtag ou por texto, e a área que encontrou.",
     "Na rodada nova (Reiniciar Missão) com a mesma atividade, todas as habilidades são medidas de novo, mas a turma já sabe que o feed se adapta e o voto deixa de ser espontâneo. Para reaplicar, prefira uma atividade com outro tema.",
   ],
@@ -419,7 +396,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     {
       contexto: "Duas sessões de 25 minutos",
       comoAdaptar:
-        "Na primeira sessão, os Passos 1 a 3: a credencial, o feed e o voto travado, que congela o progresso com segurança. A segunda retoma exatamente a partir da projeção da lousa: a plenária, Liberar Auditoria, a Galeria Oculta, a cadeia, o caso Mariana e as enquetes.",
+        "Na primeira sessão, os Passos 1 a 3: a credencial, o feed e o voto travado, que congela o progresso com segurança. A segunda retoma exatamente a partir da projeção da lousa: a plenária, Liberar Auditoria, a Galeria Oculta, a regra e o caso Mariana.",
     },
     {
       contexto: "Turma com leitura ainda em construção",
@@ -452,7 +429,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     {
       pergunta: "O estudante vê o nível da habilidade?",
       resposta:
-        "Não. As enquetes respondem com uma confirmação neutra, e o crachá final é o mesmo para todos. O nível fica no painel de habilidades, que só você e a coordenação veem — e só você confirma e ajusta.",
+        "Não. A separação e a regra não dizem quem acertou, e o crachá final é o mesmo para todos. O nível fica no painel de habilidades, que só você e a coordenação veem — e só você confirma e ajusta.",
     },
     {
       pergunta: "Posso aplicar de novo na mesma turma?",

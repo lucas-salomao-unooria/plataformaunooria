@@ -2,157 +2,54 @@ import type { FichaPedagogica } from "./tipos";
 
 /**
  * A FICHA DO JÚRI ESTADUAL DE PROJETOS (exp06ef1b, 6º ano, unidade 1) —
- * **versão 4 (2026-10-10, PRD v2 §14.2 com as melhorias 3 e 4)**. Três
- * habilidades, seis marcadores, uma AÇÃO e uma PERGUNTA por habilidade, e
- * **vale o MELHOR dos dois** (`regras.ts#statusProprio`):
+ * versão 5, de 2026-10-18 (ADR-174): só o Canal A. Toda habilidade é medida
+ * pelo que a criança FAZ, contra o TEXTO OFICIAL da BNCC; as enquetes P1–P3
+ * saíram, como no 4º, 5º, 7º e 8º anos e na 2ª série. O PO reordenou o foco:
  *
- * - **EF06CO10** (o foco primário) — `auditoria`, AÇÃO, no LATCH da revisão do
- *   voto, sobre o que a criança fez na Galeria Oculta
- *   (`juri-estadual/regras/evidencia.ts#nivelDaAuditoria`): abriu ao menos DOIS
- *   estandes que o feed escondeu E buscou ao menos uma vez = atingiu; abriu
- *   algum = em processo; não abriu nada = SEM marca de ação (a `p1` decide).
- * - **EF06CO01** — `classificacao`, AÇÃO, no MESMO latch, a régua da melhoria
- *   3 (`#nivelDaClassificacao`): buscou pela HASHTAG de uma categoria que ficou
- *   fora da bolha (não a que dominou o feed) E abriu um projeto dela = atingiu;
- *   buscou qualquer coisa ou abriu um oculto = em processo; nada = SEM marca.
- *   A lista do professor mostra qual categoria a criança buscou.
- * - **EF06CO03** — `cadeia`, AÇÃO, quando a cadeia de quatro blocos se monta:
- *   uma tentativa = atingiu; duas ou três = em processo; mais = não atingiu. A
- *   ordem errada é 422 `ordem-incorreta`, e a tentativa conta.
+ *   - **EF06CO01** (a primária) pela SEPARAÇÃO: logo depois do voto, a criança
+ *     põe cada estande que viu numa das quatro áreas
+ *     (`juri-estadual/regras/classificacao.ts#nivelDaClassificacao`);
+ *   - **EF06CO03** pela REGRA SE … ENTÃO montada com peças, depois da revisão do
+ *     voto (`juri-estadual/regras/regra.ts#nivelDaRegra`).
  *
- * As perguntas são VERBATIM do banco de conteúdo (doc-exp06ef1b-02). As
- * alternativas descem EMBARALHADAS de forma DETERMINÍSTICA por estudante
- * (`ordemDasAlternativas: "por-estudante"`, melhoria 4): a mesma ordem ao
- * recarregar; ids e gabarito ficam no servidor, e o estudante recebe
- * `{ enviada: true }`.
+ * A **EF06CO10 saiu da missão**: o texto oficial (consumo de tecnologia,
+ * produção, obsolescência, sustentabilidade) não é o que o Júri trabalha. A
+ * galeria continua, como experiência, sem marcar nada.
  *
- * Toda rodada mede as ações de novo, também na mesma atividade (ADR-145): o
- * resultado é a melhor rodada de cada habilidade. A versão gravada em cada
- * evidência diz qual régua valeu (a 3 contava só os ocultos abertos na CO10, e
- * a CO01 pedia a hashtag de área ≠ do voto).
+ * Uma tentativa em cada tarefa: o nível é o que a criança sabia ANTES de ver a
+ * resposta. Toda rodada mede de novo (ADR-145). Quem não fez a tarefa fica "Não
+ * avaliado" — a AUSÊNCIA de marca —, nunca "não atingiu", e o professor ajusta.
+ * Os níveis da versão 4 (auditoria, cadeia, enquetes) ficam no histórico,
+ * gravados com a versão deles; `regra` é marcador NOVO para a régua nova não se
+ * misturar com a contagem de tentativas da cadeia.
  */
 export const FICHA_EXP06EF1B: FichaPedagogica = {
   expId: "exp06ef1b",
-  versao: 4,
-  ordemDasAlternativas: "por-estudante",
+  versao: 5,
   habilidades: [
     {
-      codigo: "EF06CO10",
-      marcadores: [
-        { id: "auditoria", tipo: "acao" },
-        { id: "p1", tipo: "multipla_escolha", perguntaId: "p1" },
-      ],
-      criterios: {
-        atingiu:
-          "Antes de manter ou trocar o voto, faz busca ativa na Galeria Oculta e inspeciona pelo menos dois projetos que o feed escondeu; ou, na pergunta, reconhece que as próprias interações fizeram o algoritmo filtrar o feed.",
-        em_processo:
-          "Abre a Galeria Oculta superficialmente: inspeciona algum projeto, mas sem a busca ativa e os dois ocultos; ou, na pergunta, atribui o feed a outra causa técnica.",
-        nao_atingiu: "Na pergunta, diz que os outros projetos foram apagados, sem uma auditoria da galeria que mostre outra coisa.",
-        observacao:
-          "Vale o melhor entre a auditoria da Galeria Oculta e a pergunta sobre a frase do jurado. Quem revisa o voto sem inspecionar nenhum projeto não tem a auditoria contada: decide a pergunta.",
-      },
-    },
-    {
       codigo: "EF06CO01",
-      marcadores: [
-        { id: "classificacao", tipo: "acao" },
-        { id: "p2", tipo: "multipla_escolha", perguntaId: "p2" },
-      ],
+      marcadores: [{ id: "classificacao", tipo: "acao", rotulo: "Separação dos estandes" }],
       criterios: {
         atingiu:
-          "Na Galeria Oculta, busca pela hashtag de uma categoria que ficou fora do seu feed e abre um projeto dessa categoria; ou, na pergunta, diz que cada curtida foi associada à categoria do projeto.",
-        em_processo:
-          "Busca alguma coisa na galeria, ou abre um projeto oculto, sem usar a categoria como chave; ou, na pergunta, diz que o sistema só contou os cliques.",
-        nao_atingiu: "Na pergunta, diz que o aplicativo adivinhou pela foto de perfil, sem uma busca na galeria que mostre outra coisa.",
+          "Logo depois do voto, separa nas quatro áreas os estandes que viu no feed e acerta 9 ou 10 de cada 10 (90% ou mais).",
+        em_processo: "Separa os estandes nas áreas e acerta de 5 a 8 de cada 10 (de 50% a 89%).",
+        nao_atingiu: "Separa os estandes nas áreas e acerta 4 ou menos de cada 10.",
         observacao:
-          "Vale o melhor entre a busca por categoria na galeria e a pergunta sobre como o aplicativo organizou as curtidas. Quem revisa o voto sem buscar nem abrir nada não tem a ação contada: decide a pergunta. A lista do painel mostra qual categoria a criança buscou.",
+          'É o "classificar informações, agrupando-as em coleções" da BNCC: cada área é uma coleção, e a criança associa cada estande a ela. Na tela de separar não aparece a hashtag, só o título e a imagem. Uma tentativa, antes da Galeria Oculta (que mostra o que ficou fora por área). Quem viu menos de quatro estandes, ou não separou, fica "Não avaliado", e você pode ajustar.',
       },
     },
     {
       codigo: "EF06CO03",
-      marcadores: [
-        { id: "cadeia", tipo: "acao" },
-        { id: "p3", tipo: "multipla_escolha", perguntaId: "p3" },
-      ],
+      marcadores: [{ id: "regra", tipo: "acao", rotulo: "Regra SE … ENTÃO" }],
       criterios: {
-        atingiu: "Monta a cadeia dos quatro blocos na 1ª tentativa; ou, na pergunta, escolhe a regra SE…ENTÃO que o programa executou.",
-        em_processo: "Monta a cadeia na 2ª ou na 3ª tentativa; ou escolhe uma regra que não descreve o feed.",
-        nao_atingiu: "Precisa de mais de 3 tentativas para montar a cadeia, e escolhe uma regra sem relação com o feed.",
-        observacao: "Vale o melhor entre a montagem da cadeia e a pergunta sobre a regra do programa.",
+        atingiu: "Monta a regra que o programa do feed executou com a condição certa no SE e a ação certa no ENTÃO.",
+        em_processo: "Monta a regra com só uma das duas partes certa.",
+        nao_atingiu: "Monta a regra com as duas partes erradas.",
+        observacao:
+          'É o "descrever com precisão a solução, construindo o programa" da BNCC: a criança escolhe a instrução, não só a reconhece. Uma tentativa; depois, a tela mostra a regra certa ligada ao feed dela. Sem a regra enviada, a habilidade fica "Não avaliado", e você pode ajustar.',
       },
     },
   ],
-  perguntas: [
-    {
-      id: "p1",
-      enunciado:
-        "Ao final da mostra, um jurado disse: 'Eu só vi projetos de robótica no meu feed porque eram os únicos de verdade que participaram da feira'. O que essa afirmação revela sobre como a tecnologia funcionou?",
-      alternativas: [
-        {
-          id: "D1",
-          texto:
-            "Revela um engano: o jurado não percebeu que suas próprias interações fizeram o algoritmo filtrar o feed, confundindo o que foi recomendado com a totalidade dos projetos existentes.",
-          status: "atingiu",
-        },
-        {
-          id: "D2",
-          texto:
-            "Revela que o aplicativo prefere mostrar robótica porque é um tema que gasta mais internet e tecnologia na escola.",
-          status: "em_processo",
-        },
-        {
-          id: "D3",
-          texto:
-            "Revela que os organizadores da feira apagaram os projetos de outras matérias para deixar a mostra mais rápida.",
-          status: "nao_atingiu",
-        },
-      ],
-    },
-    {
-      id: "p2",
-      enunciado:
-        "Para decidir quais novos posts colocar na sua tela, o sistema precisou agrupar o que você fazia. Como o aplicativo organizou as informações das suas curtidas?",
-      alternativas: [
-        {
-          id: "B1",
-          texto:
-            "O sistema associou cada curtida a um tipo de dado temático (categoria do projeto), agrupando os cliques para descobrir qual assunto você preferia.",
-          status: "atingiu",
-        },
-        {
-          id: "B2",
-          texto: "O sistema contou a quantidade total de cliques, sem se importar com o tema das fotos que foram curtidas.",
-          status: "em_processo",
-        },
-        {
-          id: "B3",
-          texto: "O sistema adivinhou a matéria escolar que você estuda olhando a foto de perfil da sua conta.",
-          status: "nao_atingiu",
-        },
-      ],
-    },
-    {
-      id: "p3",
-      enunciado:
-        "Qual regra lógica descreve com exatidão a instrução que o programa do aplicativo executou para montar o seu feed?",
-      alternativas: [
-        {
-          id: "C1",
-          texto:
-            "SE o jurado curtir dois ou mais posts do mesmo tema, ENTÃO selecione apenas projetos desse mesmo tema para as próximas posições da tela.",
-          status: "atingiu",
-        },
-        {
-          id: "C2",
-          texto: "SE o tempo de uso do aplicativo for longo, ENTÃO mostre qualquer publicação disponível na feira.",
-          status: "em_processo",
-        },
-        {
-          id: "C3",
-          texto: "SE o jurado abrir o aplicativo, ENTÃO bloqueie as outras turmas de votar no mesmo horário.",
-          status: "nao_atingiu",
-        },
-      ],
-    },
-  ],
+  perguntas: [],
 };

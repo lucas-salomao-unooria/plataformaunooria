@@ -17,9 +17,8 @@ import { PreparoDaExp06ef1bService } from "./preparo.service";
  * globais.
  *
  * **`EvidenciasModule` entra** porque a missão tem ficha pedagógica (E14): o
- * service registra o contexto das enquetes no `onModuleInit` e marca as três
- * ações dentro das transações da revisão do voto (EF06CO10 e EF06CO01) e da
- * cadeia (EF06CO03). As
+ * service marca as duas ações do Canal A (ADR-174) dentro das transações delas
+ * — a separação (EF06CO01) e a regra SE … ENTÃO (EF06CO03). As
  * equipes NÃO entram como módulo: o painel lê `equipes/consulta.ts`, funções
  * livres sobre o `tx`.
  *
@@ -27,7 +26,7 @@ import { PreparoDaExp06ef1bService } from "./preparo.service";
  * da mostra (`preparo.service.ts`) e as imagens dos estandes
  * (`midia.service.ts`), do professor; e as imagens do BANCO PADRÃO
  * (`banco-padrao-imagens.service.ts`), do `admin`. A aula inteira (o feed, o
- * voto, a galeria, a cadeia) é determinística, e nenhuma criança espera o
+ * voto, a separação, a galeria, a regra) é determinística, e nenhuma criança espera o
  * Vertex.
  *
  * **`AssetsModule`** é o bucket das imagens (`experiencias/exp06ef1b/mostra/`).

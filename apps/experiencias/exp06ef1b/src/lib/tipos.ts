@@ -8,10 +8,10 @@
  * os arquivos da api como texto e reprova a divergência. Sem ele, um passo novo
  * no servidor cairia numa tela que não existe, e o typecheck não veria.
  *
- * O que NÃO está aqui, de propósito (regra 3): a ordem certa dos blocos da
- * cadeia, o cartão certo do caso Mariana, os pesos do motor do feed, a área
- * líder, o nível das alternativas das enquetes. A tela recebe os itens
- * embaralhados, com ids opacos, e quem confere é o servidor.
+ * O que NÃO está aqui, de propósito (regra 3): a área de cada estande da
+ * separação, a peça certa da regra (antes do envio), o cartão certo do caso
+ * Mariana, os pesos do motor do feed, a área líder. A tela recebe os itens
+ * embaralhados, com ids opacos, e quem corrige é o servidor.
  */
 
 export const EXP_ID = "exp06ef1b";
@@ -21,17 +21,22 @@ export const EXP_ID = "exp06ef1b";
  * `public/experiencia.json`. O CI lê a do manifesto, e a divergência já causou
  * bug — o `versao.test.ts` compara os três (ADR-84).
  */
-export const EXP_VERSION = "0.5.0";
+export const EXP_VERSION = "0.6.0";
 
 /** O prefixo das rotas da missão na api. */
 export const ROTA = "/juri-estadual";
 
 // ───────────────────────────────────────────── o vocabulário (espelho)
 
-/** `regras/passos.ts#PASSOS` — na ordem em que a criança os percorre. */
+/**
+ * `regras/passos.ts#PASSOS` — na ordem em que a criança os percorre. Desde a
+ * 0.6.0 (ADR-174) há a `classificacao` depois do voto; `cadeia` é a tela da
+ * regra; `enquetes` só existe para as sessões antigas, que a tela conclui.
+ */
 export const PASSOS = [
   "credencial",
   "feed",
+  "classificacao",
   "lacrada",
   "galeria",
   "revisada",
@@ -99,17 +104,8 @@ export const POSTS_NO_FEED = 10;
  */
 export const TOTAL_DE_PROJETOS = 40;
 
-/** `conteudo.ts#TOTAL_DE_BLOCOS`. */
-export const TOTAL_DE_BLOCOS = 4;
-
-/**
- * As três perguntas da ficha (`evidencias/fichas/exp06ef1b.ts`), uma por
- * segmento do Story, nesta ordem: EF06CO10 (o foco primário, a frase do
- * jurado), EF06CO01 e EF06CO03. Descem pelas rotas GENÉRICAS de
- * `/evidencias`, embaralhadas a cada leitura.
- */
-export const ENQUETES = ["p1", "p2", "p3"] as const;
-export type IdDaEnquete = (typeof ENQUETES)[number];
+/** `conteudo.ts#PECAS_DO_SE` e `PECAS_DO_ENTAO` — três peças de cada lado da regra. */
+export const PECAS_POR_LADO = 3;
 
 // ──────────────────────────────────────────── o que a api devolve
 
@@ -160,10 +156,27 @@ export interface Feed {
   cedulaLiberada: boolean;
 }
 
-export interface BlocoDaCadeia {
-  /** Opaco por sessão (`bl-xxx`). */
+/** `ItemDaClassificacaoSchema` — um estande na separação: SEM área, hashtag nem perfil. */
+export interface ItemDaClassificacao {
+  /** Opaco por sessão (`cl-xxx`). */
   id: string;
-  rotulo: string;
+  titulo: string;
+  imagem: ImagemPublica;
+}
+
+/** `PecaPublicaSchema` — uma peça da regra, sem dizer se é a certa. */
+export interface PecaDaRegra {
+  /** Opaco por sessão (`rg-xxx`). */
+  id: string;
+  texto: string;
+}
+
+/** `RevelacaoDaRegraSchema` — só depois do envio. */
+export interface RevelacaoDaRegra {
+  escolha: { se: string; entao: string };
+  certa: { se: string; entao: string };
+  motivo: "curtidas" | "permanencia" | "variado";
+  area: Area | null;
 }
 
 export interface Cartao {
@@ -174,21 +187,6 @@ export interface Cartao {
 export interface Voto {
   projetoId: string;
   conviccao: Conviccao;
-}
-
-/** Um dos dois lados do par simulado: quantos posts e curtidas de cada área. */
-export interface Historico {
-  areaPrincipal: Area | null;
-  porArea: { area: Area; posts: number; curtidas: number }[];
-}
-
-/**
- * `ParSimuladoSchema` — o histórico desta criança ao lado do de "outro jurado
- * que curtiu temas diferentes", GERADO pelo servidor (nunca dado de colega).
- */
-export interface ParSimulado {
-  voce: Historico;
-  outroJurado: Historico;
 }
 
 /** `SessaoSchema` — o boot e o F5. */
@@ -207,8 +205,13 @@ export interface Sessao {
   voto: Voto | null;
   /** `complementar` só nas sessões da 0.3.0. `projetoId`: o estande da troca; `null` ao manter. */
   revisao: { acao: AcaoDaRevisao | "complementar"; projetoId: string | null } | null;
-  /** Do passo `cadeia` em diante. */
-  cadeia: { blocos: BlocoDaCadeia[]; tentativas: number; montada: boolean; parSimulado: ParSimulado } | null;
+  /** Só no passo `classificacao`: os estandes vistos, embaralhados. As opções são as `categorias`. */
+  classificacao: { itens: ItemDaClassificacao[] } | null;
+  /**
+   * A REGRA (o passo guarda o nome `cadeia`), do passo dela em diante.
+   * `enviada` sem `revelacao` = a cadeia antiga da 0.5.0, já montada.
+   */
+  cadeia: { se: PecaDaRegra[]; entao: PecaDaRegra[]; enviada: boolean; revelacao: RevelacaoDaRegra | null } | null;
   /** Do passo `mariana` em diante. */
   mariana: {
     caso: string;
@@ -226,20 +229,15 @@ export interface Gate {
   etapa: Etapa;
 }
 
-/** `EstadoSchema` — voto, revisão, cartões e concluir. */
+/** `EstadoSchema` — voto, separação, revisão, cartões e concluir. */
 export interface Estado {
   passo: Passo;
   etapa: Etapa;
 }
 
-/**
- * `TentativaSchema` — a cadeia CERTA (200). A errada é **422**
- * `ordem-incorreta` (a tentativa conta), nunca qual vaga errou.
- */
-export interface Tentativa {
-  correta: true;
-  tentativas: number;
-  passo: Passo;
+/** `RespostaDaRegraSchema` — o estado e a revelação da regra. */
+export interface RespostaDaRegra extends Estado {
+  revelacao: RevelacaoDaRegra | null;
 }
 
 /** `ProjetoDaGaleriaSchema`. */
@@ -294,10 +292,3 @@ export interface Galeria {
 export type AcaoDaGaleria =
   | { tipo: "abrir"; projetoId: string }
   | { tipo: "buscar"; busca: TipoDeBusca; area: Area | null };
-
-/** A pergunta de evidência, como as rotas genéricas de `/evidencias` a devolvem. */
-export interface PerguntaDaEnquete {
-  enunciado: string;
-  /** Embaralhadas a cada chamada: guarde o `id`, nunca a posição. */
-  alternativas: { id: string; texto: string }[];
-}

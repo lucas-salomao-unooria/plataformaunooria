@@ -17,9 +17,9 @@ import {
   normalizar,
   ocultosDaArea,
   opcoesDaTroca,
-  ordemValida,
   protocoloDoVoto,
-  tocarNoBloco,
+  respostasDaSeparacao,
+  separacaoValida,
   vozDaTela,
 } from "./regras";
 import type { Categoria, PostPublico, ProjetoDaGaleria } from "./tipos";
@@ -173,21 +173,22 @@ describe("a busca da galeria", () => {
   });
 });
 
-describe("a calha da cadeia", () => {
-  test("tocar na bandeja encaixa na próxima vaga; tocar na vaga devolve", () => {
-    let ordem: string[] = [];
-    ordem = tocarNoBloco(ordem, "bl-aaa", 4);
-    ordem = tocarNoBloco(ordem, "bl-bbb", 4);
-    expect(ordem).toEqual(["bl-aaa", "bl-bbb"]);
-    expect(tocarNoBloco(ordem, "bl-aaa", 4)).toEqual(["bl-bbb"]);
+describe("a separação (ADR-174)", () => {
+  const itens = [{ id: "cl-aaa" }, { id: "cl-bbb" }];
+  const areas = ["area_a", "area_b", "area_c", "area_d"] as const;
+
+  test("a escolha guardada só vale para os itens desta rodada e para as áreas do vocabulário", () => {
+    expect(separacaoValida({ "cl-aaa": "area_b", "cl-old": "area_a", "cl-bbb": "robotica" }, itens, areas)).toEqual({
+      "cl-aaa": "area_b",
+    });
   });
 
-  test("calha cheia não aceita mais", () => {
-    expect(tocarNoBloco(["a", "b"], "c", 2)).toEqual(["a", "b"]);
-  });
-
-  test("a ordem guardada só vale para os ids desta rodada", () => {
-    expect(ordemValida(["bl-old", "bl-aaa", "bl-aaa", "bl-bbb"], ["bl-aaa", "bl-bbb"], 4)).toEqual(["bl-aaa", "bl-bbb"]);
+  test("o envio só existe com TODOS os estandes separados", () => {
+    expect(respostasDaSeparacao(itens, { "cl-aaa": "area_b" })).toBeNull();
+    expect(respostasDaSeparacao(itens, { "cl-aaa": "area_b", "cl-bbb": "area_d" })).toEqual([
+      { itemId: "cl-aaa", area: "area_b" },
+      { itemId: "cl-bbb", area: "area_d" },
+    ]);
   });
 });
 
@@ -205,10 +206,10 @@ describe("pequenas coisas da tela", () => {
     expect(protocoloDoVoto("pacote", 1, "proj-b2")).not.toBe(a);
   });
 
-  test("a cadeia e o caso Mariana falam pela escola (PRD §10.1)", () => {
-    expect(vozDaTela("cadeia")).toBe("escola");
+  test("a regra e o caso Mariana falam pela escola (PRD §10.1); a separação, antes da galeria, é da comissão", () => {
+    expect(vozDaTela("regra")).toBe("escola");
     expect(vozDaTela("mariana")).toBe("escola");
-    for (const t of ["credencial", "feed", "espera", "galeria", "avancando", "enquetes", "fim"] as const) {
+    for (const t of ["credencial", "feed", "separacao", "espera", "galeria", "avancando", "concluindo", "fim"] as const) {
       expect(vozDaTela(t)).toBe("clone");
     }
   });

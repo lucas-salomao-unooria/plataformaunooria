@@ -5,24 +5,25 @@ import {
   ACOES_DA_REVISAO,
   AREAS,
   CONVICCOES,
-  ENQUETES,
   ETAPAS,
   MINUTOS_NO_FEED,
   PASSOS,
   PASSOS_PEDIDOS,
+  PECAS_POR_LADO,
   POSTS_NO_FEED,
   TIPOS_DE_BUSCA,
   TIPOS_DE_POST,
   TIPOS_DE_POST_LEGADOS,
   TIPOS_DE_POST_LIDOS,
-  TOTAL_DE_BLOCOS,
   TOTAL_DE_PROJETOS,
   type AreaSemCurtidas,
   type Feed,
   type Galeria,
+  type ItemDaClassificacao,
+  type PecaDaRegra,
   type PostPublico,
-  type ParSimulado,
   type ProjetoDaGaleria,
+  type RevelacaoDaRegra,
   type Sessao,
   type VistosPorArea,
 } from "./tipos";
@@ -85,12 +86,14 @@ function chavesDoSchema(nome: string): string[] {
 const CHAVES = {
   sessao: {
     pacoteId: 1, rodada: 1, passo: 1, passoDoEstudante: 1, etapa: 1, aguardandoOProfessor: 1, tema: 1,
-    categorias: 1, feed: 1, voto: 1, revisao: 1, cadeia: 1, mariana: 1, concluida: 1,
+    categorias: 1, feed: 1, voto: 1, revisao: 1, classificacao: 1, cadeia: 1, mariana: 1, concluida: 1,
   } satisfies Record<keyof Sessao, 1>,
   feed: {
     posts: 1, curtidos: 1, salvos: 1, completo: 1, tempoEsgotado: 1, encerraEm: 1, cedulaLiberada: 1,
   } satisfies Record<keyof Feed, 1>,
-  par: { voce: 1, outroJurado: 1 } satisfies Record<keyof ParSimulado, 1>,
+  item: { id: 1, titulo: 1, imagem: 1 } satisfies Record<keyof ItemDaClassificacao, 1>,
+  peca: { id: 1, texto: 1 } satisfies Record<keyof PecaDaRegra, 1>,
+  revelacao: { escolha: 1, certa: 1, motivo: 1, area: 1 } satisfies Record<keyof RevelacaoDaRegra, 1>,
   post: {
     id: 1, projetoId: 1, tipo: 1, area: 1, titulo: 1, escola: 1, perfil: 1, texto: 1, legenda: 1, bastidor: 1,
     hashtags: 1, imagem: 1,
@@ -144,25 +147,23 @@ describe("o vocabulário é o da api, na mesma ordem", () => {
     expect(ETAPAS).not.toContain("desvio" as never);
   });
 
-  test("quatro blocos, como o esqueleto da api — e os pacotes da curtida não existem mais", () => {
+  test("três peças de cada lado da regra, como o esqueleto da api — e a cadeia e os pacotes não existem mais", () => {
     const conteudo = ler(CONTEUDO);
-    const blocos = /export const BLOCOS_DA_CADEIA = \[([\s\S]*?)\] as const/.exec(conteudo)?.[1] ?? "";
-    expect([...blocos.matchAll(/posicao: \d/g)]).toHaveLength(TOTAL_DE_BLOCOS);
-    /* A EF06CO07 saiu da missão (o pedido do PO): nem o esqueleto nem o passo. */
+    for (const nome of ["PECAS_DO_SE", "PECAS_DO_ENTAO"]) {
+      const pecas = new RegExp(`export const ${nome} = \\[([\\s\\S]*?)\\] as const`).exec(conteudo)?.[1] ?? "";
+      expect([...pecas.matchAll(/certa: (true|false)/g)]).toHaveLength(PECAS_POR_LADO);
+    }
+    expect(conteudo).not.toContain("BLOCOS_DA_CADEIA");
     expect(conteudo).not.toContain("PACOTES_DA_CURTIDA");
-    expect(PASSOS).not.toContain("pacotes");
+    expect(PASSOS).not.toContain("pacotes" as never);
   });
 
-  test("as três enquetes são as perguntas da ficha, na ordem", () => {
-    const perguntas = /perguntas: \[([\s\S]*)\],\s*\};?\s*$/.exec(ler(FICHA))?.[1] ?? "";
-    const ids = [...perguntas.matchAll(/^\s{6}id: "(p\d)"/gm)].map((m) => m[1]);
-    expect(ids).toEqual([...ENQUETES]);
-  });
-
-  test("as habilidades da ficha: EF06CO10 (com a p1), EF06CO01 e EF06CO03 — sem a EF06CO07", () => {
+  test("a ficha 5 (ADR-174): EF06CO01 e EF06CO03 por ação, sem pergunta — a EF06CO10 e a EF06CO07 saíram", () => {
     const ficha = ler(FICHA);
     const codigos = [...ficha.matchAll(/codigo: "(EF\d{2}CO\d{2})"/g)].map((m) => m[1]);
-    expect(codigos).toEqual(["EF06CO10", "EF06CO01", "EF06CO03"]);
+    expect(codigos).toEqual(["EF06CO01", "EF06CO03"]);
+    expect(ficha).toContain("perguntas: [],");
+    expect(ficha).not.toContain('codigo: "EF06CO10"');
     expect(ficha).not.toContain('codigo: "EF06CO07"');
   });
 });
@@ -171,7 +172,9 @@ describe("os campos do espelho são os do contrato", () => {
   test.each([
     ["SessaoSchema", CHAVES.sessao],
     ["FeedSchema", CHAVES.feed],
-    ["ParSimuladoSchema", CHAVES.par],
+    ["ItemDaClassificacaoSchema", CHAVES.item],
+    ["PecaPublicaSchema", CHAVES.peca],
+    ["RevelacaoDaRegraSchema", CHAVES.revelacao],
     ["PostPublicoSchema", CHAVES.post],
     ["GaleriaSchema", CHAVES.galeria],
     ["InvisibilidadeSchema", CHAVES.invisibilidade],
@@ -188,10 +191,11 @@ describe("passoEfetivo — a mesma resposta da api num F5", () => {
     expect(Object.keys(TELA_DO_PASSO)).toEqual([...PASSOS]);
   });
 
-  test("antes do voto, a etapa não toca a criança", () => {
+  test("antes do voto, a etapa não toca a criança — nem na separação, que é dela", () => {
     for (const etapa of ETAPAS) {
       expect(passoEfetivo("credencial", etapa)).toBe("credencial");
       expect(passoEfetivo("feed", etapa)).toBe("feed");
+      expect(passoEfetivo("classificacao", etapa)).toBe("classificacao");
     }
   });
 

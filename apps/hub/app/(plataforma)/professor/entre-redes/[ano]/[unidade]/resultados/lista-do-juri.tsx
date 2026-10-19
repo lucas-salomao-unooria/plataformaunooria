@@ -6,8 +6,6 @@ import {
   ROTULO_DO_PASSO,
   TEXTO_DO_OCIOSO,
   ordenarLinhas,
-  textoDasCategoriasBuscadas,
-  type CategoriaDaMostra,
   type LinhaDoPainel,
 } from "@/lib/juri-estadual-tipos";
 
@@ -22,7 +20,8 @@ import { EquipeNaLinha } from "./equipe-na-linha";
  * nova a cada consulta.
  *
  * O que ela NÃO tem, e cada ausência é regra: o VOTO, a concentração do feed
- * (só agregada, no cartão da lousa) e o nível (`PROIBIDO_NA_LINHA_DO_PAINEL`, na api) — nome ligado a escolha
+ * (só agregada, no cartão da lousa), quantos estandes a criança separou CERTO
+ * e o nível (`PROIBIDO_NA_LINHA_DO_PAINEL`, na api) — nome ligado a escolha
  * não vai para a lousa do pico —, e ordenação. A ordem é alfabética pelo que a
  * primeira célula mostra (`ordenarLinhas`) e nenhuma coluna é `sortable`:
  * listagem ordenável por progresso vira ranking.
@@ -71,17 +70,13 @@ function nomeDaLinha(l: Linha) {
       );
 }
 
-const demaisColunas = (categorias: readonly CategoriaDaMostra[]): TableColumn<Linha>[] => [
+const DEMAIS_COLUNAS: TableColumn<Linha>[] = [
   { key: "passo", title: "Onde está", minWidth: 200, render: (_, l) => (l.entrou ? ROTULO_DO_PASSO[l.passo] : "Não entrou") },
   { key: "votou", title: "Cédula", width: 110, render: (_, l) => feito(l.votou, "lacrou") },
+  /* A separação (EF06CO01, ADR-174): só SE separou. O acerto é nível, e o nível mora no painel de habilidades. */
+  { key: "separou", title: "Separação", width: 120, render: (_, l) => feito(l.separou, "separou") },
   { key: "abriuAGaleria", title: "Galeria Oculta", width: 140, render: (_, l) => feito(l.abriuAGaleria, "abriu") },
   { key: "buscou", title: "Busca", width: 110, render: (_, l) => feito(l.buscou, "buscou") },
-  {
-    key: "categoriasBuscadas",
-    title: "Categorias buscadas",
-    minWidth: 180,
-    render: (_, l) => (l.categoriasBuscadas.length > 0 ? textoDasCategoriasBuscadas(l.categoriasBuscadas, categorias) : "—"),
-  },
   { key: "revisou", title: "Revisão do voto", width: 140, render: (_, l) => feito(l.revisou, "revisou") },
   { key: "concluiu", title: "Missão", width: 120, render: (_, l) => feito(l.concluiu, "concluiu") },
 ];
@@ -90,12 +85,9 @@ export function ListaDoJuri({
   linhas,
   porComputador,
   membros,
-  categorias,
 }: {
   linhas: LinhaDoPainel[];
   porComputador: boolean;
-  /** O nome e a hashtag de cada área do pacote (vêm no resumo do painel). */
-  categorias: readonly CategoriaDaMostra[];
   /** Os membros de cada equipe, por id. A linha desta api traz só o nome da equipe. */
   membros: Readonly<Record<string, MembroNoPainel[]>>;
 }) {
@@ -107,7 +99,7 @@ export function ListaDoJuri({
   return (
     <ScrollBar orientation="both" autoHide className="tabela-rolavel">
       <Table<Linha>
-        columns={[primeiraColuna(porComputador), ...demaisColunas(categorias)]}
+        columns={[primeiraColuna(porComputador), ...DEMAIS_COLUNAS]}
         data={dados}
         keyExtractor={chaveDaLinha}
         emptyText="Esta turma ainda não tem estudantes."

@@ -2,25 +2,24 @@
 
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
-## A missão (exp06ef1b 0.5.0 na api — instrumento 3.0.0 —, PRD v2 de 2026-10-10 com os 40 projetos de 2026-10-14, rotas `/juri-estadual/*`)
+## A missão (exp06ef1b 0.6.0 — instrumento 4.0.0 —, PRD v2 com os 40 projetos e o Canal A puro da ADR-174, rotas `/juri-estadual/*`)
 
 Missão de 6º ano, unidade 1, no Unoovista. A criança é jurada de uma mostra
 estadual: rola um feed de dez posts (ou 8 minutos) que as curtidas dela
-AFUNILAM em silêncio, vota numa cédula lacrada (LATCH 1) e espera a turma (o
-PICO: o professor projeta a dispersão de votos). O professor clica "Liberar
-Auditoria": ela vê a Galeria Oculta — "30 de 40", o que ficou fora POR ÁREA e
-o CONTRAFACTUAL "sem as suas curtidas" —, busca por hashtag e MANTÉM ou TROCA
-o voto (LATCH 2). Depois avança sozinha para a
-cadeia (EF06CO03, com o par simulado ao lado), o caso Mariana e as enquetes
-(P1–P3, pelas rotas de `/evidencias`). Quatro tabelas: `exp06ef1b_pacotes`,
+AFUNILAM em silêncio, vota numa cédula lacrada (LATCH 1), SEPARA os estandes
+que viu nas 4 áreas (EF06CO01) e espera a turma (o PICO: o professor projeta a
+dispersão de votos). Passos: `feed → classificacao → lacrada → galeria →
+revisada → cadeia → mariana → fim`. O professor clica "Liberar Auditoria": ela
+vê a Galeria Oculta — "30 de 40", o que ficou fora POR ÁREA e o CONTRAFACTUAL
+"sem as suas curtidas" —, busca por hashtag e MANTÉM ou TROCA o voto (LATCH 2).
+Depois avança sozinha para a REGRA SE … ENTÃO (EF06CO03, passo `cadeia`) e o
+caso Mariana, cujos cartões concluem. Quatro tabelas: `exp06ef1b_pacotes`,
 `exp06ef1b_gates_turma`, `exp06ef1b_gates_historico`, `exp06ef1b_sessoes`.
 
-**A implementação segue o PRD v2; os únicos desvios são as 9 melhorias
-aprovadas pelo dono (2026-10-10).** O ciclo do voto da 0.3.0 SAIU (melhoria 6):
-justificativa (cartões `v*`/`r*`, frase grifada), complementar e a RODADA DE
-DESVIO (etapa, passo, rotas). As colunas ficam sem uso — migração
-`20261010120000` não apaga nada; os CHECKs antigos seguem valendo para as
-linhas antigas, e `complementar` continua aceito no CHECK e lido como manter.
+**Segue o PRD v2 com as 9 melhorias do dono (2026-10-10) e a ADR-174.** O
+ciclo do voto da 0.3.0 SAIU (justificativa, complementar, RODADA DE DESVIO); as
+colunas ficam sem uso, e `complementar` segue aceito no CHECK, lido como manter.
+Nenhuma migração apaga coluna: linha antiga continua válida.
 
 **A espinha é contrato com a experiência e o hub**: `vocabulario.ts`,
 `conteudo.ts`, `banco-padrao.ts`, `invariantes.ts`, `erros.ts`,
@@ -77,25 +76,34 @@ lados têm espelhos dessas listas; mudar a forma aqui sem avisar quebra os dois.
   `resumo` da galeria). Uma sessão 2.0.0 continua de onde parou, só com
   apresentações de projetos novos.
 - **8 minutos do servidor** (melhoria 9): o 1º `proximo: true` grava
-  `feed_iniciado_em`; esgotado, o feed não serve mais e `cedulaLiberada` vira
-  `true` (voto aceito com < 10). F5 não zera.
+  `feed_iniciado_em`; esgotado, `cedulaLiberada` (voto com < 10). F5 não zera.
 - **Ociosos** (melhoria 8): `POST cedula/batimento` a cada 15 s com a cédula
   aberta (`segundosSemToque`) grava `cedula_batimento_em`/`cedula_inativa_desde`;
   o painel acende `ocioso` com > 60 s e batimento de até 40 s
   (`regras/painel.ts#ociosoNaCedula`). O voto apaga o par (CHECK: só antes do voto).
+- **A SEPARAÇÃO** (`regras/classificacao.ts`, `POST classificacao`): o voto
+  leva ao passo `classificacao`; os estandes DISTINTOS vistos descem com id
+  opaco `cl-xxx`, título e imagem — sem área, hashtag nem perfil (o perfil É a
+  hashtag). Uma vez (409 `classificacao-ja-enviada`; corpo incompleto ou de
+  outra sessão, 400); corrige no servidor, grava `classificacao_*` +
+  `classificacao_status` e leva a `lacrada`. Responde SÓ o estado. Galeria
+  liberada antes: ela termina a separação e cai na galeria. Não é segredo: o
+  feed já deu a área (a hashtag vista); o id opaco tira a resposta da TELA.
 - **A revisão tem dois botões** (melhoria 6): `manter` exige ≥ 1 oculto aberto
-  (409 `galeria-sem-inspecao`); `trocar` aceita os do pacote menos o voto. Grava
-  `auditoria_status`/`classificacao_status` com as marcas. Depois, `POST passo
-  {para: "cadeia"}` (de `revisada`).
-- **A cadeia**: ids opacos (`regras/ordem.ts`), ordem de chegada nunca a certa.
-  **Errada = 422 `ordem-incorreta` com `tentativas`** — a tentativa é gravada
-  e a exceção é lançada FORA do `comTenancy` (senão o rollback a apagaria).
-  Blocos e feedback literais do 01e, SEM o número da frente (seria gabarito).
-  `cadeia.parSimulado` (melhoria 7, `regras/par.ts`): o espelho das áreas do
-  feed DESTA criança, nunca dado de colega.
+  (409 `galeria-sem-inspecao`); `trocar` aceita os do pacote menos o voto.
+  **Não marca** desde a 0.6.0. Depois, `POST passo {para: "cadeia"}`.
+- **A REGRA SE … ENTÃO** (`regras/regra.ts`, `POST regra`; o passo guarda o
+  nome `cadeia`): `conteudo.ts#PECAS_DO_SE/PECAS_DO_ENTAO`, 3 de cada lado, uma
+  certa, ids `rg-xxx`. Uma vez; grava `regra_se`/`regra_entao` e o carimbo da
+  cadeia (`cadeia_montada_em`, `cadeia_tentativas = 1`) e responde a REVELAÇÃO
+  (`motivo` `curtidas | permanencia | variado` + a área em foco, do feed DELA);
+  reenviar devolve a mesma. "Ficar muito tempo" não é distrator: o motor pesa
+  a permanência. A cadeia de 4 blocos, o `ordem-incorreta` e o par simulado
+  SAÍRAM; `regras/ordem.ts` só sorteia ids opacos.
 - **Mariana e os 5 cartões** literais do 01e (`m1`–`m3`, `t1`–`t2`), juntos e
-  embaralhados por sessão. O `m1` (27 palavras) é exceção NOMEADA do teto de 25
-  (`conteudo.ts#EXCECOES_DE_TETO`, melhoria 5); texto da IA segue barrado.
+  embaralhados por sessão. Os cartões CONCLUEM (`fim` + `concluida_em` no mesmo
+  update); `POST concluir` só serve às sessões antigas em `enquetes`. O `m1`
+  (27 palavras) é exceção NOMEADA do teto de 25 (`conteudo.ts#EXCECOES_DE_TETO`).
 - **O acervo não desce antes da galeria** (allowlist `regras/publico.ts`); a
   galeria exige passo efetivo `galeria` (voto E etapa) e traz `invisibilidade`
   `{ocultos, total}`, `porArea` (`{area, vistos, total}`, projetos distintos),
@@ -107,13 +115,12 @@ lados têm espelhos dessas listas; mudar a forma aqui sem avisar quebra os dois.
   botão/zerar/homologar/pôr no ar/banco padrão; compartilhado nas jogadas que
   marcam, com 409 `rodada-mudou`).
 - **O painel** conta por COMPUTADOR e é projetado (PED-07): a linha diz só
-  progresso + `ocioso` + `categoriasBuscadas` (a leitura da EF06CO01). A lousa
+  progresso + `ocioso` + `separou` — NUNCA o acerto (é nível, vai ao painel de
+  habilidades); o resumo conta `separaram`. A lousa
   do contraste é `resumo.concentracao` `{curtiram, naoCurtiram}`: entre quem
   votou, a média da fração do feed (0–100) na área mais vista, separando quem
   tem ≥ 1 curtida (≈ 70 × ≈ 30). Só agregado — `concentracao` está em
-  `PROIBIDO_NA_LINHA_DO_PAINEL`. A `invisibilidadeMedia` saiu (com 40 seria
-  sempre a mesma). Cada GET
-  incrementa `painel_vistas` (EVT-P04). O botão grava uma linha em
+  `PROIBIDO_NA_LINHA_DO_PAINEL`. Cada GET incrementa `painel_vistas` (EVT-P04). O botão grava uma linha em
   `exp06ef1b_gates_historico` (EVT-P05). `homologar` grava `aprovado_em/por` e
   `preparo_iniciado_em` (opcional no corpo, últimas 24 h).
 - **A IA só existe fora da aula**: do professor, o preparo, a regeneração e
@@ -125,15 +132,13 @@ lados têm espelhos dessas listas; mudar a forma aqui sem avisar quebra os dois.
   PARALELO (`promptDaArea`, `schemaDaArea`, `projetosDaAreaDaIa`), e o estande
   que repetir título ou perfil de outra área é regerado sozinho
   (`montarConteudo` → `promptDaRegeneracao`, que lista os outros 39). Ponta a
-  ponta: ~42 s. Área que falha derruba o rascunho (o fallback é da rota);
-  todas as tentativas são debitadas. A customização gera as 40 imagens quatro
+  ponta: ~42 s. Área que falha derruba o rascunho (fallback da rota); toda
+  tentativa é debitada. A customização gera as 40 imagens quatro
   por chamada (`IMAGENS_POR_CHAMADA`).
 - **O podcast** (ADR-150/151, RF-008): o banco padrão intocado tem o roteiro do
   sheet (aud-exp06ef1b-01, `ROTEIRO_DO_BANCO_PADRAO`) com os estandes DO BANCO
-  nas três vagas (o sheet citava robô dos bueiros, hortas e drones, que não
-  existem nele) e sem número cravado ("os projetos das outras áreas", "mais da
-  metade" — verdade com 30 de 40). Os estandes citados são os 1–4 do banco, que
-  ficaram. Mudou o texto? Suba
+  nas três vagas (os 1–4, que ficaram) e sem número cravado ("mais da
+  metade" — verdade com 30 de 40). Mudou o texto? Suba
   `VERSAO_DO_PEDIDO_DE_VOZ`, senão o áudio velho continua tocando. `padrao: true` sem
   linha na tabela; as falas do sheet ativam esse roteiro
   (`ehFalaDoBancoPadrao`). Mostra da IA: texto fixo corrigido + as três vagas
@@ -141,31 +146,30 @@ lados têm espelhos dessas listas; mudar a forma aqui sem avisar quebra os dois.
 
 ## A evidência (E14)
 
-Ficha `evidencias/fichas/exp06ef1b.ts` **versão 4** (`regras/evidencia.ts`),
-com `ordemDasAlternativas: "por-estudante"` (melhoria 4: embaralhamento
-determinístico por estudante, `evidencias/regras.ts#aleatorioDe`):
+Ficha `evidencias/fichas/exp06ef1b.ts` **versão 5** (ADR-174, `regras/evidencia.ts`),
+só ação, sem perguntas; marcado na transação de cada tarefa (porta `marcar`):
 
-- **EF06CO10** `auditoria`: ≥ 2 ocultos abertos E ≥ 1 busca = atingiu; abriu
-  algum = em processo; não abriu nada = SEM marca (`p1` decide).
-- **EF06CO01** `classificacao` (melhoria 3): hashtag de uma categoria FORA da
-  bolha (≠ `areaDominante`: a abertura mostra todas as áreas, então "não
-  apareceu" é lido como "não dominou") E abriu um projeto dela = atingiu;
-  buscou qualquer coisa ou abriu um oculto = em processo; nada = SEM marca.
-- **EF06CO03** `cadeia`: 1 tentativa = atingiu; 2–3 = em processo; > 3 = não.
-- `p1`/`p2`/`p3` verbatim do 01e (ids `D*`/`B*`/`C*` mantidos). Vale o melhor;
-  toda rodada mede de novo (ADR-145). As colunas `enquete_*_alt` existem e não
-  são escritas (a resposta mora em `evidencias_marcas`).
+- **EF06CO01** (a principal) `classificacao`: fração de acertos ≥ 0,9 = atingiu
+  (9–10 de 10); ≥ 0,5 = em processo; menos = não; < 4 estandes vistos = SEM
+  marca (`MINIMO_PARA_CLASSIFICAR`).
+- **EF06CO03** `regra` (id NOVO): 2 peças certas = atingiu; 1 = em processo; 0
+  = não (chute: 1 em 9 atinge).
+- **A EF06CO10 saiu**, com as enquetes P1–P3 e o `registrarContexto`; a galeria
+  não marca. `auditoria`, `cadeia` e `p1`–`p3` ficam no histórico (versão 4).
+  Toda rodada mede de novo (ADR-145). `enquete_*_alt` nunca foram escritas.
 
 ## As suítes
 
 - `tests/juri-estadual-regras.spec.ts` — SEM banco: as PROVAS dos 40 em
   centenas de sementes (curtiu cedo: 10 distintos, 7/1/1/1; sem toque:
-  3/3/2/2; 30 de 40; contrafactual; concentração 70 × 30), a 0.4.x continuada,
-  o banco de 40 (sha256 dos 16 de antes), o preparo por área e o FALLBACK.
+  3/3/2/2; 30 de 40; contrafactual; concentração 70 × 30), os ids opacos, a
+  separação, a regra e a ficha 5, o banco de 40 (sha256 dos 16), o preparo por
+  área e o FALLBACK.
 - `tests/juri-estadual-midia.spec.ts` — refazer, o lote de quatro, as imagens
   do BANCO (guarda de admin, só as que faltam, atribuição no medidor real) e o
   preparo em cinco chamadas com IA falsa.
 - `tests/juri-estadual-postgres.spec.ts` — RLS, CHECKs (16/40 sim, 15 não;
-  `proj-d10` sim, `proj-e1`/`proj-a11` não), galeria, concentração fora da
-  linha, a 0.4.x legível, a `midia` do banco. Migração `20261014120000`.
+  `proj-d10` sim, `proj-e1`/`proj-a11` não; os da separação e da regra),
+  galeria, a separação, a regra, Mariana que conclui, a sessão antiga em
+  `enquetes`, a `midia` do banco. Migração `20261018090000`.
 - `tests/podcast.spec.ts` — os roteiros e o material de 40.

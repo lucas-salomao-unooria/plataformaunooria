@@ -59,16 +59,16 @@ import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from ".
  *    botões — "Manter meu voto inicial" só acende depois de abrir um oculto, e
  *    a troca filtra os estandes por área. O F5 depois da revisão não reabre a
  *    galeria.
- * 9. **Etapa 5, da escola**: o Léo, o par simulado OPOSTO lado a lado (gerado
- *    pelo servidor) e a cadeia com os blocos do 01e; a ordem errada é 422
- *    `ordem-incorreta` e devolve os blocos à bandeja sem dizer qual vaga errou.
- * 10. **Mariana e o Canal B**: os cinco cartões literais (3 de mecanismo, 2 de
- *    atitude), as três enquetes nos Stories sem acerto, e o fim com a faixa da
- *    Unooria (o infográfico "Como os robôs leem nossas curtidas").
+ * 9. **A regra SE … ENTÃO (EF06CO03, ADR-174), da escola**: o Léo, as duas
+ *    escolhas (três peças cada, sem a certa), uma tentativa só e a revelação
+ *    ligada ao feed de cada um; o primeiro acerta as duas, o segundo uma.
+ * 10. **Mariana**: os cinco cartões literais (3 de mecanismo, 2 de atitude),
+ *    que CONCLUEM a missão (sem enquetes), e o fim com a faixa da Unooria (o
+ *    infográfico "Como os robôs leem nossas curtidas").
  * 11. **O painel da professora** não tem voto, taxa, concentração nem nível
- *    por criança;
- *    mostra as categorias que cada um buscou, e as três habilidades da ficha
- *    (EF06CO10, EF06CO01, EF06CO03) ficam no painel de habilidades.
+ *    (nem acerto) por criança; mostra quem SEPAROU, e as duas habilidades da
+ *    ficha 5 (EF06CO01, EF06CO03) ficam no painel de habilidades, com o nível
+ *    que a régua dá — a EF06CO10 saiu.
  * 12. **O podcast de recapitulação** do banco padrão é o roteiro fixo
  *    (aud-exp06ef1b-01), na página da atividade.
  *
@@ -105,13 +105,6 @@ const CARIMBO_OU_ACERTO = /\b(correta|incorreta|errou|acertou|errada|pontos|sua 
 /** O que a missão não diz antes da galeria. */
 const SPOILER = /\b(algoritmo|bolha|filtro|ocult[ao]s?)\b/i;
 
-/** Os rótulos da cadeia (`conteudo.ts#BLOCOS_DA_CADEIA`, 01e doc-03), na ordem certa. */
-const CADEIA = [
-  "Suas interações com cliques e curtidas no feed",
-  "Registro de dados e identificação de padrões",
-  "Algoritmo de recomendação escolhendo novos posts",
-  "Afunilamento do feed e criação da bolha",
-];
 
 /** A copy da experiência (`lib/textos.ts`) que a suíte confere. */
 const COPY = {
@@ -141,11 +134,14 @@ const COPY = {
   ficha: "Ficha Técnica de Auditoria",
   voltar: "Voltar à Galeria",
   leo: "Você viveu na prática o que Léo investigou no livro didático!",
-  cadeiaErro: "A ordem das regras precisa de ajuste. Lembre-se: primeiro vêm suas ações, depois os dados registrados pela máquina.",
-  cadeiaCerta: "Cadeia lógica confirmada. O sistema usou suas ações como dados para prever e limitar o que você via.",
+  separacao: "Organize o que você viu",
+  enviarSeparacao: "Enviar Organização à Comissão",
+  grupoDoSe: "SE — a condição",
+  grupoDoEntao: "ENTÃO — a ação",
+  enviarRegra: "Enviar a Regra",
+  regraCerta: "A regra que o aplicativo seguiu:",
   avancar: "Continuar para a Reflexão",
   submeter: "Submeter Análise do Júri",
-  confirmadas: ["Resposta registrada na ata do júri", "Dados computados", "Regra conferida"],
   fimTitulo: "Credenciamento de Jurado Concluído",
   infografico: "Como os robôs leem nossas curtidas",
 };
@@ -282,14 +278,6 @@ function areaComMaisOcultos(porArea) {
   return melhor?.area ?? null;
 }
 
-/** As caixas de dois elementos lado a lado: mesma linha, sem sobreposição. */
-async function ladoALado(locator) {
-  const caixas = await locator.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().toJSON()));
-  if (caixas.length !== 2) return { ok: false, caixas };
-  const [a, b] = caixas;
-  return { ok: Math.abs(a.top - b.top) < 4 && a.right <= b.left + 1 && a.width > 60 && b.width > 60, caixas };
-}
-
 await suite(
   {
     slug: "estudante/13-juri-estadual",
@@ -309,12 +297,12 @@ await suite(
       "Dez posts sem repetir nenhum; quem curte cedo recebe os posts 5 a 10 só da área curtida, com projetos novos (7/1/1/1)",
       "Salvar grava e não pesa: quem só salva vê as quatro áreas misturadas (3/3/2/2)",
       "A cédula tem quatro elementos, e parado 60 s com ela aberta o aviso acende no topo e a professora vê o ícone de ocioso",
-      "O lacre e a espera com três elementos; o F5 volta à espera",
+      "Depois do voto, a separação dos estandes vistos nas quatro áreas, sem hashtag e uma vez só (EF06CO01); o lacre e a espera com três elementos; o F5 volta à espera",
       "Um botão só, Liberar Auditoria, e ele não volta; só depois dele a lousa mostra a concentração do feed (quem curtiu × quem não curtiu)",
       "A Galeria Oculta: 30 de 40 para os dois, o que chegou por área, o feed “sem as suas curtidas” (o real de quem não curtiu, outro para quem curtiu), a grade por área e a revisão de dois botões — Manter só depois de abrir um oculto",
-      "A Etapa 5 com o par simulado oposto lado a lado, e a cadeia errada respondida com 422 sem dizer qual vaga",
-      "Mariana, os cinco cartões, as três enquetes do Canal B sem acerto e a faixa da Unooria no fim",
-      "O painel da professora: sem voto, taxa, concentração nem nível; as categorias buscadas; EF06CO10, EF06CO01 e EF06CO03",
+      "A regra SE … ENTÃO (EF06CO03): três peças de cada lado, uma tentativa, e a revelação ligada ao feed de cada um",
+      "Mariana, os cinco cartões que concluem a missão, e a faixa da Unooria no fim",
+      "O painel da professora: sem voto, taxa, concentração, acerto nem nível; quem separou; EF06CO01 e EF06CO03 com o nível da régua",
     ],
     comando: "node scripts/e2e/estudante/13-juri-estadual.mjs",
   },
@@ -667,9 +655,40 @@ await suite(
       if ((await opcao.getAttribute("aria-checked")) !== "true") throw new Error("a cédula não marcou o projeto tocado");
       await folha.getByRole("group", { name: "Sua certeza" }).getByRole("button", { name: certeza, exact: true }).click();
     };
+    /* O voto leva à SEPARAÇÃO (ADR-174), não mais direto à espera. */
     const lacrar = async (q, folha) => {
       await folha.getByRole("button", { name: "Confirmar Voto Oficial" }).click();
-      await q().getByText(/^Voto Registrado e Lacrado — Protocolo #/).first().waitFor({ timeout: 15_000 });
+      await q().getByRole("heading", { name: COPY.separacao }).waitFor({ timeout: 15_000 });
+    };
+
+    /**
+     * A SEPARAÇÃO (EF06CO01): um grupo de rádio por estande visto, com o nome de
+     * cada área. A suíte sabe a área certa pelo FEED da sessão (o post traz a
+     * área; a tela de separar, não) e erra de propósito os `erradas` primeiros.
+     * Devolve quantos estandes a tela pediu.
+     */
+    const separar = async (pagina, qq, erradas = 0) => {
+      const sessao = await sessaoDe(pagina);
+      const areaDoTitulo = new Map(sessao.feed.posts.map((x) => [x.titulo, x.area]));
+      const nomeDaArea = new Map(sessao.categorias.map((c) => [c.area, c.nome]));
+      const grupos = qq().getByRole("radiogroup", { name: /^Área do estande / });
+      await grupos.first().waitFor({ timeout: 20_000 });
+      const total = await grupos.count();
+      const enviar = qq().getByRole("button", { name: COPY.enviarSeparacao });
+      for (let i = 0; i < total; i += 1) {
+        r.exigir(i === 0 || (await enviar.isDisabled()), "“Enviar” só acende com TODOS os estandes separados");
+        const grupo = grupos.nth(i);
+        const titulo = ((await grupo.getAttribute("aria-label")) ?? "").replace(/^Área do estande /, "");
+        const certa = areaDoTitulo.get(titulo);
+        if (!certa) throw new Error(`a separação mostra um estande que o feed não serviu: “${titulo}”`);
+        const area = i < erradas ? [...nomeDaArea.keys()].find((a) => a !== certa) : certa;
+        await grupo.getByRole("radio", { name: nomeDaArea.get(area), exact: true }).click();
+      }
+      return { total, enviar };
+    };
+    const enviarASeparacao = async (qq, enviar) => {
+      await enviar.click();
+      await qq().getByText(/^Voto Registrado e Lacrado — Protocolo #/).first().waitFor({ timeout: 20_000 });
     };
 
     const plenaria = (qq) => qq().locator(".plenaria");
@@ -872,11 +891,40 @@ await suite(
       prova: "As duas respostas afirmam certeza de propósito: é a aposta que a Galeria Oculta vai confrontar.",
     });
     await lacrar(q, folha1);
+
+    // ── ESTUDANTE 1: a separação (EF06CO01), tudo certo ─────────────────
+    const listaDaSeparacao = q().locator(".separacao__lista");
+    const textoDaSeparacao = await listaDaSeparacao.innerText();
+    const hashtagsDoFeed = feed1.posts.flatMap((x) => x.hashtags).map((h) => h.replace(/^#*/, "#"));
+    r.exigir(
+      !textoDaSeparacao.includes("#") && hashtagsDoFeed.every((h) => !textoDaSeparacao.includes(h)),
+      "a separação não mostra hashtag nem perfil: só o título e a imagem do estande (o perfil do post é a hashtag)",
+    );
+    /* Só a MOLDURA: o título de um estande pode dizer "filtro" (de água) sem ser spoiler. */
+    const molduraDaSeparacao = `${await q().getByRole("heading", { name: COPY.separacao }).innerText()} ${await q().locator(".separacao__instrucao").innerText()}`;
+    r.exigir(!SPOILER.test(molduraDaSeparacao), "a moldura da separação, antes da galeria, não diz algoritmo, bolha, filtro nem oculto");
+    const { total: estandesSeparados1, enviar: enviar1 } = await separar(p, q, 0);
+    r.exigir(
+      estandesSeparados1 === projetosDistintos1,
+      `a separação pede os ${projetosDistintos1} estandes distintos que o feed serviu (pediu ${estandesSeparados1})`,
+    );
+    r.exigir(!(await enviar1.isDisabled()), "com todos separados, “Enviar Organização à Comissão” acende");
+    await semAnimacao(q);
+    await r.registrar(p, "separacao", {
+      titulo: "Organize o que você viu",
+      mostra: `Depois do voto, os ${estandesSeparados1} estandes do feed — só título e imagem — e, em cada um, as quatro áreas da mostra; todos separados.`,
+      prova:
+        "A EF06CO01 (ADR-174): classificar cada estande na coleção a que pertence. Sem a hashtag na tela, a criança " +
+        "não copia a etiqueta; ids opacos, e quem corrige é o servidor. Uma vez só, antes da Galeria Oculta.",
+      inteira: true,
+    });
+    await enviarASeparacao(q, enviar1);
+    r.exigir(!CARIMBO_OU_ACERTO.test(await q().locator(".tela").innerText()), "depois do envio, a tela não diz quantos acertou");
     await conferirOPico(q, "o primeiro estudante");
     await r.registrar(p, "lacre-e-espera", {
       titulo: "O lacre, e a espera",
       mostra: "O brasão, “Voto Registrado e Lacrado — Protocolo #…” e a ordem da comissão, e nada mais.",
-      prova: "O voto é o LATCH 1: só existe quando a api confirma. Quem tira a criança daqui é o polling do gate.",
+      prova: "O voto é o LATCH 1, e a separação vem logo depois dele: só existem quando a api confirma. Quem tira a criança daqui é o polling do gate.",
     });
     await p.reload({ waitUntil: "domcontentloaded" });
     await plenaria(q).waitFor({ timeout: 40_000 });
@@ -947,16 +995,27 @@ await suite(
 
     await marcarOVoto(folha2, null, "Sim");
     await lacrar(q2, folha2);
+    /* O segundo erra três estandes de propósito: 7 de 10 é "em processo". */
+    const { total: estandesSeparados2, enviar: enviar2 } = await separar(p2, q2, 3);
+    await enviarASeparacao(q2, enviar2);
     await conferirOPico(q2, "o segundo estudante");
 
     // ═══ PROFESSORA: a lousa do pico, e Liberar Auditoria ════════════════
     const painelNoPico = await esperarNaApi(
       prof,
       `${caminhoDaTurma}/painel`,
-      (c) => (c?.resumo?.computadores?.votaram ?? 0) >= 2,
-      { oQue: "os dois votos no painel da aula" },
+      (c) => (c?.resumo?.computadores?.votaram ?? 0) >= 2 && (c?.resumo?.separaram ?? 0) >= 2,
+      { oQue: "os dois votos e as duas separações no painel da aula" },
     );
     const { resumo } = painelNoPico;
+    r.exigir(
+      painelNoPico.linhas.filter((l) => [PRIMEIRO.login, SEGUNDO.login].includes(l.usuario)).every((l) => l.separou === true),
+      "a linha de cada um diz que SEPAROU — e só isso: o acerto não vem na folha",
+    );
+    r.exigir(
+      JSON.stringify(painelNoPico.linhas).match(/acert/i) === null,
+      "nenhuma linha do painel carrega acerto da separação",
+    );
     r.exigir(
       resumo.votosPorArea.reduce((n, a) => n + a.votos, 0) === 2,
       `os votos por área somam 2 (${resumo.votosPorArea.map((a) => `${a.area}=${a.votos}`).join(", ")})`,
@@ -1184,8 +1243,8 @@ await suite(
        grade de uma área, não é busca nenhuma. */
     const linhaAntesDoChip = (await lerApi(prof, `${caminhoDaTurma}/painel`)).corpo?.linhas?.find((l) => l.usuario === PRIMEIRO.login);
     r.exigir(
-      (linhaAntesDoChip?.categoriasBuscadas ?? []).length === 0,
-      `abrir a galeria não conta como busca por hashtag: ninguém tocou num chip (categorias buscadas: ${JSON.stringify(linhaAntesDoChip?.categoriasBuscadas ?? null)})`,
+      linhaAntesDoChip?.buscou === false,
+      `abrir a galeria não conta como busca: ninguém tocou num chip (buscou: ${JSON.stringify(linhaAntesDoChip?.buscou ?? null)})`,
     );
     const areaBuscada = categorias1.map((c) => c.area).find((a) => a !== areaCurtida && a !== areaInicial1);
     const categoriaBuscada = categorias1.find((c) => c.area === areaBuscada);
@@ -1212,7 +1271,7 @@ await suite(
     await r.registrar(p, "galeria-ficha", {
       titulo: "A ficha de auditoria",
       mostra: `Depois do chip ${chip} (a grade trocou para ${categoriaBuscada.nome}), a ficha de “${ocultosDaBusca[0].titulo}”: as três fotos, o resumo técnico, as hashtags e Voltar à Galeria.`,
-      prova: "Tocar a hashtag de uma categoria fora da bolha e abrir um projeto dela é a EF06CO01 (melhoria 3); dois ocultos e uma busca, a EF06CO10.",
+      prova: "A busca por hashtag e a ficha de auditoria são a experiência da galeria: desde a ficha 5 (ADR-174) elas não marcam habilidade — a EF06CO01 já foi medida na separação.",
     });
     await ficha1.getByRole("button", { name: COPY.voltar }).click();
     await ficha1.waitFor({ state: "detached", timeout: 10_000 });
@@ -1267,56 +1326,51 @@ await suite(
         "num celular: a lista é filtrada pelos mesmos chips de área. A api grava o voto final ao lado do lacrado.",
     });
     await folhaDaRevisao.getByRole("button", { name: COPY.confirmarRevisao }).click();
-    // ═══ ESTUDANTE 1: a Etapa 5 — o Léo, o par simulado e a cadeia ═══════
+    // ═══ ESTUDANTE 1: a Etapa 5 — o Léo e a regra SE … ENTÃO ═════════════
     await q().getByText(COPY.leo).first().waitFor({ timeout: 30_000 });
     const sessao1 = await sessaoDe(p);
     r.exigir(sessao1.revisao?.acao === "manter", "a api guardou que o primeiro manteve o voto");
-    const par = sessao1.cadeia?.parSimulado;
     r.exigir(
-      Boolean(par) && par.voce.areaPrincipal === areaCurtida && par.outroJurado.areaPrincipal !== areaCurtida,
-      `o par simulado é o OPOSTO: você = ${par?.voce.areaPrincipal}, outro jurado = ${par?.outroJurado.areaPrincipal}`,
+      sessao1.cadeia?.se?.length === 3 && sessao1.cadeia?.entao?.length === 3 && sessao1.cadeia?.revelacao === null,
+      "a regra desce com três peças de cada lado e SEM a revelação antes do envio",
     );
-    const lados = await ladoALado(q().locator(".par__lado"));
-    r.exigir(lados.ok, `os dois históricos ficam LADO A LADO (${JSON.stringify(lados.caixas.map((c) => [Math.round(c.left), Math.round(c.top), Math.round(c.width)]))})`);
+    r.exigir(!/"certa"/.test(JSON.stringify(sessao1.cadeia)), "nenhuma peça diz se é a certa");
+    r.exigir((await q().locator(".par__lado").count()) === 0, "o par simulado e a cadeia de quatro blocos saíram (ADR-174)");
+    /* O gabarito vem do material do PROFESSOR — a criança nunca o recebe. */
+    const material = await lerApi(prof, "/juri-estadual/professor/material");
+    if (material.status !== 200) throw new Error(`o material do professor não veio (HTTP ${material.status})`);
+    const pecaCerta = (lado) => material.corpo.pecas[lado].find((x) => x.certa).texto;
+    const pecaErrada = (lado) => material.corpo.pecas[lado].find((x) => !x.certa).texto;
+    const escolherARegra = async (qq, se, entao) => {
+      await qq().getByRole("radiogroup", { name: COPY.grupoDoSe }).getByRole("radio", { name: se, exact: true }).click();
+      await qq().getByRole("radiogroup", { name: COPY.grupoDoEntao }).getByRole("radio", { name: entao, exact: true }).click();
+    };
+    await escolherARegra(q, pecaCerta("se"), pecaCerta("entao"));
     await semAnimacao(q);
-    await r.registrar(p, "etapa5-lado-a-lado", {
-      titulo: "A Etapa 5: você e o outro jurado, lado a lado",
-      mostra: "A tela da escola: a ponte do Léo, os dois históricos — o seu e o de outro jurado que curtiu temas diferentes — lado a lado, e os quatro blocos.",
-      prova: "O outro jurado é gerado pelo servidor como o OPOSTO das áreas reais deste feed (melhoria 7) — nunca dado de colega.",
+    await r.registrar(p, "regra-montada", {
+      titulo: "A regra SE … ENTÃO",
+      mostra: "A tela da escola: a ponte do Léo, as três condições (SE) e as três ações (ENTÃO), a regra montada e Enviar a Regra.",
+      prova:
+        "A EF06CO03 (ADR-174): construir a instrução que o programa executou, não só reconhecê-la. As peças descem " +
+        "embaralhadas e com ids opacos; o servidor corrige, e é uma tentativa só.",
       inteira: true,
     });
-
-    const bandeja = () => q().getByRole("region", { name: "Etapas da regra" });
-    const bloco = (rotulo) => bandeja().getByRole("button", { name: new RegExp(`^${escaparRegex(rotulo)}`) });
-    const errada = [CADEIA[1], CADEIA[0], CADEIA[2], CADEIA[3]];
-    for (const rotulo of errada) await bloco(rotulo).click();
-    const respostaDaCadeia = p.waitForResponse((res) => /juri-estadual\/cadeia/.test(res.url()) && res.request().method() === "POST", {
-      timeout: 15_000,
-    });
-    r.provocado(/ordem-incorreta|422/, "a suíte manda a cadeia na ordem errada de propósito: o 422 é a regra");
-    await q().getByRole("button", { name: "Validar Cadeia Lógica" }).click();
-    const errou = await respostaDaCadeia;
-    const corpoDoErro = await errou.json().catch(() => null);
+    await q().getByRole("button", { name: COPY.enviarRegra }).click();
+    await q().getByText(COPY.regraCerta).first().waitFor({ timeout: 15_000 });
+    const revelacao1 = (await sessaoDe(p)).cadeia?.revelacao;
     r.exigir(
-      errou.status() === 422 && JSON.stringify(corpoDoErro ?? {}).includes("ordem-incorreta"),
-      `a ordem errada é 422 ordem-incorreta (veio ${errou.status()} ${JSON.stringify(corpoDoErro ?? {}).slice(0, 120)})`,
+      revelacao1?.motivo === "curtidas" && revelacao1?.area === areaCurtida,
+      `a revelação liga a regra ao feed DELE: curtiu ${nomeDa(areaCurtida)} (veio ${revelacao1?.motivo} / ${revelacao1?.area})`,
     );
-    await q().getByText(COPY.cadeiaErro).first().waitFor({ timeout: 15_000 });
-    r.exigir((await q().getByText("Voltou para a bandeja").count()) > 0, "na ordem errada, os blocos voltam para a bandeja");
-    r.exigir(!/vaga|posição \d+ (está )?errad/i.test(await q().locator("body").innerText()), "e a tela não diz qual vaga errou");
-    await r.registrar(p, "cadeia-errada", {
-      titulo: "A cadeia que não encaixou",
-      mostra: `Os blocos de volta à bandeja e a frase de apoio: “${COPY.cadeiaErro}”`,
-      prova: "O servidor confere a ordem (ids opacos) e responde 422 sem dizer qual vaga; a tentativa conta para a EF06CO03.",
-    });
-    for (const rotulo of CADEIA) await bloco(rotulo).click();
-    await q().getByRole("button", { name: "Validar Cadeia Lógica" }).click();
-    await q().getByText(COPY.cadeiaCerta).first().waitFor({ timeout: 15_000 });
+    const textoDaRevelacao = await q().locator("body").innerText();
+    r.exigir(textoDaRevelacao.includes(chipDa(areaCurtida)), `a revelação cita a hashtag da área que ele curtiu (${chipDa(areaCurtida)})`);
+    r.exigir(!CARIMBO_OU_ACERTO.test(textoDaRevelacao), "a revelação mostra a regra certa sem dizer “acertou” ou “errou”");
     await semAnimacao(q);
-    await r.registrar(p, "cadeia-montada", {
-      titulo: "Interações → Dados → Algoritmo → Bolha",
-      mostra: "A cadeia lógica montada na calha, na segunda tentativa, com a confirmação.",
-      prova: "A regra que o feed executou vira descrição precisa: o “se… então…” que a enquete da EF06CO03 pergunta.",
+    await r.registrar(p, "regra-revelada", {
+      titulo: "A regra certa, ligada ao feed dele",
+      mostra: `A regra que ele montou, a que o aplicativo seguiu, e “Depois que você curtiu posts de ${chipDa(areaCurtida)}…”.`,
+      prova: "A revelação só desce depois do envio, e diz o que a regra fez NESTE feed — no tom de “pode deixar o feed menos variado”, não de bolha inevitável.",
+      inteira: true,
     });
     await q().getByRole("button", { name: COPY.avancar }).click();
 
@@ -1341,25 +1395,9 @@ await suite(
     });
     await q().getByRole("button", { name: COPY.submeter }).click();
 
-    // ═══ ESTUDANTE 1: o Canal B — as três enquetes nos Stories ══════════
-    for (const [i, id] of ["p1", "p2", "p3"].entries()) {
-      const pergunta = await lerApi(p, `/evidencias/${EXP_ID}/perguntas/${id}`);
-      if (pergunta.status !== 200) throw new Error(`a pergunta ${id} não veio da api (HTTP ${pergunta.status})`);
-      const alternativa = pergunta.corpo.alternativas[0];
-      await q().getByRole("button", { name: alternativa.texto }).first().click({ timeout: 30_000 });
-      await q().getByText(COPY.confirmadas[i]).first().waitFor({ timeout: 15_000 });
-      r.exigir(!CARIMBO_OU_ACERTO.test(await q().locator("body").innerText()), `a enquete ${i + 1} confirma o registro, sem acerto`);
-      if (i === 0) {
-        await r.registrar(p, "enquete", {
-          titulo: "A consulta aos jurados",
-          mostra: `Os Stories da comissão, em tema escuro: a primeira pergunta, a alternativa tocada e “${COPY.confirmadas[0]}”.`,
-          prova: "O gabarito mora na ficha da api e a ordem muda (ids opacos). A criança não sabe se acertou: é evidência, não prova.",
-        });
-      }
-      if (i < 2) await q().getByRole("button", { name: "Próxima pergunta" }).last().click();
-    }
-    await q().getByRole("button", { name: "Encerrar consulta" }).click();
+    // ═══ ESTUDANTE 1: os cartões CONCLUEM (sem enquetes, ADR-174) ════════
     await q().getByText(COPY.fimTitulo).first().waitFor({ timeout: 20_000 });
+    r.exigir((await sessaoDe(p)).concluida === true, "os cartões do caso Mariana concluem a missão — as enquetes saíram");
     const faixa = q().getByRole("region", { name: COPY.infografico });
     await faixa.waitFor({ timeout: 10_000 });
     await faixa.scrollIntoViewIfNeeded();
@@ -1374,11 +1412,20 @@ await suite(
     await q2().getByText(COPY.leo).first().waitFor({ timeout: 30_000 });
     await p2.reload({ waitUntil: "domcontentloaded" });
     await q2().getByText(COPY.leo).first().waitFor({ timeout: 40_000 });
-    r.exigir((await tituloDaGaleria(q2).count()) === 0, "o F5 depois da revisão volta à cadeia — a galeria não reabre");
+    r.exigir((await tituloDaGaleria(q2).count()) === 0, "o F5 depois da revisão volta à regra — a galeria não reabre");
     const sessao2 = await sessaoDe(p2);
     r.exigir(
       sessao2.revisao?.acao === "trocar" && sessao2.revisao.projetoId !== sessao2.voto?.projetoId,
       "a api guardou a troca, com o voto final diferente do lacrado",
+    );
+    /* O segundo acerta só o SE: "em processo". Quem só salvou não fechou bolha: a regra não disparou (ou disparou pelo tempo parado). */
+    await escolherARegra(q2, pecaCerta("se"), pecaErrada("entao"));
+    await q2().getByRole("button", { name: COPY.enviarRegra }).click();
+    await q2().getByText(COPY.regraCerta).first().waitFor({ timeout: 15_000 });
+    const revelacao2 = (await sessaoDe(p2)).cadeia?.revelacao;
+    r.exigir(
+      revelacao2?.motivo === "variado" || revelacao2?.motivo === "permanencia",
+      `quem só salvou não curtiu: a revelação não fala de curtidas (veio ${revelacao2?.motivo})`,
     );
 
     // ═══ PROFESSORA: a folha, as categorias buscadas e as habilidades ═══
@@ -1390,10 +1437,7 @@ await suite(
       `um manteve e um trocou (${JSON.stringify(painelDepois.resumo.revisao)})`,
     );
     const linha1 = painelDepois.linhas.find((l) => l.usuario === PRIMEIRO.login);
-    r.exigir(
-      linha1?.categoriasBuscadas?.includes(areaBuscada),
-      `a linha do primeiro traz a categoria que ele buscou (${linha1?.categoriasBuscadas?.join(", ")})`,
-    );
+    r.exigir(linha1?.separou === true && !("categoriasBuscadas" in (linha1 ?? {})), "a linha diz que separou; as categorias buscadas saíram da folha");
     await prof.reload({ waitUntil: "domcontentloaded" });
     await prof.locator("[data-revisao-da-turma]").waitFor({ timeout: 30_000 });
     const colunasDaFolha = await prof.locator("main").getByRole("columnheader").allInnerTexts();
@@ -1403,24 +1447,43 @@ await suite(
     );
     const linhaDoPrimeiro = prof.locator("main").getByRole("row").filter({ hasText: PRIMEIRO.login }).first();
     r.exigir(
-      (await linhaDoPrimeiro.innerText()).includes(categoriaBuscada.hashtag.startsWith("#") ? categoriaBuscada.hashtag : `#${categoriaBuscada.hashtag}`),
-      `a coluna “Categorias buscadas” mostra ${chip} na linha do primeiro`,
+      colunasDaFolha.some((c) => /Separação/.test(c)) && !colunasDaFolha.some((c) => /Categorias buscadas/.test(c)),
+      `a folha tem a coluna “Separação” e não tem mais “Categorias buscadas” (colunas: ${colunasDaFolha.join(", ")})`,
     );
+    r.exigir((await linhaDoPrimeiro.innerText()).includes("separou"), "na linha do primeiro, a separação aparece como feita");
     const habilidades = prof.locator("[data-habilidades-do-juri]");
     await habilidades.waitFor({ timeout: 30_000 });
-    await habilidades.getByText("EF06CO10").first().waitFor({ timeout: 30_000 });
+    await habilidades.getByText("EF06CO01").first().waitFor({ timeout: 30_000 });
     const textoDasHabilidades = await habilidades.innerText();
     r.exigir(
-      ["EF06CO10", "EF06CO01", "EF06CO03"].every((codigo) => textoDasHabilidades.includes(codigo)),
-      "o painel de habilidades mostra EF06CO10, EF06CO01 e EF06CO03",
+      ["EF06CO01", "EF06CO03"].every((codigo) => textoDasHabilidades.includes(codigo)) && !textoDasHabilidades.includes("EF06CO10"),
+      "o painel de habilidades mostra EF06CO01 e EF06CO03 — e não a EF06CO10, que saiu (ADR-174)",
     );
-    const painelDeHabilidades = await lerApi(prof, `/evidencias/turma/${turmaId}/missao/${EXP_ID}/atividade/${atividadeId}`);
-    r.exigir(painelDeHabilidades.status === 200, `a api do painel de habilidades responde para esta atividade (HTTP ${painelDeHabilidades.status})`);
+    const caminhoDaEvidencia = `/evidencias/turma/${turmaId}/missao/${EXP_ID}/atividade/${atividadeId}`;
+    const nivelDe = (c, quem, codigo) => {
+      const e = c?.estudantes?.find((x) => x.nome === quem.nome);
+      return Object.values(e?.porRodada ?? {}).map((rodada) => rodada?.[codigo]?.status).find(Boolean) ?? null;
+    };
+    const evidencia = await esperarNaApi(
+      prof,
+      caminhoDaEvidencia,
+      (c) => nivelDe(c, SEGUNDO, "EF06CO03") !== null,
+      { oQue: "as marcas da separação e da regra no painel de habilidades", timeout: 30_000 },
+    );
+    const esperado = {
+      [`${PRIMEIRO.login} EF06CO01`]: [nivelDe(evidencia, PRIMEIRO, "EF06CO01"), "atingiu"],
+      [`${PRIMEIRO.login} EF06CO03`]: [nivelDe(evidencia, PRIMEIRO, "EF06CO03"), "atingiu"],
+      [`${SEGUNDO.login} EF06CO01 (${estandesSeparados2 - 3} de ${estandesSeparados2})`]: [nivelDe(evidencia, SEGUNDO, "EF06CO01"), "em_processo"],
+      [`${SEGUNDO.login} EF06CO03`]: [nivelDe(evidencia, SEGUNDO, "EF06CO03"), "em_processo"],
+    };
+    for (const [quem, [veio, regua]] of Object.entries(esperado)) {
+      r.exigir(veio === regua, `${quem}: o painel registra “${veio}”, e a régua dá “${regua}”`);
+    }
     await linhaDoPrimeiro.scrollIntoViewIfNeeded();
     await r.registrar(prof, "resultados-e-habilidades", {
-      titulo: "A folha da turma, as categorias buscadas e as habilidades",
-      mostra: "Onde cada um está, a coluna “Categorias buscadas” com a hashtag que o primeiro usou, e o painel de habilidades da BNCC.",
-      prova: "A folha diz só o progresso e o que cada um buscou — nunca voto, taxa, concentração ou nível ligados a nome. A concentração mora só na lousa, agregada; o nível, no painel de habilidades.",
+      titulo: "A folha da turma, a separação e as habilidades",
+      mostra: "Onde cada um está, a coluna “Separação” e o painel de habilidades da BNCC com a EF06CO01 e a EF06CO03.",
+      prova: "A folha diz só o progresso — nunca voto, taxa, concentração, acerto ou nível ligados a nome. A concentração mora só na lousa, agregada; o nível (a separação e a regra), no painel de habilidades.",
       inteira: true,
     });
 
