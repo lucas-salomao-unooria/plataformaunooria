@@ -89,6 +89,14 @@ composição do Raio-x e do envio, os gabaritos e as réguas são da api
 - **O relatório expande também a pedido** ("Rever meu relatório", no cinza e na
   reflexão): `passo: "relatorio"` no `exp:estado`, em qualquer fase. As tarefas
   publicam `passo: "tarefas"` para o hub tirar a moldura do cinza.
+- **Quem publica `passo` desfaz ao DESMONTAR, não só no botão** (1.4.1). O
+  desvio por fase montava o `RelatorioComSaida` por um instante, com as tarefas
+  de antes do fim da revelação, e o trocava pelo cinza quando elas chegavam: o
+  `passo` ficava publicado, o cinza preso em tela cheia e a moldura do hub
+  nunca aparecia — só no dev publicado, onde a latência abre a janela. A casca
+  também recarrega as tarefas ao gravar o fim da revelação
+  (`aoConcluirRevelacao`). Para diagnosticar, escute `exp:estado` na página do
+  hub: a última mensagem com `passo` é a culpada.
 - **O `Checkbox` do DS tem o `<input>` sr-only, fora da área visível**: na e2e
   marca-se pelo RÓTULO (`getByText`), nunca `check()` no input.
 - Compensação local: o texto da miniatura do envio abre por inteiro num
