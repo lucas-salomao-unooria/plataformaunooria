@@ -240,13 +240,18 @@ await suite(
         r.ressalva("a 6A ainda não liberou a auditoria: a concentração do feed não aparece por desenho (rode antes a estudante/13)");
         r.exigir((await concentracaoDoJuri.count()) === 0, "antes da auditoria, a lousa não mostra a concentração do feed");
       }
-      /* PRD v2: a folha diz QUAIS categorias cada um buscou na galeria (a leitura
-         da EF06CO01), e o painel conta quem está parado na cédula — o ícone ao
-         lado do nome é provado AO VIVO na estudante/13 (ele some sozinho 40 s
-         depois de a cédula fechar, então aqui só a coluna e a métrica). */
+      /* ADR-174: a folha diz quem SEPAROU os estandes (a EF06CO01 — o acerto é
+         nível e mora no painel de habilidades), e o painel conta quem está
+         parado na cédula — o ícone ao lado do nome é provado AO VIVO na
+         estudante/13 (ele some sozinho 40 s depois de a cédula fechar, então
+         aqui só a coluna e a métrica). */
       r.exigir(
-        colunasDoJuri.some((c) => /Categorias buscadas/.test(c)),
-        `a folha do Júri tem a coluna “Categorias buscadas” (colunas: ${colunasDoJuri.join(", ")})`,
+        colunasDoJuri.some((c) => /Separação/.test(c)) && !colunasDoJuri.some((c) => /Categorias buscadas/.test(c)),
+        `a folha do Júri tem a coluna “Separação”, sem “Categorias buscadas” (colunas: ${colunasDoJuri.join(", ")})`,
+      );
+      r.exigir(
+        (await p.getByText("Separaram os estandes", { exact: true }).count()) > 0,
+        "o painel da aula conta quem separou os estandes",
       );
       r.exigir(
         (await p.getByText("Parados na cédula", { exact: true }).count()) > 0,
