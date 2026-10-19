@@ -407,7 +407,9 @@ await suite(
     }
     try {
       let equipes = antes;
-      if (!jaTinha) {
+      /* Montagem de OUTRO dia no modo individual não tem equipe: sorteia por cima
+         dela (com a versão gravada), senão não há estudante com equipe a provar. */
+      if (!jaTinha || !(antes?.equipes?.length)) {
         const sugestao = await pa.request.post(`${rotaDasEquipes(turmaAbertaId)}/sugestao`, {
           data: { modo: "sorteio", computadores: COMPUTADORES, ausentes: [] },
         });
@@ -415,7 +417,7 @@ await suite(
         const proposta = await sugestao.json();
         const gravado = await pa.request.put(rotaDasEquipes(turmaAbertaId), {
           data: {
-            versao: 0,
+            versao: antes?.montagem?.versao ?? 0,
             modo: "sorteio",
             computadores: proposta.equipes.length,
             ausentes: [],
@@ -480,7 +482,7 @@ await suite(
          enquanto a página estiver nele. */
       await pe.goto(`${HUB}/estudante`, { waitUntil: "domcontentloaded" });
     } finally {
-      if (!jaTinha) await pa.request.delete(rotaDasEquipes(turmaAbertaId)).catch(() => {});
+      if (!jaTinha || !(antes?.equipes?.length)) await pa.request.delete(rotaDasEquipes(turmaAbertaId)).catch(() => {});
     }
   },
 );

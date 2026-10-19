@@ -590,7 +590,14 @@ await suite(
 
     // ═══ O QUE PERDERAM ══════════════════════════════════════════════════
     await moverEtapa(prof, atividade.id, "perdidos");
-    await p.waitForTimeout(9000); // o polling do relógio na experiência é de 5s
+    /* O DESFECHO, não o relógio: o polling da experiência é de 5 s e, no dev
+       publicado, a fase nova chega depois disso. Espera o aparelho contrair E a
+       moldura aparecer, com teto de 45 s. */
+    for (let i = 0; i < 45; i += 1) {
+      const caixa = await aparelho.boundingBox();
+      if (caixa.width < caixaDepois.width * 0.6 && (await p.locator("text=o feed que você não recebeu").count()) > 0) break;
+      await p.waitForTimeout(1000);
+    }
     const caixaPerdidos = await aparelho.boundingBox();
     r.exigir(
       caixaPerdidos.width < caixaDepois.width * 0.6,
@@ -646,6 +653,8 @@ await suite(
       .catch(() => {
         throw new Error(`o envio (6c) não abriu${falhasDaApi.length ? ` — falhas da api: ${falhasDaApi.join(" | ")}` : ""}`);
       });
+    /* Os posts chegam depois do título: contar sem esperar o primeiro dava 0. */
+    await tela.getByRole("checkbox", { name: "mandar este" }).first().waitFor({ state: "attached", timeout: 30_000 });
     const postsDoEnvio = await tela.getByRole("checkbox", { name: "mandar este" }).count();
     r.exigir(postsDoEnvio === 9, `o envio oferece 9 posts (${postsDoEnvio})`);
     const textoDoEnvio = await tela.getByRole("list", { name: "Os posts" }).innerText();
@@ -687,6 +696,9 @@ await suite(
     await moverEtapa(prof, atividade.id, "reflexao");
     const escrita = tela.locator("textarea");
     await escrita.waitFor({ timeout: 40_000 });
+    /* A caixa nasce desabilitada até o texto salvo carregar: digitar antes
+       perdia o texto e o "Salvar" nunca acendia. */
+    for (let i = 0; i < 40 && (await escrita.isDisabled()); i += 1) await p.waitForTimeout(500);
     const TEXTO_REFLEXAO =
       "Como eu parava e salvava os posts de um lado, o feed foi me mostrando cada vez mais deles e os do outro lado quase não chegaram. Eu nem percebi que era sempre o mesmo lado.";
     await escrita.pressSequentially(TEXTO_REFLEXAO, { delay: 8 });

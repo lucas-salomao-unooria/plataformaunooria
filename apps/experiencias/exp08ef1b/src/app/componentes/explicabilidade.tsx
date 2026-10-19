@@ -47,10 +47,14 @@ export function Explicabilidade({
   runId,
   fase = 'explicabilidade',
   aoContinuar,
+  aoConcluirRevelacao,
 }: {
   runId: string;
   fase?: string;
   aoContinuar?: () => void;
+  /** A casca recarrega as tarefas: sem isso, a fase seguinte lia o retrato de
+      ANTES do fim da revelação e o desvio remontava o relatório (1.4.1). */
+  aoConcluirRevelacao?: () => void;
 }) {
   const [passo, setPasso] = useState<'revelacao' | 'relatorio'>('revelacao');
 
@@ -59,7 +63,7 @@ export function Explicabilidade({
       <Revelacao
         runId={runId}
         aoTerminar={() => {
-          void concluirRevelacao(runId);
+          void concluirRevelacao(runId).then((ok) => ok && aoConcluirRevelacao?.());
           experiencia().enviarEstado({ fase, passo: 'relatorio' });
           setPasso('relatorio');
         }}
