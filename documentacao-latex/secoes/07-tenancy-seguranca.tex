@@ -574,7 +574,7 @@ repassa WebSocket, então o \emph{cookie} do hub não chega lá). As trancas:
 \textbf{\cd{ajuda\_configuracao} também fica sem RLS e sem \cd{escola\_id}},
 como \cd{ia\_quotas} e \cd{ajuda\_limites}: é UMA linha de configuração comercial
 da rede (quem atende por padrão, se a pessoa pode trocar, a voz e o modelo do
-mascote), não dado de pessoa. A escrita é só do \cd{admin}
+mascote, e as instruções de cada atendente, \adrr{ADR-165}), não dado de pessoa. A escrita é só do \cd{admin}
 (\rota{/recursos/configuracao-da-ajuda}), com motivo obrigatório e histórico em
 \cd{recursos\_auditoria}. A voz e o modelo vão ao pedido de abertura do Gemini, e
 por isso são lista fechada (voz) e formato de nome (modelo) no Zod e no
@@ -679,7 +679,8 @@ da fornecedora. Também só \cd{admin}, na leitura e na escrita. E, desde a
 \adrr{ADR-158}, \textbf{quem atende na Ajuda}
 (\rota{/recursos/configuracao-da-ajuda}): o mascote e o avatar custam diferente
 (\emph{token} de áudio do Gemini e minuto de vídeo), e a escolha também é da
-fornecedora.
+fornecedora; na mesma rota, desde a \adrr{ADR-165}, as instruções de
+\enquote{como responder} de cada atendente.
 
 \textbf{E os custos de IA} (\rota{/recursos/custos-de-ia/*}, \adrr{ADR-161}),
 na tela \rota{/unooria/custos-de-ia}: quanto a IA da rede custa à Unooria, em
@@ -1271,7 +1272,12 @@ acredita ter declarado algo.
     ficam na api; o navegador recebe só o \emph{token} da sala de vídeo daquela
     sessão (Seção~\ref{sec:ajuda-seguranca}). No mascote (\adrr{ADR-158}), a
     instrução do sistema vai da api ao Gemini Live na abertura da conversa, e o
-    navegador recebe só o bilhete de entrada e os ajustes da boca.
+    navegador recebe só o bilhete de entrada e os ajustes da boca. As
+    instruções de cada atendente editadas no painel (\adrr{ADR-165}) ficam em
+    \cd{ajuda\_configuracao} e só a api as lê para montar o \emph{prompt}; a
+    única tela que as mostra é a do \cd{admin}, \rota{/unooria/uso-de-ia}, por
+    \rota{GET /recursos/configuracao-da-ajuda}, que responde 403 a qualquer
+    outro papel.
   \item O gabarito do UnooTube arquivado (\cd{factual}, hoje em
     \arq{backup-unootube}) não era persistido no estado do estudante nem
     devolvido em nenhuma rota de estudante.
@@ -1286,10 +1292,16 @@ acredita ter declarado algo.
     motor do feed, a área líder e os estandes que o feed não serviu ficam no
     servidor até a Galeria Oculta abrir --- e, depois dela, o contrafactual
     \enquote{sem as suas curtidas} desce já calculado, nunca o motor
-    (\adrr{ADR-164}); o par simulado da cadeia é gerado das
-    áreas que a própria criança viu, nunca de colega (\adrr{ADR-157}); a ordem certa da cadeia não desce (os ids são
-    opacos por sessão; os pacotes da curtida saíram com a \adrr{ADR-151}), nem o cartão certo do caso Mariana (\cd{certo} está na
-    redação do \emph{log}), nem o nível das alternativas das enquetes.
+    (\adrr{ADR-164}). Na separação, os estandes descem sem área,
+    \emph{hashtag} nem perfil, com ids opacos \cd{cl-} por sessão, e a resposta
+    não diz o acerto; na regra SE \ldots{} ENTÃO, as peças descem sem a marca
+    de certa, com ids opacos \cd{rg-}, e a certa só desce DEPOIS do envio
+    (\adrr{ADR-174}; os pacotes da curtida saíram com a \adrr{ADR-151}, e a
+    cadeia, o par simulado e as enquetes com a \adrr{ADR-174}); o cartão certo
+    do caso Mariana também não desce (\cd{certo} está na redação do
+    \emph{log}). O que NÃO é segredo: o feed já entregou ao aparelho a área de
+    cada post (a \emph{hashtag} que a criança viu); a separação tira a resposta
+    da TELA, e quem corrige é o servidor.
   \item Os textos dos cartões da app-70 chegam ao jogo \textbf{sem gabarito}, e
     apenas os da bolha daquela criança.
   \item \cd{lado}, \cd{perfil} e \cd{intensidade} dos posts da exp08ef1b são
@@ -1339,7 +1351,8 @@ Ranking sem menor real & O ranking do UnooTube (hoje \cd{backup-exp04ef1b})
   há pontuação de criança real exposta a outra criança --- nem no Jornal da
   Escola, em que o painel só mostra as verificadas num histograma anônimo e a
   criança não vê a edição de ninguém, nem no Júri Estadual de Projetos, cujo
-  painel é PROJETADO na lousa: a linha de cada computador diz só progresso, e o
+  painel é PROJETADO na lousa: a linha de cada computador diz só progresso
+  (\enquote{separou}, nunca quantos acertou, \adrr{ADR-174}), e o
   voto aparece apenas no agregado por área e a concentração do feed só na média
   de quem curtiu e de quem não curtiu, sem nome (\adrr{ADR-137},
   \adrr{ADR-164}).\\
@@ -1369,7 +1382,8 @@ Texto de menor com contenção & \cd{exp06ef2b\_reflexoes} guarda o
   Galeria Oculta \textbf{nunca sai do aparelho} --- a api recebe só o tipo da
   busca e a área que casou ---, e o resto é vocabulário fechado (curtida,
   salvo, voto, convicção, cartão de motivo e o índice da frase grifada da
-  legenda --- \adrr{ADR-152} ---, ids opacos, cartão, alternativa).\\
+  legenda --- \adrr{ADR-152} ---, ids opacos, a área de cada estande na
+  separação e as peças da regra, \adrr{ADR-174}, cartão).\\
 \bottomrule
 \end{tabularx}
 

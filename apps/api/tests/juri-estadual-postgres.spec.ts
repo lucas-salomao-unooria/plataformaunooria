@@ -12,16 +12,18 @@ import {
   GatePublicoSchema,
   PacotesSchema,
   PainelSchema,
+  RespostaDaRegraSchema,
   SessaoSchema,
-  TentativaSchema,
 } from "../src/juri-estadual/contrato-de-rotas";
 import { EXP_ID, JuriEstadualService } from "../src/juri-estadual/juri-estadual.service";
 import { FALAS_DO_TEMA_PADRAO } from "../src/juri-estadual/podcast";
 import { fonteDoPodcastDaExp06ef1b } from "../src/juri-estadual/podcast-fonte";
 import { PreparoDaExp06ef1bService } from "../src/juri-estadual/preparo.service";
-import { ordemCertaDaCadeia } from "../src/juri-estadual/regras/ordem";
+import { itensDaClassificacao } from "../src/juri-estadual/regras/classificacao";
+import { feedDaLinha } from "../src/juri-estadual/regras/galeria";
 import { PROIBIDO_NA_LINHA_DO_PAINEL } from "../src/juri-estadual/regras/painel";
 import { ETAPAS, PASSOS } from "../src/juri-estadual/regras/passos";
+import { pecasCertas, pecasDaSessao } from "../src/juri-estadual/regras/regra";
 import { AREAS, DISCIPLINAS, ID_DE_PROJETO_RE, VERSAO_DO_INSTRUMENTO, areaDoProjeto, type Area } from "../src/juri-estadual/vocabulario";
 import { PrismaService } from "../src/prisma/prisma.service";
 import {
@@ -115,7 +117,6 @@ const equipes = new EquipesService(prisma);
 const evidencias = new EvidenciasService(prisma, equipes);
 evidencias.onModuleInit();
 const service = new JuriEstadualService(prisma, evidencias);
-service.onModuleInit();
 
 const ids = {
   turma: "",
@@ -231,14 +232,41 @@ async function rolarFeed(estudanteId: string, area?: Area, turmaId = ids.turma, 
   return feed;
 }
 
-async function votar(estudanteId: string, area?: Area) {
+/**
+ * A SEPARAÇÃO (EF06CO01) de quem acabou de votar. A suíte sabe a área de cada
+ * item porque lê a sessão no BANCO (a tela não sabe): `erradas` = quantos dos
+ * primeiros itens vão para uma área errada.
+ */
+async function respostasDaSeparacao(estudanteId: string, erradas = 0) {
+  const s = await sessaoDe(estudanteId);
+  return itensDaClassificacao(s.semente, feedDaLinha(s).servidos).map((item, i) => {
+    const certa = areaDoProjeto(item.projetoId);
+    return { itemId: item.id, area: i < erradas ? (AREAS.find((a) => a !== certa) as Area) : certa };
+  });
+}
+
+async function separar(estudanteId: string, erradas = 0) {
+  return service.classificar(ESCOLA, estudanteId, ids.turma, await respostasDaSeparacao(estudanteId, erradas));
+}
+
+/** Rola, vota e — salvo `separar: false` — separa os estandes, todos certos: a sessão chega à espera (`lacrada`). */
+async function votar(estudanteId: string, area?: Area, opcoes: { separar?: boolean } = {}) {
   const feed = await rolarFeed(estudanteId, area);
   const projetoId = (feed.posts.find((p) => !area || p.area === area) ?? feed.posts[0])!.projetoId;
   await service.votar(ESCOLA, estudanteId, ids.turma, ({ projetoId, conviccao: "vi_tudo" as const }));
+  if (opcoes.separar !== false) await separar(estudanteId);
   return { feed, projetoId };
 }
 
-/** Do zero até o passo `cadeia`: vota, a turma libera a galeria, busca e abre dois ocultos de outras áreas, mantém e avança. */
+/** As peças certas (ou não) da regra desta sessão, em ids opacos. */
+async function escolhaDaRegra(estudanteId: string, certas: { se: boolean; entao: boolean } = { se: true, entao: true }) {
+  const pecas = pecasDaSessao((await sessaoDe(estudanteId)).semente);
+  const certa = pecasCertas(pecas);
+  const errada = (lado: typeof pecas.se) => lado.find((p) => !p.peca.certa)?.opaco as string;
+  return { se: certas.se ? certa.se : errada(pecas.se), entao: certas.entao ? certa.entao : errada(pecas.entao) };
+}
+
+/** Do zero até o passo `cadeia` (a regra): vota, separa, a turma libera a galeria, busca e abre dois ocultos de outras áreas, mantém e avança. */
 async function ateACadeia(estudanteId: string) {
   const { projetoId } = await votar(estudanteId, "area_b");
   const gate = await service.gate(ESCOLA, estudanteId, ids.turma);
@@ -479,6 +507,23 @@ describe("os CHECKs recusam o que dizem recusar", () => {
     await naSessao("concluida_em = now()");
   });
 
+  test("a separação e a regra (ADR-174): as colunas andam juntas, os acertos cabem no total, e a regra só com o carimbo", async () => {
+    const separada = (acertos: number, total: number) =>
+      `classificada_em = now(), classificacao_respostas = '[]', classificacao_acertos = ${acertos}, classificacao_total = ${total}`;
+    await naSessao("classificada_em = now()");
+    await naSessao("classificacao_acertos = 3");
+    await naSessao(separada(11, 10));
+    await naSessao(separada(3, 11));
+    await naSessao(`${separada(1, 2)}, classificacao_respostas = '{}'`);
+    await naSessao("regra_se = 'se-curtir'");
+    /* As duas peças sem o carimbo da cadeia. */
+    await naSessao("regra_se = 'se-curtir', regra_entao = 'entao-tema'");
+    // O caminho certo passa (a sessão já votou e está na cadeia).
+    await prisma.$executeRawUnsafe(`UPDATE exp06ef1b_sessoes SET ${separada(7, 10)}, classificacao_status = 'em_processo' WHERE id = '${sessao}'::uuid`);
+    const checks = await def("exp06ef1b_sessoes_classificacao_check");
+    expect(checks).toContain("votado_em IS NOT NULL");
+  });
+
   test("PROVA 7: o pacote: `ia` ou `padrao`, 40 projetos (ou os 16 da 0.4.x, nunca 15), e UM ativo por turma", async () => {
     const json = (c: unknown) => JSON.stringify(c).replace(/'/g, "''");
     const conteudo = json(conteudoDeTeste());
@@ -653,7 +698,7 @@ describe("o feed afunilado, servido pelo motor", () => {
     expect(esgotado).toMatchObject({ tempoEsgotado: true, cedulaLiberada: true, completo: false });
     expect(esgotado.posts).toHaveLength(5);
     expect(await service.votar(ESCOLA, ids.caio, ids.turma, { projetoId: f.posts[0]!.projetoId, conviccao: "vi_tudo" })).toMatchObject({
-      passo: "lacrada",
+      passo: "classificacao",
     });
   });
 
@@ -695,7 +740,8 @@ describe("o feed afunilado, servido pelo motor", () => {
     const recusa = [a, b].find((r) => r.status === "rejected") as PromiseRejectedResult;
     expect((recusa.reason as HttpException).getResponse()).toMatchObject({ codigo: "voto-ja-lacrado" });
     const depois = SessaoSchema.parse(await entrar(ids.ana));
-    expect(depois).toMatchObject({ passo: "lacrada", aguardandoOProfessor: true });
+    /* Depois do voto, a SEPARAÇÃO (ADR-174): ninguém espera ainda — há tarefa. */
+    expect(depois).toMatchObject({ passo: "classificacao", aguardandoOProfessor: false });
     expect(depois.voto).not.toBeNull();
     expect(Object.keys(depois.voto ?? {}).sort()).toEqual(["conviccao", "projetoId"]);
     expect(await codigoDe(service.eventosDoFeed(ESCOLA, ids.ana, ids.turma, semEventos))).toBe("voto-ja-lacrado");
@@ -754,6 +800,7 @@ describe("a Galeria Oculta e a revisão do voto", () => {
   test("PROVA 4: sem curtida nem permanência, o contrafactual é IGUAL ao feed real", async () => {
     const semToque = await rolarFeed(ids.enzo);
     await service.votar(ESCOLA, ids.enzo, ids.turma, { projetoId: semToque.posts[0]!.projetoId, conviccao: "vi_tudo" });
+    await separar(ids.enzo);
     const g = GaleriaSchema.parse(await service.galeria(ESCOLA, ids.enzo, ids.turma));
     const reais = new Set(semToque.posts.map((p) => p.projetoId));
     expect(new Set(g.semCurtidas.flatMap((a) => a.posts))).toEqual(reais);
@@ -788,25 +835,24 @@ describe("a Galeria Oculta e a revisão do voto", () => {
     /* Sem rodada de desvio: a revisão não espera ninguém. */
     const s = SessaoSchema.parse(await entrar(ids.ana));
     expect(s).toMatchObject({ passo: "revisada", aguardandoOProfessor: false, cadeia: null });
-    /* A hashtag da área D (fora da bolha B) + um oculto da D: a EF06CO01 é "atingiu"... */
-    expect(await evidenciaDe(ids.ana, "EF06CO01")).toMatchObject([{ status: "atingiu", origem: "propria", rodada: 1 }]);
-    /* ...e um oculto só, mesmo com busca, é auditoria por cima: a EF06CO10 é "em processo". */
-    expect(await evidenciaDe(ids.ana, "EF06CO10")).toMatchObject([{ status: "em_processo", origem: "propria", rodada: 1 }]);
+    /* A revisão não marca nada desde a ficha 5 (ADR-174): a EF06CO01 é a da SEPARAÇÃO, e a EF06CO10 saiu. */
     expect(await marcasDe("classificacao", ids.ana)).toEqual([{ status: "atingiu", rodada: 1 }]);
-    expect(await sessaoDe(ids.ana)).toMatchObject({ auditoriaStatus: "em_processo", classificacaoStatus: "atingiu" });
+    expect(await evidenciaDe(ids.ana, "EF06CO10")).toEqual([]);
+    expect(await marcasDe("auditoria", ids.ana)).toEqual([]);
+    expect(await sessaoDe(ids.ana)).toMatchObject({ auditoriaStatus: null, classificacaoStatus: "atingiu" });
     expect(await codigoDe(service.acaoDaGaleria(ESCOLA, ids.ana, ids.turma, { tipo: "abrir", projetoId: "proj-a1" }))).toBe("passo-invalido");
   });
 
-  test("\"Manter\" sem abrir nenhum oculto é 409 `galeria-sem-inspecao`; trocar sem explorar fica SEM marca de ação", async () => {
+  test("\"Manter\" sem abrir nenhum oculto é 409 `galeria-sem-inspecao`; trocar sem explorar não marca nada", async () => {
     await votar(ids.duda);
     expect(await codigoDe(service.revisar(ESCOLA, ids.duda, ids.turma, { acao: "manter" as const }))).toBe("galeria-sem-inspecao");
     const { voto } = SessaoSchema.parse(await entrar(ids.duda));
     const outro = voto?.projetoId === "proj-a1" ? "proj-a2" : "proj-a1";
     await service.revisar(ESCOLA, ids.duda, ids.turma, { acao: "trocar" as const, projetoId: outro });
     expect(await evidenciaDe(ids.duda, "EF06CO10")).toEqual([]);
-    expect(await evidenciaDe(ids.duda, "EF06CO01")).toEqual([]);
     expect(await marcasDe("auditoria", ids.duda)).toEqual([]);
-    expect(await marcasDe("classificacao", ids.duda)).toEqual([]);
+    /* Só a marca da separação, de antes da galeria. */
+    expect(await marcasDe("classificacao", ids.duda)).toHaveLength(1);
   });
 
   test("da revisão para a cadeia: o \"avançar\" é da criança, e antes da revisão é recusado", async () => {
@@ -814,98 +860,128 @@ describe("a Galeria Oculta e a revisão do voto", () => {
     expect(await service.pedirPasso(ESCOLA, ids.ana, ids.turma, "cadeia")).toEqual({ passo: "cadeia", etapa: "galeria" });
     expect(await service.pedirPasso(ESCOLA, ids.ana, ids.turma, "cadeia")).toEqual({ passo: "cadeia", etapa: "galeria" });
     const s = SessaoSchema.parse(await entrar(ids.ana));
-    expect(s.cadeia?.blocos).toHaveLength(4);
-    /* O par simulado: o espelho das áreas do feed DELA, nunca dado de colega. */
-    expect(s.cadeia?.parSimulado.voce.areaPrincipal).toBe("area_b");
-    expect(s.cadeia?.parSimulado.outroJurado.areaPrincipal).not.toBe("area_b");
+    /* A regra: três peças de cada lado, sem a certa, e sem revelação antes do envio. */
+    expect(s.cadeia?.se).toHaveLength(3);
+    expect(s.cadeia?.entao).toHaveLength(3);
+    expect(s.cadeia).toMatchObject({ enviada: false, revelacao: null });
+    expect(JSON.stringify(s.cadeia)).not.toMatch(/"certa"|se-curtir|entao-tema/);
   });
 });
 
-describe("a cadeia, Mariana e as enquetes", () => {
+describe("a separação, a regra e Mariana (ADR-174)", () => {
   beforeAll(async () => {
     await zerarMissao();
     await ateACadeia(ids.ana);
   });
 
-  test("busca + dois ocultos de duas áreas antes de manter: a EF06CO10 e a EF06CO01 são atingiu", async () => {
-    expect(await evidenciaDe(ids.ana, "EF06CO10")).toMatchObject([{ status: "atingiu" }]);
+  test("a separação: depois do voto, os estandes vistos SEM área — e a galeria liberada espera quem não separou", async () => {
+    /* A Bia vota com a galeria JÁ liberada (a Ana a liberou ao ir para a cadeia). */
+    await votar(ids.bia, "area_c", { separar: false });
+    const s = SessaoSchema.parse(await entrar(ids.bia));
+    expect(s).toMatchObject({ passo: "classificacao", etapa: "galeria", aguardandoOProfessor: false });
+    const itens = s.classificacao?.itens ?? [];
+    const distintos = new Set(feedDaLinha(await sessaoDe(ids.bia)).servidos.map((post) => post.split(":")[0]));
+    expect(itens).toHaveLength(distintos.size);
+    /* Nem área, nem hashtag, nem perfil, nem id de projeto. */
+    expect(itens.every((i) => Object.keys(i).sort().join(",") === "id,imagem,titulo")).toBe(true);
+    expect(JSON.stringify(itens)).not.toMatch(/area_|proj-|#/);
+    expect(await codigoDe(service.galeria(ESCOLA, ids.bia, ids.turma))).toBe("galeria-nao-liberada");
+  });
+
+  test("a separação: corpo de outra sessão ou incompleto é 400; uma vez só; a resposta não diz quantos acertou", async () => {
+    const respostas = await respostasDaSeparacao(ids.bia, 3);
+    expect(await codigoDe(service.classificar(ESCOLA, ids.bia, ids.turma, respostas.slice(1)))).toBe("payload-invalido");
+    const daAna = await respostasDaSeparacao(ids.ana);
+    expect(await codigoDe(service.classificar(ESCOLA, ids.bia, ids.turma, daAna))).toBe("payload-invalido");
+    const r = EstadoSchema.strict().parse(await service.classificar(ESCOLA, ids.bia, ids.turma, respostas));
+    /* Separou e caiu direto na galeria, que já estava liberada. */
+    expect(r).toEqual({ passo: "galeria", etapa: "galeria" });
+    expect(await codigoDe(service.classificar(ESCOLA, ids.bia, ids.turma, respostas))).toBe("classificacao-ja-enviada");
+    const linha = await sessaoDe(ids.bia);
+    expect(linha).toMatchObject({ passo: "lacrada", classificacaoAcertos: respostas.length - 3, classificacaoTotal: respostas.length });
+    /* 7 de 10 = em processo. */
+    expect(await marcasDe("classificacao", ids.bia)).toEqual([{ status: "em_processo", rodada: 1 }]);
+    expect(await evidenciaDe(ids.bia, "EF06CO01")).toMatchObject([{ status: "em_processo", origem: "propria" }]);
+    expect(SessaoSchema.parse(await entrar(ids.bia)).classificacao).toBeNull();
+  });
+
+  test("a separação de tudo certo é atingiu; a EF06CO10 não existe mais na missão", async () => {
     expect(await evidenciaDe(ids.ana, "EF06CO01")).toMatchObject([{ status: "atingiu" }]);
+    expect(await evidenciaDe(ids.ana, "EF06CO10")).toEqual([]);
     expect(await evidenciaDe(ids.ana, "EF06CO07")).toEqual([]);
   });
 
-  test("ids de outra sessão são 400; a ordem errada é 422 `ordem-incorreta` E a tentativa conta", async () => {
-    const semente = (await sessaoDe(ids.ana)).semente;
-    expect(await codigoDe(service.montarCadeia(ESCOLA, ids.ana, ids.turma, ordemCertaDaCadeia("outra")))).toBe("payload-invalido");
-    const errada = await service.montarCadeia(ESCOLA, ids.ana, ids.turma, [...ordemCertaDaCadeia(semente)].reverse()).catch((e: unknown) => e);
-    expect((errada as HttpException).getStatus()).toBe(422);
-    expect((errada as HttpException).getResponse()).toMatchObject({ codigo: "ordem-incorreta", tentativas: 1 });
-    expect((await sessaoDe(ids.ana)).cadeiaTentativas).toBe(1);
-    /* A errada contou: zera a contagem para o teste seguinte medir a 1ª tentativa certa. */
-    await prisma.exp06ef1bSessao.updateMany({ where: { escolaId: ESCOLA, estudanteId: ids.ana }, data: { cadeiaTentativas: 0 } });
+  test("a regra: peça de outra sessão é 400; as duas certas = atingiu, com a revelação do feed DELA", async () => {
+    const pecasDeOutra = pecasCertas(pecasDaSessao("outra-sessao"));
+    expect(await codigoDe(service.montarRegra(ESCOLA, ids.ana, ids.turma, pecasDeOutra))).toBe("payload-invalido");
+    const r = RespostaDaRegraSchema.parse(await service.montarRegra(ESCOLA, ids.ana, ids.turma, await escolhaDaRegra(ids.ana)));
+    expect(r).toMatchObject({ passo: "mariana", etapa: "galeria" });
+    /* A Ana curtiu a B: a regra "disparou" pelas curtidas. */
+    expect(r.revelacao).toMatchObject({ motivo: "curtidas", area: "area_b" });
+    expect(r.revelacao?.escolha).toEqual(r.revelacao?.certa);
+    expect(await evidenciaDe(ids.ana, "EF06CO03")).toMatchObject([{ status: "atingiu" }]);
+    expect(await marcasDe("regra", ids.ana)).toEqual([{ status: "atingiu", rodada: 1 }]);
+    expect(await marcasDe("cadeia", ids.ana)).toEqual([]);
+    expect(await sessaoDe(ids.ana)).toMatchObject({ logicaStatus: "atingiu", regraSe: "se-curtir", regraEntao: "entao-tema", cadeiaTentativas: 1 });
+    /* Enviar de novo devolve a mesma revelação, sem trocar a escolha nem marcar outra vez. */
+    const errada = await escolhaDaRegra(ids.ana, { se: false, entao: false });
+    expect(RespostaDaRegraSchema.parse(await service.montarRegra(ESCOLA, ids.ana, ids.turma, errada)).revelacao).toEqual(r.revelacao);
+    expect(await marcasDe("regra", ids.ana)).toHaveLength(1);
+    /* E a sessão traz a revelação num F5. */
+    expect(SessaoSchema.parse(await entrar(ids.ana)).cadeia).toMatchObject({ enviada: true, revelacao: r.revelacao });
   });
 
-  test("a cadeia certa de primeira = atingiu, e o caso Mariana desce sem o certo", async () => {
-    const semente = (await sessaoDe(ids.ana)).semente;
-    const s = SessaoSchema.parse(await entrar(ids.ana));
-    expect(s.cadeia?.blocos.map((b) => b.id)).not.toEqual(ordemCertaDaCadeia(semente));
-    const r = await service.montarCadeia(ESCOLA, ids.ana, ids.turma, ordemCertaDaCadeia(semente));
-    expect(TentativaSchema.parse(r)).toEqual({ correta: true, tentativas: 1, passo: "mariana" });
-    expect(await evidenciaDe(ids.ana, "EF06CO03")).toMatchObject([{ status: "atingiu" }]);
-    expect((await sessaoDe(ids.ana)).logicaStatus).toBe("atingiu");
+  test("Mariana desce sem o certo; os cartões CONCLUEM, uma vez; concluir é idempotente em `fim`", async () => {
     const m = SessaoSchema.parse(await entrar(ids.ana)).mariana;
     expect(m?.mecanismos).toHaveLength(3);
     expect(m?.atitudes).toHaveLength(2);
-    expect(m?.escolha).toBeNull();
     expect(JSON.stringify(m)).not.toContain("certo");
-  });
-
-  test("o resolvedor: `null` antes das enquetes, o contexto nelas; cartões uma vez; concluir idempotente", async () => {
-    const antes = await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA);
-    expect(antes).toBeNull();
-    expect(await codigoDe(evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "D1"))).toBe("sem-atividade-em-andamento");
     expect(await codigoDe(service.concluir(ESCOLA, ids.ana, ids.turma))).toBe("passo-invalido");
-
-    expect(EstadoSchema.parse(await service.escolherCartoes(ESCOLA, ids.ana, ids.turma, { mecanismo: "m2", atitude: "t1" }))).toMatchObject({
-      passo: "enquetes",
+    expect(EstadoSchema.parse(await service.escolherCartoes(ESCOLA, ids.ana, ids.turma, { mecanismo: "m2", atitude: "t1" }))).toEqual({
+      passo: "fim",
+      etapa: "galeria",
     });
     await service.escolherCartoes(ESCOLA, ids.ana, ids.turma, { mecanismo: "m1", atitude: "t2" });
-    expect(SessaoSchema.parse(await entrar(ids.ana)).mariana?.escolha).toEqual({ mecanismo: "m2", atitude: "t1" });
-
-    const s = await entrar(ids.ana);
-    const contexto = await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA);
-    expect(contexto).toEqual({ turmaId: ids.turma, atividadeId: s.pacoteId, rodada: 1 });
-    expect(await evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "D1")).toEqual({ enviada: true });
-    /* A P1 é da EF06CO10 agora: a resposta certa leva ao atingiu (vale o melhor). */
-    expect(await evidenciaDe(ids.ana, "EF06CO10")).toMatchObject([{ status: "atingiu" }]);
-
+    const s = SessaoSchema.parse(await entrar(ids.ana));
+    expect(s.mariana?.escolha).toEqual({ mecanismo: "m2", atitude: "t1" });
+    expect(s.concluida).toBe(true);
     expect(await service.concluir(ESCOLA, ids.ana, ids.turma)).toEqual({ passo: "fim", etapa: "galeria" });
-    expect(await service.concluir(ESCOLA, ids.ana, ids.turma)).toEqual({ passo: "fim", etapa: "galeria" });
-    expect(SessaoSchema.parse(await entrar(ids.ana)).concluida).toBe(true);
+    /* Sem enquetes: as perguntas da ficha saíram, e a rota genérica não tem o que responder. */
+    expect(await codigoDe(evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "D1"))).not.toBeNull();
   });
 
-  test("depois de zerar: o resolvedor devolve `null`, a rodada 2 abre limpa, a evidência sai (ADR-155) e quem já foi avaliada é medida de novo (ADR-145)", async () => {
-    expect((await marcasDe("auditoria", ids.ana)).length).toBeGreaterThan(0);
+  test("a sessão ANTIGA parada nas enquetes ainda conclui", async () => {
+    await votar(ids.caio, "area_a");
+    await prisma.$executeRawUnsafe(
+      `UPDATE exp06ef1b_sessoes SET revisao_acao = 'manter', voto_revisado = voto_projeto, revisado_em = now(),
+         cadeia_tentativas = 1, cadeia_montada_em = now(), mecanismo = 'm1', atitude = 't1', cartoes_em = now(), passo = 'enquetes'
+       WHERE escola_id = '${ESCOLA}' AND estudante_id = '${ids.caio}'::uuid`,
+    );
+    expect(await service.concluir(ESCOLA, ids.caio, ids.turma)).toEqual({ passo: "fim", etapa: "galeria" });
+  });
+
+  test("depois de zerar: a rodada 2 abre limpa, a evidência sai (ADR-155) e quem já foi avaliada é medida de novo (ADR-145)", async () => {
+    expect((await marcasDe("classificacao", ids.ana)).length).toBeGreaterThan(0);
     expect(await service.zerar(ESCOLA, ids.turma, ids.professora)).toMatchObject({ rodada: 2, etapa: "exploracao" });
     expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, expId: EXP_ID } })).toBe(0);
     expect(await prisma.evidencia.count({ where: { escolaId: ESCOLA, expId: EXP_ID } })).toBe(0);
-    expect(await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA)).toBeNull();
     expect(await entrar(ids.ana)).toMatchObject({ rodada: 2, passo: "credencial", voto: null });
     await ateACadeia(ids.ana);
-    expect((await marcasDe("auditoria", ids.ana)).map((m) => m.rodada).sort()).toEqual([2]);
+    expect((await marcasDe("classificacao", ids.ana)).map((m) => m.rodada).sort()).toEqual([2]);
     expect(await prisma.exp06ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).toBe(2);
   });
 
   test("zerar no meio de uma jogada que marca: ou ela termina antes, ou recebe `rodada-mudou`", async () => {
-    const certa = ordemCertaDaCadeia((await sessaoDe(ids.ana)).semente);
+    const certa = await escolhaDaRegra(ids.ana);
     const [jogada] = await Promise.allSettled([
-      service.montarCadeia(ESCOLA, ids.ana, ids.turma, certa),
+      service.montarRegra(ESCOLA, ids.ana, ids.turma, certa),
       service.zerar(ESCOLA, ids.turma, ids.professora),
     ]);
     if (jogada.status === "rejected") {
       expect(["rodada-mudou", "passo-invalido"]).toContain(((jogada.reason as HttpException).getResponse() as { codigo: string }).codigo);
     }
-    /* Toda marca da cadeia caiu numa rodada que tinha sessão da Ana. */
-    for (const m of await marcasDe("cadeia", ids.ana)) expect([1, 2]).toContain(m.rodada);
+    /* Toda marca da regra caiu numa rodada que tinha sessão da Ana. */
+    for (const m of await marcasDe("regra", ids.ana)) expect([1, 2]).toContain(m.rodada);
   });
 });
 
@@ -1093,9 +1169,9 @@ describe("o painel POR COMPUTADOR, e a cópia para a equipe", () => {
     await service.revisar(ESCOLA, ids.ana, ids.turma, ({ acao: "trocar" as const, projetoId: "proj-a1" }));
   });
 
-  test("a evidência da Ana é copiada para a Bia, a colega de computador", async () => {
-    expect(await evidenciaDe(ids.ana, "EF06CO01")).toMatchObject([{ status: "em_processo", origem: "propria" }]);
-    expect(await evidenciaDe(ids.bia, "EF06CO01")).toMatchObject([{ status: "em_processo", origem: "equipe" }]);
+  test("a evidência da Ana (a separação) é copiada para a Bia, a colega de computador", async () => {
+    expect(await evidenciaDe(ids.ana, "EF06CO01")).toMatchObject([{ status: "atingiu", origem: "propria" }]);
+    expect(await evidenciaDe(ids.bia, "EF06CO01")).toMatchObject([{ status: "atingiu", origem: "equipe" }]);
   });
 
   test("uma linha por computador; a lousa conta votos, taxa média e revisões, anônimos", async () => {
@@ -1108,13 +1184,14 @@ describe("o painel POR COMPUTADOR, e a cópia para a equipe", () => {
       entrou: true,
       votou: true,
       ocioso: false,
+      separou: true,
       abriuAGaleria: false,
       buscou: true,
-      categoriasBuscadas: [],
       revisou: true,
     });
     expect(equipe2).toMatchObject({ estudanteId: ids.caio, entrou: true, votou: false, passo: "credencial" });
     expect(painel.resumo.computadores).toEqual({ votaram: 1, total: 2 });
+    expect(painel.resumo.separaram).toBe(1);
     expect(painel.resumo.votosPorArea.map((v) => [v.area, v.votos])).toEqual([
       ["area_a", 0],
       ["area_b", 0],

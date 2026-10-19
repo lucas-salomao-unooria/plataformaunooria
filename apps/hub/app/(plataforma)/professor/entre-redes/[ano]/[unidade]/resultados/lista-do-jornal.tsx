@@ -16,7 +16,9 @@ import { EquipeNaLinha } from "./equipe-na-linha";
  *
  * O que ela NÃO tem, e cada ausência é regra: quantas notícias verificadas
  * cada um publicou, nível, nota ou "acerto" (`PROIBIDO_NA_LINHA_DO_PAINEL`, na
- * api — a contagem mora SÓ no histograma anônimo), e ordenação. A ordem é
+ * api — a contagem mora SÓ no histograma anônimo), o que cada um pôs na Chave
+ * ou decidiu diante da mensagem nova (só AGREGADO, no roteiro da conversa), e
+ * ordenação. As colunas são só por onde cada computador já passou. A ordem é
  * alfabética pelo que a primeira célula mostra (`ordenarLinhas`) e nenhuma
  * coluna é `sortable`: listagem ordenável por pistas ou por velocidade vira
  * ranking — e o PDF §7 é explícito: nada de ranking nem exposição de quem errou.
@@ -52,9 +54,10 @@ const DEMAIS_COLUNAS: TableColumn<Linha>[] = [
   { key: "passo", title: "Onde está", minWidth: 190, render: (_, l) => ROTULO_DO_PASSO[l.passo] },
   { key: "pistasAbertas", title: "Pistas abertas", width: 120, render: (_, l) => (l.pistasAbertas > 0 ? l.pistasAbertas : "—") },
   { key: "publicouAPrimeira", title: "1ª edição", width: 110, render: (_, l) => feito(l.publicouAPrimeira, "publicou") },
-  { key: "chaveFormada", title: "Chave do Editor", width: 140, render: (_, l) => feito(l.chaveFormada, "formada") },
+  { key: "chaveFormada", title: "Chave do Editor", width: 140, render: (_, l) => feito(l.chaveFormada, "montou") },
   { key: "publicouASegunda", title: "2ª edição", width: 110, render: (_, l) => feito(l.publicouASegunda, "publicou") },
-  { key: "concluiu", title: "Desafio final", width: 130, render: (_, l) => feito(l.concluiu, "concluiu") },
+  { key: "simulou", title: "Teste da Chave", width: 130, render: (_, l) => feito(l.simulou, "testou") },
+  { key: "concluiu", title: "Fim da missão", width: 130, render: (_, l) => feito(l.concluiu, "concluiu") },
 ];
 
 export function ListaDoJornal({

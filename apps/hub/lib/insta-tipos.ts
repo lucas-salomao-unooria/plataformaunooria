@@ -260,7 +260,7 @@ export const CONTROLE_DO_PROFESSOR: {
     etapa: 'conclusao',
     nome: 'Resposta',
     rotulo: 'Encerrar investigação',
-    descricao: 'Fecha o feed e pede a resposta: cada estudante escolhe um dos três lados.',
+    descricao: 'Fecha o feed e pede a resposta: cada estudante escolhe um dos três lados e faz o Raio-x de 6 posts que viu.',
   },
   {
     etapa: 'debate',
@@ -272,13 +272,13 @@ export const CONTROLE_DO_PROFESSOR: {
     etapa: 'explicabilidade',
     nome: 'Explicação',
     rotulo: 'Encerrar debate',
-    descricao: 'Libera a explicação de como o feed de cada um foi montado.',
+    descricao: 'Libera a explicação de como o feed de cada um foi montado, com a devolutiva do Raio-x.',
   },
   {
     etapa: 'perdidos',
     nome: 'O que perderam',
     rotulo: 'Mostrar o que perderam',
-    descricao: 'O feed do outro lado, em cinza: o que o algoritmo escondeu de cada um.',
+    descricao: 'O feed do outro lado, em cinza: o que o algoritmo escondeu de cada um. Depois, os termos e o envio.',
   },
   {
     etapa: 'reflexao',

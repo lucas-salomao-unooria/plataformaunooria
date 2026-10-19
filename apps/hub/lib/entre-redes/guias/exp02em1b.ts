@@ -17,7 +17,7 @@ import type { GuiaDaAula } from "./tipos";
 export const GUIA_EXP02EM1B: GuiaDaAula = {
   expId: "exp02em1b",
   chamada:
-    "Uma aula de 50 minutos. A missão leva ~12 min; os outros 35 são o debate, e é lá que a lição acontece — a missão não conta a ninguém qual fonte engana em quê.",
+    "Uma aula de 50 minutos. A missão leva cerca de 16 minutos, com o registro da operação; o debate, 15; o fechamento, 5. É no debate que a lição acontece — a missão não conta a ninguém qual fonte engana em quê.",
 
   avisos: [
     {
@@ -50,7 +50,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
       eixo: "Cultura Digital",
       principal: true,
       ondeAcontece:
-        "A investigação inteira: o estudante escolhe quais fontes carregar, cruza camadas e decide com o que o cruzamento mostra — inclusive com o que ele não cobre.",
+        "A investigação inteira: o estudante escolhe quais fontes carregar e cruza camadas. Medida no registro da operação: a última tabela que o grupo pediu volta à tela, e ele compara dois pares de bairros — num a faixa de um fica acima da do outro, no outro as faixas se cruzam. Pedir dados leva a \"em desenvolvimento\"; ler certo os dois pares, a \"demonstra\".",
     },
     {
       codigo: "EM13CO14",
@@ -58,7 +58,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
         "Avaliar a confiabilidade das informações encontradas em meio digital, investigando seus modos de construção e considerando a autoria, a estrutura e o propósito da mensagem.",
       eixo: "Cultura Digital",
       ondeAcontece:
-        "O debate: cada viés vem do MODO DE CONSTRUÇÃO da fonte — satélite vê telhado, cadastro tem nove anos, telefonia conta aparelho e não pessoa. Medida na 1ª pergunta do resultado: o que a faixa e o nível de confiança dizem sobre o que o Cientista passou.",
+        "Medida no registro da operação: dois cartões, cada um com uma fonte e um bairro, e as mesmas cinco perguntas para toda fonte (quando foi medida, o que conta, se enxerga o bairro, quem a produziu, ou nada). O cartão cai sempre num bairro onde aquela fonte distorce ou não enxerga — se o bairro da equipe não é um deles, o cartão pergunta \"se fosse usar essa fonte\" em outro. No debate, cada viés vem do MODO DE CONSTRUÇÃO da fonte.",
     },
     {
       codigo: "EM13CO10",
@@ -66,7 +66,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
         "Conhecer os fundamentos da Inteligência Artificial, comparando-a com a inteligência humana, analisando suas potencialidades, riscos e limites.",
       eixo: "Mundo Digital",
       ondeAcontece:
-        "O Cientista de Dados responde com rigor a partir de fontes enviesadas — e é assim que a turma vê que o limite não estava no modelo, e sim no dado que ele recebeu.",
+        "Trabalhada no debate, não medida: o Cientista de Dados responde com rigor a partir de fontes enviesadas — e é assim que a turma vê que o limite não estava no modelo, e sim no dado que ele recebeu. Nenhuma tarefa da missão gera nível nesta habilidade.",
     },
     {
       codigo: "EM13CO11",
@@ -74,7 +74,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
         "Criar e explorar modelos computacionais simples para simular e fazer previsões, identificando sua importância no desenvolvimento científico.",
       eixo: "Pensamento Computacional",
       ondeAcontece:
-        "O desfecho é uma FAIXA com 20 corridas da mesma decisão: a turma vê, de graça, que um modelo devolve distribuição e não profecia.",
+        "Medida no resultado, em \"Duas outras decisões, nas mesmas 20 tempestades\": para cada comparação o grupo lê uma faixa de 20 quadradinhos e diz se a outra decisão resgata mais, menos, ou depende da tempestade. Mede interpretar as previsões de um modelo; explorar fica no \"E se…\" livre, que não dá marca.",
     },
     {
       codigo: "EM13CO08",
@@ -82,7 +82,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
         "Entender como mudanças na tecnologia afetam a segurança, incluindo novas maneiras de preservar sua privacidade e dados pessoais on-line, reportando suspeitas e buscando ajuda em situações de risco.",
       eixo: "Cultura Digital",
       ondeAcontece:
-        "Medida na 2ª pergunta do resultado: cadastro de moradores e registros por bairro dizem onde mora quem é vulnerável — que cuidado um sistema real exigiria com esses dados.",
+        "Medida no fechamento: um número desconhecido, que diz ser voluntário, pede pelo WhatsApp a lista das pessoas com deficiência ou mobilidade reduzida do Morro Alto. O grupo diz o que responde e o que mais faz com o pedido. Não mandar nada e avisar a coordenação é o que demonstra.",
     },
     {
       codigo: "EM13CO24",
@@ -90,7 +90,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
         "Identificar e reconhecer como as redes sociais e artefatos computacionais em geral interferem na saúde física e mental de seus usuários.",
       eixo: "Cultura Digital",
       ondeAcontece:
-        "Medida na 3ª pergunta do resultado: o bairro sem equipe teve gente exposta pela combinação entre o sistema e as perguntas que o estudante fez.",
+        "Medida no registro da operação: o grupo monta o alerta para os celulares de quem ficou sem equipe — com que frequência, em que tom e o que ele diz. Frequência e tom pesam na saúde mental de quem recebe; o conteúdo, na física.",
     },
     {
       codigo: "EM13CO26",
@@ -98,7 +98,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
         "Aplicar os conceitos e pressupostos do direito digital em sua conduta e experiências com o cotidiano da cultura digital, bem como na produção e uso de artefatos computacionais.",
       eixo: "Cultura Digital",
       ondeAcontece:
-        "Medida na 4ª pergunta do resultado: os direitos de quem é afetado por uma decisão automatizada — transparência, responsável e a chance de questionar.",
+        "Medida duas vezes, e vale a melhor: na investigação, quando a Secretaria de Saúde liga e o grupo escolhe que dados de terceiros pedir (o pedido vai no máximo a \"em desenvolvimento\"); e no fechamento, na resposta à moradora do bairro que ficou sem equipe — com que dados decidiu, o critério, quem decidiu e como contestar.",
     },
   ],
 
@@ -116,7 +116,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
       {
         titulo: "Rode a missão você mesmo, uma vez, com calma.",
         texto:
-          "Doze minutos. Faça de propósito o que a turma vai fazer sem querer: decida sem carregar fonte nenhuma e veja o que o resultado devolve. Você precisa conhecer essa tela para reconhecê-la no rosto de quem acabou de vê-la.",
+          "Uns dezesseis minutos. Faça de propósito o que a turma vai fazer sem querer: decida sem carregar fonte nenhuma e veja o que o resultado devolve. Passe pela ligação da Saúde e pelo registro da operação, que vêm antes do resultado. Você precisa conhecer essas telas para reconhecê-las no rosto de quem acabou de vê-las.",
       },
       {
         titulo: "Leia a tabela dos 8 vieses nesta página.",
@@ -136,9 +136,9 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
     ],
     pedagogico: [
       {
-        titulo: "Guarde 35 dos 50 minutos para a conversa.",
+        titulo: "Guarde 15 minutos para o debate, e 5 para o fechamento.",
         texto:
-          "É a proporção mais desconfortável da trilha e a mais importante: a missão em si leva 12 minutos. Se a aula for “rodar e recolher”, o estudante sai achando que perdeu um jogo por azar.",
+          "O debate vem antes do fechamento de propósito: as perguntas sobre cuidado com os dados e sobre direitos entregariam as respostas do WhatsApp e da moradora. Se a aula for “rodar e recolher”, o estudante sai achando que perdeu um jogo por azar.",
       },
       {
         titulo: "Não prometa uma resposta certa.",
@@ -170,7 +170,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
     linhas: [
       {
         tempo: "0–5",
-        momento: "Enquadramento. Você abre Resultados da turma na sua tela.",
+        momento: "Enquadramento. Você abre A aula e os resultados na sua tela.",
         professor:
           "“Uma tempestade chega em uma hora. Vocês têm duas equipes e quatro bairros. Não dá para atender todos.” Nada sobre dados, viés ou IA.",
       },
@@ -179,7 +179,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
         momento:
           "A turma entra: a tela da missão, mapa apagado e o cronômetro PARADO. Ninguém fala com o assistente ainda.",
         professor:
-          "Confirme na sua tela que todos entraram. Quem chegou antes espera — e a espera é combinada, não travamento.",
+          "Confirme na sua tela que todos entraram. Diga uma vez, para todos: “intuição é uma resposta legítima aqui, e é melhor que inventar um motivo”.",
       },
       {
         tempo: "8–9",
@@ -188,108 +188,111 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
         botao: "Dar a largada",
       },
       {
-        tempo: "9–16",
+        tempo: "9–18",
         momento:
-          "Investigação: 3 perguntas e 5 minutos de relógio. O mapa começa vazio e só acende o que uma fonte carregada cobre. Conversar é de graça; investigar custa.",
+          "Investigação: 3 perguntas e 5 minutos de relógio. O mapa começa vazio e só acende o que uma fonte carregada cobre. No primeiro destino escolhido, ou ao abrir a decisão, a Secretaria de Saúde liga oferecendo dados de pessoas com deficiência ou mobilidade reduzida.",
         professor:
-          "Circule em silêncio. Se alguém disser que o assistente travou, lembre que uma resposta leva de 10 a 30 segundos e que reenviar não adianta. Não sugira fonte nenhuma — a escolha é o dado que você vai ler depois.",
-        botao: "+2 min (se precisar)",
+          "Circule em silêncio e não sugira fonte nenhuma — a escolha é o dado que você vai ler depois. Se alguém disser que o assistente travou, lembre que uma resposta leva de 10 a 30 segundos.",
+        botao: "+2 min (só se a turma inteira atrasar)",
       },
       {
-        tempo: "16–22",
+        tempo: "18–25",
         momento:
-          "Decisão: cada equipe para um bairro, com a justificativa escolhida entre as fontes que ele ABRIU — ou “foi intuição, não olhei dado”.",
+          "Decisão: cada equipe para um bairro, com o porquê — uma fonte que o grupo ABRIU, ou “foi intuição”. As equipes saem no botão “Enviar equipes” (confirmar na conversa só abre essa tela). Depois, sem relógio, o registro da operação: a leitura dos dados, o que precisaria saber de cada fonte e o alerta para quem ficou sem equipe. O resultado vem em seguida.",
         professor:
-          "Diga uma vez, para todos: “intuição é uma resposta legítima aqui, e é melhor que inventar um motivo”. Sem isso, metade da turma marca uma fonte qualquer para não parecer desleixada, e o dado do relatório apodrece.",
-      },
-      {
-        tempo: "22–27",
-        momento:
-          "O resultado individual: a faixa com 20 corridas da mesma decisão, um fato sobre quem ficou sem equipe, e a lista do que ele nunca abriu. Não há pontuação.",
-        professor:
-          "Deixe em silêncio por dois minutos. Depois faça a única pergunta desta etapa: “levanta a mão quem teve o mesmo resultado que o colega do lado, com a mesma decisão”. Quase ninguém levanta.",
+          "Se alguém reclamar que o resultado demora, diga que as equipes já saíram e que o registro é parte da operação.",
         botao: "Encerrar (quando todos tiverem enviado)",
       },
       {
-        tempo: "27–45",
-        momento: "Debate com a turma inteira. É a metade que vale.",
+        tempo: "25–30",
+        momento:
+          "O resultado: a faixa com 20 corridas da mesma decisão, o bairro sem equipe, o que o grupo nunca abriu e as duas comparações de “Duas outras decisões, nas mesmas 20 tempestades”. Não há pontuação.",
         professor:
-          "Comece pelo mapa em branco, não pelo resultado. Depois puxe as três fontes que você escolheu preparar. A tabela dos vieses fica só com você.",
+          "Deixe em silêncio por dois minutos. Depois: “levanta a mão quem teve o mesmo resultado que o colega do lado, com a mesma decisão”. Quase ninguém levanta.",
+      },
+      {
+        tempo: "30–45",
+        momento: "Debate com a turma inteira, em cinco blocos. É a metade que vale.",
+        professor:
+          "Siga os blocos do debate abaixo. Use o painel “O que cada grupo perguntou sobre cada fonte” e a frase do alcance do alerta. Não use aqui as perguntas sobre cuidado com os dados nem sobre direitos: elas entregariam as respostas do fechamento.",
       },
       {
         tempo: "45–50",
-        momento: "Registro individual e fechamento.",
+        momento:
+          "Fechamento: no computador, o pedido pelo WhatsApp e a resposta à moradora (cerca de 3 min); no papel, cada um escreve a pergunta que faria se tivesse uma quarta, em duas linhas.",
         professor:
-          "“Escreva a pergunta que você faria se tivesse uma quarta.” É a melhor síntese possível desta aula, e ela cabe em duas linhas.",
+          "Abra o fechamento e diga a frase de síntese. O painel mostra quantos grupos já enviaram.",
+        botao: "Abrir o fechamento",
+      },
+      {
+        tempo: "Depois do fechamento enviado",
+        momento:
+          "Duas perguntas faladas, sem nível: “que cuidado um sistema desses exigiria com os dados?” e “que direitos teriam as pessoas afetadas?”.",
+        professor:
+          "Só comece quando o painel mostrar todos os fechamentos enviados — no fim desta aula, se sobrar tempo, ou na abertura da seguinte.",
       },
     ],
-    nota: "Somar +2 min não faz a chuva andar para trás: o relógio da cidade tem um pivô que impede a tempestade de rebobinar. Use o +2 quando a turma inteira estiver atrasada, não para socorrer um estudante — para esse, o resultado com poucas fontes é uma aula melhor do que o tempo extra.",
+    nota: "Somar +2 min não faz a chuva andar para trás: o relógio da cidade tem um pivô que impede a tempestade de rebobinar. Use o +2 quando a turma inteira estiver atrasada, não para socorrer um estudante — para esse, o resultado com poucas fontes é uma aula melhor do que o tempo extra. O grupo que não terminou o fechamento quando o sinal tocou termina no começo da aula seguinte, antes de você encerrar a missão: o nível só aparece no encerramento, então nada se perde.",
   },
 
   debate: {
     aberturaNaLousa: "Vocês decidiram sobre a mesma cidade. Por que viram cidades diferentes?",
     tempo:
-      "18 minutos, com a turma inteira. É o maior debate da trilha e é proposital: esta é a única missão em que a tela se recusa a explicar, e tudo o que ela mede só vira aprendizado aqui.",
+      "15 minutos, com a turma inteira, em cinco blocos: o mapa em branco (4 min), as fontes que discordam (5), “nenhuma fonte mentiu” (2), por que um modelo honesto entrega faixa (2) e como um sistema afeta a vida das pessoas (2). Esta é a única missão em que a tela se recusa a explicar, e tudo o que ela mede só vira aprendizado aqui.",
     perguntas: [
-      {
-        nivel: "retomada",
-        pergunta: "Qual foi a sua primeira pergunta ao assistente? Por que essa?",
-        porQue:
-          "Separa quem foi atrás do problema (“onde tem mais gente em risco?”) de quem foi atrás da confirmação (“o Ribeirinha é o pior, né?”). Anote os dois tipos na lousa sem nomeá-los ainda.",
-      },
       {
         nivel: "retomada",
         pergunta: "Quantos de vocês terminaram com algum bairro ainda em branco no mapa?",
         porQue:
-          "Quase todos. Serve para instalar o fato antes da interpretação: a cidade nunca ficou inteira visível para ninguém.",
+          "Bloco 1, o mapa em branco. Quase todos. Serve para instalar o fato antes da interpretação: a cidade nunca ficou inteira visível para ninguém.",
       },
       {
         nivel: "analise",
         pergunta:
           "O que significava um bairro em branco? Quem tratou como “não sabemos” e quem tratou como “não tem risco”?",
         porQue:
-          "É a pergunta mais importante da aula. Confundir ausência de dado com ausência de risco é o erro que a missão foi construída para produzir — e ele aparece em política pública, em diagnóstico médico e em crédito bancário exatamente assim.",
+          "Ainda o bloco 1, e a pergunta mais importante da aula. Confundir ausência de dado com ausência de risco é o erro que a missão foi construída para produzir — e ele aparece em política pública, em diagnóstico médico e em crédito bancário exatamente assim.",
       },
       {
         nivel: "analise",
         pergunta:
           "Alguém teve duas fontes discordando sobre o mesmo bairro? Em qual acreditou, e por quê?",
         porQue:
-          "Aqui entra a tabela dos vieses, uma fonte por vez. Pergunte COMO cada fonte foi produzida antes de dizer o viés — “quem mediu isso? quando? o que esse instrumento consegue ver?” — e deixe a turma deduzir. É muito mais forte deduzido que contado.",
+          "Bloco 2, as fontes que discordam. Aqui entra a tabela dos vieses, uma fonte por vez, e o painel “O que cada grupo perguntou sobre cada fonte” (por exemplo, quantos grupos perguntaram “quando foi medida” sobre o cadastro, no Morro Alto). Pergunte COMO cada fonte foi produzida antes de dizer o viés — “quem mediu isso? quando? o que esse instrumento consegue ver?” — e deixe a turma deduzir. Feche o bloco com o alcance do alerta: o aviso no celular não chega a quem não tem aparelho, a mesma gente que o sinal de celular não conta.",
       },
       {
         nivel: "analise",
         pergunta:
           "O satélite mostrou o Industrial cheio de construção. Isso quer dizer cheio de gente?",
         porQue:
-          "O viés mais fácil de deduzir, e por isso o melhor para abrir a série. Satélite vê telhado, não vê morador — galpão vazio e prédio lotado têm o mesmo telhado.",
+          "O viés mais fácil de deduzir, e por isso o melhor para abrir a série do bloco 2. Satélite vê telhado, não vê morador — galpão vazio e prédio lotado têm o mesmo telhado.",
       },
       {
         nivel: "generalizacao",
         pergunta:
           "Nenhuma fonte mentiu. Todas mediram direito o que se propunham a medir. Então de onde veio o erro?",
         porQue:
-          "Move a turma de “dado falso” para “dado parcial”, que é o conceito que sustenta a habilidade. Erro não está no número: está na distância entre o que a fonte mede e a pergunta que se faz a ela.",
+          "Bloco 3. Move a turma de “dado falso” para “dado parcial”, que é o conceito que sustenta a habilidade. Erro não está no número: está na distância entre o que a fonte mede e a pergunta que se faz a ela.",
       },
       {
         nivel: "generalizacao",
         pergunta:
-          "O resultado veio como uma faixa de 20 corridas, não como um número. Por que um modelo honesto entrega faixa?",
+          "O resultado veio como uma faixa de 20 corridas, e as duas comparações mostraram tempestade por tempestade. Por que um modelo honesto entrega faixa?",
         porQue:
-          "Trabalha incerteza como propriedade do mundo, e não como falha de quem calculou. É também o antídoto para “eu decidi certo e deu errado” — a mesma decisão não repete igual.",
+          "Bloco 4. Trabalha incerteza como propriedade do mundo, e não como falha de quem calculou. A comparação “depende” é a prova: nas mesmas tempestades, uma decisão ganha numas e perde noutras.",
+      },
+      {
+        nivel: "transferencia",
+        pergunta: "O que a missão mostra sobre como um sistema pode afetar a vida das pessoas?",
+        porQue:
+          "Bloco 5. O alerta já foi montado no registro, então a pergunta não entrega nada do fechamento. Puxe para quem ficou sem equipe e para quem recebe o aviso no celular.",
       },
       {
         nivel: "transferencia",
         pergunta:
           "Que decisão sobre a nossa cidade é tomada com dado que não enxerga alguém?",
         porQue:
-          "Puxa para o real sem sair do instrumento: onde passa ônibus, onde vai o posto de saúde, onde a prefeitura conta que mora gente. Se a turma travar, comece você com um exemplo do município.",
-      },
-      {
-        nivel: "transferencia",
-        pergunta: "Se você tivesse uma quarta pergunta, qual faria — e por quê essa?",
-        porQue:
-          "É o registro escrito do fechamento. Uma quarta pergunta bem escolhida vale mais como avaliação do que a decisão que o estudante tomou com três.",
+          "Só se sobrar tempo. Puxa para o real sem sair do instrumento: onde passa ônibus, onde vai o posto de saúde, onde a prefeitura conta que mora gente.",
       },
     ],
   },
@@ -356,7 +359,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
       "“A mesma decisão, rodada vinte vezes, deu resultados diferentes. Vocês não controlavam o desfecho: controlavam a pergunta que fizeram antes.”",
     ],
     registro:
-      "Duas linhas, individuais, entregues no fim da aula: “se eu tivesse uma quarta pergunta, faria ___, porque ___”. É a avaliação mais honesta desta missão — mostra o que o estudante entendeu do próprio ponto cego, e não a sorte que ele teve na simulação. No resultado, cada um responde ainda quatro perguntas de múltipla escolha; vale a melhor resposta, e o nível só aparece em “Habilidades da BNCC” depois que você encerra a missão na Sala de Aula.",
+      "Duas linhas, individuais, no papel, no fechamento: “se eu tivesse uma quarta pergunta, faria ___, porque ___”. É a avaliação mais honesta desta missão — mostra o que o estudante entendeu do próprio ponto cego, e não a sorte que ele teve na simulação — e ela é sua: não vira nível no painel. O que vira nível são as tarefas no computador (a ligação da Saúde, o registro da operação, as duas comparações do resultado e o fechamento), e só aparece em “Habilidades da BNCC” depois que você encerra a missão na Sala de Aula. Quem não fez a tarefa de uma habilidade fica “não avaliado” nela, e você pode ajustar no painel.",
     produto: {
       titulo: "Registro estendido (para quem quiser levar a duas aulas)",
       itens: [
@@ -424,9 +427,26 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
     "Cuidado com a turma que mora no bairro invisível. O Morro Alto é ficção, a situação não é; conduza para o instrumento (o dado é velho) e nunca para o lugar ou as pessoas.",
     "Não diga que a IA errou. Ela respondeu com rigor sobre um dado torto — e é essa diferença que a aula ensina.",
     "“Foi intuição, não olhei dado” é uma resposta legítima e precisa ser dita como tal antes da decisão. Tratada como vergonha, ela some do relatório e você perde o dado mais interessante da turma.",
+    "A missão fala de pessoas com deficiência, de acamados e de enchente. Pode haver na sala quem tem deficiência, quem cuida de alguém acamado, ou uma turma de região que passou por enchente há pouco tempo. O texto fala de pessoas afetadas, nunca de mortes; conduza a conversa pelo instrumento, não pela história de ninguém.",
+    "As perguntas faladas sobre cuidado com os dados e sobre direitos só depois que todos enviarem o fechamento: antes, elas entregariam as respostas do WhatsApp e da moradora.",
   ],
 
   adaptacoes: [
+    {
+      contexto: "Há estudantes que precisam de mediação de leitura.",
+      comoAdaptar:
+        "Os cartões da ligação da Saúde, do registro e do fechamento podem ser lidos em voz alta: são iguais para todos, salvo os nomes de fonte e de bairro. Leia o enunciado e as opções sem comentar nenhuma.",
+    },
+    {
+      contexto: "O grupo divide o mesmo computador.",
+      comoAdaptar:
+        "Todas as tarefas no computador são do grupo, inclusive as do fechamento: peça que o grupo decida em voz alta. O nível de quem entrou é copiado para os colegas da mesma equipe, e você ajusta cada estudante, um a um, no painel. A parte individual é a quarta pergunta, no papel.",
+    },
+    {
+      contexto: "O sinal tocou e um grupo não terminou o fechamento.",
+      comoAdaptar:
+        "Ele termina no começo da aula seguinte, antes de você encerrar a missão na Sala de Aula. Se o debate passar do tempo, abra o fechamento no começo da aula seguinte.",
+    },
     {
       contexto: "Você tem 30 minutos, não 50.",
       comoAdaptar:
@@ -456,6 +476,16 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
 
   duvidas: [
     {
+      pergunta: "O resultado não aparece depois de “Enviar equipes”.",
+      resposta:
+        "Ele vem depois do registro da operação: três cartões, sem relógio, com as equipes já a caminho. Respondidos os cartões, o grupo toca em “Ver o que aconteceu”.",
+    },
+    {
+      pergunta: "A turma pergunta da contagem da Secretaria de Saúde.",
+      resposta:
+        "Ela usa a mesma base de endereços do cadastro de nove anos atrás, então o Morro Alto aparece com menos da metade. É mais uma visão parcial, e entra no debate junto da tabela dos vieses. O Cientista não a comenta.",
+    },
+    {
       pergunta: "O cronômetro está parado e ninguém consegue falar com o assistente.",
       resposta:
         "Falta a largada. Ela sai de Resultados da turma e vale para a turma inteira ao mesmo tempo. É o motivo nº 1 de “não abre” nesta missão.",
@@ -473,7 +503,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
     {
       pergunta: "Um estudante quer tentar de novo.",
       resposta:
-        "Dá: “Tentar de novo” abre uma tentativa NOVA e não apaga a conversa anterior. O relatório do professor registra de qual botão veio o recomeço.",
+        "Dá, até você abrir o fechamento: “Tentar de novo” abre uma tentativa NOVA e não apaga a conversa anterior. Nas tarefas de escolha (a ligação da Saúde, o alerta, as duas comparações e o fechamento), vale a primeira resposta da rodada; na leitura dos dados e nas fontes, a melhor tentativa que começou com o relógio aberto. Com o fechamento aberto, o botão some.",
     },
     {
       pergunta: "O assistente demora muito para responder.",

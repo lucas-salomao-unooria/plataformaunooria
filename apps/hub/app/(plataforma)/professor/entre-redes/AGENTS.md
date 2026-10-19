@@ -123,8 +123,9 @@ decide nível, cópia e o que conta é a api (`apps/api/src/evidencias/`).
 - **O painel acompanha a aula sem F5** (ADR-146): o polling do painel da aula
   chama `router.refresh()` quando `mudouAEvidencia` (no `lib/<missão>-tipos.ts`)
   acusa mudança no que a ficha registra. No Jornal e no Júri uma leitura basta
-  (a marca vai na transação da jogada); na A Seleção relê de novo na volta
-  seguinte, porque o Canal A gradua a legenda DEPOIS de ela aparecer no painel.
+  (a marca vai na transação da jogada); na A Seleção relê quando uma leitura de
+  legenda termina (ela roda depois da publicação) e quando a etapa vira (a
+  marcação congela nas fichas).
 - **O perfil** é `professor/turmas/[id]/estudantes/[estudanteId]`, pelo NOME na aba
   Estudantes; o relatório da Vila, antes destino da linha inteira, virou link ao
   lado (link dentro de link não existe). A trilha volta para `?aba=estudantes`.
@@ -157,7 +158,18 @@ folha por computador, zerar, podcast e habilidades. A criação é
   dela mostra a mesma grade com "Aprovar imagens".
 - Pôr no ar abre a rodada seguinte à última; **zerar = rodada nova** e apaga
   as habilidades da cobertura (ADR-155), em toda missão com ficha.
-- **UM botão**, com o rótulo de `proximaEtapa` da api; não volta.
+- **UM botão**, com o rótulo de `proximaEtapa` da api; não volta. Desde a
+  ADR-170 há a etapa "Abrir marcação do colega" entre o Mural e as fichas, com
+  o "{n} de {total} marcaram" e a métrica "Marcaram o post do colega".
+- **O Canal A sem nível na lista** (ADR-170): a folha mostra a leitura da
+  legenda como ESTADO (`textoDaLeitura`: lendo, lida, ou "revise" com o que a
+  reserva viu), a poda, a marcação (`textoDaMarcacao`) e o "por quê?" — o nível
+  é do painel de habilidades. O guia de leitura da reflexão (`GUIA_DA_REFLEXAO`)
+  fica acima da lista. O ajuste tem `motivo` opcional (`OPCOES_DE_MOTIVO`).
+- **A criação manda os posts EDITADOS** (`editados`, comparando com as
+  legendas que chegaram) para a conferência do enquadramento; o 422
+  `enquadramento-divergente` marca o card ("não mostra mais o lado de…") e a
+  edição do post apaga o aviso; `conferencia: "nao-conferida"` vira aviso.
 - **O painel consulta `…/painel`** a cada 5 s e só refaz a página quando muda a
   evidência (acima): a página lê seis rotas.
 - **As imagens são um laço do cliente** (`continuarGerando`): 2 por chamada,
@@ -204,8 +216,9 @@ A página da atividade é `resultados/resultados-juri-estadual.tsx`; a criação
 - **Podcast**: falas na FASE 1; recurso FIXO do fechamento, depois da Etapa 4
   (`avisoDoPodcast`, literal do one-pager).
 - **Um botão só**: "Liberar Auditoria", com a instrução de gatilho acima.
-- **A folha**: o ícone de ocioso ao lado do nome e "Categorias buscadas".
-  Sem voto, taxa, concentração nem nível.
+- **A folha**: o ícone de ocioso ao lado do nome e "Separação" (se separou,
+  nunca quantos acertou — ADR-174). Sem voto, taxa, concentração nem nível; o
+  acerto da separação e da regra é nível, e mora no painel de habilidades.
 - **A lousa mostra a CONCENTRAÇÃO** (`resumo.concentracao`, quem curtiu ×
   quem não curtiu, dois `MetricCard`) **só depois de Liberar Auditoria**: ela
   diz que o feed se adaptou, e a plenária do pico pede para não dizer ainda. A

@@ -68,9 +68,19 @@ await suite(
     }
     const temRelogio = await p.locator("text=Relógio da aula").count();
     r.exigir(temRelogio > 0, "o relógio da aula fica na MESMA tela dos resultados");
+    /* O fechamento da Tempestade (ADR-172): o WhatsApp e a moradora são abertos
+       daqui, depois do debate, e o painel conta quem enviou. */
+    r.exigir(
+      (await p.locator("[data-fechamento]").count()) > 0,
+      "o fechamento (o WhatsApp e a moradora) é aberto do mesmo painel do relógio",
+    );
+    r.exigir(
+      (await p.locator("[data-alcance-do-alerta]").count()) > 0,
+      "o card do debate traz a frase do alcance do alerta, que nunca vai ao grupo",
+    );
     await r.registrar(p, "resultados-unoogpt", {
       titulo: "O relógio e os resultados do unooGPT",
-      mostra: "O relógio da turma (largada, tempo, encerrar) acima da folha da turma.",
+      mostra: "O relógio da turma (largada, tempo, encerrar e o fechamento) acima da folha da turma.",
       prova:
         "Conduzir e ler ficam juntos aqui porque a condução É durante a aula: obrigar o professor " +
         "a trocar de tela entre dar a largada e ver quem travou seria desenhar para a demonstração, " +
@@ -230,13 +240,18 @@ await suite(
         r.ressalva("a 6A ainda não liberou a auditoria: a concentração do feed não aparece por desenho (rode antes a estudante/13)");
         r.exigir((await concentracaoDoJuri.count()) === 0, "antes da auditoria, a lousa não mostra a concentração do feed");
       }
-      /* PRD v2: a folha diz QUAIS categorias cada um buscou na galeria (a leitura
-         da EF06CO01), e o painel conta quem está parado na cédula — o ícone ao
-         lado do nome é provado AO VIVO na estudante/13 (ele some sozinho 40 s
-         depois de a cédula fechar, então aqui só a coluna e a métrica). */
+      /* ADR-174: a folha diz quem SEPAROU os estandes (a EF06CO01 — o acerto é
+         nível e mora no painel de habilidades), e o painel conta quem está
+         parado na cédula — o ícone ao lado do nome é provado AO VIVO na
+         estudante/13 (ele some sozinho 40 s depois de a cédula fechar, então
+         aqui só a coluna e a métrica). */
       r.exigir(
-        colunasDoJuri.some((c) => /Categorias buscadas/.test(c)),
-        `a folha do Júri tem a coluna “Categorias buscadas” (colunas: ${colunasDoJuri.join(", ")})`,
+        colunasDoJuri.some((c) => /Separação/.test(c)) && !colunasDoJuri.some((c) => /Categorias buscadas/.test(c)),
+        `a folha do Júri tem a coluna “Separação”, sem “Categorias buscadas” (colunas: ${colunasDoJuri.join(", ")})`,
+      );
+      r.exigir(
+        (await p.getByText("Separaram os estandes", { exact: true }).count()) > 0,
+        "o painel da aula conta quem separou os estandes",
       );
       r.exigir(
         (await p.getByText("Parados na cédula", { exact: true }).count()) > 0,

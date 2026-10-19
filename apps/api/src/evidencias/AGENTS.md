@@ -10,31 +10,49 @@ do ar, acertou a pergunta) e isso morria dentro da experiência; aqui vira o
 nível que o professor lê, corrige e leva para o boletim.
 
 A plataforma entrou primeiro; as missões entram uma a uma, cada uma com a sua
-ficha. **A primeira é Quem Mandou Isso? v2.2** (`fichas/exp05ef1b.ts`): a
-EF05CO08 por uma AÇÃO (a seleção do Mural, marcada na transação do latch) e a
-EF05CO03/EF05CO04 por duas perguntas de múltipla escolha — o molde para a
-próxima.
-**A segunda é A Seleção (`exp07ef1b`)**: `fichas/exp07ef1b.ts` (EF07CO11 pela
-legenda graduada por IA — o Canal A — e pela enquete P1; EF07CO08 pela P2),
-o contexto registrado no `onModuleInit` de `a-selecao.service.ts` e a marca da
-legenda numa transação SÓ DELA, depois do latch da publicação: a IA leva até
-6 s, e a transação da jogada não pode esperar. Falhando a IA, não há marca:
-"Não avaliado", e o professor decide.
-**A terceira é o Jornal da Escola (`exp04ef1b`)**: `fichas/exp04ef1b.ts`
-(EF15CO04 por `pistas`, EF15CO02 por `chave`, EF04CO08 por `edicao-2`, `p1` e
-`p2`), as três ações marcadas DENTRO das transações dos latches e da Chave.
-A quarta é o Júri Estadual (`exp06ef1b`, ADR-151/152).
-**A quinta é o Unoovista (`exp08ef1b`, ADR-153)**: `fichas/exp08ef1b.ts`, três
-perguntas do PO (EF08CO11, EF08CO09, EF08CO07) e NENHUMA ação. O contexto é o
-provider `motor/contexto-da-evidencia.ts` (o `MotorModule` importa o
-`EvidenciasModule`): a run mais recente numa atividade ativa, `null` sem
-reflexão salva ou em atividade sem turma, e a **rodada sempre 1** — o motor não
-tem rodada, e aplicar de novo é criar outra atividade.
-**A sexta é a Missão Tempestade (`exp02em1b`, ADR-154)**, com duas regras só
-dela, na ficha: `respostas: "melhor"` (a marca única só muda para melhor) e
+ficha. **A primeira é Quem Mandou Isso?** (`fichas/exp05ef1b.ts` v4, ADR-171,
+sem as P1/P2): só ações rotuladas, cada uma na transação do próprio envio —
+Mural (EF05CO08), cartão de frases (CO03), regra do tio (CO04). Sem resolvedor.
+**A segunda é A Seleção (`exp07ef1b`)**: `fichas/exp07ef1b.ts` v2 (ADR-170,
+que tirou as enquetes P1/P2): EF07CO11 pela legenda lida por IA, marcada numa
+transação só dela DEPOIS da resposta; EF07CO08 pela marcação do post do colega,
+congelada na abertura das fichas. Sem resolvedor. Falhando a IA, não há marca:
+"Não avaliado", com a sugestão da reserva na lista da aula, e o professor
+ajusta — com `motivo` opcional (ADR-170, `MOTIVOS_DE_AJUSTE`), que vai só para
+o histórico (`evidencias_eventos.para.motivo`), para todas as missões.
+**A terceira é o Jornal da Escola (`exp04ef1b`)**: `fichas/exp04ef1b.ts`,
+**versão 2, Canal A puro (ADR-168)** — EF15CO04 por `julgamentos`, EF15CO02 por
+`montagem` + `simulacao`, EF04CO08 por `edicao-2` + `transferencia`, todas AÇÃO,
+nenhuma pergunta e nenhum resolvedor de contexto. O marcador parcial tem teto
+em "em processo" e o final grava o COMBINADO: é assim que uma régua "A só com
+as duas" cabe no "vale o melhor" desta porta, sem regra nova na plataforma.
+**A quarta é o Júri Estadual (`exp06ef1b`)**: `fichas/exp06ef1b.ts` v5
+(ADR-174, que tirou as enquetes P1–P3 e a EF06CO10): só ações rotuladas, cada
+uma na transação do próprio envio — `classificacao`, a separação (EF06CO01, a
+principal; < 4 estandes vistos = sem marca), e `regra`, a SE … ENTÃO (EF06CO03,
+id novo: a `cadeia` da v4 fica no histórico). Sem resolvedor.
+**A quinta é o Unoovista (`exp08ef1b`)**: `fichas/exp08ef1b.ts` v2 (ADR-167,
+que tirou as três perguntas da ADR-153): toda habilidade por AÇÃO — `raio-x` e
+`reflexao` (EF08CO11), `termos` (EF08CO09), `envio` e `envio-sem-confiabilidade`
+(EF08CO07, limitado pela atividade), todos com `rotulo`. Sem resolvedor
+registrado: as tarefas marcam da run do próprio estudante
+(`motor/contexto-da-evidencia.ts#contextoDaRun`, `null` em atividade sem turma)
+e a **rodada é sempre 1**. Vale o PRIMEIRO envio: o reinício reabre a tarefa e
+não apaga a marca, e a missão confere `jaMarcou` antes de marcar.
+**A sexta é a Missão Tempestade (`exp02em1b`)**: `fichas/exp02em1b.ts` v2
+(ADR-172, que tirou as quatro perguntas da ADR-154): toda habilidade por AÇÃO
+— `leitura`, `fontes`, `e-se`, `whatsapp`, `alerta`, `saude` e `moradora`,
+todos com `rotulo` —, marcadas pelas tarefas de `unoogpt/canal-a.service.ts`
+(as que são "primeira da rodada" conferem `jaMarcou`). Continua com
 `contaAoEncerrarAMissao` (vira evidência só no encerramento da missão na Sala
 de Aula: `SalasService.aoEncerrarMissao` → `aoEncerrarAMissao`, pelo mesmo
-`gravarPropria`). Atividade `"turma"` (a das equipes), rodada da turma.
+`gravarPropria`). Atividade `"turma"` (a das equipes), rodada da turma, sem
+resolvedor registrado: não há pergunta.
+**O encerramento só transforma em nível a marca de marcador que ESTÁ na ficha
+vigente** (`aoEncerrarAMissao`): a turma com a missão aberta no dia em que a
+ficha muda tem marcas de marcador que saiu (as `p1`–`p4` da Tempestade v1), e
+elas virariam nível pelo caminho que o pedagógico tirou. A marca fica no banco;
+só não conta.
 
 Três tabelas de PLATAFORMA (sem prefixo, como `liberacoes` e `equipes`), todas
 com `escola_id` + RLS forçada:
@@ -86,8 +104,23 @@ com `escola_id` + RLS forçada:
   não na tela: o bundle é público e a tela é de cada missão; aqui a regra vale
   para todas sem nenhuma lembrar. A tela responde pelo `id`, nunca pela
   posição. O teste de Postgres lê 60 vezes e cobra mais de uma ordem.
-  Ficha com `ordemDasAlternativas: "por-estudante"` (Júri): ordem fixa por
-  estudante (`regras.ts#aleatorioDe`).
+  Ficha com `ordemDasAlternativas: "por-estudante"` (o Júri até a v4): ordem
+  fixa por estudante (`regras.ts#aleatorioDe`).
+- **De onde veio o nível (ADR-166).** A evidência PRÓPRIA guarda o marcador
+  que a deu (`evidencias.marcador`, `regras.ts#marcadorDoNivel`): o da melhor
+  marca; no empate, o que NÃO é `limitadoPelaAtividade`, depois a ordem da
+  ficha. Cópia e ajuste ficam com `null` (CHECK
+  `evidencias_marcador_so_na_propria_check`). Com `rotulo` no marcador da
+  ficha, o painel traz `marcador`/`rotulo` na célula, `acoes` (o nível de cada
+  ação rotulada) quando elas DIVERGEM na rodada, e `origemDoResultado`. **Ficha
+  sem `rotulo` não recebe nada disso** — é o que mantém o painel das missões
+  antigas igual, e a suíte cobra (`o painel › a forma`).
+- **O "em processo" limitado pela atividade** (`limitadoPelaAtividade`, só em
+  marcador de ação): a missão nunca grava ali acima de `em_processo`. O
+  consolidado o conta em `emProcessoLimitado`, FORA de `emProcesso` e dentro do
+  `total`; entre atividades, empate limitado × comum guarda o COMUM
+  (`regras-do-consolidado.ts#limitadosDaMissao`). O limitado sai da ficha de
+  HOJE (`fichaDe`), e a cópia da equipe não o carrega.
 - **O professor ajusta a qualquer momento**, mesmo com a missão encerrada, um ou
   vários (1..200); cada mudança vai para o histórico. **Gestor só LÊ. O
   estudante nunca vê o próprio resultado. Não há ranking em lugar nenhum.**
@@ -116,8 +149,8 @@ Missão com ficha faz TRÊS coisas, no mesmo trabalho:
 
 `registrarFicha` existe **só para teste**. A suíte da plataforma registra uma
 ficha FALSA da exp08ef1b, que SUBSTITUI a real só na instância dela, de
-propósito (as regras pedem marcador de ação, e a real só tem perguntas); a real
-e o resolvedor do motor são provados em `tests/motor-evidencia-postgres.spec.ts`.
+propósito (as regras pedem uma pergunta de múltipla escolha, que a real não tem
+mais); a real e as tarefas do motor são provadas em `tests/motor-evidencia-postgres.spec.ts`.
 A ficha real vai no registro estático, onde a trava a confere.
 
 O resolvedor da missão devolve `null` sempre que a resposta não deve contar:

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { dataUriDeSvg, escaparXml, quebrarEmLinhas, svgDaConsulta, svgDoEstande, type Paleta } from "./arte";
+import { dataUriDeSvg, escaparXml, quebrarEmLinhas, svgDoEstande, type Paleta } from "./arte";
 
 const PALETA: Paleta = {
   fundo: "#EFEEF5",
@@ -37,8 +37,8 @@ describe("a arte procedural do estande", () => {
     expect(linhas[2]?.endsWith("…")).toBe(true);
   });
 
-  test("o fundo da consulta e o data: URI", () => {
-    const svg = svgDaConsulta("Consulta Oficial aos Jurados · Ata da Mostra", PALETA);
+  test("o formato do Story e o data: URI", () => {
+    const svg = svgDoEstande("cl-abc", "Horta vertical", PALETA, "story");
     expect(svg).toContain('viewBox="0 0 375 667"');
     expect(dataUriDeSvg(svg).startsWith("data:image/svg+xml;charset=utf-8,")).toBe(true);
   });

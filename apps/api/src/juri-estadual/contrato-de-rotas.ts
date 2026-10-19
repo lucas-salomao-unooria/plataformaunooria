@@ -3,7 +3,7 @@ import { falasDoTemaSchema } from "../podcast/roteiro";
 import { VAGAS_DO_PODCAST } from "./podcast";
 import { problemasDoPacote } from "./invariantes";
 import { ETAPAS, PASSOS, PASSOS_PEDIDOS } from "./regras/passos";
-import { IDS_DE_ATITUDE, IDS_DE_MECANISMO, TOTAL_DE_BLOCOS } from "./conteudo";
+import { IDS_DE_ATITUDE, IDS_DE_MECANISMO, PECAS_DO_ENTAO, PECAS_DO_SE } from "./conteudo";
 import {
   ACOES_DA_REVISAO,
   AREAS,
@@ -33,11 +33,11 @@ import {
  *   `GET galeria`, com a etapa `galeria` liberada pelo professor;
  * - a REGRA do motor: nenhum peso, nenhuma área líder. O contrafactual é
  *   CALCULADO no servidor e desce pronto: o motor nunca vai ao bundle;
- * - a ORDEM certa dos blocos e o cartão certo: os itens descem
- *   embaralhados, com ids opacos, e quem confere é o servidor (regra 3) — a
- *   ordem errada é 422 `ordem-incorreta`, e a tentativa conta;
- * - as alternativas certas das enquetes, que são da ficha de evidência e
- *   descem pelas rotas genéricas de `/evidencias`.
+ * - o GABARITO das duas tarefas do Canal A (ADR-174): os estandes da
+ *   separação descem sem área, hashtag nem perfil, e as peças da regra sem
+ *   `certa`, todos com ids OPACOS e embaralhados pela sessão — quem corrige é
+ *   o servidor (regra 3). A regra certa só desce DEPOIS do envio;
+ * - o cartão certo do caso Mariana.
  */
 
 // ------------------------------------------------------------------ comuns
@@ -47,8 +47,9 @@ export const PassoSchema = z.enum(PASSOS);
 export const EtapaSchema = z.enum(ETAPAS);
 export const IdDeProjetoSchema = z.string().regex(ID_DE_PROJETO_RE);
 export const IdDePostSchema = z.string().regex(ID_DE_POST_RE);
-/** Ids opacos dos blocos: sorteados por sessão, não dizem a posição. */
-export const IdOpacoSchema = z.string().regex(/^bl-[a-z0-9]{3}$/);
+/** Ids opacos por sessão (`cl-` os estandes da separação, `rg-` as peças da regra): não dizem o que o item é. */
+export const IdDeItemSchema = z.string().regex(/^cl-[a-z0-9]{3}$/);
+export const IdDePecaSchema = z.string().regex(/^rg-[a-z0-9]{3}$/);
 
 // -------------------------------------------------------- entrada: estudante
 
@@ -109,15 +110,21 @@ export const RevisaoDoVotoSchema = z.discriminatedUnion("acao", [
   z.object({ acao: z.literal(ACOES_DA_REVISAO[1]), projetoId: IdDeProjetoSchema }),
 ]);
 
-/** A ordem que a criança montou: os ids opacos, da vaga 1 à última. */
-const ordemDe = (tamanho: number) =>
-  z.object({
-    ordem: z
-      .array(IdOpacoSchema)
-      .length(tamanho)
-      .refine((o) => new Set(o).size === o.length, "itens diferentes"),
-  });
-export const OrdemDaCadeiaSchema = ordemDe(TOTAL_DE_BLOCOS);
+/**
+ * A SEPARAÇÃO (EF06CO01): uma área para cada estande que a criança viu. O teto
+ * de 10 é o do feed; os itens diferentes, e o "é desta sessão", quem confere é
+ * o servidor (400).
+ */
+export const ClassificacaoSchema = z.object({
+  respostas: z
+    .array(z.object({ itemId: IdDeItemSchema, area: AreaSchema }))
+    .min(1)
+    .max(POSTS_NO_FEED)
+    .refine((r) => new Set(r.map((x) => x.itemId)).size === r.length, "itens diferentes"),
+});
+
+/** A REGRA (EF06CO03): a peça do SE e a do ENTÃO, ids opacos da sessão. */
+export const RegraSchema = z.object({ se: IdDePecaSchema, entao: IdDePecaSchema });
 
 export const CartoesSchema = z.object({
   mecanismo: z.enum(IDS_DE_MECANISMO as [string, ...string[]]),
@@ -244,23 +251,28 @@ export const GaleriaSchema = z.object({
   podeManter: z.boolean(),
 });
 
-export const BlocoDaCadeiaSchema = z.object({ id: IdOpacoSchema, rotulo: z.string() });
-
-const CartaoSchema = z.object({ id: z.string(), texto: z.string() });
-
-const HistoricoSchema = z.object({
-  areaPrincipal: AreaSchema.nullable(),
-  porArea: z
-    .array(z.object({ area: AreaSchema, posts: z.number().int().min(0), curtidas: z.number().int().min(0) }))
-    .length(AREAS.length),
+/** Um estande na tela da separação: id opaco, título e imagem — sem área, hashtag nem perfil. */
+export const ItemDaClassificacaoSchema = z.object({
+  id: IdDeItemSchema,
+  titulo: z.string(),
+  imagem: z.object({ url: z.string().nullable(), alt: z.string() }),
 });
 
+export const PecaPublicaSchema = z.object({ id: IdDePecaSchema, texto: z.string() });
+
 /**
- * O PAR SIMULADO da Etapa 5 (melhoria 7): o histórico desta criança ao lado do
- * de "outro jurado que curtiu temas diferentes" — GERADO pelo servidor como o
- * espelho das áreas reais deste feed, nunca dado de colega.
+ * A REVELAÇÃO da regra, só depois do envio: as peças escolhidas e as certas, e
+ * o que a regra fez no feed DESTA criança (`curtidas`, `permanencia` ou
+ * `variado`, com a área em foco).
  */
-export const ParSimuladoSchema = z.object({ voce: HistoricoSchema, outroJurado: HistoricoSchema });
+export const RevelacaoDaRegraSchema = z.object({
+  escolha: z.object({ se: z.string(), entao: z.string() }),
+  certa: z.object({ se: IdDePecaSchema, entao: IdDePecaSchema }),
+  motivo: z.enum(["curtidas", "permanencia", "variado"]),
+  area: AreaSchema.nullable(),
+});
+
+const CartaoSchema = z.object({ id: z.string(), texto: z.string() });
 
 /** O estado do estudante. Cada bloco só aparece do passo dele em diante. */
 export const SessaoSchema = z.object({
@@ -284,13 +296,19 @@ export const SessaoSchema = z.object({
       projetoId: IdDeProjetoSchema.nullable(),
     })
     .nullable(),
-  /** Embaralhados pela sessão, e o par simulado. Do passo `cadeia` em diante. */
+  /** Só no passo `classificacao`: os estandes que a criança viu, embaralhados. As opções são as `categorias`. */
+  classificacao: z.object({ itens: z.array(ItemDaClassificacaoSchema).max(POSTS_NO_FEED) }).nullable(),
+  /**
+   * A REGRA (o passo guarda o nome `cadeia`), do passo dela em diante: as
+   * peças embaralhadas e, depois do envio, a revelação. `enviada` sem
+   * `revelacao` = a cadeia antiga da 0.5.0, já montada.
+   */
   cadeia: z
     .object({
-      blocos: z.array(BlocoDaCadeiaSchema).length(TOTAL_DE_BLOCOS),
-      tentativas: z.number().int().min(0),
-      montada: z.boolean(),
-      parSimulado: ParSimuladoSchema,
+      se: z.array(PecaPublicaSchema).length(PECAS_DO_SE.length),
+      entao: z.array(PecaPublicaSchema).length(PECAS_DO_ENTAO.length),
+      enviada: z.boolean(),
+      revelacao: RevelacaoDaRegraSchema.nullable(),
     })
     .nullable(),
   /** Do passo `mariana` em diante. `escolha` volta num F5. */
@@ -311,18 +329,11 @@ export const GatePublicoSchema = z.object({
   etapa: EtapaSchema,
 });
 
-/**
- * A resposta da cadeia CERTA (200). A errada é **422** `ordem-incorreta`, com
- * `tentativas` no corpo — nunca qual vaga errou.
- */
-export const TentativaSchema = z.object({
-  correta: z.literal(true),
-  tentativas: z.number().int().min(1),
-  passo: PassoSchema,
-});
-
-/** A resposta das rotas que só mudam o passo (voto, revisão, cartões, concluir). */
+/** A resposta das rotas que só mudam o passo (voto, separação, revisão, cartões, concluir). */
 export const EstadoSchema = z.object({ passo: PassoSchema, etapa: EtapaSchema });
+
+/** A resposta da regra: o estado e a revelação, que só existe depois do envio. */
+export const RespostaDaRegraSchema = EstadoSchema.extend({ revelacao: RevelacaoDaRegraSchema.nullable() });
 
 // ----------------------------------------------------- entrada: professor
 
@@ -545,10 +556,10 @@ export const LinhaDoPainelSchema = z.object({
   votou: z.boolean(),
   /** O SINALIZADOR DE OCIOSOS: cédula aberta e mais de 60 s sem toque (o ícone ao lado do nome). */
   ocioso: z.boolean(),
+  /** Já separou os estandes nas áreas (EF06CO01). Progresso: quantos acertou NÃO vai à lousa. */
+  separou: z.boolean(),
   abriuAGaleria: z.boolean(),
   buscou: z.boolean(),
-  /** As categorias que a criança buscou pela hashtag na galeria (a leitura da EF06CO01, melhoria 3). */
-  categoriasBuscadas: z.array(AreaSchema),
   revisou: z.boolean(),
   concluiu: z.boolean(),
 });
@@ -565,6 +576,7 @@ export const PainelSchema = z.object({
     total: z.number().int().min(0),
     entraram: z.number().int().min(0),
     votaram: z.number().int().min(0),
+    separaram: z.number().int().min(0),
     revisaram: z.number().int().min(0),
     concluiram: z.number().int().min(0),
     /** Quantos estão ociosos na cédula agora. */
@@ -611,18 +623,19 @@ export const ZerarTurmaSchema = z.object({
 });
 
 /**
- * O material do professor (guia da aula): o esqueleto fixo COM gabarito — a
- * ordem dos blocos, os cartões certos — e a plenária.
+ * O material do professor (guia da aula): o esqueleto fixo COM gabarito — as
+ * peças da regra com a certa marcada, os cartões certos — e a plenária.
  */
+const PecaComGabaritoSchema = z.object({ texto: z.string(), certa: z.boolean() });
+
 export const MaterialSchema = z.object({
-  blocos: z.array(z.object({ posicao: z.number().int(), rotulo: z.string() })),
+  pecas: z.object({ se: z.array(PecaComGabaritoSchema), entao: z.array(PecaComGabaritoSchema) }),
   mariana: z.object({
     caso: z.string(),
     mecanismos: z.array(CartaoSchema.extend({ certo: z.boolean() })),
     atitudes: z.array(CartaoSchema.extend({ certo: z.boolean() })),
   }),
   plenaria: z.array(z.string()),
-  feedbackDaCadeia: z.object({ correta: z.string(), incorreta: z.string() }),
   regra: z.object({
     pesoDaCurtida: z.number().int(),
     pesoDaPermanencia: z.number().int(),

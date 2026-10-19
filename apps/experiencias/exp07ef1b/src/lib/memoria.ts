@@ -2,12 +2,10 @@
  * A memória de F5 — `sessionStorage`, só com IDS e NÚMEROS, e só conveniência.
  *
  * O que VALE mora na api: o latch da publicação, a tríade, a legenda, a
- * reflexão, as respostas das enquetes. Aqui fica só o que a api não guarda
+ * reflexão, a marcação. Aqui fica só o que a api não guarda
  * antes do latch e cuja perda num F5 seria injusta com a criança: os posts que
  * ela salvou no feed, os que desmarcou na aba Salvos, o tempo de feed já
- * contado, o card em que parou na Etapa 5 e qual alternativa ela tocou em cada
- * enquete (para a enquete reabrir travada — a api guarda a primeira resposta de
- * qualquer jeito).
+ * contado e o card em que parou na Etapa 5.
  *
  * Três regras, e as três já custaram em outra missão:
  *
@@ -27,10 +25,9 @@ export interface Memoria {
   desmarcados: string[];
   tempoFeedS: number;
   card: number;
-  votos: Record<string, string>;
 }
 
-const VAZIA: Memoria = { salvos: [], desmarcados: [], tempoFeedS: 0, card: 0, votos: {} };
+const VAZIA: Memoria = { salvos: [], desmarcados: [], tempoFeedS: 0, card: 0 };
 
 function chave(sessaoId: string): string {
   return `exp07ef1b:${sessaoId}`;
@@ -44,15 +41,6 @@ function numero(valor: unknown): number {
   return typeof valor === "number" && Number.isFinite(valor) && valor >= 0 ? Math.floor(valor) : 0;
 }
 
-function votos(valor: unknown): Record<string, string> {
-  if (!valor || typeof valor !== "object") return {};
-  const saida: Record<string, string> = {};
-  for (const [k, v] of Object.entries(valor as Record<string, unknown>)) {
-    if (typeof v === "string") saida[k] = v;
-  }
-  return saida;
-}
-
 /** O que está guardado para esta sessão — ou a memória vazia, nunca exceção. */
 export function lerMemoria(sessaoId: string): Memoria {
   try {
@@ -64,7 +52,6 @@ export function lerMemoria(sessaoId: string): Memoria {
       desmarcados: ids(dado.desmarcados),
       tempoFeedS: numero(dado.tempoFeedS),
       card: numero(dado.card),
-      votos: votos(dado.votos),
     };
   } catch {
     return { ...VAZIA };

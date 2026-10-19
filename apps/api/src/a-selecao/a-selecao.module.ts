@@ -7,6 +7,7 @@ import { ASelecaoTurmasController } from "./a-selecao-turmas.controller";
 import { ASelecaoController } from "./a-selecao.controller";
 import { ASelecaoService } from "./a-selecao.service";
 import { ClassificacaoService } from "./classificacao.service";
+import { ConferenciaDoEnquadramentoService } from "./conferencia.service";
 import { MidiaDaExp07ef1bService } from "./midia.service";
 import { PodcastDaExp07ef1b } from "./podcast-fonte";
 import { PreparoDaExp07ef1bService } from "./preparo.service";
@@ -37,6 +38,7 @@ import { PreparoDaExp07ef1bService } from "./preparo.service";
   providers: [
     ASelecaoService,
     ClassificacaoService,
+    ConferenciaDoEnquadramentoService,
     PreparoDaExp07ef1bService,
     MidiaDaExp07ef1bService,
     PodcastDaExp07ef1b,

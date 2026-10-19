@@ -1,7 +1,7 @@
 {
   "id": "exp07ef1b",
   "nome": "A Seleção",
-  "versao": "1.2.1",
+  "versao": "1.3.0",
   "produto": "entre-redes",
   "series": ["7EF"],
   "unidade": 1,
@@ -12,7 +12,7 @@
   "verbos": {
     "attempted": "publicou três posts nos Stories do grêmio com uma legenda",
     "interacted": "salvou e removeu posts do feed da cobertura",
-    "progressed": "comparou a própria publicação com a do colega no Mural da Turma",
-    "completed": "enviou a reflexão e respondeu às enquetes da Amara"
+    "progressed": "comparou a própria publicação com a do colega no Mural da Turma e marcou o que a sua deixou de fora",
+    "completed": "enviou a reflexão, que encerra a missão"
   }
 }

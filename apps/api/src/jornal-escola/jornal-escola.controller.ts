@@ -6,12 +6,15 @@ import { rateLimit } from "../comum/rate-limit";
 import { Contrato } from "../openapi/contrato";
 import {
   AbrirPistaSchema,
+  ChaveMontadaSchema,
   ChaveSchema,
   ComparativoSchema,
   DiagramacaoSchema,
   DiagramarSchema,
   EstadoSchema,
   GatePublicoSchema,
+  JulgamentoSchema,
+  JulgarSchema,
   MotivoSchema,
   PedirPassoSchema,
   PistaReveladaSchema,
@@ -19,7 +22,12 @@ import {
   ResultadoSchema,
   RevisaoSchema,
   SessaoSchema,
-  TentativaDaChaveSchema,
+  SimulacaoDaTelaSchema,
+  SimulacaoEnviadaSchema,
+  SimularSchema,
+  TransferenciaDaTelaSchema,
+  TransferenciaEnviadaSchema,
+  TransferirSchema,
 } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
 import { JornalEscolaService } from "./jornal-escola.service";
@@ -104,12 +112,12 @@ export class JornalEscolaController {
   @Post("passo")
   @HttpCode(200)
   @Contrato({
-    resumo: "Registra o passo que a própria criança deu: a mesa, ou o Desafio Final.",
+    resumo: "Registra o passo que a própria criança deu: a mesa, ou a simulação da Chave.",
     descricao:
-      "`mesa` vale do desafio (\"Explorar Mesa de Notícias\"); pedir de novo, ou depois da 1ª publicação, devolve o passo em que ela está — a escada é de sentido único. `transferencia` é o \"Avançar para Desafio Final\", só do comparativo.",
+      "`mesa` vale do desafio (\"Explorar Mesa de Notícias\"); pedir de novo, ou depois da 1ª publicação, devolve o passo em que ela está — a escada é de sentido único. `simulacao` é o \"Testar a minha Chave\", só do comparativo. A rodada da 2.x, sem Chave MONTADA, vai direto à `transferencia`.",
     corpo: PedirPassoSchema,
     resposta: EstadoSchema,
-    notas: ["`transferencia` antes do comparativo responde **409** `passo-invalido`.", PORTA],
+    notas: ["`simulacao` antes do comparativo responde **409** `passo-invalido`.", PORTA],
   })
   passo(@Body() corpo: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
@@ -122,7 +130,7 @@ export class JornalEscolaController {
   @Contrato({
     resumo: "Abre uma pista (fonte, data ou autoria) de uma notícia — o texto vem do servidor.",
     descricao:
-      "O texto da pista desce AQUI, e não na sessão: o registro de quem abriu o quê é o dado da EF15CO04 (decompor \"posso confiar?\" em três perguntas), e uma pista lida sem registro seria evidência que a plataforma não vê. Abrir um campo não prova compreensão (PDF §11) — o registro apoia a observação do professor.\n\nSó na mesa da 1ª edição (fase 1) e na mesa de revisão (fase 2). Idempotente por par na mesma fase: abrir de novo devolve o mesmo texto e não conta.",
+      "O texto da pista desce AQUI, e não na sessão: o registro de quem abriu o quê é o que o `POST julgamento` exige antes de julgar, e a metade do `edicao-2` da EF04CO08 — uma pista lida sem registro seria evidência que a plataforma não vê.\n\nSó na mesa da 1ª edição (fase 1) e na mesa de revisão (fase 2). Idempotente por par na mesma fase: abrir de novo devolve o mesmo texto e não conta.",
     corpo: AbrirPistaSchema,
     resposta: PistaReveladaSchema,
     notas: [
@@ -135,6 +143,25 @@ export class JornalEscolaController {
     limitar(req.auth.usuarioId);
     const par = valida(AbrirPistaSchema, corpo);
     return this.missao.abrirPista(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), par);
+  }
+
+  @Post("julgamento")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "\"Confio / Não confio\" numa pista já aberta — o registro da EF15CO04.",
+    descricao:
+      "Logo depois de abrir a pista e ANTES de decidir a capa (o plenário pôs o julgamento antes da decisão). Opcional: a pista aberta e não julgada só não conta. O PRIMEIRO julgamento de cada (notícia, pista) vale; o segundo devolve o gravado, com `novo: false`. A EF15CO04 é marcada na 1ª publicação, sobre estes julgamentos e a capa publicada.",
+    corpo: JulgarSchema,
+    resposta: JulgamentoSchema,
+    notas: [
+      "Fora da mesa da 1ª edição responde **409** `passo-invalido`; pista sem abertura registrada, **409** `pista-nao-aberta`.",
+      PORTA,
+    ],
+  })
+  julgamento(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    const j = valida(JulgarSchema, corpo);
+    return this.missao.julgar(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), j);
   }
 
   @Post("diagramar")
@@ -162,7 +189,7 @@ export class JornalEscolaController {
   @Contrato({
     resumo: '"Distribuir Jornal Agora" — a 1ª edição (latch).',
     descricao:
-      "O gesto que a missão mede, e ele é IRREVERSÍVEL. A api calcula as verificadas AQUI, contra o gabarito do pacote (o cliente só manda os três ids), e grava vagas, layout, carimbo e o passo `motivo` juntos. **A resposta não traz o resultado**: ele só desce no `GET /jornal-escola/resultado`, depois do motivo e com o portão do professor aberto.\n\nMarca a EF15CO04 (`pistas`) pelas pistas que a criança abriu antes de publicar.",
+      "O gesto que a missão mede, e ele é IRREVERSÍVEL. A api calcula as verificadas AQUI, contra o gabarito do pacote (o cliente só manda os três ids), e grava vagas, layout, carimbo e o passo `motivo` juntos. **A resposta não traz o resultado**: ele só desce no `GET /jornal-escola/resultado`, depois do motivo e com o portão do professor aberto.\n\nMarca a EF15CO04 (`julgamentos`) pelos \"confio / não confio\" da mesa e pela coerência da capa publicada.",
     corpo: PublicarSchema,
     resposta: EstadoSchema,
     notas: [
@@ -215,22 +242,22 @@ export class JornalEscolaController {
   @Post("chave")
   @HttpCode(200)
   @Contrato({
-    resumo: "Uma tentativa da Chave do Editor: três blocos, em qualquer ordem.",
+    resumo: "A Chave do Editor MONTADA — um envio, sem correção (3.0.0).",
     descricao:
-      "Cada envio é uma TENTATIVA — a isca também conta. Sucesso é o conjunto dos três pilares, corrigido no servidor (o conjunto certo nunca desce ao bundle). `devolvidos` são as iscas enviadas, que voltam à bandeja. No sucesso, o passo vai a `revisao` e a EF15CO02 é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu).\n\nCom a Chave já formada, responde `sucesso: true` sem contar outra tentativa.",
+      "Três vagas — o bloco (entre seis: três pilares e três iscas), o lado de cada um dos dois cartões de condição dele (`aprova`/`reprova`, na ordem canônica `<bloco>-1`, `<bloco>-2`) e o \"se esta pista falhar\" (`parar` = \"Não publico\", `seguir` = \"Olho a próxima pista\") — e a repetição (`todas` / `so_a_primeira`). **Não há correção nem nova tentativa**, e a resposta não diz se a Chave está certa: o lado certo dos cartões nunca desce ao bundle. Grava a montagem, o passo vai a `revisao` e a EF15CO02 é marcada (`montagem`, com teto em \"em processo\": o \"atingiu\" só vem da simulação).",
     corpo: ChaveSchema,
-    resposta: TentativaDaChaveSchema,
+    resposta: ChaveMontadaSchema,
     notas: [
-      "`blocos`: exatamente 3 ids diferentes dos seis da bandeja. (Os `.refine()` somem do OpenAPI; daí esta nota.)",
-      "`tentativa` (opcional, 1 a 100) é o número que a tela acha que está enviando. Número já contado é REENVIO: devolve o resultado gravado, sem somar tentativa nem marcar de novo — com a Chave formada, `sucesso: true`; senão, `sucesso: false` com os `devolvidos` recalculados sobre os blocos enviados. Sem o número, todo envio conta.",
+      "`vagas`: exatamente 3, com blocos diferentes. (Os `.refine()` somem do OpenAPI; daí esta nota.)",
+      "O reenvio da MESMA montagem devolve o estado; outra montagem depois de formada responde **409** `chave-ja-montada`.",
       "Antes de a revisão abrir para esta criança responde **409** `revisao-nao-liberada`.",
       PORTA,
     ],
   })
   chave(@Body() corpo: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
-    const { blocos, tentativa } = valida(ChaveSchema, corpo);
-    return this.missao.tentarChave(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), blocos, tentativa);
+    const montagem = valida(ChaveSchema, corpo);
+    return this.missao.montarChave(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), montagem);
   }
 
   @Get("revisao")
@@ -251,7 +278,7 @@ export class JornalEscolaController {
   @Contrato({
     resumo: '"Publicar 2ª Edição Revisada" — a 2ª edição (latch).',
     descricao:
-      "O mesmo corpo da 1ª. Pode repetir as três vagas da 1ª edição: quem acertou de primeira confirma, sem trocar à força (PDF §9). Marca a EF04CO08 (`edicao-2`) pelas pistas das duas fases e as verificadas da 2ª.",
+      "O mesmo corpo da 1ª. Pode repetir as três vagas da 1ª edição: quem acertou de primeira confirma, sem trocar à força (PDF §9). Marca a EF04CO08 (`edicao-2`, com teto em \"em processo\") pelas pistas das duas fases e as verificadas da 2ª; o \"atingiu\" só vem da transferência.",
     corpo: PublicarSchema,
     resposta: EstadoSchema,
     notas: [
@@ -278,14 +305,79 @@ export class JornalEscolaController {
     return this.missao.comparativo(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth));
   }
 
+  @Get("simulacao")
+  @Contrato({
+    resumo: "A simulação: as duas matérias novas e a Chave DELA como roteiro (3.0.0).",
+    descricao:
+      "As matérias vêm com as pistas e SEM o gabarito; a Chave, com o bloco de cada vaga, o \"se falhar\" e a repetição — e, na vaga com isca, a frase neutra de pulo (a matéria não traz o que a isca olharia).",
+    resposta: SimulacaoDaTelaSchema,
+    notas: ["Antes do passo `simulacao` responde **409** `passo-invalido`; sem Chave montada, **409** `chave-nao-formada`.", PORTA],
+  })
+  simulacao(@Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    return this.missao.simulacao(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth));
+  }
+
+  @Post("simulacao")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "A Chave aplicada às duas matérias — enviada de uma vez (3.0.0).",
+    descricao:
+      "Por matéria, as pistas na ORDEM em que a criança as abriu, cada uma com o \"confio / não confio\" (obrigatório na simulação: a marcação é a execução) e a decisão. A api mede a FIDELIDADE à regra dela — a ordem das vagas, a parada no \"Não publico\", a decisão coerente — e marca a EF15CO02 (`simulacao`, o combinado com a montagem). O passo vai a `transferencia`, e a resposta traz a regra de referência, igual para todos.",
+    corpo: SimularSchema,
+    resposta: SimulacaoEnviadaSchema,
+    notas: [
+      "`materias`: `s1` e `s2`, uma vez cada; até 3 passos por matéria, sem repetir pista. (Os `.refine()` somem do OpenAPI.)",
+      "Segundo envio responde **409** `simulacao-ja-enviada`; fora do passo, **409** `passo-invalido`.",
+      PORTA,
+    ],
+  })
+  simular(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    const simulacao = valida(SimularSchema, corpo);
+    return this.missao.simular(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), simulacao);
+  }
+
+  @Get("transferencia")
+  @Contrato({
+    resumo: "O boato da transferência e as três pistas dele (fixos).",
+    descricao:
+      "O de \"todas as escolas do bairro\", diferente do da mesa: aqui é transferência, e não memória. A tela é NEUTRA — nada nela pede para verificar.",
+    resposta: TransferenciaDaTelaSchema,
+    notas: ["Antes do passo `transferencia` responde **409** `passo-invalido`.", PORTA],
+  })
+  transferencia(@Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    return this.missao.transferencia(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth));
+  }
+
+  @Post("transferencia")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "A decisão diante do boato: repassar ou não — uma vez (3.0.0).",
+    descricao:
+      "As pistas abertas ANTES da decisão, na ordem, e a decisão. Marca a EF04CO08 (`transferencia`): o COMBINADO com a 2ª edição — \"atingiu\" só com a 2ª edição e a transferência no \"atingiu\". O passo continua `transferencia`; quem leva ao fim é o \"Concluir Missão\".",
+    corpo: TransferirSchema,
+    resposta: TransferenciaEnviadaSchema,
+    notas: ["Segunda decisão responde **409** `transferencia-ja-decidida`; fora do passo, **409** `passo-invalido`.", PORTA],
+  })
+  transferir(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    const t = valida(TransferirSchema, corpo);
+    return this.missao.transferir(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), t);
+  }
+
   @Post("concluir")
   @HttpCode(200)
   @Contrato({
     resumo: '"Concluir Missão" — idempotente.',
     descricao:
-      "Leva a sessão de `transferencia` a `fim` e carimba `concluidaEm`, no mesmo update. P1 e P2 do Desafio Final vão pelas rotas genéricas de `/evidencias/exp04ef1b/perguntas`, e não são exigidas para concluir.",
+      "Leva a sessão de `transferencia` a `fim` e carimba `concluidaEm`, no mesmo update — com o boato já decidido. A 3.0.0 não tem pergunta de múltipla escolha (ADR-168).",
     resposta: EstadoSchema,
-    notas: ["Antes do Desafio Final responde **409** `passo-invalido`. Concluir de novo devolve o mesmo estado.", PORTA],
+    notas: [
+      "Antes da transferência responde **409** `passo-invalido`; sem a decisão do boato, **409** `transferencia-pendente`. Concluir de novo devolve o mesmo estado.",
+      PORTA,
+    ],
   })
   concluir(@Req() req: Autenticado) {
     limitar(req.auth.usuarioId);

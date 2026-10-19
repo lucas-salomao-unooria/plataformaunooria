@@ -32,6 +32,15 @@ interface LinhaMonitor {
   /** > 0 quando ele já escreveu a reflexão — o texto está no popup. */
   caracteresDaReflexao: number;
   publicou: boolean;
+  /** O Canal A (ADR-167): sim/não, nunca o que a criança respondeu. */
+  canalA?: {
+    revelacaoConcluida: boolean;
+    raioX: boolean;
+    termos: boolean;
+    envio: boolean;
+    comFrase: boolean;
+    refeita: boolean;
+  };
 
   // doc 11 §4.1 — a largada, a virada e a imersão parcial
   ladoInicial: "A" | "B";
@@ -67,6 +76,8 @@ interface RespostaMonitor {
     ladoA: number;
     ladoB: number;
     semLado: number;
+    /** Já na revelação e ainda sem chegar à última tela (ADR-167). */
+    naRevelacao?: number;
   };
   limiteDeOciosidadeMs: number;
 }
@@ -243,6 +254,14 @@ export function PainelMonitor({
             de {dados?.resumo.total ?? 0} na atividade · quem virou o jogo terminou no lado oposto ao
             que recebeu · {dados?.resumo.salvosDoOutroLado ?? 0} dos posts salvos são do outro lado
           </p>
+          {dados?.resumo.naRevelacao ? (
+            <p className="-mt-2 text-[12px] font-semibold leading-snug text-unooria-neutral-800">
+              {dados.resumo.naRevelacao === 1
+                ? "1 estudante ainda não terminou a revelação"
+                : `${dados.resumo.naRevelacao} estudantes ainda não terminaram a revelação`}
+              {" — as tarefas abrem para cada um quando chegar à última tela."}
+            </p>
+          ) : null}
 
           {/* como largaram: o equilíbrio da turma, que decide se vale redistribuir */}
           <div className="grid gap-3 sm:grid-cols-2">
@@ -309,7 +328,7 @@ export function PainelMonitor({
       />
 
       <ScrollBar orientation="both" autoHide className="tabela-rolavel rounded-xl border border-unooria-neutral-200">
-        <table className="w-full min-w-[980px] border-collapse text-left">
+        <table className="w-full min-w-[1100px] border-collapse text-left">
           {/*
             Sete colunas, não dez. Domínio, escalada e contagem de posts saíram
             para o popup do estudante: são leitura de detalhe, e numa tabela de 40
@@ -320,6 +339,7 @@ export function PainelMonitor({
             <tr className="text-[12px] text-unooria-neutral-700">
               <th className="px-3 py-2 font-semibold">Estudante</th>
               <th className="px-3 py-2 font-semibold">Fase</th>
+              <th className="px-3 py-2 font-semibold">Tarefas</th>
               <th className="px-3 py-2 font-semibold">Largada</th>
               <th className="px-3 py-2 font-semibold">Coleção</th>
               <th className="px-3 py-2 font-semibold">Bolha agora</th>
@@ -367,6 +387,9 @@ export function PainelMonitor({
                         escreveu {linha.caracteresDaReflexao} caracteres
                       </span>
                     ) : null}
+                  </td>
+                  <td className="px-3 py-2">
+                    <TarefasDoEstudante canalA={linha.canalA} />
                   </td>
                   <td className="px-3 py-2">
                     <span className="text-[12px] text-unooria-neutral-800">
@@ -502,5 +525,28 @@ export function PainelMonitor({
         </table>
       </ScrollBar>
     </div>
+  );
+}
+
+/**
+ * As tarefas do Canal A de um estudante (ADR-167), no texto discreto da
+ * tabela: o que ele já fez, e as duas marcas que o professor precisa saber
+ * — mandou com frase própria (a frase está no popup) e refez depois de um
+ * reinício (vale o primeiro envio). Nunca o que ele respondeu.
+ */
+function TarefasDoEstudante({ canalA }: { canalA?: LinhaMonitor["canalA"] }) {
+  if (!canalA) return <span className="text-[11px] text-unooria-neutral-500">—</span>;
+  const feitas = [
+    canalA.raioX ? "Raio-x" : null,
+    canalA.termos ? "termos" : null,
+    canalA.envio ? "envio" : null,
+  ].filter(Boolean);
+  return (
+    <span className="flex flex-col gap-0.5 text-[11px] leading-tight">
+      <span className="text-unooria-neutral-800">{feitas.length > 0 ? `fez ${feitas.join(", ")}` : "nenhuma ainda"}</span>
+      {!canalA.revelacaoConcluida ? <span className="text-unooria-neutral-500">revelação não terminada</span> : null}
+      {canalA.comFrase ? <span className="text-unooria-navy-800">envio com frase do estudante</span> : null}
+      {canalA.refeita ? <span className="text-unooria-neutral-500">refeito após reinício</span> : null}
+    </span>
   );
 }

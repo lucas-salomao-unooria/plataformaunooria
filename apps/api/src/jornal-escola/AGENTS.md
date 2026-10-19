@@ -8,9 +8,12 @@ Missão de 4º ano, unidade 1, numa redação da Unooria (não é clone de rede
 social). A criança recebe oito notícias de oito meios, abre as pistas (fonte,
 data, autoria), põe três na primeira página e publica (o LATCH da 1ª); depois
 responde como escolheu (o motivo), o professor libera o RESULTADO — as reações
-dos leitores às notícias escolhidas —, depois a REVISÃO: a Chave do Editor, a
-mesa com os marcadores e a 2ª edição (o LATCH da 2ª), o comparativo e o Desafio
-Final (P1/P2 pelas rotas de `/evidencias`). Quatro tabelas:
+dos leitores às notícias escolhidas —, depois a REVISÃO: a Chave do Editor
+MONTADA, a mesa com os marcadores e a 2ª edição (o LATCH da 2ª), o comparativo,
+a SIMULAÇÃO da Chave em duas matérias novas e a TRANSFERÊNCIA (o boato com
+"Repassar" à mão). **Canal A puro desde a 3.0.0 (ADR-168)**: nenhuma pergunta de
+múltipla escolha — P1/P2 saíram, e as rotas de pergunta de `/evidencias` não
+respondem por esta missão (não há resolvedor de contexto). Quatro tabelas:
 `exp04ef1b_pacotes`, `exp04ef1b_gates_turma`, `exp04ef1b_sessoes`,
 `exp04ef1b_diagramacoes`. O código era do UnooTube, ARQUIVADO como
 `backup-exp04ef1b` (ADR-116): nada daqui colide com `backup_exp04ef1b_sessoes`
@@ -42,17 +45,23 @@ em silêncio.
   ALLOWLIST (`noticiaPublica`); o texto da pista desce no `POST pista` (é o
   REGISTRO da EF15CO04, e uma pista lida sem registro seria evidência
   invisível); a consequência, no `GET resultado` com a etapa `resultado`; o
-  pilar em falta, no `GET revisao` depois da Chave; o conjunto certo da Chave,
-  nunca (`regras/chave.ts`). As verificadas são calculadas no latch, NO SERVIDOR.
+  pilar em falta, no `GET revisao` depois da Chave; o LADO CERTO de cada cartão
+  de condição da Chave e o gabarito das matérias da simulação, nunca
+  (`regras/montagem.ts`, `GET simulacao` sem `gabarito`). As verificadas são
+  calculadas no latch, NO SERVIDOR; a fidelidade da simulação, também.
 - **Os CHECKs dos latches são equivalências com o passo gravado**: `publicada1_em
   ⇔ passo ∉ {desafio, mesa}`, motivo ⇔ passo além de `motivo`, Chave ⇔ passo ≥
-  `revisao`, `publicada2_em` ⇔ passo ≥ `comparativo`, `fim ⇔ concluida_em` — e
+  `revisao`, `publicada2_em` ⇔ passo ≥ `comparativo`, `fim ⇔ concluida_em`. Os
+  da 3.0.0 são IMPLICAÇÕES, não equivalências (a sessão da 2.x passou por passos
+  que não existiam): a montagem só com a Chave formada; `simulada_em` ⇔
+  `simulacao` e só em `transferencia`/`fim`; `transferida_em` ⇔ `transferencia`
+  e idem — e
   `resultado`/`chave` nunca são GRAVADOS (a etapa os impõe a quem está em
   `publicada`, `regras/passos.ts#passoEfetivo`). O service grava carimbo e passo
   no MESMO update.
 - **Os locks**: por estudante (o funil `garantirSessao`) e da TURMA —
-  exclusivo para o botão, zerar e homologar; compartilhado para as três jogadas
-  que MARCAM evidência (publicar, Chave, republicar), que relêem o gate depois
+  exclusivo para o botão, zerar e homologar; compartilhado para as cinco jogadas
+  que MARCAM evidência (publicar, Chave, republicar, simular, transferir), que relêem o gate depois
   dele e respondem 409 `rodada-mudou` se o professor zerou no meio. Sem isso, a
   marca atrasada cairia numa rodada que acabou e enganaria o recálculo das
   equipes.
@@ -105,27 +114,47 @@ em silêncio.
   criação, e `homologar` as grava em `podcast_roteiros` na MESMA transação —
   também no segundo clique, que devolve o pacote existente.
 
-## A evidência (E14)
+## A evidência (E14) — Canal A puro (ficha 2, ADR-168)
 
-A ficha é `evidencias/fichas/exp04ef1b.ts`: EF15CO04 por `pistas` (no latch da
-1ª, fase 1), EF15CO02 por `chave` (tentativas), EF04CO08 por `edicao-2` (no
-latch da 2ª), `p1` e `p2` — vale o melhor, o que afrouxa o "E" do PRD. Toda
-rodada mede as três AÇÕES de novo, também no mesmo pacote (ADR-145).
-A cópia para os colegas de computador é da porta `marcar`. O resolvedor
-(`contextoDaAtividade`) devolve `null` antes de `transferencia` e fora do
-(pacote, rodada) do gate. O `gabarito`, a `consequencia` e o `pilarEmFalta` estão
-em `observabilidade/redaction.ts` (o teste da missão cobra).
+A ficha é `evidencias/fichas/exp04ef1b.ts`, versão 2, e as réguas estão em
+`regras/evidencia.ts` (aprovadas por um plenário pedagógico de três
+avaliadores, 2026-10-16):
+
+| Habilidade | Marcador | Onde | Régua |
+|---|---|---|---|
+| EF15CO04 | `julgamentos` | latch da 1ª | o "confio / não confio" de cada pista, logo depois de abrir e ANTES de decidir a capa (`POST julgamento`, o primeiro vale); atingiu = cada tipo julgado em ≥ 2 notícias, ≥ 80% certos, o furo percebido em ≥ metade das pistas com furo que abriu (mín. 1) e coerência da capa publicada |
+| EF15CO02 | `montagem` (teto P) + `simulacao` | Chave / fim da simulação | a montagem: 3 pilares sem isca, ≥ 5/6 condições, "Não publico" nas 3, "em todas"; a simulação: FIEL à regra dela (ordem das vagas, parada, decisão) |
+| EF04CO08 | `edicao-2` (teto P) + `transferencia` | latch da 2ª / decisão do boato | bruto da 2ª = 3/3 com as três pistas de cada; transferência = fonte ou ≥ 2 pistas e não repassar; o marcador grava o COMBINADO |
+
+**O teto é o que faz a combinação caber no "melhor dos marcadores"** da
+plataforma: o parcial nunca dá "atingiu", e o final grava a combinação — as
+tabelas do PO saem do melhor dos dois, e quem não chega ao fim fica com o
+parcial. Toda rodada mede de novo, também no mesmo pacote (ADR-145). A cópia
+para os colegas de computador é da porta `marcar`. Não há resolvedor de
+contexto: sem pergunta, toda marca nasce numa jogada desta missão. O
+`gabarito`, a `consequencia` e o `pilarEmFalta` estão em
+`observabilidade/redaction.ts` (o teste da missão cobra).
+
+**A rodada da 2.x** (Chave por tentativas, sem `chave_montagem`) segue legível:
+o comparativo leva direto à `transferencia`, porque não há Chave dela para
+simular. As marcas antigas (`pistas`, `chave`, `p1`, `p2`) ficam no histórico
+com `versao_ficha = 1`.
 
 ## As suítes
 
 - `tests/jornal-escola-regras.spec.ts` — SEM banco: o banco padrão contra a
-  régua e casos ruins, resultado e reações, Chave, bandeja, as três réguas,
+  régua e casos ruins, resultado e reações, a Chave montada, bandeja e
+  cartões, os julgamentos (a criança perfeita atinge; marcar tudo "confio" não),
+  a simulação (fiel, "Olho a próxima", "Só na primeira", só iscas), as nove
+  combinações da transferência, as matérias da simulação, as réguas,
   `passoEfetivo` × etapa, layout, o molde e o Zod da IA, a allowlist e o painel
   sem campo proibido.
 - `tests/jornal-escola-postgres.spec.ts` — o que só o banco responde: RLS
-  ISOLANDO (role sem `BYPASSRLS`), CHECKs, latches concorrentes, portões, a
-  Chave, zerar e pacote novo, `garantirPacote` concorrente, painel por
-  computador, resolvedor, a diagramação com IA falsa e o cache, o preparo.
+  ISOLANDO (role sem `BYPASSRLS`), CHECKs (os da 3.0.0 também), latches
+  concorrentes, portões, julgar, a Chave montada uma vez, a simulação e a
+  transferência, o Canal B ausente, zerar e pacote novo, `garantirPacote`
+  concorrente, painel por computador (com os agregados da Chave e do boato), a
+  diagramação com IA falsa e o cache, o preparo com as duas da simulação.
 
 Armadilha: **o rate limit da diagramação é em memória e por estudante** (doze por
 janela). Um estudante que diagrama em vários blocos da suíte esgota o limite e

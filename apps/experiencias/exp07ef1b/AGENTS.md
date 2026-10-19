@@ -4,7 +4,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp07ef1b` · 7EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **1.2.0** (acima da do Eco, dono anterior do caminho no bucket — ADR-113) | `:5179`, hub `/exp/exp07ef1b` | `@edu/ui/ds-unoovista` (clone, desde a 1.1.0 — ADR-135) + `@edu/ui/ds` (escola) | `apps/api/src/a-selecao` ↔ `/a-selecao/*`; enquetes em `/evidencias/exp07ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/11-a-selecao.mjs` (dois estudantes + a professora) |
+| `exp07ef1b` · 7EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **1.3.0** (acima da do Eco, dono anterior do caminho no bucket — ADR-113) | `:5179`, hub `/exp/exp07ef1b` | `@edu/ui/ds-unoovista` (clone, desde a 1.1.0 — ADR-135) + `@edu/ui/ds` (escola) | `apps/api/src/a-selecao` ↔ `/a-selecao/*` (a marcação em `/a-selecao/marcacao`, E14 só por ação — ADR-170) | `scripts/e2e/estudante/11-a-selecao.mjs` (dois estudantes + a professora) |
 
 ## O passo manda na tela
 
@@ -21,10 +21,11 @@ LÊ o `passos.ts` da api e reprova divergência nas listas.
 | `salvos` | E3 — a poda + E3-ALU-02 | app | `TopBar`, `ButtonUnv`+`IconUnv`, `BadgeUnv`, `InlineHint` (o aviso da poda), `MediaGrid` (`selectable`), `StoryComposer`, `ConfirmDialog` (`tone="default"`), `TabBar` |
 | `publicado` | E3-SIS-01 — a espera | app | `StoryViewer` (a própria tríade, `footer` = a legenda) |
 | `mural` | E4-ALU-01 — o PICO, aberto no PAR | app | `SegmentedTabs`, `StoryViewer` (3 segmentos, `onNext`/`onPrev`, `footer`), `PostCard.Caption` (legenda sobre a imagem) |
+| `marcacao` | E4-ALU-01B — a marcação do post do colega (ADR-170) | app | `TopBar`, `MediaGrid` (`selectable`), `ButtonUnv`, `InlineHint`, `TextFieldUnv` |
 | `fichas` | E4-ALU-02 — a revelação | app | o mesmo + `BottomSheetUnv` não modal (`maxHeight 45%`) com `BadgeUnv` — por `React.lazy` |
 | `explicacao` | E5 — carrossel + DM de fechamento | app, depois Amara | `TopBar`, `PostCard` (`.Media` sem `src`, `currentIndex/totalCount`), `ButtonUnv`, `DirectThread` — por `React.lazy` |
 | `reflexao` | E6 | **escola** | `SectionHeader`, `Card`, `TextArea`, `Button` |
-| `enquetes` | a confirmação, depois as enquetes | escola, depois Amara | `AlertBox`; `DirectThread`, `MessageBubble` (`bare`), `DmPoll` |
+| `enquetes` | só sessão de antes da ADR-170: a tela a conclui sozinha (`POST concluir`) e vai ao fim | escola | `AlertBox` |
 | `fim` | "Missão concluída!" | **escola** | `AlertBox` |
 | 403 | missão não aberta aqui (relê a cada 5 s) | **escola** | `AlertBox` |
 
@@ -36,8 +37,9 @@ otimista. É o que torna o latch da publicação à prova de rede ruim.
 Do "Abrir Feed da Cobertura" até o fechamento da Amara, quem conduz é o clone —
 inclusive a revelação, que é a ficha técnica sobre o Story. A reflexão sai do
 clone porque a pergunta é sobre um jornal cobrindo OUTRA escola, e fazê-la dentro
-do clone a devolveria à ficção. As enquetes voltam ao clone (é a Amara quem
-pergunta, ordem do PO) e o fim volta à escola. Os avisos globais seguem a mesma
+do clone a devolveria à ficção, e ela ENCERRA a missão (as enquetes saíram na
+ADR-170): a confirmação e o fim são da escola. A MARCAÇÃO (E4-ALU-01B) é do
+clone — é o app perguntando, entre o Mural e as fichas. Os avisos globais seguem a mesma
 regra (`app/avisos.tsx`): no clone, a tarja de rede é o `SnackbarUnv` e a
 sessão é a `BottomSheet` modal; na tela da escola os dois saem pelo `AlertBox`,
 com copy própria — a do sheet fala de "marcações de posts" e da "conta do
@@ -106,19 +108,22 @@ da do Mural na tela — "diferente" releria em laço se o Mural voltasse adianta
 **E na porta fechada** (ADR-146): o 403 da abertura relê `GET /a-selecao/sessao`
 a cada 5 s, com a aba visível, e entra sozinho — antes, só com F5.
 
-## As enquetes pulam para o fim
+## A marcação (1.3.0, ADR-170)
 
-Uma tentativa por pergunta (o SDK já reenvia o GET uma vez), sem repetição:
-falhou (409 `sem-atividade-em-andamento`, rede, 404), a DM vai para o
-encerramento. A conclusão da missão nunca fica presa numa pergunta opcional.
-Nunca mostram acerto — o `DmPoll` não sabe qual é a certa. Da enquete, a
-telemetria leva a PERGUNTA, nunca a alternativa (o id da alternativa é o nível
-para quem conhece a ficha).
+`clone/marcacao.tsx`, no passo `marcacao` (etapa da turma entre o Mural e as
+fichas): a grade do colega (`MediaGrid` `selectable`, um id só), "Nada que mude
+a história" (`ButtonUnv`, `aria-pressed`), o "por quê?" opcional
+(`TextFieldUnv` + "Guardar") e a própria publicação embaixo, sem ação. Grava ao
+tocar, a última vale, e NENHUMA resposta tem aviso. Lê o MESMO `GET mural` (o
+par já congelado). Da marcação a telemetria leva só "post" ou "nenhum", nunca
+QUAL post (o id do colega, para quem conhece a cobertura, é o enquadramento), e
+do "por quê?" só o tamanho. A reflexão enviada encerra a missão e chama
+`concluir()` do hub ali.
 
 ## `sessionStorage`: só ids e números, e a chave leva o `sessaoId`
 
-`lib/memoria.ts`: os salvos, os desmarcados, o tempo de feed, o card da E5 e o
-id votado em cada enquete. Nunca texto (a legenda em edição some num F5, de
+`lib/memoria.ts`: os salvos, os desmarcados, o tempo de feed e o card da E5.
+(A marcação não mora aqui: a api a guarda e o estado a devolve.) Nunca texto (a legenda em edição some num F5, de
 propósito), nunca `localStorage` (a máquina da escola é compartilhada). A chave
 leva o `sessaoId`: "Zerar a turma" cria outra sessão, e os salvos da rodada
 anterior não reaparecem.
@@ -196,5 +201,5 @@ não aqui.
 - As armadilhas que a suíte e2e (`scripts/e2e/estudante/11-a-selecao.mjs`) já
   contorna, e que valem para quem escrever outra: o `fill` do Chrome DevTools/
   Playwright pode não mover o estado controlado do `TextArea` (o contador fica
-  parado) — digite, ou dispare `input`; e as enquetes vêm embaralhadas a cada
-  GET, então a suíte casa pelo TEXTO da alternativa, nunca pela posição.
+  parado) — digite, ou dispare `input`. A marcação casa o post do colega pela
+  grade (`aria-label` "Publicação de {nome}"), nunca pela posição.

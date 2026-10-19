@@ -22,8 +22,10 @@ ar é erro, nunca "0 de 40".
 
 ### O segundo item: Uso de IA (ADR-105, 2026-09-15)
 
-`/unooria/uso-de-ia` — o teto diário de tokens por perfil, um cartão por perfil
-(`estudante`, `professor`), lido de `GET /recursos/quotas-de-ia` e alterado por
+`/unooria/uso-de-ia` — o teto diário de tokens por perfil, um cartão por linha
+(`estudante`, `professor` e, desde a ADR-169, `avaliacao` — a leitura da
+plataforma para a evidência, com teto POR ESCOLA: a régua diz "por escola", não
+"por pessoa"), lido de `GET /recursos/quotas-de-ia` e alterado por
 `PUT /recursos/quotas-de-ia/:perfil` pelo BFF (prefixo `recursos`, já na
 allowlist). O histórico é o MESMO `HistoricoDeRecursos`, com `prefixo="quota:"`
 e `key={mudancas}` para remontar depois de cada gravação — a doutrina do painel.
@@ -54,8 +56,8 @@ que todo papel entra na própria casa e que ninguém além do `admin` entra em
 **`homeDoPapel("admin")` é `/unooria/recursos`**: a casa da conta da Unooria é o
 painel dela, não a área da escola.
 
-**Embaixo, a Ajuda** (ADR-132, ADR-158): quem atende (`painel-do-atendente.tsx`)
-e os minutos, com UM histórico (`prefixo="ajuda:"`). O cartão avisa quando o
+**Embaixo, a Ajuda** (ADR-132/158/165): quem atende, as instruções
+(`painel-das-instrucoes.tsx`) e os minutos, com UM histórico. O cartão avisa quando o
 padrão escolhido não está montado na stack (a Ajuda abriria o outro calada).
 
 ### O terceiro item: Prospecção (ADR-107, 2026-09-16)

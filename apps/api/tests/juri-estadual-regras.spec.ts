@@ -1,6 +1,4 @@
 import { createHash } from "node:crypto";
-import { HttpException } from "@nestjs/common";
-import { aleatorioDe, embaralhar as embaralharAlternativas } from "../src/evidencias/regras";
 import { FICHA_EXP06EF1B } from "../src/evidencias/fichas/exp06ef1b";
 import {
   CATEGORIAS_DO_BANCO_PADRAO,
@@ -8,23 +6,26 @@ import {
   ehConteudoDoBancoPadrao,
 } from "../src/juri-estadual/banco-padrao";
 import {
-  BLOCOS_DA_CADEIA,
   CARTOES_DE_ATITUDE,
   CARTOES_DE_MECANISMO,
   CASO_MARIANA,
   EXCECOES_DE_TETO,
   MAX_PALAVRAS_DO_CARTAO,
+  PECAS_DO_ENTAO,
+  PECAS_DO_SE,
 } from "../src/juri-estadual/conteudo";
 import {
   ConteudoDoPacoteSchema,
   GaleriaSchema,
+  ClassificacaoSchema,
   HomologacaoSchema,
-  IdOpacoSchema,
+  IdDeItemSchema,
+  IdDePecaSchema,
   PainelSchema,
-  ParSimuladoSchema,
   PostPublicoSchema,
   ProjetoDaGaleriaSchema,
   RascunhoSchema,
+  RegraSchema,
   RevisaoDoVotoSchema,
   VotoSchema,
 } from "../src/juri-estadual/contrato-de-rotas";
@@ -45,7 +46,6 @@ import {
   aplicarCurtida,
   aplicarPermanencia,
   aplicarSalvamento,
-  areaDominante,
   areaLider,
   cedulaLiberada,
   feedSemCurtidas,
@@ -58,25 +58,24 @@ import {
   type EstadoDoFeed,
   type ProjetoDoMotor,
 } from "../src/juri-estadual/regras/afunilamento";
-import { nivelDaAuditoria, nivelDaClassificacao, nivelPorTentativas } from "../src/juri-estadual/regras/evidencia";
+import {
+  MINIMO_PARA_CLASSIFICAR,
+  corrigirClassificacao,
+  itensDaClassificacao,
+  nivelDaClassificacao,
+  projetosParaClassificar,
+} from "../src/juri-estadual/regras/classificacao";
+import { MARCADOR_DA_CLASSIFICACAO, MARCADOR_DA_REGRA } from "../src/juri-estadual/regras/evidencia";
 import {
   AUDITORIA_VAZIA,
   MAX_BUSCAS,
-  areasBuscadas,
   auditoriaDaLinha,
   feedDaLinha,
   ocultosAbertos,
   ordemDaGaleria,
   registrarAcao,
 } from "../src/juri-estadual/regras/galeria";
-import {
-  blocosDaSessao,
-  embaralharForaDeOrdem,
-  idsDaSessao,
-  idsOpacos,
-  ordemCertaDaCadeia,
-  ordemConfere,
-} from "../src/juri-estadual/regras/ordem";
+import { idsOpacos, opacosEmbaralhados } from "../src/juri-estadual/regras/ordem";
 import {
   PROIBIDO_NA_LINHA_DO_PAINEL,
   concentracaoDaTurma,
@@ -84,15 +83,23 @@ import {
   ociosoNaCedula,
   votosPorArea,
 } from "../src/juri-estadual/regras/painel";
-import { parSimulado } from "../src/juri-estadual/regras/par";
 import {
   aguardandoOProfessor,
   normalizarEtapa,
   passoEfetivo,
   pedirPasso,
   transicaoDoGate,
+  PASSOS,
   type Passo,
 } from "../src/juri-estadual/regras/passos";
+import {
+  corrigirRegra,
+  nivelDaRegra,
+  pecasCertas,
+  pecasDaSessao,
+  pecasPublicas,
+  revelacaoDaRegra,
+} from "../src/juri-estadual/regras/regra";
 import {
   categoriasDaIa,
   conteudoDaIa,
@@ -398,6 +405,9 @@ describe("os passos e a etapa da turma", () => {
   const casos: Array<[Passo, "exploracao" | "galeria", Passo]> = [
     ["credencial", "galeria", "credencial"],
     ["feed", "galeria", "feed"],
+    /* A separação é da criança: a galeria liberada a ESPERA terminar (ADR-174). */
+    ["classificacao", "exploracao", "classificacao"],
+    ["classificacao", "galeria", "classificacao"],
     ["lacrada", "exploracao", "lacrada"],
     ["lacrada", "galeria", "galeria"],
     ["revisada", "galeria", "revisada"],
@@ -411,6 +421,10 @@ describe("os passos e a etapa da turma", () => {
   test("só quem votou espera o professor; o pedido do feed é de sentido único; a cadeia vem da revisão", () => {
     expect(aguardandoOProfessor("lacrada", "exploracao")).toBe(true);
     expect(aguardandoOProfessor("feed", "exploracao")).toBe(false);
+    /* Quem está separando não espera: faz a tarefa. */
+    expect(aguardandoOProfessor("classificacao", "exploracao")).toBe(false);
+    expect(PASSOS.indexOf("classificacao")).toBe(PASSOS.indexOf("feed") + 1);
+    expect(PASSOS.indexOf("lacrada")).toBe(PASSOS.indexOf("classificacao") + 1);
     expect(aguardandoOProfessor("lacrada", "galeria")).toBe(false);
     /* Sem rodada de desvio: depois da revisão ninguém espera. */
     expect(aguardandoOProfessor("revisada", "galeria")).toBe(false);
@@ -430,123 +444,152 @@ describe("os passos e a etapa da turma", () => {
   });
 });
 
-describe("a cadeia: ids opacos e a ordem de chegada", () => {
-  const sementes = Array.from({ length: 400 }, (_, i) => `semente-${i}`);
-
-  test("ids opacos no formato, diferentes entre si e estáveis num F5", () => {
-    for (const s of sementes.slice(0, 50)) {
-      const bl = idsOpacos(s, "bl", 4);
-      for (const id of bl) expect(IdOpacoSchema.safeParse(id).success).toBe(true);
-      expect(new Set(bl).size).toBe(4);
-      expect(bl.every((id) => id.startsWith("bl-"))).toBe(true);
-      expect(idsOpacos(s, "bl", 4)).toEqual(bl);
-      expect(blocosDaSessao(s)).toEqual(blocosDaSessao(s));
+describe("os ids opacos (ADR-174)", () => {
+  test("no formato, diferentes entre si, estáveis num F5 e diferentes entre sessões e listas", () => {
+    for (const s of Array.from({ length: 50 }, (_, i) => `semente-${i}`)) {
+      const cl = idsOpacos(s, "cl", 10, "classificacao");
+      expect(cl.every((id) => IdDeItemSchema.safeParse(id).success)).toBe(true);
+      expect(new Set(cl).size).toBe(10);
+      expect(idsOpacos(s, "cl", 10, "classificacao")).toEqual(cl);
+      const rg = idsOpacos(s, "rg", 3, "se");
+      expect(rg.every((id) => IdDePecaSchema.safeParse(id).success)).toBe(true);
     }
-    /* Duas sessões, dois conjuntos de ids. */
-    expect(idsOpacos("a", "bl", 4)).not.toEqual(idsOpacos("b", "bl", 4));
-    /* O prefixo dos pacotes saiu com eles: o contrato não aceita mais `pk-`. */
-    expect(IdOpacoSchema.safeParse("pk-abc").success).toBe(false);
-  });
-
-  test("a ordem de chegada NUNCA é a ordem certa, em nenhuma das 400 sementes", () => {
-    for (const s of sementes) {
-      expect(ordemConfere(blocosDaSessao(s).map((b) => b.id), ordemCertaDaCadeia(s))).toBe(false);
+    expect(idsOpacos("a", "cl", 4)).not.toEqual(idsOpacos("b", "cl", 4));
+    expect(idsOpacos("a", "rg", 3, "se")).not.toEqual(idsOpacos("a", "rg", 3, "entao"));
+    /* Os prefixos que saíram (a cadeia, os pacotes) não passam mais no contrato. */
+    for (const velho of ["bl-abc", "pk-abc"]) {
+      expect(IdDeItemSchema.safeParse(velho).success).toBe(false);
+      expect(IdDePecaSchema.safeParse(velho).success).toBe(false);
     }
-    expect(embaralharForaDeOrdem([1], "x", "y")).toEqual([1]);
   });
 
-  test("a ordem certa é a das posições", () => {
-    const s = "preenche";
-    const blocos = blocosDaSessao(s);
-    const certos = ordemCertaDaCadeia(s).map((id) => blocos.find((b) => b.id === id)?.rotulo);
-    expect(certos).toEqual(BLOCOS_DA_CADEIA.map((b) => b.rotulo));
-    expect(idsDaSessao(ordemCertaDaCadeia(s), ordemCertaDaCadeia(s))).toBe(true);
-    expect(idsDaSessao(ordemCertaDaCadeia("outra"), ordemCertaDaCadeia(s))).toBe(false);
-  });
-
-  test("nada do que desce diz a posição: nem `posicao`, nem `certo`", () => {
-    const json = JSON.stringify({ blocos: blocosDaSessao("x") });
-    expect(json).not.toMatch(/"posicao"|"certo"/);
-    expect(blocosDaSessao("x").every((b) => Object.keys(b).sort().join(",") === "id,rotulo")).toBe(true);
+  test("embaralhados pela semente: a mesma ordem num F5, e a posição não é sempre a original", () => {
+    const itens = ["x", "y", "z"];
+    expect(opacosEmbaralhados(itens, "f5", "rg", "se")).toEqual(opacosEmbaralhados(itens, "f5", "rg", "se"));
+    const primeiros = new Set(
+      Array.from({ length: 60 }, (_, i) => opacosEmbaralhados(itens, `s-${i}`, "rg", "se")[0]?.item),
+    );
+    expect(primeiros.size).toBe(3);
   });
 });
 
-describe("as réguas da evidência (ficha versão 4)", () => {
-  const servidos = abertura(PROJETOS, "regua");
-  const ocultos = projetosOcultos(PROJETOS, servidos);
-  const ocultoDe = (area: string) => ocultos.find((id) => areaDoProjeto(id) === area) as string;
-  const busca = (area: Area | null, tipo: "hashtag" | "texto" = "hashtag") => ({ tipo, area });
+describe("a separação (EF06CO01, ADR-174)", () => {
+  const servidos = jogar("separacao", () => false).servidos;
 
-  test("EF06CO10 (PRD §14.2): dois OCULTOS abertos E uma busca = atingiu", () => {
-    expect(nivelDaAuditoria({ abertos: [ocultoDe("area_b"), ocultoDe("area_c")], buscas: [busca(null, "texto")] }, ocultos)).toBe(
+  test("os itens são os projetos DISTINTOS que o feed serviu, com id opaco — e nada diz a área", () => {
+    const projetos = projetosParaClassificar(servidos);
+    expect(new Set(projetos).size).toBe(projetos.length);
+    expect(projetosParaClassificar([...servidos, servidos[0] as string])).toEqual(projetos);
+    const itens = itensDaClassificacao("separacao", servidos);
+    expect(itens.map((i) => i.projetoId).sort()).toEqual([...projetos].sort());
+    /* O id opaco não carrega o id do projeto (que diz a área: `proj-a3`). */
+    expect(itens.every((i) => /^cl-[a-z0-9]{3}$/.test(i.id))).toBe(true);
+    expect(JSON.stringify(itens.map((i) => i.id))).not.toMatch(/proj-|area_/);
+    /* A ordem da tela não é a do feed (a do feed também diria a área). */
+    const ordens = new Set(
+      Array.from({ length: 20 }, (_, i) => itensDaClassificacao(`ordem-${i}`, servidos).map((x) => x.projetoId).join(",")),
+    );
+    expect(ordens.size).toBeGreaterThan(1);
+  });
+
+  test("corrige contra a área de cada projeto; corpo que não é desta sessão é inválido, nunca 'errou'", () => {
+    const itens = itensDaClassificacao("separacao", servidos);
+    const certas = itens.map((i) => ({ itemId: i.id, area: areaDoProjeto(i.projetoId) }));
+    expect(corrigirClassificacao(itens, certas)).toEqual({ acertos: itens.length, total: itens.length });
+    const umaErrada = certas.map((r, i) => (i === 0 ? { ...r, area: r.area === "area_a" ? "area_b" : "area_a" } : r)) as typeof certas;
+    expect(corrigirClassificacao(itens, umaErrada)?.acertos).toBe(itens.length - 1);
+    /* Faltando, sobrando, repetido ou de outra sessão. */
+    expect(corrigirClassificacao(itens, certas.slice(1))).toBeNull();
+    expect(corrigirClassificacao(itens, [...certas, certas[0] as (typeof certas)[number]])).toBeNull();
+    expect(corrigirClassificacao(itens, certas.map((r, i) => (i === 1 ? certas[0] as (typeof certas)[number] : r)))).toBeNull();
+    const deOutra = itensDaClassificacao("outra-sessao", servidos);
+    expect(corrigirClassificacao(deOutra, certas)).toBeNull();
+  });
+
+  test("a régua: 9–10 de 10 atinge, 5–8 em processo, até 4 não atinge; com menos de 4 vistos, SEM marca", () => {
+    expect([10, 9, 8, 5, 4, 0].map((acertos) => nivelDaClassificacao({ acertos, total: 10 }))).toEqual([
       "atingiu",
-    );
-    /* Sem a busca ativa, os dois ocultos ficam em processo. */
-    expect(nivelDaAuditoria({ abertos: [ocultoDe("area_b"), ocultoDe("area_c")], buscas: [] }, ocultos)).toBe("em_processo");
-  });
-
-  test("EF06CO10: abriu algum = em processo; não abriu nada = SEM marca (busca sozinha não conta aqui)", () => {
-    expect(nivelDaAuditoria({ abertos: [ocultoDe("area_b")], buscas: [busca("area_b")] }, ocultos)).toBe("em_processo");
-    const vistos = servidos.map(projetoDoPost);
-    expect(nivelDaAuditoria({ abertos: vistos, buscas: [busca("area_b")] }, ocultos)).toBe("em_processo");
-    expect(nivelDaAuditoria({ abertos: [], buscas: [busca("area_b")] }, ocultos)).toBeNull();
-    expect(nivelDaAuditoria(AUDITORIA_VAZIA, ocultos)).toBeNull();
-  });
-
-  test("EF06CO01 (melhoria 3): a hashtag de uma categoria FORA da bolha + um projeto dela = atingiu", () => {
-    const bolha: Area = "area_a";
-    expect(nivelDaClassificacao({ abertos: [ocultoDe("area_d")], buscas: [busca("area_d")] }, ocultos, bolha)).toBe("atingiu");
-    /* A hashtag da própria bolha não é procurar outra coleção. */
-    expect(nivelDaClassificacao({ abertos: [ocultoDe("area_a")], buscas: [busca("area_a")] }, ocultos, bolha)).toBe("em_processo");
-    /* A hashtag de uma categoria, o projeto de OUTRA. */
-    expect(nivelDaClassificacao({ abertos: [ocultoDe("area_c")], buscas: [busca("area_b")] }, ocultos, bolha)).toBe("em_processo");
-    /* Por texto, mesmo casando a área: a categoria não foi a chave. */
-    expect(nivelDaClassificacao({ abertos: [ocultoDe("area_b")], buscas: [busca("area_b", "texto")] }, ocultos, bolha)).toBe(
+      "atingiu",
       "em_processo",
+      "em_processo",
+      "nao_atingiu",
+      "nao_atingiu",
+    ]);
+    /* Proporcional para quem votou antes dos dez (o relógio de 8 min). */
+    expect(nivelDaClassificacao({ acertos: 6, total: 6 })).toBe("atingiu");
+    expect(nivelDaClassificacao({ acertos: 3, total: 6 })).toBe("em_processo");
+    expect(nivelDaClassificacao({ acertos: 2, total: 6 })).toBe("nao_atingiu");
+    expect(MINIMO_PARA_CLASSIFICAR).toBe(4);
+    expect(nivelDaClassificacao({ acertos: 3, total: 3 })).toBeNull();
+  });
+
+  test("o corpo da rota: uma área por item, sem repetir, até dez", () => {
+    const resposta = (itemId: string) => ({ itemId, area: "area_a" });
+    expect(ClassificacaoSchema.safeParse({ respostas: [resposta("cl-abc")] }).success).toBe(true);
+    expect(ClassificacaoSchema.safeParse({ respostas: [resposta("cl-abc"), resposta("cl-abc")] }).success).toBe(false);
+    expect(ClassificacaoSchema.safeParse({ respostas: [] }).success).toBe(false);
+    expect(ClassificacaoSchema.safeParse({ respostas: [{ itemId: "proj-a1", area: "area_a" }] }).success).toBe(false);
+    expect(ClassificacaoSchema.safeParse({ respostas: [{ itemId: "cl-abc", area: "robotica" }] }).success).toBe(false);
+  });
+});
+
+describe("a regra SE … ENTÃO (EF06CO03, ADR-174)", () => {
+  test("três peças de cada lado, uma certa em cada — e o que desce não tem `certa`", () => {
+    expect(PECAS_DO_SE).toHaveLength(3);
+    expect(PECAS_DO_ENTAO).toHaveLength(3);
+    expect(PECAS_DO_SE.filter((p) => p.certa)).toHaveLength(1);
+    expect(PECAS_DO_ENTAO.filter((p) => p.certa)).toHaveLength(1);
+    const publicas = pecasPublicas(pecasDaSessao("regra"));
+    expect(JSON.stringify(publicas)).not.toMatch(/"certa"|se-curtir|entao-tema/);
+    expect([...publicas.se, ...publicas.entao].every((p) => Object.keys(p).sort().join(",") === "id,texto")).toBe(true);
+    /* A certa não é sempre a primeira. */
+    const primeiras = new Set(Array.from({ length: 60 }, (_, i) => pecasPublicas(pecasDaSessao(`r-${i}`)).se[0]?.texto));
+    expect(primeiras.size).toBe(3);
+  });
+
+  test("a régua: duas certas atinge, uma em processo, nenhuma não atinge; peça de outra sessão ou do lado errado é inválida", () => {
+    const pecas = pecasDaSessao("regra");
+    const certa = pecasCertas(pecas);
+    const errada = (lado: typeof pecas.se) => lado.find((p) => !p.peca.certa)?.opaco as string;
+    expect(nivelDaRegra(corrigirRegra(pecas, certa)?.acertos ?? -1)).toBe("atingiu");
+    expect(nivelDaRegra(corrigirRegra(pecas, { se: certa.se, entao: errada(pecas.entao) })?.acertos ?? -1)).toBe("em_processo");
+    expect(nivelDaRegra(corrigirRegra(pecas, { se: errada(pecas.se), entao: certa.entao })?.acertos ?? -1)).toBe("em_processo");
+    expect(nivelDaRegra(corrigirRegra(pecas, { se: errada(pecas.se), entao: errada(pecas.entao) })?.acertos ?? -1)).toBe(
+      "nao_atingiu",
     );
+    /* O SE no lugar do ENTÃO, e a peça de outra sessão. */
+    expect(corrigirRegra(pecas, { se: certa.entao, entao: certa.se })).toBeNull();
+    expect(corrigirRegra(pecas, pecasCertas(pecasDaSessao("outra")))).toBeNull();
+    expect(RegraSchema.safeParse({ se: certa.se, entao: certa.entao }).success).toBe(true);
+    expect(RegraSchema.safeParse({ se: "se-curtir", entao: "entao-tema" }).success).toBe(false);
   });
 
-  test("EF06CO01: buscou qualquer coisa OU abriu um oculto = em processo; nada = SEM marca", () => {
-    expect(nivelDaClassificacao({ abertos: [], buscas: [busca("area_b")] }, ocultos, "area_a")).toBe("em_processo");
-    expect(nivelDaClassificacao({ abertos: [ocultoDe("area_b")], buscas: [] }, ocultos, "area_a")).toBe("em_processo");
-    /* Abrir só os VISTOS, sem buscar, não é ação de classificação. */
-    expect(nivelDaClassificacao({ abertos: servidos.map(projetoDoPost), buscas: [] }, ocultos, "area_a")).toBeNull();
-    expect(nivelDaClassificacao(AUDITORIA_VAZIA, ocultos, "area_a")).toBeNull();
+  test("'ficar muito tempo' não é distrator: o motor pesa a permanência", () => {
+    for (const p of [...PECAS_DO_SE, ...PECAS_DO_ENTAO]) expect(p.texto).not.toMatch(/tempo/i);
   });
 
-  test("EF06CO01: a categoria fora é a que NÃO dominou o feed — a líder de quem curtiu", () => {
-    const alvo = areaDoPost(abertura(PROJETOS, "dominante")[0] as string);
-    const estado = jogar("dominante", (post) => areaDoPost(post) === alvo);
-    expect(areaDominante(estado)).toBe(alvo);
-    expect(areaDominante({ ...VAZIO })).toBeNull();
+  test("a revelação conta o que a regra fez NESTE feed: curtidas, permanência ou feed variado", () => {
+    const alvo = areaDoPost(abertura(PROJETOS, "revela")[0] as string);
+    const curtiu = jogar("revela", curtirAte(alvo, 2));
+    expect(revelacaoDaRegra(curtiu)).toEqual({ motivo: "curtidas", area: alvo });
+    expect(revelacaoDaRegra(jogar("revela", () => false))).toEqual({ motivo: "variado", area: null });
+    const parado = { ...VAZIO, servidos: curtiu.servidos, permanencias: [curtiu.servidos[0] as string] };
+    expect(revelacaoDaRegra(parado)).toEqual({ motivo: "permanencia", area: areaDoPost(curtiu.servidos[0] as string) });
   });
+});
 
-  test("a CO10 e a CO01 medem coisas diferentes: abrir ocultos sem buscar investiga, mas não classifica", () => {
-    const auditoria = { abertos: [ocultoDe("area_b"), ocultoDe("area_c")], buscas: [] };
-    expect(nivelDaAuditoria(auditoria, ocultos)).toBe("em_processo");
-    expect(nivelDaClassificacao(auditoria, ocultos, "area_a")).toBe("em_processo");
-    const comHashtag = { ...auditoria, buscas: [busca("area_c")] };
-    expect(nivelDaAuditoria(comHashtag, ocultos)).toBe("atingiu");
-    expect(nivelDaClassificacao(comHashtag, ocultos, "area_c")).toBe("em_processo");
-  });
-
-  test("EF06CO03: 1 tentativa = atingiu; 2–3 = em processo; mais = não atingiu", () => {
-    expect([1, 2, 3, 4, 9].map(nivelPorTentativas)).toEqual(["atingiu", "em_processo", "em_processo", "nao_atingiu", "nao_atingiu"]);
-  });
-
-  test("melhoria 4: as alternativas das enquetes têm ordem embaralhada DETERMINÍSTICA por estudante", () => {
-    expect(FICHA_EXP06EF1B.versao).toBe(4);
-    expect(FICHA_EXP06EF1B.ordemDasAlternativas).toBe("por-estudante");
-    for (const pergunta of FICHA_EXP06EF1B.perguntas) {
-      const ordem = (estudante: string) =>
-        embaralharAlternativas(pergunta.alternativas, aleatorioDe(`exp06ef1b:${pergunta.id}:${estudante}`)).map((a) => a.id);
-      /* A mesma ordem ao recarregar. */
-      expect(ordem("est-1")).toEqual(ordem("est-1"));
-      expect(new Set(ordem("est-1"))).toEqual(new Set(pergunta.alternativas.map((a) => a.id)));
-      /* E ordens diferentes entre estudantes: a primeira não é sempre a certa. */
-      const primeiras = new Set(Array.from({ length: 40 }, (_, i) => ordem(`est-${i}`)[0]));
-      expect(primeiras.size).toBe(3);
-    }
+describe("a ficha versão 5 (ADR-174): o Canal A puro", () => {
+  test("duas habilidades, uma ação cada, rotuladas, sem pergunta — e a EF06CO10 saiu", () => {
+    expect(FICHA_EXP06EF1B.versao).toBe(5);
+    expect(FICHA_EXP06EF1B.habilidades.map((h) => h.codigo)).toEqual(["EF06CO01", "EF06CO03"]);
+    expect(FICHA_EXP06EF1B.perguntas).toEqual([]);
+    expect(FICHA_EXP06EF1B.ordemDasAlternativas).toBeUndefined();
+    const marcadores = FICHA_EXP06EF1B.habilidades.flatMap((h) => h.marcadores);
+    expect(marcadores.map((m) => m.id)).toEqual([MARCADOR_DA_CLASSIFICACAO, MARCADOR_DA_REGRA]);
+    expect(marcadores.every((m) => m.tipo === "acao" && Boolean(m.rotulo))).toBe(true);
+    /* `regra` é id NOVO: a régua nova não se mistura com as tentativas da cadeia (`cadeia`, ficha 4). */
+    expect(marcadores.map((m) => m.id)).not.toContain("cadeia");
+    expect(marcadores.map((m) => m.id)).not.toContain("auditoria");
   });
 });
 
@@ -583,12 +626,11 @@ describe("a galeria e o feed lidos do banco", () => {
     ).toEqual(["proj-b1:prototipo", "proj-b2:depoimento", "proj-d10:apresentacao"]);
   });
 
-  test("os ocultos abertos (o 'Manter' só com um) e as categorias buscadas por hashtag (a lista do professor)", () => {
+  test("os ocultos abertos (o 'Manter' só com um)", () => {
     const ocultos = ["proj-b1", "proj-c2"];
     const a = { abertos: ["proj-a1", "proj-b1"], buscas: [{ tipo: "hashtag" as const, area: "area_c" as const }, { tipo: "texto" as const, area: "area_d" as const }, { tipo: "hashtag" as const, area: "area_c" as const }] };
     expect(ocultosAbertos(a, ocultos)).toBe(1);
     expect(ocultosAbertos({ abertos: ["proj-a1"], buscas: [] }, ocultos)).toBe(0);
-    expect(areasBuscadas(a)).toEqual(["area_c"]);
   });
 });
 
@@ -605,25 +647,6 @@ describe("a grade da galeria", () => {
     expect(ordem.slice(36).every((id) => vistos.has(id))).toBe(true);
     const ocultosA = ordem.filter((id) => id.startsWith("proj-a") && !vistos.has(id));
     expect(ocultosA.at(-1)).toBe(vistos.has("proj-a10") ? "proj-a9" : "proj-a10");
-  });
-});
-
-describe("o par simulado da Etapa 5 (melhoria 7)", () => {
-  test("é o ESPELHO das áreas reais deste feed: a principal da criança é a menos vista do par", () => {
-    const alvo = areaDoPost(abertura(PROJETOS, "par")[0] as string);
-    const estado = jogar("par", (post) => areaDoPost(post) === alvo);
-    const par = parSimulado(estado, "par");
-    expect(ParSimuladoSchema.safeParse(par).success).toBe(true);
-    expect(par.voce.areaPrincipal).toBe(alvo);
-    expect(par.outroJurado.areaPrincipal).not.toBe(alvo);
-    const postsDe = (h: typeof par.voce, area: Area) => h.porArea.find((x) => x.area === area)?.posts ?? -1;
-    /* O par tem a MESMA quantidade de posts, distribuída ao contrário. */
-    const total = (h: typeof par.voce) => h.porArea.reduce((n, x) => n + x.posts, 0);
-    expect(total(par.outroJurado)).toBe(total(par.voce));
-    expect(postsDe(par.outroJurado, par.outroJurado.areaPrincipal as Area)).toBe(postsDe(par.voce, alvo));
-    expect(postsDe(par.outroJurado, alvo)).toBe(Math.min(...par.voce.porArea.map((x) => x.posts)));
-    /* Determinístico (o F5) e sem dado de colega: só sai do feed desta sessão. */
-    expect(parSimulado(estado, "par")).toEqual(par);
   });
 });
 
@@ -967,68 +990,10 @@ describe("os textos literais e os tetos (melhoria 5)", () => {
     expect(problemasDoPacote(longa).join(" ")).toMatch(/bastidor longo/);
   });
 
-  test("os blocos da cadeia são os do 01e, sem o número que entregaria a posição", () => {
-    expect(BLOCOS_DA_CADEIA.map((b) => b.rotulo)).toEqual([
-      "Suas interações com cliques e curtidas no feed",
-      "Registro de dados e identificação de padrões",
-      "Algoritmo de recomendação escolhendo novos posts",
-      "Afunilamento do feed e criação da bolha",
-    ]);
-    expect(BLOCOS_DA_CADEIA.every((b) => !/^\d/.test(b.rotulo))).toBe(true);
-  });
-
   test("a cédula tem quatro elementos e a revisão, dois botões: sem justificativa no contrato", () => {
     expect(Object.keys(VotoSchema.shape).sort()).toEqual(["conviccao", "projetoId"]);
     expect(RevisaoDoVotoSchema.safeParse({ acao: "manter" }).success).toBe(true);
     expect(RevisaoDoVotoSchema.safeParse({ acao: "trocar", projetoId: "proj-b1" }).success).toBe(true);
     expect(RevisaoDoVotoSchema.safeParse({ acao: "complementar", projetoId: "proj-b1" }).success).toBe(false);
-  });
-});
-
-describe("a cadeia errada é 422 `ordem-incorreta` — e a tentativa CONTA", () => {
-  test("a contagem é gravada antes do erro (fora da transação, para o rollback não apagá-la)", async () => {
-    const semente = "semente-da-cadeia";
-    const certa = ordemCertaDaCadeia(semente);
-    const errada = [...certa].reverse();
-    let tentativasGravadas = 0;
-    const atualizacoes: unknown[] = [];
-    const tx = {
-      exp06ef1bSessao: {
-        update: jest.fn(async (args: { data: { cadeiaTentativas: number } }) => {
-          atualizacoes.push(args);
-          tentativasGravadas = args.data.cadeiaTentativas;
-          return {};
-        }),
-      },
-    };
-    let commits = 0;
-    const prisma = {
-      comTenancy: async <T>(fn: (t: unknown) => Promise<T>) => {
-        const r = await fn(tx);
-        commits += 1;
-        return r;
-      },
-    };
-    const service = new JuriEstadualService(prisma as never, {} as never);
-    const sessao = { id: "s1", semente, passo: "cadeia", cadeiaTentativas: 0, cadeiaMontadaEm: null, pacoteId: "p", rodada: 1 };
-    const gate = { pacoteId: "p", rodada: 1, etapa: "galeria", atualizadoEm: new Date() };
-    jest.spyOn(service as unknown as { garantirSessao: () => unknown }, "garantirSessao").mockImplementation(async () => ({
-      turmaId: "t",
-      gate,
-      pacote: {},
-      sessao: { ...sessao, cadeiaTentativas: tentativasGravadas },
-    }));
-    jest.spyOn(service as unknown as { gateDaSessao: () => unknown }, "gateDaSessao").mockImplementation(async () => gate);
-
-    for (const esperado of [1, 2]) {
-      const erro = await service.montarCadeia("escola", "estudante", "t", errada).catch((e: unknown) => e);
-      expect(erro).toBeInstanceOf(HttpException);
-      expect((erro as HttpException).getStatus()).toBe(422);
-      expect((erro as HttpException).getResponse()).toMatchObject({ codigo: "ordem-incorreta", tentativas: esperado });
-      /* A transação TERMINOU (commit) com a tentativa gravada: o erro veio depois. */
-      expect(tentativasGravadas).toBe(esperado);
-    }
-    expect(commits).toBe(2);
-    expect(atualizacoes).toHaveLength(2);
   });
 });

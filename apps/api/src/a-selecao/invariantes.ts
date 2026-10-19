@@ -24,6 +24,8 @@ export const CAMPOS_SENSIVEIS = [
   // A reflexão é caixa livre de menor de idade: só o professor da turma a lê
   // (o recorte da ADR-108 no painel), e ela não vai a log nem à telemetria.
   "texto",
+  // O "por quê?" da marcação (ADR-170): a mesma caixa de menor, só do professor.
+  "marcacaoPorque",
 ] as const;
 
 /**

@@ -195,6 +195,43 @@ body {
   list-style: none;
 }
 
+/* O Montador: cada vaga cheia é uma coluna — a ordem, o bloco, os dois
+   cartões e o "se falhar". A vaga ocupa a largura da calha (o `PuzzleTrack`
+   empilha as vagas abaixo de 672px). */
+.chave__vaga,
+.chave__escolhas,
+.chave__bandeja-e-acao,
+.simulacao__materia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-xs, 12px);
+}
+
+.chave__ordem {
+  margin: 0;
+  font-size: var(--unooria-size-body-xs, 14px);
+  font-weight: var(--unooria-weight-semibold, 600);
+  color: var(--unooria-color-neutral-700, #536167);
+}
+
+.simulacao__materia {
+  gap: var(--unooria-spacing-s, 16px);
+}
+
+/* Os pares de decisão (Confio | Não confio, Publicar | Não publicar, Repassar
+   | Não repassar): dois `Button` do DS lado a lado, com o MESMO peso — a
+   grade é só a posição. Abaixo de 320px úteis, empilham. */
+.julgar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--unooria-spacing-xs, 12px);
+  margin-top: var(--unooria-spacing-xs, 12px);
+}
+
+.julgar__marcado {
+  margin: var(--unooria-spacing-xs, 12px) 0 0;
+}
+
 .comparativo__paginas {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -261,6 +298,15 @@ body {
   align-items: center;
   min-height: 64px;
   padding: var(--unooria-spacing-xs, 12px);
+}
+
+/* Ainda a mesma compensação, para os pares do Montador ("A pista passa" |
+   "A pista falha", "Não publico" | "Olho a próxima pista"): no
+   `direction="horizontal"` as duas opções dividem a linha (e quebram o rótulo
+   dentro dos 64px) em vez de ficarem do tamanho do texto. Só posição e largura. */
+.jornal .opcoes-amplas .unooria-radio-group--horizontal .unooria-radio {
+  flex: 1 1 8rem;
+  min-width: 0;
 }
 
 /* ════════════════════════════ o post de rede social (unoovista, SÓ a peça) */

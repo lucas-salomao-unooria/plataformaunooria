@@ -56,7 +56,7 @@ export function MissaoJornalEscola({
       <FeedbackAlert
         type="warning"
         title="A aula tem dois portões, num botão só, e ele não volta"
-        description="Na página da atividade, o mesmo botão mostra sempre a próxima etapa: primeiro Liberar resultado, depois Liberar revisão. Sem o primeiro clique, quem publicou fica esperando. A missão só abre para a turma com uma atividade sua em andamento: crie o pacote de notícias (pode partir do banco da Unooria, “Feira de Ciências e Notícias da Cidade”), gere as imagens e use a atividade quando a turma for fazer."
+        description="Na página da atividade, o mesmo botão mostra sempre a próxima etapa: primeiro Liberar resultado, depois Liberar revisão. Sem o primeiro clique, quem publicou fica esperando. A missão cabe em uma aula ou em duas: em duas, pare depois da conversa do resultado — o progresso fica salvo, e a segunda aula começa na Chave do Editor quando você aperta Liberar revisão. A missão só abre para a turma com uma atividade sua em andamento: crie o pacote de notícias (pode partir do banco da Unooria, “Feira de Ciências e Notícias da Cidade”), gere as imagens e use a atividade quando a turma for fazer."
       />
 
       <section className="grid gap-4 lg:grid-cols-2">
@@ -105,6 +105,11 @@ export function MissaoJornalEscola({
             A 1ª edição é <strong>definitiva</strong>. Depois de publicar não dá para trocar notícia —
             é o que faz os leitores reagirem à escolha que a turma fez, e não à que ela faria depois de
             ouvir a conversa.
+          </p>
+          <p className="max-w-3xl">
+            A Chave do Editor <strong>não é corrigida na tela</strong>: cada dupla monta a sua uma vez, testa em
+            duas matérias novas e só depois recebe, como todos, a mesma regra de referência. O nível de cada
+            criança fica no painel de habilidades, só para você.
           </p>
           <p className="max-w-3xl text-[13px] text-unooria-neutral-500">
             Não há nota, ranking nem “você errou”: o “X de 3 notícias verificadas” descreve a SELEÇÃO,

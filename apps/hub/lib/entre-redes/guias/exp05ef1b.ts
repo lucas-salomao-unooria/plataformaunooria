@@ -8,9 +8,10 @@ import type { GuiaDaAula } from "./tipos";
  * O que ele NÃO guarda, e vem por BLOCO VIVO (`guia/quem-mandou-o-pacote.tsx`,
  * lido de `GET /quem-mandou-isso/professor/material`): as 8 mensagens do banco
  * curado com o gabarito, o roteiro das 3 perguntas da roda de conversa, as
- * falas da Nina e as duas perguntas de evidência com o nível de cada
- * alternativa. Tudo isso tem fonte na api (`quem-mandou-isso/catalogo.ts` e a
- * ficha E14), e uma cópia aqui seria a que diverge na primeira revisão de copy
+ * falas da Nina, um cartão de frases respondido, as peças da regra do tio com
+ * o que cada uma faz e o critério de cada nível. Tudo isso tem fonte na api
+ * (`quem-mandou-isso/catalogo.ts`, `regras/` e a ficha E14), e uma cópia aqui
+ * seria a que diverge na primeira revisão de copy
  * — o professor conduziria a conversa com palavras que ninguém leu na tela.
  *
  * O que ele guarda é o que só existe aqui: a pedagogia dos dois eixos, o que
@@ -56,7 +57,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
     "Reconhecer que a aparência de uma mensagem — séria ou alarmada — não diz se ela é verdadeira.",
     "Separar os dois eixos de uma mensagem: se ela é verdadeira ou falsa, e se o tom é emocional ou neutro.",
     "Identificar o que pesou na própria decisão de encaminhar: a pressa, a confiança em quem mandou, a emoção ou a aparência de real.",
-    "Reconhecer uma regra do tipo “Se a mensagem for…, então eu…” que funciona antes de repassar uma mensagem.",
+    "Montar e testar uma regra do tipo “Se a mensagem for…, então eu…” que manda conferir antes de repassar uma mensagem.",
   ],
 
   bncc: [
@@ -78,7 +79,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
         "Realizar operações de negação, conjunção e disjunção sobre sentenças lógicas e valores 'verdadeiro' e 'falso'.",
       eixo: "Pensamento Computacional",
       ondeAcontece:
-        "Etapa 4, na revelação: cada mensagem ganha DOIS selos independentes — verdadeira ou falsa, e emocional ou neutra —, e a criança vê que “séria” não quer dizer “verdadeira”. O painel registra a habilidade pela primeira pergunta da Nina, no fim da missão: uma colega diz que a mensagem calma e cheia de números é verdadeira “porque é séria”, e a criança diz se concorda.",
+        "Etapa 4, na revelação: cada mensagem ganha DOIS selos independentes — verdadeira ou falsa, e emocional ou neutra —, e a criança vê que “séria” não quer dizer “verdadeira”. Logo depois dos crachás, o cartão de frases pede a operação sobre esses valores: seis frases com E, OU e NÃO sobre as três mensagens dela (“é falsa E neutra?”), cada uma com Sim ou Não. É o cartão que o painel registra.",
     },
     {
       codigo: "EF05CO04",
@@ -86,7 +87,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
         "Criar e simular algoritmos representados em linguagem oral, escrita ou pictográfica, que incluam sequências, repetições e seleções condicionais para resolver problemas de forma independente e em colaboração.",
       eixo: "Pensamento Computacional",
       ondeAcontece:
-        "Etapa 6, a reflexão: na segunda pergunta da Nina a criança reconhece, entre três regras de colegas, a que funciona de verdade — condição que dá para conferir, ação concreta e a ordem certa. É essa resposta que o painel registra. Criar a própria regra fica para a roda de conversa e o cartaz da turma, depois da missão.",
+        "Etapa 6, a reflexão: a criança monta a própria regra com peças (SE a mensagem for… ENTÃO eu… E DEPOIS…), diz o que acha que ela vai fazer com o áudio assustado do tio e só então testa. Prever antes de ver é simular o algoritmo. O painel registra a primeira regra testada e a primeira previsão.",
     },
   ],
 
@@ -179,9 +180,9 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
       },
       {
         tempo: "35–45",
-        momento: "Refletir: as perguntas da Nina",
+        momento: "Refletir: a regra do tio",
         professor:
-          "Libere e deixe responder em silêncio: cada um volta ao chat da Nina, responde às duas perguntas e vê a missão concluída.",
+          "Libere e deixe trabalhar em silêncio: quem ainda não respondeu o cartão de frases responde primeiro; depois cada um monta a regra para o áudio do tio, prevê o que ela faz, testa e envia. Não diga qual peça usar.",
         botao: "Liberar Reflexão",
       },
       {
@@ -222,7 +223,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
         nivel: "transferencia",
         pergunta: "Se chegar um áudio assustado no grupo da família pedindo para repassar correndo, o que você faz antes?",
         porQue:
-          "Tira a lição da ficção e a transforma em gesto — e é a ponte para as perguntas da Nina, que vêm logo depois. Cace o verbo: parar, comparar com outra fonte, perguntar a um adulto.",
+          "Tira a lição da ficção e a transforma em gesto — e é a ponte para a regra do tio, que vem logo depois. Cace o verbo: parar, comparar com outra fonte, perguntar a um adulto.",
       },
     ],
   },
@@ -279,7 +280,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
     {
       quando: "A turma conclui que “não dá para acreditar em nada”",
       faca:
-        "Volte ao grupo: metade das mensagens era verdadeira. A lição não é desconfiar de tudo — é ter um jeito de conferir antes de repassar, que é o que as perguntas da Nina vão pedir a seguir.",
+        "Volte ao grupo: metade das mensagens era verdadeira. A lição não é desconfiar de tudo — é ter um jeito de conferir antes de repassar, que é o que a regra do tio vai pedir a seguir.",
       naoFaca: "Encerrar aí. É a conclusão errada mais comum, e ela produz cinismo em vez de critério.",
     },
   ],
@@ -291,7 +292,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
       "Antes de encaminhar: compare com uma fonte confiável e não deixe a emoção apertar o botão por você.",
     ],
     registro:
-      "As respostas às duas perguntas da Nina, no painel de habilidades: a EF05CO03 e a EF05CO04 de cada criança, com o critério de cada nível no fim da página. Você confere e ajusta lá.",
+      "O cartão de frases e a regra do tio de cada criança, no painel de habilidades: a EF05CO03 e a EF05CO04, com o critério de cada nível no fim da página. Você confere e ajusta lá; a folha da turma mostra os acertos por operador e a regra montada.",
     produto: {
       titulo: "O cartaz das regras do 5º ano",
       itens: [
@@ -302,7 +303,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
     },
     rubrica: {
       nota:
-        "Formativa, e sobre o RACIOCÍNIO — nunca sobre ter caído no truque. Os níveis da plataforma saem da seleção e das duas perguntas da Nina; esta rubrica é para você ler o que a criança disse na roda e escreveu no cartaz.",
+        "Formativa, e sobre o RACIOCÍNIO — nunca sobre ter caído no truque. Os níveis da plataforma saem da seleção, do cartão de frases e da regra do tio; esta rubrica é para você ler o que a criança disse na roda e escreveu no cartaz.",
       criterios: [
         {
           criterio: "Separar tom e verdade (EF05CO03)",
@@ -352,7 +353,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
     {
       contexto: "Duas aulas de 25 minutos",
       comoAdaptar:
-        "Na primeira, as etapas 1 a 3, até o voto na enquete. Na segunda, a revelação, a roda de conversa e as perguntas da Nina. Nada se perde entre as duas.",
+        "Na primeira, as etapas 1 a 3, até o voto na enquete. Na segunda, a revelação com o cartão de frases, a roda de conversa e a regra do tio. Nada se perde entre as duas.",
     },
     {
       contexto: "Turma com leitura ainda em construção",
@@ -395,7 +396,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
     {
       pergunta: "Como a missão registra as habilidades da BNCC?",
       resposta:
-        "A EF05CO08 pela seleção do Mural, só três verdadeiras atingem; a EF05CO03 e a EF05CO04 pelas duas perguntas da Nina, no fim. Quem sai antes das perguntas fica “Não avaliado” nelas, nunca “Não atingiu”. Cada rodada mede tudo de novo, e vale a melhor. O critério de cada nível está no fim do painel de habilidades, onde você confere e ajusta tudo.",
+        "A EF05CO08 pela seleção do Mural, só três verdadeiras atingem; a EF05CO03 pelo cartão de frases e a EF05CO04 pela regra do tio. Quem não faz uma das ações fica “Não avaliado” nela, nunca “Não atingiu”. Cada rodada mede tudo de novo, e vale a melhor. O critério de cada nível está no fim do painel de habilidades, onde você confere e ajusta tudo.",
     },
   ],
 };

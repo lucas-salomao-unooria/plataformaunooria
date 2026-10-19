@@ -77,6 +77,16 @@ export const ID_DA_FICHA_RE = ATIVIDADE_ID_RE;
 /** Quantos ajustes cabem num `PATCH` — uma turma grande vezes a ficha, com folga. */
 export const AJUSTES_MAX = 200;
 
+/**
+ * POR QUE o professor ajustou (ADR-170) — opcional, e vai só para o HISTÓRICO
+ * (`evidencias_eventos.para.motivo`): o nível continua sendo o que ele
+ * escolheu. Existe porque, meses depois, "Atingiu ajustado" sem motivo não diz
+ * se foi a legenda revisada, um problema técnico ou a criança presente que não
+ * quis participar — e são leituras diferentes do mesmo número.
+ */
+export const MOTIVOS_DE_AJUSTE = ["presente_sem_participar", "problema_tecnico", "legenda_revisada", "outro"] as const;
+export type MotivoDeAjuste = (typeof MOTIVOS_DE_AJUSTE)[number];
+
 /** A ESCALA, do menor para o maior. É o que `melhor` compara. */
 export const NIVEL: Readonly<Record<Nivel, number>> = { nao_atingiu: 1, em_processo: 2, atingiu: 3 };
 
@@ -100,6 +110,41 @@ export function melhor(a: Nivel | null | undefined, b: Nivel | null | undefined)
  */
 export function statusProprio(marcas: readonly { status: Nivel }[]): Nivel | null {
   return marcas.reduce<Nivel | null>((acc, m) => melhor(acc, m.status), null);
+}
+
+/**
+ * O MARCADOR QUE DEU O NÍVEL de uma habilidade numa rodada: entre as marcas,
+ * a de melhor nível (é o `statusProprio`). Empate: a marca que NÃO é limitada
+ * pela atividade (`limitadoPelaAtividade`) ganha da que é — o "em processo"
+ * comum diz mais do estudante que o limitado. Persistindo o empate, a ordem da
+ * ficha decide, para a resposta não depender da ordem do banco. Sem marca,
+ * `null`.
+ */
+export function marcadorDoNivel(
+  ficha: FichaPedagogica,
+  marcas: readonly { marcador: string; status: Nivel }[],
+): string | null {
+  const ordem = ficha.habilidades.flatMap((h) => h.marcadores);
+  const posicao = (id: string) => {
+    const i = ordem.findIndex((m) => m.id === id);
+    return i === -1 ? ordem.length : i;
+  };
+  const limitado = (id: string) => ordem.find((m) => m.id === id)?.limitadoPelaAtividade === true;
+  let escolhida: { marcador: string; status: Nivel } | null = null;
+  for (const m of marcas) {
+    if (!escolhida) {
+      escolhida = m;
+      continue;
+    }
+    const diferenca = NIVEL[m.status] - NIVEL[escolhida.status];
+    if (diferenca > 0) escolhida = m;
+    else if (diferenca === 0) {
+      const lm = limitado(m.marcador);
+      const le = limitado(escolhida.marcador);
+      if ((le && !lm) || (le === lm && posicao(m.marcador) < posicao(escolhida.marcador))) escolhida = m;
+    }
+  }
+  return escolhida?.marcador ?? null;
 }
 
 /** O estado de uma evidência como o histórico o grava em `de`/`para`. */
@@ -465,6 +510,12 @@ export function validarFicha(ficha: FichaPedagogica, codigosBncc: Pick<ReadonlyS
         }
       } else if (m.perguntaId !== undefined) {
         erros.push(`${rotulo}: o marcador de ação "${m.id}" não pode ter pergunta.`);
+      }
+      if (m.rotulo !== undefined && !m.rotulo.trim()) {
+        erros.push(`${rotulo}: o marcador "${m.id}" tem rótulo vazio.`);
+      }
+      if (m.limitadoPelaAtividade && m.tipo !== "acao") {
+        erros.push(`${rotulo}: o marcador "${m.id}" só pode ser limitado pela atividade se for de ação.`);
       }
     }
   }

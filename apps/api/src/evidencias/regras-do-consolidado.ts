@@ -21,7 +21,14 @@ import { melhorRodadaPorHabilidade, type Nivel, type Situacao, type Status } fro
 /** Quantas crianças em cada nível — e as que não têm nível nenhum. */
 export interface Distribuicao {
   atingiu: number;
+  /** O "em processo" que diz do estudante — sem o limitado pela atividade. */
   emProcesso: number;
+  /**
+   * O "em processo" que mede a ATIVIDADE escolhida, e não o estudante: veio de
+   * um marcador `limitadoPelaAtividade` (o acervo dela não deixava ir além).
+   * Contado À PARTE, fora de `emProcesso`, e dentro do `total`.
+   */
+  emProcessoLimitado: number;
   naoAtingiu: number;
   /**
    * Da turma, sem evidência que conte: não fez, saiu antes, a projeção ainda
@@ -29,13 +36,14 @@ export interface Distribuicao {
    * "não atingiu" — não ter sido observado não é ter falhado.
    */
   naoAvaliado: number;
-  /** Todas as crianças contadas: a soma das quatro. */
+  /** Todas as crianças contadas: a soma das cinco caixas. */
   total: number;
 }
 
 export const DISTRIBUICAO_VAZIA: Readonly<Distribuicao> = Object.freeze({
   atingiu: 0,
   emProcesso: 0,
+  emProcessoLimitado: 0,
   naoAtingiu: 0,
   naoAvaliado: 0,
   total: 0,
@@ -48,6 +56,11 @@ export interface LinhaDoConsolidado {
   habilidade: string;
   status: Status;
   situacao: Situacao;
+  /**
+   * O nível desta linha veio de um marcador `limitadoPelaAtividade`. Só a
+   * linha PRÓPRIA sabe o marcador; cópia e ajuste nunca são limitados.
+   */
+  limitado?: boolean;
 }
 
 /**
@@ -78,8 +91,37 @@ export function niveisDaMissao(
 }
 
 /**
+ * QUEM ESTÁ "EM PROCESSO" SÓ PELO LIMITE DA ATIVIDADE, numa missão: o melhor
+ * nível da criança na habilidade é "em processo" e TODAS as linhas válidas que
+ * deram esse "em processo" são limitadas. Empate entre um "em processo"
+ * limitado e um comum guarda o COMUM — houve uma atividade que mediu o
+ * estudante, e é ela que fala dele.
+ *
+ * Devolve as chaves `estudante|habilidade` (a de `chaveDoLimitado`).
+ */
+export function limitadosDaMissao(linhas: readonly LinhaDoConsolidado[], expId: string): Set<string> {
+  const emProcesso = new Map<string, boolean>();
+  const niveis = niveisDaMissao(linhas, expId);
+  for (const l of linhas) {
+    if (l.expId !== expId || l.situacao !== "valida" || l.status !== "em_processo") continue;
+    if (niveis.get(l.estudanteId)?.get(l.habilidade) !== "em_processo") continue;
+    const chave = chaveDoLimitado(l.estudanteId, l.habilidade);
+    emProcesso.set(chave, (emProcesso.get(chave) ?? true) && l.limitado === true);
+  }
+  return new Set([...emProcesso].filter(([, limitado]) => limitado).map(([chave]) => chave));
+}
+
+/** `estudante|habilidade` — a chave de `limitadosDaMissao`. */
+export function chaveDoLimitado(estudanteId: string, habilidade: string): string {
+  return `${estudanteId}|${habilidade}`;
+}
+
+/**
  * A DISTRIBUIÇÃO DE UMA TURMA NUMA HABILIDADE: cada criança da turma cai em
  * exatamente uma das quatro caixas.
+ *
+ * `limitados` (de `limitadosDaMissao`) separa o "em processo" que mede a
+ * atividade: ele cai em `emProcessoLimitado`, e não em `emProcesso`.
  *
  * Quem conta é a lista de ESTUDANTES DA TURMA, não as linhas: a criança sem
  * linha é "não avaliado", e a linha de quem saiu da turma não entra (é dela, e
@@ -89,11 +131,13 @@ export function distribuir(
   estudantes: readonly string[],
   niveis: ReadonlyMap<string, ReadonlyMap<string, Nivel>>,
   habilidade: string,
+  limitados: ReadonlySet<string> = new Set(),
 ): Distribuicao {
   const d: Distribuicao = { ...DISTRIBUICAO_VAZIA };
   for (const id of estudantes) {
     const nivel = niveis.get(id)?.get(habilidade);
     if (nivel === "atingiu") d.atingiu += 1;
+    else if (nivel === "em_processo" && limitados.has(chaveDoLimitado(id, habilidade))) d.emProcessoLimitado += 1;
     else if (nivel === "em_processo") d.emProcesso += 1;
     else if (nivel === "nao_atingiu") d.naoAtingiu += 1;
     else d.naoAvaliado += 1;
@@ -107,6 +151,7 @@ export function somar(a: Distribuicao, b: Distribuicao): Distribuicao {
   return {
     atingiu: a.atingiu + b.atingiu,
     emProcesso: a.emProcesso + b.emProcesso,
+    emProcessoLimitado: a.emProcessoLimitado + b.emProcessoLimitado,
     naoAtingiu: a.naoAtingiu + b.naoAtingiu,
     naoAvaliado: a.naoAvaliado + b.naoAvaliado,
     total: a.total + b.total,

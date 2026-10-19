@@ -1,10 +1,11 @@
 import type { ExperienciaHandle } from "@edu/sdk";
 import type { EtapaDaMissao } from "./regras";
-import { EXP_ID, EXP_VERSION, type IdDaPergunta, type IdDeNoticia, type TipoDePista } from "./tipos";
+import { EXP_ID, EXP_VERSION, type IdDeNoticia, type TipoDePista } from "./tipos";
 
 /**
  * Telemetria analítica da missão — a tabela canônica do PRD §13 (EVT-U01 a
- * U05, EVT-001 a 004), e nada além dela.
+ * U05, EVT-001 a 004) com o que o Canal A da 3.0.0 acrescentou (EVT-005 e
+ * EVT-006, ADR-168), e nada além disso.
  *
  * **O contrato do SDK é `track(verbo, objeto, { resultado?, contexto? })`**, e
  * os dois são OBJETOS. Não existe campo `dados`: chave desconhecida é
@@ -15,10 +16,12 @@ import { EXP_ID, EXP_VERSION, type IdDaPergunta, type IdDeNoticia, type TipoDePi
  * mesa), o tipo da pista, a edição, a quantidade. Nenhum texto, nome ou e-mail
  * — e a missão não tem texto livre de menor.
  *
- * **Dois afastamentos do PRD, de propósito:**
- * - EVT-004 leva a PERGUNTA, nunca a alternativa (o PRD pedia `opcao_id`): o id
- *   da alternativa é o nível da habilidade para quem conhece a ficha, e esse
- *   mapa é segredo de servidor (regra 3). O mesmo que a exp07ef1b faz.
+ * **Os afastamentos do PRD, de propósito:**
+ * - nenhum evento leva a ESCOLHA que vale nível — o veredito de uma pista, o
+ *   lado de um cartão, os blocos da Chave, a decisão de publicar ou repassar.
+ *   Cruzada com o gabarito, cada uma é o nível da habilidade, e esse mapa é
+ *   segredo de servidor (regra 3); a fonte da verdade são as colunas da api. É
+ *   a mesma razão de o antigo EVT-004 nunca ter levado a alternativa de P1/P2.
  * - EVT-002 sai no LATCH e não leva `verificadas`: a tela não sabe quantas
  *   estavam verificadas quando publica (o resultado só desce depois do portão
  *   do professor). O número vai num evento próprio, quando o resultado chega
@@ -49,6 +52,7 @@ const PAPEL: Record<EtapaDaMissao, string> = {
   E4: "resultado",
   E5: "core_action",
   EREV: "core_action",
+  ESIM: "core_action",
   E6: "transferencia",
 };
 
@@ -73,13 +77,26 @@ export const telemetria = {
   viuOResultado: (verificadas: number, percentual: number) =>
     track("progressed", "resultado:ver", { resultado: { verificadas, percentual }, contexto: { etapa: "E4" } }),
 
-  /** EVT-003 — uma tentativa da Chave, com o que a api respondeu. */
-  tentouAChave: (sucesso: boolean, tentativas: number) =>
-    track("interacted", "algoritmo:ordenar", { resultado: { sucesso, tentativas }, contexto: { etapa: "E5" } }),
+  /**
+   * EVT-005 — marcou "confio / não confio" numa pista da mesa. O PAR, nunca o
+   * veredito; `novo: false` = o par já tinha marcação (vale a primeira).
+   */
+  julgou: (noticiaId: IdDeNoticia, tipo: TipoDePista, novo: boolean) =>
+    track("interacted", "pista:julgar", { resultado: { tipo, novo }, contexto: { noticia_id: noticiaId, fase: 1 } }),
 
-  /** EVT-004 — respondeu P1 ou P2. A PERGUNTA, nunca a alternativa. */
-  respondeu: (questao: IdDaPergunta) =>
-    track("interacted", "transferencia:responder", { resultado: { questao }, contexto: { etapa: "E6" } }),
+  /** EVT-003 — a Chave montada e enviada (um envio, sem correção). Sem os blocos nem os lados. */
+  montouAChave: () => track("interacted", "chave:montar", { resultado: { enviada: true }, contexto: { etapa: "E5" } }),
+
+  /** EVT-006 — a simulação enviada: quantas pistas ela abriu em cada matéria, sem vereditos nem decisões. */
+  simulou: (pistasPorMateria: readonly number[]) =>
+    track("interacted", "simulacao:enviar", {
+      resultado: { pistas_s1: pistasPorMateria[0] ?? 0, pistas_s2: pistasPorMateria[1] ?? 0 },
+      contexto: { etapa: "ESIM" },
+    }),
+
+  /** EVT-004 — decidiu diante do boato. Quantas pistas abriu ANTES, nunca a decisão. */
+  transferiu: (pistasAntes: number) =>
+    track("interacted", "transferencia:decidir", { resultado: { pistas_abertas: pistasAntes }, contexto: { etapa: "E6" } }),
 
   /** EVT-U03 — `concluir()`. O tempo é indicativo (desde a primeira abertura NESTA aba). */
   concluiu: (tempoTotalS: number) =>

@@ -24,7 +24,7 @@
  *   (`/juri-estadual/banco-padrao/imagens`): o hub só lê o progresso e pede
  *   as que faltam.
  *
- * O GABARITO (a ordem dos blocos da cadeia, os cartões certos do caso
+ * O GABARITO (a peça certa da regra SE … ENTÃO, os cartões certos do caso
  * Mariana) aparece em `MaterialDoJuri`, que só rota de professor devolve.
  *
  * As funções daqui são PURAS: o painel ao vivo e a criação da atividade são
@@ -123,6 +123,7 @@ export type OrigemDoPacote = (typeof ORIGENS_DO_PACOTE)[number];
 export const PASSOS = [
   "credencial",
   "feed",
+  "classificacao",
   "lacrada",
   "galeria",
   "revisada",
@@ -424,10 +425,10 @@ export interface LinhaDoPainel {
   votou: boolean;
   /** O SINALIZADOR DE OCIOSOS: cédula aberta e mais de 60 s sem toque. Volta a `false` sozinho. */
   ocioso: boolean;
+  /** Já separou os estandes nas áreas (EF06CO01, ADR-174). Progresso: o acerto NÃO vem — a folha vai para a lousa. */
+  separou: boolean;
   abriuAGaleria: boolean;
   buscou: boolean;
-  /** As categorias que a criança buscou pela hashtag na galeria (a leitura da EF06CO01). */
-  categoriasBuscadas: Area[];
   revisou: boolean;
   concluiu: boolean;
 }
@@ -446,6 +447,7 @@ export interface PainelDoJuri {
     total: number;
     entraram: number;
     votaram: number;
+    separaram: number;
     revisaram: number;
     concluiram: number;
     /** Quantos estão ociosos na cédula agora. */
@@ -490,13 +492,18 @@ interface CartaoComGabarito {
   certo: boolean;
 }
 
+/** Uma peça da regra SE … ENTÃO, com o gabarito (só rota de professor). */
+export interface PecaComGabarito {
+  texto: string;
+  certa: boolean;
+}
+
 /** `GET /juri-estadual/professor/material` — o esqueleto fixo COM gabarito, a plenária e a regra do feed. */
 export interface MaterialDoJuri {
-  blocos: Array<{ posicao: number; rotulo: string }>;
+  /** As peças da regra (EF06CO03, ADR-174): três de cada lado, uma certa em cada. */
+  pecas: { se: PecaComGabarito[]; entao: PecaComGabarito[] };
   mariana: { caso: string; mecanismos: CartaoComGabarito[]; atitudes: CartaoComGabarito[] };
   plenaria: string[];
-  /** O retorno que a criança lê ao montar a cadeia, certa ou errada. */
-  feedbackDaCadeia: { correta: string; incorreta: string };
   regra: {
     pesoDaCurtida: number;
     pesoDaPermanencia: number;
@@ -579,12 +586,13 @@ export function avisoDoPodcast(emAndamento: boolean, etapa: EtapaDaTurma | null)
 export const ROTULO_DO_PASSO: Record<PassoDoEstudante, string> = {
   credencial: "Na credencial de jurado",
   feed: "No feed da mostra",
-  lacrada: "Votou — esperando a plenária",
+  classificacao: "Votou — separando os estandes",
+  lacrada: "Separou — esperando a plenária",
   galeria: "Na Galeria Oculta",
   revisada: "Revisou o voto",
-  cadeia: "Montando a cadeia do feed",
+  cadeia: "Montando a regra do feed",
   mariana: "No caso Mariana",
-  enquetes: "Nas enquetes",
+  enquetes: "Concluindo",
   fim: "Concluiu",
 };
 
@@ -651,17 +659,6 @@ export function textoDaTaxaDeRevisao(trocaram: number, total: number, porComputa
 /** O sinalizador de ocioso, em texto (o ícone não basta para leitor de tela). */
 export const TEXTO_DO_OCIOSO = "Cédula aberta parada há mais de 1 minuto";
 
-/** "Robótica (#robotica), Saúde (#saude)" — as categorias que a linha buscou, com o nome do pacote. */
-export function textoDasCategoriasBuscadas(areas: readonly Area[], categorias: readonly CategoriaDaMostra[]): string {
-  if (areas.length === 0) return "Nenhuma";
-  return AREAS.filter((a) => areas.includes(a))
-    .map((a) => {
-      const c = categorias.find((k) => k.area === a);
-      return c ? `${c.nome} (${c.hashtag})` : rotuloCurtoDaArea(a);
-    })
-    .join(", ");
-}
-
 export function totalDeVotos(v: readonly VotosDaArea[]): number {
   return v.reduce((soma, a) => soma + a.votos, 0);
 }
@@ -696,12 +693,12 @@ function passaramDe(linhas: readonly Pick<LinhaDoPainel, "passo">[], passo: Pass
 }
 
 /**
- * Mudou algo que a EVIDÊNCIA registra (ADR-146)? As três ações da ficha são
- * marcadas na MESMA transação do passo que o painel mostra: a EF06CO10 e a
- * EF06CO01 no latch da revisão do voto (`revisaram`) e a EF06CO03 quando a
- * cadeia se monta (a linha sai de `cadeia`) — e as enquetes vêm antes do crachá
- * (`concluiram`). A cadeia não tem contador no resumo, por isso a conta é sobre
- * o passo de cada linha. A atividade troca com um pacote novo ou uma rodada nova. Só nesses
+ * Mudou algo que a EVIDÊNCIA registra (ADR-146)? As duas ações da ficha 5
+ * (ADR-174) são marcadas na MESMA transação do passo que o painel mostra: a
+ * EF06CO01 na separação (`separaram`) e a EF06CO03 quando a regra é enviada (a
+ * linha sai de `cadeia`). A regra não tem contador no resumo, por isso a conta
+ * é sobre o passo de cada linha. A revisão do voto e os cartões não marcam
+ * nada. A atividade troca com um pacote novo ou uma rodada nova. Só nesses
  * casos o painel da aula relê a página inteira, para o painel de habilidades
  * acompanhar sem o professor apertar F5. É o mesmo desenho da exp05ef1b
  * (`mudouAEvidencia` em `quem-mandou-regras.ts`).
@@ -711,9 +708,8 @@ export function mudouAEvidencia(
   depois: Pick<PainelDoJuri, "pacote" | "rodada" | "resumo" | "linhas">,
 ): boolean {
   return (
-    antes.resumo.revisaram !== depois.resumo.revisaram ||
+    antes.resumo.separaram !== depois.resumo.separaram ||
     passaramDe(antes.linhas, "cadeia") !== passaramDe(depois.linhas, "cadeia") ||
-    antes.resumo.concluiram !== depois.resumo.concluiram ||
     antes.pacote.id !== depois.pacote.id ||
     antes.rodada !== depois.rodada
   );

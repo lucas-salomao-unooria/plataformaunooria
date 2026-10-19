@@ -235,8 +235,9 @@ export const MISSAO_BACKUP_UNOOTUBE: Missao = {
  *
  * O professor tem DOIS portões, num botão só que avança: Liberar resultado
  * (as reações dos leitores e o "X de 3 notícias verificadas") e, depois da
- * conversa com a turma, Liberar revisão (a Chave do Editor e a 2ª edição).
- * Nenhum volta. E a missão NÃO nasce vazia, como a exp07ef1b: sem preparo, a
+ * conversa com a turma, Liberar revisão (a Chave do Editor, a 2ª edição, o
+ * teste da Chave e a mensagem nova). Nenhum volta, e entre os dois cabe a
+ * pausa de quem faz a missão em duas aulas (3.0.0, ADR-168). E a missão NÃO nasce vazia, como a exp07ef1b: sem preparo, a
  * turma roda o banco padrão "Feira de Ciências e Notícias da Cidade".
  *
  * Tem ficha pedagógica (E14): a atividade é o PACOTE homologado e a rodada é o
@@ -253,8 +254,8 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
     "O Bento, que cuida do jornal da escola, recebe oito notícias de meios diferentes para uma " +
     "capa de três vagas. Cada computador escolhe as suas e publica a 1ª edição; quando você libera " +
     "o resultado, os leitores reagem ao que foi publicado. Depois da conversa com a turma, você " +
-    "libera a revisão: a Chave do Editor junta fonte, data e autoria, e cada um revisa a capa, " +
-    "publica a 2ª edição e compara as duas.",
+    "libera a revisão: cada dupla monta a sua Chave do Editor, revisa a capa, publica a 2ª edição, " +
+    "testa a Chave em duas matérias novas e decide o que fazer com uma mensagem urgente.",
   status: "disponivel",
   // Sem spoiler: é o desafio do PDF (§4), palavra por palavra. A missão mede o
   // que a criança escolhe quando ninguém avisou para checar.
@@ -269,11 +270,11 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
       "Letramento midiático — conferir de onde veio, quando aconteceu e quem assina uma notícia " +
       "antes de publicá-la. BNCC Computação: EF04CO08 (verificar a confiabilidade das fontes), " +
       "EF15CO04 (decomposição) e EF15CO02 (algoritmos simples).",
-    duracao: "1 aula de 50 min (ou 2 de 25 min)",
+    duracao: "1 aula de 50 min, ou 2 aulas com a pausa depois do resultado",
     formato:
       "Uma redação digital da Unooria, sem imitar rede social: a mesa com 8 notícias de 8 meios, a " +
-      "primeira página com 3 vagas, o mural dos leitores e a Chave do Editor. O desafio final é numa " +
-      "tela limpa da Unooria, fora da redação.",
+      "primeira página com 3 vagas, o mural dos leitores e a Chave do Editor. A mensagem nova do fim " +
+      "chega numa tela limpa da Unooria, fora da redação.",
     atos: [
       {
         rotulo: "1 — O Bento e as três vagas",
@@ -287,7 +288,8 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
           "Oito cartões de meios diferentes — jornal impresso, rádio, telejornal, blog, portal, rede " +
           "social, mensagem encaminhada e mural da escola. Cada notícia abre no formato original, com " +
           "três botões: de onde veio, quando aconteceu e quem assina. Nada obriga a abrir: quem já sabe " +
-          "checar checa sozinho, e é isso que o painel de habilidades registra.",
+          "checar checa sozinho. Cada pista aberta pede um Confio ou Não confio — é isso que o painel " +
+          "de habilidades registra.",
       },
       {
         rotulo: "3 — A 1ª edição",
@@ -304,22 +306,25 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
           "Liberar resultado mostra, em cada computador, as reações dos leitores às notícias " +
           "escolhidas e “X de 3 notícias verificadas nesta edição”. Você projeta o gráfico anônimo da " +
           "turma e conduz a conversa com as três perguntas do painel. Não há ranking nem exposição de " +
-          "quem errou.",
+          "quem errou. Se a missão for em duas aulas, a primeira acaba aqui: o progresso fica salvo.",
       },
       {
         rotulo: "5 — A Chave e a revisão (o seu segundo botão)",
         texto:
-          "Liberar revisão traz o Bento de volta com seis blocos: fonte, data, autoria e três iscas. " +
-          "Formada a Chave do Editor, cada vaga da 1ª edição ganha um marcador, a turma troca o que " +
-          "não tinha evidência, publica a 2ª edição e compara as duas. Quem acertou de primeira " +
-          "confirma, sem precisar trocar.",
+          "Liberar revisão — na mesma aula ou no começo da segunda — traz o Bento de volta com seis " +
+          "blocos: fonte, data, autoria e três armadilhas. Cada dupla monta a sua Chave do Editor, uma " +
+          "vez só e sem correção: três blocos, quando cada pista passa ou falha, Não publico ou Olho a " +
+          "próxima pista, e se vale para todas as notícias ou só para a primeira. Depois, cada vaga da " +
+          "1ª edição ganha um marcador, a turma troca o que não tinha evidência, publica a 2ª edição e " +
+          "compara as duas.",
       },
       {
-        rotulo: "6 — O desafio final",
+        rotulo: "6 — O teste da Chave e a mensagem nova",
         texto:
-          "Fora da redação, numa tela limpa: um aviso de corte de água chega por mensagem, e a " +
-          "criança responde a duas perguntas sobre o que conferir antes de repassar. A síntese é a " +
-          "mesma para todos — ninguém vê nível —, e as respostas vão para o painel de habilidades.",
+          "A dupla aplica a própria Chave a duas matérias novas, sem imagem, e depois todos recebem a " +
+          "mesma regra de referência. Por fim, numa tela limpa, chega uma mensagem urgente sobre um " +
+          "corte de água, com Repassar à mão desde o começo. A tela não diz a ninguém se acertou: o " +
+          "nível de cada um fica no painel de habilidades, só para você.",
       },
     ],
     preparo: [
@@ -329,14 +334,15 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
         "confirma em um toque.",
       "Para um tema da sua aula: escolha o componente curricular, escreva o tema e os tópicos, " +
         "gere o pacote com IA e revise cada notícia — inclusive se ela pode ir para a capa e a " +
-        "reação do leitor. Nada gerado por inteligência artificial chega à turma sem o seu clique " +
-        "em Aprovar Pacote.",
+        "reação do leitor — e as duas matérias do teste da Chave. Nada gerado por inteligência " +
+        "artificial chega à turma sem o seu clique em Aprovar Pacote.",
       "Depois de aprovar, gere as imagens no mesmo lugar: elas saem duas por vez. Notícia sem " +
         "imagem aparece desenhada pelo meio, e a missão roda igual.",
       "Se a turma divide computadores, monte as equipes aqui na ficha, em Equipes desta turma — " +
         "duplas é o arranjo recomendado. O painel conta por computador.",
       "Durante a aula são dois botões, na ordem — Liberar resultado e Liberar revisão —, e " +
-        "nenhum volta. Deixe o projetor pronto para o gráfico da turma.",
+        "nenhum volta. Em duas aulas, a pausa é entre os dois. Deixe o projetor pronto para o " +
+        "gráfico da turma.",
       "Não diga que a aula é sobre notícia falsa, nem peça que abram as pistas: a missão mede o " +
         "que a turma escolhe quando ninguém avisou para checar.",
     ],
@@ -679,8 +685,8 @@ export const MISSAO_FOTO_CONTA: Missao = {
  *    síntese (que pode ser pulada) e a reflexão.
  *
  * As habilidades avaliadas são SÓ as de Computação — EF05CO08 pela seleção do
- * Mural, EF05CO03 e EF05CO04 pelas duas perguntas finais da Nina (a ficha E14
- * da api). Os códigos de Língua Portuguesa do one-pager ("a confirmar") não
+ * Mural, EF05CO03 pelo cartão de frases e EF05CO04 pela regra do tio (a ficha
+ * E14 da api, v4: só ações). Os códigos de Língua Portuguesa do one-pager ("a confirmar") não
  * entram como habilidade avaliada.
  */
 export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
@@ -710,7 +716,7 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
     duracao: "1 aula de 50 min (ou 2 sessões de 25 min)",
     formato:
       "Unoochat, o aplicativo de mensagens da Unooria, em tema claro: a conversa com a Nina, o grupo da " +
-      "turma com 8 mensagens, o Mural da Turma, a enquete e as duas perguntas finais.",
+      "turma com 8 mensagens, o Mural da Turma, a enquete e o cartão de frases; o desafio final, a regra do tio, é na tela da escola.",
     atos: [
       {
         rotulo: "1 — Desafiar: o pedido da Nina",
@@ -739,8 +745,9 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
         texto:
           "Você aperta Liberar Revelação: o painel mostra o Termômetro da Turma para projetar, e cada " +
           "aparelho ganha os dois selos sobre as 3 mensagens encaminhadas, com o motivo votado e o " +
-          "lembrete do bimestre. Quem ainda não tinha confirmado continua, confirma e vê a própria " +
-          "revelação depois.",
+          "lembrete do bimestre — e o cartão de frases: seis frases com E, OU e NÃO sobre as 3 " +
+          "mensagens, que registra a EF05CO03. Quem ainda não tinha confirmado continua, confirma e vê a " +
+          "própria revelação depois.",
       },
       {
         rotulo: "5 — Explicar: a síntese e a roda de conversa",
@@ -750,11 +757,12 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
           "minutos. A síntese pode ser pulada.",
       },
       {
-        rotulo: "6 — Refletir: as perguntas da Nina",
+        rotulo: "6 — Refletir: a regra do tio",
         texto:
-          "Liberar Reflexão leva cada aparelho de volta ao chat da Nina, que faz duas perguntas de " +
-          "múltipla escolha: se o tom diz se a mensagem é verdadeira, e qual regra funciona antes de " +
-          "repassar. As respostas registram a EF05CO03 e a EF05CO04 no painel de habilidades.",
+          "Liberar Reflexão leva cada aparelho ao desafio do tio: quem ainda não respondeu o cartão " +
+          "responde primeiro; depois a criança monta uma regra com peças (“SE a mensagem for… ENTÃO " +
+          "eu…”), prevê o que ela faz com o áudio assustado do tio e testa. A regra registra a EF05CO04 " +
+          "no painel de habilidades.",
       },
     ],
     preparo: [
@@ -912,11 +920,12 @@ export const MISSAO_A_SELECAO: Missao = {
  * curte nada vê as quatro misturadas). Nenhum número cravado na copy, de
  * propósito.
  *
- * As habilidades são as da spec v1.5.2: EF06CO10 (o foco primário), EF06CO01
- * e EF06CO03, com o TEXTO OFICIAL de `apps/api/src/curriculo/dados/
- * habilidades-computacao.ts`. A decisão de 2026-10-02 (medir a EF06CO07, os
- * pacotes) foi revertida pelo PO em 2026-10-06: a tela dos pacotes saiu, e a
- * EF06CO10 se ancora no livro didático (o consumo crítico das plataformas).
+ * As habilidades são as da ficha 5 (ADR-174, o Canal A puro): EF06CO01 (o
+ * foco primário), pela separação dos estandes, e EF06CO03, pela regra SE …
+ * ENTÃO, com o TEXTO OFICIAL de `apps/api/src/curriculo/dados/
+ * habilidades-computacao.ts`. O PO, revisando com a equipe pedagógica contra o
+ * texto oficial, tirou a EF06CO10 (consumo, obsolescência e sustentabilidade
+ * não são o que a missão trabalha) e as enquetes; a EF06CO07 saiu antes.
  *
  * Tem ficha pedagógica (E14): a atividade é o PACOTE homologado e a rodada é o
  * "Zerar". Desde a 0.4.0 (PRD v2) tem BANCO PADRÃO: o professor usa a Feira
@@ -949,17 +958,14 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
     competencia:
       "Letramento digital — perceber que um feed que se adapta às curtidas esconde parte do que " +
       "existe, e que essa engrenagem é uma regra que se pode descrever. BNCC Computação, com o foco " +
-      "na EF06CO10 (analisar o consumo de tecnologia na sociedade, compreendendo criticamente o " +
-      "caminho da produção dos recursos bem como aspectos ligados à obsolescência e a " +
-      "sustentabilidade); e EF06CO01 (classificar informações, agrupando-as em coleções " +
-      "(conjuntos) e associando cada coleção a um ‘tipo de dados’) e EF06CO03 (descrever com " +
-      "precisão a solução de um problema, construindo o programa que implementa a solução " +
-      "descrita).",
+      "na EF06CO01 (classificar informações, agrupando-as em coleções (conjuntos) e associando " +
+      "cada coleção a um ‘tipo de dados’) e na EF06CO03 (descrever com precisão a solução de um " +
+      "problema, construindo o programa que implementa a solução descrita).",
     duracao: "1 aula de 50 min, 29 em tela (ou 2 sessões de 25 min)",
     formato:
       "Clone de rede social de fotos (o Unoovista): a credencial de jurado, o feed da mostra, a " +
-      "cédula lacrada, a Galeria Oculta com a busca por hashtag, o caso Mariana e as enquetes nos " +
-      "Stories. A cadeia do feed é numa tela da Unooria.",
+      "cédula lacrada, a separação dos estandes e a Galeria Oculta com a busca por hashtag. A " +
+      "regra do feed e o caso Mariana são numa tela da Unooria.",
     atos: [
       {
         rotulo: "1 — A credencial de jurado",
@@ -982,7 +988,8 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
           "Quatro elementos: o título, um dos estandes que ele viu, a certeza (as duas opções " +
           "afirmam certeza, de propósito) e o botão de confirmar. O voto é lacrado e não volta. Se a " +
           "cédula ficar parada mais de um minuto, a tela lembra que a comissão aguarda, e o seu " +
-          "painel mostra um alerta ao lado do nome.",
+          "painel mostra um alerta ao lado do nome. Logo depois do voto, a comissão pede que ele " +
+          "separe nas quatro áreas os estandes que viu, sem a hashtag — uma vez só.",
       },
       {
         rotulo: "4 — A lousa e a Galeria Oculta (o seu botão)",
@@ -995,19 +1002,18 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
           "você mostra quanto do feed caiu numa área só para quem curtiu e para quem não curtiu.",
       },
       {
-        rotulo: "5 — A cadeia do feed",
+        rotulo: "5 — A regra do feed",
         texto:
-          "Numa tela da Unooria, ao lado do histórico de outro jurado simulado que curtiu temas " +
-          "opostos, o estudante monta a engrenagem que controlou o feed: interações do jurado, " +
-          "registro de dados e padrões, algoritmo de recomendação, formação de bolha temática.",
+          "Numa tela da Unooria, o estudante monta a regra que o aplicativo seguiu: a condição (SE) " +
+          "e a ação (ENTÃO), entre três peças cada, uma vez só. Depois, a tela mostra a regra certa " +
+          "e o que ela fez no feed dele.",
       },
       {
-        rotulo: "6 — Mariana e as enquetes",
+        rotulo: "6 — Mariana",
         texto:
           "O caso da eleição do grêmio da escola de Mariana leva a lição para fora da mostra: " +
-          "um cartão para o que aconteceu com o feed dela e outro para o que fazer. Por fim, três " +
-          "enquetes nos Stories, que alimentam o painel de habilidades, e o crachá homologado. O " +
-          "podcast de recapitulação fecha a aula, depois da Etapa 4.",
+          "um cartão para o que aconteceu com o feed dela e outro para o que fazer, e o crachá " +
+          "homologado. O podcast de recapitulação fecha a aula, depois da Etapa 4.",
       },
     ],
     preparo: [

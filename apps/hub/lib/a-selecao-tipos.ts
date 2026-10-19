@@ -28,7 +28,7 @@
 // ─────────────────────────────────────────────────────────────── o vocabulário
 
 /** As etapas da TURMA, na ordem em que o botão único as abre. */
-export type EtapaDaTurma = "exploracao" | "mural" | "fichas" | "explicacao";
+export type EtapaDaTurma = "exploracao" | "mural" | "marcacao" | "fichas" | "explicacao";
 
 /** Onde o estudante está — o passo EFETIVO, já reconciliado com a etapa. */
 export type PassoDoEstudante =
@@ -37,6 +37,7 @@ export type PassoDoEstudante =
   | "salvos"
   | "publicado"
   | "mural"
+  | "marcacao"
   | "fichas"
   | "explicacao"
   | "reflexao"
@@ -129,6 +130,21 @@ export interface LinhaDoPainel {
   legenda: string | null;
   par: { rotulo: string; virtual: boolean } | null;
   tempoFeedS: number | null;
+  /** A poda (ADR-170): quantos salvos saíram antes de publicar. Indicador, nunca nível. */
+  podados: number | null;
+  /**
+   * A leitura da legenda como ESTADO — o nível é do painel de habilidades. Na
+   * `reserva` (a IA não leu), o que a regra de palavras viu, para conferir.
+   */
+  leituraDaLegenda: {
+    estado: "pendente" | "ia" | "reserva";
+    explicaAEscolha: boolean | null;
+    falaDosPosts: boolean | null;
+  } | null;
+  /** A marcação do post do colega (EF07CO08): o id apontado, ou "nada". */
+  marcacao: { postId: IdDePost | null; nenhum: boolean } | null;
+  /** O "por quê?" da marcação. Texto livre de menor: `null` para quem não leciona (ADR-108). */
+  marcacaoPorque: string | null;
   entregouReflexao: boolean;
   /** Texto livre de menor: `null` para quem não leciona a turma (ADR-108). */
   reflexaoTexto: string | null;
@@ -161,6 +177,8 @@ export interface PainelDaSelecao {
     iniciaram: number;
     publicaram: number;
     entregaram: number;
+    /** Quantos computadores que publicaram já marcaram (a etapa `marcacao`, ADR-170). */
+    marcaram: number;
     concluiram: number;
     /** "X de Y computadores publicaram". Y sai da montagem das equipes quando há. */
     computadores: { publicaram: number; total: number };
@@ -323,8 +341,9 @@ export interface ErroDaSelecao {
 export const ROTULO_DA_ETAPA: Record<EtapaDaTurma, string> = {
   exploracao: "Exploração — cada um no feed, nos salvos e na publicação",
   mural: "Mural da Turma — os Stories pareados, sem as fichas",
+  marcacao: "Marcação — cada um aponta o que a publicação do colega mostrou e a sua deixou de fora",
   fichas: "Fichas técnicas reveladas — quem cada post ouviu",
-  explicacao: "Conclusão individual — os cards, a reflexão e as enquetes",
+  explicacao: "Conclusão individual — os cards e a reflexão",
 };
 
 /**
@@ -334,6 +353,7 @@ export const ROTULO_DA_ETAPA: Record<EtapaDaTurma, string> = {
  */
 export const ROTULO_DO_BOTAO: Record<Exclude<EtapaDaTurma, "exploracao">, string> = {
   mural: "Liberar Mural da Turma",
+  marcacao: "Abrir marcação do colega",
   fichas: "Revelar Fichas Técnicas",
   explicacao: "Liberar Conclusão Individual",
 };
@@ -351,10 +371,12 @@ export const ROTULO_DO_PASSO: Record<PassoDoEstudante, string> = {
   salvos: "Escolhendo nos salvos",
   publicado: "Publicou — esperando o Mural",
   mural: "No Mural da Turma",
+  marcacao: "Marcando o post do colega",
   fichas: "Vendo as fichas técnicas",
   explicacao: "Lendo os cards da conclusão",
   reflexao: "Escrevendo a reflexão",
-  enquetes: "Respondendo as enquetes",
+  /* O passo do Canal B, que saiu (ADR-170): só a sessão de antes passa por ele. */
+  enquetes: "Concluindo",
   fim: "Concluiu",
 };
 
@@ -447,31 +469,75 @@ export const PISO_DO_MURAL = 80;
 /**
  * A aula ainda CORRE? É o que decide se o painel continua consultando. Para
  * quando a turma inteira concluiu a última etapa — antes disso sempre há
- * algo a acompanhar (publicação, reflexão, enquete).
+ * algo a acompanhar (publicação, marcação, reflexão).
  */
 export function aulaEmAndamento(p: Pick<PainelDaSelecao, "etapa" | "resumo">): boolean {
   return !(p.etapa === "explicacao" && p.resumo.total > 0 && p.resumo.concluiram >= p.resumo.total);
 }
 
 /**
- * Mudou algo que a EVIDÊNCIA registra (ADR-146)? A EF07CO11 é marcada pelo
- * Canal A logo depois da publicação, e as enquetes (Canal B) vêm antes do
- * "concluir" — e a atividade troca com uma cobertura nova ou uma rodada nova.
+ * Mudou algo que a EVIDÊNCIA registra (ADR-146)? A EF07CO11 é marcada quando a
+ * leitura da legenda TERMINA (ela roda depois da publicação, sem a criança
+ * esperar — ADR-170), e a EF07CO08 congela quando a etapa vira `fichas`; e a
+ * atividade troca com uma cobertura nova ou uma rodada nova.
  * Só nesses casos o painel da aula relê a página inteira, para o painel de
  * habilidades acompanhar sem o professor apertar F5. É o mesmo desenho da
  * exp05ef1b (`mudouAEvidencia` em `quem-mandou-regras.ts`).
  */
 export function mudouAEvidencia(
-  antes: Pick<PainelDaSelecao, "cobertura" | "rodada" | "resumo">,
-  depois: Pick<PainelDaSelecao, "cobertura" | "rodada" | "resumo">,
+  antes: Pick<PainelDaSelecao, "cobertura" | "rodada" | "resumo" | "etapa" | "linhas">,
+  depois: Pick<PainelDaSelecao, "cobertura" | "rodada" | "resumo" | "etapa" | "linhas">,
 ): boolean {
   return (
+    leiturasEncerradas(antes.linhas) !== leiturasEncerradas(depois.linhas) ||
+    antes.etapa !== depois.etapa ||
     antes.resumo.publicaram !== depois.resumo.publicaram ||
     antes.resumo.entregaram !== depois.resumo.entregaram ||
     antes.resumo.concluiram !== depois.resumo.concluiram ||
     antes.cobertura.id !== depois.cobertura.id ||
     antes.rodada !== depois.rodada
   );
+}
+
+/**
+ * A leitura da legenda em palavras, para a coluna da lista (ADR-170) — SEM
+ * nível (o nível é do painel de habilidades). Na reserva, o que a regra de
+ * palavras viu, para o professor conferir antes de ajustar.
+ */
+export function textoDaLeitura(leitura: LinhaDoPainel["leituraDaLegenda"]): string | null {
+  if (!leitura) return null;
+  if (leitura.estado === "pendente") return "Lendo a legenda…";
+  if (leitura.estado === "ia") return "Lida — o nível está nas habilidades";
+  const viu = [
+    leitura.explicaAEscolha ? "explica a escolha" : "não explica a escolha",
+    leitura.falaDosPosts ? "fala dos posts" : "não fala dos posts",
+  ].join(", ");
+  return `Revise no painel de habilidades: a leitura automática não conseguiu ler (${viu})`;
+}
+
+/** A marcação do post do colega em palavras (EF07CO08) — o post apontado, ou "nada". */
+export function textoDaMarcacao(
+  marcacao: LinhaDoPainel["marcacao"],
+  posts: readonly PostDaCobertura[],
+): string | null {
+  if (!marcacao) return null;
+  if (marcacao.nenhum || !marcacao.postId) return "“Nada que mude a história”";
+  return rotuloDoPost(marcacao.postId, posts);
+}
+
+/** O guia de leitura da reflexão (ADR-170) — três perguntas, da proposta do Artur. */
+export const GUIA_DA_REFLEXAO = {
+  titulo: "Como ler esta reflexão",
+  perguntas: [
+    "Nomeia quem ficou invisível na reportagem?",
+    "Liga isso ao que o próprio estudante deixou de fora nos Stories?",
+    "Explica o que o leitor perde por não conhecer essa parte?",
+  ],
+} as const;
+
+/** Quantas leituras de legenda já terminaram (pela IA ou pela reserva). */
+export function leiturasEncerradas(linhas: readonly Pick<LinhaDoPainel, "leituraDaLegenda">[]): number {
+  return linhas.filter((l) => l.leituraDaLegenda && l.leituraDaLegenda.estado !== "pendente").length;
 }
 
 /**

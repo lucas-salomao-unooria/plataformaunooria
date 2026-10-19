@@ -544,8 +544,11 @@ export const ROTEIRO_DA_ETAPA_4 = {
 export const GATILHOS_DO_PROFESSOR = {
   mural:
     "Liberar Mural da Turma: acione quando a sala atingir ao menos 80% de envios concluídos para projetar os Stories pareados.",
+  /* ADR-170: a marcação do post do colega (EF07CO08) — texto da proposta do Artur (16/10). */
+  marcacao:
+    "Abrir marcação do colega: deixe a turma ver o par em silêncio e conduza a conversa. Quando quiser ouvir a marcação individual, abra a marcação.",
   fichas:
-    "Revelar Fichas Técnicas: acione após ouvir os primeiros comentários dos estudantes sobre as diferenças entre os Stories.",
+    "Revelar Fichas Técnicas: acione quando a maioria tiver marcado o post do colega. A marcação fecha aqui, e o nível dela é calculado.",
   explicacao:
     "Liberar Conclusão Individual: acione para destravar a leitura dos cards conceituais e a escrita reflexiva.",
 } as const;

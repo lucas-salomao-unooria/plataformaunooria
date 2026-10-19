@@ -18,8 +18,10 @@ export const EXP_ID = "exp05ef1b";
 /**
  * Vai gravado em cada sessão, para reprocessar o histórico se o instrumento
  * mudar. 2.3.0: sem a regra Se/Então, as perguntas são a reflexão (ADR-145).
+ * 2.4.0: só o Canal A — saem as perguntas P1/P2, entram o cartão de frases
+ * (EF05CO03) e a regra do tio montada com peças (EF05CO04).
  */
-export const VERSAO_DO_INSTRUMENTO = "2.3.0";
+export const VERSAO_DO_INSTRUMENTO = "2.4.0";
 
 // ───────────────────────────────────────────────────────────── vocabulário
 
@@ -111,13 +113,14 @@ export const CALLBACK_DO_MOTIVO: Readonly<Record<Motivo, string>> = {
 };
 
 /**
- * O `Se` do construtor que a Etapa 6 TINHA. A regra Se/Então saiu (ADR-145):
- * as perguntas de múltipla escolha são a reflexão. O vocabulário fica só
- * porque a tabela `exp05ef1b_reflexoes` guarda o que já foi escrito, e o CHECK
- * `exp05ef1b_reflexoes_condicional_check` continua lá — a suíte de Postgres
- * compara os dois.
+ * O `SE` da regra do tio (Etapa 6). Saiu com o texto livre na ADR-145 e voltou
+ * na 2.4.0, agora como PEÇA da regra montada (`regras/regra.ts`). O mesmo
+ * vocabulário do CHECK `exp05ef1b_reflexoes_condicional_check` (a tabela da
+ * 2.2 guarda o que já foi escrito) e do CHECK das regras da sessão — a suíte
+ * de Postgres compara os textos.
  */
 export const CONDICOES = ["urgente_alarmante", "parente_proximo", "link_nao_checado", "promessa_incrivel"] as const;
+export type Condicao = (typeof CONDICOES)[number];
 
 /**
  * O componente curricular do recorte (`e0.professor.campo_disciplina_label`).
@@ -370,29 +373,27 @@ export function falaDaNina(tema: string): string {
 }
 
 /**
- * O encerramento da Nina, depois da P2 — texto da equipe, à espera da revisão
- * do PO. Até a ADR-145 dizia "eu vou lembrar da sua regra", a Se/Então que
- * saiu.
+ * O encerramento da Nina, depois da regra do tio — texto da equipe, à espera
+ * da revisão do PO.
  */
 export const ENCERRAMENTO_DA_NINA =
   "Muito obrigada pela ajuda! Antes de repassar qualquer coisa, eu vou conferir de onde veio. Até a próxima!";
 
 /**
- * As falas da Nina ANTES de cada pergunta de evidência (Canal B). São texto
- * da EXPERIÊNCIA, não da ficha: o enunciado e as alternativas (e o nível de
- * cada uma, que nunca desce) são de `evidencias/fichas/exp05ef1b.ts`. Os ids
- * são os da ficha — a suíte de regras cobra que existam lá.
+ * A fala da Nina que abre o CARTÃO DE FRASES no Mural revelado (EF05CO03),
+ * logo depois dos crachás. Texto da equipe, à espera da revisão do PO.
  */
-export const FALAS_ANTES_DAS_PERGUNTAS = [
-  {
-    perguntaId: "p1",
-    fala: "Uma colega sua recebeu uma mensagem com tom calmo e formal, cheia de dados e números. Ela diz: 'Pode confiar, essa é verdadeira, olha como é séria.'",
-  },
-  {
-    perguntaId: "p2",
-    fala: "Três colegas escreveram regras pra decidir o que fazer antes de repassar uma mensagem.",
-  },
-] as const;
+export const FALA_DO_CARTAO =
+  "Agora que você viu os crachás, me ajuda a conferir: essas frases sobre as suas mensagens estão certas?";
+
+/**
+ * O desafio do tio (Etapa 6, casca): a versão curta da copy da v2.2, 41
+ * palavras, FIXA. Voltou na 2.4.0 como o caso em que a regra montada com
+ * peças é testada (EF05CO04). Ele precisa ser URGENTE E ALARMANTE e mandado
+ * por um PARENTE — é o que `regras/regra.ts` assume sobre o áudio.
+ */
+export const FALA_DO_TIO =
+  "Valeu pela ajuda no grupo! Mas olha o que rolou agora: meu tio mandou um áudio na família com voz assustada dizendo que as aulas vão ser canceladas por causa do temporal e pediu pra repassar correndo. O que você faz?";
 
 // ──────────────────────────────────────────────────── a voz do professor
 
@@ -408,5 +409,5 @@ export const INSTRUCOES_DO_CONSOLE = {
   revelacao:
     "Aguarde a conclusão da maioria dos estudantes. Chame a atenção da turma para o telão e clique em Liberar Revelação para projetar o Termômetro da Turma.",
   reflexao:
-    "Conduza a roda de conversa com as 3 perguntas sugeridas. Ao concluir o debate, clique em Liberar Reflexão para enviar as duas perguntas finais da Nina aos aparelhos.",
+    "Conduza a roda de conversa com as 3 perguntas sugeridas. Ao concluir o debate, clique em Liberar Reflexão: cada estudante monta a própria regra para o áudio do tio e a testa antes de enviar.",
 } as const;

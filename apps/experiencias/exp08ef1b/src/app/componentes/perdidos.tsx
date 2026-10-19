@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { ButtonUnv } from '@edu/ui/ds-unoovista';
+
 import { api } from '../../lib/api';
 import { altDaImagem } from '../../lib/alt-da-imagem';
 
@@ -39,7 +41,17 @@ interface Resposta {
   posts: PostPerdido[];
 }
 
-export function Perdidos({ runId }: { runId: string }) {
+/**
+ * A SAÍDA do cinza (ADR-167): "Continuar" leva às tarefas 6b e 6c quando elas
+ * estão pendentes; sem tarefa pendente, "Rever meu relatório". O silêncio do
+ * cinza continua sendo o primeiro momento: o botão fica no rodapé.
+ */
+export interface SaidaDoCinza {
+  rotulo: string;
+  aoTocar: () => void;
+}
+
+export function Perdidos({ runId, saida }: { runId: string; saida?: SaidaDoCinza }) {
   const [dados, setDados] = useState<Resposta | null>(null);
   const [erro, setErro] = useState(false);
 
@@ -160,11 +172,16 @@ export function Perdidos({ runId }: { runId: string }) {
         ) : null}
       </div>
 
-      <footer className="border-t border-hairline px-4 py-4">
+      <footer className="flex flex-col gap-3 border-t border-hairline px-4 py-4">
         <p className="text-[13px] leading-relaxed text-ink/70">
           Nenhum desses posts era escondido de propósito por uma pessoa. Eles só não foram
           escolhidos para você.
         </p>
+        {saida ? (
+          <ButtonUnv variant="primary" block onClick={saida.aoTocar}>
+            {saida.rotulo}
+          </ButtonUnv>
+        ) : null}
       </footer>
     </div>
   );

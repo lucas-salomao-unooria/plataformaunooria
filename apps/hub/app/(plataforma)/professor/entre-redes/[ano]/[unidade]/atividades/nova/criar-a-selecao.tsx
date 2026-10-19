@@ -53,6 +53,17 @@ interface TextosAprovados {
 /** Fase 1, no card de cada post: a imagem vem depois (o pedido do PO, verbatim no espírito). */
 const AVISO_DA_IMAGEM = "A imagem será gerada após a aprovação dos textos.";
 
+/**
+ * A conferência do enquadramento (ADR-170): o post editado que passou a
+ * mostrar OUTRO lado. A etiqueta do post (o lado do veículo) não muda com o
+ * texto — e é ela que a revelação das fichas e a marcação dos estudantes leem.
+ */
+const avisoDeLado = (perfil: string) =>
+  `Este post não mostra mais o lado de ${perfil}. Ajuste a legenda para manter o equilíbrio da atividade.`;
+
+const AVISO_SEM_CONFERENCIA =
+  "Não foi possível conferir agora se os posts que você editou continuam mostrando o lado de cada veículo. Releia-os antes de pôr a atividade no ar.";
+
 async function lerErro(r: Response, padrao: string): Promise<{ mensagem: string; erros: string[] }> {
   const corpo = (await r.json().catch(() => ({}))) as ErroDaSelecao;
   return { mensagem: corpo.mensagem ?? padrao, erros: corpo.erros ?? [] };
@@ -104,6 +115,10 @@ export function CriarASelecao({
   const [erro, setErro] = useState<{ mensagem: string; erros: string[] } | null>(null);
   const [aprovados, setAprovados] = useState<TextosAprovados | null>(null);
   const [aprovandoTextos, setAprovandoTextos] = useState(false);
+  /* As legendas como chegaram (do gerador ou da cobertura pronta): é por elas
+     que se sabe o que a professora EDITOU — só isso vai à conferência. */
+  const [originais, setOriginais] = useState<Record<string, string>>({});
+  const [divergentes, setDivergentes] = useState<ReadonlySet<string>>(new Set());
   const [imagensProntas, setImagensProntas] = useState(false);
   const aoMudarProntidao = useCallback((pronta: boolean) => setImagensProntas(pronta), []);
 
@@ -151,6 +166,8 @@ export function CriarASelecao({
         posts: rascunho.posts,
         podcast: rascunho.podcast,
       });
+      setOriginais(Object.fromEntries(rascunho.posts.map((p) => [p.id, p.legenda])));
+      setDivergentes(new Set());
       setTemaDosPosts(rascunho.tema);
       setAviso(
         rascunho.usouIa
@@ -180,6 +197,8 @@ export function CriarASelecao({
       }
       const material = (await r.json()) as MaterialDaSelecao;
       setLote({ tema: material.tema, foco: "", origem: "padrao", posts: material.posts, podcast: material.podcast });
+      setOriginais(Object.fromEntries(material.posts.map((p) => [p.id, p.legenda])));
+      setDivergentes(new Set());
       setTemaDosPosts(material.tema);
       setAviso({
         tipo: "success",
@@ -206,8 +225,21 @@ export function CriarASelecao({
           origem: lote.origem,
           posts: lote.posts,
           podcast: lote.podcast,
+          editados: lote.posts.filter((p) => originais[p.id] !== undefined && originais[p.id] !== p.legenda).map((p) => p.id),
         }),
       });
+      if (r.status === 422) {
+        /* A conferência do enquadramento (ADR-170): os posts que passaram a
+           mostrar outro lado vão marcados no card, e nada foi gravado. */
+        const corpo = (await r.json().catch(() => ({}))) as ErroDaSelecao & { posts?: string[] };
+        if (corpo.codigo === "enquadramento-divergente") {
+          setDivergentes(new Set(corpo.posts ?? []));
+          setErro({ mensagem: corpo.mensagem ?? avisoDeLado("um veículo"), erros: [] });
+          return;
+        }
+        setErro({ mensagem: corpo.mensagem ?? "Não deu para aprovar os textos agora.", erros: corpo.erros ?? [] });
+        return;
+      }
       if (!r.ok) {
         /* `lote-invalido` traz a LISTA de problemas em frases para a professora
            (`problemasDoLote`, na api) — o termo que antecipa a revelação,
@@ -215,7 +247,10 @@ export function CriarASelecao({
         setErro(await lerErro(r, "Não deu para aprovar os textos agora."));
         return;
       }
-      const criada = (await r.json()) as CoberturaCriada & { posts: PostDaCobertura[] };
+      const criada = (await r.json()) as CoberturaCriada & {
+        posts: PostDaCobertura[];
+        conferencia?: "conferida" | "sem-edicao" | "nao-conferida";
+      };
       /* A cobertura nasce com as imagens HERDADAS de outra da turma com a
          mesma cena; o detalhe as traz, e a fase das imagens não as paga de novo. */
       const detalhe = await fetch(
@@ -224,7 +259,10 @@ export function CriarASelecao({
       );
       const imagens = detalhe.ok ? (((await detalhe.json()) as { imagens?: Record<string, string> }).imagens ?? {}) : {};
       setAprovados({ id: criada.id, turmaId, posts: criada.posts, imagens });
-      setAviso(null);
+      setDivergentes(new Set());
+      /* A IA da conferência falhou: a atividade foi criada mesmo assim (ela não
+         pode depender da IA), e a professora é avisada para reler. */
+      setAviso(criada.conferencia === "nao-conferida" ? { tipo: "warning", texto: AVISO_SEM_CONFERENCIA } : null);
     } catch {
       setErro({ mensagem: SEM_CONEXAO, erros: [] });
     } finally {
@@ -250,8 +288,16 @@ export function CriarASelecao({
     setImagensProntas(false);
   }
 
-  const trocarLegenda = (id: string, legenda: string) =>
+  const trocarLegenda = (id: string, legenda: string) => {
     setLote((atual) => ({ ...atual, posts: atual.posts.map((p) => (p.id === id ? { ...p, legenda } : p)) }));
+    /* Mexeu no post marcado: o aviso sai, e a próxima aprovação confere de novo. */
+    setDivergentes((atual) => {
+      if (!atual.has(id)) return atual;
+      const proximo = new Set(atual);
+      proximo.delete(id);
+      return proximo;
+    });
+  };
 
   return (
     <AssistenteDeAtividade
@@ -394,7 +440,7 @@ export function CriarASelecao({
               <GradeDosPosts
                 posts={lote.posts}
                 cartao={(p) => {
-                  const problema = problemas.get(p.id) ?? null;
+                  const problema = problemas.get(p.id) ?? (divergentes.has(p.id) ? avisoDeLado(p.perfil) : null);
                   return (
                     <CartaoDoPost
                       key={p.id}

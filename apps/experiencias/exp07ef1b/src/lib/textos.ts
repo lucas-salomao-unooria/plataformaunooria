@@ -4,16 +4,14 @@
  * `Stories`, `Posts`); fora dele, tudo é pt-BR.
  *
  * **A fonte é o sheet congelado da missão** (`design/06-copy-strings-revisada.md`,
- * passada 2) e o texto do PO para as enquetes. Cada entrada diz a chave do
+ * passada 2) e a proposta do Artur para a marcação (ADR-170). Cada entrada diz a chave do
  * sheet ao lado; as que dizem **ESCRITA AQUI** são as que o sheet não tinha e
  * a tela precisou (estão listadas no `AGENTS.md` desta pasta, para o PO revisar).
  *
- * O CONTEÚDO da missão (os 12 posts, a legenda do colega, as fichas, as
- * perguntas das enquetes) NÃO mora aqui: vem da api, e corrigir uma palavra dele
+ * O CONTEÚDO da missão (os 12 posts, a legenda do colega, as fichas) NÃO mora aqui: vem da api, e corrigir uma palavra dele
  * não pode exigir republicar um caminho imutável no bucket.
  *
- * **Três vozes, e cada tela tem uma só**: a Amara (a DM, E1, E5 e as
- * enquetes), a plataforma simulada (seca, funcional — feed, salvos, Stories,
+ * **Três vozes, e cada tela tem uma só**: a Amara (a DM, E1 e E5), a plataforma simulada (seca, funcional — feed, salvos, Stories,
  * Mural, os avisos de rede) e a Unooria (E6 e as telas da escola). O teste de
  * `textos.test.ts` cobra que nada de E1 a E4 diga, antes da revelação, as
  * palavras que entregariam a descoberta (`TERMOS_PROIBIDOS_NA_TELA` da api).
@@ -185,21 +183,45 @@ export const E6 = {
     `Escreva mais ${restante} ${plural(restante, "caractere", "caracteres")} para poder enviar sua reflexão.`,
   /** `e6.ui.btn_enviar` */
   enviar: "Enviar Reflexão ao Professor",
-  /** Texto do PO (enquetes, passo 1): a confirmação do envio. */
+  /** Texto do PO: a confirmação do envio. */
   enviada: "Pronto! Sua resposta foi enviada ✓",
-  /** ESCRITA AQUI — o botão que leva da confirmação à DM das enquetes. */
+  /** ESCRITA AQUI — o botão que leva da confirmação ao fim da missão. */
   continuar: "Continuar",
 } as const;
 
-// ─────────────────────────────────────────── as enquetes (de volta à Amara)
+// ───────────────────────────────── E4-ALU-01B: a marcação (EF07CO08, ADR-170)
 
-export const ENQUETE = {
-  /** O rótulo do voto, o mesmo padrão do DS (`DmPoll`), dito aqui para não depender dele. */
-  enviada: "Resposta enviada ✓",
-  /** ESCRITA AQUI — a mensagem de encerramento da Amara, depois da segunda enquete. */
-  encerramento: "Valeu pela força com a cobertura! Até a próxima.",
-  /** ESCRITA AQUI — o rodapé que fecha a DM e leva à tela final. */
-  fecharConversa: "Fechar conversa",
+/**
+ * A MARCAÇÃO, entre o Mural e as fichas — textos da proposta do Artur
+ * (16/10), sem exclamação e sem "viés" nem "enquadramento" (a revelação ainda
+ * não aconteceu). "Nada que mude a história" não ganha aviso nenhum: a
+ * criança não sabe o que cada resposta vale.
+ */
+export const MARCACAO = {
+  /** `e4.instrucao.marcacao_pergunta` */
+  pergunta: (nome: string) => `Tem algo na publicação de ${nome} que a sua deixou de fora e muda a história?`,
+  /** `e4.instrucao.marcacao_como` */
+  como: "Toque em um post do colega ou escolha a última opção.",
+  /** `e4.rotulo.marcacao_sua_publicacao` */
+  suaPublicacao: "Sua publicação",
+  /** ESCRITA AQUI — o nome acessível da grade do colega. */
+  doColega: (nome: string) => `Publicação de ${nome}`,
+  /** `e4.ui.btn_nenhum` */
+  nenhum: "Nada que mude a história",
+  /** `e4.rotulo.marcacao_porque` */
+  porque: "Quer dizer por quê? Só o professor lê.",
+  /** `e4.instrucao.marcacao_porque_placeholder` */
+  porquePlaceholder: "Escreva uma frase (opcional)",
+  /** `e4.ui.btn_porque_guardar` */
+  guardar: "Guardar",
+  /** ESCRITA AQUI — depois de guardar o "por quê?". */
+  porqueGuardado: "Guardado.",
+  /** `e4.feedback.marcacao_registrada` */
+  registrada: "Registrado. Você pode mudar até o professor liberar as fichas.",
+  /** `e4.feedback.marcacao_fechada` */
+  fechada: "A marcação foi encerrada pelo professor.",
+  /** ESCRITA AQUI — o "por quê?" que o sanitizador recusou. */
+  porqueRecusado: "Reescreva sem link, telefone, e-mail, @ ou palavrão.",
 } as const;
 
 // ─────────────────────────────────────────── as telas da escola (Unooria)

@@ -17,6 +17,7 @@ import {
   type SerieSomada,
 } from "../src/evidencias/evidencias-consolidado.service";
 import { EvidenciasService } from "../src/evidencias/evidencias.service";
+import { FICHA_EXP05EF1B } from "../src/evidencias/fichas/exp05ef1b";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { EscolasService } from "../src/rostering/escolas.service";
 import { criarTurmaDeTeste } from "./turma-de-teste";
@@ -194,6 +195,7 @@ describe("o painel da turma (H14.7.1)", () => {
     expect(missao.habilidades[0]!.distribuicao).toEqual({
       atingiu: 1,
       emProcesso: 1,
+      emProcessoLimitado: 0,
       naoAtingiu: 0,
       naoAvaliado: 2,
       total: 4,
@@ -241,6 +243,7 @@ describe("o painel da escola (H14.7.2)", () => {
     expect(daHabilidade(painel.total, "5EF", "EF05CO08")).toEqual({
       atingiu: 1,
       emProcesso: 1,
+      emProcessoLimitado: 0,
       naoAtingiu: 0,
       naoAvaliado: 4,
       total: 6,
@@ -252,6 +255,7 @@ describe("o painel da escola (H14.7.2)", () => {
         .reduce((a, b) => ({
           atingiu: a.atingiu + b.atingiu,
           emProcesso: a.emProcesso + b.emProcesso,
+          emProcessoLimitado: a.emProcessoLimitado + b.emProcessoLimitado,
           naoAtingiu: a.naoAtingiu + b.naoAtingiu,
           naoAvaliado: a.naoAvaliado + b.naoAvaliado,
           total: a.total + b.total,
@@ -275,6 +279,7 @@ describe("o painel da rede (H14.7.3)", () => {
     expect(missao.habilidades.find((h) => h.codigo === "EF05CO08")!.distribuicao).toEqual({
       atingiu: 1,
       emProcesso: 1,
+      emProcessoLimitado: 0,
       naoAtingiu: 0,
       naoAvaliado: 4,
       total: 6,
@@ -302,6 +307,7 @@ describe("o painel da rede (H14.7.3)", () => {
     expect(daHabilidade(painel.total, "5EF", "EF05CO08")).toEqual({
       atingiu: 2,
       emProcesso: 1,
+      emProcessoLimitado: 0,
       naoAtingiu: 0,
       naoAvaliado: 4,
       total: 7,
@@ -420,5 +426,57 @@ describe("quem chega em cada altura — o RolesGuard lê exatamente isto", () =>
   test("a rede: a regional e os perfis de contrato; a coordenação de UMA escola não", () => {
     for (const p of ["gestor_regional", "gestor_contrato", "admin"] as const) expect(passa("rede", p)).toBe(true);
     for (const p of ["gestor_escola", "professor", "estudante"] as const) expect(passa("rede", p)).toBe(false);
+  });
+});
+
+describe('o "em processo" limitado pela atividade (ADR-166)', () => {
+  /* A ficha REAL da exp05ef1b com um marcador a mais, limitado pela atividade —
+     só nesta instância do serviço, e no fim da suíte, para não mudar as somas
+     de cima. */
+  beforeAll(async () => {
+    evidencias.registrarFicha({
+      ...FICHA_EXP05EF1B,
+      habilidades: FICHA_EXP05EF1B.habilidades.map((h) =>
+        h.codigo === "EF05CO08"
+          ? { ...h, marcadores: [...h.marcadores, { id: "teste-limitado", tipo: "acao" as const, limitadoPelaAtividade: true as const }] }
+          : h,
+      ),
+    });
+    ids.t5L = (await criarTurmaDeTeste(prisma, ESCOLA, "5L", "5EF")).id;
+    for (const nome of ["lia", "leo", "lua"]) await estudante(ESCOLA, ids.t5L, nome);
+    const propria = (estudanteId: string, atividadeId: string, marcador: string | null) =>
+      prisma.evidencia.create({
+        data: {
+          escolaId: ESCOLA,
+          turmaId: ids.t5L!,
+          expId: MISSAO,
+          atividadeId,
+          rodada: 1,
+          estudanteId,
+          habilidade: "EF05CO08",
+          status: "em_processo",
+          origem: "propria",
+          situacao: "valida",
+          marcador,
+        },
+      });
+    // Lia: só o limitado. Leo: limitado numa atividade, comum na outra (empate = comum). Lua: comum.
+    await propria(ids.lia!, "atv-1", "teste-limitado");
+    await propria(ids.leo!, "atv-1", "teste-limitado");
+    await propria(ids.leo!, "atv-2", null);
+    await propria(ids.lua!, "atv-1", null);
+  });
+
+  test("a turma conta o limitado À PARTE, e o total continua sendo a soma das caixas", async () => {
+    const painel = TurmaConsolidadaSchema.parse(await consolidado.daTurma(ESCOLA, ids.t5L!));
+    const d = painel.missoes.find((m) => m.expId === MISSAO)!.habilidades.find((h) => h.codigo === "EF05CO08")!.distribuicao;
+    expect(d).toEqual({ atingiu: 0, emProcesso: 2, emProcessoLimitado: 1, naoAtingiu: 0, naoAvaliado: 0, total: 3 });
+  });
+
+  test("o topo da escola soma o limitado também, e continua a soma das linhas", async () => {
+    const painel = EscolaConsolidadaSchema.parse(await consolidado.daEscola(ESCOLA, AGORA));
+    const topo = daHabilidade(painel.total, "5EF", "EF05CO08")!;
+    expect(topo.emProcessoLimitado).toBe(1);
+    expect(topo.atingiu + topo.emProcesso + topo.emProcessoLimitado + topo.naoAtingiu + topo.naoAvaliado).toBe(topo.total);
   });
 });

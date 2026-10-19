@@ -3,7 +3,7 @@ import { Button, Modal, NewsCard, NewspaperPage, ScrollBar, Tabs } from "@edu/ui
 import { MEIO_PARA_MEDIUM } from "../../lib/meios";
 import { adicionar, esvaziar, preenchidas, retirar, type Vagas } from "../../lib/regras";
 import { E2, E3, EREV, REDACAO } from "../../lib/textos";
-import type { Diagramacao, IdDeNoticia, NoticiaPublica, TipoDePista } from "../../lib/tipos";
+import type { Diagramacao, IdDeNoticia, NoticiaPublica, TipoDePista, Veredito } from "../../lib/tipos";
 import { Gaveta } from "./gaveta";
 import { vagasDaPagina } from "./pagina";
 
@@ -52,6 +52,8 @@ export function MesaDeEdicao({
   aoMudarVagas,
   aoRevelar,
   abertaDeInicio,
+  julgamentos,
+  aoJulgar,
   aoPublicar,
   aoFalharMidia,
   abaInicial = "pautas",
@@ -71,6 +73,9 @@ export function MesaDeEdicao({
   aoMudarVagas: (vagas: Vagas) => void;
   aoRevelar: (noticiaId: IdDeNoticia, tipo: TipoDePista) => Promise<boolean>;
   abertaDeInicio: (noticiaId: IdDeNoticia, tipo: TipoDePista) => boolean;
+  /** Só na 1ª edição: os vereditos que valem (`n3:fonte` → veredito). Ausente = a fase não julga. */
+  julgamentos?: ReadonlyMap<string, Veredito>;
+  aoJulgar?: (noticiaId: IdDeNoticia, tipo: TipoDePista, veredito: Veredito) => Promise<boolean>;
   aoPublicar: () => void;
   aoFalharMidia: () => void;
   /** Onde a mesa abre: na 1ª edição, nas pautas; na revisão, na capa. */
@@ -223,6 +228,10 @@ export function MesaDeEdicao({
         aoTrocar={trocarAberta}
         aoRevelar={(tipo) => (aberta ? aoRevelar(aberta, tipo) : Promise.resolve(false))}
         abertaDeInicio={(tipo) => (aberta ? abertaDeInicio(aberta, tipo) : false)}
+        julgamentos={julgamentos}
+        aoJulgar={
+          aoJulgar ? (tipo, veredito) => (aberta ? aoJulgar(aberta, tipo, veredito) : Promise.resolve(false)) : undefined
+        }
         aoFalharMidia={aoFalharMidia}
       />
 

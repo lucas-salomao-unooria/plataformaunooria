@@ -25,6 +25,8 @@ describe('invariante: o que cruza a fronteira do cliente é allowlist', () => {
     'perguntasGastas',
     'tentativa',
     'rodadaDaTurma',
+    'ofertaSaude',
+    'registroConcluido',
     'alocacao',
     'justificativas',
   ];
@@ -100,7 +102,7 @@ describe('invariante: o que cruza a fronteira do cliente é allowlist', () => {
       agora,
     );
     expect(Object.keys(publico).sort()).toEqual(
-      ['modo', 'iniciadoEm', 'duracaoSeg', 'encerradoEm', 'pivoSeg', 'pivoMin', 'agora'].sort(),
+      ['modo', 'iniciadoEm', 'duracaoSeg', 'encerradoEm', 'pivoSeg', 'pivoMin', 'agora', 'fechamentoAberto'].sort(),
     );
     expect(publico.agora).toBe(agora.toISOString());
     expect(JSON.stringify(publico)).not.toContain('tenant');

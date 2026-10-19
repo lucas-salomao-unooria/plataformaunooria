@@ -9,12 +9,14 @@ import {
   gateMudou,
   horarioDaMensagem,
   iniciais,
-  marcaComoVista,
+  acoesDaRegra,
+  cartaoCompleto,
   mensagensDoMural,
   mesclarSessao,
   outrosParticipantes,
+  partesDaFrase,
   percentualDaBarra,
-  perguntaDaVez,
+  regraMontada,
   telaDe,
   type Vista,
 } from "./regras";
@@ -38,6 +40,8 @@ function estado(passo: Passo, extra: Partial<Estado> = {}): Estado {
     motivo: null,
     concluido: false,
     revelacao: null,
+    cartao: null,
+    regra: null,
     ...extra,
   };
 }
@@ -51,18 +55,17 @@ function sessao(passo: Passo, extra: Partial<Sessao> = {}): Sessao {
     ...estado(passo),
     pacote: null,
     textos: {
-      nina: { convite: null, encerramento: "" },
-      perguntas: [],
+      nina: { convite: null, encerramento: "", cartao: "", tio: "" },
     },
-    opcoes: { motivos: [] },
-    limites: { encaminhamentos: 3 },
+    opcoes: { motivos: [], condicoes: [], acoes: [], previsoes: [] },
+    limites: { encaminhamentos: 3, testes: 5 },
     ...extra,
   };
 }
 
 describe("telaDe — a tela que o passo pede", () => {
   test("sem pacote aprovado, é a espera do preparo em QUALQUER passo", () => {
-    for (const passo of ["abertura", "grupo", "espera", "perguntas", "concluida"] as Passo[]) {
+    for (const passo of ["abertura", "grupo", "espera", "cartao", "regra", "concluida"] as Passo[]) {
       expect(telaDe(estado(passo, { preparada: false }), vista())).toBe("preparo");
     }
   });
@@ -84,33 +87,21 @@ describe("telaDe — a tela que o passo pede", () => {
     expect(telaDe(estado("sintese", { revelacao: REVELACAO }), vista())).toBe("sintese");
   });
 
-  test("quem votou ATRASADO, com a turma já nas perguntas, vê os crachás antes do chat da Nina", () => {
-    const atrasado = estado("perguntas", { revelacao: REVELACAO });
-    expect(telaDe(atrasado, vista())).toBe("revelacao-atrasada");
-    expect(telaDe(atrasado, vista({ viuRevelacao: true }))).toBe("perguntas");
+  test("na reflexão: o cartão pendente vem antes da regra — o servidor manda, a tela segue", () => {
+    expect(telaDe(estado("cartao", { revelacao: REVELACAO }), vista())).toBe("cartao");
+    expect(telaDe(estado("regra", { revelacao: REVELACAO }), vista())).toBe("regra");
   });
 
-  test("as perguntas sem revelação no estado vão direto ao chat da Nina (nada a mostrar antes)", () => {
-    expect(telaDe(estado("perguntas"), vista())).toBe("perguntas");
-  });
-
-  test("concluída: a despedida da Nina segura a casca; um F5 cai direto em 'Missão Concluída'", () => {
-    expect(telaDe(estado("concluida"), vista({ segurandoDespedida: true }))).toBe("perguntas");
+  test("concluída é a casca 'Missão Concluída', também depois de um F5", () => {
     expect(telaDe(estado("concluida"), vista())).toBe("concluida");
-  });
-
-  test("só revelação e síntese marcam os crachás como vistos — a atrasada espera o 'Continuar'", () => {
-    expect(marcaComoVista("revelacao")).toBe(true);
-    expect(marcaComoVista("sintese")).toBe(true);
-    expect(marcaComoVista("revelacao-atrasada")).toBe(false);
-    expect(marcaComoVista("perguntas")).toBe(false);
   });
 
   test("o gate de telemetria de cada passo que o professor abre", () => {
     expect(gateDoPasso("revelacao")).toBe("revelacao");
     expect(gateDoPasso("sintese")).toBe("sintese");
-    /* As perguntas SÃO a reflexão (ADR-145): o gate que o professor abriu. */
-    expect(gateDoPasso("perguntas")).toBe("reflexao");
+    /* O cartão pendente e a regra são a reflexão: o gate que o professor abriu. */
+    expect(gateDoPasso("cartao")).toBe("reflexao");
+    expect(gateDoPasso("regra")).toBe("reflexao");
     expect(gateDoPasso("grupo")).toBeNull();
   });
 });
@@ -187,11 +178,40 @@ describe("a seleção do Mural", () => {
   });
 });
 
-describe("as perguntas da Nina", () => {
-  test("a da vez é a primeira sem resposta nesta aba", () => {
-    expect(perguntaDaVez(["p1", "p2"], {})).toBe("p1");
-    expect(perguntaDaVez(["p1", "p2"], { p1: "A1" })).toBe("p2");
-    expect(perguntaDaVez(["p1", "p2"], { p1: "A1", p2: "B3" })).toBeNull();
+describe("o cartão de frases", () => {
+  const frases = ["f1", "f2", "f3", "f4", "f5", "f6"].map((id) => ({ id, operador: "E" as const, texto: id }));
+
+  test("só envia com as seis respondidas: não existe cartão pela metade", () => {
+    const cinco = Object.fromEntries(frases.slice(0, 5).map((f) => [f.id, "sim" as const]));
+    expect(cartaoCompleto(frases, cinco)).toBe(false);
+    expect(cartaoCompleto(frases, { ...cinco, f6: "nao" })).toBe(true);
+    expect(cartaoCompleto([], {})).toBe(false);
+  });
+
+  test("o operador ISOLADO, em maiúsculas, é destacado — e só ele", () => {
+    const partes = partesDaFrase("A mensagem de Ana “Então vamos” é verdadeira E neutra.");
+    expect(partes.filter((p) => p.operador).map((p) => p.texto)).toEqual(["E"]);
+    expect(partes.map((p) => p.texto).join("")).toBe("A mensagem de Ana “Então vamos” é verdadeira E neutra.");
+    expect(partesDaFrase("A mensagem de Bia “Oi” NÃO é falsa.").filter((p) => p.operador).map((p) => p.texto)).toEqual([
+      "NÃO",
+    ]);
+    expect(partesDaFrase("A mensagem de Caio “Oi” é falsa OU emocional.").filter((p) => p.operador).map((p) => p.texto)).toEqual([
+      "OU",
+    ]);
+  });
+});
+
+describe("a regra do tio", () => {
+  test("montada = condição e a primeira ação (a segunda é opcional)", () => {
+    expect(regraMontada(null, "a")).toBe(false);
+    expect(regraMontada("c", null)).toBe(false);
+    expect(regraMontada("c", "a")).toBe(true);
+  });
+
+  test("as ações em ordem; a segunda só se escolhida e diferente da primeira", () => {
+    expect(acoesDaRegra("a", null)).toEqual(["a"]);
+    expect(acoesDaRegra("a", "b")).toEqual(["a", "b"]);
+    expect(acoesDaRegra("a", "a")).toEqual(["a"]);
   });
 });
 

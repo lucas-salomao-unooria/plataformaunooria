@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{164 decisões}, numeradas até ADR-164. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{174 decisões}, numeradas até ADR-174: a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -155,7 +155,7 @@ que a cercam.
 \adrr{ADR-102} & A doutrina é uma fonte só, lida por quatro agentes & 2026-09-15 & Aceita\\
 \zebra \adrr{ADR-103} & A frente mergeada se enterra sozinha & 2026-09-15 & Aceita\\
 \adrr{ADR-104} & A base se realinha sozinha depois da promoção & 2026-09-15 & Aceita\\
-\zebra \adrr{ADR-105} & A quota de IA é dado, editável pela Unooria, e não variável de ambiente & 2026-09-15 & Aceita\\
+\zebra \adrr{ADR-105} & A quota de IA é dado, editável pela Unooria, e não variável de ambiente & 2026-09-15 & Aceita; a \adrr{ADR-169} acrescenta a linha da avaliação\\
 \adrr{ADR-106} & O \cd{\_template} nasce com a fiação inteira e sem componente de interface & 2026-09-16 & Aceita\\
 \zebra \adrr{ADR-107} & O site público entra no hub como porte, e o cadastro de interesse passa pela api & 2026-09-16 & Aceita\\
 \adrr{ADR-108} & A missão de sala nasce vazia, e a revelação é do relógio da turma & 2026-09-17 & Aceita; a v1 saiu (\adrr{ADR-114}) e a v2.2 a retoma (\adrr{ADR-118})\\
@@ -165,9 +165,9 @@ que a cercam.
 \zebra \adrr{ADR-112} & A evidência é por atividade e rodada, e a melhor rodada vale por habilidade & 2026-09-25 & Aceita\\
 \adrr{ADR-113} & A Seleção substitui o Eco no Grupo, e a limpeza vem antes & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
-\adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita; a leitura da legenda ficou sem teto de saída (\adrr{ADR-148})\\
+\adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita; a leitura da legenda ficou sem teto de saída (\adrr{ADR-148}); superada em parte pela \adrr{ADR-170}\\
 \zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
-\adrr{ADR-117} & Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout & 2026-09-27 & Aceita; as imagens passam pelo OK do professor, uma a uma (\adrr{ADR-147}); a diagramação ficou sem teto de saída (\adrr{ADR-148})\\
+\adrr{ADR-117} & Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout & 2026-09-27 & Aceita; as imagens passam pelo OK do professor, uma a uma (\adrr{ADR-147}); a diagramação ficou sem teto de saída (\adrr{ADR-148}); estendida pela \adrr{ADR-173}\\
 \zebra \adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita; a régua foi substituída pela \adrr{ADR-120}\\
 \adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita; revista pela \adrr{ADR-150} (o podcast vira recurso da plataforma, com rotas únicas)\\
 \zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita; as perguntas voltaram às do PO (\adrr{ADR-131}); a medição única e a rubrica do Se/Então saíram (\adrr{ADR-145})\\
@@ -181,7 +181,7 @@ que a cercam.
 \zebra \adrr{ADR-128} & SSE só no chat do agente & 2026-09-30 & Aceita; a segunda rota com \emph{stream} é a da \adrr{ADR-132}\\
 \adrr{ADR-129} & O \emph{markdown} do agente vira HTML no navegador & 2026-09-30 & Aceita\\
 \adrr{ADR-130} & A atividade é do professor, e a equipe é da atividade & 2026-10-01 & Aceita\\
-\zebra \adrr{ADR-131} & As perguntas de evidência de Quem mandou isso? são as do PO, literais & 2026-10-01 & Aceita\\
+\zebra \adrr{ADR-131} & As perguntas de evidência de Quem mandou isso? são as do PO, literais & 2026-10-01 & Aceita; superada em parte pela \adrr{ADR-171} (as perguntas saem)\\
 \adrr{ADR-132} & A Ajuda com avatar: o vídeo é do vendor, o LLM é nosso, e o limite é em minutos & 2026-10-02 & Aceita; exceção à regra 5 e à \adrr{ADR-105}\\
 \zebra \adrr{ADR-133} & A missão do 8º ano troca o Instanooria pelo Unoovista & 2026-10-02 & Aceita\\
 \adrr{ADR-134} & Quem mandou isso? troca o clone do WhatsApp pelo Unoochat & 2026-10-02 & Aceita\\
@@ -195,26 +195,36 @@ que a cercam.
 \adrr{ADR-142} & Na subida do DS, o \cd{dist/} se compara sem os sourcemaps & 2026-10-03 & Aceita\\
 \zebra \adrr{ADR-143} & O lado do feed entra no sorteio de equipes por registro da missão, e redistribuir não convive com equipe & 2026-10-03 & Aceita\\
 \adrr{ADR-144} & O painel de habilidades lê por unidade, a missão vale o melhor entre as atividades, e a regional desce até a escola sem lotação & 2026-10-03 & Aceita\\
-\zebra \adrr{ADR-145} & Toda rodada mede todas as habilidades, o critério de cada nível aparece no painel, e Quem mandou isso? perde a regra dissertativa & 2026-10-05 & Aceita; revê a \adrr{ADR-120}\\
+\zebra \adrr{ADR-145} & Toda rodada mede todas as habilidades, o critério de cada nível aparece no painel, e Quem mandou isso? perde a regra dissertativa & 2026-10-05 & Aceita; revê a \adrr{ADR-120}; superada em parte pela \adrr{ADR-171} (as perguntas deixam de ser a reflexão)\\
 \adrr{ADR-146} & Pôr a atividade no ar libera a missão na sala, e A Seleção aprova textos e imagens em duas fases & 2026-10-05 & Aceita; complementa a \adrr{ADR-130}\\
 \zebra \adrr{ADR-147} & O Jornal da Escola: o professor aprova cada imagem antes da turma, e a mesa leva a criança à página & 2026-10-05 & Aceita; complementa a \adrr{ADR-117}\\
 \adrr{ADR-148} & As duas chamadas curtas de IA em sala não têm teto de saída, e as missões revisadas se testam com a IA real & 2026-10-05 & Aceita; revê o teto da \adrr{ADR-115} e da \adrr{ADR-117}\\
 \zebra \adrr{ADR-149} & A plataforma publica a base que o gerador de missões lê & 2026-10-06 & Aceita\\
 \adrr{ADR-150} & O podcast de recapitulação vira recurso da plataforma, com rotas únicas, e o professor revisa as falas do tema na customização & 2026-10-06 & Aceita; revê a \adrr{ADR-119}\\
-\zebra \adrr{ADR-151} & O Júri Estadual volta ao foco EF06CO10, aprova as imagens antes da turma e ganha o podcast & 2026-10-06 & Aceita; substitui em parte a \adrr{ADR-137}; complementada pela \adrr{ADR-152}\\
-\adrr{ADR-152} & O Júri Estadual recupera o ciclo do voto: salvar pesa, a justificativa vem antes e depois, complementar, e a rodada de desvio & 2026-10-07 & Aceita; complementa a \adrr{ADR-151}\\
-\zebra \adrr{ADR-153} & O Unoovista mede a evidência pelas três perguntas do PO, depois da reflexão, numa rodada só & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}\\
-\adrr{ADR-154} & A Missão Tempestade mede a evidência numa atividade sintética, com rodada da turma, a melhor resposta e o nível só ao encerrar a missão & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}\\
+\zebra \adrr{ADR-151} & O Júri Estadual volta ao foco EF06CO10, aprova as imagens antes da turma e ganha o podcast & 2026-10-06 & Aceita; substitui em parte a \adrr{ADR-137}; complementada pela \adrr{ADR-152}; superada em parte pela \adrr{ADR-174} (a EF06CO10 sai)\\
+\adrr{ADR-152} & O Júri Estadual recupera o ciclo do voto: salvar pesa, a justificativa vem antes e depois, complementar, e a rodada de desvio & 2026-10-07 & Aceita; complementa a \adrr{ADR-151}; superada em parte pela \adrr{ADR-174} (a galeria não marca)\\
+\zebra \adrr{ADR-153} & O Unoovista mede a evidência pelas três perguntas do PO, depois da reflexão, numa rodada só & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}; superada em parte pela \adrr{ADR-167}\\
+\adrr{ADR-154} & A Missão Tempestade mede a evidência numa atividade sintética, com rodada da turma, a melhor resposta e o nível só ao encerrar a missão & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}; superada em parte pela \adrr{ADR-172}\\
 \zebra \adrr{ADR-155} & Zerar a turma apaga a evidência pedagógica da atividade & 2026-10-09 & Aceita; reverte parte da \adrr{ADR-112}\\
 \adrr{ADR-156} & O Unoovista ganha o podcast com as falas revisadas no Ativar, e a Missão Tempestade ganha o primeiro podcast fixo & 2026-10-10 & Aceita; aplica a \adrr{ADR-150}\\
-\zebra \adrr{ADR-157} & O Júri Estadual segue o PRD v2 (0.4.0) & 2026-10-10 & Aceita; supera em parte a \adrr{ADR-151} e a \adrr{ADR-152}; superada em parte pela \adrr{ADR-164}\\
+\zebra \adrr{ADR-157} & O Júri Estadual segue o PRD v2 (0.4.0) & 2026-10-10 & Aceita; supera em parte a \adrr{ADR-151} e a \adrr{ADR-152}; superada em parte pela \adrr{ADR-164} e pela \adrr{ADR-174} (a cadeia, o par simulado e as enquetes saem)\\
 \adrr{ADR-158} & O mascote na Ajuda: voz do Gemini Live por um proxy na api, rosto 3D no hub, e o padrão escolhido no painel & 2026-10-12 & Aceita; complementa a \adrr{ADR-132}\\
 \zebra \adrr{ADR-159} & O hub no celular e no tablet: \cd{min-w-0} na coluna ao lado da \cd{SideBar}, e a \cd{Tag} que quebra linha & 2026-10-12 & Aceita; complementa a \adrr{ADR-83}\\
 \adrr{ADR-160} & O painel de habilidades abre pelo total, e o contrato desce pela regional & 2026-10-13 & Aceita; complementa a \adrr{ADR-144}\\
 \adrr{ADR-161} & Custos de IA: o consumo medido por dia, produto, escola e modelo, e o custo derivado na leitura, com preço datado e a PTAX do dia & 2026-10-13 & Aceita; complementa a \adrr{ADR-105} e a \adrr{ADR-158}\\
 \zebra \adrr{ADR-162} & Acessibilidade WCAG 2.2 AA: o axe como portão, e a correção no \emph{design system}, não na tela & 2026-10-13 & Aceita; reclassifica o risco R-07\\
 \adrr{ADR-163} & O texto alternativo da imagem do post é o \emph{brief} que a gerou; as fotos fixas são descritas no \emph{bundle} & 2026-10-13 & Aceita; corrige uma consequência da \adrr{ADR-162}\\
-\zebra \adrr{ADR-164} & O Júri Estadual com quarenta projetos: o feed sem repetir post, a galeria mostra O QUE sumiu, e o banco padrão ganha imagens & 2026-10-14 & Aceita; supera em parte a \adrr{ADR-157}\\
+\zebra \adrr{ADR-164} & O Júri Estadual com quarenta projetos: o feed sem repetir post, a galeria mostra O QUE sumiu, e o banco padrão ganha imagens & 2026-10-14 & Aceita; supera em parte a \adrr{ADR-157}; superada em parte pela \adrr{ADR-174} (a ficha da evidência)\\
+\adrr{ADR-165} & As instruções da Ajuda no painel: o \enquote{como responder} de cada atendente é dado & 2026-10-15 & Aceita; complementa a \adrr{ADR-132} e a \adrr{ADR-158}\\
+\zebra \adrr{ADR-166} & De onde veio o nível: a evidência guarda o marcador que a deu, e o consolidado conta à parte o \enquote{em processo} limitado pela atividade & 2026-10-16 & Aceita; complementa a \adrr{ADR-112} e a \adrr{ADR-144}\\
+\adrr{ADR-167} & O Canal A do Unoovista: toda habilidade por ação --- o Raio-x antes do debate, os termos e o envio depois do cinza, e a reflexão lida pela IA; as perguntas do fim saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-153}\\
+\zebra \adrr{ADR-168} & O Jornal da Escola em Canal A puro: julgar cada pista, montar a Chave, simulá-la e decidir diante do boato --- sem múltipla escolha & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-117} e a \adrr{ADR-147}\\
+\adrr{ADR-169} & A quota de avaliação: a leitura da plataforma para a evidência pedagógica tem teto próprio, por escola, fora da quota do estudante & 2026-10-16 & Aceita; segunda exceção à regra 5, complementa a \adrr{ADR-105}\\
+\zebra \adrr{ADR-170} & O Canal A da A Seleção: a legenda lida por indicadores, a marcação do post do colega entre o Mural e as fichas, e as enquetes saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-115}; usa a \adrr{ADR-166} e a \adrr{ADR-169}\\
+\adrr{ADR-171} & Quem mandou isso? só com o Canal A: o cartão de frases depois dos crachás e a regra do tio montada com peças & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-131} e a \adrr{ADR-145}\\
+\zebra \adrr{ADR-172} & O Canal A da Missão Tempestade: toda habilidade por ação --- a ligação da Saúde, o registro da operação, o \enquote{E se…} pareado e o fechamento aberto pelo professor; as perguntas saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-154}\\
+\adrr{ADR-173} & Clone dentro de clone: a peça de outra plataforma dentro de uma experiência disfarçada & 2026-10-16 & Aceita; estende a \adrr{ADR-117}\\
+\zebra \adrr{ADR-174} & O Júri Estadual mede pelo que a criança faz: a separação (EF06CO01) e a regra SE … ENTÃO (EF06CO03); a EF06CO10 sai & 2026-10-18 & Aceita; supera em parte a \adrr{ADR-151}, a \adrr{ADR-152}, a \adrr{ADR-157} e a \adrr{ADR-164}\\
 \bottomrule
 \end{tabularx}
 
@@ -11467,7 +11477,9 @@ etapa por atividade, e não só no gate da turma.
 \section{ADR-131 --- As perguntas de evidência de Quem mandou isso? são as do PO, literais}
 \label{adr:perguntas-do-po-quem-mandou}
 
-\textbf{Data.} 2026-10-01. \textbf{Status.} Aceita. \textbf{Substitui} a parte
+\textbf{Data.} 2026-10-01. \textbf{Status.} Aceita; \textbf{superada em parte
+pela \adrr{ADR-171}} (2026-10-16): a P1 e a P2 saíram, e a EF05CO03 e a
+EF05CO04 passaram a ser medidas por ação. \textbf{Substitui} a parte
 das perguntas da \adrr{ADR-120}; o resto dela --- a faixa da EF05CO08, a
 EF05CO08 medida uma vez por criança e pacote, e a rubrica do Se/Então --- continua
 valendo.
@@ -12626,7 +12638,10 @@ ficha.
 
 \textbf{Data.} 2026-10-05. \textbf{Status.} Aceita. Revê a \adrr{ADR-120}
 (a medição única por criança e pacote, e a rubrica do Se/Então) e complementa
-a \adrr{ADR-112}.
+a \adrr{ADR-112}. \textbf{Superada em parte pela \adrr{ADR-171}}
+(2026-10-16): as perguntas deixaram de ser a reflexão --- a reflexão é a regra
+do tio, montada com peças e sem texto livre ---, e a EF05CO04 voltou a medir o
+criar.
 
 \begin{especificacao}{Contexto}
 O PO testou Quem mandou isso? (exp05ef1b) de ponta a ponta e devolveu três
@@ -13340,6 +13355,9 @@ pela \adrr{ADR-152}} (2026-10-07): o ciclo do voto que a esteira perdeu
 volta, a régua de quem não explora a galeria muda e o podcast fica opcional.
 \textbf{Superada em parte pela \adrr{ADR-157}} (2026-10-10): o banco padrão
 volta, a régua da EF06CO01 muda e o podcast vira recurso fixo.
+\textbf{Superada em parte pela \adrr{ADR-174}} (2026-10-18): a EF06CO10 sai
+da missão, a galeria deixa de marcar habilidade, as enquetes \cd{p1}--\cd{p3}
+saem e a EF06CO01 passa a ser a principal, medida pela separação.
 \textbf{Substitui em
 parte} a \adrr{ADR-137} (as habilidades medidas e a remontagem dos pacotes;
 o feed no servidor, a taxa real e a mostra sem acervo padrão continuam).
@@ -13512,7 +13530,9 @@ recorte por missão da descrição oficial.
 
 \textbf{Data.} 2026-10-07. \textbf{Status.} Aceita; \textbf{superada pela
 \adrr{ADR-157}} (2026-10-10) no ciclo do voto: salvar deixa de pesar, e a
-justificativa, o complementar e a rodada de desvio saem. \textbf{Complementa} a
+justificativa, o complementar e a rodada de desvio saem; \textbf{superada em
+parte pela \adrr{ADR-174}} (2026-10-18) na régua da Galeria Oculta: a revisão
+do voto deixa de marcar a EF06CO10 e a EF06CO01. \textbf{Complementa} a
 \adrr{ADR-151} (recupera as diretrizes do PO que ela declarou fora) e a
 \adrr{ADR-137} (o feed no servidor e a taxa real continuam). \textbf{Revê} a
 régua de quem não explora a Galeria Oculta (a ficha sobe para a versão 3) e o
@@ -14020,7 +14040,11 @@ outras).
 pela \adrr{ADR-164}} (2026-10-14): os dezesseis projetos, a saturação por
 formatos (o desvio 1) e a taxa de invisibilidade como a prova da Galeria Oculta
 deram lugar aos quarenta projetos, ao feed sem repetir post e à galeria que
-mostra O QUE sumiu; o resto continua valendo. \textbf{Supera} a
+mostra O QUE sumiu; o resto continua valendo. \textbf{Superada em parte
+pela \adrr{ADR-174}} (2026-10-18): a cadeia de quatro blocos, o par simulado
+(melhoria 7), o 422 \cd{ordem-incorreta}, as enquetes nos Stories e a ficha
+versão 4 deram lugar à separação, à regra SE \ldots{} ENTÃO e à ficha versão 5.
+\textbf{Supera} a
 \adrr{ADR-151} e a \adrr{ADR-152} no que conflitam com ela (o ciclo do voto, o
 salvar com peso, a rodada de desvio, a ausência de banco padrão, o podcast
 opcional, a régua da EF06CO01); o resto delas (duas fases de aprovação,
@@ -14729,7 +14753,10 @@ a ser a descrição, como na exp08ef1b).
 saturação por formatos (o desvio 1 dela) e a taxa de invisibilidade como a prova
 da Galeria Oculta. O resto da \adrr{ADR-157} continua valendo (o ciclo do voto
 em dois botões, os 8 minutos do servidor, o batimento da cédula, a cadeia, o caso
-Mariana, a ficha da evidência).
+Mariana, a ficha da evidência). \textbf{Superada em parte pela \adrr{ADR-174}}
+(2026-10-18): a cadeia e a ficha da evidência que este parágrafo dá como
+vigentes foram trocadas pela separação, pela regra SE \ldots{} ENTÃO e pela
+ficha versão 5.
 
 \begin{especificacao}{Contexto}
 \begin{itemize}
@@ -14865,3 +14892,945 @@ feed; a geração por área passar do teto do BFF (modelo mais lento, mais
 estandes); a concentração da lousa deixar de separar quem curtiu de quem não
 curtiu numa turma real; ou o PO pedir mudança nos vinte e quatro projetos novos
 do banco.
+
+% ---------------------------------------------------------------------------
+\section{ADR-165 --- As instruções da Ajuda no painel: o \enquote{como responder} de cada atendente é dado}
+\label{adr:ajuda-instrucoes-no-painel}
+
+\textbf{Data.} 2026-10-15. \textbf{Status.} Aceita. \textbf{Complementa} a
+\adrr{ADR-132} e a \adrr{ADR-158}.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O pedido.} O dono do produto pediu, na frente da
+    \adrr{ADR-158}, que a voz e os \emph{prompts} de sistema da Ajuda ficassem
+    no painel da Unooria. A voz e o modelo do mascote entraram; as instruções
+    ficaram fixas no código (\cd{src/ajuda/prompt.ts}).
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{As instruções de \enquote{como responder} de cada atendente são
+    dado}: \cd{ajuda\_configuracao.instrucoes\_mascote} e
+    \cd{instrucoes\_avatar}, editadas só pelo \cd{admin}, com motivo e
+    histórico (\cd{configuracao-alterada}). \textbf{NULO = o texto padrão do
+    código}, e texto igual ao padrão é gravado como NULO --- quando o padrão
+    melhorar, quem nunca personalizou recebe a melhoria.
+  \item \textbf{Só o comportamento é editável.} O cabeçalho do conhecimento, a
+    base gerada e \enquote{quem está falando} a api monta SEMPRE depois do texto:
+    uma edição não consegue tirar a base do \emph{prompt}. O texto fica no
+    banco e só a api o lê (regra 2).
+  \item \textbf{Vale já}: o avatar relê a configuração a cada turno do LLM; o
+    mascote, a cada sessão de voz.
+  \item \textbf{Na mesma tela} de \cd{/unooria/uso-de-ia}, logo abaixo de
+    quem atende: um cartão por atendente, com \enquote{Restaurar o texto
+    padrão}.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{O \emph{prompt} inteiro editável}, base incluída. A base é
+    gerada do mapa de produto (cerca de 84 mil \emph{tokens}) e se regera a cada
+    mudança dele; editada à mão, ela divergiria do produto na primeira entrega.
+  \item \textbf{Uma página própria da Ajuda no menu do painel.} Chegou a ser
+    feita e foi desfeita a pedido do dono do produto: a Ajuda continua no fim
+    de \enquote{Uso de IA}, ao lado das quotas.
+  \item \textbf{Instruções por escola ou regional.} O atendente é um só por
+    rede, como a voz; não houve pedido de variação.
+  \item \textbf{Guardar o texto padrão no banco} na migração. Congelaria a
+    versão do dia: a melhoria do código não chegaria a ninguém.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O \cd{admin} pode piorar o atendente}: um texto que manda
+    responder longo aumenta o custo e a espera, e um que contradiz as regras de
+    privacidade enfraquece a proteção. O histórico guarda quem mudou e por quê,
+    e \enquote{Restaurar o texto padrão} desfaz.
+  \item \textbf{Uma leitura a mais por turno do avatar} (chave primária, linha
+    única), contra a regra de não ter cache: aceito, pelo mesmo motivo das
+    quotas.
+\end{itemize}
+
+\textbf{Gatilho.} Pedido de instruções por escola ou por papel, ou um incidente
+causado por instrução editada.
+
+% ---------------------------------------------------------------------------
+\section{ADR-166 --- De onde veio o nível: a evidência guarda o marcador que a deu, e o consolidado conta à parte o \enquote{em processo} limitado pela atividade}
+\label{adr:evidencia-origem-do-nivel}
+
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Complementa} a
+\adrr{ADR-112} e a \adrr{ADR-144}.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O pedido.} O dono do produto aprovou medir TODAS as
+    habilidades do 8º ano por ação (o Canal A da exp08ef1b), e a EF08CO11 passa
+    a ter duas ações: o Raio-x do feed e a reflexão lida pela IA. Vale a melhor
+    (\adrr{ADR-112}), mas o professor precisa saber QUAL das duas deu o nível
+    --- sobretudo quando ele vem da leitura da IA, que é sugestão --- e, quando
+    elas divergem, o nível de cada uma.
+  \item \textbf{O limite da atividade.} O envio do 8º ano só mede a
+    confiabilidade quando o acervo da atividade tem página de fofoca ou de
+    humor nos dois lados. Nas atividades sem isso, o envio vai no máximo a
+    \enquote{em processo}: esse nível diz da ATIVIDADE escolhida, não do
+    estudante, e o consolidado da escola e da rede o somava como se dissesse.
+  \item \textbf{O que havia.} A linha de \cd{evidencias} guardava o nível, a
+    origem e a situação; o marcador ficava só em \cd{evidencias\_marcas}. O
+    painel não sabia de onde veio a evidência própria, e o consolidado não
+    tinha como separar o limitado.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{A evidência própria guarda o marcador que deu o nível}
+    (coluna \cd{evidencias.marcador}, nula na cópia, no ajuste e nas linhas
+    anteriores). É o marcador da melhor marca da habilidade na rodada
+    (\cd{regras.ts\#marcadorDoNivel}); no empate, o que NÃO é limitado pela
+    atividade ganha, e depois a ordem da ficha. Dois \emph{CHECKs}: o alfabeto
+    dos ids da ficha, e marcador só na origem \cd{propria}.
+  \item \textbf{A ficha dá rótulo às ações}: \cd{MarcadorDaFicha.rotulo}
+    (\enquote{Raio-x}, \enquote{Reflexão --- sugestão da IA}) e
+    \cd{limitadoPelaAtividade}. O painel da atividade diz, embaixo do nível, a
+    ação que o deu e, quando duas ações da habilidade divergem na rodada, o
+    nível de cada uma --- também depois do ajuste do professor. Missão sem
+    rótulo não recebe nada disso: o painel dela não muda.
+  \item \textbf{O consolidado conta à parte o \enquote{em processo} limitado}:
+    \cd{emProcessoLimitado}, fora de \cd{emProcesso} e dentro do \cd{total},
+    que continua sendo a soma das caixas. Entre atividades, \textbf{o empate
+    entre um \enquote{em processo} limitado e um comum guarda o comum}: houve
+    uma atividade que mediu o estudante. A barra ganha o quinto segmento só
+    quando há criança nele.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Derivar o marcador das marcas a cada leitura}, sem coluna
+    nova. O painel da atividade conseguiria, mas o consolidado da rede lê
+    escola por escola em lotes (\adrr{ADR-82}) e passaria a ler também as
+    marcas de todas as turmas --- o dobro de linhas para separar uma caixa.
+  \item \textbf{Contar o limitado DENTRO do \enquote{em processo}}, com um
+    \enquote{dos quais} ao lado. A barra continuaria somando ao estudante um
+    nível que mediu a atividade; a coordenação compara turmas pela porcentagem
+    e não leria a nota de rodapé.
+  \item \textbf{Esconder o nível da IA até o professor confirmar}. O dono do
+    produto decidiu que a marca da reflexão vale desde o início; o painel diz
+    \enquote{sugestão da IA} e o professor ajusta como qualquer nível.
+  \item \textbf{A regra \enquote{a pergunta só conta sem tarefa}}, que chegou a
+    ser desenhada junto. Saiu com as perguntas do 8º ano e da 2ª série: sem
+    pergunta, não há o que ignorar.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A cópia da equipe não carrega o marcador.} O colega de
+    computador que recebe um \enquote{em processo} limitado é contado como
+    \enquote{em processo} comum no consolidado. Aceito: a cópia já é uma
+    aproximação (\adrr{ADR-111}), e o professor ajusta um a um.
+  \item \textbf{As linhas anteriores à coluna ficam sem \enquote{de onde
+    veio}.} Nenhuma missão tinha rótulo antes desta decisão, então nada some do
+    painel.
+  \item \textbf{O limitado depende da ficha de hoje.} Se uma versão nova da
+    ficha deixar de marcar um marcador como limitado, o consolidado passa a
+    contá-lo como comum também no passado.
+\end{itemize}
+
+\textbf{Gatilho.} Uma segunda missão com marcador limitado pela atividade, ou
+pedido do dono do produto para que a cópia da equipe carregue a origem.
+
+% ---------------------------------------------------------------------------
+\section{ADR-167 --- O Canal A do Unoovista: toda habilidade por ação}
+\label{adr:exp08ef1b-canal-a}
+
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Supera em parte} a
+\adrr{ADR-153} (as três perguntas do fim) e \textbf{usa} a \adrr{ADR-166} (de
+onde veio o nível).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O pedido.} O dono do produto pediu evidência por AÇÃO em todas
+    as habilidades da ficha do 8º ano (o Canal A), com liberdade para mudar a
+    mecânica. Até aqui a missão media as três habilidades só por três perguntas
+    de múltipla escolha depois da reflexão (\adrr{ADR-153}): o que a criança
+    faz no app não virava nível.
+  \item \textbf{O meio-termo com o PO.} O desenho aprovado pedia os termos de
+    uso na entrada e dois itens novos no menu do post. O PO preferiu não mexer
+    na entrada nem no menu, levar o Raio-x para antes do debate, com a
+    devolutiva dentro da revelação, e tirar o lado das miniaturas do envio.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{EF08CO11 por duas ações, vale a melhor.} O \textbf{6a Raio-x},
+    logo depois da resposta à pergunta-chave e ainda no disfarce (seção
+    \cd{unoovista}): de 6 posts que o estudante VIU --- nenhum da tela cinza
+    ---, o que cada um faz. A \textbf{regra dos 3} (nenhuma resposta certa
+    mais de 3 vezes) e os casos de falta estão em
+    \arq{motor/canal-a/raio-x.ts}; sem fechar 6, o Raio-x não aparece. O envio
+    responde só \enquote{enviado}: de onde cada post veio aparece na
+    revelação, como ponte. E a \textbf{reflexão lida pela IA}: uma vez só, o
+    primeiro texto salvo, com a quota do perfil \cd{estudante}, teto de 60\,s por tentativa (ela roda depois da resposta ao estudante, que não espera por ela), até 3 tentativas só para a falha técnica --- tempo, \emph{provider} ou saída que o Zod recusa ---, sempre com o mesmo primeiro texto, e
+    motivo coerente com o nível; o painel diz \enquote{sugestão da IA}.
+  \item \textbf{EF08CO09 pelo 6b}, depois do cinza: as 5 regras fictícias
+    (\enquote{Estes seriam os termos de uso de uma plataforma como o
+    Unoovista}), localizar, explicar o efeito e julgar a mudança. Os termos
+    aparecem pela primeira vez aqui.
+  \item \textbf{EF08CO07 pelo 6c}: de 9 posts do acervo (3 de cada lado e 3
+    neutros sobre o tema, um de fofoca ou humor por lado), até 3 e uma
+    mensagem para um colega que não viu nada. As miniaturas NÃO mostram o
+    lado; o servidor classifica pelo lado gravado. A régua 4$\times$4 está em
+    \arq{motor/canal-a/envio.ts}. Na atividade sem página de fofoca ou de humor
+    nos dois lados, só a casa \enquote{os dois lados, sem fofoca $\times$
+    aviso} muda (para \enquote{em processo}) e grava o marcador limitado
+    (\adrr{ADR-166}); a página da atividade avisa antes de pôr no ar, com a
+    saída de criar uma atividade nova com a mesma pergunta.
+  \item \textbf{As perguntas do fim saem} (o Canal B), com a tela delas e o
+    resolvedor que as liberava. Os níveis já dados por elas ficam no
+    histórico. Sem tarefa feita, a habilidade fica \enquote{Não avaliado}, e o
+    professor ajusta à mão.
+  \item \textbf{O fim da revelação é registrado no servidor}
+    (\cd{runs.revelacao\_concluida\_em}): o 6b e o 6c só abrem com ele, e o 6a
+    fecha. Quem foi puxado adiante pela turma vê a revelação (e o relatório,
+    com \enquote{Continuar}) antes do cinza; tarefa pendente vem antes da
+    reflexão.
+  \item \textbf{Vale o primeiro envio}, mesmo depois de um reinício: o reinício
+    apaga as tarefas e o fim da revelação, e não as marcas; quem refaz aparece
+    como \enquote{refeito após reinício}. A leitura da reflexão também fica.
+  \item \textbf{O relatório não entrega o gabarito}: enquanto o Raio-x está
+    pendente, o relatório do estudante chega sem lado, intensidade e
+    categoria dos posts em que ele mais parou.
+  \item \textbf{A geração passa a exigir}, em cada lado, um perfil de fofoca e
+    um de humor entre os de tese, e reserva a checagem aos neutros.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Os termos na entrada do app e no menu do post}, com
+    \enquote{Por que estou vendo isto?}. O PO preferiu a entrada e o menu sem
+    mudança; a régua do 6b não muda, e as telas da revelação foram reescritas
+    para quem nunca viu termo nenhum.
+  \item \textbf{O Raio-x depois da revelação.} Mediria o viés com o estudante
+    já avisado; o PO o quis antes do debate, sem devolutiva no envio.
+  \item \textbf{A pergunta como rede de segurança} (\enquote{só conta sem
+    tarefa}). Saiu com o Canal B, nesta missão e na 2ª série.
+  \item \textbf{O lado nas miniaturas do envio.} Separaria a EF08CO07 da
+    EF08CO11, mas o PO preferiu que montar \enquote{os dois lados} exija
+    reconhecê-los.
+  \item \textbf{\enquote{Gerar de novo} o acervo das atividades antigas.} A
+    geração acrescenta e não substitui; a saída é criar uma atividade nova com
+    a mesma pergunta.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Sem rede de segurança}: quem falta, atrasa ou não termina uma
+    tarefa fica \enquote{Não avaliado} naquela habilidade.
+  \item \textbf{O Raio-x antes do debate pode dar o tom da conversa}, e mede o
+    viés sem aviso: os cortes da régua podem ficar duros. O texto da tela não
+    fala de algoritmo, bolha nem lado inicial, e o guia avisa.
+  \item \textbf{O 6c sem o lado volta a misturar a EF08CO07 com a EF08CO11}:
+    quem não reconhece os lados não monta \enquote{os dois lados}.
+  \item \textbf{O gabarito depende do que a IA gerou}: o lado de cada post e o
+    tipo de cada perfil. Post ambíguo vira erro do estudante; o professor
+    ajusta.
+  \item \textbf{A aula fica mais cheia.} Na versão em duas aulas, a
+    investigação da aula 1 cai de 13 para 11 minutos (acima do piso de 8 do
+    feed) e o fechamento, de 2 para 1, para caber o Raio-x.
+\end{itemize}
+
+\textbf{Gatilho.} A distribuição dos níveis do Raio-x ou do envio mostrar a
+régua dura demais, ou a leitura da IA divergir do professor nos ajustes do
+painel.
+
+
+% ---------------------------------------------------------------------------
+\section{ADR-168 --- O Jornal da Escola em Canal A puro: julgar cada pista, montar a Chave, simulá-la e decidir diante do boato}
+\label{adr:exp04ef1b-canal-a}
+
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Supera em parte}
+a \adrr{ADR-117} (a Chave por tentativas e o Desafio Final de múltipla
+escolha) e a \adrr{ADR-147} (a missão de oito notícias passa a ter dez).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O pedido.} O dono do produto descontinuou o Canal B (a pergunta
+    de múltipla escolha que vale nota): toda habilidade da ficha precisa de uma
+    AÇÃO voluntária na missão que sustente sozinha o atingiu, o em processo e o
+    não atingiu. No Jornal (\cd{exp04ef1b}, 4º ano), as três habilidades já
+    tinham marcador de ação, mas a EF04CO08 valia o melhor entre a 2ª edição e
+    as perguntas P1/P2.
+  \item \textbf{As três versões da proposta.} A primeira descrevia uma versão
+    antiga da missão (um \emph{feed}); a segunda, já sobre o Jornal, trazia
+    furos que a revisão apontou --- a ordem livre das vagas não prova
+    sequência, repetir a tarefa não é construir uma repetição, a Chave entregava
+    as três peças certas, e o julgamento de cada pista só nas matérias adicionadas impedia a criança
+    que acertava tudo de chegar ao atingiu. A terceira corrigiu, e um plenário
+    pedagógico de três avaliadores (avaliação educacional, currículo da BNCC
+    Computação, sala de aula e proteção da criança) aprovou a especificação por
+    unanimidade, depois de três rodadas.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{EF15CO04 (decomposição) pelo julgamento de cada pista.} Logo
+    depois de abrir uma pista, e ANTES de decidir a capa, a criança marca
+    \enquote{Confio} ou \enquote{Não confio} (\cd{POST julgamento}; o primeiro
+    vale; opcional). Atingiu = cada tipo de pista julgado em pelo menos duas
+    notícias, pelo menos 80\% dos julgamentos certos, o furo percebido em pelo
+    menos metade das pistas com furo que ela abriu (no mínimo uma) e a capa
+    publicada coerente com os próprios julgamentos. O gabarito por pista sai do
+    da notícia (\cd{pilarEmFalta}).
+  \item \textbf{EF15CO02 (construir e simular) pela Chave MONTADA e pela
+    simulação.} A Chave do Editor deixa de ser tentativa e erro: a criança
+    escolhe três blocos entre seis (os três pilares e três armadilhas), decide o
+    lado de cada cartão de condição, o \enquote{se esta pista falhar} (\enquote{Não
+    publico} ou \enquote{Olho a próxima pista}) e a repetição (\enquote{em TODAS
+    as notícias} ou \enquote{só na primeira}) --- um envio, sem correção. Depois
+    da 2ª edição, ela aplica a Chave dela a duas matérias novas; mede-se a
+    FIDELIDADE à regra dela (a ordem das vagas, a parada, a decisão coerente),
+    não se a regra está certa.
+  \item \textbf{EF04CO08 pela 2ª edição e pela transferência.} O boato de
+    \enquote{todas as escolas do bairro} chega com \enquote{Repassar para o
+    grupo} à mão desde o início, numa tela neutra; conta abrir a pista de
+    fonte (ou duas pistas) e não repassar. A 2ª edição só vale o atingiu com as
+    três verificadas E as três pistas de cada uma conferidas --- a revisão marca
+    os furos, e o 3/3 sozinho viria do retorno da tela.
+  \item \textbf{A combinação cabe no \enquote{vale o melhor} da plataforma}, sem
+    regra nova nela: o marcador PARCIAL (a montagem, a 2ª edição) tem teto em
+    \enquote{em processo}, e o FINAL (a simulação, a transferência) grava o
+    COMBINADO. Quem não chega ao fim fica com o parcial; as tabelas do dono do
+    produto saem inteiras do melhor dos dois.
+  \item \textbf{O Canal B sai inteiro}: a ficha vai à versão 2, sem perguntas, e a
+    missão não registra resolvedor de contexto --- as rotas de pergunta de
+    \cd{/evidencias} não respondem por ela. A pergunta de motivo (depois da 1ª
+    publicação) fica: não avalia, e serve à conversa do professor.
+  \item \textbf{O resto do desenho}: as duas matérias da simulação são geradas
+    no preparo, sem imagem (não somam curadoria de imagem); o boato é fixo;
+    depois da simulação todos recebem a mesma regra de referência; o painel da
+    aula ganha só AGREGADOS da Chave e do boato; a aula pode ter uma pausa
+    oficial depois do resultado (1 ou 2 aulas).
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{A ordem livre das vagas como prova de sequência.} Conferir fonte,
+    data e autoria dá o mesmo veredito em qualquer ordem; a ordem só ganha
+    função na execução, e é lá que se mede.
+  \item \textbf{A escolha binária \enquote{verifico antes / publico agora}} como
+    transferência: depois de ver as famílias no portão, mede o que a criança sabe
+    que deve dizer, não o que faz.
+  \item \textbf{O julgamento só ao adicionar à capa}, com um \enquote{Não confio} certo obrigatório: a
+    criança que deixa as ruins de fora nunca o marca. O botão \enquote{Deixar de
+    fora} resolveria, mas o julgamento logo depois de abrir resolve também a
+    ordem (julgar antes de decidir) e dispensa o botão.
+  \item \textbf{A Chave com só os três pilares.} Escolher o que importa entre
+    armadilhas é a parte mais difícil de construir a regra; sem elas, as peças
+    certas chegariam prontas.
+  \item \textbf{Uma regra nova de combinação na plataforma de evidência.} O teto
+    no marcador parcial dá o mesmo resultado sem tocar a porta \cd{marcar}, que
+    serve a todas as missões.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A missão ficou mais longa} (a Chave montada, a simulação e a
+    transferência); o guia admite 1 ou 2 aulas. O tempo real só se sabe numa
+    turma piloto.
+  \item \textbf{O professor revisa dez matérias por atividade}, e não oito --- as
+    duas a mais são curtas e sem imagem.
+  \item \textbf{A transferência mede \enquote{verificou espontaneamente}}, o
+    comportamento associado a reconhecer a importância, e não o reconhecimento
+    declarado. É o limite de uma medição só por ação.
+  \item \textbf{A janela de chute da 2ª edição} sobe para cerca de 2,7\% quando a
+    criança reabre pistas ao acaso na revisão; aceita, porque é na revisão que ela
+    precisa conferir a matéria que entra no lugar do furo.
+  \item \textbf{As rodadas da 2.x} ficam com as marcas antigas (\cd{versao\_ficha
+    = 1}); a sessão que estava no comparativo sem Chave montada vai direto à
+    transferência.
+\end{itemize}
+
+\textbf{Gatilho.} O resultado de uma turma piloto (tempo de aula, taxa de
+chute observada, a fala das professoras sobre o painel), ou a ficha de outra
+missão pedindo uma combinação que o teto não resolva.
+
+% ---------------------------------------------------------------------------
+\section{ADR-169 --- A quota de avaliação: a leitura da plataforma tem teto próprio}
+\label{adr:quota-de-avaliacao}
+
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Segunda exceção}
+à regra inviolável 5 (a primeira é a Ajuda com avatar, \adrr{ADR-132}) e
+\textbf{complementa} a \adrr{ADR-105}.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{A leitura não é uso do estudante.} Quando a IA lê a legenda dos
+    Stories para a evidência pedagógica, é a PLATAFORMA avaliando, não a
+    criança usando a IA como ferramenta. Até aqui a leitura debitava a quota do
+    perfil \cd{estudante}: quem gastou a quota no tutor de outra missão, de
+    manhã, caía à tarde na régua de reserva --- mais fraca --- pelo mesmo
+    trabalho que o colega teve lido pela IA.
+  \item \textbf{O pedido.} O dono do produto escolheu a solução pedagógica,
+    independente do trabalho de implementação.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{Uma terceira linha em \cd{ia\_quotas}}, \cd{avaliacao}, que NÃO é
+    perfil de token: é a linha da plataforma. O CHECK e a tupla
+    \cd{PERFIS\_COM\_QUOTA} a acrescentam juntos; a semente é de 4 milhões de
+    tokens por dia.
+  \item \textbf{O teto é POR ESCOLA}, contado em \cd{ia\_uso\_diario} com o
+    usuário \cd{avaliacao} (a coluna é texto e sem FK desde o início).
+  \item \textbf{O admin edita em \arq{/unooria/uso-de-ia}}, no mesmo cartão das
+    outras linhas, com a régua \enquote{leituras de legenda por escola}.
+  \item \textbf{Aviso antes de esgotar}: o débito que cruza 80\% do teto escreve o
+    log \cd{ia-quota-avaliacao-80}; o esgotado, \cd{ia-quota-avaliacao-esgotada}.
+    O alerta no Cloud Monitoring é métrica a partir deles, no Terraform.
+  \item \textbf{Esgotada, a aula não trava}: a leitura cai na regra de reserva e
+    vai para a revisão do professor (\adrr{ADR-170}).
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter a quota do estudante.} Custo zero, mas a avaliação
+    competiria com o uso da ferramenta, e o estudante mais engajado no tutor
+    seria lido pela régua pior.
+  \item \textbf{Sem teto nenhum.} Um laço de leituras não teria freio, e o custo
+    só apareceria na fatura.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O teto é da escola inteira}: se ele estourar, todas as legendas
+    da escola daquele dia vão para a revisão do professor.
+  \item \textbf{É precedente}: outra leitura de avaliação (a reflexão do 8º ano,
+    \adrr{ADR-167}) pede a mesma linha; a mudança dela ficou para depois.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{ADR-170 --- O Canal A da A Seleção: toda habilidade por ação}
+\label{adr:exp07ef1b-canal-a}
+
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Supera em parte} a
+\adrr{ADR-115} (a enquete P1 valendo o melhor com a legenda, e a P2 como a
+única medida da EF07CO08), \textbf{usa} a \adrr{ADR-166} (de onde veio o nível)
+e a \adrr{ADR-169} (a quota de avaliação).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O pedido.} A equipe pedagógica (Artur) propôs avaliar a A
+    Seleção só pelo Canal A, e o PO (Vinicius) fechou as decisões no card da
+    missão. A EF07CO08 não tinha nenhuma ação do estudante que a medisse: só a
+    enquete P2.
+  \item \textbf{O que a proposta trazia e não ficou.} A condição
+    \enquote{alternou para a publicação do colega} (o Mural abre no Story do
+    colega desde a \adrr{ADR-146}, então valeria para todos), a regra de
+    palavras como leitora única da legenda, e tabelas e telas que a plataforma
+    já tinha (o ajuste do professor, o painel de habilidades, as equipes).
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{EF07CO11 pela legenda, lida por indicadores.} A IA responde três
+    perguntas de sim ou não --- explica a escolha, fala do conteúdo dos posts,
+    não tem relação --- e o servidor dá o nível: sem relação é \enquote{não
+    atingiu}; razão e conteúdo, \enquote{atingiu}; o resto, \enquote{em
+    processo}. A leitura roda DEPOIS da resposta ao estudante (como a da
+    \adrr{ADR-167}), com teto de 60\,s e até 3 tentativas para a falha técnica,
+    na quota de avaliação. Nada que a IA escreve é gravado.
+  \item \textbf{A regra de reserva.} Falhando a IA, a regra de palavras (a do
+    Artur, mais o \enquote{pq} da criança) grava só uma SUGESTÃO, sem marca:
+    a célula fica \enquote{Não avaliado} e a lista da aula diz o que a regra
+    viu. A reserva nunca sugere \enquote{não atingiu}. A calibragem vem dos
+    testes e do piloto.
+  \item \textbf{EF07CO08 pela marcação}, uma etapa nova e obrigatória da turma,
+    entre o Mural e as fichas: \enquote{Tem algo na publicação do colega que a
+    sua deixou de fora e muda a história?}. O estudante toca num post do
+    colega ou em \enquote{Nada que mude a história}, e pode dizer por quê numa
+    frase que só o professor lê, fora do nível. O nível congela na abertura das
+    fichas: post de um lado que falta no trio é \enquote{atingiu}; de um lado
+    que o trio já tem, \enquote{em processo}; \enquote{nada que mude},
+    \enquote{não atingiu} (o pareamento garante que o colega mostrou outro
+    lado), salvo o trio com os três lados, que fica \enquote{em processo}; o
+    post que o próprio estudante publicou, \enquote{não atingiu}. Sem marcação,
+    \enquote{Não avaliado}.
+  \item \textbf{As enquetes P1 e P2 saem por completo} (o Canal B): a reflexão
+    encerra a missão. Os níveis já dados por elas ficam no histórico.
+  \item \textbf{A conferência do enquadramento na criação.} Os posts que a
+    professora EDITOU passam por uma conferência de IA, na quota dela, que diz
+    se cada legenda ainda mostra o lado do veículo; divergiu, o card avisa e a
+    aprovação espera a correção. A IA falhando, a atividade é criada com aviso.
+  \item \textbf{O motivo do ajuste} (revisei o trabalho, presente sem
+    participar, problema técnico, outro) entra no ajuste do professor da
+    plataforma, para todas as missões, e vai só para o histórico.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{A regra de palavras como leitora única.} Erra a legenda que
+    explica sem conectivo e aceita \enquote{porque} com uma palavra copiada.
+  \item \textbf{A resposta ao Story do colega, lida por IA}, para a EF07CO08.
+    Mais próxima do texto da BNCC, mas o PO preferiu a marcação, mais simples.
+  \item \textbf{As enquetes como informação no piloto.} O PO pediu tirá-las de
+    vez: elas só tinham sentido como rede de segurança.
+  \item \textbf{Uma tabela de ajuste e um relatório só do 7º ano.} O ajuste e o
+    painel são da plataforma; duas fontes de nível divergiriam.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O \enquote{atingiu} da marcação é uma medida fraca}: com o par mais
+    distante, um toque ao acaso tende a cair num lado que falta. O PO aceitou e
+    a ficha diz isso ao professor, que confirma pelo \enquote{por quê?}.
+  \item \textbf{A marcação mede tomada de perspectiva, não empatia afetiva.}
+  \item \textbf{Sem rede de segurança}: quem falta, atrasa ou não marca fica
+    \enquote{Não avaliado}, e o professor ajusta à mão.
+  \item \textbf{Mais um botão do professor} na aula, e cerca de 3 minutos.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{ADR-171 --- Quem mandou isso? só com o Canal A: o cartão de frases depois dos crachás e a regra do tio montada com peças}
+\label{adr:exp05ef1b-canal-a}
+
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Supera em parte} a
+\adrr{ADR-131} (as perguntas do PO, literais: a P1 e a P2 saem) e a
+\adrr{ADR-145} (o \enquote{as perguntas são a reflexão}); o resto da
+\adrr{ADR-145} --- toda rodada mede tudo, o critério no painel, sem texto livre
+--- continua valendo. \textbf{Segue} a \adrr{ADR-167}, que fez o mesmo no
+8º ano. Os números 168 a 170 estavam reservados por frentes paralelas
+(o Jornal da Escola e A Seleção).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O pedido.} O dono do produto pediu evidência por AÇÃO em todas
+    as habilidades das missões (o Canal A). Em Quem mandou isso? (exp05ef1b, 5º
+    ano, unidade 1) só a EF05CO08 vinha do que a criança faz (a seleção do
+    Mural); a EF05CO03 e a EF05CO04 vinham de duas perguntas de múltipla
+    escolha no fim (a P1 e a P2 do PO, \adrr{ADR-131}), que desde a
+    \adrr{ADR-145} eram a própria reflexão.
+  \item \textbf{A proposta do PO pedagógico}, revisada no card do Notion,
+    mantinha as perguntas como informação e trazia uma classificação em dois
+    eixos antes dos crachás e uma regra escrita lida por palavras-chave. O dono
+    do produto decidiu tirar o Canal B inteiro, e não deixá-lo como
+    informação.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{As perguntas P1 e P2 saem}, com a tela delas e o resolvedor de
+    contexto da E14 que as liberava. A ficha sobe para a \textbf{versão 4}, sem
+    pergunta, com os três marcadores de ação rotulados (\enquote{Seleção do
+    Mural}, \enquote{Cartão de frases}, \enquote{Regra do tio}); as marcas são
+    gravadas pelo módulo da missão na transação de cada envio, e
+    \rota{/evidencias/exp05ef1b/perguntas/*} responde 404. Os níveis já dados
+    pelas perguntas ficam no histórico, com a versão 3.
+  \item \textbf{EF05CO03 pelo cartão de frases}, logo depois dos crachás e
+    ainda no clone: seis frases com E, OU e NÃO sobre as três mensagens que a
+    criança encaminhou (\enquote{a mensagem de Pedro é falsa E neutra?}), cada
+    uma com Sim ou Não. Os crachás dão os valores simples; a frase composta
+    quem resolve é ela. Duas frases por operador, cada mensagem em duas, três
+    certas e três erradas --- responder tudo igual acerta três ---, com
+    semente na sessão. 5 ou 6 acertos são \enquote{atingiu}, 3 ou 4 \enquote{em
+    processo}, 0 a 2 \enquote{não atingiu}; no chute, 10,9\,\% de chance de
+    atingir (contado em todas as trincas do pacote).
+  \item \textbf{O cartão segue o caminho da criança, não o botão do
+    professor}: abre na revelação DELA (voto dado e revelação aberta) e fecha
+    quando ela envia; na reflexão, quem ainda não o enviou cai nele antes da
+    regra.
+  \item \textbf{EF05CO04 pela regra do tio, montada com peças} na casca:
+    \enquote{Se} uma de quatro condições, \enquote{então} uma ou duas de oito
+    ações, em ordem. Antes de cada teste no áudio do tio, a criança
+    \textbf{prevê} o que a regra fará; prever é a simulação que a habilidade
+    pede. A régua lê a PRIMEIRA regra testada e a PRIMEIRA previsão:
+    \enquote{atingiu} quando a primeira já pega o áudio e manda checar, a
+    previsão acerta e a enviada continua assim; \enquote{não atingiu} quando a
+    enviada encaminha antes de checar; \enquote{em processo} em todo o resto,
+    com \textbf{teto} para quem checa e encaminha de qualquer jeito. Entra a
+    peça \enquote{encaminho só se a notícia se confirmar}, o jeito certo de
+    terminar depois de uma checagem. No chute, 5,0\,\% de chance de atingir.
+    Enviar a regra fecha a missão.
+  \item \textbf{Quem não faz a ação fica \enquote{Não avaliado}} nela --- a
+    ausência de marca ---, nunca \enquote{não atingiu}, e o professor ajusta.
+  \item Instrumento \textbf{2.4.0}, experiência \textbf{0.5.0}, migração
+    \arq{20261017090000\_\B{}exp05ef1b\_\B{}canal\_\B{}a} (as colunas do cartão e
+    da regra em \cd{exp05ef1b\_sessoes}, com quatro \emph{CHECKs} de ordem dos
+    \emph{latches}). Rotas novas: \rota{POST /quem-mandou-isso/operacoes},
+    \rota{POST /quem-mandou-isso/regra/teste} e
+    \rota{POST /quem-mandou-isso/regra}.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{A classificação em dois eixos antes dos crachás}, da proposta
+    do PO. Repetia a EF05CO08, que já mede a triagem pelos dois eixos, e
+    adiantava a descoberta da revelação (o \enquote{um eixo não prediz o
+    outro}).
+  \item \textbf{A regra escrita, lida por palavras-chave.} Ignorava o
+    \enquote{Se}, errava com a ortografia de uma criança de 10 anos e desfazia
+    a \adrr{ADR-145}, que tirou o texto livre por ser a única etapa sem
+    critério fixo. As peças têm critério fixo.
+  \item \textbf{A P1 e a P2 como informação}, fora do nível. O dono do produto
+    preferiu tirar o Canal B inteiro, como no 8º ano (\adrr{ADR-167}): pergunta
+    que não conta ainda ocupa a aula e confunde a leitura do painel.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Sem rede de segurança}: quem falta, atrasa ou sai antes do
+    cartão ou da regra fica \enquote{Não avaliado} naquela habilidade.
+  \item \textbf{A EF05CO04 cobre só a seleção condicional e a sequência de
+    duas ações}; repetição e colaboração ficam fora da missão.
+  \item \textbf{Testar e corrigir não leva ao \enquote{atingiu}}: quem acerta
+    só depois de ver o resultado fica em processo. É aprendizado, mas não é
+    evidência de que a criança simulou.
+  \item \textbf{A fala da Nina no cartão, o desafio do tio e os critérios são
+    texto da equipe}, à espera da revisão do PO.
+  \item \textbf{Quatro versões da ficha no histórico}: o painel não separa as
+    rodadas medidas pelas perguntas das medidas pelas ações.
+\end{itemize}
+
+\textbf{Gatilho.} A distribuição dos níveis do cartão ou da regra mostrar a
+régua dura demais (ou o chute acima do previsto), ou o PO pedir de volta uma
+pergunta.
+
+\section{ADR-172 --- O Canal A da Missão Tempestade: toda habilidade por ação, sem pergunta}
+\label{adr:exp02em1b-canal-a}
+
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Supera em parte} a
+\adrr{ADR-154} (as quatro perguntas do resultado e a régua de \enquote{vale a
+melhor}; continua valendo que só conta ao encerrar a missão) e \textbf{usa} a
+\adrr{ADR-166} (de onde veio o nível).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O pedido.} O dono do produto pediu evidência por AÇÃO em todas
+    as habilidades da ficha da 2ª série (o Canal A), com liberdade para mudar a
+    mecânica. Até aqui a missão media quatro habilidades só por quatro
+    perguntas de múltipla escolha no resultado (\adrr{ADR-154}), vencíveis por
+    exclusão com \enquote{Tentar de novo}.
+  \item \textbf{As decisões do PO (16/10).} O Canal B sai por inteiro; o
+    pedido pelo WhatsApp ganha três opções de aviso; o balão do pedido tem a
+    cara do mensageiro (\adrr{ADR-173}); e o cartão das fontes que cairia numa
+    célula em que a fonte não distorce vira hipotético.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{Seis habilidades, sete marcadores de ação}, a ficha versão 2
+    (\arq{evidencias/fichas/exp02em1b.ts}), todos com rótulo: EM13CO12 pela
+    \textbf{leitura dos dados}, EM13CO14 pelas \textbf{fontes}, EM13CO11 pelo
+    \textbf{\enquote{E se\ldots}}, EM13CO08 pelo \textbf{WhatsApp}, EM13CO24
+    pelo \textbf{alerta} e EM13CO26 pela \textbf{ligação da Saúde} e pela
+    \textbf{resposta à moradora} (vale o melhor dos dois). A EM13CO10 fica
+    fora: trabalhada no debate, não medida.
+  \item \textbf{O registro da operação}, um passo novo dentro do resultado,
+    entre \enquote{Enviar equipes} e o desfecho, SEM relógio: a hora de saída é
+    a do clique, e o desfecho fica retido no servidor
+    (\rota{GET /unoogpt/resultado} responde \cd{registro-pendente}) até a
+    leitura dos dados, as fontes e o alerta.
+  \item \textbf{A conversa não manda as equipes}: \cd{confirmar\_alocacao}
+    abre a decisão na tela do estudante (\cd{abrirEnvio}), e quem manda é o
+    botão, que passa pelo porquê de cada equipe e leva ao registro
+    (\cd{VERSAO\_PROMPT} 5).
+  \item \textbf{As réguas} são regras puras em \arq{unoogpt/regras/}, cada uma
+    com a conferência de exaustividade: a leitura em dois pares (um separado,
+    com folga de 5\%, e um cruzado, tirado de um grupo de empate da própria
+    leitura); as fontes com as mesmas cinco perguntas para toda fonte e o
+    gabarito por célula (fonte $\times$ bairro); o alerta em três partes de
+    quatro opções, cada uma com uma errada moderada; a Saúde com teto em
+    \enquote{em desenvolvimento} (a contagem: Ribeirinha 2.150, Vale Verde
+    980, Morro Alto 850, Industrial 190); o WhatsApp em 4 $\times$ 3, com
+    \enquote{demonstra} só em \enquote{não mando nenhum dado} com
+    \enquote{aviso a coordenação}; a moradora com as frases certas de
+    \enquote{Os dados} e de \enquote{Quem decidiu} montadas pelo servidor,
+    em quatro perfis.
+  \item \textbf{O cartão das fontes nunca cai onde a fonte não distorce.} O
+    par real é a fonte citada (ou a primeira aberta, para quem foi por
+    intuição) no bairro da equipe; se ela não distorce ali, o cartão pergunta
+    \enquote{se fosse usar essa fonte} num bairro onde ela distorce ou não
+    enxerga. Os dois cartões coincidindo, o segundo é a mesma fonte no
+    próximo bairro assim; sem dois cartões válidos, não há marca.
+  \item \textbf{O \enquote{E se\ldots} pareado}: duas comparações montadas
+    pelo servidor (uma clara, uma que depende), nas mesmas 20 tempestades, em
+    ordem embaralhada. O \enquote{E se\ldots} livre continua, sem marca.
+  \item \textbf{O fechamento é aberto pelo professor}
+    (\cd{abrir-fechamento} no relógio da turma): o WhatsApp e a moradora
+    aparecem juntos, e o \enquote{Tentar de novo} some.
+  \item \textbf{Duas réguas de agregação.} \enquote{Primeira da rodada} (Saúde,
+    alerta, \enquote{E se\ldots}, WhatsApp, moradora): a missão confere
+    \cd{jaMarcou} antes de marcar, sob o lock da sessão. \enquote{Melhor
+    tentativa com o relógio aberto} (leitura e fontes): a marca de ação guarda
+    a melhor, e a tentativa que começou com o relógio fechado não marca.
+  \item \textbf{O encerramento só conta marcador da ficha vigente}
+    (\cd{aoEncerrarAMissao}): as marcas \cd{p1} a \cd{p4} de uma turma com a
+    missão aberta no dia da troca não viram nível.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{A pergunta como rede de segurança} (\enquote{só conta sem
+    tarefa}). Saiu com o Canal B, como no 8º ano (\adrr{ADR-167}).
+  \item \textbf{O aviso à coordenação como sim ou não.} Com duas opções, o
+    chute de \enquote{demonstra} era 12,5\%; com três, 8,3\%, e a resposta
+    \enquote{perguntar quem é} fica visível para o debate.
+  \item \textbf{O cartão das fontes na célula que não distorce}, aceitando
+    \enquote{Nada: aqui ela basta}. Levava o chute de \enquote{demonstra} a
+    32\% no pior caso; com o cartão hipotético, fica entre 4\% e 16\%.
+  \item \textbf{Um cartão das fontes só, quando não há dois.} O chute de um
+    cartão é de 20\% ou 40\%.
+  \item \textbf{Mandar as equipes pela conversa}, como antes. Pulava o
+    registro e o porquê.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Sem rede de segurança}: quem falta ao fechamento fica
+    \enquote{Não avaliado} na EM13CO08, e só com a ligação da Saúde (no
+    máximo \enquote{em desenvolvimento}) na EM13CO26. O professor ajusta à mão.
+  \item \textbf{O WhatsApp é o único marcador da EM13CO08}, e o chute de
+    \enquote{em desenvolvimento} chega a 41,7\%.
+  \item \textbf{O cartão hipotético pergunta sobre um bairro para onde a
+    equipe não foi}: é de propósito, e o texto diz que é hipótese.
+  \item \textbf{O registro atrasa o resultado} em cerca de dois minutos.
+  \item \textbf{O cliente anterior} (\rota{POST /unoogpt/simular}, até a
+    1.4.x) pula o registro: a rota virou alias que manda e fecha o registro
+    sem tarefa nem marca.
+\end{itemize}
+
+\textbf{Gatilho.} A distribuição dos níveis do WhatsApp, das fontes ou da
+leitura mostrar a régua dura demais, ou o professor ajustar muitas marcas no
+painel.
+
+% ---------------------------------------------------------------------------
+\section{ADR-173 --- Clone dentro de clone: a peça de outra plataforma dentro de uma experiência disfarçada}
+\label{adr:clone-dentro-de-clone}
+
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Estende} a
+\adrr{ADR-117}.
+
+\begin{especificacao}{Contexto}
+A \adrr{ADR-117} deixa uma tela \emph{da Unooria} mostrar uma peça da
+plataforma que o conteúdo imita (o post do \cd{unoovista}, a mensagem do
+\cd{unoochat} na gaveta do Jornal). O pedido pelo WhatsApp do fechamento da
+Missão Tempestade (\adrr{ADR-172}) aparece dentro do UnooriaAI, que já é um
+clone, inteiro (\adrr{ADR-138}). Sem regra, ou o balão seria do UnooriaAI e não
+pareceria mensagem, ou a experiência importaria outra seção sem limite.
+\end{especificacao}
+
+\textbf{Decisão.} A regra da \adrr{ADR-117} vale também para \textbf{peça de
+outra plataforma dentro de um clone}, com os mesmos limites: só a peça, nunca a
+barra, as abas ou o fundo do app. Na Tempestade, o balão é o
+\cd{MessageBubble} da seção \cd{unoochat}, em tema claro, dentro de um
+contêiner do tamanho da peça (\cd{.peca-unoochat}, com o
+\cd{--unc-color-surface-base}), sem hora nem tiques
+(\arq{app/pecas/mensagem-do-voluntario.tsx}, no molde da exp04ef1b). As opções
+de resposta continuam no visual \cd{unooriaai}. A experiência importa as folhas
+\arq{unoochat.css} e \arq{fonts/unoochat.css} só por isso, e um teste cobra que
+só a peça importa a ponte \cd{@edu/ui/ds-unoochat}.
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{O balão do UnooriaAI} (\cd{ChatBubble}). Não parece mensagem de
+    número desconhecido, e o pedido suspeito é o que a tarefa ensina a
+    reconhecer.
+  \item \textbf{A tela do mensageiro inteira} (barra, fundo, campo). Trocaria
+    de app no meio da missão, que não tem revelação.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.} Duas folhas de seção na mesma página:
+um token \cd{--unc-*} usado fora do contêiner passaria sem erro. O tema claro
+fica preso ao contêiner (\cd{data-unc-theme}), e a revisão confere que nenhuma
+outra tela usa o prefixo.
+
+\textbf{Gatilho.} Uma segunda peça de outra seção dentro de um clone: aí a
+regra pede o próprio teste de fronteira, e não só o desta peça.
+
+% ---------------------------------------------------------------------------
+\section{ADR-174 --- O Júri Estadual mede pelo que a criança faz: a separação (EF06CO01) e a regra SE … ENTÃO (EF06CO03); a EF06CO10 sai}
+\label{adr:exp06ef1b-canal-a}
+
+\textbf{Data.} 2026-10-18. \textbf{Status.} Aceita (decidida pelo PO no card da
+missão, revisada com a equipe pedagógica). \textbf{Supera em parte} a
+\adrr{ADR-151} (a EF06CO10 como foco primário e as enquetes \cd{p1}--\cd{p3}),
+a \adrr{ADR-152} (a régua da Galeria Oculta), a \adrr{ADR-157} (a cadeia de
+quatro blocos, o par simulado da melhoria 7, o 422 \cd{ordem-incorreta}, as
+enquetes nos Stories e a ficha versão 4) e a \adrr{ADR-164} (que dava a cadeia
+e a ficha como vigentes). O resto delas --- o feed no servidor, os 40 projetos,
+os 8 minutos, o ciclo do voto em dois botões, a Galeria Oculta, o caso Mariana,
+as duas fases de aprovação, atividade = pacote e rodada = zerar --- continua
+valendo. \textbf{Segue} a \adrr{ADR-167}, a \adrr{ADR-170}, a \adrr{ADR-171} e
+a \adrr{ADR-172}, que fizeram o mesmo nas outras missões, e \textbf{usa} a
+\adrr{ADR-166} (de onde veio o nível) e a \adrr{ADR-162} (sem arrastar).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O pedido.} O dono do produto pediu evidência por AÇÃO em todas
+    as habilidades das missões (o Canal A). No Júri Estadual de Projetos
+    (\cd{exp06ef1b}, 6º ano, unidade 1), a ficha versão 4 media três
+    habilidades, cada uma por uma ação OU por uma pergunta de múltipla escolha
+    nos Stories (vale o melhor): a EF06CO10 pela auditoria da galeria, a
+    EF06CO01 pela busca por \emph{hashtag} de uma categoria fora da bolha e a
+    EF06CO03 pelas tentativas da cadeia de quatro blocos.
+  \item \textbf{A proposta do PO pedagógico} comparava a missão com o
+    \emph{one-pager} v1.5.8 e descrevia as habilidades por paráfrase. Revisada
+    com a equipe pedagógica, a régua passou a ser o \textbf{texto oficial da
+    BNCC}. Lida assim, a EF06CO10 (consumo de tecnologia, produção,
+    obsolescência, sustentabilidade) não é o que o Júri trabalha; a EF06CO01
+    (\enquote{classificar informações, agrupando-as em coleções e associando
+    cada coleção a um tipo de dados}) pede que a criança CLASSIFIQUE, não que
+    busque; e a EF06CO03 (\enquote{descrever com precisão a solução,
+    construindo o programa}) pede que ela CONSTRUA a instrução, não que
+    reconheça uma ordem.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{A EF06CO10 sai da missão, e as enquetes P1--P3 também.} A ficha
+    sobe para a \textbf{versão 5} (\arq{evidencias/fichas/exp06ef1b.ts}), sem
+    perguntas, com dois marcadores de ação rotulados: \cd{classificacao}
+    (\enquote{Separação dos estandes}) e \cd{regra} (\enquote{Regra SE \ldots{}
+    ENTÃO}). A EF06CO01 vira a \textbf{principal}; a EF06CO03, a secundária.
+    \cd{regra} é um id NOVO, para a régua nova não se misturar com a contagem
+    de tentativas da cadeia; \cd{auditoria}, \cd{cadeia} e as enquetes ficam só
+    no histórico, gravadas com a versão 4. Sai o \cd{registrarContexto} das
+    enquetes.
+  \item \textbf{A separação (EF06CO01)}, um passo novo, \cd{classificacao},
+    entre o voto e a espera (\cd{feed} \seta{} o voto \seta{}
+    \cd{classificacao} \seta{} \cd{lacrada} \seta{} \cd{galeria} \seta{}
+    \cd{revisada} \seta{} \cd{cadeia} \seta{} \cd{mariana} \seta{} \cd{fim}).
+    A criança põe cada estande DISTINTO que o feed lhe mostrou (até dez) numa
+    das quatro áreas. A tela mostra só o título e a imagem --- sem
+    \emph{hashtag} e sem perfil, porque o perfil do post é a própria
+    \emph{hashtag} ---, com ids opacos \cd{cl-xxx} embaralhados pela semente, e
+    a escolha é por toque ou teclado (\cd{Chip} em grupo de rádio, sem arrastar,
+    \adrr{ADR-162}), na voz da comissão (o clone Unoovista, porque vem antes da
+    galeria). Uma tentativa; o servidor corrige; régua por fração: 0,9 ou mais
+    \enquote{atingiu} (9 ou 10 de 10), 0,5 ou mais \enquote{em processo} (5 a
+    8), abaixo disso \enquote{não atingiu}. Com menos de quatro estandes vistos
+    (o relógio de 8 minutos levou ao voto), \textbf{sem marca}
+    (\enquote{Não avaliado}). A resposta é só o estado: a criança não vê o
+    acerto. Se o professor liberou a galeria antes de ela separar, ela termina a
+    separação e só então entra na galeria. Reenviar é 409
+    \cd{classificacao-ja-enviada}; corpo de outra sessão ou incompleto, 400.
+  \item \textbf{A regra SE \ldots{} ENTÃO (EF06CO03)} substitui a cadeia de
+    quatro blocos e o par simulado, no passo \cd{cadeia} (o nome ficou). Três
+    peças de cada lado (\arq{juri-estadual/conteudo.ts}, \cd{PECAS\_DO\_SE} e
+    \cd{PECAS\_DO\_\B{}ENTAO}), uma certa em cada, ids opacos \cd{rg-xxx}, dois
+    \cd{RadioGroup} na tela da escola (Unooria). Uma tentativa: as duas certas
+    \enquote{atingiu}, uma \enquote{em processo}, nenhuma \enquote{não
+    atingiu}; no chute, 1 em 9 atinge. A resposta traz a \textbf{revelação} ---
+    as peças escolhidas, as certas e o \cd{motivo} (\cd{curtidas},
+    \cd{permanencia} ou \cd{variado}, com a área em foco do feed DESTA criança,
+    \arq{regras/regra.ts}, \cd{revelacaoDaRegra}) ---, que a tela mostra antes
+    de seguir para o caso Mariana. \enquote{Ficar muito tempo} não é
+    distrator, de propósito: o motor pesa a permanência, e a peça seria meio
+    certa.
+  \item \textbf{A galeria continua como experiência} (busca, contraste,
+    \enquote{manter} exige um oculto aberto), mas \textbf{não marca mais
+    habilidade}. Os \textbf{cartões do caso Mariana concluem} a missão (passo
+    \cd{fim} e \cd{concluida\_em} no mesmo \emph{update});
+    \rota{POST /juri-estadual/\B{}concluir} fica só para sessões antigas paradas em
+    \cd{enquetes}.
+  \item \textbf{Rotas.} Entram \rota{POST /juri-estadual/\B{}classificacao} e
+    \rota{POST /juri-estadual/\B{}regra}; sai \rota{POST /juri-estadual/\B{}cadeia} (e o
+    422 \cd{ordem-incorreta}). \rota{GET /juri-estadual/\B{}sessao} ganha
+    \cd{classificacao} e a \cd{cadeia} nova (\cd{se}, \cd{entao}, \cd{enviada},
+    \cd{revelacao}). A linha do painel troca \cd{categoriasBuscadas} por
+    \cd{separou} (progresso: o acerto NUNCA vai à folha, que é projetada) e o
+    resumo ganha \cd{separaram}. O material do professor troca \cd{blocos} e
+    \cd{feedbackDaCadeia} por \cd{pecas}, com a certa marcada.
+  \item \textbf{Banco.} Seis colunas novas em \cd{exp06ef1b\_\B{}sessoes},
+    na migração \arq{20261018090000\_\B{}exp06ef1b\_\B{}canal\_\B{}a}
+    (\cd{classificacao\_\B{}respostas}, em \cd{JSONB},
+    \cd{classificacao\_\B{}acertos}, \cd{classificacao\_\B{}total},
+    \cd{classificada\_\B{}em}, \cd{regra\_se}, \cd{regra\_entao}), o
+    \emph{CHECK} de passo com \cd{classificacao}, o de status que aceita
+    \cd{classificacao\_\B{}status} vindo da separação OU da revisão (as linhas
+    antigas), e dois \emph{CHECKs} novos, fracos de propósito: uma sessão da
+    0.5.0 em \cd{lacrada} sem separação continua válida. Nada é apagado.
+    Instrumento \textbf{4.0.0}, experiência \textbf{0.6.0}.
+  \item \textbf{O que NÃO é segredo, e não se finge que é}: o feed já entrega ao
+    aparelho a área de cada post (a \emph{hashtag} que a criança viu). A
+    separação tira a resposta da TELA; quem corrige é o servidor (regra 3).
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{\enquote{Qual área mais (ou menos) apareceu no seu feed?}}
+    Empata nos dois perfis que o motor produz --- 7/1/1/1 (três áreas empatam
+    no \enquote{menos}) e 3/3/2/2 (duas empatam no \enquote{mais} e duas no
+    \enquote{menos}) ---, então não tem gabarito único; e é contagem, não
+    classificação.
+  \item \textbf{A cadeia de quatro blocos em tentativa única, pontuada por
+    posições certas.} \enquote{3 certas} é impossível com quatro blocos (trocar
+    dois de lugar erra dois); no chute, \enquote{em processo} sai na maioria
+    das vezes; e a cadeia inteira deslocada de uma posição --- a ordem entendida,
+    começada no lugar errado --- leva zero.
+  \item \textbf{Autodeclaração para a EF06CO10} (\enquote{qual projeto de fora
+    te influenciou?}). É pergunta com resposta óbvia e pune o \enquote{nenhum}
+    honesto.
+  \item \textbf{Manter a EF06CO10 como \enquote{trabalhada sem avaliação}.}
+    Contradiz o Canal A obrigatório e fica sempre vazia no painel de
+    habilidades.
+  \item \textbf{Manter as enquetes como Canal B}, fora do nível. Como no 8º ano
+    (\adrr{ADR-167}) e em Quem mandou isso? (\adrr{ADR-171}): pergunta que não
+    conta ainda ocupa a aula e confunde a leitura do painel.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Cada habilidade depende de UMA medida}: sem a separação ou sem a
+    regra, a habilidade fica \enquote{Não avaliado}, e o professor ajusta à
+    mão.
+  \item \textbf{A separação com poucos estandes vistos fica \enquote{Não
+    avaliado}}: a criança que o relógio de 8 minutos levou ao voto com menos de
+    quatro estandes não tem marca da EF06CO01.
+  \item \textbf{Sessões em andamento no \emph{deploy} que já passaram do voto
+    ficam sem a EF06CO01}: o passo novo vem logo depois do voto, e elas não
+    voltam a ele.
+  \item \textbf{Num F5 logo depois de enviar a regra, a tela pula a
+    revelação}: a api já está no caso Mariana.
+  \item \textbf{Sem foto gerada, a arte procedural da separação difere da do
+    feed}: o título é a chave para reconhecer o estande.
+\end{itemize}
+
+\textbf{Gatilho.} Se a regra SE \ldots{} ENTÃO travar a aula, ou o chute
+aparecer alto na distribuição dos níveis, o PO autorizou voltar à ordenação,
+com régua por pares vizinhos.

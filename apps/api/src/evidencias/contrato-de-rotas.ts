@@ -2,6 +2,7 @@ import { z } from "zod";
 import { EXP_ID_RE, FORMATO_DO_EXP_ID } from "../comum/codigo-da-experiencia";
 import {
   AJUSTES_MAX,
+  MOTIVOS_DE_AJUSTE,
   ATIVIDADE_ID_RE,
   FORMATO_DO_ATIVIDADE_ID,
   ID_DA_FICHA_RE,
@@ -40,8 +41,28 @@ export const ParamsDaRodadaSchema = ParamsDaAtividadeSchema.extend({ rodada: Rod
 export const ParamsDoEstudanteSchema = z.object({ estudanteId: Uuid });
 export const ParamsDaPerguntaSchema = z.object({ expId: ExpId, perguntaId: IdDaFicha });
 
+/**
+ * O nível de cada AÇÃO da habilidade na rodada, quando elas DIVERGEM — só as
+ * que têm `rotulo` na ficha. Com duas ações iguais (ou uma só), não vem.
+ */
+const AcoesDaCelulaSchema = z.array(z.object({ rotulo: z.string(), status: NivelSchema })).min(2);
+
+/**
+ * De onde veio o nível (ADR-166): o marcador da ficha que o deu e o rótulo dele
+ * para o professor. Só na evidência PRÓPRIA cujo marcador tem `rotulo` na
+ * ficha; cópia, ajuste e missão sem rótulo não trazem — e a célula fica como
+ * sempre foi.
+ */
+const DeOndeVeioSchema = z.object({
+  marcador: IdDaFicha.optional(),
+  rotulo: z.string().optional(),
+  acoes: AcoesDaCelulaSchema.optional(),
+});
+
 /** Uma célula do painel: o nível, de onde veio, e se já vale. */
-const CelulaSchema = z.object({ status: StatusSchema, origem: OrigemSchema, situacao: SituacaoSchema });
+const CelulaSchema = z
+  .object({ status: StatusSchema, origem: OrigemSchema, situacao: SituacaoSchema })
+  .merge(DeOndeVeioSchema);
 
 /**
  * O PAINEL da atividade — o `GET`, e a resposta do `POST confirmar` e do
@@ -90,6 +111,12 @@ export const PainelDaAtividadeSchema = z.object({
       porRodada: z.record(z.record(CelulaSchema)),
       /** A MELHOR rodada por habilidade, só com o que vale — sem `a_revisar`, sem `nao_participou`. */
       resultado: z.record(NivelSchema),
+      /**
+       * De onde veio cada nível do `resultado` — a célula da rodada que o deu
+       * (a primeira, no empate). Só as habilidades com rótulo; opcional para o
+       * hub antigo não reprovar.
+       */
+      origemDoResultado: z.record(DeOndeVeioSchema).optional(),
     }),
   ),
   /** Quantas cópias da projeção esperam o professor confirmar, por rodada. */
@@ -108,6 +135,8 @@ export const AjustesSchema = z.object({
         estudanteId: Uuid,
         habilidade: z.string().min(1).max(20),
         status: StatusSchema,
+        /** Opcional (ADR-170): só vai para o histórico, nunca muda o nível. */
+        motivo: z.enum(MOTIVOS_DE_AJUSTE).optional(),
       }),
     )
     .min(1)
@@ -151,11 +180,14 @@ export const PerfilDoEstudanteSchema = z.object({
 
 /**
  * Quantas crianças em cada nível. `naoAvaliado` é a criança da turma sem
- * evidência que conte — nunca "não atingiu". `total` é a soma das quatro.
+ * evidência que conte — nunca "não atingiu". `emProcessoLimitado` é o "em
+ * processo" que mede a ATIVIDADE escolhida (marcador `limitadoPelaAtividade`),
+ * contado à parte e fora de `emProcesso`. `total` é a soma das cinco.
  */
 export const DistribuicaoSchema = z.object({
   atingiu: z.number().int().nonnegative(),
   emProcesso: z.number().int().nonnegative(),
+  emProcessoLimitado: z.number().int().nonnegative(),
   naoAtingiu: z.number().int().nonnegative(),
   naoAvaliado: z.number().int().nonnegative(),
   total: z.number().int().nonnegative(),

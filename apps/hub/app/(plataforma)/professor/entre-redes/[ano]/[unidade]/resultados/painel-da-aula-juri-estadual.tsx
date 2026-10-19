@@ -65,8 +65,8 @@ import { ListaDoJuri } from "./lista-do-juri";
  * visível.
  *
  * A exceção é a EVIDÊNCIA (ADR-146): quando muda o que o painel de
- * habilidades mostra (`mudouAEvidencia` — alguém revisou o voto, montou a
- * cadeia ou concluiu depois das enquetes; ou a
+ * habilidades mostra (`mudouAEvidencia` — alguém separou os estandes ou
+ * enviou a regra, as duas tarefas da ficha 5; ou a
  * atividade/rodada trocou), a página é refeita, e o professor vê o nível
  * chegar sem recarregar. Uma leitura basta: a api marca na MESMA transação do
  * passo que o painel mostra, então quando a folha anda a marca já está lá —
@@ -223,9 +223,10 @@ export function PainelDaAulaJuriEstadual({
             </div>
           ) : (
             <p className="text-[13px] leading-snug text-unooria-neutral-700">
-              A auditoria está liberada. Cada computador segue no próprio ritmo pela Galeria Oculta, pela cadeia, pelo
-              caso Mariana e pelas enquetes. Depois que a turma concluir a Etapa 4 e o debate da virada, toque o
-              podcast de recapitulação, mais abaixo. Para aplicar de novo, use Reiniciar Missão, mais abaixo.
+              A auditoria está liberada. Quem ainda separava os estandes termina a separação e entra na galeria em
+              seguida. Cada computador segue no próprio ritmo pela Galeria Oculta, pela regra do feed e pelo caso
+              Mariana. Depois que a turma concluir a Etapa 4 e o debate da virada, toque o podcast de recapitulação,
+              mais abaixo. Para aplicar de novo, use Reiniciar Missão, mais abaixo.
             </p>
           )}
 
@@ -235,9 +236,14 @@ export function PainelDaAulaJuriEstadual({
         </div>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard title="Entraram na mostra" value={`${resumo.entraram}/${resumo.total}`} />
         <MetricCard title="Lacraram o voto" value={`${votaram}/${y}`} />
+        <MetricCard
+          title="Separaram os estandes"
+          value={`${resumo.separaram}/${y}`}
+          description="Cada estande visto numa área, logo depois do voto. Quantos acertaram está no painel de habilidades, não aqui."
+        />
         <MetricCard title="Revisaram o voto" value={`${resumo.revisaram}/${y}`} />
         <MetricCard
           title="Parados na cédula"
@@ -273,7 +279,6 @@ export function PainelDaAulaJuriEstadual({
           linhas={painel.linhas}
           porComputador={resumo.porComputador}
           membros={membros}
-          categorias={resumo.votosPorArea}
         />
       </Card>
     </>

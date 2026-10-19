@@ -1,11 +1,11 @@
-import { Injectable, type OnModuleInit } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { Prisma, type Exp04ef1bSessao } from "@prisma/client";
 import { z } from "zod";
 import { exigirMissaoLiberada } from "../comum/liberacao";
 import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-professor";
 import { computadoresDaMontagem, mapaDeEquipes } from "../equipes/consulta";
 import { colapsarEmUnidades } from "../equipes/regras";
-import { EvidenciasService, type ContextoDaAtividade } from "../evidencias/evidencias.service";
+import { EvidenciasService } from "../evidencias/evidencias.service";
 import { apagarEvidenciaDaAtividade } from "../evidencias/apagar-da-atividade";
 import type { Nivel } from "../evidencias/regras";
 import { logger } from "../observabilidade/logger";
@@ -13,20 +13,40 @@ import { ehUuid } from "../motor/guardas";
 import { gravarFalasDoPodcast } from "../podcast/podcast.service";
 import type { FalasDoTema } from "../podcast/roteiro";
 import { PrismaService } from "../prisma/prisma.service";
-import { BLOCOS_DA_CHAVE, noticiasPadrao } from "./catalogo";
-import { NoticiaDoPacoteSchema, type NoticiaDoPacote } from "./contrato-de-rotas";
+import {
+  BLOCOS_DA_CHAVE,
+  BOATO_DA_TRANSFERENCIA,
+  CARTOES_DA_CHAVE,
+  PULO_DA_ISCA,
+  noticiasPadrao,
+  simulacaoPadrao,
+} from "./catalogo";
+import {
+  MateriaDaSimulacaoSchema,
+  NoticiaDoPacoteSchema,
+  type MateriaDaSimulacao,
+  type NoticiaDoPacote,
+} from "./contrato-de-rotas";
 import { DiagramacaoService } from "./diagramacao.service";
 import { erroDeJogo } from "./erros";
-import { ordemDaBandeja } from "./regras/bandeja";
-import { corrigirChave } from "./regras/chave";
+import { ordemDaBandeja, ordemDosCartoes } from "./regras/bandeja";
 import {
-  MARCADOR_DA_CHAVE,
   MARCADOR_DA_EDICAO_2,
-  MARCADOR_DAS_PISTAS,
-  nivelDaChave,
+  MARCADOR_DA_MONTAGEM,
+  MARCADOR_DA_SIMULACAO,
+  MARCADOR_DA_TRANSFERENCIA,
+  MARCADOR_DOS_JULGAMENTOS,
+  nivelBrutoDaEdicao2,
   nivelDaEdicao2,
-  nivelDasPistas,
+  nivelDaMontagem,
+  nivelDaSimulacao,
+  nivelDaTransferencia,
+  nivelDosJulgamentos,
 } from "./regras/evidencia";
+import { julgamentosDaLinha, registrarJulgamento } from "./regras/julgamentos";
+import { ehBlocoPilar, montagemDaLinha, type Montagem } from "./regras/montagem";
+import type { Simulacao } from "./regras/simulacao";
+import { transferenciaDaLinha, type Transferencia } from "./regras/transferencia";
 import {
   ETAPA_INICIAL,
   aguardandoOProfessor,
@@ -46,17 +66,18 @@ import { edicaoComResultado, vagasMarcadas, verificadasDa } from "./regras/resul
 import {
   EXP_ID,
   IDS_DE_NOTICIA,
+  IDS_DE_SIMULACAO,
   ID_DE_NOTICIA_RE,
   MOTIVOS,
   TAMANHO_DA_CHAVE,
   TAMANHO_DA_EDICAO,
-  type IdDeBloco,
   type IdDeNoticia,
   type Layout,
   type Motivo,
   type OrigemDoLayout,
   type OrigemDoPacote,
   type TipoDePista,
+  type Veredito,
 } from "./vocabulario";
 
 export { EXP_ID } from "./vocabulario";
@@ -79,10 +100,17 @@ export { EXP_ID } from "./vocabulario";
  * **O gabarito não desce antes da hora.** A notícia do estudante sai por
  * `noticiaPublica`, uma ALLOWLIST; o texto das pistas desce no `POST pista`
  * (com registro); a consequência, só no `GET resultado` com o portão aberto; o
- * pilar em falta, só depois da Chave; e o conjunto certo da Chave, nunca.
+ * pilar em falta, só depois da Chave; e o lado certo dos cartões da Chave,
+ * nunca. O gabarito das matérias da simulação também não desce: a criança
+ * recebe a matéria com as pistas, e a fidelidade à regra dela se mede aqui.
  *
  * **A IA em sala só diagrama** (`diagramacao.service.ts`), fora de qualquer
  * transação, e nunca derruba a resposta.
+ *
+ * **Canal A puro (3.0.0, ADR-168)**: nenhuma pergunta de múltipla escolha. Toda
+ * marca nasce de uma jogada DESTA missão, dentro da transação dela — por isso
+ * não há resolvedor de contexto registrado no `EvidenciasService`, e as rotas
+ * de pergunta de `/evidencias/exp04ef1b/*` não têm o que responder.
  */
 
 type NoticiaPublica = {
@@ -106,6 +134,8 @@ export interface PacoteLido {
   topicos: string | null;
   origem: OrigemDoPacote;
   noticias: NoticiaDoPacote[];
+  /** As duas matérias da simulação (3.0.0) — as do banco padrão nos pacotes anteriores. */
+  simulacao: MateriaDaSimulacao[];
   midia: Partial<Record<IdDeNoticia, string>>;
   /** A URL que o professor aprovou por notícia (ADR-147); vale só se for a mesma de `midia`. */
   midiaAprovada: Partial<Record<IdDeNoticia, string>>;
@@ -139,9 +169,16 @@ const SELECAO_DO_PACOTE = {
   noticias: true,
   midia: true,
   midiaAprovada: true,
+  simulacao: true,
 } satisfies Prisma.Exp04ef1bPacoteSelect;
 
 const ListaDeNoticiasSchema = z.array(NoticiaDoPacoteSchema).length(IDS_DE_NOTICIA.length);
+
+/** As matérias da simulação na ordem `s1`, `s2`. */
+function emOrdemDaSimulacao<T extends { id: string }>(materias: readonly T[]): T[] {
+  const posicao = (id: string) => (IDS_DE_SIMULACAO as readonly string[]).indexOf(id);
+  return [...materias].sort((a, b) => posicao(a.id) - posicao(b.id));
+}
 
 /** As notícias na ordem da mesa (os ids são a posição). */
 function emOrdemDaMesa<T extends { id: string }>(noticias: readonly T[]): T[] {
@@ -169,6 +206,25 @@ function noticiasDaLinha(bruto: Prisma.JsonValue, contexto: { escolaId: string; 
   return noticiasPadrao();
 }
 
+const ListaDaSimulacaoSchema = z.array(MateriaDaSimulacaoSchema).length(IDS_DE_SIMULACAO.length);
+
+/**
+ * As duas matérias da simulação do `Json` do pacote. Nulo (o pacote anterior à
+ * 3.0.0) ou torto: as do banco padrão — a simulação não tem imagem nem
+ * consequência a perder, e a aula segue.
+ */
+function simulacaoDaLinhaDoPacote(bruto: Prisma.JsonValue | null): MateriaDaSimulacao[] {
+  if (bruto === null) return simulacaoPadrao();
+  const lido = ListaDaSimulacaoSchema.safeParse(bruto);
+  if (lido.success) {
+    const porId = new Map(lido.data.map((m) => [m.id, m]));
+    const ordenadas = IDS_DE_SIMULACAO.map((id) => porId.get(id)).filter((m): m is MateriaDaSimulacao => Boolean(m));
+    if (ordenadas.length === IDS_DE_SIMULACAO.length) return ordenadas;
+  }
+  logger.warn({ codigo: "exp04ef1b-simulacao-invalida" }, "simulação do pacote com forma inesperada; vale a do banco padrão");
+  return simulacaoPadrao();
+}
+
 /** As URLs de imagem do pacote, só com chave de notícia conhecida e valor texto. */
 function midiaDaLinha(bruto: Prisma.JsonValue): Partial<Record<IdDeNoticia, string>> {
   if (bruto === null || typeof bruto !== "object" || Array.isArray(bruto)) return {};
@@ -189,6 +245,7 @@ function pacoteDaLinha(linha: Prisma.Exp04ef1bPacoteGetPayload<{ select: typeof 
     topicos: linha.topicos,
     origem: linha.origem === "ia" ? "ia" : "padrao",
     noticias: noticiasDaLinha(linha.noticias, { escolaId: linha.escolaId, pacoteId: linha.id }),
+    simulacao: simulacaoDaLinhaDoPacote(linha.simulacao),
     midia: midiaDaLinha(linha.midia),
     midiaAprovada: midiaDaLinha(linha.midiaAprovada),
   };
@@ -301,54 +358,21 @@ function pesoDaLinha(publicada1Em: Date | null, atualizadoEm: Date | null): numb
   return (publicada1Em ? 1e13 : 0) + recencia;
 }
 
+/**
+ * A REGRA DE REFERÊNCIA, igual para todos, depois da simulação (o plenário
+ * pediu: a Chave montada errada não pode sair da aula reforçada). Não compara
+ * com a da criança, e desce quando a medição já terminou.
+ */
+export const REGRA_DE_REFERENCIA =
+  "Bons editores olham a fonte, a data e quem escreveu — e param se uma delas falhar.";
+
 @Injectable()
-export class JornalEscolaService implements OnModuleInit {
+export class JornalEscolaService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly evidencias: EvidenciasService,
     private readonly diagramacao: DiagramacaoService,
   ) {}
-
-  /**
-   * O contexto da evidência pedagógica: é por ele que P1/P2
-   * (`/evidencias/exp04ef1b/perguntas/:id/resposta`) caem na atividade e na
-   * rodada certas, sem o cliente dizer quais. No teste, quem chama isto é a
-   * suíte.
-   */
-  onModuleInit(): void {
-    this.evidencias.registrarContexto(EXP_ID, (tx, escolaId, estudanteId) =>
-      this.contextoDaAtividade(tx, escolaId, estudanteId),
-    );
-  }
-
-  /**
-   * A atividade em andamento para P1/P2 — ou `null`.
-   *
-   * A turma sai da sessão MAIS RECENTE do estudante, porque o resolvedor não
-   * recebe o token. E `null` em dois casos, os dois de propósito:
-   *   - o passo está antes de `transferencia`: o Desafio Final vem depois do
-   *     comparativo, e uma resposta mandada por fora da tela não fura a fila;
-   *   - a sessão não é do (pacote, rodada) que o gate diz: o professor zerou ou
-   *     trocou o pacote, e a resposta atrasada cairia numa rodada que acabou.
-   */
-  async contextoDaAtividade(
-    tx: Prisma.TransactionClient,
-    escolaId: string,
-    estudanteId: string,
-  ): Promise<ContextoDaAtividade | null> {
-    const sessao = await tx.exp04ef1bSessao.findFirst({
-      where: { escolaId, estudanteId },
-      orderBy: { criadoEm: "desc" },
-      select: { turmaId: true, pacoteId: true, rodada: true, passo: true },
-    });
-    if (!sessao || passoAntes(normalizarPasso(sessao.passo), "transferencia")) return null;
-    const gate = await tx.exp04ef1bGateTurma.findUnique({
-      where: { escolaId_turmaId: { escolaId, turmaId: sessao.turmaId } },
-      select: { pacoteId: true, rodada: true },
-    });
-    if (!gate || gate.pacoteId !== sessao.pacoteId || gate.rodada !== sessao.rodada) return null;
-    return { turmaId: sessao.turmaId, atividadeId: sessao.pacoteId, rodada: sessao.rodada };
-  }
 
   // ───────────────────────────────────────────────────── rotas do estudante
 
@@ -369,7 +393,13 @@ export class JornalEscolaService implements OnModuleInit {
           tema: ctx.pacote.tema,
           noticias: ctx.pacote.noticias.map((n) => noticiaPublica(n, midiaAprovada(ctx.pacote))),
         },
-        blocos: comChave ? ordemDaBandeja(ctx.sessao.id).map((id) => ({ id, ...BLOCOS_DA_CHAVE[id] })) : null,
+        blocos: comChave
+          ? ordemDaBandeja(ctx.sessao.id).map((id) => ({
+              id,
+              ...BLOCOS_DA_CHAVE[id],
+              cartoes: ordemDosCartoes(ctx.sessao.id, id).map((indice) => ({ indice, ...CARTOES_DA_CHAVE[id][indice] })),
+            }))
+          : null,
         limites: { edicao: TAMANHO_DA_EDICAO, chave: TAMANHO_DA_CHAVE },
       };
     }, escolaId);
@@ -416,7 +446,7 @@ export class JornalEscolaService implements OnModuleInit {
     }, escolaId);
   }
 
-  /** Os passos que a própria criança pede: a mesa e o Desafio Final. */
+  /** Os passos que a própria criança pede: a mesa e a simulação. */
   async pedirPasso(escolaId: string, estudanteId: string, turmaId: string | null, para: PassoPedido) {
     return this.prisma.comTenancy(async (tx) => {
       const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
@@ -424,7 +454,10 @@ export class JornalEscolaService implements OnModuleInit {
       const r = pedirPasso(atual, para);
       if (!r.ok) throw erroDeJogo(r.codigo);
       if (r.passo === atual) return this.estado(ctx.sessao, ctx.gate, ctx.pacote);
-      const sessao = await tx.exp04ef1bSessao.update({ where: { id: ctx.sessao.id }, data: { passo: r.passo } });
+      /* A rodada da 2.x formou a Chave por tentativas, sem MONTAGEM: não há Chave
+         dela para simular, e o comparativo leva direto ao boato. */
+      const destino = r.passo === "simulacao" && montagemDaLinha(ctx.sessao.chaveMontagem) === null ? "transferencia" : r.passo;
+      const sessao = await tx.exp04ef1bSessao.update({ where: { id: ctx.sessao.id }, data: { passo: destino } });
       return this.estado(sessao, ctx.gate, ctx.pacote);
     }, escolaId);
   }
@@ -455,6 +488,38 @@ export class JornalEscolaService implements OnModuleInit {
         });
       }
       return { ...par, fase, texto: noticia.pistas[par.tipo], abertas: paresAbertos(r.pistas).length };
+    }, escolaId);
+  }
+
+  /**
+   * O "confio / não confio" de uma pista já aberta — o registro da EF15CO04
+   * (3.0.0, ADR-168). Só na mesa da 1ª edição, e só da pista cuja abertura está
+   * registrada (julgar o que não leu não é julgamento). O PRIMEIRO de cada par
+   * vale: o segundo devolve o gravado, com `novo: false`.
+   */
+  async julgar(
+    escolaId: string,
+    estudanteId: string,
+    turmaId: string | null,
+    j: { noticiaId: IdDeNoticia; tipo: TipoDePista; veredito: Veredito },
+  ) {
+    return this.prisma.comTenancy(async (tx) => {
+      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
+      if (passoEfetivo(normalizarPasso(ctx.sessao.passo), ctx.gate.etapa) !== "mesa") throw erroDeJogo("passo-invalido");
+      const aberta = paresAbertos(pistasDaLinha(ctx.sessao.pistas), 1).some(
+        (p) => p.noticiaId === j.noticiaId && p.tipo === j.tipo,
+      );
+      if (!aberta) throw erroDeJogo("pista-nao-aberta");
+
+      const r = registrarJulgamento(julgamentosDaLinha(ctx.sessao.julgamentos), j, new Date());
+      if (r.novo) {
+        await tx.exp04ef1bSessao.update({
+          where: { id: ctx.sessao.id },
+          data: { julgamentos: r.julgamentos as unknown as Prisma.InputJsonValue },
+        });
+      }
+      const valido = r.julgamentos.find((x) => x.noticiaId === j.noticiaId && x.tipo === j.tipo);
+      return { noticiaId: j.noticiaId, tipo: j.tipo, veredito: valido?.veredito ?? j.veredito, novo: r.novo };
     }, escolaId);
   }
 
@@ -490,7 +555,8 @@ export class JornalEscolaService implements OnModuleInit {
    * `edicao-ja-publicada`. O `WHERE publicada1_em IS NULL` é a segunda tranca,
    * e o CHECK, a terceira. O lock COMPARTILHADO da turma (depois do do
    * estudante) e a releitura do gate fecham a corrida com o "Zerar": a marca da
-   * EF15CO04 não cai numa rodada que já acabou.
+   * EF15CO04 não cai numa rodada que já acabou — e ela é medida AQUI, sobre os
+   * julgamentos da mesa e a capa que acabou de ser publicada (a coerência).
    */
   async publicar(escolaId: string, estudanteId: string, turmaId: string | null, pub: Publicacao) {
     return this.prisma.comTenancy(async (tx) => {
@@ -513,7 +579,18 @@ export class JornalEscolaService implements OnModuleInit {
       });
       if (count === 0) throw erroDeJogo("edicao-ja-publicada");
 
-      await this.marcar(tx, ctx, gate, MARCADOR_DAS_PISTAS, nivelDasPistas(pistasDaLinha(ctx.sessao.pistas)));
+      await this.marcar(
+        tx,
+        ctx,
+        gate,
+        MARCADOR_DOS_JULGAMENTOS,
+        nivelDosJulgamentos(
+          julgamentosDaLinha(ctx.sessao.julgamentos),
+          pistasDaLinha(ctx.sessao.pistas),
+          ctx.pacote.noticias,
+          pub.slots,
+        ),
+      );
       const sessao = await tx.exp04ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
       return this.estado(sessao, gate, ctx.pacote);
     }, escolaId);
@@ -559,72 +636,41 @@ export class JornalEscolaService implements OnModuleInit {
   }
 
   /**
-   * Uma tentativa da Chave do Editor. Só com o passo efetivo `chave` (a revisão
-   * liberada para quem já respondeu o motivo); cada envio conta; o sucesso é o
-   * CONJUNTO {fonte, data, autoria}, corrigido aqui (`regras/chave.ts`). No
-   * sucesso, o passo vai a `revisao` e a EF15CO02 é marcada pelas tentativas.
-   * Com a Chave já formada, responde sucesso sem contar — o F5 e o toque
-   * duplo não viram tentativa. Com `tentativaDaTela` já contada, também não
-   * conta: devolve o resultado daquela tentativa.
+   * A Chave do Editor MONTADA (3.0.0, ADR-168) — um envio, sem correção. Só com
+   * o passo efetivo `chave` (a revisão liberada para quem já respondeu o
+   * motivo). Grava a montagem, UMA tentativa, o carimbo e o passo `revisao` no
+   * mesmo update, e marca a EF15CO02 (`montagem`, com teto em "em processo":
+   * o "atingiu" só vem da simulação). A resposta não diz se a Chave está certa.
+   *
+   * O reenvio da MESMA montagem (a resposta perdida na rede) devolve o estado;
+   * outra montagem depois de formada é 409 `chave-ja-montada`.
    */
-  async tentarChave(
-    escolaId: string,
-    estudanteId: string,
-    turmaId: string | null,
-    blocos: readonly IdDeBloco[],
-    tentativaDaTela?: number,
-  ) {
+  async montarChave(escolaId: string, estudanteId: string, turmaId: string | null, montagem: Montagem) {
     return this.prisma.comTenancy(async (tx) => {
       const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
       if (ctx.sessao.chaveFormadaEm) {
-        return {
-          sucesso: true,
-          tentativas: ctx.sessao.chaveTentativas,
-          devolvidos: [],
-          estado: this.estado(ctx.sessao, ctx.gate, ctx.pacote),
-        };
+        const gravada = montagemDaLinha(ctx.sessao.chaveMontagem);
+        if (gravada && canonico(gravada) === canonico(montagem)) return { estado: this.estado(ctx.sessao, ctx.gate, ctx.pacote) };
+        throw erroDeJogo("chave-ja-montada");
       }
       if (passoEfetivo(normalizarPasso(ctx.sessao.passo), ctx.gate.etapa) !== "chave") {
         throw erroDeJogo("revisao-nao-liberada");
       }
       const gate = await this.gateDaSessao(tx, escolaId, ctx);
 
-      const correcao = corrigirChave(blocos);
-      /* O REENVIO: a tela diz que número está mandando, e um número já contado
-         é a mesma tentativa chegando de novo (a resposta perdida na rede, o toque
-         duplo). Devolve o resultado sem somar — a EF15CO02 sai daqui. Lido depois
-         do lock do estudante, então dois reenvios simultâneos contam UMA vez. Os
-         `devolvidos` daquela tentativa não são gravados; saem dos blocos enviados. */
-      if (tentativaDaTela !== undefined && tentativaDaTela <= ctx.sessao.chaveTentativas) {
-        return {
-          sucesso: false,
-          tentativas: ctx.sessao.chaveTentativas,
-          devolvidos: correcao.devolvidos,
-          estado: this.estado(ctx.sessao, gate, ctx.pacote),
-        };
-      }
-      const tentativas = ctx.sessao.chaveTentativas + 1;
-      if (!correcao.sucesso) {
-        const sessao = await tx.exp04ef1bSessao.update({
-          where: { id: ctx.sessao.id },
-          data: { chaveTentativas: tentativas },
-        });
-        return { sucesso: false, tentativas, devolvidos: correcao.devolvidos, estado: this.estado(sessao, gate, ctx.pacote) };
-      }
-
       const { count } = await tx.exp04ef1bSessao.updateMany({
         where: { id: ctx.sessao.id, escolaId, chaveFormadaEm: null, passo: "publicada" },
-        data: { chaveTentativas: tentativas, chaveFormadaEm: new Date(), passo: "revisao" },
+        data: {
+          chaveMontagem: montagem as unknown as Prisma.InputJsonValue,
+          chaveTentativas: 1,
+          chaveFormadaEm: new Date(),
+          passo: "revisao",
+        },
       });
-      /* Sem linha atualizada, a Chave já estava formada: não conta nem marca de novo. */
-      if (count > 0) await this.marcar(tx, ctx, gate, MARCADOR_DA_CHAVE, nivelDaChave(tentativas));
+      /* Sem linha atualizada, a Chave já estava formada (a corrida com o toque duplo): não marca de novo. */
+      if (count > 0) await this.marcar(tx, ctx, gate, MARCADOR_DA_MONTAGEM, nivelDaMontagem(montagem));
       const sessao = await tx.exp04ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
-      return {
-        sucesso: true,
-        tentativas: sessao.chaveTentativas,
-        devolvidos: [],
-        estado: this.estado(sessao, gate, ctx.pacote),
-      };
+      return { estado: this.estado(sessao, gate, ctx.pacote) };
     }, escolaId);
   }
 
@@ -641,7 +687,8 @@ export class JornalEscolaService implements OnModuleInit {
   /**
    * "Publicar 2ª Edição Revisada" — O LATCH da 2ª. Pode repetir as três da 1ª:
    * quem acertou de primeira confirma, sem trocar à força (PDF §9). Marca a
-   * EF04CO08 (`edicao-2`) pelas pistas das duas fases e as verificadas da 2ª.
+   * EF04CO08 (`edicao-2`, com teto em "em processo") pelas pistas das duas fases
+   * e as verificadas da 2ª; o "atingiu" só vem da transferência (3.0.0).
    */
   async republicar(escolaId: string, estudanteId: string, turmaId: string | null, pub: Publicacao) {
     return this.prisma.comTenancy(async (tx) => {
@@ -665,7 +712,13 @@ export class JornalEscolaService implements OnModuleInit {
       });
       if (count === 0) throw erroDeJogo("edicao-ja-publicada");
 
-      await this.marcar(tx, ctx, gate, MARCADOR_DA_EDICAO_2, nivelDaEdicao2(pistasDaLinha(ctx.sessao.pistas), verificadas2));
+      await this.marcar(
+        tx,
+        ctx,
+        gate,
+        MARCADOR_DA_EDICAO_2,
+        nivelDaEdicao2(pistasDaLinha(ctx.sessao.pistas), pub.slots, verificadas2),
+      );
       const sessao = await tx.exp04ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
       return this.estado(sessao, gate, ctx.pacote);
     }, escolaId);
@@ -688,13 +741,111 @@ export class JornalEscolaService implements OnModuleInit {
     }, escolaId);
   }
 
-  /** "Concluir Missão" — de `transferencia` para `fim`; idempotente em `fim`. */
+  /**
+   * A tela da simulação (3.0.0, ADR-168): as duas matérias, SEM o gabarito, e a
+   * Chave DELA como roteiro. Do passo `simulacao` em diante (o F5 da tela, e a
+   * leitura depois de enviada).
+   */
+  async simulacao(escolaId: string, estudanteId: string, turmaId: string | null) {
+    return this.prisma.comTenancy(async (tx) => {
+      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
+      if (passoAntes(normalizarPasso(ctx.sessao.passo), "simulacao")) throw erroDeJogo("passo-invalido");
+      const montagem = montagemDaLinha(ctx.sessao.chaveMontagem);
+      if (!montagem) throw erroDeJogo("chave-nao-formada");
+      return {
+        materias: ctx.pacote.simulacao.map(({ gabarito: _g, ...publica }) => publica),
+        chave: {
+          vagas: montagem.vagas.map((v) => ({
+            bloco: v.bloco,
+            rotulo: BLOCOS_DA_CHAVE[v.bloco].rotulo,
+            seFalhar: v.seFalhar,
+            pulo: ehBlocoPilar(v.bloco) ? null : PULO_DA_ISCA[v.bloco as keyof typeof PULO_DA_ISCA],
+          })),
+          repeticao: montagem.repeticao,
+        },
+      };
+    }, escolaId);
+  }
+
+  /**
+   * A simulação ENVIADA — a execução da Chave nas duas matérias, de uma vez.
+   * Grava, carimba e leva ao `transferencia` no mesmo update, e marca a
+   * EF15CO02 (`simulacao`: a fidelidade à regra DELA combinada com a montagem).
+   * A resposta traz a regra de referência, igual para todos.
+   */
+  async simular(escolaId: string, estudanteId: string, turmaId: string | null, simulacao: Simulacao) {
+    return this.prisma.comTenancy(async (tx) => {
+      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
+      if (ctx.sessao.simuladaEm) throw erroDeJogo("simulacao-ja-enviada");
+      if (normalizarPasso(ctx.sessao.passo) !== "simulacao") throw erroDeJogo("passo-invalido");
+      const montagem = montagemDaLinha(ctx.sessao.chaveMontagem);
+      if (!montagem) throw erroDeJogo("chave-nao-formada");
+      const gate = await this.gateDaSessao(tx, escolaId, ctx);
+
+      const { count } = await tx.exp04ef1bSessao.updateMany({
+        where: { id: ctx.sessao.id, escolaId, simuladaEm: null, passo: "simulacao" },
+        data: {
+          simulacao: simulacao as unknown as Prisma.InputJsonValue,
+          simuladaEm: new Date(),
+          passo: "transferencia",
+        },
+      });
+      if (count === 0) throw erroDeJogo("simulacao-ja-enviada");
+      await this.marcar(tx, ctx, gate, MARCADOR_DA_SIMULACAO, nivelDaSimulacao(montagem, simulacao));
+      const sessao = await tx.exp04ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
+      return { estado: this.estado(sessao, gate, ctx.pacote), referencia: REGRA_DE_REFERENCIA };
+    }, escolaId);
+  }
+
+  /** O boato da transferência (fixo): do passo `transferencia` em diante. */
+  async transferencia(escolaId: string, estudanteId: string, turmaId: string | null) {
+    return this.prisma.comTenancy(async (tx) => {
+      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
+      if (passoAntes(normalizarPasso(ctx.sessao.passo), "transferencia")) throw erroDeJogo("passo-invalido");
+      return {
+        remetente: BOATO_DA_TRANSFERENCIA.remetente,
+        mensagem: BOATO_DA_TRANSFERENCIA.mensagem,
+        pistas: { ...BOATO_DA_TRANSFERENCIA.pistas },
+      };
+    }, escolaId);
+  }
+
+  /**
+   * A decisão diante do boato — uma vez. Marca a EF04CO08 (`transferencia`, o
+   * COMBINADO com a 2ª edição BRUTA). Fica no passo `transferencia`: quem leva
+   * ao `fim` é o "Concluir Missão", depois da síntese.
+   */
+  async transferir(escolaId: string, estudanteId: string, turmaId: string | null, t: Transferencia) {
+    return this.prisma.comTenancy(async (tx) => {
+      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
+      if (ctx.sessao.transferidaEm) throw erroDeJogo("transferencia-ja-decidida");
+      if (normalizarPasso(ctx.sessao.passo) !== "transferencia") throw erroDeJogo("passo-invalido");
+      const gate = await this.gateDaSessao(tx, escolaId, ctx);
+
+      const { count } = await tx.exp04ef1bSessao.updateMany({
+        where: { id: ctx.sessao.id, escolaId, transferidaEm: null, passo: "transferencia" },
+        data: { transferencia: t as unknown as Prisma.InputJsonValue, transferidaEm: new Date() },
+      });
+      if (count === 0) throw erroDeJogo("transferencia-ja-decidida");
+      const slots2 = slotsDaLinha(ctx.sessao.slotsEd2);
+      const bruto2 =
+        ctx.sessao.publicada2Em && slots2 && ctx.sessao.verificadasEd2 !== null
+          ? nivelBrutoDaEdicao2(pistasDaLinha(ctx.sessao.pistas), slots2, ctx.sessao.verificadasEd2)
+          : null;
+      await this.marcar(tx, ctx, gate, MARCADOR_DA_TRANSFERENCIA, nivelDaTransferencia(bruto2, t));
+      const sessao = await tx.exp04ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
+      return { estado: this.estado(sessao, gate, ctx.pacote) };
+    }, escolaId);
+  }
+
+  /** "Concluir Missão" — de `transferencia` (com o boato decidido) para `fim`; idempotente em `fim`. */
   async concluir(escolaId: string, estudanteId: string, turmaId: string | null) {
     return this.prisma.comTenancy(async (tx) => {
       const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
       const atual = normalizarPasso(ctx.sessao.passo);
       if (atual === "fim") return this.estado(ctx.sessao, ctx.gate, ctx.pacote);
       if (atual !== "transferencia") throw erroDeJogo("passo-invalido");
+      if (!ctx.sessao.transferidaEm) throw erroDeJogo("transferencia-pendente");
       /* Passo e carimbo no mesmo update: o CHECK `fim ⇔ concluida_em` vale por statement. */
       const sessao = await tx.exp04ef1bSessao.update({
         where: { id: ctx.sessao.id },
@@ -781,6 +932,7 @@ export class JornalEscolaService implements OnModuleInit {
           publicouAPrimeira: Boolean(s?.publicada1Em),
           chaveFormada: Boolean(s?.chaveFormadaEm),
           publicouASegunda: Boolean(s?.publicada2Em),
+          simulou: Boolean(s?.simuladaEm),
           concluiu: Boolean(s?.concluidaEm),
           _sessao: s ?? null,
           _peso: pesoDaLinha(s?.publicada1Em ?? null, s?.atualizadoEm ?? null),
@@ -801,6 +953,8 @@ export class JornalEscolaService implements OnModuleInit {
       const histograma1 = [0, 0, 0, 0];
       const histograma2 = [0, 0, 0, 0];
       const motivos = { visual: 0, checagem: 0 };
+      const chave = { montaram: 0, iscas: { foto: 0, urgencia: 0, compartilhada: 0 }, seguir: 0, soNaPrimeira: 0 };
+      const transferencia = { decidiram: 0, repassaramSemAbrir: 0, naoRepassaram: 0 };
       const naEdicao1 = new Map<string, number>();
       const naEdicao2 = new Map<string, number>();
       for (const { linha } of unidades) {
@@ -811,6 +965,21 @@ export class JornalEscolaService implements OnModuleInit {
         if (ed1 && s.verificadasEd1 !== null) histograma1[s.verificadasEd1] = (histograma1[s.verificadasEd1] ?? 0) + 1;
         if (ed2 && s.verificadasEd2 !== null) histograma2[s.verificadasEd2] = (histograma2[s.verificadasEd2] ?? 0) + 1;
         if (ehMotivo(s.motivoEd1)) motivos[s.motivoEd1] += 1;
+        const montagem = montagemDaLinha(s.chaveMontagem);
+        if (montagem) {
+          chave.montaram += 1;
+          for (const v of montagem.vagas) {
+            if (v.bloco === "foto" || v.bloco === "urgencia" || v.bloco === "compartilhada") chave.iscas[v.bloco] += 1;
+          }
+          if (montagem.vagas.some((v) => v.seFalhar === "seguir")) chave.seguir += 1;
+          if (montagem.repeticao === "so_a_primeira") chave.soNaPrimeira += 1;
+        }
+        const t = transferenciaDaLinha(s.transferencia);
+        if (t) {
+          transferencia.decidiram += 1;
+          if (t.decisao === "repassar" && t.pistas.length === 0) transferencia.repassaramSemAbrir += 1;
+          if (t.decisao === "nao_repassar") transferencia.naoRepassaram += 1;
+        }
         for (const id of ed1 ?? []) naEdicao1.set(id, (naEdicao1.get(id) ?? 0) + 1);
         for (const id of ed2 ?? []) naEdicao2.set(id, (naEdicao2.get(id) ?? 0) + 1);
       }
@@ -845,6 +1014,8 @@ export class JornalEscolaService implements OnModuleInit {
           porComputador: mapa.size > 0,
           histograma: { edicao1: histograma1, edicao2: histograma2 },
           motivos,
+          chave,
+          transferencia,
           radar: pacote.noticias.map((n) => ({
             noticiaId: n.id,
             manchete: n.manchete,
@@ -1086,6 +1257,7 @@ export class JornalEscolaService implements OnModuleInit {
       origem: pacote.origem,
       topicos: pacote.topicos,
       noticias: pacote.noticias,
+      simulacao: pacote.simulacao,
       midia: resumoDaMidia(pacote),
       imagens,
       /** As notícias cuja imagem ATUAL o professor aprovou (ADR-147). */
@@ -1130,6 +1302,8 @@ export class JornalEscolaService implements OnModuleInit {
       origem: OrigemDoPacote;
       noticias: NoticiaDoPacote[];
       podcast: FalasDoTema;
+      /** As duas matérias da simulação (3.0.0); ausentes = as do banco padrão. */
+      simulacao?: MateriaDaSimulacao[];
     },
   ) {
     return this.prisma.comTenancy(async (tx) => {
@@ -1143,12 +1317,13 @@ export class JornalEscolaService implements OnModuleInit {
         select: { ...SELECAO_DO_PACOTE, ativo: true },
       });
       const noticias = emOrdemDaMesa(corpo.noticias);
+      const simulacao = emOrdemDaSimulacao(corpo.simulacao ?? simulacaoPadrao());
 
       /* O MESMO conteúdo do pacote mais recente não é atividade nova: é o
          segundo clique em "Criar atividade". Sem isto, cada toque criaria uma
          entrada na lista de atividades. */
       const [ultimo] = recentes;
-      if (ultimo && this.mesmoConteudo(pacoteDaLinha(ultimo), corpo.origem, corpo.tema, noticias)) {
+      if (ultimo && this.mesmoConteudo(pacoteDaLinha(ultimo), corpo.origem, corpo.tema, noticias, simulacao)) {
         const lido = pacoteDaLinha(ultimo);
         /* O segundo clique pode trazer as falas do podcast editadas: elas
            valem, mesmo sem atividade nova (ADR-150). */
@@ -1185,6 +1360,7 @@ export class JornalEscolaService implements OnModuleInit {
           topicos: corpo.topicos?.trim() || null,
           origem: corpo.origem,
           noticias: noticias as unknown as Prisma.InputJsonValue,
+          simulacao: simulacao as unknown as Prisma.InputJsonValue,
           midia: herdada,
           aprovadoPor,
           aprovadoEm: new Date(),
@@ -1293,12 +1469,19 @@ export class JornalEscolaService implements OnModuleInit {
 
   // ────────────────────────────────────────────────────────────── privados
 
-  /** O pacote que chega tem a MESMA origem, o mesmo tema e as mesmas notícias do ativo? */
-  private mesmoConteudo(ativo: PacoteLido, origem: OrigemDoPacote, tema: string, noticias: readonly NoticiaDoPacote[]): boolean {
+  /** O pacote que chega tem a MESMA origem, o mesmo tema, as mesmas notícias e a mesma simulação do ativo? */
+  private mesmoConteudo(
+    ativo: PacoteLido,
+    origem: OrigemDoPacote,
+    tema: string,
+    noticias: readonly NoticiaDoPacote[],
+    simulacao: readonly MateriaDaSimulacao[],
+  ): boolean {
     return (
       ativo.origem === origem &&
       ativo.tema.trim() === tema.trim() &&
-      canonico(ativo.noticias) === canonico(emOrdemDaMesa(noticias))
+      canonico(ativo.noticias) === canonico(emOrdemDaMesa(noticias)) &&
+      canonico(ativo.simulacao) === canonico(emOrdemDaSimulacao(simulacao))
     );
   }
 
@@ -1317,12 +1500,14 @@ export class JornalEscolaService implements OnModuleInit {
       edicao1: edicaoDaLinha(sessao.slotsEd1, sessao.layoutEd1, sessao.origemLayoutEd1, sessao.publicada1Em),
       motivoRespondido: sessao.motivoEd1 !== null,
       chaveFormada: sessao.chaveFormadaEm !== null,
-      chaveTentativas: sessao.chaveTentativas,
       edicao2: edicaoDaLinha(sessao.slotsEd2, sessao.layoutEd2, sessao.origemLayoutEd2, sessao.publicada2Em),
       pistasAbertas: pistasDaTela(pistasDaLinha(sessao.pistas)).map((p) => ({
         ...p,
         texto: porId.get(p.noticiaId)?.pistas[p.tipo] ?? "",
       })),
+      julgamentos: julgamentosDaLinha(sessao.julgamentos).map(({ noticiaId, tipo, veredito }) => ({ noticiaId, tipo, veredito })),
+      simulada: sessao.simuladaEm !== null,
+      transferida: sessao.transferidaEm !== null,
       iniciadaEm: sessao.criadoEm.toISOString(),
       concluidaEm: sessao.concluidaEm?.toISOString() ?? null,
     };

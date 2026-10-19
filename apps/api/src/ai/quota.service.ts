@@ -5,13 +5,20 @@ import { Metricas } from "../observabilidade/metricas";
 import { PrismaService } from "../prisma/prisma.service";
 
 /**
- * Os perfis que TÊM linha em `ia_quotas` — e o CHECK da migration espelha esta
- * tupla. Só dois chamam IA de fato: o estudante (tutor da exp08ef1b, exp02em1b)
- * e o professor (exp01ef1b, exp08ef4b, app-90, app-91, app-92).
- * Gestores e `admin` não têm rota de IA hoje; quando tiverem, o perfil entra
- * aqui, no CHECK e na semente — nunca só num dos três.
+ * As linhas de `ia_quotas` — e o CHECK da migration espelha esta tupla. Duas
+ * são PERFIS de quem chama IA: o estudante (tutor da exp08ef1b, exp02em1b) e o
+ * professor (exp01ef1b, exp08ef4b, app-90, app-91, app-92). Gestores e `admin`
+ * não têm rota de IA hoje; quando tiverem, o perfil entra aqui, no CHECK e na
+ * semente — nunca só num dos três.
+ *
+ * A terceira, `avaliacao`, NÃO é perfil de token (ADR-169): é a leitura que a
+ * PLATAFORMA faz do trabalho da criança para a evidência pedagógica (o Canal A
+ * da exp07ef1b). Avaliar não pode competir com o uso que o estudante faz da IA
+ * como ferramenta — quem usou o tutor de manhã não pode ser avaliado por uma
+ * régua pior à tarde. O teto é POR ESCOLA por dia, contado em `ia_uso_diario`
+ * com o usuário `USUARIO_DA_AVALIACAO`.
  */
-export const PERFIS_COM_QUOTA = ["estudante", "professor"] as const;
+export const PERFIS_COM_QUOTA = ["estudante", "professor", "avaliacao"] as const;
 export type PerfilDaQuota = (typeof PERFIS_COM_QUOTA)[number];
 
 /**
@@ -27,14 +34,25 @@ export type PerfilDaQuota = (typeof PERFIS_COM_QUOTA)[number];
 export const QUOTA_PADRAO: Record<PerfilDaQuota, number> = {
   estudante: 300_000,
   professor: 2_000_000,
+  avaliacao: 4_000_000,
 };
+
+/**
+ * O `usuario_id` com que a avaliação conta em `ia_uso_diario` — uma linha por
+ * ESCOLA e dia. A coluna é texto, sem FK (como sempre foi), e nenhum id de
+ * pessoa tem este formato: o uuid de `users` nunca colide com ele.
+ */
+export const USUARIO_DA_AVALIACAO = "avaliacao";
+
+/** A fração do teto a partir da qual a avaliação AVISA (log e métrica), antes de esgotar. */
+export const ALERTA_DA_AVALIACAO = 0.8;
 
 /**
  * Qual linha de `ia_quotas` vale para um perfil do token. Todo perfil que não é
  * `estudante` cai em `professor` — é o comportamento que já valia com as duas
  * envs, agora escrito em vez de implícito num `if`.
  */
-export function perfilDaQuota(perfil: Perfil | string): PerfilDaQuota {
+export function perfilDaQuota(perfil: Perfil | string): Exclude<PerfilDaQuota, "avaliacao"> {
   return perfil === "estudante" ? "estudante" : "professor";
 }
 
@@ -70,7 +88,11 @@ export class QuotaService {
 
   /** O teto diário que vale para este perfil, lido do banco. */
   async limite(perfil: Perfil | string): Promise<number> {
-    const chave = perfilDaQuota(perfil);
+    return this.limiteDaLinha(perfilDaQuota(perfil));
+  }
+
+  /** O teto de UMA linha de `ia_quotas`, inclusive a da avaliação. */
+  async limiteDaLinha(chave: PerfilDaQuota): Promise<number> {
     // Tabela de CONTRATO, sem RLS e sem `escola_id`: fora do `comTenancy`, como
     // `disponibilidades`. A política por escola a esconderia.
     const linha = await this.prisma.iaQuota.findUnique({ where: { perfil: chave } });
@@ -112,6 +134,44 @@ export class QuotaService {
     // perfil é rótulo fechado, não a escola.
     if (!ok) this.metricas?.iaQuotaRecusas.add(1, { perfil });
     return ok;
+  }
+
+  /**
+   * A AVALIAÇÃO tem saldo nesta escola, hoje? (ADR-169) — a leitura da
+   * plataforma para a evidência pedagógica, fora da quota do estudante.
+   */
+  async temSaldoDaAvaliacao(escolaId: string): Promise<boolean> {
+    const [usado, limite] = await Promise.all([
+      this.usadoHoje(escolaId, USUARIO_DA_AVALIACAO),
+      this.limiteDaLinha("avaliacao"),
+    ]);
+    const ok = usado < limite;
+    if (!ok) {
+      this.metricas?.iaQuotaRecusas.add(1, { perfil: "avaliacao" });
+      logger.warn(
+        { codigo: "ia-quota-avaliacao-esgotada", escolaId, limite },
+        "a quota de avaliação da escola acabou: as leituras caem na reserva",
+      );
+    }
+    return ok;
+  }
+
+  /**
+   * Debita a avaliação e AVISA ao cruzar 80% do teto — uma vez por cruzamento,
+   * porque é o débito que cruza que sabe o "antes" e o "depois". O alerta de
+   * verdade (Cloud Monitoring) é métrica a partir deste log, no Terraform.
+   */
+  async consumirDaAvaliacao(escolaId: string, tokens: number): Promise<number> {
+    const total = await this.consumir(escolaId, USUARIO_DA_AVALIACAO, tokens);
+    const limite = await this.limiteDaLinha("avaliacao");
+    const antes = total - tokens;
+    if (antes < limite * ALERTA_DA_AVALIACAO && total >= limite * ALERTA_DA_AVALIACAO) {
+      logger.warn(
+        { codigo: "ia-quota-avaliacao-80", escolaId, total, limite },
+        "a quota de avaliação da escola passou de 80%",
+      );
+    }
+    return total;
   }
 
   /** Incremento atômico; devolve o total do dia depois do consumo. */

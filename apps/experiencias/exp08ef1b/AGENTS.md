@@ -6,7 +6,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 |---|---|
 | Manifesto | `exp08ef1b` · 8EF · `telemetria, progresso, ia` · viewport 375×812 |
 | Dev | `pnpm --filter @edu/exp08ef1b dev` → :5173 |
-| DS | `@edu/ui/ds-unoovista` no disfarce (desde a 1.2.0, ADR-133; antes era `ds-insta`), `@edu/ui/ds` só depois da revelação: os gráficos do dossiê e as perguntas de evidência (1.3.0, ADR-153), as duas no chunk `lazy`, para o CSS da plataforma não descer com o feed |
+| DS | `@edu/ui/ds-unoovista` no disfarce (desde a 1.2.0, ADR-133; antes era `ds-insta`) — o Raio-x (6a) inclusive, que vem ANTES da revelação; `@edu/ui/ds` só depois dela: os gráficos do dossiê, o 6b e o 6c, a reflexão e o "Rever meu relatório" (1.4.0, ADR-167), todos no chunk `lazy`, para o CSS da plataforma não descer com o feed |
 | api | `motor`, `geracao`, `dossie`, `atividades` — tabelas `exp08ef1b_*` |
 | e2e | `scripts/e2e/estudante/02-instanooria.mjs` (sobe DOIS contextos: o docente conduz) |
 | Copy da revelação | `src/lib/copy-da-revelacao.ts` — **cópia gêmea** de `apps/hub/lib/insta/copy-da-revelacao.ts`, que o guia do professor lê. Mexeu numa, mexa na outra: nada no build cobra isso |
@@ -71,3 +71,26 @@ Personagens-símbolo, nunca rosto humano realista nem pessoa identificável — 
 criança escolhe uma identidade para usar dentro de um feed que a está medindo.
 A URL sai de `import.meta.env.BASE_URL`, **não** de `/`: o bundle é servido de
 `{expId}/{versao}/` no bucket, e caminho absoluto aponta para a raiz da CDN.
+
+## O Canal A (1.4.0, ADR-167): o desvio por fase
+
+`lib/canal-a.ts#desvioDaFase` decide o que vem ANTES da tela da fase, a partir
+de `GET /runs/:id/tarefas`: o Raio-x pendente antes da revelação (quem não o
+fez antes do debate faz na entrada da explicação), a revelação antes do cinza
+e das tarefas (quem foi puxado adiante vê a revelação e o relatório com
+"Continuar"), e tarefa pendente antes da reflexão. Quem não teve feed com lado
+não recebe tarefa. **O aparelho não sabe o lado de nenhum post**: a
+composição do Raio-x e do envio, os gabaritos e as réguas são da api
+(`apps/api/src/motor/canal-a/`), e todo envio responde `{ enviada: true }`.
+
+- **O fim da revelação é do servidor**: o "Ver meu relatório" chama
+  `POST /runs/:id/revelacao/concluida` (idempotente). Sem ele o 6b e o 6c não
+  abrem.
+- **O relatório expande também a pedido** ("Rever meu relatório", no cinza e na
+  reflexão): `passo: "relatorio"` no `exp:estado`, em qualquer fase. As tarefas
+  publicam `passo: "tarefas"` para o hub tirar a moldura do cinza.
+- **O `Checkbox` do DS tem o `<input>` sr-only, fora da área visível**: na e2e
+  marca-se pelo RÓTULO (`getByText`), nunca `check()` no input.
+- Compensação local: o texto da miniatura do envio abre por inteiro num
+  `<button>` sem estilo de controle (`tarefas-pos-revelacao.tsx`) — o DS não tem
+  "texto que expande"; o `Collapse` sequestra o teclado.

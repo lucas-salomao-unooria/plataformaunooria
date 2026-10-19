@@ -418,9 +418,10 @@ export function deveConsultar(painel: Pick<PainelDaTurma, "atividade" | "progres
 
 /**
  * Mudou algo que a EVIDÊNCIA registra? A EF05CO08 é marcada quando o Mural
- * fecha e a EF05CO03/CO04 quando as perguntas da Nina terminam — e a atividade
- * troca com um pacote novo ou uma rodada nova. É só nesses casos que vale reler
- * a página inteira para o painel de habilidades acompanhar.
+ * fecha, a EF05CO03 quando o cartão de frases é enviado e a EF05CO04 quando a
+ * regra do tio é enviada — e a atividade troca com um pacote novo ou uma rodada
+ * nova. É só nesses casos que vale reler a página inteira para o painel de
+ * habilidades acompanhar.
  */
 export function mudouAEvidencia(
   antes: Pick<PainelDaTurma, "atividade" | "progresso">,
@@ -428,6 +429,8 @@ export function mudouAEvidencia(
 ): boolean {
   return (
     antes.progresso.confirmaram !== depois.progresso.confirmaram ||
+    antes.progresso.responderamCartao !== depois.progresso.responderamCartao ||
+    antes.progresso.enviaramRegra !== depois.progresso.enviaramRegra ||
     antes.progresso.concluiram !== depois.progresso.concluiram ||
     antes.atividade?.pacoteId !== depois.atividade?.pacoteId ||
     antes.atividade?.rodada !== depois.atividade?.rodada

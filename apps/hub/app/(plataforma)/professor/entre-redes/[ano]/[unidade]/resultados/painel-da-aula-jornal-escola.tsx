@@ -31,7 +31,11 @@ import {
   histogramaEmPercentual,
   mudouAEvidencia,
   percentual,
+  quantosSimularam,
   rotuloDoBotao,
+  ROTULO_DA_ISCA,
+  iscasMaisEscolhidas,
+  sujeito,
   textoDoDestaque,
   textoDoEnvio,
   textoDoHistograma,
@@ -72,10 +76,15 @@ import { ListaDoJornal } from "./lista-do-jornal";
  * BFF, só enquanto a aula corre (`aulaEmAndamento`) e com a aba visível.
  *
  * A exceção é a EVIDÊNCIA (ADR-146): quando muda o que o painel de
- * habilidades mostra (`mudouAEvidencia` — alguém publicou a 1ª edição, formou
- * a Chave, publicou a 2ª ou concluiu depois do Desafio Final; ou a
- * atividade/rodada trocou), a página é refeita, e o professor vê o nível
- * chegar sem recarregar. Uma leitura basta: a api marca na MESMA transação da
+ * habilidades mostra (`mudouAEvidencia` — alguém publicou a 1ª edição, montou
+ * a Chave, publicou a 2ª, testou a Chave nas duas matérias novas ou decidiu
+ * sobre a mensagem nova; ou a atividade/rodada trocou), a página é refeita, e
+ * o professor vê o nível chegar sem recarregar.
+ *
+ * **A Chave e a mensagem nova chegam só AGREGADAS** (3.0.0, ADR-168): quantos
+ * puseram cada armadilha, quantos "Olho a próxima pista", quantos "Só na
+ * primeira notícia", quantos repassaram sem abrir pista. É o roteiro da
+ * conversa; o nível de cada criança mora no painel de habilidades. Uma leitura basta: a api marca na MESMA transação da
  * jogada que o painel conta, então quando o número muda a marca já está lá —
  * não há a segunda volta da A Seleção, cuja IA gradua depois.
  *
@@ -213,6 +222,13 @@ export function PainelDaAulaJornalEscola({
                   montando a página continua, e vê o resultado assim que publicar e disser por que escolheu.
                 </p>
               ) : null}
+              {proxima === "revisao" ? (
+                <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600" data-pausa>
+                  <strong>A missão cabe em uma ou em duas aulas.</strong> Se a aula acabar depois da conversa, pare
+                  aqui: o que cada computador fez fica salvo. Na próxima aula, aperte Liberar revisão quando a turma
+                  estiver pronta — ela começa pela Chave do Editor.
+                </p>
+              ) : null}
               {proxima === "revisao" && roteiro ? (
                 <div className="flex flex-col gap-1" data-perguntas-da-mediacao>
                   <p className="text-[13px] font-semibold text-unooria-neutral-950">
@@ -251,8 +267,9 @@ export function PainelDaAulaJornalEscola({
             </div>
           ) : (
             <p className="text-[13px] leading-snug text-unooria-neutral-700">
-              Os dois portões estão abertos. Cada computador segue no próprio ritmo pela Chave do Editor, pela
-              2ª edição e pelo desafio final. Para aplicar de novo, use Zerar a turma, mais abaixo.
+              Os dois portões estão abertos. Cada computador segue no próprio ritmo: monta a Chave do Editor,
+              publica a 2ª edição, testa a Chave em duas matérias novas e decide o que fazer com uma mensagem
+              nova. Para aplicar de novo, use Zerar a turma, mais abaixo.
             </p>
           )}
 
@@ -262,25 +279,28 @@ export function PainelDaAulaJornalEscola({
         </div>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <MetricCard title="Publicaram a 1ª edição" value={`${publicaram}/${y}`} />
-        <MetricCard title="Formaram a Chave do Editor" value={`${resumo.formaramAChave}/${y}`} />
+        <MetricCard title="Montaram a Chave do Editor" value={`${resumo.formaramAChave}/${y}`} />
         <MetricCard title="Publicaram a 2ª edição" value={`${resumo.publicaramASegunda}/${y}`} />
-        <MetricCard title="Concluíram o desafio final" value={`${resumo.concluiram}/${y}`} />
+        <MetricCard title="Testaram a Chave" value={`${quantosSimularam(painel.linhas)}/${y}`} />
+        <MetricCard title="Concluíram a missão" value={`${resumo.concluiram}/${y}`} />
       </div>
       {resumo.porComputador ? (
         <p className="-mt-2 text-[12px] leading-snug text-unooria-neutral-600">{AVISO_POR_COMPUTADOR}</p>
       ) : null}
 
       <PainelParaProjetar painel={painel} />
+      {painel.etapa === "revisao" ? <RoteiroDaChave painel={painel} /> : null}
       <RadarDaMesa painel={painel} />
 
       <Card variant="elevated" title={[painel.turma.nome, painel.turma.serie].filter(Boolean).join(" · ")}>
         <div className="mb-3 flex flex-col gap-1 text-[12px] leading-snug text-unooria-neutral-600">
           <p>
             Esta folha é para a <strong>sua</strong> tela, não para o projetor: ela tem nomes. Não há coluna de
-            nível nem de acerto — quantas notícias cada um verificou fica só no gráfico, sem nome, e o nível das
-            habilidades fica no painel de habilidades, lá embaixo, com a sua confirmação.
+            nível nem de acerto — quantas notícias cada um verificou fica só no gráfico, sem nome. O nível de cada
+            um, inclusive de quem repassou a mensagem nova sem abrir nenhuma pista, fica no painel de habilidades,
+            lá embaixo, só para você: se precisar conversar, converse com a criança em particular.
           </p>
           <p>
             “Pistas abertas” conta quantas vezes o computador abriu de onde veio, quando aconteceu ou quem assina.
@@ -387,6 +407,99 @@ function PainelParaProjetar({ painel }: { painel: PainelDoJornal }) {
                 data-motivo={m}
               />
             ))
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * O roteiro da conversa sobre a Chave e a mensagem nova (3.0.0, ADR-168) — só
+ * AGREGADOS, sem nome e sem nível: quantos puseram cada armadilha na Chave,
+ * quantos escolheram "Olho a próxima pista" em alguma vaga, quantos "Só na
+ * primeira notícia" e quantos repassaram a mensagem sem abrir pista. Só
+ * aparece com a revisão liberada: antes não há Chave.
+ *
+ * Projetar no meio da revisão contaria a quem ainda está na Chave, ou na
+ * mensagem, o que se espera dele — o texto diz isso.
+ */
+function RoteiroDaChave({ painel }: { painel: PainelDoJornal }) {
+  const { resumo } = painel;
+  const { chave, transferencia, porComputador } = resumo;
+  const quem = (n: number) => `${n} ${sujeito(porComputador, n)}`;
+  const verbo = (n: number, um: string, varios: string) => (n === 1 ? um : varios);
+  const iscas = iscasMaisEscolhidas(chave.iscas);
+
+  return (
+    <Card variant="elevated" title="Roteiro da conversa: a Chave e a mensagem nova">
+      <div className="flex flex-col gap-4" data-roteiro-da-chave>
+        <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
+          Sem nomes e sem nível: são as escolhas da turma somadas, para puxar a conversa do fechamento. Projete só
+          quando todos tiverem terminado — antes, contaria a quem ainda está na Chave ou na mensagem o que se espera
+          dele. Depois do teste, todos recebem na tela a mesma regra de referência.
+        </p>
+
+        <div className="flex flex-col gap-2" data-iscas-da-chave>
+          <p className="text-[14px] font-semibold text-unooria-neutral-950">
+            Armadilhas mais escolhidas na Chave{" "}
+            <span className="font-normal text-unooria-neutral-600">
+              · {chave.montaram === 1 ? "1 Chave montada" : `${chave.montaram} Chaves montadas`}
+            </span>
+          </p>
+          {chave.montaram === 0 ? (
+            <p className="text-[13px] text-unooria-neutral-700">Ninguém montou a Chave ainda.</p>
+          ) : iscas.length === 0 ? (
+            <p className="text-[13px] text-unooria-neutral-700">
+              Nenhuma Chave usou foto, urgência ou compartilhamento como critério.
+            </p>
+          ) : (
+            iscas.map((i) => (
+              <ProgressBar
+                key={i.isca}
+                label={ROTULO_DA_ISCA[i.isca]}
+                value={i.vezes}
+                max={chave.montaram}
+                valueFormatter={(v) => quem(v)}
+                variant="brand"
+                data-isca={i.isca}
+              />
+            ))
+          )}
+        </div>
+
+        {chave.montaram > 0 ? (
+          <ul className="flex max-w-3xl flex-col gap-1 text-[13px] leading-relaxed text-unooria-neutral-800">
+            <li data-chave-seguir>
+              <strong>{quem(chave.seguir)}</strong> {verbo(chave.seguir, "pôs", "puseram")} “Olho a próxima pista” em alguma vaga: quando a pista
+              falha, a Chave segue em vez de parar.
+            </li>
+            <li data-chave-so-na-primeira>
+              <strong>{quem(chave.soNaPrimeira)}</strong> {verbo(chave.soNaPrimeira, "escolheu", "escolheram")} “Só na primeira notícia”: a Chave não se
+              repete nas outras.
+            </li>
+          </ul>
+        ) : null}
+
+        <div className="flex flex-col gap-2 border-t border-unooria-neutral-200 pt-4" data-mensagem-nova>
+          <p className="text-[14px] font-semibold text-unooria-neutral-950">A mensagem nova</p>
+          {transferencia.decidiram === 0 ? (
+            <p className="text-[13px] text-unooria-neutral-700">Ninguém chegou à mensagem nova ainda.</p>
+          ) : (
+            <ul className="flex max-w-3xl flex-col gap-1 text-[13px] leading-relaxed text-unooria-neutral-800">
+              <li>
+                <strong>{quem(transferencia.decidiram)}</strong> {verbo(transferencia.decidiram, "decidiu", "decidiram")} o que fazer com a mensagem.
+              </li>
+              <li data-repassaram-sem-abrir>
+                <strong>{quem(transferencia.repassaramSemAbrir)}</strong>{" "}
+                {verbo(transferencia.repassaramSemAbrir, "repassou", "repassaram")} a mensagem sem abrir nenhuma
+                pista.
+              </li>
+              <li>
+                <strong>{quem(transferencia.naoRepassaram)}</strong>{" "}
+                {verbo(transferencia.naoRepassaram, "não repassou", "não repassaram")}.
+              </li>
+            </ul>
           )}
         </div>
       </div>

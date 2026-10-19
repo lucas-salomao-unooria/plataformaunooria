@@ -4,7 +4,7 @@ import type { AiJsonRequest, AiProvider, AiResult } from "../src/ai/provider";
 import { QuotaService, perfilDaQuota } from "../src/ai/quota.service";
 import { EquipesService } from "../src/equipes/equipes.service";
 import { EvidenciasService } from "../src/evidencias/evidencias.service";
-import { DISCIPLINA_PADRAO, NOTICIAS_PADRAO, TEMA_PADRAO, noticiasPadrao } from "../src/jornal-escola/catalogo";
+import { DISCIPLINA_PADRAO, NOTICIAS_PADRAO, SIMULACAO_PADRAO, TEMA_PADRAO, noticiasPadrao } from "../src/jornal-escola/catalogo";
 import {
   ComparativoSchema,
   EstadoSchema,
@@ -15,7 +15,9 @@ import {
   PistaReveladaSchema,
   ResultadoSchema,
   SessaoSchema,
-  TentativaDaChaveSchema,
+  SimulacaoDaTelaSchema,
+  SimulacaoEnviadaSchema,
+  TransferenciaDaTelaSchema,
   type NoticiaDoPacote,
 } from "../src/jornal-escola/contrato-de-rotas";
 import { DiagramacaoService } from "../src/jornal-escola/diagramacao.service";
@@ -23,8 +25,10 @@ import { PROIBIDO_NA_LINHA_DO_PAINEL } from "../src/jornal-escola/invariantes";
 import { EXP_ID, JornalEscolaService, noticiasQuePedemImagem } from "../src/jornal-escola/jornal-escola.service";
 import { FALAS_DO_TEMA_PADRAO } from "../src/jornal-escola/podcast";
 import { PreparoDaExp04ef1bService } from "../src/jornal-escola/preparo.service";
-import { emFormatoDaIa, gabaritoDoPapel, sortearMolde } from "../src/jornal-escola/regras/molde";
+import { emFormatoDaIa, gabaritoDoPapel, sortearMolde, sortearMoldeDaSimulacao } from "../src/jornal-escola/regras/molde";
 import { ETAPAS, PASSOS } from "../src/jornal-escola/regras/passos";
+import { vereditoCerto } from "../src/jornal-escola/regras/julgamentos";
+import type { Montagem } from "../src/jornal-escola/regras/montagem";
 import type { IdDeNoticia, TipoDePista } from "../src/jornal-escola/vocabulario";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { liberarParaTeste } from "./liberar-de-teste";
@@ -34,10 +38,10 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
 /**
  * Integração da exp04ef1b no Postgres: a RLS das quatro tabelas e os CHECKs, a
  * porta da sala, `garantirPacote` sob concorrência, as pistas, os dois latches
- * concorrentes, o motivo, os portões do professor, a Chave, atividade × rodada
- * (zerar guarda, pacote novo volta à 1, o mesmo pacote é idempotente), o painel
- * POR COMPUTADOR, o resolvedor de P1/P2, a diagramação com IA falsa e o cache,
- * e o preparo.
+ * concorrentes, o motivo, os portões do professor, os julgamentos, a Chave
+ * montada, a simulação e a transferência (Canal A puro, 3.0.0), atividade ×
+ * rodada (zerar guarda, pacote novo volta à 1, o mesmo pacote é idempotente),
+ * o painel POR COMPUTADOR, a diagramação com IA falsa e o cache, e o preparo.
  *
  * UMA ESCOLA POR SUÍTE (mais a vizinha, para a RLS). Molde:
  * `a-selecao-postgres.spec.ts`.
@@ -105,7 +109,6 @@ const evidencias = new EvidenciasService(prisma, equipes);
 evidencias.onModuleInit();
 const diagramacao = new DiagramacaoService(ia, quota, prisma, 300);
 const service = new JornalEscolaService(prisma, evidencias, diagramacao);
-service.onModuleInit();
 
 const ids = {
   turma: "",
@@ -223,6 +226,23 @@ const pista = (estudanteId: string, noticiaId: IdDeNoticia, tipo: TipoDePista) =
 async function abrirTodas(estudanteId: string, noticias: IdDeNoticia[]) {
   for (const n of noticias) for (const t of ["fonte", "data", "autoria"] as const) await pista(estudanteId, n, t);
 }
+
+/** Abre as três pistas de cada notícia e as julga CERTO, pelo gabarito do banco padrão. */
+async function abrirEJulgar(estudanteId: string, noticias: IdDeNoticia[]) {
+  for (const n of noticias) {
+    const gabarito = NOTICIAS_PADRAO.find((x) => x.id === n)!.gabarito;
+    for (const tipo of ["fonte", "data", "autoria"] as const) {
+      await pista(estudanteId, n, tipo);
+      await service.julgar(ESCOLA, estudanteId, ids.turma, { noticiaId: n, tipo, veredito: vereditoCerto(gabarito, tipo) });
+    }
+  }
+}
+
+/** A Chave certa: os três pilares, os cartões no lado certo, "Não publico" e "em todas". */
+const CHAVE_CERTA: Montagem = {
+  vagas: (["fonte", "data", "autoria"] as const).map((bloco) => ({ bloco, lados: ["aprova", "reprova"], seFalhar: "parar" })),
+  repeticao: "todas",
+};
 
 const publicacao = (slots: IdDeNoticia[]) => ({ slots, layout: "classic" as const, origemDoLayout: "modelo" as const });
 
@@ -457,6 +477,15 @@ describe("os CHECKs recusam o que dizem recusar", () => {
     await naSessao("passo = 'fim'");
   });
 
+  test("Canal A (3.0.0): montagem só com a Chave formada; simulação e transferência só com o dado e no passo delas", async () => {
+    await naSessao(`chave_montagem = '{"vagas":[],"repeticao":"todas"}'::jsonb`);
+    await naSessao(`simulada_em = now()`);
+    await naSessao(`simulacao = '{"materias":[]}'::jsonb, simulada_em = now()`);
+    await naSessao(`transferencia = '{"pistas":[],"decisao":"repassar"}'::jsonb, transferida_em = now()`);
+    await naSessao(`julgamentos = '{}'::jsonb`);
+    await falha(`UPDATE exp04ef1b_pacotes SET simulacao = '[1]'::jsonb WHERE id = '${pacoteId}'::uuid`);
+  });
+
   test("o pacote: IA só homologada, oito notícias, e UM ativo por turma", async () => {
     const noticias = JSON.stringify(NOTICIAS_PADRAO).replace(/'/g, "''");
     const inserir = (origem: string, json: string, ativo: boolean, extra = "") =>
@@ -513,7 +542,17 @@ describe("a porta da sala, a primeira entrada e a atividade em andamento", () =>
   test("com a atividade do professor em andamento, a entrada abre a rodada 1 dela", async () => {
     const pacoteId = await prepararAtividade();
     const s = SessaoSchema.parse(await entrar(ids.ana));
-    expect(s).toMatchObject({ pacoteId, rodada: 1, etapa: "exploracao", passo: "desafio", edicao1: null, blocos: null, chaveTentativas: 0 });
+    expect(s).toMatchObject({
+      pacoteId,
+      rodada: 1,
+      etapa: "exploracao",
+      passo: "desafio",
+      edicao1: null,
+      blocos: null,
+      julgamentos: [],
+      simulada: false,
+      transferida: false,
+    });
     expect(s.pacote.tema).toBe(TEMA_PADRAO);
     expect(s.pacote.noticias.map((n) => n.id)).toEqual(["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8"]);
     await entrar(ids.bia);
@@ -601,9 +640,30 @@ describe("as pistas", () => {
 describe("os latches, o motivo e os portões", () => {
   beforeAll(zerarMissao);
 
+  test("julgar exige a pista aberta, só na mesa, e o primeiro julgamento vale", async () => {
+    await naMesa(ids.ana);
+    expect(await codigoDe(service.julgar(ESCOLA, ids.ana, ids.turma, { noticiaId: "n2", tipo: "data", veredito: "nao_confio" }))).toBe(
+      "pista-nao-aberta",
+    );
+    await pista(ids.ana, "n2", "data");
+    expect(await service.julgar(ESCOLA, ids.ana, ids.turma, { noticiaId: "n2", tipo: "data", veredito: "nao_confio" })).toEqual({
+      noticiaId: "n2",
+      tipo: "data",
+      veredito: "nao_confio",
+      novo: true,
+    });
+    expect(await service.julgar(ESCOLA, ids.ana, ids.turma, { noticiaId: "n2", tipo: "data", veredito: "confio" })).toEqual({
+      noticiaId: "n2",
+      tipo: "data",
+      veredito: "nao_confio",
+      novo: false,
+    });
+    expect((await entrar(ids.ana)).julgamentos).toEqual([{ noticiaId: "n2", tipo: "data", veredito: "nao_confio" }]);
+  });
+
   test("dois toques simultâneos em Publicar: um publica, o outro recebe 409 `edicao-ja-publicada`", async () => {
     await naMesa(ids.ana);
-    await abrirTodas(ids.ana, ["n1", "n4"]);
+    await abrirEJulgar(ids.ana, ["n1", "n4"]);
     const [a, b] = await Promise.allSettled([
       service.publicar(ESCOLA, ids.ana, ids.turma, publicacao(["n1", "n2", "n3"])),
       service.publicar(ESCOLA, ids.ana, ids.turma, publicacao(["n4", "n6", "n8"])),
@@ -622,12 +682,20 @@ describe("os latches, o motivo e os portões", () => {
     );
   });
 
-  test("a resposta do latch NÃO traz o resultado, e a EF15CO04 foi marcada pelas pistas", async () => {
+  test("a resposta do latch NÃO traz o resultado, e a EF15CO04 foi marcada pelos julgamentos e pela capa", async () => {
     const s = EstadoSchema.parse(await entrar(ids.ana));
     expect(JSON.stringify(s)).not.toMatch(/verificadas|reacoes|percentual/);
-    expect(await evidenciaDe(ids.ana, "EF15CO04")).toMatchObject([{ status: "atingiu", origem: "propria", rodada: 1 }]);
+    /* Julgou certo n1, n4 e o furo da n2 (a data). Na capa que venceu a corrida,
+       ou a n2 está lá — e a coerência falha —, ou só há boas: "atingiu". */
+    const capa = (await prisma.exp04ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).slotsEd1;
+    const esperado = capa.includes("n2") ? "em_processo" : "atingiu";
+    expect(await evidenciaDe(ids.ana, "EF15CO04")).toMatchObject([{ status: esperado, origem: "propria", rodada: 1 }]);
     await publicar(ids.bia, ["n2", "n3", "n5"]);
     expect(await evidenciaDe(ids.bia, "EF15CO04")).toMatchObject([{ status: "nao_atingiu" }]);
+    // Depois do latch, não se julga mais.
+    expect(await codigoDe(service.julgar(ESCOLA, ids.ana, ids.turma, { noticiaId: "n6", tipo: "data", veredito: "confio" }))).toBe(
+      "passo-invalido",
+    );
   });
 
   test("o resultado espera a edição, o motivo e o portão — nesta ordem", async () => {
@@ -681,78 +749,63 @@ describe("os latches, o motivo e os portões", () => {
   });
 });
 
-describe("a Chave, a revisão, a 2ª edição e o Desafio Final", () => {
+describe("a Chave montada, a revisão, a 2ª edição, a simulação e a transferência", () => {
   beforeAll(async () => {
     await zerarMissao();
     await naMesa(ids.ana);
-    await abrirTodas(ids.ana, ["n1", "n2"]);
+    await abrirEJulgar(ids.ana, ["n1", "n2"]);
     await service.publicar(ESCOLA, ids.ana, ids.turma, publicacao(["n2", "n1", "n3"]));
     await service.responderMotivo(ESCOLA, ids.ana, ids.turma, "visual");
     await etapa("resultado");
   });
 
   test("antes da revisão, a Chave não abre e os blocos não descem", async () => {
-    expect(await codigoDe(service.tentarChave(ESCOLA, ids.ana, ids.turma, ["fonte", "data", "autoria"]))).toBe(
-      "revisao-nao-liberada",
-    );
+    expect(await codigoDe(service.montarChave(ESCOLA, ids.ana, ids.turma, CHAVE_CERTA))).toBe("revisao-nao-liberada");
     expect((await entrar(ids.ana)).blocos).toBeNull();
     expect(await codigoDe(service.revisao(ESCOLA, ids.ana, ids.turma))).toBe("chave-nao-formada");
   });
 
-  test("com a revisão, a bandeja desce com os seis — e estável num F5", async () => {
+  test("com a revisão, a bandeja desce com os seis e os cartões, SEM o lado certo — e estável num F5", async () => {
     await etapa("revisao");
     const s = SessaoSchema.parse(await entrar(ids.ana));
     expect(s.passo).toBe("chave");
     expect(s.blocos?.map((b) => b.id).sort()).toEqual(["autoria", "compartilhada", "data", "fonte", "foto", "urgencia"]);
+    for (const b of s.blocos ?? []) expect(b.cartoes.map((c) => c.indice).sort()).toEqual([0, 1]);
+    expect(JSON.stringify(s.blocos)).not.toMatch(/aprova|reprova|"lado"|pilar/);
     expect((await entrar(ids.ana)).blocos).toEqual(s.blocos);
   });
 
-  test("a isca conta tentativa e volta à bandeja; a Chave forma na segunda, e a EF15CO02 é 'em processo'", async () => {
-    const t1 = TentativaDaChaveSchema.parse(await service.tentarChave(ESCOLA, ids.ana, ids.turma, ["fonte", "foto", "data"], 1));
-    expect(t1).toMatchObject({ sucesso: false, tentativas: 1, devolvidos: ["foto"] });
-    expect(t1.estado.chaveTentativas).toBe(1);
-    /* O REENVIO da tentativa 1 (a resposta se perdeu na rede) — sozinho e em dois
-       ao mesmo tempo — não conta: devolve o resultado gravado. */
-    expect(await service.tentarChave(ESCOLA, ids.ana, ids.turma, ["fonte", "foto", "data"], 1)).toMatchObject({
-      sucesso: false,
-      tentativas: 1,
-      devolvidos: ["foto"],
-    });
-    const reenvios = await Promise.all([
-      service.tentarChave(ESCOLA, ids.ana, ids.turma, ["fonte", "foto", "data"], 1),
-      service.tentarChave(ESCOLA, ids.ana, ids.turma, ["fonte", "foto", "data"], 1),
+  test("a montagem é UMA: a resposta não diz se está certa, o reenvio igual devolve o estado, outra é 409", async () => {
+    const r = await service.montarChave(ESCOLA, ids.ana, ids.turma, CHAVE_CERTA);
+    expect(Object.keys(r)).toEqual(["estado"]);
+    expect(r.estado).toMatchObject({ passo: "revisao", chaveFormada: true });
+    const [a, b] = await Promise.all([
+      service.montarChave(ESCOLA, ids.ana, ids.turma, CHAVE_CERTA),
+      service.montarChave(ESCOLA, ids.ana, ids.turma, CHAVE_CERTA),
     ]);
-    expect(reenvios.map((r) => r.tentativas)).toEqual([1, 1]);
+    expect([a.estado.chaveFormada, b.estado.chaveFormada]).toEqual([true, true]);
+    expect(await codigoDe(service.montarChave(ESCOLA, ids.ana, ids.turma, { ...CHAVE_CERTA, repeticao: "so_a_primeira" }))).toBe(
+      "chave-ja-montada",
+    );
     const gravada = await prisma.exp04ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
-    expect(gravada.chaveTentativas).toBe(1);
-
-    const t2 = await service.tentarChave(ESCOLA, ids.ana, ids.turma, ["autoria", "fonte", "data"], 2);
-    expect(t2).toMatchObject({ sucesso: true, tentativas: 2, devolvidos: [] });
-    expect(t2.estado).toMatchObject({ passo: "revisao", chaveFormada: true, chaveTentativas: 2 });
-    expect(EstadoSchema.parse(await entrar(ids.ana)).chaveTentativas).toBe(2);
+    expect(gravada).toMatchObject({ chaveTentativas: 1 });
+    // Certa, mas a montagem sozinha tem teto: "em processo" até a simulação.
     expect(await evidenciaDe(ids.ana, "EF15CO02")).toMatchObject([{ status: "em_processo" }]);
-    // Formada: o reenvio da 2 (dois ao mesmo tempo) e um envio sem número respondem sucesso sem contar nem marcar.
-    const [r1, r2] = await Promise.all([
-      service.tentarChave(ESCOLA, ids.ana, ids.turma, ["autoria", "fonte", "data"], 2),
-      service.tentarChave(ESCOLA, ids.ana, ids.turma, ["autoria", "fonte", "data"], 2),
-    ]);
-    expect([r1.sucesso, r1.tentativas, r2.sucesso, r2.tentativas]).toEqual([true, 2, true, 2]);
-    expect(await service.tentarChave(ESCOLA, ids.ana, ids.turma, ["foto", "urgencia", "compartilhada"])).toMatchObject({
-      sucesso: true,
-      tentativas: 2,
-    });
-    expect((await marcasDe("chave")).filter((m) => m.estudanteId === ids.ana)).toEqual([
+    expect((await marcasDe("montagem")).filter((m) => m.estudanteId === ids.ana)).toEqual([
       { estudanteId: ids.ana, status: "em_processo", rodada: 1 },
     ]);
   });
 
-  test("sem número, todo envio conta — e um número à frente do gravado conta UMA", async () => {
+  test("a Chave só de iscas marca 'não atingiu' já na montagem", async () => {
     await naMesa(ids.duda);
     await service.publicar(ESCOLA, ids.duda, ids.turma, publicacao(["n1", "n4", "n6"]));
     await service.responderMotivo(ESCOLA, ids.duda, ids.turma, "checagem");
-    expect((await service.tentarChave(ESCOLA, ids.duda, ids.turma, ["foto", "data", "fonte"])).tentativas).toBe(1);
-    expect((await service.tentarChave(ESCOLA, ids.duda, ids.turma, ["foto", "data", "fonte"])).tentativas).toBe(2);
-    expect((await service.tentarChave(ESCOLA, ids.duda, ids.turma, ["urgencia", "data", "fonte"], 7)).tentativas).toBe(3);
+    const iscas: Montagem = {
+      vagas: (["foto", "urgencia", "compartilhada"] as const).map((bloco) => ({ bloco, lados: ["aprova", "reprova"], seFalhar: "parar" })),
+      repeticao: "todas",
+    };
+    await service.montarChave(ESCOLA, ids.duda, ids.turma, iscas);
+    expect(await evidenciaDe(ids.duda, "EF15CO02")).toMatchObject([{ status: "nao_atingiu" }]);
   });
 
   test("a mesa de revisão marca as vagas, e as pistas da fase 2 registram", async () => {
@@ -763,17 +816,17 @@ describe("a Chave, a revisão, a 2ª edição e o Desafio Final", () => {
         { noticiaId: "n3", pilarEmFalta: "autoria" },
       ],
     });
-    await abrirTodas(ids.ana, ["n4"]);
+    await abrirTodas(ids.ana, ["n4", "n6"]);
     const r = await pista(ids.ana, "n1", "data");
-    expect(r).toMatchObject({ fase: 2, abertas: 9 });
+    expect(r).toMatchObject({ fase: 2, abertas: 12 });
     const s = await prisma.exp04ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
-    expect((s.pistas as Array<{ fase: number }>).filter((p) => p.fase === 2)).toHaveLength(4);
+    expect((s.pistas as Array<{ fase: number }>).filter((p) => p.fase === 2)).toHaveLength(7);
     // O par aberto nas duas fases aparece DUAS vezes na lista da tela.
     const tela = (await entrar(ids.ana)).pistasAbertas.filter((p) => p.noticiaId === "n1" && p.tipo === "data");
     expect(tela.map((p) => p.fase)).toEqual([1, 2]);
   });
 
-  test("dois toques em Republicar: um publica, o outro 409; a EF04CO08 é marcada pelo `edicao-2`", async () => {
+  test("dois toques em Republicar: um publica, o outro 409; o `edicao-2` grava com teto", async () => {
     const [a, b] = await Promise.allSettled([
       service.republicar(ESCOLA, ids.ana, ids.turma, publicacao(["n1", "n4", "n6"])),
       service.republicar(ESCOLA, ids.ana, ids.turma, publicacao(["n2", "n3", "n5"])),
@@ -783,9 +836,10 @@ describe("a Chave, a revisão, a 2ª edição e o Desafio Final", () => {
     expect((recusa.reason as HttpException).getResponse()).toMatchObject({ codigo: "edicao-ja-publicada" });
     const s = await prisma.exp04ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
     expect(s.passo).toBe("comparativo");
-    /* Nove pares abertos nas duas fases: "atingiu" com a 2ª em 3/3; senão, em processo. */
-    const esperado = s.verificadasEd2 === 3 ? "atingiu" : "em_processo";
-    expect(await evidenciaDe(ids.ana, "EF04CO08")).toMatchObject([{ status: esperado, origem: "propria" }]);
+    /* Sozinha, a 2ª edição nunca dá "atingiu": em processo com a 3/3; não atingiu só sem conferir nada. */
+    expect((await marcasDe("edicao-2")).filter((m) => m.estudanteId === ids.ana)).toEqual([
+      { estudanteId: ids.ana, status: "em_processo", rodada: 1 },
+    ]);
   });
 
   test("o comparativo tem as duas edições e o pilar de cada notícia delas", async () => {
@@ -796,19 +850,55 @@ describe("a Chave, a revisão, a 2ª edição e o Desafio Final", () => {
     expect(await codigoDe(service.comparativo(ESCOLA, ids.caio, ids.turma))).toBe("edicao-nao-publicada");
   });
 
-  test("o resolvedor: `null` antes do Desafio Final, o contexto nele — e a primeira resposta vale", async () => {
-    const antes = await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA);
-    expect(antes).toBeNull();
-    expect(await codigoDe(evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A1"))).toBe("sem-atividade-em-andamento");
+  test("a simulação: a Chave DELA como roteiro, as matérias sem gabarito, e a fidelidade marca a EF15CO02", async () => {
+    expect(await codigoDe(service.simulacao(ESCOLA, ids.ana, ids.turma))).toBe("passo-invalido");
     expect(await codigoDe(service.concluir(ESCOLA, ids.ana, ids.turma))).toBe("passo-invalido");
+    expect((await service.pedirPasso(ESCOLA, ids.ana, ids.turma, "simulacao")).passo).toBe("simulacao");
+    const tela = SimulacaoDaTelaSchema.parse(await service.simulacao(ESCOLA, ids.ana, ids.turma));
+    expect(tela.chave).toEqual({
+      vagas: [
+        { bloco: "fonte", rotulo: "Fonte", seFalhar: "parar", pulo: null },
+        { bloco: "data", rotulo: "Data", seFalhar: "parar", pulo: null },
+        { bloco: "autoria", rotulo: "Autoria", seFalhar: "parar", pulo: null },
+      ],
+      repeticao: "todas",
+    });
+    expect(JSON.stringify(tela)).not.toMatch(/gabarito|publicavel|pilarEmFalta|explicacao/);
 
-    const s = await service.pedirPasso(ESCOLA, ids.ana, ids.turma, "transferencia");
-    expect(s.passo).toBe("transferencia");
-    const contexto = await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA);
-    expect(contexto).toEqual({ turmaId: ids.turma, atividadeId: s.pacoteId, rodada: 1 });
-    expect(await evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A1")).toEqual({ enviada: true });
-    expect(await evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A3")).toEqual({ enviada: true });
-    expect(await evidenciaDe(ids.ana, "EF04CO08")).toMatchObject([{ status: "atingiu" }]);
+    // O banco padrão: s1 publicável; s2 sem autoria.
+    const enviada = SimulacaoEnviadaSchema.parse(
+      await service.simular(ESCOLA, ids.ana, ids.turma, {
+        materias: [
+          { id: "s1", passos: [{ tipo: "fonte", veredito: "confio" }, { tipo: "data", veredito: "confio" }, { tipo: "autoria", veredito: "confio" }], decisao: "publicar" },
+          { id: "s2", passos: [{ tipo: "fonte", veredito: "confio" }, { tipo: "data", veredito: "confio" }, { tipo: "autoria", veredito: "nao_confio" }], decisao: "nao_publicar" },
+        ],
+      }),
+    );
+    expect(enviada.estado).toMatchObject({ passo: "transferencia", simulada: true });
+    expect(enviada.referencia).toMatch(/fonte, a data e quem escreveu/);
+    expect(await evidenciaDe(ids.ana, "EF15CO02")).toMatchObject([{ status: "atingiu" }]);
+    expect(await codigoDe(service.simular(ESCOLA, ids.ana, ids.turma, { materias: [] } as never))).toBe("simulacao-ja-enviada");
+  });
+
+  test("a transferência: o boato fixo; concluir exige a decisão; uma decisão só; o combinado marca a EF04CO08", async () => {
+    const boato = TransferenciaDaTelaSchema.parse(await service.transferencia(ESCOLA, ids.ana, ids.turma));
+    expect(boato.mensagem).toMatch(/todas as escolas do bairro/);
+    expect(await codigoDe(service.concluir(ESCOLA, ids.ana, ids.turma))).toBe("transferencia-pendente");
+    const r = await service.transferir(ESCOLA, ids.ana, ids.turma, { pistas: ["fonte"], decisao: "nao_repassar" });
+    expect(r.estado).toMatchObject({ passo: "transferencia", transferida: true });
+    expect(await codigoDe(service.transferir(ESCOLA, ids.ana, ids.turma, { pistas: [], decisao: "repassar" }))).toBe(
+      "transferencia-ja-decidida",
+    );
+    /* A 2ª edição dela teve as 3 verificadas com as três pistas de cada (n1 na mesa, n4 e n6 na
+       revisão) só se a capa vencedora foi a boa; senão o combinado é "em processo". */
+    const s = await prisma.exp04ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
+    const esperado = s.verificadasEd2 === 3 ? "atingiu" : "em_processo";
+    expect(await evidenciaDe(ids.ana, "EF04CO08")).toMatchObject([{ status: esperado }]);
+  });
+
+  test("Canal B retirado: a pergunta de múltipla escolha não existe mais para esta missão", async () => {
+    expect(await codigoDe(evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A1"))).not.toBeNull();
+    expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, expId: EXP_ID, tipo: "multipla_escolha" } })).toBe(0);
   });
 
   test("concluir é idempotente e carimba `concluidaEm`", async () => {
@@ -818,29 +908,35 @@ describe("a Chave, a revisão, a 2ª edição e o Desafio Final", () => {
     expect((await service.concluir(ESCOLA, ids.ana, ids.turma)).concluidaEm).toBe(a.concluidaEm);
   });
 
-  test("depois de zerar: o resolvedor devolve `null`, a rodada 2 abre limpa, os portões fecham e a evidência sai (ADR-155)", async () => {
-    expect((await marcasDe("pistas")).length).toBeGreaterThan(0);
+  test("a rodada da 2.x sem Chave montada vai do comparativo direto à transferência", async () => {
+    await prisma.$executeRawUnsafe(
+      `UPDATE exp04ef1b_sessoes SET chave_montagem = NULL WHERE escola_id = '${ESCOLA}' AND estudante_id = '${ids.duda}'::uuid`,
+    );
+    await service.republicar(ESCOLA, ids.duda, ids.turma, publicacao(["n1", "n4", "n6"]));
+    expect((await service.pedirPasso(ESCOLA, ids.duda, ids.turma, "simulacao")).passo).toBe("transferencia");
+  });
+
+  test("depois de zerar: a rodada 2 abre limpa, os portões fecham e a evidência sai (ADR-155)", async () => {
+    expect((await marcasDe("julgamentos")).length).toBeGreaterThan(0);
     const z = await service.zerar(ESCOLA, ids.turma, ids.professora);
     expect(z).toMatchObject({ rodada: 2, etapa: "exploracao" });
     /* Zerar apaga a evidência do pacote, de todas as rodadas: marca e nível. */
     expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, expId: EXP_ID } })).toBe(0);
     expect(await prisma.evidencia.count({ where: { escolaId: ESCOLA, expId: EXP_ID } })).toBe(0);
-    const contexto = await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA);
-    expect(contexto).toBeNull();
     const gate = await prisma.exp04ef1bGateTurma.findUniqueOrThrow({
       where: { escolaId_turmaId: { escolaId: ESCOLA, turmaId: ids.turma } },
     });
     expect(gate).toMatchObject({ rodada: 2, etapa: "exploracao", resultadoLiberadoEm: null, revisaoLiberadaEm: null });
     const s = await entrar(ids.ana);
-    expect(s).toMatchObject({ rodada: 2, passo: "desafio", edicao1: null });
+    expect(s).toMatchObject({ rodada: 2, passo: "desafio", edicao1: null, julgamentos: [] });
     expect(await prisma.exp04ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).toBe(2);
   });
 
   test("na rodada 2 do MESMO pacote, quem já foi avaliada é medida de novo (ADR-145) — e só a rodada 2 existe (ADR-155)", async () => {
     await naMesa(ids.ana);
-    await abrirTodas(ids.ana, ["n1", "n4"]);
+    await abrirEJulgar(ids.ana, ["n1", "n4"]);
     await service.publicar(ESCOLA, ids.ana, ids.turma, publicacao(["n1", "n4", "n6"]));
-    expect((await marcasDe("pistas")).filter((m) => m.estudanteId === ids.ana).map((m) => m.rodada).sort()).toEqual([2]);
+    expect((await marcasDe("julgamentos")).filter((m) => m.estudanteId === ids.ana).map((m) => m.rodada).sort()).toEqual([2]);
   });
 });
 
@@ -1046,7 +1142,8 @@ describe("o painel POR COMPUTADOR, e a cópia para a equipe", () => {
       [ids.enzo],
     );
     await naMesa(ids.ana);
-    await abrirTodas(ids.ana, ["n1", "n4"]);
+    /* Julga certo duas boas e o furo da n3 (que fica fora da capa); a n2 vai à capa sem julgamento. */
+    await abrirEJulgar(ids.ana, ["n1", "n4", "n3"]);
     await service.publicar(ESCOLA, ids.ana, ids.turma, publicacao(["n1", "n4", "n2"]));
     await service.responderMotivo(ESCOLA, ids.ana, ids.turma, "checagem");
     await entrar(ids.caio);
@@ -1062,10 +1159,13 @@ describe("o painel POR COMPUTADOR, e a cópia para a equipe", () => {
     expect(painel.resumo.porComputador).toBe(true);
     expect(painel.linhas.slice(0, 2).map((l) => l.equipe?.nome)).toEqual(["Equipe 1", "Equipe 2"]);
     const [equipe1, equipe2] = painel.linhas;
-    expect(equipe1).toMatchObject({ estudanteId: ids.ana, entrou: true, iniciou: true, publicouAPrimeira: true, pistasAbertas: 6 });
+    expect(equipe1).toMatchObject({ estudanteId: ids.ana, entrou: true, iniciou: true, publicouAPrimeira: true, pistasAbertas: 9, simulou: false });
     expect(equipe2).toMatchObject({ estudanteId: ids.caio, entrou: true, iniciou: false, passo: "desafio" });
     expect(painel.resumo.computadores).toEqual({ publicaram: 1, total: 2 });
     expect(painel.resumo).toMatchObject({ publicaramAPrimeira: 1, formaramAChave: 0 });
+    // Os agregados da Chave e do boato começam zerados: nada por criança.
+    expect(painel.resumo.chave).toEqual({ montaram: 0, iscas: { foto: 0, urgencia: 0, compartilhada: 0 }, seguir: 0, soNaPrimeira: 0 });
+    expect(painel.resumo.transferencia).toEqual({ decidiram: 0, repassaramSemAbrir: 0, naoRepassaram: 0 });
     expect(painel.resumo.histograma.edicao1).toEqual([0, 0, 1, 0]);
     expect(painel.resumo.motivos).toEqual({ visual: 0, checagem: 1 });
     const radar = new Map(painel.resumo.radar.map((r) => [r.noticiaId, r.naEdicao1]));
@@ -1172,20 +1272,38 @@ describe("o preparo com IA falsa", () => {
 
   /** Uma saída da IA que respeita o molde: o texto do banco padrão, com o papel e a imagem da vaga. */
   function saidaNoMolde() {
-    const molde = sortearMolde(gerador());
+    const g = gerador();
+    const molde = sortearMolde(g);
+    const moldeDaSimulacao = sortearMoldeDaSimulacao(g);
     const porMeio = new Map(NOTICIAS_PADRAO.map((n) => [n.meio, n]));
     return {
       noticias: molde.map((v) => {
         const base = porMeio.get(v.meio)!;
-        const g = gabaritoDoPapel(v.papel);
         return emFormatoDaIa({
           ...base,
           id: v.id,
           falante: v.comFalante ? (base.falante ?? "Fulano de Tal") : null,
           descricaoImagem: v.comImagem ? (base.descricaoImagem ?? "Ilustração colorida de uma cena da escola, vista de longe.") : null,
           legenda: v.comImagem ? (base.legenda ?? "Cena da escola") : null,
-          gabarito: { ...base.gabarito, ...g },
+          gabarito: { ...base.gabarito, ...gabaritoDoPapel(v.papel) },
         });
+      }),
+      simulacao: moldeDaSimulacao.map((v) => {
+        const base = SIMULACAO_PADRAO[v.papel === "publicavel" ? 0 : 1]!;
+        const gab = gabaritoDoPapel(v.papel);
+        return {
+          id: v.id,
+          meio: v.meio,
+          veiculo: base.veiculo,
+          manchete: base.manchete,
+          resumo: base.resumo,
+          pista_fonte: base.pistas.fonte,
+          pista_data: base.pistas.data,
+          pista_autoria: base.pistas.autoria,
+          publicavel: gab.publicavel,
+          pilar_em_falta: gab.pilarEmFalta ?? "nenhum",
+          explicacao: base.gabarito.explicacao,
+        };
       }),
     };
   }
@@ -1195,7 +1313,11 @@ describe("o preparo com IA falsa", () => {
     ia.resposta = saidaNoMolde();
     const r = await preparo.gerar(ESCOLA, ids.professora, "professor", { disciplina: "Ciências", tema: "A feira da escola" });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.valor).toHaveLength(8);
+    if (r.ok) {
+      expect(r.valor.noticias).toHaveLength(8);
+      expect(r.valor.simulacao.map((m) => m.id)).toEqual(["s1", "s2"]);
+      expect(r.valor.simulacao.filter((m) => m.gabarito.publicavel)).toHaveLength(1);
+    }
     await service.registrarGeracao(ESCOLA, ids.turma, r.tokens);
     const pacote = await prisma.exp04ef1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turma, ativo: true } });
     expect(pacote).toMatchObject({ geracoes: 1, tokensUsados: 20 });

@@ -106,3 +106,48 @@ export const TAMANHO_DA_CHAVE = 3;
 /** Origem do pacote: o banco padrão da Unooria, ou o gerado por IA no preparo. */
 export const ORIGENS_DO_PACOTE = ["padrao", "ia"] as const;
 export type OrigemDoPacote = (typeof ORIGENS_DO_PACOTE)[number];
+
+// ───────────────────────────────────────────── Canal A puro (3.0.0, ADR-168)
+
+/**
+ * O julgamento de uma pista na mesa: a criança marca, logo depois de abrir, se
+ * CONFIA no que leu. Na tela vem sempre com o texto ("✓ Confio" / "✗ Não
+ * confio"), nunca só o símbolo.
+ */
+export const VEREDITOS = ["confio", "nao_confio"] as const;
+export type Veredito = (typeof VEREDITOS)[number];
+
+/** Os dois lados de um cartão de condição na Chave: o que faz a pista passar ou falhar. */
+export const LADOS_DA_CONDICAO = ["aprova", "reprova"] as const;
+export type LadoDaCondicao = (typeof LADOS_DA_CONDICAO)[number];
+
+/**
+ * O que a Chave faz quando a pista de uma vaga FALHA: "Não publico" (para ali)
+ * ou "Olho a próxima pista" (segue). É a seleção condicional que dá à ordem
+ * das vagas uma consequência na simulação.
+ */
+export const SE_FALHAR = ["parar", "seguir"] as const;
+export type SeFalhar = (typeof SE_FALHAR)[number];
+
+/** A repetição da Chave: "em TODAS as notícias" ou "só na primeira". */
+export const REPETICOES = ["todas", "so_a_primeira"] as const;
+export type Repeticao = (typeof REPETICOES)[number];
+
+/** Os cartões de condição: dois por bloco, os ids `<bloco>-1` e `<bloco>-2`. */
+export const CARTOES_POR_BLOCO = 2;
+export const ID_DE_CARTAO_RE = /^(fonte|data|autoria|foto|urgencia|compartilhada)-[12]$/;
+
+/**
+ * As duas matérias da SIMULAÇÃO: inéditas, sem imagem, uma publicável e uma
+ * com furo. Ids próprios — não são da mesa, e não cabem nas vagas.
+ */
+export const IDS_DE_SIMULACAO = ["s1", "s2"] as const;
+export type IdDeSimulacao = (typeof IDS_DE_SIMULACAO)[number];
+
+/** A decisão em cada matéria da simulação. */
+export const DECISOES_DA_SIMULACAO = ["publicar", "nao_publicar"] as const;
+export type DecisaoDaSimulacao = (typeof DECISOES_DA_SIMULACAO)[number];
+
+/** A decisão diante do boato da transferência. */
+export const DECISOES_DA_TRANSFERENCIA = ["repassar", "nao_repassar"] as const;
+export type DecisaoDaTransferencia = (typeof DECISOES_DA_TRANSFERENCIA)[number];

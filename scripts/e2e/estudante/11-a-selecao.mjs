@@ -351,13 +351,13 @@ await suite(
     await q().getByRole("button", { name: /Confirmar publicação/i }).click();
     await q().locator("text=/Publicado! Aguardando o professor/i").first().waitFor({ timeout: 20_000 });
 
-    /* O CANAL A: a IA lê a legenda DEPOIS do latch, fora da transação dele, e
-       marca a EF07CO11. A resposta da publicação não conta nada (é o estado da
-       sessão); quem mostra é o painel de evidências, e só ANTES da enquete p1 —
-       que também marca a EF07CO11 — a marca é, com certeza, a da IA. */
+    /* O CANAL A (ADR-170): a IA lê a legenda DEPOIS da resposta do latch (a
+       criança não espera) e marca a EF07CO11 — a única fonte dela desde que as
+       enquetes saíram. Quem mostra é o painel de evidências; a leitura tem até 3
+       tentativas de 60 s, daí a espera longa, que corre contra o relógio da IA. */
     const coberturaId = new URL(prof.url()).searchParams.get("cobertura");
     let celulaDoCanalA = null;
-    for (let i = 0; i < 30 && !celulaDoCanalA; i += 1) {
+    for (let i = 0; i < 120 && !celulaDoCanalA; i += 1) {
       const painel = await api(prof, `evidencias/turma/${daTurma.id}/missao/exp07ef1b/atividade/${coberturaId}`);
       const dele = (painel.corpo?.estudantes ?? []).find((e) => e.nome === PRIMEIRO.nome);
       celulaDoCanalA = Object.values(dele?.porRodada ?? {}).find((celulas) => celulas?.EF07CO11)?.EF07CO11 ?? null;
@@ -365,7 +365,7 @@ await suite(
     }
     r.exigir(
       Boolean(celulaDoCanalA),
-      `a IA leu a legenda e marcou a EF07CO11 antes da enquete (o Canal A; veio ${JSON.stringify(celulaDoCanalA)})`,
+      `a IA leu a legenda e marcou a EF07CO11 (o Canal A; veio ${JSON.stringify(celulaDoCanalA)})`,
     );
     await r.registrar(p, "publicado", {
       titulo: "Publicado, e sem volta",
@@ -402,7 +402,14 @@ await suite(
     await q().getByRole("heading", { name: /Mural de Stories da Turma/i }).first().waitFor({ timeout: 30_000 });
     /* Abre no Story do PAR (ADR-146): o nome dele está na aba E no Story — daí
        o `.first()`. A legenda de cada post vem sobre a imagem. */
-    await q().locator(`text=Publicação de ${PRIMEIRO_NOME_DO_SEGUNDO}`).first().waitFor({ timeout: 15_000 });
+    const tituloDoPar = q().locator(`text=Publicação de ${PRIMEIRO_NOME_DO_SEGUNDO}`).first();
+    await tituloDoPar.waitFor({ timeout: 15_000 });
+    /* O RÓTULO do colega é o da tela, não o primeiro nome: com dois colegas de
+       mesmo nome na turma, a api desempata com a inicial ("Rafael M.",
+       `rotulosSemRepeticao`). Supor só o primeiro nome quebrava a busca exata
+       da pergunta da marcação e do `aria-label` da grade. */
+    const rotuloDoColega =
+      /Publicação de (\S+(?: [A-ZÀ-Ý][a-zà-ÿ]*\.?)?)/.exec(await tituloDoPar.innerText())?.[1] ?? PRIMEIRO_NOME_DO_SEGUNDO;
     await q().locator(".legenda-do-post").first().waitFor({ timeout: 10_000 });
     r.exigir(
       (await q().locator("text=/Ficha Técnica/i").count()) === 0,
@@ -410,13 +417,42 @@ await suite(
     );
     await r.registrar(p, "mural-pareado", {
       titulo: "O mesmo feed, outra história",
-      mostra: `O Mural aberto na tríade de ${PRIMEIRO_NOME_DO_SEGUNDO}, que escolheu só vozes da comunidade, com a legenda de cada post sobre a imagem; a própria fica na outra aba.`,
+      mostra: `O Mural aberto na tríade de ${rotuloDoColega}, que escolheu só vozes da comunidade, com a legenda de cada post sobre a imagem; a própria fica na outra aba.`,
       prova:
         "O par é o colega que mais se afastou da escolha da criança, e ele aparece pelo primeiro " +
         "nome. Tela nua: nenhuma tag, nenhuma nota — o estranhamento vem antes da teoria.",
     });
 
-    // ═══ PROFESSORA revela as fichas ═════════════════════════════════════
+    // ═══ PROFESSORA abre a MARCAÇÃO (ADR-170) ════════════════════════════
+    await apertar(prof, "marcacao");
+    await q()
+      .locator(`text=Tem algo na publicação de ${rotuloDoColega} que a sua deixou de fora`)
+      .first()
+      .waitFor({ timeout: 30_000 });
+    /* Um post do colega (só comunitário): pela GRADE do colega, nunca pela posição na tela. */
+    await q().locator(`[aria-label="Publicação de ${rotuloDoColega}"] img`).first().click();
+    await q().locator("text=/Registrado\\. Você pode mudar/").first().waitFor({ timeout: 15_000 });
+    const porque = q().getByRole("textbox").first();
+    await porque.click();
+    await porque.pressSequentially("os moradores contam o que eu deixei de fora");
+    await q().getByRole("button", { name: /^Guardar$/ }).click();
+    await q().locator("text=/^Guardado\\./").first().waitFor({ timeout: 15_000 });
+    r.exigir(
+      (await q().locator("text=/correta|acertou|errou|atingiu/i").count()) === 0,
+      "a marcação não mostra acerto nem nível",
+    );
+    await r.registrar(p, "marcacao", {
+      titulo: "O que a publicação do colega mostrou",
+      mostra: `A pergunta, os três posts de ${rotuloDoColega} para tocar, \"Nada que mude a história\", o \"por quê?\" e a própria publicação embaixo.`,
+      prova:
+        "É a ação que mede a EF07CO08 (ADR-170): reconhecer o lado que o colega mostrou. Grava ao " +
+        "tocar, troca até as fichas, e nenhuma resposta diz se está certa.",
+    });
+    /* O segundo estudante diz que nada muda — com o trio todo comunitário, é "não atingiu". */
+    const nada = await api(p2, "a-selecao/marcacao", { nenhum: true });
+    r.exigir(nada.status === 200, `o segundo estudante marca "nada que mude" (veio ${nada.status})`);
+
+    // ═══ PROFESSORA revela as fichas (e a marcação congela) ═════════════
     await apertar(prof, "fichas");
     /* A folha chega ABERTA quando a revelação acende (é o momento de ler); só
        recolhida ela mostra "Ver detalhes da postagem". Espera a UNIÃO dos dois
@@ -470,7 +506,7 @@ await suite(
     }
     await q().getByRole("button", { name: /Ir para a Reflexão/i }).click({ timeout: 45_000 });
 
-    // ═══ REFLEXÃO (escola) e as ENQUETES (Amara) ═════════════════════════
+    // ═══ REFLEXÃO (escola): ela encerra a missão (ADR-170) ══════════════
     await q().locator("text=/Reflexão Individual/i").first().waitFor({ timeout: 20_000 });
     const reflexao = q().getByRole("textbox").first();
     await reflexao.click();
@@ -485,35 +521,17 @@ await suite(
     await q().getByRole("button", { name: /Enviar Reflexão ao Professor/i }).click();
     await q().locator("text=/Pronto! Sua resposta foi enviada/i").first().waitFor({ timeout: 20_000 });
     await q().getByRole("button", { name: /^Continuar/i }).click();
-
-    /* As alternativas vêm EMBARALHADAS a cada leitura: casa-se por texto. */
-    await q()
-      .getByRole("button", { name: /Cuidado, eu só escolhi 3 posts/i })
-      .click({ timeout: 30_000 });
-    await q().locator("text=/Resposta enviada ✓/").first().waitFor({ timeout: 15_000 });
-    r.exigir(
-      (await q().locator("text=/correta|acertou|errou/i").count()) === 0,
-      "a enquete não mostra acerto nem erro",
-    );
-    await r.registrar(p, "enquete", {
-      titulo: "A enquete da Amara",
-      mostra: "A pergunta na DM, as três respostas e o \"Resposta enviada ✓\".",
-      prova:
-        "O gabarito mora no servidor e a ordem muda a cada exibição. A criança não sabe se " +
-        "\"acertou\" — é evidência para o professor, não prova.",
-    });
-    await q()
-      .getByRole("button", { name: /A gente priorizou fontes diferentes/i })
-      .click({ timeout: 30_000 });
-    const fechar = q().getByRole("button", { name: /Fechar conversa/i });
-    await fechar.waitFor({ timeout: 30_000 });
-    await fechar.click();
     await q().locator("text=/Missão concluída!/").first().waitFor({ timeout: 20_000 });
+    r.exigir(
+      (await q().locator("text=/Resposta enviada ✓|enquete/i").count()) === 0,
+      "sem enquetes depois da reflexão: o Canal B saiu",
+    );
     await r.registrar(p, "concluida", {
       titulo: "Missão concluída",
-      mostra: "O fim, na voz da escola.",
+      mostra: "O fim, na voz da escola, logo depois da reflexão.",
       prova:
-        "A conclusão só chega depois da reflexão e das enquetes, e nenhuma delas prende a criança.",
+        "As habilidades foram medidas pelo que a criança FEZ — a legenda e a marcação. Não há " +
+        "pergunta no fim (ADR-170).",
     });
 
     // ═══ PROFESSORA: a folha da turma e as habilidades ═══════════════════
@@ -530,6 +548,22 @@ await suite(
       `a folha da turma não tem coluna de pontos (colunas: ${colunas.join(", ")})`,
     );
     r.exigir(/EF07CO11/.test(folha), "o painel de habilidades da BNCC aparece com a EF07CO11");
+    r.exigir(/EF07CO08/.test(folha), "e com a EF07CO08, medida pela marcação");
+    r.exigir(
+      colunas.some((c) => /Marcação do colega/i.test(c)) && /os moradores contam o que eu deixei de fora/.test(folha),
+      "a folha mostra a marcação e o \"por quê?\" para a professora da turma",
+    );
+    /* A régua da marcação (ADR-170), conferida no painel de evidências. */
+    const painelFinal = await api(prof, `evidencias/turma/${daTurma.id}/missao/exp07ef1b/atividade/${coberturaId}`);
+    const nivelDe = (nome) =>
+      Object.values((painelFinal.corpo?.estudantes ?? []).find((e) => e.nome === nome)?.porRodada ?? {}).find(
+        (celulas) => celulas?.EF07CO08,
+      )?.EF07CO08?.status ?? null;
+    r.exigir(
+      nivelDe(SEGUNDO.nome) === "nao_atingiu",
+      `"nada que mude" com o trio de um lado só é "não atingiu" (veio ${nivelDe(SEGUNDO.nome)})`,
+    );
+    r.exigir(nivelDe(PRIMEIRO.nome) !== null, `a marcação do primeiro estudante virou nível (veio ${nivelDe(PRIMEIRO.nome)})`);
     await r.registrar(prof, "resultados-e-habilidades", {
       titulo: "A turma por computador, e as habilidades",
       mostra:
@@ -537,8 +571,8 @@ await suite(
         "habilidades da BNCC da cobertura.",
       prova:
         "A legenda e a reflexão aparecem para a professora da turma, e para a gestão só " +
-        "\"entregou\". A EF07CO11 tem duas fontes — a leitura da legenda pela IA (o Canal A, provado " +
-        "antes da enquete) e a enquete — e vale a melhor.",
+        "\"entregou\". As duas habilidades vêm só de ações (ADR-170): a EF07CO11 da legenda lida pela IA, " +
+        "a EF07CO08 da marcação do post do colega.",
       inteira: true,
     });
 

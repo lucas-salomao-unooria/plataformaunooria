@@ -33,6 +33,11 @@ export type CodigoErro =
   | "resultado-nao-liberado"
   | "revisao-nao-liberada"
   | "chave-nao-formada"
+  | "chave-ja-montada"
+  | "pista-nao-aberta"
+  | "simulacao-ja-enviada"
+  | "transferencia-ja-decidida"
+  | "transferencia-pendente"
   | "transicao-de-etapa-invalida"
   | "pacote-invalido"
   | "imagens-nao-aprovadas"
@@ -59,6 +64,11 @@ export const STATUS: Record<CodigoErro, number> = {
   "resultado-nao-liberado": 409,
   "revisao-nao-liberada": 409,
   "chave-nao-formada": 409,
+  "chave-ja-montada": 409,
+  "pista-nao-aberta": 409,
+  "simulacao-ja-enviada": 409,
+  "transferencia-ja-decidida": 409,
+  "transferencia-pendente": 409,
   "transicao-de-etapa-invalida": 409,
   "pacote-invalido": 400,
   "imagens-nao-aprovadas": 409,
@@ -89,6 +99,13 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   "resultado-nao-liberado": "Edição entregue aos leitores! Aguardando o sinal do professor.",
   "revisao-nao-liberada": "Aguardando o professor liberar a mesa de revisão.",
   "chave-nao-formada": "Monte a Chave do Editor para abrir a mesa de revisão.",
+  // A Chave é montada uma vez só (3.0.0): o segundo envio não a refaz.
+  "chave-ja-montada": "A sua Chave do Editor já foi montada.",
+  // Julgar é sobre a pista que ela LEU: sem a abertura registrada, não há o que julgar.
+  "pista-nao-aberta": "Abra a pista antes de dizer se confia nela.",
+  "simulacao-ja-enviada": "O teste da sua Chave já foi registrado.",
+  "transferencia-ja-decidida": "A sua decisão sobre a mensagem já foi registrada.",
+  "transferencia-pendente": "Decida o que fazer com a mensagem para concluir a missão.",
   "transicao-de-etapa-invalida": "A turma avança uma etapa por vez, e nunca volta.",
   "pacote-invalido": "O pacote de notícias não atende às regras da missão.",
   "imagens-nao-aprovadas":

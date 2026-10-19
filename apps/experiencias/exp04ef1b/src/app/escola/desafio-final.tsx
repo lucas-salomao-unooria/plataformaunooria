@@ -1,185 +1,146 @@
-import { useEffect, useState } from "react";
-import { Button, Card, CardContent, NEWS_MEDIUM_LABELS, RadioGroup, ScrollBar, SectionHeader } from "@edu/ui/ds";
-import { rotas, reportarErro, tipoDaFalha } from "../../lib/api";
+import { useState } from "react";
+import { Button, Card, CardContent, NEWS_MEDIUM_LABELS, RevealClue, ScrollBar, SectionHeader } from "@edu/ui/ds";
 import { gravarMemoria, lerMemoria } from "../../lib/memoria";
-import { separarEnunciado } from "../../lib/regras";
-import { telemetria } from "../../lib/telemetria";
-import { E6 } from "../../lib/textos";
-import type { IdDaPergunta, Pergunta } from "../../lib/tipos";
+import { ICONE_DA_PISTA } from "../../lib/meios";
+import { pistasDoBoatoValidas, registrarPistaDoBoato } from "../../lib/regras";
+import { E6, PISTA } from "../../lib/textos";
+import {
+  TIPOS_DE_PISTA,
+  type CorpoDaTransferencia,
+  type DecisaoDaTransferencia,
+  type TipoDePista,
+  type TransferenciaDaTela,
+} from "../../lib/tipos";
 import { MensagemEncaminhada } from "../pecas/mensagem-encaminhada";
 
-type Fase = IdDaPergunta | "sintese";
-
-interface PerguntaNaTela {
-  id: IdDaPergunta;
-  pergunta: string;
-  alternativas: Pergunta["alternativas"];
-}
+const DECISOES: readonly DecisaoDaTransferencia[] = ["repassar", "nao_repassar"];
 
 /**
- * E6 — o desafio individual, FORA da redação e sem o Bento (PRD §5, Etapa 6):
- * a Unooria fala, numa tela limpa da seção `unooria`. A única peça de outra
- * seção é o boato, e ele é o que a missão quer que a criança reconheça fora da
- * escola: uma mensagem ENCAMINHADA — o `MessageBubble` do `unoochat`
- * (ADR-117, ADR-136), no mesmo contêiner lavanda da gaveta.
+ * E6 — a TRANSFERÊNCIA (3.0.0, ADR-168): o boato chega e a criança decide, à
+ * mão, o que faz com ele. Fora da redação e sem o Bento: a Unooria fala, numa
+ * tela NEUTRA — sem fala de ninguém, sem destaque nem animação nas pistas, e
+ * nada nela pede para verificar. Saiu o Desafio Final de múltipla escolha
+ * (P1/P2): a habilidade agora é medida pelo que a criança FAZ.
  *
- * **As perguntas são as da ficha da E14**, pelas rotas genéricas de
- * `/evidencias/exp04ef1b/perguntas/p1|p2` (molde: as enquetes da exp07ef1b). O
- * enunciado de P1 traz o boato, o detalhe e a pergunta separados por linha em
- * branco (`regras.ts#separarEnunciado`); as alternativas saem NA ORDEM QUE A API
- * DEVOLVE (ela embaralha a cada leitura), e a tela responde pelo `id`, nunca
- * pela posição. Cada pergunta é lida UMA vez por tela.
+ * A mensagem é o `MessageBubble` do `unoochat` (`forwardedLabel`, ADR-136); as
+ * três pistas são `RevealClue` sem julgamento, com o texto que já desceu no
+ * `GET transferencia` (abrir não vai à api); "Repassar para o grupo" e "Não
+ * repassar" estão à mão DESDE O INÍCIO, logo abaixo das pistas, com o mesmo
+ * peso visual. A tela registra as pistas abertas ANTES da decisão, na ordem
+ * (memória da aba: o F5 não as apaga), e a decisão as manda junto
+ * (`POST transferencia`). Depois dela nada mais conta.
  *
- * **Selecionar não envia.** O `RadioGroup` muda a seleção com as setas do
- * teclado; enviar na mudança mandaria a alternativa por onde o foco passou.
- * "Responder" envia, e a resposta é única (a api guarda a primeira).
- *
- * **A síntese é ÚNICA** (decisão): o recibo é `{ enviada: true }` para qualquer
- * alternativa, a criança nunca sabe o nível, e a tela mostra a mesma síntese
- * acolhedora (`e6.feedback.sintese_inicial`) para todos. As outras duas do
- * sheet ("Você comprovou que é um editor responsável…") só fariam sentido se a
- * tela soubesse o nível — e ela não sabe, de propósito.
- *
- * **Pergunta que falha pula para a síntese** (409 `sem-atividade-em-andamento`
- * — o professor zerou a turma —, 404, rede depois da repetição do SDK): a
- * conclusão da missão nunca fica presa numa pergunta.
+ * Decidido, a síntese ÚNICA (`e6.feedback.sintese_inicial`, a mesma para
+ * todos: a tela não sabe se a decisão "foi boa", e não diz), a frase da
+ * conversa com a professora e o "Concluir Missão".
  */
 export function DesafioFinal({
   sessaoId,
+  dados,
+  decidida,
   concluindo,
+  aoDecidir,
   aoConcluir,
 }: {
   sessaoId: string;
+  /** O `GET transferencia`; `null` enquanto não volta. */
+  dados: TransferenciaDaTela | null;
+  /** `estado.transferida` — a decisão já está gravada (também depois do F5). */
+  decidida: boolean;
   concluindo: boolean;
-  aoConcluir: (respondidas: number) => void;
+  /** O `POST transferencia`. `false` = falhou por um motivo que não se repete (a casca já tratou). */
+  aoDecidir: (corpo: CorpoDaTransferencia) => Promise<boolean>;
+  aoConcluir: () => void;
 }) {
-  const [respostas, setRespostas] = useState<Record<string, string>>(() => lerMemoria(sessaoId).respostas ?? {});
-  const [fase, setFase] = useState<Fase>(() => (respostas.p1 ? (respostas.p2 ? "sintese" : "p2") : "p1"));
-  const [boato, setBoato] = useState<{ texto: string; detalhe: string | null } | null>(null);
-  const [atual, setAtual] = useState<PerguntaNaTela | null>(null);
-  const [escolha, setEscolha] = useState<string | null>(null);
-  const [enviando, setEnviando] = useState(false);
+  const [abertasAntes, setAbertasAntes] = useState<readonly TipoDePista[]>(() =>
+    pistasDoBoatoValidas(lerMemoria(sessaoId).boato),
+  );
+  const [abertas, setAbertas] = useState<ReadonlySet<TipoDePista>>(() => new Set(abertasAntes));
+  const [decidindo, setDecidindo] = useState(false);
 
-  function pular(erro: unknown) {
-    if (tipoDaFalha(erro) === "invalida") reportarErro(erro);
-    setFase("sintese");
+  function alternar(tipo: TipoDePista, aberta: boolean) {
+    setAbertas((atual) => {
+      const nova = new Set(atual);
+      if (aberta) nova.add(tipo);
+      else nova.delete(tipo);
+      return nova;
+    });
+    if (!aberta) return;
+    const registradas = registrarPistaDoBoato(abertasAntes, tipo, decidida || decidindo);
+    if (registradas === abertasAntes) return;
+    setAbertasAntes(registradas);
+    gravarMemoria(sessaoId, { boato: [...registradas] });
   }
 
-  /* O boato sai do enunciado de P1 — lido uma vez, mesmo com P1 já respondida
-     (depois de um F5, a P2 continua falando "de um aviso desses"). */
-  useEffect(() => {
-    let vivo = true;
-    void (async () => {
-      try {
-        const p1 = await rotas.pergunta("p1");
-        if (!vivo) return;
-        const partes = separarEnunciado(p1.enunciado);
-        if (partes.boato) setBoato({ texto: partes.boato, detalhe: partes.detalhe });
-        if (fase === "p1") setAtual({ id: "p1", pergunta: partes.pergunta, alternativas: p1.alternativas });
-      } catch (erro) {
-        if (vivo && fase === "p1") pular(erro);
-      }
-    })();
-    return () => {
-      vivo = false;
-    };
-    // Uma leitura por tela: a fase inicial decide se o P1 vira pergunta.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (fase !== "p2") return;
-    let vivo = true;
-    void (async () => {
-      try {
-        const p2 = await rotas.pergunta("p2");
-        if (!vivo) return;
-        setAtual({ id: "p2", pergunta: separarEnunciado(p2.enunciado).pergunta, alternativas: p2.alternativas });
-      } catch (erro) {
-        if (vivo) pular(erro);
-      }
-    })();
-    return () => {
-      vivo = false;
-    };
-  }, [fase]);
-
-  async function responder() {
-    if (!atual || !escolha || enviando) return;
-    setEnviando(true);
-    try {
-      await rotas.responder(atual.id, escolha);
-      const novas = { ...respostas, [atual.id]: escolha };
-      setRespostas(novas);
-      gravarMemoria(sessaoId, { respostas: novas });
-      telemetria.respondeu(atual.id);
-      setEscolha(null);
-      setAtual(null);
-      setFase(atual.id === "p1" ? "p2" : "sintese");
-    } catch (erro) {
-      pular(erro);
-    } finally {
-      setEnviando(false);
-    }
+  async function decidir(decisao: DecisaoDaTransferencia) {
+    if (decidida || decidindo) return;
+    setDecidindo(true);
+    const ok = await aoDecidir({ pistas: [...abertasAntes], decisao });
+    setDecidindo(false);
+    if (ok) gravarMemoria(sessaoId, { boato: undefined });
   }
-
-  const respondidas = Object.keys(respostas).length;
 
   return (
     <div className="tela tela--escola">
       <SectionHeader className="tela__topo" variant="mobile" divider title={E6.titulo} />
       <ScrollBar className="rolagem" autoHide>
-        <div className="tela__corpo">
-          {boato && (
-            <figure className="desafio__boato">
-              <MensagemEncaminhada remetente={null} texto={boato.texto} rotulo={NEWS_MEDIUM_LABELS.message} />
-              {boato.detalhe && <figcaption className="tela__texto">{boato.detalhe}</figcaption>}
-            </figure>
-          )}
+        {dados ? (
+          <div className="tela__corpo">
+            <MensagemEncaminhada remetente={dados.remetente} texto={dados.mensagem} rotulo={NEWS_MEDIUM_LABELS.message} />
 
-          {fase !== "sintese" && atual && (
-            <div className="opcoes-amplas" key={atual.id}>
-              <RadioGroup
-                name={`pergunta-${atual.id}`}
-                label={atual.pergunta}
-                size="lg"
-                value={escolha ?? ""}
-                disabled={enviando}
-                options={atual.alternativas.map((a) => ({ value: a.id, label: a.texto }))}
-                onChange={(v) => setEscolha(String(v))}
-              />
+            <div className="gaveta__pistas">
+              {TIPOS_DE_PISTA.map((tipo) => (
+                <RevealClue
+                  key={tipo}
+                  label={PISTA[tipo].rotulo}
+                  question={PISTA[tipo].pergunta}
+                  icon={ICONE_DA_PISTA[tipo]}
+                  open={abertas.has(tipo)}
+                  onOpenChange={(aberta) => alternar(tipo, aberta)}
+                >
+                  {dados.pistas[tipo]}
+                </RevealClue>
+              ))}
             </div>
-          )}
 
-          {fase === "sintese" && (
-            <Card>
-              <CardContent>
-                <p className="tela__texto" role="status">
-                  {E6.sintese}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+            {decidida ? (
+              <Card>
+                <CardContent>
+                  <p className="tela__texto" role="status">
+                    {E6.sintese}
+                  </p>
+                  <p className="tela__texto">{E6.conversa}</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="julgar" role="group" aria-label={E6.oQueFazer}>
+                {DECISOES.map((d) => (
+                  <Button
+                    key={d}
+                    variant="outline"
+                    size="lg"
+                    fullWidth
+                    className="acao-crianca"
+                    disabled={decidindo}
+                    onClick={() => void decidir(d)}
+                  >
+                    {E6.decisao[d]}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="tela__corpo" aria-busy="true" />
+        )}
       </ScrollBar>
-      <div className="tela__acao">
-        {fase === "sintese" ? (
-          <Button size="lg" fullWidth className="acao-crianca" isLoading={concluindo} onClick={() => aoConcluir(respondidas)}>
+      {decidida && (
+        <div className="tela__acao">
+          <Button size="lg" fullWidth className="acao-crianca" isLoading={concluindo} onClick={aoConcluir}>
             {E6.concluir}
           </Button>
-        ) : (
-          <Button
-            size="lg"
-            fullWidth
-            className="acao-crianca"
-            disabled={!atual || escolha === null}
-            isLoading={enviando}
-            onClick={() => void responder()}
-          >
-            {E6.responder}
-          </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

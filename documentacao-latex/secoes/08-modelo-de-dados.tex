@@ -335,7 +335,8 @@ linha tracejada: vínculo por coluna, sem FK
   \cd{admin}, histórico em \cd{recursos\_auditoria}.\\
 \zebra \cd{ajuda\_configuracao} & Catálogo & \textbf{Uma linha só} (\cd{id = 1}):
   quem atende na Ajuda por padrão (o mascote ou o avatar), se a pessoa pode
-  trocar, e os ajustes do mascote (voz, modelo do Live, boca). Semeada com o
+  trocar, os ajustes do mascote (voz, modelo do Live, boca) e as instruções
+  de \enquote{como responder} de cada atendente (\adrr{ADR-165}). Semeada com o
   mascote; sobrescrita só pelo \cd{admin}, histórico em
   \cd{recursos\_auditoria} (\adrr{ADR-158}).\\
 \cd{ia\_consumo\_\B diario} & \textbf{Sem RLS} & O que cada chamada de IA PAGOU
@@ -488,6 +489,24 @@ Sem a linha, vale a constante do código (\cd{CONFIGURACAO\_PADRAO}), e o
 \emph{log} \cd{ajuda-configuracao-sem-linha} acusa; por isso o \cd{GRANT} é
 \cd{SELECT, INSERT, UPDATE}, \textbf{sem \cd{DELETE}}. A configuração vale na
 PRÓXIMA sessão aberta: a conversa no ar mantém a voz e o modelo com que começou.
+
+\subsection{As instruções de cada atendente (\adrr{ADR-165})}
+
+A migração \arq{20261015120000\_\B{}ajuda\_\B{}instrucoes} acrescenta a
+\cd{ajuda\_configuracao} duas colunas \cd{TEXT} nuláveis,
+\cd{instrucoes\_mascote} e \cd{instrucoes\_avatar}: o texto de
+\enquote{como responder} de cada atendente, editado pelo \cd{admin} em
+\rota{/unooria/uso-de-ia}. \textbf{\cd{NULL} é o texto padrão do código}
+(\cd{instrucoesPadrao}, em \arq{src/ajuda/prompt.ts}), e a rota grava
+\cd{NULL} também quando o texto enviado é igual ao padrão: quem nunca
+personalizou de verdade recebe a melhoria do padrão. O \emph{CHECK}
+\cd{ck\_ajuda\_configuracao\_instrucoes} cobra, nas duas, nulo OU de 20 a
+\num{8000} caracteres depois do \cd{btrim} --- o mesmo teto do Zod
+(\cd{MAXIMO\_DAS\_INSTRUCOES}): um texto longo demais disputaria a janela de
+contexto com a base, e vazio não é instrução. \textbf{Só o comportamento mora
+aqui}: o cabeçalho \cd{CONHECIMENTO}, a base gerada e \enquote{quem está
+falando} a api monta sempre depois, e o texto nunca sai dela (regra 2). O avatar
+lê a coluna a cada turno do LLM; o mascote, na abertura da sessão de voz.
 
 \section{Os custos de IA: \cd{ia\_consumo\_diario}, \cd{ia\_precos} e \cd{cotacoes\_dolar}}
 \label{sec:custos-de-ia-dados}
@@ -859,8 +878,9 @@ de uma missão, rodada a rodada. São três tabelas de plataforma, na migração
 \arq{20260925150000\_\B{}evidencia\_\B{}pedagogica}, e elas separam o que a missão
 VIU (\cd{evidencias\_marcas}) do nível que o professor LÊ e pode corrigir
 (\cd{evidencias}), com toda mudança no histórico (\cd{evidencias\_eventos}). A
-primeira missão a escrever nelas é a exp05ef1b (\adrr{ADR-118}): a marca da
-EF05CO08 na transação do Mural, e as da EF05CO03 e EF05CO04 pelas perguntas.
+primeira missão a escrever nelas é a exp05ef1b (\adrr{ADR-118}): hoje só por
+ação (\adrr{ADR-171}) --- a marca da EF05CO08 na transação do Mural, a da
+EF05CO03 na do cartão de frases e a da EF05CO04 na da regra do tio.
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
@@ -890,7 +910,14 @@ Uma evidência por habilidade por rodada & \cd{UNIQUE (escola\_id, exp\_id,
   \cd{projecao}; \cd{fonte\_estudante\_id} se e só se for cópia
   (\cd{equipe}/\cd{projecao}); \cd{editado\_por} se e só se for ajuste
   (\cd{professor}). A linha que o código montar errada é recusada pelo banco, em
-  vez de chegar ao painel como um estado que ele não sabe mostrar.\\
+  vez de chegar ao painel como um estado que ele não sabe mostrar.
+  \cd{marcador} (\adrr{ADR-166}, migração
+  \arq{20261016120000\_\B{}evidencia\_\B{}origem\_\B{}do\_\B{}nivel}) só na
+  origem \cd{propria}.\\
+\zebra O marcador que deu o nível NA linha & A evidência própria guarda de que
+  marcador veio (\adrr{ADR-166}). Derivá-lo das marcas a cada leitura faria o
+  consolidado da rede ler também as marcas de todas as turmas, só para separar
+  o \enquote{em processo} que mede a atividade e não o estudante.\\
 \zebra O vocabulário em dois lugares & Os \emph{CHECKs} de \cd{status},
   \cd{origem}, \cd{situacao}, \cd{tipo} e o \emph{regex} de \cd{atividade\_id}
   repetem as constantes de \arq{evidencias/regras.ts}, e
@@ -1241,6 +1268,22 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
   está na migração.\\
 \zebra \cd{de\_ia} & Permite ao professor distinguir, na auditoria, o comentário
   escrito pela persona (modelo) do escrito pelo estudante.\\
+\cd{exp08ef1b\_tarefas} e \cd{runs.revelacao\_concluida\_em} (\adrr{ADR-167},
+  migração \arq{20261016180000\_\B{}exp08ef1b\_\B{}canal\_\B{}a}) & As tarefas
+  do Canal A, uma linha por (sessão, tarefa), criada na PRIMEIRA leitura com a
+  composição que a tela mostra: os posts do Raio-x e do envio não mudam entre a
+  leitura e o envio. É produção do estudante e sai no reinício, junto com o fim
+  da revelação; a MARCA de evidência fica, e vale o primeiro envio. \emph{CHECKs}
+  do vocabulário (\cd{raio-x}, \cd{termos}, \cd{envio}), de respondida com
+  data, e da frase só no envio, até 140 caracteres.\\
+\zebra \cd{exp08ef1b\_leituras\_da\_reflexao} e \cd{reflexoes.primeiro\_texto} &
+  A leitura da reflexão pela IA é UMA só por (atividade, estudante): a
+  unicidade impede a segunda, inclusive depois de um reinício, que não apaga a
+  sessão. A linha não guarda texto; o texto lido fica em \cd{primeiro\_texto},
+  gravado só na criação da reflexão, e sai com ela. \cd{run\_id} e
+  \cd{estudante\_id} em cascata: \enquote{Apagar as sessões} e a exclusão da
+  conta levam a leitura. As duas tabelas com \cd{escola\_id NOT NULL} e RLS
+  forçada.\\
 \bottomrule
 \end{tabularx}
 
@@ -1510,9 +1553,16 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
   pacote, chave \cd{(escola\_id, estudante\_id, pacote\_id, rodada)}: nasce no
   \enquote{Entrar no grupo}, e zerar a turma abre outra linha em vez de apagar
   esta. Guarda a seleção (0 a 3) e os carimbos dos \emph{latches} ---
-  \cd{confirmado\_em}, \cd{votou\_em}, \cd{reflexao\_em}, \cd{concluido\_em} ---,
-  o motivo votado, o \cd{tempo\_feed\_segundos} e a \cd{versao\_instrumento}.
-  \textbf{Não tem coluna de passo} nem de pontuação.\\
+  \cd{confirmado\_em}, \cd{votou\_em}, \cd{operacoes\_em}, \cd{regra\_em},
+  \cd{concluido\_em} (\cd{reflexao\_em} só pelo histórico) ---, o motivo
+  votado, o \cd{tempo\_feed\_segundos} e a \cd{versao\_instrumento} (2.4.0
+  desde a \adrr{ADR-171}). Desde a mesma ADR, o dado bruto das duas ações do
+  Canal A: as seis frases do cartão COMO a criança as viu, com a resposta
+  esperada (\cd{frases\_operacoes}), e as respostas dela
+  (\cd{respostas\_operacoes}); os testes da regra do tio, em ordem, com a
+  previsão e o que a regra fez (\cd{regra\_testes}, até 5), e a regra enviada
+  (\cd{regra\_final}). \textbf{Não tem coluna de passo} nem de pontuação: o
+  nível é da evidência.\\
 \zebra \cd{exp05ef1b\_reflexoes} & \textbf{Histórico desde a \adrr{ADR-145}}:
   nenhuma rota escreve mais nela. A regra Se/Então, 1:1 com a sessão: a
   condição (\cd{condicional\_se}) e o \enquote{Então} (\cd{acao\_entao}, 15 a
@@ -1526,11 +1576,15 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
 \begin{regra}
 \textbf{Os \emph{latches} estão em ordem no banco.} Cada carimbo exige o
 anterior: confirmar o Mural exige \textbf{exatamente três} na seleção, votar
-exige ter confirmado (e motivo e carimbo andam juntos), a regra exige o voto, e
-concluir exige a regra. O \emph{CHECK} vale por \emph{statement}, então o
-\emph{service} grava carimbo e dado no MESMO \cd{UPDATE} --- a seleção com o
-\cd{confirmado\_em}, o motivo com o \cd{votou\_em} ---, senão o estado
-intermediário reprova. A seleção fica dentro dos oito ids (\cd{<@ ARRAY['msg\_1'
+exige ter confirmado (e motivo e carimbo andam juntos), o cartão de frases
+exige o voto e seis frases e seis respostas, testar a regra exige o cartão (e
+no máximo cinco testes), enviar a regra exige o cartão e uma condição do
+vocabulário, e concluir exige só o voto --- quem sai antes de uma ação fica
+\enquote{Não avaliado} nela, nunca travado (\adrr{ADR-145}, \adrr{ADR-171}). O
+\emph{CHECK} vale por \emph{statement}, então o \emph{service} grava carimbo e
+dado no MESMO \cd{UPDATE} --- a seleção com o \cd{confirmado\_em}, o motivo
+com o \cd{votou\_em}, as frases e as respostas com o \cd{operacoes\_em}, a
+regra com o \cd{regra\_em} ---, senão o estado intermediário reprova. A seleção fica dentro dos oito ids (\cd{<@ ARRAY['msg\_1'
 \ldots 'msg\_8']}) e com no máximo três; o \cd{tempo\_feed\_segundos} existe
 exatamente quando o Mural fechou.
 
@@ -1577,7 +1631,9 @@ O \enquote{Então} com \cd{btrim} & \cd{char\_length(btrim(acao\_entao)) BETWEEN
 \label{sec:tabelas-exp04ef1b}
 
 O Jornal da Escola (\adrr{ADR-117}), na migração
-\arq{20260927120000\_\B{}exp04ef1b\_\B{}jornal\_\B{}da\_\B{}escola}. As quatro têm
+\arq{20260927120000\_\B{}exp04ef1b\_\B{}jornal\_\B{}da\_\B{}escola}, e o Canal A
+puro da 3.0.0 (\adrr{ADR-168}) na \arq{20261016130000\_\B{}exp04ef1b\_\B{}canal\_\B{}a},
+que só acrescenta colunas e \emph{CHECKs}. As quatro têm
 \cd{escola\_id NOT NULL}, RLS \cd{ENABLE} + \cd{FORCE} com a política por escola, e
 nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
 \emph{role} de \emph{runtime} é só de tabela, guardado. O prefixo não colide com
@@ -1597,7 +1653,9 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
   objeto) guarda a URL que o professor APROVOU por notícia (\adrr{ADR-147}): a
   imagem só chega ao estudante quando é a mesma de \cd{midia}, e o
   \enquote{Gerar outra} troca \cd{midia} e deixa só aquela notícia à espera do
-  novo OK.\\
+  novo OK. \cd{simulacao} (\cd{JSONB}, \emph{array} de duas ou nulo) guarda as
+  duas matérias da simulação com o gabarito; nula nos pacotes anteriores à
+  3.0.0, que usam as do banco padrão.\\
 \zebra \cd{exp04ef1b\_gates\_turma} & O \textbf{relógio da turma}:
   \cd{exploracao} $|$ \cd{resultado} $|$ \cd{revisao}, o pacote em andamento, a
   \textbf{rodada} e os carimbos dos dois portões. Chave
@@ -1608,7 +1666,10 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
   de cinco colunas, com o nome dado à mão). O passo gravado, as pistas abertas
   (\cd{JSONB}, uma entrada por par e fase), as vagas, o layout, a origem do
   layout e as verificadas de cada edição, o motivo, as tentativas da Chave e os
-  carimbos dos \emph{latches}. \textbf{Nenhum campo de texto livre.}\\
+  carimbos dos \emph{latches}. Desde a 3.0.0: os \cd{julgamentos} da mesa
+  (\cd{JSONB}, o primeiro de cada par), a \cd{chave\_montagem} (a Chave como foi
+  montada), a \cd{simulacao} e a \cd{transferencia} com os seus carimbos.
+  \textbf{Nenhum campo de texto livre.}\\
 \zebra \cd{exp04ef1b\_diagramacoes} & O \emph{cache} da diagramação por IA:
   pacote e as três vagas NA ORDEM (a \cd{chave}, como \cd{n1,n5,n3}) \seta{} layout, com
   os \emph{tokens} gastos. É o que limita o custo às combinações usadas. Fica sob
@@ -1621,7 +1682,10 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
 implicações: \cd{publicada1\_em} existe se e só se o passo saiu de \cd{desafio} e
 \cd{mesa}; o motivo, se e só se saiu também de \cd{motivo}; a Chave formada, se e
 só se o passo está de \cd{revisao} em diante; \cd{publicada2\_em}, de
-\cd{comparativo} em diante; e \cd{fim}, se e só se há \cd{concluida\_em}. Cada
+\cd{comparativo} em diante; e \cd{fim}, se e só se há \cd{concluida\_em}. Os da
+3.0.0 são IMPLICAÇÕES, porque a sessão da 2.x passou por passos que não
+existiam: a montagem só com a Chave formada; a simulação e a transferência, cada
+uma com o seu carimbo, só de \cd{transferencia} em diante. Cada
 edição publicada exige as três vagas DIFERENTES dentro dos oito ids, o layout, a
 origem e as verificadas no mesmo gesto. Os passos \cd{resultado} e \cd{chave}
 \textbf{nunca} são gravados --- a etapa os impõe a quem está em
@@ -1708,12 +1772,16 @@ tabela, guardado.
   cédula aberta (\cd{cedula\_batimento\_em}, \cd{cedula\_inativa\_desde},
   um par que só existe antes do voto); o voto, a convicção e o carimbo do
   \emph{latch} 1; a \cd{auditoria} da galeria (\cd{JSONB}
-  \cd{\{abertos, buscas\}}, sem o texto da busca); a ação da revisão, o voto
-  final e o carimbo do \emph{latch} 2; os \cd{*\_status} das três ações; as
-  tentativas e o
-  carimbo da cadeia (as colunas dos pacotes, \cd{pacotes\_tentativas} e
+  \cd{\{abertos, buscas\}}, sem o texto da busca); a \textbf{separação}
+  (\cd{classificacao\_\B{}respostas}, \cd{classificacao\_\B{}acertos},
+  \cd{classificacao\_\B{}total}, \cd{classificada\_\B{}em}, \adrr{ADR-174}); a ação
+  da revisão, o voto final e o carimbo do \emph{latch} 2; os \cd{*\_status}
+  (desde a 0.6.0, só \cd{classificacao\_\B{}status} e \cd{logica\_status} são
+  escritos; \cd{auditoria\_status} fica nas linhas antigas); a \textbf{regra
+  SE \ldots{} ENTÃO} (\cd{regra\_se}, \cd{regra\_entao}) com o carimbo da
+  cadeia (as colunas dos pacotes, \cd{pacotes\_tentativas} e
   \cd{pacotes\_remontados\_em}, saíram com a \adrr{ADR-151}); os cartões de Mariana; a conclusão e a
-  versão do instrumento (\cd{3.0.0} desde a \adrr{ADR-164}). \textbf{Nenhum campo de texto livre.} Desde a
+  versão do instrumento (\cd{4.0.0} desde a \adrr{ADR-174}). \textbf{Nenhum campo de texto livre.} Desde a
   \adrr{ADR-157} ficam SEM USO a justificativa (\cd{voto\_motivo},
   \cd{voto\_trecho}, \cd{revisao\_*}), o \cd{complemento\_projeto} e as
   colunas \cd{desvio\_*}; \cd{enquete\_*\_alt} existem e não são escritas
@@ -1724,12 +1792,16 @@ tabela, guardado.
 \begin{regra}
 \textbf{Os \emph{latches} são EQUIVALÊNCIAS com o passo gravado}, como no
 Jornal: \cd{votado\_em} existe se e só se o passo saiu de \cd{credencial} e
-\cd{feed}; \cd{revisado\_em}, se e só se está de \cd{revisada} em diante
+\cd{feed} (desde a \adrr{ADR-174}, o primeiro passo depois do voto é
+\cd{classificacao}, e \cd{classificada\_\B{}em} nunca existe com o passo nele);
+\cd{revisado\_em}, se e só se está de \cd{revisada} em diante
 (até a \adrr{ADR-151}, de \cd{pacotes}, o passo que saiu; até a
 \adrr{ADR-152}, de \cd{cadeia}); \cd{desvio\_concluido\_em} só existe
 nas sessões antigas, e só depois da revisão (a equivalência com a cadeia caiu
-na \adrr{ADR-157}); \cd{cadeia\_montada\_em}, de \cd{mariana} em diante; \cd{cartoes\_em}, de
-\cd{enquetes} em diante; e \cd{fim} se e só se há \cd{concluida\_em}. O voto,
+na \adrr{ADR-157}); \cd{cadeia\_\B{}montada\_em}, de \cd{mariana} em diante; \cd{cartoes\_em}, de
+\cd{enquetes} em diante (desde a \adrr{ADR-174}, os cartões levam direto a
+\cd{fim}, com \cd{concluida\_em} no mesmo \cd{UPDATE}; \cd{enquetes} só
+existe nas sessões antigas); e \cd{fim} se e só se há \cd{concluida\_em}. O voto,
 a convicção e o carimbo andam juntos, e a revisão também: \cd{manter}
 repete o voto lacrado e \cd{trocar} escolhe outro (\cd{complementar} segue
 aceito no \emph{CHECK} pelas linhas da 0.3.0 e é lido como manter). O passo
@@ -1800,7 +1872,13 @@ Retenção & A da vigência contratual, sem rotina de expurgo (\adrr{ADR-13}).\\
   (três ids distintos do feed), a legenda (10 a 140 \emph{code points}), a matriz
   (as três lentes somando 3), o par (\cd{par\_sessao\_id} sem FK ou
   \cd{par\_virtual}, e o rótulo congelado). Os \emph{CHECK} amarram o
-  \emph{latch}: publicado equivale a tríade, legenda e matriz.\\
+  \emph{latch}: publicado equivale a tríade, legenda e matriz. Desde a
+  \adrr{ADR-170}: a leitura da legenda (\cd{legenda\_leitura}
+  \cd{pendente}/\cd{ia}/\cd{reserva}, os três indicadores, o nível ou a
+  sugestão, que na reserva nunca é \cd{nao\_atingiu}), a poda
+  (\cd{n\_podados}) e a marcação do post do colega (\cd{marcacao\_post\_id}
+  ou \cd{marcacao\_nenhum}, nunca os dois, e o \cd{marcacao\_porque}, texto de
+  menor só do professor).\\
 \zebra \cd{exp07ef1b\_reflexoes} & A reflexão: 100 a 500 caracteres de
   \textbf{texto livre de menor}, com \cd{chars = char\_length(texto)}. Fora de
   \emph{log} e da telemetria, e só sai para quem leciona a turma
@@ -1858,7 +1936,7 @@ em produção, que é onde ela existe.
 \end{atencao}
 
 
-\section{As cinco tabelas da exp02em1b}
+\section{As sete tabelas da exp02em1b}
 \label{sec:tabelas-exp02em1b}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
@@ -1892,6 +1970,17 @@ em produção, que é onde ela existe.
   pedagógica (\adrr{ADR-154}): só o \enquote{Zerar a turma} a sobe, e ela
   sobrevive ao zerar, que apaga o relógio e a evidência da turma
   (\adrr{ADR-155}). Ausência de linha = rodada 1.\\
+\cd{exp02em1b\_tarefas} & As \textbf{tarefas do Canal A} (\adrr{ADR-172},
+  migração \arq{20261016200000\_\B{}exp02em1b\_\B{}canal\_\B{}a}): uma linha
+  por (sessão, rodada da turma, tentativa, tarefa), com a APRESENTAÇÃO que o
+  servidor montou --- os pares da leitura, os cartões das fontes, as
+  comparações do \enquote{E se\ldots}, a ordem das opções --- e as respostas.
+  Só ids de escolha fechada, nenhum texto livre. \emph{CHECKs} do vocabulário
+  (sete tarefas) e de respondida com data. Sai com a sessão (cascata do par),
+  e o \enquote{Zerar a turma} apaga as sessões. A sessão ganhou
+  \cd{registro\_concluido\_em} (o desfecho fica retido até ele),
+  \cd{oferta\_saude\_em} e \cd{inicio\_com\_relogio\_aberto}; o relógio da
+  turma, \cd{fechamento\_aberto\_em}.\\
 \bottomrule
 \end{tabularx}
 
@@ -2257,6 +2346,41 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   vocabulário de \cd{exp06ef1b\_sessoes} passa o id de projeto a
   \cd{\textasciicircum{}proj-[a-d](10|[1-9])\$} nas três colunas que o guardam
   --- a regex nova contém a antiga.\\
+\zebra \arq{20261015120000\_\B{}ajuda\_\B{}instrucoes} & As instruções de cada
+  atendente da Ajuda no painel (\adrr{ADR-165}): \cd{instrucoes\_mascote} e
+  \cd{instrucoes\_avatar} (\cd{TEXT}, nulas = o texto padrão do código) em
+  \cd{ajuda\_configuracao}, com o \emph{CHECK}
+  \cd{ck\_ajuda\_configuracao\_instrucoes} (nulo ou de 20 a \num{8000}
+  caracteres sem os brancos das pontas). Sem RLS e sem \cd{escola\_id}, como a
+  linha.\\
+\arq{20261017090000\_\B{}exp05ef1b\_\B{}canal\_\B{}a} & Quem mandou isso? só com o
+  Canal A (\adrr{ADR-171}): em \cd{exp05ef1b\_sessoes}, o cartão de frases
+  (\cd{frases\_operacoes}, \cd{respostas\_operacoes}, \cd{operacoes\_em}) e a
+  regra do tio (\cd{regra\_testes} \cd{JSONB NOT NULL DEFAULT '[]'},
+  \cd{regra\_final}, \cd{regra\_em}), e o padrão da \cd{versao\_instrumento}
+  passa a 2.4.0. Quatro \emph{CHECKs} novos: \cd{exp05ef1b\_sessoes\_operacoes\_check}
+  (o cartão exige o voto, seis frases e seis respostas),
+  \cd{exp05ef1b\_sessoes\_regra\_testes\_check} (\emph{array} de até cinco, e só
+  com o cartão), \cd{exp05ef1b\_sessoes\_regra\_check} (a regra exige o cartão e
+  uma das quatro condições) e \cd{exp05ef1b\_sessoes\_regra\_final\_check}
+  (regra e carimbo nulos juntos). O nível não mora aqui: é da evidência. Sem
+  RLS nova.\\
+\zebra \arq{20261018090000\_\B{}exp06ef1b\_\B{}canal\_\B{}a} & O Júri
+  Estadual só com o Canal A (\adrr{ADR-174}): em \cd{exp06ef1b\_sessoes}, a
+  separação (\cd{classificacao\_\B{}respostas} \cd{JSONB}, \cd{classificacao\_\B{}acertos},
+  \cd{classificacao\_\B{}total}, \cd{classificada\_\B{}em}) e a regra SE \ldots{}
+  ENTÃO (\cd{regra\_se}, \cd{regra\_entao}, os ids das peças; o carimbo é o
+  \cd{cadeia\_\B{}montada\_em} de sempre, com \cd{cadeia\_\B{}tentativas = 1}). O
+  \emph{CHECK} de passo ganha \cd{classificacao}, entre o voto e
+  \cd{lacrada} (\cd{enquetes} fica, pelas sessões paradas ali); o de status
+  aceita \cd{classificacao\_\B{}status} vindo da separação OU da revisão (as linhas
+  da 0.5.0). Dois \emph{CHECKs} novos, fracos de propósito:
+  \cd{exp06ef1b\_\B{}sessoes\_\B{}classificacao\_\B{}check} (as quatro colunas juntas, só
+  depois do voto, \emph{array}, total de 0 a 10, acertos dentro do total) e
+  \cd{exp06ef1b\_\B{}sessoes\_\B{}regra\_\B{}check} (as duas peças juntas, só com o
+  carimbo da cadeia). Uma sessão que votou na 0.5.0 está em \cd{lacrada} SEM
+  separação e continua válida. Nenhuma coluna sai, nenhuma linha muda, a RLS
+  não afrouxa.\\
 \bottomrule
 \end{tabularx}
 

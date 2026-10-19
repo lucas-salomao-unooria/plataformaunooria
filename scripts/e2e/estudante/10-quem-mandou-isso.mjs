@@ -4,7 +4,7 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../
 import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from "../lib/podcast.mjs";
 
 /**
- * Quem mandou isso? v2.2 (exp05ef1b), nas duas pontas da sala: a professora
+ * Quem mandou isso? v2.2 (exp05ef1b, 0.5.0 — só o Canal A), nas duas pontas da sala: a professora
  * cria a atividade e conduz, o estudante joga. Dois contextos de navegador, porque
  * metade do que a missão instala só se prova com as duas telas vivas.
  *
@@ -26,16 +26,24 @@ import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from ".
  * 4. **Os três botões chegam por polling HTTP** (ADR-93): revelação, síntese
  *    e reflexão trocam a tela do estudante SEM recarregar. E um F5 no meio
  *    devolve a mesma tela, porque o passo é do servidor.
- * 5. **As perguntas da Nina SÃO a reflexão** (ADR-145): Liberar Reflexão leva
- *    direto ao chat da Nina, sem a regra Se/Então e sem repetir a fala da
- *    abertura (o pedido do PO em 2026-10-05).
- * 6. **As perguntas do PO não expõem acerto**: o recibo é `{ enviada: true }`
- *    e a tela diz só "Resposta enviada". Quem sabe o nível é a professora, no
+ * 5. **O cartão de frases vem com os crachás** (EF05CO03): no fim do Mural
+ *    revelado, seis frases com E, OU e NÃO sobre as 3 mensagens encaminhadas,
+ *    cada uma com Sim/Não. As frases descem SEM a resposta esperada; a suíte
+ *    a calcula como a criança — os crachás dão os valores simples, a frase pede
+ *    a operação — e responde as seis certas. O recibo é o estado com
+ *    `cartao.enviado`, sem acerto nenhum.
+ * 6. **A reflexão é a regra do tio, na casca** (EF05CO04): Liberar Reflexão
+ *    leva ao desafio do tio, montado com peças. A criança PREVÊ o que a regra
+ *    faz com o áudio antes de cada teste; a suíte testa primeiro uma regra que
+ *    só manda esperar (com a previsão certa), corrige para a que checa antes de
+ *    encaminhar, testa de novo e envia — e a missão fecha sozinha.
+ * 7. **Nenhum acerto chega à criança.** Quem sabe o nível é a professora, no
  *    bloco "Habilidades da BNCC" — e a suíte confere que o nível dali é o que
- *    a régua dá para as 3 escolhidas (EF05CO08) e para as alternativas
- *    marcadas (EF05CO03 e EF05CO04), em TODA rodada, e que o critério de cada
- *    nível está escrito no fim do bloco.
- * 7. **O Termômetro não tem nome**, nem no painel nem no telão.
+ *    a régua dá: as 3 escolhidas (EF05CO08), as 6 frases certas (EF05CO03,
+ *    atingiu) e a regra que só checou depois do retorno do teste (EF05CO04, em
+ *    processo), em TODA rodada, e que o critério de cada nível está escrito no
+ *    fim do bloco. As perguntas P1/P2 saíram: a rota delas responde 404.
+ * 8. **O Termômetro não tem nome**, nem no painel nem no telão.
  *
  * A IA é a DE VERDADE (Vertex, com o ADC válido): a suíte cria a atividade
  * pelo assistente ("Nova atividade" na ficha) apertando "Gerar Atividade com
@@ -82,6 +90,81 @@ function nivelEsperadoCO08(escolhidas) {
   if (falsas === 0) return "atingiu";
   if (falsas === 1) return "em_processo";
   return "nao_atingiu";
+}
+
+/** A régua da EF05CO03, à parte da api (`regras/operacoes.ts#nivelCO03`): 5–6 acertos atingem, 3–4 em processo. */
+function nivelEsperadoCO03(acertos) {
+  if (acertos >= 5) return "atingiu";
+  if (acertos >= 3) return "em_processo";
+  return "nao_atingiu";
+}
+
+/**
+ * A régua da EF05CO04, à parte da api (`regras/regra.ts#nivelCO04`), sobre o
+ * que o SERVIDOR disse que cada regra fez com o áudio (`situacao`). Vale para
+ * as regras desta suíte, que pegam o áudio: "não atingiu" de verdade é
+ * "encaminha antes de checar" para QUALQUER mensagem, e uma regra que deixa o
+ * áudio passar e ainda assim repassa não aparece aqui.
+ */
+function nivelEsperadoCO04(testes, situacaoDaEnviada) {
+  if (situacaoDaEnviada === "repassa_antes") return "nao_atingiu";
+  const primeiro = testes[0];
+  if (primeiro?.situacao === "checa" && primeiro?.previsao === "checa" && situacaoDaEnviada === "checa") return "atingiu";
+  return "em_processo";
+}
+
+/** O que cada teste da regra escreve na tela (`regras/regra.ts#RESULTADO_DO_TESTE`) — o oráculo dos cards. */
+const RESULTADO_DO_TESTE = {
+  sem_conferir: "Sua regra pegou o áudio, mas não diz como conferir.",
+  checa: "Sua regra pegou o áudio e mandou você checar antes de encaminhar.",
+};
+
+/** Os campos da regra do tio, pelo NOME do combobox do `Selection` (`textos.ts#regra`). */
+const CAMPO_DA_REGRA = {
+  se: /^SE a mensagem for/,
+  entao: /^ENTÃO eu/,
+  depois: /^E DEPOIS/,
+  previsao: /^O que a sua regra vai fazer com o áudio do tio/,
+};
+
+const normalizar = (t) => String(t ?? "").replace(/\s+/g, " ").trim();
+
+/**
+ * Como a frase do cartão cita a mensagem (`regras/operacoes.ts#referenciaDa`):
+ * quem mandou e as 4 primeiras palavras, entre aspas curvas.
+ */
+function referenciaDa(m) {
+  const palavras = m.texto.replace(/\s+/g, " ").trim().split(" ");
+  const inicio = palavras
+    .slice(0, 4)
+    .join(" ")
+    .replace(/[,.;:!?…]+$/u, "");
+  return `A mensagem de ${m.remetente} “${inicio}${palavras.length > 4 ? "…" : ""}”`;
+}
+
+/**
+ * A resposta CERTA de uma frase do cartão, calculada como a criança a calcula:
+ * os crachás dão os dois valores simples da mensagem (veracidade e tom), e a
+ * frase pede a operação sobre eles. `mensagens` são as 3 encaminhadas, com o
+ * texto do grupo e o gabarito que a revelação trouxe.
+ */
+function respostaCertaDaFrase(frase, mensagens) {
+  const candidatas = mensagens
+    .map((m) => ({ m, ref: referenciaDa(m) }))
+    .filter(({ ref }) => frase.texto.startsWith(ref))
+    .sort((a, b) => b.ref.length - a.ref.length);
+  if (!candidatas.length) throw new Error(`a frase ${frase.id} não cita nenhuma das 3 mensagens encaminhadas: "${frase.texto}"`);
+  const { m, ref } = candidatas[0];
+  const resto = frase.texto.slice(ref.length);
+  const tem = (valor) => valor === m.veracidade || valor === m.tom;
+  const negacao = resto.match(/^ NÃO é (\S+)\.$/u);
+  if (frase.operador === "NAO" && negacao) return tem(negacao[1]) ? "nao" : "sim";
+  const binaria = resto.match(/^ é (\S+) (E|OU) (\S+)\.$/u);
+  if (binaria && binaria[2] === frase.operador) {
+    const [a, b] = [tem(binaria[1]), tem(binaria[3])];
+    return (frase.operador === "E" ? a && b : a || b) ? "sim" : "nao";
+  }
+  throw new Error(`a frase ${frase.id} (${frase.operador}) não tem a forma que o cartão promete: "${frase.texto}"`);
 }
 
 /** A api pelo BFF do hub, com a sessão do navegador (APIRequestContext divide os cookies do contexto). */
@@ -145,13 +228,14 @@ await suite(
     slug: "estudante/10-quem-mandou-isso",
     papel: "estudante",
     titulo: "Quem mandou isso? — o grupo da turma e o Mural",
-    subtitulo: "exatamente 3, o latch, os três botões da professora e as perguntas da Nina",
+    subtitulo: "exatamente 3, o latch, os três botões da professora, o cartão de frases e a regra do tio",
     contexto:
       "A Nina pede ajuda: rolou uma confusão sobre o passeio ao museu. No grupo da turma chegam " +
       "oito mensagens — verdadeiras e falsas, calmas e alarmadas —, e a criança encaminha " +
       "exatamente três ao Mural da Turma e vota no motivo. Quando a professora libera a " +
-      "revelação, cada mensagem ganha dois selos; depois vêm a síntese e a reflexão: duas perguntas " +
-      "rápidas da Nina.",
+      "revelação, cada mensagem ganha dois selos e a Nina manda um cartão de frases com E, OU e NÃO " +
+      "sobre as três; depois vêm a síntese e a reflexão: a regra do tio, montada com peças, prevista " +
+      "e testada no áudio dele.",
     prova: [
       "A atividade nasce da professora, pelo assistente — conteúdo, equipes e criar —, e sem uma em andamento a missão não abre",
       "Criada com “Pôr no ar agora”, a Nina chega sozinha à tela do estudante, sem recarregar",
@@ -161,9 +245,10 @@ await suite(
       "Revelação, síntese e reflexão chegam à tela do estudante por polling, sem recarregar",
       "Os crachás são os do gabarito do servidor, só das 3 escolhidas, e um F5 os devolve",
       "O Termômetro da Turma não tem nome, no painel nem no telão",
-      "Liberar Reflexão leva direto às perguntas da Nina, sem repetir a fala da abertura",
-      "As perguntas da Nina respondem só “Resposta enviada” — nenhum acerto chega à criança",
-      "O bloco Habilidades da BNCC mostra EF05CO08, EF05CO03 e EF05CO04 com o nível que a régua v2 dá",
+      "Depois dos crachás, o cartão de 6 frases desce sem a resposta esperada, e o envio não devolve acerto",
+      "Liberar Reflexão leva à regra do tio, na casca: prever, testar, corrigir e enviar fecham a missão",
+      "As perguntas P1/P2 saíram: a rota delas responde 404 para esta missão",
+      "O bloco Habilidades da BNCC mostra EF05CO08, EF05CO03 (cartão) e EF05CO04 (regra) com o nível que a régua dá",
       "Toda rodada mede as três habilidades de novo, e o critério de cada nível está no fim do bloco",
       "Zerar a turma abre a aba da rodada nova na hora, sem recarregar a página",
     ],
@@ -913,6 +998,136 @@ await suite(
     });
     r.exigir((await q.locator(".crachas").count()) === 3, "o F5 devolve a revelação com os 3 pares de crachás");
 
+    // ═══ O CARTÃO DE FRASES (EF05CO03), no fim do Mural revelado ══════════
+    /* O cartão desce JUNTO com a revelação — depende do gabarito das três —,
+       e SEM a resposta esperada: o servidor gera as frases com semente na
+       sessão e guarda a certa só no envio. A suíte calcula a certa como a
+       criança: os crachás dão os valores simples, a frase pede a operação. */
+    const comCartao = await lerApi(p, "/quem-mandou-isso/sessao");
+    const cartao = comCartao.corpo?.cartao ?? null;
+    if (!r.exigir(cartao !== null && cartao.frases?.length === 6, `o cartão de 6 frases desce com a revelação (${cartao?.frases?.length ?? "nenhum"})`)) return;
+    r.exigir(cartao.enviado === false, "e ainda não foi enviado");
+    r.exigir(
+      cartao.frases.every((f) => Object.keys(f).sort().join() === "id,operador,texto") &&
+        !JSON.stringify(comCartao.corpo).includes('"esperado"'),
+      "cada frase desce só com id, operador e texto — a resposta esperada não está no estado",
+    );
+    const porOperador = cartao.frases.reduce((acc, f) => ({ ...acc, [f.operador]: (acc[f.operador] ?? 0) + 1 }), {});
+    r.exigir(
+      porOperador.E === 2 && porOperador.OU === 2 && porOperador.NAO === 2,
+      `duas frases com E, duas com OU e duas com NÃO (${JSON.stringify(porOperador)})`,
+    );
+
+    const frasesNaTela = q.locator("fieldset.cartao__frase");
+    await esperarOuFalharPorHttp(p, frasesNaTela.nth(5), /quem-mandou-isso\/(sessao|gate)/, {
+      timeout: 20_000,
+      oQue: "o cartão de frases no fim do Mural",
+    });
+    const legendas = (await q.locator("fieldset.cartao__frase legend").allInnerTexts()).map(normalizar);
+    r.exigir(
+      legendas.length === 6 && legendas.every((t, i) => t === normalizar(cartao.frases[i].texto)),
+      "a tela mostra as 6 frases do estado, na mesma ordem, com o operador em destaque",
+    );
+    r.exigir(
+      (await q.getByText("OU vale se uma das partes for verdadeira, ou as duas.", { exact: true }).count()) === 1,
+      "e a dica do OU fica à vista: em português “ou” costuma soar exclusivo",
+    );
+    await frasesNaTela.first().scrollIntoViewIfNeeded();
+    await r.registrar(p, "cartao-de-frases", {
+      titulo: "O cartão de frases da Nina",
+      mostra:
+        "No fim do Mural revelado, a fala da Nina e seis frases sobre as três mensagens encaminhadas — " +
+        "“é falsa E neutra”, “é verdadeira OU emocional”, “NÃO é emocional” —, cada uma com Sim e Não.",
+      prova:
+        "Os crachás dão os valores simples, e a frase composta quem resolve é a criança: é a operação " +
+        "com E, OU e NÃO que a EF05CO03 mede. Três frases certas e três erradas — responder tudo igual " +
+        "acerta só a metade —, e a resposta esperada nunca desceu ao navegador.",
+      detalhe: cartao.frases.map((f) => f.operador).join(" · "),
+    });
+
+    /* As 3 encaminhadas, com o texto do grupo (de onde a frase tira a
+       citação) e os dois eixos que a revelação trouxe. */
+    const mensagensDoCartao = revelacao.mensagens.map((g) => ({
+      ...g,
+      ...s0.pacote.mensagens.find((m) => m.id === g.id),
+    }));
+    const enviarRespostas = q.locator(".rodape__acao").getByRole("button", { name: "Enviar respostas", exact: true });
+    let acertosEsperados = 0;
+    for (const [i, frase] of cartao.frases.entries()) {
+      const certa = respostaCertaDaFrase(frase, mensagensDoCartao);
+      if (i === 5) {
+        r.exigir(await enviarRespostas.isDisabled(), "com 5 das 6 respondidas, “Enviar respostas” ainda não acende");
+      }
+      /* O `<input>` do Radio do Unoochat é recortado (1px, clip): o clique vai
+         no `<label>` que o embrulha, e o portão é o input MARCADO. */
+      const naTela = frasesNaTela.nth(i);
+      await naTela.locator(`label.unc-radio:has(input[value="${certa}"])`).click();
+      await naTela
+        .locator(`input[value="${certa}"]:checked`)
+        .waitFor({ state: "attached", timeout: 5_000 })
+        .catch(() => {
+          throw new Error(`marcar “${certa}” na frase ${frase.id} não moveu o estado da tela`);
+        });
+      acertosEsperados += 1;
+    }
+    await q
+      .locator(".rodape__acao button:not([disabled])", { hasText: "Enviar respostas" })
+      .waitFor({ timeout: 10_000 })
+      .catch(() => {
+        throw new Error("com as 6 frases respondidas, “Enviar respostas” não acendeu");
+      });
+    /* A resposta do iframe é cross-origin: quem a vê com certeza é o CONTEXTO. */
+    const reciboDoCartao = p.context().waitForEvent("response", {
+      predicate: (x) => /\/quem-mandou-isso\/operacoes$/.test(new URL(x.url()).pathname) && x.request().method() === "POST",
+      timeout: 30_000,
+    });
+    await enviarRespostas.click();
+    await esperarOuFalharPorHttp(p, q.getByText("Respostas enviadas.", { exact: true }), /quem-mandou-isso\/operacoes/, {
+      timeout: 30_000,
+      oQue: "enviar o cartão de frases",
+    });
+    const estadoDoCartao = await (await reciboDoCartao).json().catch(() => null);
+    r.exigir(
+      estadoDoCartao?.cartao?.enviado === true &&
+        !/"(esperado|acertos|nivel|status)"/.test(JSON.stringify(estadoDoCartao?.cartao ?? {})),
+      "o recibo é o estado com `cartao.enviado` — sem resposta esperada, acerto nem nível",
+    );
+    r.exigir(
+      (await frasesNaTela.locator("input:disabled").count()) === 12 && (await enviarRespostas.count()) === 0,
+      "enviado, o cartão trava (os 12 botões desabilitados) e o “Enviar respostas” some",
+    );
+    await q.getByText("Respostas enviadas.", { exact: true }).scrollIntoViewIfNeeded();
+    await r.registrar(p, "cartao-enviado", {
+      titulo: "Respostas enviadas",
+      mostra: "As seis frases respondidas e travadas, e a linha “Respostas enviadas.” no fim do Mural.",
+      prova:
+        "Nada diz se a criança acertou: o servidor recalcula as frases da sessão, confere e marca a " +
+        "EF05CO03 na mesma transação do envio. Quem lê o nível é a professora.",
+    });
+
+    /* A marca chega ao painel de habilidades da professora no envio, antes da
+       síntese — o cartão segue o caminho da criança, não o botão dela. */
+    const caminhoDaEvidencia = `/evidencias/turma/${turmaId}/missao/${EXP_ID}/atividade/${atividade.pacoteId}`;
+    const doEstudante = (c) => c?.estudantes?.find((e) => e.nome === estudante.nome);
+    const naRodada = (c) => doEstudante(c)?.porRodada?.[String(atividade.rodada)] ?? {};
+    const depoisDoCartao = await esperarNaApi(prof, caminhoDaEvidencia, (c) => Boolean(naRodada(c).EF05CO03), {
+      oQue: "a marca da EF05CO03 depois do cartão",
+    });
+    const celulaCO03 = naRodada(depoisDoCartao).EF05CO03;
+    r.exigir(
+      celulaCO03.status === nivelEsperadoCO03(acertosEsperados),
+      `EF05CO03 pelo cartão: o painel registra “${celulaCO03.status}”, e a régua dá “${nivelEsperadoCO03(acertosEsperados)}” para ${acertosEsperados} de 6`,
+    );
+    r.exigir(celulaCO03.rotulo === "Cartão de frases", `e diz de onde veio o nível: “${celulaCO03.rotulo ?? "sem rótulo"}”`);
+    r.exigir(!naRodada(depoisDoCartao).EF05CO04, "a EF05CO04 ainda não tem marca: a regra do tio não foi enviada");
+    const painelDoCartao = await esperarNaApi(prof, `${daTurma}/painel`, (c) => linhaDele(c)?.cartao != null, {
+      oQue: "o cartão na folha da turma",
+    });
+    r.exigir(
+      linhaDele(painelDoCartao).cartao.acertos === acertosEsperados && painelDoCartao.progresso.responderamCartao >= 1,
+      `a folha da professora conta ${linhaDele(painelDoCartao).cartao.acertos} de 6 certas, e o painel da aula, quem respondeu o cartão`,
+    );
+
     // ─── o Termômetro, na tela dela e no telão ─────────────────────────────
     painel = await esperarNaApi(prof, `${daTurma}/painel`, (c) => c?.termometro !== null, { oQue: "o Termômetro" });
     const nomes = new Set(
@@ -976,145 +1191,226 @@ await suite(
         "depois sem mostrar botão nenhum — quem solta a turma é a professora.",
     });
 
-    // ═══ 3º BOTÃO: a reflexão — as perguntas da Nina (ADR-145) ═════════════
+    // ═══ 3º BOTÃO: a reflexão — a regra do tio, na casca (EF05CO04) ═══════
     await apertarBotaoDaAula("liberar_reflexao", "Liberar Reflexão", "Liberar a reflexão?", "reflexao");
-    await chegaSemRecarregar(q.locator(".unc-poll:not(.unc-poll--voted)").first(), "as perguntas da Nina");
-    const convite = s0.textos?.nina?.convite ?? "";
+    await chegaSemRecarregar(q.getByRole("heading", { name: "O desafio do tio", exact: true }), "a regra do tio");
+    const naRegra = await lerApi(p, "/quem-mandou-isso/sessao");
     r.exigir(
-      convite !== "" && !(await q.locator(".conversa").innerText()).includes(convite),
-      "o chat das perguntas não repete a fala da abertura, que mandava ao grupo e ao Mural",
+      naRegra.corpo?.passo === "regra" && naRegra.corpo?.cartao?.enviado === true,
+      `com o cartão enviado, a reflexão leva direto à regra (passo=${naRegra.corpo?.passo})`,
     );
     r.exigir(
-      (await q.locator(".escola").count()) === 0,
-      "a reflexão é no mensageiro: não há mais a regra Se/Então na casca da escola",
+      naRegra.corpo?.regra?.testes?.length === 0 && naRegra.corpo?.regra?.enviada === null && naRegra.corpo?.regra?.podeTestar === true,
+      "a regra começa sem teste e sem envio",
     );
-    await r.registrar(p, "reflexao-perguntas", {
-      titulo: "A reflexão: as perguntas da Nina",
-      mostra: "Liberada a reflexão, o chat da Nina abre direto na primeira pergunta, sem a fala do começo.",
-      prova:
-        "A regra Se/Então dissertativa saiu: a missão avalia por critérios fixos, e a etapa 6 são as duas " +
-        "perguntas de múltipla escolha. A fala da abertura não volta, porque ela pedia o que já foi feito.",
-    });
-
-    // ═══ AS PERGUNTAS DA NINA ═════════════════════════════════════════════
-    const idsDasPerguntas = (s0.textos?.perguntas ?? []).map((x) => x.perguntaId);
-    r.exigir(idsDasPerguntas.length === 2, `são duas perguntas da Nina (${idsDasPerguntas.join(", ")})`);
-
-    /* A pergunta que desce: sem o nível de nenhuma alternativa, e EMBARALHADA
-       no servidor a cada leitura — "a primeira é a certa" não pode virar pista.
-       Oito leituras: a chance de todas saírem na mesma ordem é (1/6)^7. */
-    const leituras = [];
-    for (let i = 0; i < 8; i += 1) leituras.push((await lerApi(p, `/evidencias/${EXP_ID}/perguntas/${idsDasPerguntas[0]}`)).corpo);
+    const opcoesDaRegra = naRegra.corpo?.opcoes ?? {};
     r.exigir(
-      leituras.every((l) => (l?.alternativas ?? []).length === 3 && l.alternativas.every((a) => Object.keys(a).sort().join() === "id,texto")),
-      "a pergunta desce com 3 alternativas, cada uma só com id e texto — o nível fica no servidor",
+      ["condicoes", "acoes", "previsoes"].every(
+        (k) => (opcoesDaRegra[k] ?? []).length > 0 && opcoesDaRegra[k].every((o) => Object.keys(o).sort().join() === "id,rotulo"),
+      ),
+      "as peças descem só com id e rótulo — o que cada uma faz com o áudio do tio fica no servidor",
     );
-    const ordens = new Set(leituras.map((l) => (l?.alternativas ?? []).map((a) => a.id).join(",")));
-    r.exigir(ordens.size > 1, `as alternativas chegam embaralhadas a cada leitura (${ordens.size} ordens em 8 leituras)`);
+    const rotuloDa = (lista, id) => {
+      const rotulo = (opcoesDaRegra[lista] ?? []).find((o) => o.id === id)?.rotulo;
+      if (!rotulo) throw new Error(`a peça "${id}" não está em opcoes.${lista} da sessão`);
+      return rotulo;
+    };
+    r.exigir(
+      rotuloDa("previsoes", "sem_conferir") === "Mandar esperar, sem dizer como conferir" &&
+        rotuloDa("previsoes", "checa") === "Mandar checar antes de encaminhar",
+      "as previsões dizem o que a regra FAZ com o áudio, nunca “certo” ou “errado”",
+    );
+    r.exigir(
+      (await q.locator(".unc-chatheader, .unc-messagebubble").count()) === 0,
+      "a regra é a CASCA da escola: nada do mensageiro na tela (a fronteira do disfarce cruza aqui, uma vez)",
+    );
+    const perguntaAntiga = await lerApi(p, `/evidencias/${EXP_ID}/perguntas/p1`);
+    r.exigir(
+      perguntaAntiga.status === 404,
+      `as perguntas P1/P2 saíram: GET /evidencias/${EXP_ID}/perguntas/p1 responde 404 (veio ${perguntaAntiga.status})`,
+    );
 
-    const alternativaDe = {};
-    for (const [indice, perguntaId] of idsDasPerguntas.entries()) {
-      const enquete = q.locator(".unc-poll:not(.unc-poll--voted)");
-      await enquete.first().waitFor({ timeout: 20_000 });
-      const opcao = enquete.first().locator(".unc-poll__option").first();
-      await opcao.click();
-      /* O Votar acende quando a escolha chegou ao estado da tela — só então o
-         rádio marcado diz qual alternativa (pelo id, nunca pela posição). */
-      const votarNaPergunta = enquete.first().locator(".unc-poll__vote:not([disabled])");
-      await votarNaPergunta.waitFor({ timeout: 10_000 });
-      alternativaDe[perguntaId] = await enquete.first().locator("input[type=radio]:checked").getAttribute("value");
-      /* A resposta do iframe é cross-origin: quem a vê com certeza é o CONTEXTO. */
-      const recibo = p
-        .context()
-        .waitForEvent("response", {
-          predicate: (x) => x.url().includes(`/perguntas/${perguntaId}/resposta`) && x.request().method() === "POST",
-          timeout: 30_000,
+    /**
+     * Uma peça da regra: o `Selection` do DS (combobox + listbox), pelo NOME do
+     * campo. A lista é a que o combobox controla (`aria-controls`), não "o
+     * listbox da tela": com dois abertos por um instante, o seletor genérico
+     * pegaria o errado. O desfecho é o campo mostrar a peça escolhida.
+     */
+    const escolherPeca = async (campo, rotulo) => {
+      const combo = q.getByRole("combobox", { name: campo });
+      await combo.click();
+      await q.locator(`[role="combobox"][aria-expanded="true"]`).first().waitFor({ timeout: 10_000 });
+      const idDaLista = await combo.getAttribute("aria-controls");
+      if (!idDaLista) throw new Error(`o campo ${campo} não abriu a lista de peças`);
+      await q.locator(`[id="${idDaLista}"]`).getByRole("option", { name: rotulo, exact: true }).click();
+      await combo
+        .filter({ hasText: rotulo })
+        .waitFor({ timeout: 5_000 })
+        .catch(async () => {
+          throw new Error(`escolher “${rotulo}” em ${campo} não mudou o campo (mostra “${normalizar(await combo.innerText())}”)`);
         });
-      await votarNaPergunta.click();
-      await esperarOuFalharPorHttp(p, q.locator(".unc-poll--voted").nth(indice), /evidencias\/exp05ef1b\/perguntas/, {
-        timeout: 30_000,
-        oQue: `responder a pergunta ${perguntaId}`,
-      });
-      const corpo = await (await recibo).json().catch(() => null);
-      r.exigir(
-        JSON.stringify(corpo) === JSON.stringify({ enviada: true }),
-        `o recibo da ${perguntaId} é só { enviada: true } — a criança não sabe, pela resposta, se acertou`,
-      );
-    }
-    r.exigir(
-      (await q.locator(".unc-poll__voted", { hasText: "Resposta enviada" }).count()) === 2,
-      "as duas enquetes mostram “Resposta enviada”, e nada mais",
-    );
-    const textoDasPerguntas = await q.locator(".conversa").innerText();
-    r.exigir(
-      !PALAVRAS_DE_ACERTO.test(textoDasPerguntas),
-      `nenhum nível, acerto ou nota na conversa da Nina (achei "${textoDasPerguntas.match(PALAVRAS_DE_ACERTO)?.[0] ?? ""}")`,
-    );
-    await r.registrar(p, "perguntas-da-nina", {
-      titulo: "Duas perguntas rápidas da Nina",
-      mostra: "De volta ao chat da Nina: as duas enquetes respondidas, cada uma com “Resposta enviada”, e a despedida dela.",
+    };
+    const testar = q.getByRole("button", { name: "Testar no áudio do tio", exact: true });
+    const cardDoTeste = (n) => q.locator(".escola__teste").filter({ hasText: `Teste ${n}` });
+
+    // ─── 1º teste: uma regra que só manda esperar, com a previsão certa ────
+    await escolherPeca(CAMPO_DA_REGRA.se, rotuloDa("condicoes", "urgente_alarmante"));
+    await escolherPeca(CAMPO_DA_REGRA.entao, rotuloDa("acoes", "esperar"));
+    r.exigir(await testar.isDisabled(), "sem a previsão, “Testar no áudio do tio” não acende: prever vem ANTES de ver");
+    await escolherPeca(CAMPO_DA_REGRA.previsao, rotuloDa("previsoes", "sem_conferir"));
+    r.exigir(!(await testar.isDisabled()), "com condição, ação e previsão, o teste acende");
+    await r.registrar(p, "regra-do-tio", {
+      titulo: "O desafio do tio",
+      mostra:
+        "Na casca da escola, a fala da Nina sobre o áudio assustado do tio e a regra montada com peças: " +
+        "“SE a mensagem for urgente e alarmante ENTÃO eu espero antes de encaminhar”, e a previsão " +
+        "“Mandar esperar, sem dizer como conferir”.",
       prova:
-        "São as perguntas de evidência do PO, com a MESMA enquete do Mural. O enunciado e as " +
-        "alternativas vêm da ficha pedagógica, embaralhados; o nível nunca desce, e quem o lê é a professora.",
+        "Prever é simular: a criança diz o que a regra vai fazer com o áudio ANTES de ver — é a " +
+        "simulação de algoritmo que a EF05CO04 pede. As peças têm critério fixo, e as erradas existem " +
+        "de propósito, para a criança poder errar. Sem texto livre de menor.",
+    });
+    await testar.click();
+    await esperarOuFalharPorHttp(p, cardDoTeste(1), /quem-mandou-isso\/regra\/teste/, {
+      timeout: 30_000,
+      oQue: "o primeiro teste da regra",
+    });
+    const textoDoTeste1 = normalizar(await cardDoTeste(1).innerText());
+    r.exigir(
+      textoDoTeste1.includes(RESULTADO_DO_TESTE.sem_conferir) &&
+        textoDoTeste1.includes(`Você previu: ${rotuloDa("previsoes", "sem_conferir")}`),
+      `o card “Teste 1” diz o que a regra fez — “${RESULTADO_DO_TESTE.sem_conferir}” — ao lado da previsão`,
+    );
+    r.exigir(
+      !PALAVRAS_DE_ACERTO.test(textoDoTeste1),
+      `o teste não diz certo nem errado (achei "${textoDoTeste1.match(PALAVRAS_DE_ACERTO)?.[0] ?? ""}")`,
+    );
+    r.exigir(
+      await testar.isDisabled(),
+      "depois do teste a previsão se apaga, e o teste seguinte pede outra: prever de novo é simular de novo",
+    );
+    await cardDoTeste(1).scrollIntoViewIfNeeded();
+    await r.registrar(p, "regra-teste-1", {
+      titulo: "Teste 1: pegou o áudio, mas não diz como conferir",
+      mostra: "O card “Teste 1” com a regra em palavras, a previsão da criança e o resultado: “Sua regra pegou o áudio, mas não diz como conferir.”",
+      prova:
+        "O resultado diz o que a regra FEZ, num card neutro, sem cor de acerto. Quem simula é o " +
+        "servidor: o tipo de cada peça e quais condições pegam o áudio nunca desceram.",
     });
 
-    await esperarOuFalharPorHttp(p, q.getByRole("heading", { name: "Missão Concluída" }), /quem-mandou-isso\/concluir/, {
+    // ─── 2º teste: a regra que checa antes de encaminhar ───────────────────
+    await escolherPeca(CAMPO_DA_REGRA.entao, rotuloDa("acoes", "comparar_fonte"));
+    await escolherPeca(CAMPO_DA_REGRA.depois, rotuloDa("acoes", "encaminhar_se_confirmar"));
+    await escolherPeca(CAMPO_DA_REGRA.previsao, rotuloDa("previsoes", "checa"));
+    await testar.click();
+    await esperarOuFalharPorHttp(p, cardDoTeste(2), /quem-mandou-isso\/regra\/teste/, {
       timeout: 30_000,
-      oQue: "concluir a missão",
+      oQue: "o segundo teste da regra",
     });
+    const textoDoTeste2 = normalizar(await cardDoTeste(2).innerText());
+    r.exigir(
+      textoDoTeste2.includes(RESULTADO_DO_TESTE.checa),
+      `o card “Teste 2” diz “${RESULTADO_DO_TESTE.checa}”`,
+    );
+    const testada = await lerApi(p, "/quem-mandou-isso/sessao");
+    const testes = testada.corpo?.regra?.testes ?? [];
+    r.exigir(
+      testes.length === 2 &&
+        testes[0].situacao === "sem_conferir" &&
+        testes[0].previsao === "sem_conferir" &&
+        testes[1].situacao === "checa" &&
+        JSON.stringify(testes[1].acoes) === JSON.stringify(["comparar_fonte", "encaminhar_se_confirmar"]),
+      `o servidor guarda os dois testes, em ordem (${testes.map((t) => `${t.previsao}→${t.situacao}`).join(", ")})`,
+    );
+    r.exigir(
+      !/"(tipo|pegaOAudio|checagem|repasse)"/.test(JSON.stringify(testada.corpo?.regra ?? {})),
+      "e o estado não traz o tipo das ações nem quais condições pegam o áudio",
+    );
+    const regraEnviadaEmPalavras = testes[1]?.emPalavras ?? "";
+    await cardDoTeste(2).scrollIntoViewIfNeeded();
+    await r.registrar(p, "regra-teste-2", {
+      titulo: "Teste 2: corrigida, a regra manda checar",
+      mostra:
+        "A regra corrigida — “ENTÃO eu comparo com uma fonte confiável E DEPOIS encaminho só se a notícia se " +
+        "confirmar” —, a previsão “Mandar checar antes de encaminhar” e o card “Teste 2”.",
+      prova:
+        "Testar e corrigir é aprendizado, mas não leva ao “atingiu” sozinho: a correção veio DEPOIS do " +
+        "retorno do teste. A régua lê a primeira regra e a primeira previsão.",
+    });
+
+    // ─── enviar a regra fecha a missão ─────────────────────────────────────
+    await q.getByRole("button", { name: "Enviar minha regra", exact: true }).click();
+    await esperarOuFalharPorHttp(
+      p,
+      q.getByRole("heading", { name: "Missão Concluída" }),
+      /quem-mandou-isso\/(regra|concluir)$/,
+      { timeout: 30_000, oQue: "enviar a regra e concluir a missão" },
+    );
+    const cardDaRegra = q.locator(".escola__regra");
+    r.exigir(
+      normalizar(await cardDaRegra.innerText()).includes("Sua regra") &&
+        normalizar(await cardDaRegra.innerText()).includes(normalizar(regraEnviadaEmPalavras)),
+      `“Missão Concluída” mostra o card “Sua regra” com a regra enviada (“${regraEnviadaEmPalavras}”)`,
+    );
     r.exigir(!PALAVRAS_DE_ACERTO.test(await q.locator(".escola").innerText()), "e o fechamento não tem nível, acerto nem nota");
     const concluida = await lerApi(p, "/quem-mandou-isso/sessao");
     r.exigir(
       concluida.corpo?.passo === "concluida" && concluida.corpo?.concluido === true,
-      `a missão fecha no servidor (passo=${concluida.corpo?.passo})`,
+      `enviar a regra fecha a missão no servidor, sem outro toque (passo=${concluida.corpo?.passo})`,
     );
     await r.registrar(p, "missao-concluida", {
       titulo: "Missão Concluída",
-      mostra: "A casca da escola com “Missão Concluída”.",
+      mostra: "A casca da escola com “Missão Concluída”, o card “Sua regra” e a despedida da Nina.",
       prova:
-        "A fronteira cruza uma vez só, no fim: as perguntas são a Nina falando (dentro da ficção), e o " +
-        "fechamento é a escola.",
+        "A fronteira cruza uma vez só, no fim: o desafio do tio é sobre o grupo da FAMÍLIA, e por isso é " +
+        "a escola que fala. Enviar a regra conclui a missão sozinho — o POST /concluir sai depois do envio.",
     });
     /* Sai do aparelho: o iframe continua falando com a api enquanto a página estiver nele. */
     await p.goto(`${HUB}/estudante`, { waitUntil: "domcontentloaded" });
 
     // ═══ PROFESSORA: a folha e as habilidades da BNCC ═════════════════════
-    const material = await lerApi(prof, "/quem-mandou-isso/professor/material");
-    const nivelDaAlternativa = (perguntaId) =>
-      (material.corpo?.perguntasDeEvidencia ?? [])
-        .find((x) => x.perguntaId === perguntaId)
-        ?.alternativas.find((a) => a.id === alternativaDe[perguntaId])?.status ?? null;
-    const habilidadeDa = (perguntaId) =>
-      (material.corpo?.perguntasDeEvidencia ?? []).find((x) => x.perguntaId === perguntaId)?.habilidade ?? null;
     const esperado = {
       EF05CO08: nivelEsperadoCO08(escolhidas.map((id) => gabarito.get(id))),
-      [habilidadeDa(idsDasPerguntas[0])]: nivelDaAlternativa(idsDasPerguntas[0]),
-      [habilidadeDa(idsDasPerguntas[1])]: nivelDaAlternativa(idsDasPerguntas[1]),
+      EF05CO03: nivelEsperadoCO03(acertosEsperados),
+      EF05CO04: nivelEsperadoCO04(testes, testes[1]?.situacao),
     };
     r.exigir(
-      Object.keys(esperado).sort().join(",") === "EF05CO03,EF05CO04,EF05CO08",
-      `a P1 mede a EF05CO03 e a P2 a EF05CO04 (${JSON.stringify(esperado)})`,
+      esperado.EF05CO03 === "atingiu" && esperado.EF05CO04 === "em_processo",
+      `o roteiro produz o cartão inteiro certo (atingiu) e a regra corrigida depois do teste (em processo): ${JSON.stringify(esperado)}`,
     );
+    const ROTULO_DO_MARCADOR = { EF05CO08: "Seleção do Mural", EF05CO03: "Cartão de frases", EF05CO04: "Regra do tio" };
 
     /* Toda rodada mede as três de novo (ADR-145), também com o MESMO pacote:
        numa corrida que zerou a turma, a rodada nova tem as três marcas. */
-    const caminhoDaEvidencia = `/evidencias/turma/${turmaId}/missao/${EXP_ID}/atividade/${atividade.pacoteId}`;
-    const doEstudante = (c) => c?.estudantes?.find((e) => e.nome === estudante.nome);
     const medidasAgora = Object.keys(esperado);
     const habilidades = await esperarNaApi(
       prof,
       caminhoDaEvidencia,
-      (c) => Object.keys(doEstudante(c)?.porRodada?.[String(atividade.rodada)] ?? {}).length >= medidasAgora.length,
+      (c) => medidasAgora.every((codigo) => Boolean(naRodada(c)[codigo])),
       { oQue: `as ${medidasAgora.length} marcas do estudante na evidência` },
     );
     r.exigir(habilidades.temFicha === true, "a exp05ef1b tem ficha pedagógica: o bloco de habilidades acende");
-    const marcas = doEstudante(habilidades).porRodada[String(atividade.rodada)];
+    const marcas = naRodada(habilidades);
     for (const codigo of medidasAgora) {
       r.exigir(
         marcas[codigo]?.status === esperado[codigo],
         `${codigo}: o painel registra “${marcas[codigo]?.status ?? "nada"}”, e a régua dá “${esperado[codigo]}”`,
       );
+      r.exigir(
+        marcas[codigo]?.rotulo === ROTULO_DO_MARCADOR[codigo],
+        `${codigo}: o nível diz de onde veio — “${marcas[codigo]?.rotulo ?? "sem rótulo"}” (ADR-166)`,
+      );
     }
+
+    const painelFinal = await esperarNaApi(prof, `${daTurma}/painel`, (c) => linhaDele(c)?.regra != null, {
+      oQue: "a regra do tio na folha da turma",
+    });
+    r.exigir(
+      linhaDele(painelFinal).regra.testes === 2 &&
+        normalizar(linhaDele(painelFinal).regra.emPalavras) === normalizar(regraEnviadaEmPalavras) &&
+        painelFinal.progresso.enviaramRegra >= 1,
+      `a folha traz a regra enviada em palavras e os ${linhaDele(painelFinal).regra.testes} testes, e o painel da aula conta quem enviou`,
+    );
 
     await prof.reload({ waitUntil: "domcontentloaded" });
     const blocoDeHabilidades = prof.locator("section", { has: prof.getByText("Habilidades da BNCC", { exact: true }) }).last();
@@ -1128,17 +1424,19 @@ await suite(
     const textoDosCriterios = await criterios.innerText();
     r.exigir(
       textoDosCriterios.includes("Encaminha ao Mural da Turma as 3 mensagens verdadeiras.") &&
+        textoDosCriterios.includes("No cartão de frases, acerta 5 ou 6 das 6 frases") &&
+        textoDosCriterios.includes("Envia uma regra que encaminha a mensagem antes de checar.") &&
         ["Atingiu:", "Em processo:", "Não atingiu:"].every((n) => textoDosCriterios.split(n).length - 1 >= 3),
-      "no fim do bloco, cada uma das três habilidades tem o critério de Atingiu, Em processo e Não atingiu",
+      "no fim do bloco, cada uma das três habilidades tem o critério de Atingiu, Em processo e Não atingiu — o cartão e a regra, não mais as perguntas",
     );
     await blocoDeHabilidades.scrollIntoViewIfNeeded();
     await r.registrar(prof, "habilidades-da-bncc", {
       titulo: "Habilidades da BNCC, por estudante",
-      mostra: `A ${atividade.rodada}ª rodada da atividade: a EF05CO08 pela seleção do Mural, a EF05CO03 pela P1 e a EF05CO04 pela P2.`,
+      mostra: `A ${atividade.rodada}ª rodada da atividade: a EF05CO08 pela seleção do Mural, a EF05CO03 pelo cartão de frases e a EF05CO04 pela regra do tio.`,
       prova:
-        "O nível é do servidor e é conferido aqui contra a régua v2: a EF05CO08 vem das 3 escolhidas " +
-        "(só três verdadeiras atingem, em toda rodada), e a CO03/CO04, da alternativa marcada. " +
-        "O critério de cada nível está escrito no fim do bloco, para a professora consultar e ajustar.",
+        "O nível é do servidor e é conferido aqui contra a régua: a EF05CO08 vem das 3 escolhidas, a " +
+        "EF05CO03 dos acertos no cartão (6 de 6, atingiu) e a EF05CO04 da regra — que só checou depois " +
+        "do retorno do teste, e por isso fica em processo. Tudo pelo que a criança FEZ (o Canal A).",
       detalhe: Object.entries(esperado)
         .map(([c, n]) => `${c}=${n}`)
         .join(" · "),
@@ -1147,20 +1445,29 @@ await suite(
     const folhaDaTurma = prof.locator("[data-folha]");
     const linhaNaFolha = folhaDaTurma.locator("tr", { hasText: estudante.nome });
     await linhaNaFolha.first().waitFor({ timeout: 20_000 });
-    const cabecalhos = await folhaDaTurma.locator("thead th").allInnerTexts();
+    const cabecalhos = (await folhaDaTurma.locator("thead th").allInnerTexts()).map(normalizar);
     r.exigir(
-      !cabecalhos.some((c) => /Se\/Então|regra/i.test(c)),
-      `a folha não tem mais a coluna da regra Se/Então (${cabecalhos.join(" · ")})`,
+      cabecalhos.includes("Cartão de frases") && cabecalhos.includes("Regra do tio") && !cabecalhos.some((c) => /Se\/Então/i.test(c)),
+      `a folha tem as colunas “Cartão de frases” e “Regra do tio”, e não a do Se/Então (${cabecalhos.join(" · ")})`,
     );
     const colunaProibida = cabecalhos.find((c) => /pontos|nota|acerto|ranking|nível/i.test(c));
     r.exigir(!colunaProibida, `a folha não tem coluna de acerto, nota nem nível (achei "${colunaProibida ?? ""}")`);
+    const textoDaLinha = normalizar(await linhaNaFolha.first().innerText());
+    r.exigir(
+      textoDaLinha.includes(`${acertosEsperados} de 6 certas`) &&
+        textoDaLinha.includes(normalizar(regraEnviadaEmPalavras)) &&
+        textoDaLinha.includes("2 testes"),
+      `a linha da criança traz “${acertosEsperados} de 6 certas”, a regra em palavras e “2 testes”`,
+    );
     await linhaNaFolha.first().scrollIntoViewIfNeeded();
     await r.registrar(prof, "folha-da-turma", {
       titulo: "O diário de bordo da turma",
-      mostra: "Onde cada um está, as 3 mensagens encaminhadas com o quadrante e o motivo declarado.",
+      mostra:
+        "Onde cada um está, as 3 mensagens encaminhadas com o quadrante, o motivo declarado, os acertos do " +
+        "cartão por operador e a regra do tio em palavras, com quantos testes ela levou.",
       prova:
-        "É a tela dela, não a do projetor: tem nome. Não tem coluna de acerto — o nível por habilidade " +
-        "mora no bloco da BNCC, onde ela também o ajusta.",
+        "É a tela dela, não a do projetor: tem nome. A regra não é texto livre de menor — o servidor a " +
+        "escreve a partir das peças. O nível por habilidade mora no bloco da BNCC, onde ela também o ajusta.",
     });
 
     // ═══ PROFESSORA: o podcast de recapitulação ══════════════════════════

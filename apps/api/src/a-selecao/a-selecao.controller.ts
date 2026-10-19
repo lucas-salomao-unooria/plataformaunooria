@@ -9,8 +9,10 @@ import {
   DecisaoSchema,
   EstadoSchema,
   GatePublicoSchema,
+  MarcacaoSchema,
   MuralSchema,
   PedirPassoSchema,
+  PorqueDaMarcacaoSchema,
   ReflexaoSchema,
   SessaoSchema,
 } from "./contrato-de-rotas";
@@ -123,7 +125,7 @@ export class ASelecaoController {
       "`selecao`: exatamente 3 ids diferentes, de `post_a_1` a `post_c_4`. `legenda`: 10 a 140 caracteres contados em code points, depois de juntar espaços e quebras de linha. (Os `.refine()` somem do OpenAPI; daí esta nota.)",
       "Segunda publicação — inclusive duas simultâneas — responde **409** `latch-ja-confirmado`. Id fora da cobertura da turma responde **400** `selecao-invalida`.",
       "Com o Mural já aberto, quem publica recebe o par do computador dele, ou o colega virtual mais distante (Tomás ou Malu).",
-      "A graduação por IA tem teto de ~6 s. Sem saldo, fora do tempo ou com saída inválida, nada é marcado: fica \"Não avaliado\", e o professor decide.",
+      "A leitura da legenda pela IA roda DEPOIS da resposta (a criança não espera): até 3 tentativas de 60 s, na quota de AVALIAÇÃO da escola (ADR-169). Falhando, a regra de palavras grava só uma sugestão, sem marca, e o professor confirma.",
     ],
   })
   decisao(@Body() corpo: unknown, @Req() req: Autenticado) {
@@ -148,12 +150,50 @@ export class ASelecaoController {
     return this.missao.mural(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth));
   }
 
+  @Post("marcacao")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "A marcação do post do colega (EF07CO08) — só na etapa `marcacao`.",
+    descricao:
+      "A pergunta da tela: \"Tem algo na publicação do colega que a sua deixou de fora e muda a história?\". O corpo é `{ postId }` (um dos três posts do PAR) ou `{ nenhum: true }` (\"Nada que mude a história\"). A última chamada vale: dá para trocar até o professor revelar as fichas. O nível congela na abertura das fichas e **o estudante não o vê** (ADR-170).",
+    corpo: MarcacaoSchema,
+    resposta: EstadoSchema,
+    notas: [
+      "Fora da etapa `marcacao` responde **409** `marcacao-fechada`; sem publicação, **409** `stories-nao-publicados`.",
+      "Post que não é do par responde **422** `marcacao-fora-do-par`.",
+    ],
+  })
+  marcacao(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    const marcacao = valida(MarcacaoSchema, corpo);
+    return this.missao.marcar(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), marcacao);
+  }
+
+  @Post("marcacao/porque")
+  @HttpCode(200)
+  @Contrato({
+    resumo: 'O "por quê?" opcional da marcação — texto livre, fora do nível.',
+    descricao:
+      "Uma frase de 1 a 140 caracteres (code points), depois de marcar e enquanto a marcação está aberta. Passa pelo mesmo sanitizador da legenda. É texto escrito por menor de idade: não vai a log nem à telemetria, e só o professor que leciona a turma o lê (recorte da ADR-108).",
+    corpo: PorqueDaMarcacaoSchema,
+    resposta: EstadoSchema,
+    notas: [
+      "Antes de marcar responde **409** `marcacao-pendente`; fora da etapa, **409** `marcacao-fechada`.",
+      "Link, telefone, e-mail, `@` de fora da ficção e palavrão respondem **422** com o código da legenda.",
+    ],
+  })
+  porque(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    const { texto } = valida(PorqueDaMarcacaoSchema, corpo);
+    return this.missao.explicarMarcacao(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), texto);
+  }
+
   @Post("reflexao")
   @HttpCode(200)
   @Contrato({
-    resumo: "A reflexão individual da Etapa 6 (latch) — leva às enquetes.",
+    resumo: "A reflexão individual da Etapa 6 (latch) — encerra a missão.",
     descricao:
-      "Texto livre de 100 a 500 caracteres, contados em code points. É caixa escrita por menor de idade: não vai a log nem à telemetria, e só o professor que leciona a turma o lê no painel (LGPD art. 14; recorte da ADR-108).\n\nDepois dela vêm as duas enquetes da DM da Amara, pelas rotas de `/evidencias/exp07ef1b/perguntas`.",
+      "Texto livre de 100 a 500 caracteres, contados em code points. É caixa escrita por menor de idade: não vai a log nem à telemetria, e só o professor que leciona a turma o lê no painel (LGPD art. 14; recorte da ADR-108).\n\nEla ENCERRA a missão: desde a ADR-170 não há mais enquetes depois dela (o Canal B saiu), e a sessão vai a `fim` com `concluidaEm` no mesmo update.",
     corpo: ReflexaoSchema,
     resposta: EstadoSchema,
     notas: [
@@ -172,7 +212,7 @@ export class ASelecaoController {
   @Contrato({
     resumo: '"Missão concluída!" — idempotente.',
     descricao:
-      "Leva a sessão a `fim` e carimba `concluidaEm`, no mesmo update. As enquetes não são exigidas (a enquete que falha pula para o fim); a reflexão, sim.",
+      "Leva a sessão a `fim` e carimba `concluidaEm`, no mesmo update. Desde a ADR-170 a reflexão já encerra a missão: esta rota fica para a sessão de antes, parada no passo `enquetes` (o Canal B, que saiu), e para a tela antiga.",
     resposta: EstadoSchema,
     notas: ["Antes da reflexão responde **409** `reflexao-pendente`. Concluir de novo devolve o mesmo estado."],
   })

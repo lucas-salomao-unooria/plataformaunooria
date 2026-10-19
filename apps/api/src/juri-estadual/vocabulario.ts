@@ -203,6 +203,8 @@ export type Disciplina = (typeof DISCIPLINAS)[number];
  * salvar não pesa, saturação por formatos, teto de 8 min, revisão de dois
  * botões, sem justificativa nem rodada de desvio. 3.0.0 (2026-10-14): quarenta
  * projetos, só o formato `apresentacao`, nenhum post repetido; a galeria conta
- * por área e mostra o contrafactual sem curtidas.
+ * por área e mostra o contrafactual sem curtidas. 4.0.0 (2026-10-18, ADR-174):
+ * o Canal A puro — a separação depois do voto (EF06CO01) e a regra SE … ENTÃO
+ * no lugar da cadeia (EF06CO03); sem enquetes, e a galeria não marca nada.
  */
-export const VERSAO_DO_INSTRUMENTO = "3.0.0";
+export const VERSAO_DO_INSTRUMENTO = "4.0.0";

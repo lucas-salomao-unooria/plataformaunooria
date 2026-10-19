@@ -41,6 +41,7 @@ import {
   ZerarTurmaSchema,
 } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
+import { ConferenciaDoEnquadramentoService } from "./conferencia.service";
 import { MidiaDaExp07ef1bService } from "./midia.service";
 import { PreparoDaExp07ef1bService } from "./preparo.service";
 
@@ -114,6 +115,7 @@ export class ASelecaoTurmasController {
     private readonly missao: ASelecaoService,
     private readonly preparo: PreparoDaExp07ef1bService,
     private readonly midia: MidiaDaExp07ef1bService,
+    private readonly conferencia: ConferenciaDoEnquadramentoService,
   ) {}
 
   @Get()
@@ -385,22 +387,32 @@ export class ASelecaoTurmasController {
       "O lote é recusado com **400** `lote-invalido` e a LISTA de problemas em `erros`, em frases para a professora: 12 posts; ids de `post_a_1` a `post_c_4`, cada um uma vez; bloco `a` = `@folhaoficial_`/institucional, `b` = `@voz_coletiva`/comunitário, `c` = `@metrica_urbana`/estatístico (4:4:4); legenda de 20 a 45 palavras; nenhum termo que antecipe a revelação na legenda, na descrição da imagem ou nos comentários. (`.superRefine()` some do OpenAPI; daí esta nota.)",
       "As imagens de post com a MESMA descrição de uma cobertura recente da turma são herdadas — o arquivo no bucket é o hash da descrição.",
       "`podcast` é obrigatório: as três falas do Bloco 2 que a professora revisou (no tema curado, as do sheet). Fora de 12 a 60 palavras, acima de 400 bytes, ou com link, e-mail ou @, o 400 `lote-invalido` diz qual fala.",
+      "`editados` (ADR-170): os posts que a professora reescreveu passam por UMA conferência de IA, na quota do professor, que diz se cada legenda ainda mostra o lado do veículo dela. Divergiu → **422** `enquadramento-divergente` com `posts` (os ids), e nada é gravado. A IA falhou → a atividade é criada mesmo assim, com `conferencia: \"nao-conferida\"`.",
     ],
   })
-  homologar(
+  async homologar(
     @Param("turmaId") turmaId: string,
     @Query("escolaId") escolaIdPedida: string | undefined,
     @Body() corpo: unknown,
     @Req() req: Autenticado,
   ) {
-    const lote = valida(HomologacaoSchema, corpo, "lote-invalido");
-    return this.missao.homologar(
-      escolaAlvo(req.auth, escolaIdPedida),
-      turmaOu400(turmaId),
-      professorDoToken(req.auth),
-      req.auth.usuarioId,
-      lote,
-    );
+    const { editados, ...lote } = valida(HomologacaoSchema, corpo, "lote-invalido");
+    const escolaId = escolaAlvo(req.auth, escolaIdPedida);
+    const turma = turmaOu400(turmaId);
+
+    /* A conferência do enquadramento (ADR-170), ANTES de gravar e só dos posts
+       editados. A guarda de turma vem antes, para não pagar token pelo erro. */
+    let conferencia: "conferida" | "sem-edicao" | "nao-conferida" = "sem-edicao";
+    const aConferir = lote.posts.filter((p) => editados?.includes(p.id));
+    if (aConferir.length > 0) {
+      await this.missao.exigirTurmaVisivel(escolaId, turma, professorDoToken(req.auth));
+      const r = await this.conferencia.conferir(escolaId, req.auth.usuarioId, req.auth.perfil, aConferir);
+      if (r.ok && r.divergentes.length > 0) throw erroDeJogo("enquadramento-divergente", { posts: r.divergentes });
+      conferencia = r.ok ? "conferida" : "nao-conferida";
+    }
+
+    const homologada = await this.missao.homologar(escolaId, turma, professorDoToken(req.auth), req.auth.usuarioId, lote);
+    return { ...homologada, conferencia };
   }
 
   @Post(":turmaId/gerar-midia")

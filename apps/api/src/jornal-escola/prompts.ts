@@ -1,7 +1,7 @@
 import type { AiJsonSchema } from "../ai/provider";
 import { TERMOS_PROIBIDOS_NA_TELA, REGUAS_DE_PALAVRAS } from "./invariantes";
-import type { VagaDoMolde } from "./regras/molde";
-import { IDS_DE_NOTICIA, LAYOUTS, MEIOS, TIPOS_DE_PISTA } from "./vocabulario";
+import type { VagaDaSimulacao, VagaDoMolde } from "./regras/molde";
+import { IDS_DE_NOTICIA, IDS_DE_SIMULACAO, LAYOUTS, MEIOS, TIPOS_DE_PISTA } from "./vocabulario";
 
 /**
  * Os contratos da exp04ef1b com a IA — e todos moram AQUI, no servidor.
@@ -49,7 +49,9 @@ Regras obrigatórias:
 - "publicavel" e "pilar_em_falta" repetem o papel: "publicavel" → true e "nenhum"; "antiga" → false e "data"; "sem-fonte" → false e "fonte"; "sem-autoria" → false e "autoria".
 - Nenhuma notícia bonita pode ser sinal de mentira, nem notícia sem graça sinal de verdade; nenhum meio carrega a resposta sozinho.
 - Todo conteúdo é simulado: nenhuma pessoa real, nenhuma escola real, nenhuma marca comercial, nenhum crime ou catástrofe.
-- NUNCA use, em nenhum texto que a criança lê, as palavras: ${TERMOS_PROIBIDOS_NA_TELA.map((t) => `"${t}"`).join(", ")}. Use "estudante" no lugar de "aluno".`;
+- NUNCA use, em nenhum texto que a criança lê, as palavras: ${TERMOS_PROIBIDOS_NA_TELA.map((t) => `"${t}"`).join(", ")}. Use "estudante" no lugar de "aluno".
+
+Além das 8, escreva 2 matérias curtas para a SIMULAÇÃO, no campo "simulacao": a criança aplica nelas a regra de verificação que montou. Elas são inéditas (não repetem nenhuma das 8), sobre o mesmo tema, SEM imagem, sem falante e sem leitor. Uma é "publicavel" e a outra tem exatamente UM furo, conforme o papel pedido. Cada pista tem resposta SEM AMBIGUIDADE para uma criança de 9 anos: a data é claramente de agora ou claramente de anos atrás; a fonte é claramente um canal conhecido ou claramente "ninguém sabe de onde veio"; a autoria tem um nome claro ou claramente não tem nenhum. "manchete", "resumo", as pistas e a "explicacao" seguem as mesmas réguas de palavras das 8.`;
 
 function linhaDaVaga(v: VagaDoMolde): string {
   return `- id "${v.id}" · meio "${v.meio}" · papel "${v.papel}" · ${v.comImagem ? "com imagem" : "sem imagem"} · ${
@@ -67,6 +69,7 @@ function linhaDaVaga(v: VagaDoMolde): string {
 export function promptDoPreparo(
   p: { disciplina: string; tema: string; topicos?: string },
   molde: readonly VagaDoMolde[],
+  moldeDaSimulacao: readonly VagaDaSimulacao[],
 ): string {
   return `Escreva o pacote da mesa editorial.
 
@@ -86,7 +89,10 @@ ${semDelimitadores(p.topicos?.trim() || "não informado")}
 TOPICOS>>>
 
 As 8 notícias, NESTA ORDEM, com estes ids, meios e papéis:
-${molde.map(linhaDaVaga).join("\n")}`;
+${molde.map(linhaDaVaga).join("\n")}
+
+As 2 matérias da simulação, NESTA ORDEM, com estes ids, meios e papéis (sem imagem, sem falante):
+${moldeDaSimulacao.map((v) => `- id "${v.id}" · meio "${v.meio}" · papel "${v.papel}"`).join("\n")}`;
 }
 
 /** Uma notícia no schema de saída — plana, com `""` no lugar de nulo. */
@@ -132,18 +138,53 @@ const SCHEMA_DA_NOTICIA: AiJsonSchema = {
   },
 };
 
+/** Uma matéria da simulação no schema de saída — a notícia sem imagem, falante nem leitor. */
+const SCHEMA_DA_MATERIA_DA_SIMULACAO: AiJsonSchema = {
+  type: "object",
+  required: [
+    "id",
+    "meio",
+    "veiculo",
+    "manchete",
+    "resumo",
+    "pista_fonte",
+    "pista_data",
+    "pista_autoria",
+    "publicavel",
+    "pilar_em_falta",
+    "explicacao",
+  ],
+  properties: {
+    id: { type: "string", enum: [...IDS_DE_SIMULACAO] },
+    meio: { type: "string", enum: [...MEIOS] },
+    veiculo: { type: "string", description: "O nome fictício do canal." },
+    manchete: { type: "string", description: `De ${R.manchete.min} a ${R.manchete.max} palavras.` },
+    resumo: { type: "string", description: `De ${R.resumo.min} a ${R.resumo.max} palavras.` },
+    pista_fonte: { type: "string", description: "De onde veio a matéria — sem ambiguidade." },
+    pista_data: { type: "string", description: "Quando foi publicada e quando o fato aconteceu — sem ambiguidade." },
+    pista_autoria: { type: "string", description: "Quem escreveu — sem ambiguidade." },
+    publicavel: { type: "boolean" },
+    pilar_em_falta: { type: "string", enum: [...TIPOS_DE_PISTA, "nenhum"] },
+    explicacao: { type: "string", description: "Para o professor: por que vai ou não vai para a capa." },
+  },
+};
+
 export const SCHEMA_DO_PREPARO: AiJsonSchema = {
   type: "object",
-  required: ["noticias"],
-  properties: { noticias: { type: "array", items: SCHEMA_DA_NOTICIA } },
+  required: ["noticias", "simulacao"],
+  properties: {
+    noticias: { type: "array", items: SCHEMA_DA_NOTICIA },
+    simulacao: { type: "array", items: SCHEMA_DA_MATERIA_DA_SIMULACAO },
+  },
 };
 
 /**
- * Teto de saída do preparo. Oito notícias ficam em torno de 3.000 tokens; o
- * teto existe porque JSON truncado não chega como `MAX_TOKENS` legível —
- * chega como `JSON.parse` falhando (ADR-74).
+ * Teto de saída do preparo. Oito notícias e as duas da simulação ficam em
+ * torno de 3.500 tokens; o teto existe porque JSON truncado não chega como
+ * `MAX_TOKENS` legível — chega como `JSON.parse` falhando (ADR-74) — e é
+ * folgado porque o Gemini 3 pensa antes de escrever (ADR-148).
  */
-export const MAX_TOKENS_DO_PREPARO = 6000;
+export const MAX_TOKENS_DO_PREPARO = 8000;
 
 /** Duas tentativas, não três: cada uma é um pacote inteiro, e o banco padrão está pronto. */
 export const TENTATIVAS_DO_PREPARO = 2;

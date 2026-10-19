@@ -51,7 +51,18 @@ export interface CriteriosDaHabilidade {
   observacao?: string;
 }
 
-export interface EvidenciaNaCelula {
+/**
+ * DE ONDE VEIO O NÍVEL (ADR-166): o rótulo da ação que o deu (só na evidência
+ * própria) e, quando as ações da habilidade divergem, o nível de cada uma. A
+ * missão que não declara rótulo na ficha não manda nada disso.
+ */
+export interface DeOndeVeio {
+  marcador?: string;
+  rotulo?: string;
+  acoes?: { rotulo: string; status: Nivel }[];
+}
+
+export interface EvidenciaNaCelula extends DeOndeVeio {
   status: StatusDaEvidencia;
   origem: Origem;
   situacao: Situacao;
@@ -66,6 +77,8 @@ export interface EstudanteDoPainel {
   porRodada: Record<string, Record<string, EvidenciaNaCelula>>;
   /** A MELHOR rodada por habilidade, só com o que vale. Ausente = "Não avaliado". */
   resultado: Record<string, Nivel>;
+  /** De onde veio cada nível do resultado — só as habilidades com rótulo na ficha. */
+  origemDoResultado?: Record<string, DeOndeVeio>;
 }
 
 /**
@@ -91,11 +104,24 @@ export interface PainelDeHabilidades {
   pendentes: Record<string, number>;
 }
 
+/** POR QUE o professor ajustou (ADR-170) — cópia de `MOTIVOS_DE_AJUSTE` da api. Vai só para o histórico. */
+export type MotivoDeAjuste = "presente_sem_participar" | "problema_tecnico" | "legenda_revisada" | "outro";
+
+/** As opções do "Motivo" na janela de ajuste; `""` = sem motivo (é opcional). */
+export const OPCOES_DE_MOTIVO: { value: MotivoDeAjuste | ""; label: string }[] = [
+  { value: "", label: "Sem motivo" },
+  { value: "legenda_revisada", label: "Revisei o trabalho do estudante" },
+  { value: "presente_sem_participar", label: "Estava presente e não quis participar" },
+  { value: "problema_tecnico", label: "Problema técnico" },
+  { value: "outro", label: "Outro" },
+];
+
 /** Um item do corpo do `PATCH …/ajustes`. */
 export interface AjusteDeEvidencia {
   estudanteId: string;
   habilidade: string;
   status: StatusDaEvidencia;
+  motivo?: MotivoDeAjuste;
 }
 
 /**
@@ -309,6 +335,10 @@ export interface LeituraDaCelula {
   marca?: string;
   /** Cópia da aula projetada que ainda não conta. */
   aRevisar?: boolean;
+  /** A ação que deu o nível ("Raio-x", "Reflexão — sugestão da IA"). */
+  deOndeVeio?: string;
+  /** Quando as ações divergem: "Raio-x: Em processo", uma por ação. */
+  acoes?: string[];
 }
 
 const NAO_AVALIADA: LeituraDaCelula = { rotulo: NAO_AVALIADO, variante: "outline", status: null };
@@ -318,13 +348,20 @@ const NAO_AVALIADA: LeituraDaCelula = { rotulo: NAO_AVALIADO, variante: "outline
  * linha é "Não avaliado" — NUNCA "Não atingiu".
  */
 export function celula(
-  estudante: Pick<EstudanteDoPainel, "porRodada" | "resultado">,
+  estudante: Pick<EstudanteDoPainel, "porRodada" | "resultado" | "origemDoResultado">,
   recorte: RecorteDoPainel,
   codigo: string,
 ): LeituraDaCelula {
   if (recorte === RESULTADO) {
     const nivel = estudante.resultado[codigo];
-    return nivel ? { rotulo: ROTULO_DO_STATUS[nivel], variante: VARIANTE_DO_STATUS[nivel], status: nivel } : NAO_AVALIADA;
+    return nivel
+      ? {
+          rotulo: ROTULO_DO_STATUS[nivel],
+          variante: VARIANTE_DO_STATUS[nivel],
+          status: nivel,
+          ...leituraDeOndeVeio(estudante.origemDoResultado?.[codigo]),
+        }
+      : NAO_AVALIADA;
   }
   const evidencia = estudante.porRodada[String(recorte)]?.[codigo];
   if (!evidencia) return NAO_AVALIADA;
@@ -337,6 +374,18 @@ export function celula(
     origem: evidencia.origem,
     ...(marca ? { marca } : {}),
     ...(aRevisar ? { aRevisar: true } : {}),
+    ...leituraDeOndeVeio(evidencia),
+  };
+}
+
+/** "De onde veio" em texto para a célula: o rótulo da ação, e as ações quando divergem. */
+function leituraDeOndeVeio(d: DeOndeVeio | undefined): Pick<LeituraDaCelula, "deOndeVeio" | "acoes"> {
+  if (!d) return {};
+  return {
+    ...(d.rotulo ? { deOndeVeio: d.rotulo } : {}),
+    ...(d.acoes && d.acoes.length > 0
+      ? { acoes: d.acoes.map((a) => `${a.rotulo}: ${ROTULO_DO_STATUS[a.status]}`) }
+      : {}),
   };
 }
 
@@ -347,7 +396,8 @@ export function varianteDoNivel(nivel: Nivel): VarianteDaCelula {
 
 /** O nome acessível da célula clicável: quem, o quê, e o que está lá hoje. */
 export function descricaoDaCelula(nome: string, codigo: string, leitura: LeituraDaCelula): string {
-  return `${nome}, ${codigo}: ${leitura.rotulo}${leitura.marca ? ` (${leitura.marca})` : ""}`;
+  const detalhes = [leitura.marca, leitura.deOndeVeio].filter(Boolean).join(", ");
+  return `${nome}, ${codigo}: ${leitura.rotulo}${detalhes ? ` (${detalhes})` : ""}`;
 }
 
 // ── a ordem das linhas ──────────────────────────────────────────────────
@@ -393,8 +443,9 @@ export function ajustesEmMassa(
   ids: readonly string[],
   habilidade: string,
   status: StatusDaEvidencia,
+  motivo?: MotivoDeAjuste,
 ): AjusteDeEvidencia[] {
-  return [...new Set(ids)].map((estudanteId) => ({ estudanteId, habilidade, status }));
+  return [...new Set(ids)].map((estudanteId) => ({ estudanteId, habilidade, status, ...(motivo ? { motivo } : {}) }));
 }
 
 /** O endereço do painel no BFF — o prefixo `evidencias` está na allowlist. */

@@ -406,7 +406,8 @@ protocolo neutro, e só ela fala com o Gemini Live, pela \cd{VozAoVivoPort}
 \arq{ai/\B gemini-live.\B client.ts} implementa. A instrução do sistema é a mesma
 base da Ajuda, com a apresentação do mascote, montada na API. Quem atende por
 padrão é a linha de \cd{ajuda\_configuracao}, que o \cd{admin} edita em
-\arq{recursos/\B configuracao-da-ajuda.\B controller.ts}; os minutos são os
+\arq{recursos/\B configuracao-da-ajuda.\B controller.ts}, e dela também saem as
+instruções de cada atendente editadas no painel (\adrr{ADR-165}); os minutos são os
 mesmos dos dois atendentes. O contrato está na
 Seção~\ref{sec:contrato-ajuda-mascote}.
 

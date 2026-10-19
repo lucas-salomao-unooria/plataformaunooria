@@ -38,26 +38,27 @@ describe("grade do Entre Redes", () => {
     expect(ANOS.flatMap((ano) => ano.missoes).some((m) => m.expId === "backup-exp04ef1b")).toBe(false);
   });
 
-  /* A ficha do Júri cita as habilidades da spec (o pedido do PO, 2026-10-06):
-     a EF06CO10 é o foco, com a EF06CO01 e a EF06CO03 — e a EF06CO07 (os
-     pacotes) saiu. O texto é o OFICIAL, lido da fonte única do currículo. E o
-     que a galeria e a lousa contam (por área, a concentração) são números
-     REAIS de cada sessão: nenhum percentual cravado. */
-  test("o Júri Estadual cita EF06CO10, EF06CO01 e EF06CO03 com o texto oficial, e nenhum percentual cravado", () => {
+  /* A ficha do Júri cita as habilidades da ficha 5 (ADR-174): a EF06CO01 é o
+     foco, com a EF06CO03 — e a EF06CO10 e a EF06CO07 saíram. O texto é o
+     OFICIAL, lido da fonte única do currículo. E o que a galeria e a lousa
+     contam (por área, a concentração) são números REAIS de cada sessão:
+     nenhum percentual cravado. */
+  test("o Júri Estadual cita EF06CO01 e EF06CO03 com o texto oficial, e nenhum percentual cravado", () => {
     const juri = buscarMissao("6-ano", "unidade-1")?.missao;
     expect(juri?.titulo).toBe("O Júri Estadual de Projetos");
     const competencia = juri?.ficha?.competencia ?? "";
     const curriculo = readFileSync(join(__dirname, "../../../api/src/curriculo/dados/habilidades-computacao.ts"), "utf8");
-    for (const codigo of ["EF06CO10", "EF06CO01", "EF06CO03"]) {
+    for (const codigo of ["EF06CO01", "EF06CO03"]) {
       expect(competencia).toContain(codigo);
       const oficial = new RegExp(`"codigo": "${codigo}",\\s*"descricao": "([^"]+)"`).exec(curriculo)?.[1] ?? "";
       expect(oficial, codigo).not.toBe("");
       /* O ponto final do documento fica de fora: a frase continua no catálogo. */
       expect(competencia.toLowerCase()).toContain(oficial.replace(/\.$/, "").toLowerCase());
     }
-    expect(competencia.indexOf("EF06CO10")).toBeLessThan(competencia.indexOf("EF06CO01"));
+    expect(competencia.indexOf("EF06CO01")).toBeLessThan(competencia.indexOf("EF06CO03"));
     const texto = JSON.stringify(juri);
     expect(texto).not.toContain("EF06CO07");
+    expect(texto).not.toContain("EF06CO10");
     expect(texto).not.toMatch(/\d+\s?%/);
   });
 });
