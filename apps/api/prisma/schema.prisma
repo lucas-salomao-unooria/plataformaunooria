@@ -3485,6 +3485,16 @@ model Exp06ef1bSessao {
   cadeiaTentativas Int       @default(0) @map("cadeia_tentativas")
   cadeiaMontadaEm  DateTime? @map("cadeia_montada_em") @db.Timestamptz(6)
 
+  // A separação (EF06CO01, ADR-174): depois do voto, cada estande visto numa área.
+  classificacaoRespostas Json?     @map("classificacao_respostas")
+  classificacaoAcertos   Int?      @map("classificacao_acertos")
+  classificacaoTotal     Int?      @map("classificacao_total")
+  classificadaEm         DateTime? @map("classificada_em") @db.Timestamptz(6)
+
+  // A regra SE … ENTÃO (EF06CO03, ADR-174): os ids das peças; o carimbo é o `cadeia_montada_em`.
+  regraSe    String? @map("regra_se") @db.VarChar(32)
+  regraEntao String? @map("regra_entao") @db.VarChar(32)
+
   /// O caso Mariana: a escolha de um cartão de mecanismo e um de atitude. Não
   /// vira nota: a evidência da missão está nas três habilidades.
   mecanismo String?

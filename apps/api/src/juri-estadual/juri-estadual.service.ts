@@ -1,12 +1,12 @@
 import { randomBytes } from "node:crypto";
-import { Injectable, type OnModuleInit } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { Prisma, type Exp06ef1bSessao } from "@prisma/client";
 import { z } from "zod";
 import { exigirMissaoLiberada } from "../comum/liberacao";
 import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-professor";
 import { computadoresDaMontagem, mapaDeEquipes } from "../equipes/consulta";
 import { colapsarEmUnidades } from "../equipes/regras";
-import { EvidenciasService, type ContextoDaAtividade } from "../evidencias/evidencias.service";
+import { EvidenciasService } from "../evidencias/evidencias.service";
 import { apagarEvidenciaDaAtividade } from "../evidencias/apagar-da-atividade";
 import type { Nivel } from "../evidencias/regras";
 import { ehUuid } from "../motor/guardas";
@@ -27,7 +27,6 @@ import {
   aplicarCurtida,
   aplicarPermanencia,
   aplicarSalvamento,
-  areaDominante,
   cedulaLiberada,
   embaralhar,
   feedCompleto,
@@ -43,15 +42,17 @@ import {
   type ProjetoDoMotor,
 } from "./regras/afunilamento";
 import {
-  MARCADOR_DA_AUDITORIA,
-  MARCADOR_DA_CADEIA,
+  corrigirClassificacao,
+  itensDaClassificacao,
+  type RespostaDaClassificacao,
+} from "./regras/classificacao";
+import {
   MARCADOR_DA_CLASSIFICACAO,
-  nivelDaAuditoria,
+  MARCADOR_DA_REGRA,
   nivelDaClassificacao,
-  nivelPorTentativas,
+  nivelDaRegra,
 } from "./regras/evidencia";
 import {
-  areasBuscadas,
   auditoriaDaLinha,
   feedDaLinha,
   ocultosAbertos,
@@ -59,9 +60,15 @@ import {
   registrarAcao,
   type AcaoDaGaleria,
 } from "./regras/galeria";
-import { blocosDaSessao, idsDaSessao, ordemCertaDaCadeia, ordemConfere } from "./regras/ordem";
 import { concentracaoDaTurma, ociosoNaCedula, votosPorArea } from "./regras/painel";
-import { parSimulado } from "./regras/par";
+import {
+  corrigirRegra,
+  pecasCertas,
+  pecasDaSessao,
+  pecasPublicas,
+  revelacaoDaRegra,
+  type EscolhaDaRegra,
+} from "./regras/regra";
 import {
   ETAPA_INICIAL,
   aguardandoOProfessor,
@@ -115,9 +122,11 @@ export { EXP_ID } from "./vocabulario";
  * quarenta, com a contagem por área e o contrafactual sem curtidas desta
  * sessão — só com a etapa `galeria` aberta.
  *
- * **A ordem certa dos blocos nunca desce**: os itens chegam com
- * ids OPACOS e embaralhados pela semente da sessão, e quem confere é o
- * servidor (`regras/ordem.ts`, regra 3).
+ * **O gabarito das duas tarefas nunca desce** (ADR-174): os estandes da
+ * separação e as peças da regra chegam com ids OPACOS e embaralhados pela
+ * semente da sessão, e quem corrige é o servidor (`regras/classificacao.ts`,
+ * `regras/regra.ts`, regra 3). A criança não vê quantos acertou na separação;
+ * a regra certa só desce depois do envio.
  */
 
 /**
@@ -310,60 +319,24 @@ function novaSemente(): string {
 }
 
 @Injectable()
-export class JuriEstadualService implements OnModuleInit {
+export class JuriEstadualService {
+  /*
+   * Sem `registrarContexto` desde a ficha 5 (ADR-174): ele existia para as
+   * enquetes P1–P3 das rotas genéricas de `/evidencias` caírem na atividade
+   * certa. As duas tarefas marcam pela porta `marcar`, na própria transação,
+   * com a atividade e a rodada que a sessão já tem.
+   */
   constructor(
     private readonly prisma: PrismaService,
     private readonly evidencias: EvidenciasService,
   ) {}
 
-  /**
-   * O contexto da evidência pedagógica: é por ele que P1–P3
-   * (`/evidencias/exp06ef1b/perguntas/:id/resposta`) caem na atividade e na
-   * rodada certas, sem o cliente dizer quais. No teste, quem chama isto é a
-   * suíte.
-   */
-  onModuleInit(): void {
-    this.evidencias.registrarContexto(EXP_ID, (tx, escolaId, estudanteId) =>
-      this.contextoDaAtividade(tx, escolaId, estudanteId),
-    );
-  }
-
-  /**
-   * A atividade em andamento para as enquetes — ou `null`.
-   *
-   * A turma sai da sessão MAIS RECENTE do estudante, porque o resolvedor não
-   * recebe o token. E `null` em dois casos, os dois de propósito:
-   *   - o passo está antes de `enquetes`: as enquetes vêm depois do caso
-   *     Mariana, e uma resposta mandada por fora da tela não fura a fila (quem
-   *     responde antes de ver a galeria e a cadeia mede outra coisa);
-   *   - a sessão não é do (pacote, rodada) que o gate diz: o professor zerou ou
-   *     trocou a atividade, e a resposta atrasada cairia numa rodada que acabou.
-   */
-  async contextoDaAtividade(
-    tx: Prisma.TransactionClient,
-    escolaId: string,
-    estudanteId: string,
-  ): Promise<ContextoDaAtividade | null> {
-    const sessao = await tx.exp06ef1bSessao.findFirst({
-      where: { escolaId, estudanteId },
-      orderBy: { criadoEm: "desc" },
-      select: { turmaId: true, pacoteId: true, rodada: true, passo: true },
-    });
-    if (!sessao || passoAntes(normalizarPasso(sessao.passo), "enquetes")) return null;
-    const gate = await tx.exp06ef1bGateTurma.findUnique({
-      where: { turmaId: sessao.turmaId, escolaId },
-      select: { pacoteId: true, rodada: true },
-    });
-    if (!gate || gate.pacoteId !== sessao.pacoteId || gate.rodada !== sessao.rodada) return null;
-    return { turmaId: sessao.turmaId, atividadeId: sessao.pacoteId, rodada: sessao.rodada };
-  }
-
   // ───────────────────────────────────────────────────── rotas do estudante
 
   /**
    * Boot da experiência e o F5. Na primeira entrada do estudante na rodada,
-   * nasce a sessão (com a semente). Cada bloco do fim da missão (`cadeia`,
-   * `mariana`) só vem do passo dele em diante.
+   * nasce a sessão (com a semente). Cada bloco do fim da missão
+   * (`classificacao`, `cadeia`, `mariana`) só vem do passo dele.
    */
   async sessao(escolaId: string, estudanteId: string, turmaId: string | null) {
     return this.prisma.comTenancy(async (tx) => {
@@ -536,7 +509,8 @@ export class JuriEstadualService implements OnModuleInit {
           votoProjeto: voto.projetoId,
           conviccao: voto.conviccao,
           votadoEm: new Date(),
-          passo: "lacrada",
+          /* Depois do voto, a SEPARAÇÃO (EF06CO01, ADR-174); a espera vem depois dela. */
+          passo: "classificacao",
           cedulaBatimentoEm: null,
           cedulaInativaDesde: null,
         },
@@ -544,6 +518,50 @@ export class JuriEstadualService implements OnModuleInit {
       if (count === 0) throw erroDeJogo("voto-ja-lacrado");
       const sessao = await tx.exp06ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
       return this.estado(sessao, ctx.gate);
+    }, escolaId);
+  }
+
+  /**
+   * A SEPARAÇÃO (EF06CO01, ADR-174), logo depois do voto: a criança põe cada
+   * estande que viu numa das quatro áreas. Uma vez só — reenviar é 409
+   * `classificacao-ja-enviada` —, e o corpo é conferido contra os itens DESTA
+   * sessão (id de outra sessão, item faltando ou repetido = 400). Corrige,
+   * grava, marca e leva à espera (`lacrada`). Devolve só o estado: a criança
+   * não vê quantos acertou — a galeria, depois, mostra o que ficou fora por
+   * área.
+   */
+  async classificar(
+    escolaId: string,
+    estudanteId: string,
+    turmaId: string | null,
+    respostas: readonly RespostaDaClassificacao[],
+  ) {
+    return this.prisma.comTenancy(async (tx) => {
+      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
+      if (ctx.sessao.classificadaEm) throw erroDeJogo("classificacao-ja-enviada");
+      if (normalizarPasso(ctx.sessao.passo) !== "classificacao") throw erroDeJogo("passo-invalido");
+      const itens = itensDaClassificacao(ctx.sessao.semente, feedDaLinha(ctx.sessao).servidos);
+      const correcao = corrigirClassificacao(itens, respostas);
+      if (!correcao) throw erroDeJogo("payload-invalido");
+      const gate = await this.gateDaSessao(tx, escolaId, ctx);
+
+      const nivel = nivelDaClassificacao(correcao);
+      const { count } = await tx.exp06ef1bSessao.updateMany({
+        where: { id: ctx.sessao.id, escolaId, classificadaEm: null, passo: "classificacao" },
+        data: {
+          classificacaoRespostas: respostas.map((r) => ({ itemId: r.itemId, area: r.area })),
+          classificacaoAcertos: correcao.acertos,
+          classificacaoTotal: correcao.total,
+          classificadaEm: new Date(),
+          classificacaoStatus: nivel,
+          passo: "lacrada",
+        },
+      });
+      if (count === 0) throw erroDeJogo("classificacao-ja-enviada");
+
+      await this.marcar(tx, ctx, gate, MARCADOR_DA_CLASSIFICACAO, nivel);
+      const sessao = await tx.exp06ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
+      return this.estado(sessao, gate);
     }, escolaId);
   }
 
@@ -650,71 +668,65 @@ export class JuriEstadualService implements OnModuleInit {
       }
       const gate = await this.gateDaSessao(tx, escolaId, ctx);
 
-      const nivelCo10 = nivelDaAuditoria(auditoria, ocultos);
-      const nivelCo01 = nivelDaClassificacao(auditoria, ocultos, areaDominante(feed));
+      /* A galeria é experiência desde a ficha 5 (ADR-174): manter ou trocar não marca habilidade. */
       const { count } = await tx.exp06ef1bSessao.updateMany({
         where: { id: ctx.sessao.id, escolaId, revisadoEm: null, passo: "lacrada" },
-        data: {
-          revisaoAcao: revisao.acao,
-          votoRevisado: final,
-          revisadoEm: new Date(),
-          passo: "revisada",
-          auditoriaStatus: nivelCo10,
-          classificacaoStatus: nivelCo01,
-        },
+        data: { revisaoAcao: revisao.acao, votoRevisado: final, revisadoEm: new Date(), passo: "revisada" },
       });
       if (count === 0) throw erroDeJogo("voto-ja-revisado");
 
-      await this.marcar(tx, ctx, gate, MARCADOR_DA_AUDITORIA, nivelCo10);
-      await this.marcar(tx, ctx, gate, MARCADOR_DA_CLASSIFICACAO, nivelCo01);
       const sessao = await tx.exp06ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
       return this.estado(sessao, gate);
     }, escolaId);
   }
 
   /**
-   * Uma tentativa de montar a cadeia (EF06CO03): Interações → Dados →
-   * Algoritmo → Bolha. Cada envio conta. A ordem ERRADA responde **422**
-   * `ordem-incorreta` (PRD §12.1) — e a tentativa é gravada ANTES: a transação
-   * devolve o resultado e o erro é lançado fora dela, senão o rollback
-   * apagaria a contagem. Na certa, o passo anda e a habilidade é marcada pelas
-   * tentativas. Com a cadeia já montada, responde certa sem contar.
+   * A REGRA SE … ENTÃO (EF06CO03, ADR-174): a criança escolhe a condição e a
+   * ação entre três peças cada. Uma tentativa só, e a correção sai daqui (a
+   * peça certa nunca desceu). Grava as duas escolhas, marca e leva ao caso
+   * Mariana. As colunas da cadeia antiga são reaproveitadas como CARIMBO
+   * (`cadeia_montada_em`, `cadeia_tentativas = 1`) para os CHECKs de passo
+   * continuarem fechando sem migração de passo.
+   *
+   * Devolve a REVELAÇÃO — as peças certas e o que a regra fez no feed DELA —,
+   * que só existe depois do envio. Enviar de novo devolve a mesma revelação,
+   * sem trocar a escolha nem marcar outra vez.
    */
-  async montarCadeia(escolaId: string, estudanteId: string, turmaId: string | null, ordem: readonly string[]) {
-    const r = await this.prisma.comTenancy(async (tx) => {
+  async montarRegra(escolaId: string, estudanteId: string, turmaId: string | null, escolha: EscolhaDaRegra) {
+    return this.prisma.comTenancy(async (tx) => {
       const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
       const s = ctx.sessao;
-      if (s.cadeiaMontadaEm) {
-        return { correta: true as const, tentativas: s.cadeiaTentativas, passo: this.estado(s, ctx.gate).passo };
-      }
+      const pecas = pecasDaSessao(s.semente);
+      if (s.cadeiaMontadaEm) return { ...this.estado(s, ctx.gate), revelacao: this.revelacao(s) };
       if (normalizarPasso(s.passo) !== "cadeia") throw erroDeJogo("passo-invalido");
-      const certa = ordemCertaDaCadeia(s.semente);
-      if (!idsDaSessao(ordem, certa)) throw erroDeJogo("payload-invalido");
+      const correcao = corrigirRegra(pecas, escolha);
+      if (!correcao) throw erroDeJogo("payload-invalido");
       const gate = await this.gateDaSessao(tx, escolaId, ctx);
 
-      const tentativas = s.cadeiaTentativas + 1;
-      if (!ordemConfere(ordem, certa)) {
-        await tx.exp06ef1bSessao.update({ where: { id: s.id }, data: { cadeiaTentativas: tentativas } });
-        return { correta: false as const, tentativas };
-      }
-
-      const nivel = nivelPorTentativas(tentativas);
+      const nivel = nivelDaRegra(correcao.acertos);
       const { count } = await tx.exp06ef1bSessao.updateMany({
         where: { id: s.id, escolaId, cadeiaMontadaEm: null, passo: "cadeia" },
-        data: { cadeiaTentativas: tentativas, cadeiaMontadaEm: new Date(), passo: "mariana", logicaStatus: nivel },
+        data: {
+          regraSe: correcao.se.id,
+          regraEntao: correcao.entao.id,
+          cadeiaTentativas: 1,
+          cadeiaMontadaEm: new Date(),
+          logicaStatus: nivel,
+          passo: "mariana",
+        },
       });
-      /* Sem linha atualizada, já estava montada: não conta nem marca de novo. */
-      if (count > 0) await this.marcar(tx, ctx, gate, MARCADOR_DA_CADEIA, nivel);
+      /* Sem linha atualizada, outro envio chegou antes: não marca de novo. */
+      if (count > 0) await this.marcar(tx, ctx, gate, MARCADOR_DA_REGRA, nivel);
       const depois = await tx.exp06ef1bSessao.findUniqueOrThrow({ where: { id: s.id } });
-      return { correta: true as const, tentativas: depois.cadeiaTentativas, passo: this.estado(depois, gate).passo };
+      return { ...this.estado(depois, gate), revelacao: this.revelacao(depois) };
     }, escolaId);
-    if (!r.correta) throw erroDeJogo("ordem-incorreta", { tentativas: r.tentativas });
-    return r;
   }
 
   /**
    * O caso Mariana: um cartão de mecanismo e um de atitude. Grava a escolha e
-   * o passo `enquetes`; não marca evidência e não diz qual é o certo (é a
+   * CONCLUI (passo `fim` e `concluida_em` no mesmo update — o CHECK `fim ⇔
+   * concluida_em` vale por statement); as enquetes saíram com a ficha 5
+   * (ADR-174). Não marca evidência e não diz qual é o certo (é a
    * transferência, conversada na plenária). Escolher de novo devolve o estado,
    * sem trocar a primeira escolha.
    */
@@ -730,7 +742,13 @@ export class JuriEstadualService implements OnModuleInit {
       if (normalizarPasso(ctx.sessao.passo) !== "mariana") throw erroDeJogo("passo-invalido");
       const { count } = await tx.exp06ef1bSessao.updateMany({
         where: { id: ctx.sessao.id, escolaId, cartoesEm: null, passo: "mariana" },
-        data: { mecanismo: cartoes.mecanismo, atitude: cartoes.atitude, cartoesEm: new Date(), passo: "enquetes" },
+        data: {
+          mecanismo: cartoes.mecanismo,
+          atitude: cartoes.atitude,
+          cartoesEm: new Date(),
+          passo: "fim",
+          concluidaEm: new Date(),
+        },
       });
       if (count === 0) throw erroDeJogo("passo-invalido");
       const sessao = await tx.exp06ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
@@ -738,7 +756,11 @@ export class JuriEstadualService implements OnModuleInit {
     }, escolaId);
   }
 
-  /** O crachá homologado — de `enquetes` para `fim`; idempotente em `fim`. */
+  /**
+   * O crachá homologado das sessões ANTIGAS — de `enquetes` para `fim`;
+   * idempotente em `fim`. Desde a 0.6.0 os cartões já concluem: a rota fica
+   * para quem parou nas enquetes antes da troca (ADR-174).
+   */
   async concluir(escolaId: string, estudanteId: string, turmaId: string | null) {
     return this.prisma.comTenancy(async (tx) => {
       const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
@@ -829,9 +851,10 @@ export class JuriEstadualService implements OnModuleInit {
           votou: Boolean(s?.votadoEm),
           ocioso:
             passoGravado === "feed" && ociosoNaCedula(s?.cedulaBatimentoEm ?? null, s?.cedulaInativaDesde ?? null, agora),
+          /* Progresso, nunca o acerto: a folha vai para a lousa (PED-07). O nível está no painel de habilidades. */
+          separou: Boolean(s?.classificadaEm),
           abriuAGaleria: auditoria.abertos.length > 0,
           buscou: auditoria.buscas.length > 0,
-          categoriasBuscadas: areasBuscadas(auditoria),
           revisou: Boolean(s?.revisadoEm),
           concluiu: Boolean(s?.concluidaEm),
           _sessao: s ?? null,
@@ -892,6 +915,7 @@ export class JuriEstadualService implements OnModuleInit {
           total: saida.length,
           entraram: saida.filter((u) => u.entrou).length,
           votaram,
+          separaram: saida.filter((u) => u.separou).length,
           revisaram: saida.filter((u) => u.revisou).length,
           concluiram: saida.filter((u) => u.concluiu).length,
           ociosos: saida.filter((u) => u.ocioso).length,
@@ -1448,12 +1472,30 @@ export class JuriEstadualService implements OnModuleInit {
         acao === "manter" || acao === "trocar" || acao === "complementar"
           ? { acao, projetoId: acao === "trocar" ? sessao.votoRevisado : null }
           : null,
+      /*
+       * A separação só existe no passo dela: os estandes vistos, com id opaco,
+       * título e imagem — sem área, hashtag nem perfil (o perfil é a hashtag).
+       * As opções são as `categorias`, acima.
+       */
+      classificacao:
+        efetivo === "classificacao"
+          ? {
+              itens: itensDaClassificacao(sessao.semente, feed.servidos).map((item) => {
+                const projeto = pacote.conteudo.projetos.find((p) => p.id === item.projetoId);
+                return {
+                  id: item.id,
+                  titulo: projeto?.titulo ?? "",
+                  imagem: { url: pacote.midia[item.projetoId] ?? null, alt: projeto?.imagem.alt ?? "" },
+                };
+              }),
+            }
+          : null,
+      /* A regra (o passo guarda o nome `cadeia`): as peças e, depois do envio, a revelação. */
       cadeia: passoNoMinimo(efetivo, "cadeia")
         ? {
-            blocos: blocosDaSessao(sessao.semente),
-            tentativas: sessao.cadeiaTentativas,
-            montada: sessao.cadeiaMontadaEm !== null,
-            parSimulado: parSimulado(feed, sessao.semente),
+            ...pecasPublicas(pecasDaSessao(sessao.semente)),
+            enviada: sessao.cadeiaMontadaEm !== null,
+            revelacao: this.revelacao(sessao),
           }
         : null,
       mariana: passoNoMinimo(efetivo, "mariana")
@@ -1466,6 +1508,22 @@ export class JuriEstadualService implements OnModuleInit {
           }
         : null,
       concluida: sessao.concluidaEm !== null,
+    };
+  }
+
+  /**
+   * A revelação da regra, só DEPOIS do envio: as peças escolhidas e as certas
+   * (ids opacos da sessão) e o que a regra fez no feed desta criança. `null`
+   * antes do envio — e nas sessões da 0.5.0 que montaram a cadeia antiga.
+   */
+  private revelacao(sessao: Exp06ef1bSessao) {
+    if (!sessao.cadeiaMontadaEm || !sessao.regraSe || !sessao.regraEntao) return null;
+    const pecas = pecasDaSessao(sessao.semente);
+    const opaco = (lado: typeof pecas.se, id: string) => lado.find((p) => p.peca.id === id)?.opaco ?? "";
+    return {
+      escolha: { se: opaco(pecas.se, sessao.regraSe), entao: opaco(pecas.entao, sessao.regraEntao) },
+      certa: pecasCertas(pecas),
+      ...revelacaoDaRegra(feedDaLinha(sessao)),
     };
   }
 
@@ -1516,7 +1574,7 @@ export class JuriEstadualService implements OnModuleInit {
     marcador: string,
     status: Nivel | null,
   ): Promise<void> {
-    /* `null` é AUSÊNCIA (a criança não fez a ação): não há marca, e a pergunta da habilidade decide. */
+    /* `null` é AUSÊNCIA (viu estandes de menos para separar): não há marca — "Não avaliado". */
     if (status === null) return;
     const marca = {
       escolaId: ctx.pacote.escolaId,

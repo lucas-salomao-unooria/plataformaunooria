@@ -113,8 +113,3 @@ export function ocultosAbertos(auditoria: Auditoria, ocultos: readonly string[])
   const oculto = new Set(ocultos);
   return auditoria.abertos.filter((id) => oculto.has(id)).length;
 }
-
-/** As áreas que a criança buscou pela HASHTAG, sem repetir — a lista do professor mostra (melhoria 3). */
-export function areasBuscadas(auditoria: Auditoria): Area[] {
-  return [...new Set(auditoria.buscas.filter((b) => b.tipo === "hashtag" && b.area !== null).map((b) => b.area as Area))];
-}

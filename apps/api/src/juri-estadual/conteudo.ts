@@ -1,44 +1,47 @@
 /**
- * O ESQUELETO fixo da exp06ef1b — o que não é gerado pelo professor: os blocos
- * da cadeia (EF06CO03), o caso Mariana e os cinco cartões, e as perguntas da
+ * O ESQUELETO fixo da exp06ef1b — o que não é gerado pelo professor: as peças
+ * da regra (EF06CO03), o caso Mariana e os cinco cartões, e as perguntas da
  * plenária. Os quarenta estandes do banco padrão moram em `banco-padrao.ts`.
  *
- * Texto LITERAL do banco de conteúdo do PRD v2 (`dev/01e-banco-conteudo.md`,
- * doc-exp06ef1b-01 e doc-exp06ef1b-03) e do Anexo (one-pager §9, o roteiro de
- * perguntas). Duas mudanças de forma, nenhuma de texto:
+ * O caso Mariana, os cartões e as perguntas são LITERAIS do banco de conteúdo
+ * do PRD v2 (`dev/01e-banco-conteudo.md`, doc-exp06ef1b-03) e do Anexo
+ * (one-pager §9). As peças da regra são da 0.6.0 (ADR-174, o Canal A puro),
+ * escritas aqui e levadas ao PO no card da missão. Os cartões levam ids
+ * opacos ao estudante (`m1`–`m3`, `t1`–`t2`) — os rótulos do 01e (M1, A1) não
+ * descem.
  *
- * - os blocos da cadeia descem SEM o número da frente ("1. Suas interações…"):
- *   o número é a posição certa, e a posição é gabarito (regra 3). Os slots da
- *   tela é que são numerados;
- * - os cartões levam ids opacos ao estudante (`m1`–`m3`, `t1`–`t2`) — os
- *   rótulos do 01e (M1, A1) não descem.
- *
- * O que é GABARITO aqui (a ordem dos blocos, o cartão certo) nunca desce: o
+ * O que é GABARITO aqui (a peça certa, o cartão certo) nunca desce: o
  * estudante recebe os itens embaralhados pela sessão, com ids OPACOS, e quem
  * confere é o servidor.
  */
 
-// ------------------------------------------------------ EF06CO03: a cadeia
+// -------------------------------------------- EF06CO03: a regra SE … ENTÃO
 
 /**
- * Os quatro blocos da regra que o programa executou, na ordem CERTA
- * (Interações → Dados → Algoritmo → Bolha). A ordem certa é gabarito.
+ * As peças da regra que o programa do feed executou: três para o SE (a
+ * condição) e três para o ENTÃO (a ação), uma certa em cada. Montar a regra é
+ * o "construir o programa que implementa a solução" do texto oficial da
+ * EF06CO03 — a cadeia de quatro blocos da 0.5.0 só pedia para reconhecer a
+ * ordem.
+ *
+ * As erradas são equívocos de verdade sobre recomendação, não absurdos: o
+ * perfil popular, o "adivinhou pela foto", o mais curtido da turma, o rodízio
+ * neutro. "Ficar muito tempo" NÃO é distrator de propósito: o motor PESA a
+ * permanência (`PESO_DA_PERMANENCIA`), e seria uma peça meio certa.
  */
-export const BLOCOS_DA_CADEIA = [
-  { posicao: 1, rotulo: "Suas interações com cliques e curtidas no feed" },
-  { posicao: 2, rotulo: "Registro de dados e identificação de padrões" },
-  { posicao: 3, rotulo: "Algoritmo de recomendação escolhendo novos posts" },
-  { posicao: 4, rotulo: "Afunilamento do feed e criação da bolha" },
+export const PECAS_DO_SE = [
+  { id: "se-curtir", texto: "o jurado curtir 2 ou mais posts do mesmo tema", certa: true },
+  { id: "se-seguidores", texto: "o jurado tiver muitos seguidores", certa: false },
+  { id: "se-foto", texto: "a foto de perfil do jurado mostrar um tema", certa: false },
 ] as const;
 
-export const TOTAL_DE_BLOCOS = BLOCOS_DA_CADEIA.length;
+export const PECAS_DO_ENTAO = [
+  { id: "entao-tema", texto: "mostrar mais projetos desse tema nas próximas posições", certa: true },
+  { id: "entao-turma", texto: "mostrar os projetos mais curtidos pela turma inteira", certa: false },
+  { id: "entao-rodizio", texto: "mostrar um projeto de cada tema, em rodízio", certa: false },
+] as const;
 
-/** O feedback da validação — o da tela é o mesmo texto, na copy da experiência. */
-export const FEEDBACK_DA_CADEIA = {
-  correta: "Cadeia lógica confirmada. O sistema usou suas ações como dados para prever e limitar o que você via.",
-  incorreta:
-    "A ordem das regras precisa de ajuste. Lembre-se: primeiro vêm suas ações, depois os dados registrados pela máquina.",
-} as const;
+export type PecaDaRegra = { readonly id: string; readonly texto: string; readonly certa: boolean };
 
 // --------------------------------------------------- transferência: Mariana
 

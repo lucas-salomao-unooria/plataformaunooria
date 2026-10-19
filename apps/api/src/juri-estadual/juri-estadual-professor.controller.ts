@@ -4,19 +4,19 @@ import { OidcGuard } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { Contrato } from "../openapi/contrato";
 import {
-  BLOCOS_DA_CADEIA,
   CARTOES_DE_ATITUDE,
   CARTOES_DE_MECANISMO,
   CASO_MARIANA,
-  FEEDBACK_DA_CADEIA,
+  PECAS_DO_ENTAO,
+  PECAS_DO_SE,
   PERGUNTAS_DA_PLENARIA,
 } from "./conteudo";
 import { MaterialSchema } from "./contrato-de-rotas";
 import { LIMIAR_DA_BOLHA, MINUTOS_NO_FEED, PESO_DA_CURTIDA, PESO_DA_PERMANENCIA, POSTS_NO_FEED } from "./vocabulario";
 
 /**
- * O material do GUIA DA AULA da exp06ef1b — o esqueleto fixo COM gabarito (a
- * ordem dos blocos, os cartões certos), as perguntas da plenária
+ * O material do GUIA DA AULA da exp06ef1b — o esqueleto fixo COM gabarito (as
+ * peças da regra com a certa marcada, os cartões certos), as perguntas da plenária
  * e a regra que o motor executou, para quem conduz.
  *
  * Classe separada de `JuriEstadualTurmasController` porque não é dado de
@@ -35,23 +35,25 @@ export class JuriEstadualProfessorController {
   @Contrato({
     resumo: "O esqueleto da missão com o gabarito, a plenária e a regra do feed.",
     descricao:
-      "**Professor e gestores.** É o bloco vivo do guia: a cadeia Interações → Dados → Algoritmo → Bolha, o caso Mariana com os cartões certos marcados, as quatro perguntas de contraste da plenária e os números do motor (o que a Etapa 5 ensina: duas curtidas na mesma área fecham a bolha).\n\nA MOSTRA da turma não está aqui: ela é da atividade, em `GET /juri-estadual/turmas/:turmaId/pacotes`.",
+      "**Professor e gestores.** É o bloco vivo do guia: as peças da regra SE … ENTÃO com a certa marcada (a EF06CO03, ADR-174), o caso Mariana com os cartões certos marcados, as quatro perguntas de contraste da plenária e os números do motor (o que a Etapa 5 ensina: duas curtidas na mesma área fecham a bolha).\n\nA MOSTRA da turma não está aqui: ela é da atividade, em `GET /juri-estadual/turmas/:turmaId/pacotes`.",
     resposta: MaterialSchema,
     notas: [
       "Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.",
-      "`mecanismos[].certo` e `atitudes[].certo` são gabarito, e só existem nesta rota de professor.",
+      "`pecas.*[].certa`, `mecanismos[].certo` e `atitudes[].certo` são gabarito, e só existem nesta rota de professor.",
     ],
   })
   material() {
     return {
-      blocos: BLOCOS_DA_CADEIA.map((b) => ({ posicao: b.posicao, rotulo: b.rotulo })),
+      pecas: {
+        se: PECAS_DO_SE.map((p) => ({ texto: p.texto, certa: p.certa })),
+        entao: PECAS_DO_ENTAO.map((p) => ({ texto: p.texto, certa: p.certa })),
+      },
       mariana: {
         caso: CASO_MARIANA,
         mecanismos: CARTOES_DE_MECANISMO.map((c) => ({ id: c.id, texto: c.texto, certo: c.certo })),
         atitudes: CARTOES_DE_ATITUDE.map((c) => ({ id: c.id, texto: c.texto, certo: c.certo })),
       },
       plenaria: [...PERGUNTAS_DA_PLENARIA],
-      feedbackDaCadeia: { ...FEEDBACK_DA_CADEIA },
       regra: {
         pesoDaCurtida: PESO_DA_CURTIDA,
         pesoDaPermanencia: PESO_DA_PERMANENCIA,

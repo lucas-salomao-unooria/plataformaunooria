@@ -12,12 +12,13 @@ import {
   EventosDoFeedSchema,
   FeedSchema,
   GaleriaSchema,
+  ClassificacaoSchema,
   GatePublicoSchema,
-  OrdemDaCadeiaSchema,
   PedirPassoSchema,
+  RegraSchema,
+  RespostaDaRegraSchema,
   RevisaoDoVotoSchema,
   SessaoSchema,
-  TentativaSchema,
   VotoSchema,
 } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
@@ -27,8 +28,8 @@ import { JuriEstadualService } from "./juri-estadual.service";
  * Rotas do ESTUDANTE da exp06ef1b — O Júri Estadual de Projetos.
  *
  * O motor e o gabarito ficam no servidor: o cliente diz o que MEDIU (curtiu,
- * ficou mais de 5 s) e o que ESCOLHEU (o voto, a ordem da cadeia), e o
- * próximo post, a taxa de invisibilidade e se a ordem confere saem daqui
+ * ficou mais de 5 s) e o que ESCOLHEU (o voto, a separação, a regra), e o
+ * próximo post, a taxa de invisibilidade e a correção das tarefas saem daqui
  * (regra inviolável nº 3). Identidade, inclusive a TURMA, sai do token, nunca
  * do corpo.
  *
@@ -76,7 +77,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "O estado da missão: o passo, o feed servido até aqui, o voto e os blocos do fim.",
     descricao:
-      "Boot da experiência e o F5. O feed traz **só os posts que o motor serviu** — o acervo da mostra existe só no servidor até a Galeria Oculta. Nenhum peso, nenhuma área líder: a regra do feed é o que a Etapa 5 ensina, e a criança a descobre depois.\n\n`cadeia` (os quatro blocos embaralhados) e `mariana` (o caso e os cartões) só vêm do passo deles em diante, com ids OPACOS e estáveis num F5. Nenhum diz a posição certa, e nenhum cartão diz se é o certo.",
+      "Boot da experiência e o F5. O feed traz **só os posts que o motor serviu** — o acervo da mostra existe só no servidor até a Galeria Oculta. Nenhum peso, nenhuma área líder: a regra do feed é o que a Etapa 5 ensina, e a criança a descobre depois.\n\n`classificacao` (os estandes vistos, sem área), `cadeia` (as peças da regra; a revelação depois do envio) e `mariana` (o caso e os cartões) só vêm do passo deles, com ids OPACOS e estáveis num F5. Nenhuma peça e nenhum cartão diz se é o certo.",
     resposta: SessaoSchema,
     notas: [
       "`passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o gravado. A etapa só conduz quem votou: quem ainda está no feed continua no feed com a galeria liberada.",
@@ -165,7 +166,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "A cédula lacrada — o projeto e a certeza (latch).",
     descricao:
-      "O gesto que a missão confronta, e ele é IRREVERSÍVEL: grava o projeto, a certeza (`examinei_bem` = \"Sim\", `vi_tudo` = \"Com certeza\"), o carimbo e o passo `lacrada` juntos. A cédula tem quatro elementos e nenhuma justificativa. Depois dele, a criança espera a turma (o pico): o professor projeta a dispersão de votos e libera a auditoria.",
+      "O gesto que a missão confronta, e ele é IRREVERSÍVEL: grava o projeto, a certeza (`examinei_bem` = \"Sim\", `vi_tudo` = \"Com certeza\"), o carimbo e o passo `classificacao` juntos. A cédula tem quatro elementos e nenhuma justificativa. Depois dele, a criança separa os estandes que viu (`POST classificacao`) e espera a turma (o pico): o professor projeta a dispersão de votos e libera a auditoria.",
     corpo: VotoSchema,
     resposta: EstadoSchema,
     notas: [
@@ -201,7 +202,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "Registra o que a criança fez na galeria: abriu um estande ou buscou.",
     descricao:
-      "É o registro da EF06CO10 e da EF06CO01, lido no latch da revisão do voto. Abrir de novo o mesmo estande não conta. Da busca, só o TIPO (`hashtag` ou `texto`) e a área que casou, ou `null` — **o texto digitado nunca sai do aparelho** (texto livre de menor). Até 30 buscas são gravadas.",
+      "É o registro da exploração da galeria (o painel mostra quem abriu e quem buscou). Desde a ficha 5 (ADR-174) não marca habilidade. Abrir de novo o mesmo estande não conta. Da busca, só o TIPO (`hashtag` ou `texto`) e a área que casou, ou `null` — **o texto digitado nunca sai do aparelho** (texto livre de menor). Até 30 buscas são gravadas.",
     corpo: AcaoDaGaleriaSchema,
     resposta: SemCorpoSchema,
     notas: [
@@ -220,7 +221,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: '"Manter meu voto inicial" ou "Confirmar Voto Revisado", depois da galeria (latch).',
     descricao:
-      "`manter` só vale depois de abrir ao menos UM estande oculto; `trocar` aceita qualquer estande do pacote (os 40; 16 num pacote antigo), menos o do voto lacrado. Sem justificativa. Grava a ação, o voto final, o carimbo e o passo `revisada` juntos, e marca a EF06CO10 (`auditoria`: dois ocultos abertos E uma busca = atingiu; abriu algum = em processo) e a EF06CO01 (`classificacao`: buscou pela hashtag de uma categoria fora da bolha E abriu um projeto dela = atingiu; buscou ou abriu um oculto = em processo). Quem não fez nada fica SEM a marca de ação: decide a pergunta. Depois, `POST passo` com `para: \"cadeia\"`.",
+      "`manter` só vale depois de abrir ao menos UM estande oculto; `trocar` aceita qualquer estande do pacote (os 40; 16 num pacote antigo), menos o do voto lacrado. Sem justificativa. Grava a ação, o voto final, o carimbo e o passo `revisada` juntos. **Não marca habilidade** desde a ficha 5 (ADR-174): a galeria é experiência. Depois, `POST passo` com `para: \"cadeia\"`.",
     corpo: RevisaoDoVotoSchema,
     resposta: EstadoSchema,
     notas: [
@@ -235,24 +236,44 @@ export class JuriEstadualController {
     return this.missao.revisar(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), revisao);
   }
 
-  @Post("cadeia")
+  @Post("classificacao")
   @HttpCode(200)
   @Contrato({
-    resumo: "Uma tentativa de montar a cadeia: Interações → Dados → Algoritmo → Bolha.",
+    resumo: "A separação: uma área para cada estande que a criança viu (EF06CO01).",
     descricao:
-      "Do passo `cadeia`. Cada envio é uma TENTATIVA. Na certa (200), o passo vai a `mariana` e a EF06CO03 (`cadeia`) é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu). Na errada, **422** `ordem-incorreta` com `tentativas` no corpo — a tentativa CONTA, e a resposta nunca diz qual vaga errou. Com a cadeia já montada, responde `correta: true` sem contar outra tentativa.",
-    corpo: OrdemDaCadeiaSchema,
-    resposta: TentativaSchema,
+      "Do passo `classificacao`, logo depois do voto. `respostas` traz um item para CADA estande de `sessao.classificacao.itens` (ids OPACOS `cl-`), com a área escolhida. Uma vez só. O servidor corrige, grava e marca a EF06CO01 (`classificacao`: 90% ou mais certos = atingiu; 50% ou mais = em processo; menos = não atingiu; com menos de quatro estandes vistos, sem marca) e leva a sessão à espera (`lacrada`). **A resposta não diz quantos acertou.** Com a galeria já liberada, a criança cai nela logo depois.",
+    corpo: ClassificacaoSchema,
+    resposta: EstadoSchema,
     notas: [
-      "`ordem`: os quatro ids OPACOS desta sessão (`bl-` e três caracteres), sem repetir. (O `.refine()` some do OpenAPI; daí esta nota.) Id de outra sessão responde **400** `payload-invalido`.",
+      "Item faltando, sobrando, repetido ou de outra sessão responde **400** `payload-invalido`. (O `.refine()` some do OpenAPI; daí esta nota.)",
+      "Enviar de novo responde **409** `classificacao-ja-enviada`; fora do passo, **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.",
+      PORTA,
+    ],
+  })
+  classificacao(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    const { respostas } = valida(ClassificacaoSchema, corpo);
+    return this.missao.classificar(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), respostas);
+  }
+
+  @Post("regra")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "A regra SE … ENTÃO: a condição e a ação que o programa do feed executou (EF06CO03).",
+    descricao:
+      "Do passo `cadeia` (o nome ficou; desde a 0.6.0 a tela é a da regra). `se` e `entao`: uma peça de cada lado, ids OPACOS `rg-` desta sessão. Uma vez só: o servidor corrige, grava, marca a EF06CO03 (`regra`: as duas certas = atingiu; uma = em processo; nenhuma = não atingiu) e leva a sessão ao caso Mariana. Responde a REVELAÇÃO — as peças escolhidas e as certas, e o que a regra fez no feed desta criança. Enviar de novo devolve a mesma revelação, sem trocar a escolha.",
+    corpo: RegraSchema,
+    resposta: RespostaDaRegraSchema,
+    notas: [
+      "Peça de outra sessão, ou do lado errado, responde **400** `payload-invalido`.",
       "Fora do passo `cadeia` responde **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.",
       PORTA,
     ],
   })
-  cadeia(@Body() corpo: unknown, @Req() req: Autenticado) {
+  regra(@Body() corpo: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
-    const { ordem } = valida(OrdemDaCadeiaSchema, corpo);
-    return this.missao.montarCadeia(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), ordem);
+    const escolha = valida(RegraSchema, corpo);
+    return this.missao.montarRegra(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), escolha);
   }
 
   @Post("cartoes")
@@ -260,7 +281,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "O caso Mariana: um cartão de mecanismo e um de atitude.",
     descricao:
-      "Grava a escolha e o passo `enquetes`. **Não marca evidência e não diz qual é o certo**: é a transferência, conversada na plenária. Escolher de novo devolve o estado, sem trocar a primeira escolha.",
+      "Grava a escolha e CONCLUI a missão (passo `fim` e o carimbo, no mesmo update) — as enquetes saíram com a ficha 5 (ADR-174). **Não marca evidência e não diz qual é o certo**: é a transferência, conversada na plenária. Escolher de novo devolve o estado, sem trocar a primeira escolha.",
     corpo: CartoesSchema,
     resposta: EstadoSchema,
     notas: ["Fora do passo `mariana` responde **409** `passo-invalido`.", PORTA],
@@ -274,11 +295,11 @@ export class JuriEstadualController {
   @Post("concluir")
   @HttpCode(200)
   @Contrato({
-    resumo: "O crachá homologado — conclui a missão, idempotente.",
+    resumo: "Conclui uma sessão ANTIGA que parou nas enquetes — idempotente.",
     descricao:
-      "Leva a sessão de `enquetes` a `fim` e carimba a conclusão, no mesmo update. As três enquetes vão pelas rotas genéricas de `/evidencias/exp06ef1b/perguntas`, e não são exigidas para concluir.",
+      "Leva a sessão de `enquetes` a `fim` e carimba a conclusão, no mesmo update. Só serve às sessões anteriores à 0.6.0: desde ela, os cartões do caso Mariana já concluem (ADR-174).",
     resposta: EstadoSchema,
-    notas: ["Antes das enquetes responde **409** `passo-invalido`. Concluir de novo devolve o mesmo estado.", PORTA],
+    notas: ["Fora de `enquetes` (e de `fim`) responde **409** `passo-invalido`. Concluir de novo devolve o mesmo estado.", PORTA],
   })
   concluir(@Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
