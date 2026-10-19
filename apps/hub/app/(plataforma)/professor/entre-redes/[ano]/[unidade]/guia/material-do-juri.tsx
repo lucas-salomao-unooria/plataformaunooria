@@ -6,9 +6,8 @@ import { TOTAL_DE_PROJETOS, type MaterialDoJuri } from "@/lib/juri-estadual-tipo
  * (professor only). UMA chamada, dois blocos, porque são dois momentos da aula:
  *
  * - `GabaritoDoJuri`, no preparo: a REGRA que o feed executou (os pesos e o
- *   limiar do motor, os mesmos que a cadeia ensina), a ordem da cadeia e os
- *   cartões do caso Mariana COM o certo marcado (os pacotes da curtida saíram
- *   com a EF06CO07, a pedido do PO);
+ *   limiar do motor), as peças da regra SE … ENTÃO com a certa marcada
+ *   (EF06CO03, ADR-174) e os cartões do caso Mariana COM o certo marcado;
  * - `PlenariaDoJuri`, no debate: as quatro perguntas da plenária do pico,
  *   verbatim — as mesmas que o painel da aula mostra ao lado do botão.
  *
@@ -54,13 +53,12 @@ export function PlenariaDoJuri({ dados }: { dados: MaterialDoJuri | null }) {
 export function GabaritoDoJuri({ dados }: { dados: MaterialDoJuri | null }) {
   if (!dados) return <NaoCarregou titulo="A regra do feed e o gabarito não carregaram" />;
   const { regra } = dados;
-  const blocos = [...dados.blocos].sort((a, b) => a.posicao - b.posicao);
 
   return (
     <div className="guia-bloco guia-bloco--longo">
       <Card variant="elevated" title="A regra do feed e o gabarito — só para você">
         <p className="text-[12px] leading-relaxed text-unooria-neutral-600">
-          <strong>Não projete este bloco</strong>: a ordem da cadeia e os cartões certos são a resposta das
+          <strong>Não projete este bloco</strong>: as peças certas da regra e os cartões certos são a resposta das
           etapas finais.
         </p>
 
@@ -78,8 +76,7 @@ export function GabaritoDoJuri({ dados }: { dados: MaterialDoJuri | null }) {
           </li>
           <li>
             Quando uma área chega a {regra.limiar} pontos, o resto do feed é só dela — outros projetos da mesma área,
-            nenhum repetido, sem aviso nenhum na tela. É a regra “se… então…” que a cadeia e a terceira enquete pedem
-            para descrever.
+            nenhum repetido, sem aviso nenhum na tela. É a regra “se… então…” que a criança monta depois da galeria.
           </li>
           <li>
             Com {TOTAL_DE_PROJETOS} estandes e {regra.postsNoFeed} publicações, todo computador que chega ao fim do feed
@@ -89,19 +86,34 @@ export function GabaritoDoJuri({ dados }: { dados: MaterialDoJuri | null }) {
           </li>
         </ul>
 
-        <p className="mt-5 text-[13px] font-semibold text-unooria-neutral-950">A cadeia do feed, na ordem certa</p>
+        <p className="mt-5 text-[13px] font-semibold text-unooria-neutral-950">A regra SE … ENTÃO, peça por peça</p>
         <p className="mt-1 text-[12px] leading-relaxed text-unooria-neutral-600">
-          Os blocos chegam fora de ordem, e a ordem de chegada muda de computador para computador. Cada envio conta
-          uma tentativa no painel de habilidades.
+          As peças chegam embaralhadas, em ordem diferente em cada computador. Uma tentativa só: as duas certas
+          atingem, uma fica em processo, nenhuma não atinge. Depois do envio, a tela mostra a regra certa ligada ao feed
+          da criança.
         </p>
-        <ol className="mt-2 flex list-decimal flex-col gap-1 pl-5 text-[13px] leading-relaxed text-unooria-neutral-800" data-cadeia>
-          {blocos.map((b) => (
-            <li key={b.posicao}>{b.rotulo}</li>
+        <div className="mt-2 grid gap-3 lg:grid-cols-2" data-pecas-da-regra>
+          {[
+            { titulo: "SE — a condição", pecas: dados.pecas.se },
+            { titulo: "ENTÃO — a ação", pecas: dados.pecas.entao },
+          ].map((lado) => (
+            <div key={lado.titulo} className="flex flex-col gap-2">
+              <span className="text-[12px] font-semibold text-unooria-neutral-700">{lado.titulo}</span>
+              <ul className="flex flex-col gap-2">
+                {lado.pecas.map((p) => (
+                  <li key={p.texto} className="flex flex-col gap-1 rounded-lg border border-unooria-neutral-200 p-3">
+                    <span>
+                      <Tag variant={p.certa ? "success" : "neutral"} size="sm">
+                        {p.certa ? "a certa" : "distrator"}
+                      </Tag>
+                    </span>
+                    <span className="text-[13px] leading-relaxed text-unooria-neutral-800">{p.texto}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ol>
-        <p className="mt-2 text-[12px] leading-relaxed text-unooria-neutral-600" data-feedback-da-cadeia>
-          Na ordem certa, a criança lê: “{dados.feedbackDaCadeia.correta}” Na errada: “{dados.feedbackDaCadeia.incorreta}”
-        </p>
+        </div>
 
         <p className="mt-5 text-[13px] font-semibold text-unooria-neutral-950">O caso Mariana</p>
         <p className="mt-1 text-[13px] leading-relaxed text-unooria-neutral-800">{dados.mariana.caso}</p>

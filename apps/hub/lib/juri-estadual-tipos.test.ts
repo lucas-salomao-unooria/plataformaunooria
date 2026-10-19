@@ -57,7 +57,6 @@ import {
   textoDaConcentracao,
   textoDaRevisao,
   textoDaTaxaDeRevisao,
-  textoDasCategoriasBuscadas,
   avisoDoRascunho,
   AVISO_DO_BANCO_PADRAO,
   textoDoProgressoDaMidia,
@@ -210,7 +209,7 @@ describe("o espelho das invariantes e do contrato", () => {
   test("a linha do painel não tem voto, taxa nem nível", () => {
     const linha = /export const LinhaDoPainelSchema = z\.object\(\{([\s\S]*?)\n\}\);/.exec(contrato)?.[1] ?? "";
     const campos = [...linha.matchAll(/^\s{2}(\w+):/gm)].map((m) => m[1]);
-    expect(campos).toEqual(["estudanteId", "nome", "usuario", "equipe", "entrou", "passo", "votou", "ocioso", "abriuAGaleria", "buscou", "categoriasBuscadas", "revisou", "concluiu"]);
+    expect(campos).toEqual(["estudanteId", "nome", "usuario", "equipe", "entrou", "passo", "votou", "ocioso", "separou", "abriuAGaleria", "buscou", "revisou", "concluiu"]);
   });
 });
 
@@ -373,12 +372,6 @@ describe("o painel da aula", () => {
     expect(textoDaTaxaDeRevisao(3, 26, false)).toBe("3 de 26 jurados revisaram o voto após a busca ativa na Galeria Oculta.");
   });
 
-  test("as categorias buscadas saem com o nome e a hashtag do pacote, na ordem das áreas", () => {
-    const categorias = AREAS.map((area, i) => ({ area, nome: `Cat${i}`, hashtag: `#c${i}` }));
-    expect(textoDasCategoriasBuscadas(["area_c", "area_a"], categorias)).toBe("Cat0 (#c0), Cat2 (#c2)");
-    expect(textoDasCategoriasBuscadas([], categorias)).toBe("Nenhuma");
-  });
-
   test("a concentração é o número da api, nunca um número cravado", () => {
     expect(textoDaConcentracao({ curtiram: null, naoCurtiram: null })).not.toMatch(/\d/);
     expect(textoDaConcentracao({ curtiram: 70, naoCurtiram: 30 })).toBe(
@@ -405,9 +398,9 @@ describe("o painel da aula", () => {
       passo: "feed",
       votou: false,
       ocioso: false,
+      separou: false,
       abriuAGaleria: false,
       buscou: false,
-      categoriasBuscadas: [],
       revisou: false,
       concluiu: false,
     });
@@ -430,15 +423,15 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
     passo,
     votou: true,
     ocioso: false,
+    separou: true,
     abriuAGaleria: false,
     buscou: false,
-    categoriasBuscadas: [],
     revisou: false,
     concluiu: false,
   });
   const painel = (
-    passos: Passo[] = ["galeria", "cadeia", "cadeia", "enquetes"],
-    resumo: Partial<{ revisaram: number; concluiram: number }> = {},
+    passos: Passo[] = ["galeria", "cadeia", "cadeia", "mariana"],
+    resumo: Partial<{ separaram: number; revisaram: number; concluiram: number }> = {},
     rodada = 1,
     id = "p1",
   ) => ({
@@ -449,6 +442,7 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
       total: passos.length,
       entraram: passos.length,
       votaram: passos.length,
+      separaram: passos.length,
       revisaram: 3,
       concluiram: 0,
       ociosos: 0,
@@ -462,22 +456,23 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
     },
   });
 
-  test("relê na revisão do voto, na cadeia montada, no concluir depois das enquetes, e quando a atividade ou a rodada trocam", () => {
+  test("relê na separação, na regra enviada, e quando a atividade ou a rodada trocam (ficha 5, ADR-174)", () => {
     const antes = painel();
     expect(mudouAEvidencia(antes, painel())).toBe(false);
-    // A revisão do voto marca a EF06CO10 e a EF06CO01.
-    expect(mudouAEvidencia(antes, painel(undefined, { revisaram: 4 }))).toBe(true);
-    // A cadeia montada: a linha sai de `cadeia` (EF06CO03), sem contador no resumo.
-    expect(mudouAEvidencia(antes, painel(["galeria", "cadeia", "mariana", "enquetes"]))).toBe(true);
-    expect(mudouAEvidencia(antes, painel(undefined, { concluiram: 1 }))).toBe(true);
+    // A separação marca a EF06CO01.
+    expect(mudouAEvidencia(antes, painel(undefined, { separaram: 5 }))).toBe(true);
+    // A regra enviada: a linha sai de `cadeia` (EF06CO03), sem contador no resumo.
+    expect(mudouAEvidencia(antes, painel(["galeria", "cadeia", "mariana", "mariana"]))).toBe(true);
     expect(mudouAEvidencia(antes, painel(undefined, {}, 2))).toBe(true);
     expect(mudouAEvidencia(antes, painel(undefined, {}, 1, "p2"))).toBe(true);
   });
 
-  test("passo que não marca nada não relê a página: o voto lacrado, a galeria aberta e o caso Mariana", () => {
-    expect(mudouAEvidencia(painel(["feed"]), painel(["lacrada"]))).toBe(false);
+  test("o que não marca nada não relê a página: a espera, a galeria, a revisão do voto e os cartões", () => {
+    expect(mudouAEvidencia(painel(["feed"]), painel(["classificacao"]))).toBe(false);
     expect(mudouAEvidencia(painel(["lacrada"]), painel(["galeria"]))).toBe(false);
-    expect(mudouAEvidencia(painel(["mariana"]), painel(["enquetes"]))).toBe(false);
+    expect(mudouAEvidencia(painel(), painel(undefined, { revisaram: 4 }))).toBe(false);
+    expect(mudouAEvidencia(painel(["mariana"]), painel(["fim"]))).toBe(false);
+    expect(mudouAEvidencia(painel(), painel(undefined, { concluiram: 1 }))).toBe(false);
   });
 });
 
