@@ -717,7 +717,14 @@ testado no container} &
   O \cd{IntersectionObserver} do \emph{dwell} se refere ao \emph{iframe}:
   numa área larga o sinal central do motor infla em silêncio, e nada na tela
   denuncia. A condição é positiva --- \cd{fase === "explicabilidade"} E
-  \cd{passo === "relatorio"} ---, tudo o mais é aparelho.\\
+  \cd{passo === "relatorio"} ---, tudo o mais é aparelho.
+  \textbf{O inverso --- o feed em cinza preso em tela cheia, sem a moldura do
+  hub} --- é \cd{passo: "relatorio"} publicado por um relatório que já saiu da
+  tela: o desvio por fase o montou por um instante com as tarefas de antes do
+  fim da revelação. Desde a 1.4.1 o \cd{RelatorioComSaida} desfaz o \cd{passo}
+  ao desmontar e a casca recarrega as tarefas ao gravar o fim da revelação.
+  Diagnóstico: escutar as mensagens \cd{exp:estado} na página do hub --- a
+  última com \cd{passo} é a culpada.\\
 \textbf{O seed morre com \enquote{SEED\_SENHA não definida}} & Não é regressão:
   a senha das contas de demonstração saiu do fonte (\adrr{ADR-47}). Nos dois
   \emph{compose} ela já vem; no \emph{host}, ponha \cd{SEED\_SENHA} no

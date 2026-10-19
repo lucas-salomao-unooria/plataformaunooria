@@ -5,7 +5,11 @@ import { FERRAMENTAS, rodarModelo } from '../ferramentas';
 import { validarOpcoes, type Opcoes } from '../regras/opcoes';
 import type { AiProvider } from '../../ai/provider';
 import { erroDeJogo } from '../erros';
-import { TETO_TOKENS_RESPOSTA } from '../regras/defaults';
+import {
+  PRAZO_DO_TURNO_DO_CIENTISTA_MS,
+  TETO_POR_CHAMADA_DO_CIENTISTA_MS,
+  TETO_TOKENS_RESPOSTA,
+} from '../regras/defaults';
 import { protocoloDoTurno, type TipoDeTurno } from './turno';
 import { problemasDeTamanho } from './tamanho';
 
@@ -373,6 +377,9 @@ export async function responder(
     // guarda de 450 caracteres com retry (agente/tamanho.ts). Este número só
     // impede geração que não para — e o RACIOCÍNIO do modelo conta aqui dentro.
     maxTokens: TETO_TOKENS_RESPOSTA,
+    // O turno cabe no teto do cliente mesmo com a fila do Vertex cheia (regras/defaults.ts).
+    tetoPorChamadaMs: TETO_POR_CHAMADA_DO_CIENTISTA_MS,
+    prazoMs: PRAZO_DO_TURNO_DO_CIENTISTA_MS,
     // Protocolo curto é seguido com mais fidelidade com menos temperatura, e
     // isto não afeta a escolha de ferramenta.
     temperatura: 0.5,

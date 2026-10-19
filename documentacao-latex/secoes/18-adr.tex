@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{174 decisões}, numeradas até ADR-174: a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{175 decisões}, numeradas até ADR-175: a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -225,6 +225,7 @@ que a cercam.
 \zebra \adrr{ADR-172} & O Canal A da Missão Tempestade: toda habilidade por ação --- a ligação da Saúde, o registro da operação, o \enquote{E se…} pareado e o fechamento aberto pelo professor; as perguntas saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-154}\\
 \adrr{ADR-173} & Clone dentro de clone: a peça de outra plataforma dentro de uma experiência disfarçada & 2026-10-16 & Aceita; estende a \adrr{ADR-117}\\
 \zebra \adrr{ADR-174} & O Júri Estadual mede pelo que a criança faz: a separação (EF06CO01) e a regra SE … ENTÃO (EF06CO03); a EF06CO10 sai & 2026-10-18 & Aceita; supera em parte a \adrr{ADR-151}, a \adrr{ADR-152}, a \adrr{ADR-157} e a \adrr{ADR-164}\\
+\adrr{ADR-175} & O turno da IA conversada cabe no teto do cliente: teto por chamada, com nova tentativa, e prazo do turno & 2026-10-19 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -15834,3 +15835,81 @@ a \adrr{ADR-172}, que fizeram o mesmo nas outras missões, e \textbf{usa} a
 \textbf{Gatilho.} Se a regra SE \ldots{} ENTÃO travar a aula, ou o chute
 aparecer alto na distribuição dos níveis, o PO autorizou voltar à ordenação,
 com régua por pares vizinhos.
+
+\section{ADR-175 --- O turno da IA conversada cabe no teto do cliente: teto por chamada, com nova tentativa, e prazo do turno}
+\label{adr:teto-por-chamada}
+
+\textbf{Data.} 2026-10-19. \textbf{Status.} Aceita. \textbf{Estende} a
+\adrr{ADR-16} (o modelo no \cd{global}, com a capacidade compartilhada) e a
+\adrr{ADR-148} (o raciocínio desligado), e \textbf{usa} a \adrr{ADR-161} (o
+custo do que se mediu).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O sintoma.} No teste de ponta a ponta das seis missões no
+    \emph{dev} publicado, a primeira pergunta da Missão Tempestade
+    (\cd{exp02em1b}) voltou como \enquote{A conexão falhou. Tente de novo} em
+    três corridas seguidas. O servidor terminava o turno 74, 177 e 194\,s
+    depois; o cliente desiste em 45\,s (\cd{TIMEOUT\_DO\_TURNO\_MS}). A
+    resposta era gravada e não chegava a ninguém --- e o relógio da
+    investigação é de três minutos.
+  \item \textbf{A medição.} Com o mesmo código, o mesmo \emph{prompt} e o
+    mesmo Vertex, o turno leva 13 a 17\,s (duas tentativas, a primeira
+    recusada pela guarda de frases). O \emph{trace} do turno de 194\,s mostrou
+    três chamadas de 80, 56 e 52\,s e duas de 1,5 e 3,3\,s. A métrica do
+    próprio Vertex (\cd{model\_invocation\_latencies}, \cd{request\_type}
+    \enquote{shared}) deu p99 de 46 a 81\,s numa janela e de 3 a 6\,s na
+    seguinte, no mesmo dia. A demora é FILA na capacidade compartilhada, não
+    código nem rede --- e a mesma suíte, sem ajuste, passou limpa uma hora
+    depois.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \cd{AiConversaRequest} ganha dois campos opcionais:
+    \cd{tetoPorChamadaMs} (o teto de UMA chamada) e \cd{prazoMs} (o do turno
+    inteiro). Sem eles, nada muda para nenhum consumidor.
+  \item No \cd{conversar} do Vertex, a chamada que passa do teto é ABORTADA
+    (\cd{AbortSignal.timeout}) e repetida, até três vezes por volta, sem
+    passar do prazo. Passado o prazo, nenhuma chamada nova começa e o turno
+    vira \cd{ErroDeGeracao}.
+  \item O Cientista usa 12\,s por chamada e 40\,s por turno
+    (\arq{unoogpt/regras/defaults.ts}), abaixo dos 45\,s do cliente. O
+    \cd{ErroDeGeracao} já era traduzido em \enquote{O Cientista não conseguiu
+    responder agora. Tente falar de novo.}, \textbf{sem debitar pergunta}.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Subir o teto do cliente.} A criança esperaria minutos olhando
+    para a tela, dentro de uma investigação de três minutos. O teto existe
+    porque espera longa é falha para quem está na aula.
+  \item \textbf{Capacidade reservada} (\emph{Provisioned Throughput}). Resolve
+    a fila, com custo fixo mensal por contrato; é decisão de produto e de
+    preço, não de código --- fica como gatilho.
+  \item \textbf{Trocar de região.} O modelo só é servido no \cd{global}
+    (\adrr{ADR-16}); a região exigiria a família anterior.
+  \item \textbf{Cortar tentativas ou voltas.} O turno normal já cabe com
+    folga (13 a 17\,s); o que estoura é UMA chamada presa, e menos
+    tentativas pioraria a fala sem tocar a causa.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A chamada abortada pode ter sido cobrada} sem devolver
+    \emph{tokens}: ela não entra no painel de custos (\adrr{ADR-161}).
+  \item \textbf{Com a fila cheia por mais de 40\,s, a criança ainda recebe a
+    recusa} --- agora dita pelo Cientista, sem perder pergunta, em vez de
+    \enquote{a conexão falhou} com a pergunta gasta no servidor.
+  \item Repetir aumenta a carga no vendor justamente no pico; o limite de
+    três por volta e o prazo do turno são o freio.
+\end{itemize}
+
+\textbf{Gatilho.} Se o turno passar do prazo em aula de verdade (o 503
+\cd{cientista-indisponivel} no log da api) mais de uma vez por turma, é hora
+de capacidade reservada para o contrato --- ou de estender o teto aos outros
+consumidores de IA em tempo real.

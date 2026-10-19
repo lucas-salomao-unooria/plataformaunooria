@@ -40,6 +40,7 @@ await suite(
       "A folha da turma não tem coluna de resgatados — não é ranking de crianças",
       "Ao encerrar a missão, o nível aparece no painel aberto, sem recarregar",
       "Zerar a turma apaga as habilidades, e o painel recomeça do zero",
+      "Depois de zerar, a turma joga de novo: largada nova, e o turno com o Cientista é gravado",
       "A ligação da Saúde aparece antes da decisão, e o pedido só da contagem traz a contagem por bairro",
       "\"Enviar equipes\" abre o registro da operação, sem relógio, antes de qualquer resultado",
       "O resultado traz as duas comparações nas mesmas 20 tempestades, e não há mais pergunta de múltipla escolha",
@@ -557,5 +558,50 @@ await suite(
 
     /* Devolve a sala como o seed a deixa: a próxima corrida entra liberada. */
     r.exigir((await estadoNaSala("liberada")) === 200, "a missão volta a ficar liberada para a turma");
+
+    // ═══ A turma joga de novo depois de zerar ════════════════════════════
+    /* Zerar deixou a rodada nova VAZIA, e é ela que o relatório do estudante
+       mostra. A suíte professor/06 abre esse relatório e exige uma rodada com
+       falas datadas — sem esta partida ela encontra "ainda não começou" e fica
+       vermelha por causa da ordem das suítes, não do produto. De quebra, prova
+       que a turma zerada volta a jogar: largada nova, campo aberto, turno gravado. */
+    await prof.goto(resultadosDaTurma, { waitUntil: "domcontentloaded" });
+    await prof.waitForSelector("text=Dar a largada", { timeout: 20_000 });
+    await prof.click("text=Dar a largada");
+    await prof.waitForSelector("text=Em andamento", { timeout: 20_000 });
+
+    await p.goto(`${HUB}/exp/exp02em1b`, { waitUntil: "domcontentloaded" });
+    const q9 = p.frameLocator('iframe[data-experiencia]');
+    const campoDeNovo = q9.locator("form input").first();
+    /* Zerar apagou a partida: a criança volta à ABERTURA, como no começo. */
+    await q9.locator("text=/Não dá para atender todos/i").waitFor({ timeout: 40_000 });
+    await q9.locator("button", { hasText: /começar/i }).first().click();
+    await campoDeNovo.waitFor({ timeout: 20_000 });
+    const liberado = Date.now() + 20_000;
+    while ((await campoDeNovo.isDisabled()) && Date.now() < liberado) await prof.waitForTimeout(500);
+    r.exigir(!(await campoDeNovo.isDisabled()), "depois de zerar e dar a largada de novo, o campo aceita fala");
+
+    const PERGUNTA_DE_NOVO = "qual bairro tem mais idosos?";
+    const turnoDeNovo = p.waitForResponse(
+      (resp) => resp.url().includes("/unoogpt/pergunta") && resp.request().method() === "POST",
+      { timeout: 120_000 },
+    );
+    await campoDeNovo.pressSequentially(PERGUNTA_DE_NOVO, { delay: 15 });
+    await campoDeNovo.press("Enter");
+    const respostaDeNovo = await turnoDeNovo;
+    r.exigir(respostaDeNovo.ok(), `o turno da rodada nova respondeu ${respostaDeNovo.status()}`);
+    await p.reload({ waitUntil: "domcontentloaded" });
+    await p
+      .frameLocator('iframe[data-experiencia]')
+      .locator(`text=${PERGUNTA_DE_NOVO}`)
+      .first()
+      .waitFor({ timeout: 40_000 });
+    await r.registrar(p, "joga-depois-de-zerar", {
+      titulo: "A turma zerada joga de novo",
+      mostra: "Depois de zerar e de uma largada nova, a criança volta a conversar com o Cientista.",
+      prova:
+        "Zerar é aplicar a missão de novo, não trancá-la: a rodada nova abre com a largada e a " +
+        "pergunta sobrevive a um F5. É esta partida que o relatório do estudante mostra depois.",
+    });
   },
 );

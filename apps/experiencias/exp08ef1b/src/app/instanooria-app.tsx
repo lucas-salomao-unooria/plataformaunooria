@@ -614,7 +614,7 @@ export function InstanooriaApp({
   if ((fase === "explicabilidade" || fase === "revelacao" || fase === "dossie") && runId) {
     return (
       <Suspense fallback={null}>
-        <Explicabilidade runId={runId} />
+        <Explicabilidade runId={runId} aoConcluirRevelacao={() => void carregarTarefas()} />
       </Suspense>
     );
   }
