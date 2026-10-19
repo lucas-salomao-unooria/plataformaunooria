@@ -64567,6 +64567,7 @@
                       "enum": [
                         "credencial",
                         "feed",
+                        "classificacao",
                         "lacrada",
                         "galeria",
                         "revisada",
@@ -64581,6 +64582,7 @@
                       "enum": [
                         "credencial",
                         "feed",
+                        "classificacao",
                         "lacrada",
                         "galeria",
                         "revisada",
@@ -64813,160 +64815,176 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "cadeia": {
+                    "classificacao": {
                       "type": "object",
                       "properties": {
-                        "blocos": {
+                        "itens": {
                           "type": "array",
                           "items": {
                             "type": "object",
                             "properties": {
                               "id": {
                                 "type": "string",
-                                "pattern": "^bl-[a-z0-9]{3}$"
+                                "pattern": "^cl-[a-z0-9]{3}$"
                               },
-                              "rotulo": {
+                              "titulo": {
+                                "type": "string"
+                              },
+                              "imagem": {
+                                "type": "object",
+                                "properties": {
+                                  "url": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "alt": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "url",
+                                  "alt"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "titulo",
+                              "imagem"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "maxItems": 10
+                        }
+                      },
+                      "required": [
+                        "itens"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "cadeia": {
+                      "type": "object",
+                      "properties": {
+                        "se": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^rg-[a-z0-9]{3}$"
+                              },
+                              "texto": {
                                 "type": "string"
                               }
                             },
                             "required": [
                               "id",
-                              "rotulo"
+                              "texto"
                             ],
                             "additionalProperties": false
                           },
-                          "minItems": 4,
-                          "maxItems": 4
+                          "minItems": 3,
+                          "maxItems": 3
                         },
-                        "tentativas": {
-                          "type": "integer",
-                          "minimum": 0
+                        "entao": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^rg-[a-z0-9]{3}$"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 3,
+                          "maxItems": 3
                         },
-                        "montada": {
+                        "enviada": {
                           "type": "boolean"
                         },
-                        "parSimulado": {
+                        "revelacao": {
                           "type": "object",
                           "properties": {
-                            "voce": {
+                            "escolha": {
                               "type": "object",
                               "properties": {
-                                "areaPrincipal": {
-                                  "type": "string",
-                                  "enum": [
-                                    "area_a",
-                                    "area_b",
-                                    "area_c",
-                                    "area_d"
-                                  ],
-                                  "nullable": true
+                                "se": {
+                                  "type": "string"
                                 },
-                                "porArea": {
-                                  "type": "array",
-                                  "items": {
-                                    "type": "object",
-                                    "properties": {
-                                      "area": {
-                                        "type": "string",
-                                        "enum": [
-                                          "area_a",
-                                          "area_b",
-                                          "area_c",
-                                          "area_d"
-                                        ]
-                                      },
-                                      "posts": {
-                                        "type": "integer",
-                                        "minimum": 0
-                                      },
-                                      "curtidas": {
-                                        "type": "integer",
-                                        "minimum": 0
-                                      }
-                                    },
-                                    "required": [
-                                      "area",
-                                      "posts",
-                                      "curtidas"
-                                    ],
-                                    "additionalProperties": false
-                                  },
-                                  "minItems": 4,
-                                  "maxItems": 4
+                                "entao": {
+                                  "type": "string"
                                 }
                               },
                               "required": [
-                                "areaPrincipal",
-                                "porArea"
+                                "se",
+                                "entao"
                               ],
                               "additionalProperties": false
                             },
-                            "outroJurado": {
+                            "certa": {
                               "type": "object",
                               "properties": {
-                                "areaPrincipal": {
+                                "se": {
                                   "type": "string",
-                                  "enum": [
-                                    "area_a",
-                                    "area_b",
-                                    "area_c",
-                                    "area_d"
-                                  ],
-                                  "nullable": true
+                                  "pattern": "^rg-[a-z0-9]{3}$"
                                 },
-                                "porArea": {
-                                  "type": "array",
-                                  "items": {
-                                    "type": "object",
-                                    "properties": {
-                                      "area": {
-                                        "type": "string",
-                                        "enum": [
-                                          "area_a",
-                                          "area_b",
-                                          "area_c",
-                                          "area_d"
-                                        ]
-                                      },
-                                      "posts": {
-                                        "type": "integer",
-                                        "minimum": 0
-                                      },
-                                      "curtidas": {
-                                        "type": "integer",
-                                        "minimum": 0
-                                      }
-                                    },
-                                    "required": [
-                                      "area",
-                                      "posts",
-                                      "curtidas"
-                                    ],
-                                    "additionalProperties": false
-                                  },
-                                  "minItems": 4,
-                                  "maxItems": 4
+                                "entao": {
+                                  "type": "string",
+                                  "pattern": "^rg-[a-z0-9]{3}$"
                                 }
                               },
                               "required": [
-                                "areaPrincipal",
-                                "porArea"
+                                "se",
+                                "entao"
                               ],
                               "additionalProperties": false
+                            },
+                            "motivo": {
+                              "type": "string",
+                              "enum": [
+                                "curtidas",
+                                "permanencia",
+                                "variado"
+                              ]
+                            },
+                            "area": {
+                              "type": "string",
+                              "enum": [
+                                "area_a",
+                                "area_b",
+                                "area_c",
+                                "area_d"
+                              ],
+                              "nullable": true
                             }
                           },
                           "required": [
-                            "voce",
-                            "outroJurado"
+                            "escolha",
+                            "certa",
+                            "motivo",
+                            "area"
                           ],
-                          "additionalProperties": false
+                          "additionalProperties": false,
+                          "nullable": true
                         }
                       },
                       "required": [
-                        "blocos",
-                        "tentativas",
-                        "montada",
-                        "parSimulado"
+                        "se",
+                        "entao",
+                        "enviada",
+                        "revelacao"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -65058,6 +65076,7 @@
                     "feed",
                     "voto",
                     "revisao",
+                    "classificacao",
                     "cadeia",
                     "mariana",
                     "concluida"
@@ -65072,7 +65091,7 @@
           "juri-estadual"
         ],
         "summary": "O estado da missão: o passo, o feed servido até aqui, o voto e os blocos do fim.",
-        "description": "Boot da experiência e o F5. O feed traz **só os posts que o motor serviu** — o acervo da mostra existe só no servidor até a Galeria Oculta. Nenhum peso, nenhuma área líder: a regra do feed é o que a Etapa 5 ensina, e a criança a descobre depois.\n\n`cadeia` (os quatro blocos embaralhados) e `mariana` (o caso e os cartões) só vêm do passo deles em diante, com ids OPACOS e estáveis num F5. Nenhum diz a posição certa, e nenhum cartão diz se é o certo.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o gravado. A etapa só conduz quem votou: quem ainda está no feed continua no feed com a galeria liberada.\n- `pacoteId` é a ATIVIDADE e `rodada` é a rodada dela: mudam quando o professor põe outra atividade no ar ou zera a turma, e a sessão é outra.\n- `imagem.url` é `null` enquanto o professor não gerou as imagens — a tela desenha a arte procedural do estande.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "Boot da experiência e o F5. O feed traz **só os posts que o motor serviu** — o acervo da mostra existe só no servidor até a Galeria Oculta. Nenhum peso, nenhuma área líder: a regra do feed é o que a Etapa 5 ensina, e a criança a descobre depois.\n\n`classificacao` (os estandes vistos, sem área), `cadeia` (as peças da regra; a revelação depois do envio) e `mariana` (o caso e os cartões) só vêm do passo deles, com ids OPACOS e estáveis num F5. Nenhuma peça e nenhum cartão diz se é o certo.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o gravado. A etapa só conduz quem votou: quem ainda está no feed continua no feed com a galeria liberada.\n- `pacoteId` é a ATIVIDADE e `rodada` é a rodada dela: mudam quando o professor põe outra atividade no ar ou zera a turma, e a sessão é outra.\n- `imagem.url` é `null` enquanto o professor não gerou as imagens — a tela desenha a arte procedural do estande.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -65292,6 +65311,7 @@
                           "enum": [
                             "credencial",
                             "feed",
+                            "classificacao",
                             "lacrada",
                             "galeria",
                             "revisada",
@@ -65659,6 +65679,7 @@
                       "enum": [
                         "credencial",
                         "feed",
+                        "classificacao",
                         "lacrada",
                         "galeria",
                         "revisada",
@@ -65690,7 +65711,7 @@
           "juri-estadual"
         ],
         "summary": "A cédula lacrada — o projeto e a certeza (latch).",
-        "description": "O gesto que a missão confronta, e ele é IRREVERSÍVEL: grava o projeto, a certeza (`examinei_bem` = \"Sim\", `vi_tudo` = \"Com certeza\"), o carimbo e o passo `lacrada` juntos. A cédula tem quatro elementos e nenhuma justificativa. Depois dele, a criança espera a turma (o pico): o professor projeta a dispersão de votos e libera a auditoria.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes da cédula liberada (menos de dez posts E menos de 8 minutos desde a 1ª rolagem) responde **409** `feed-incompleto`; projeto que não apareceu no feed DESTA criança, **409** `projeto-fora-do-feed`.\n- O segundo voto — inclusive dois simultâneos — responde **409** `voto-ja-lacrado`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "O gesto que a missão confronta, e ele é IRREVERSÍVEL: grava o projeto, a certeza (`examinei_bem` = \"Sim\", `vi_tudo` = \"Com certeza\"), o carimbo e o passo `classificacao` juntos. A cédula tem quatro elementos e nenhuma justificativa. Depois dele, a criança separa os estandes que viu (`POST classificacao`) e espera a turma (o pico): o professor projeta a dispersão de votos e libera a auditoria.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes da cédula liberada (menos de dez posts E menos de 8 minutos desde a 1ª rolagem) responde **409** `feed-incompleto`; projeto que não apareceu no feed DESTA criança, **409** `projeto-fora-do-feed`.\n- O segundo voto — inclusive dois simultâneos — responde **409** `voto-ja-lacrado`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -65876,7 +65897,7 @@
           "juri-estadual"
         ],
         "summary": "Registra o que a criança fez na galeria: abriu um estande ou buscou.",
-        "description": "É o registro da EF06CO10 e da EF06CO01, lido no latch da revisão do voto. Abrir de novo o mesmo estande não conta. Da busca, só o TIPO (`hashtag` ou `texto`) e a área que casou, ou `null` — **o texto digitado nunca sai do aparelho** (texto livre de menor). Até 30 buscas são gravadas.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Só na galeria: antes, **403** `galeria-nao-liberada`; depois da revisão do voto, **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "É o registro da exploração da galeria (o painel mostra quem abriu e quem buscou). Desde a ficha 5 (ADR-174) não marca habilidade. Abrir de novo o mesmo estande não conta. Da busca, só o TIPO (`hashtag` ou `texto`) e a área que casou, ou `null` — **o texto digitado nunca sai do aparelho** (texto livre de menor). Até 30 buscas são gravadas.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Só na galeria: antes, **403** `galeria-nao-liberada`; depois da revisão do voto, **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -65970,6 +65991,7 @@
                       "enum": [
                         "credencial",
                         "feed",
+                        "classificacao",
                         "lacrada",
                         "galeria",
                         "revisada",
@@ -66001,7 +66023,7 @@
           "juri-estadual"
         ],
         "summary": "\"Manter meu voto inicial\" ou \"Confirmar Voto Revisado\", depois da galeria (latch).",
-        "description": "`manter` só vale depois de abrir ao menos UM estande oculto; `trocar` aceita qualquer estande do pacote (os 40; 16 num pacote antigo), menos o do voto lacrado. Sem justificativa. Grava a ação, o voto final, o carimbo e o passo `revisada` juntos, e marca a EF06CO10 (`auditoria`: dois ocultos abertos E uma busca = atingiu; abriu algum = em processo) e a EF06CO01 (`classificacao`: buscou pela hashtag de uma categoria fora da bolha E abriu um projeto dela = atingiu; buscou ou abriu um oculto = em processo). Quem não fez nada fica SEM a marca de ação: decide a pergunta. Depois, `POST passo` com `para: \"cadeia\"`.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `manter` sem nenhum oculto aberto responde **409** `galeria-sem-inspecao`; `trocar` com o mesmo projeto do voto, ou com um id que o pacote não tem, **400** `payload-invalido`.\n- A segunda revisão — inclusive duas simultâneas — responde **409** `voto-ja-revisado`. Antes da galeria, **403** `galeria-nao-liberada`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "`manter` só vale depois de abrir ao menos UM estande oculto; `trocar` aceita qualquer estande do pacote (os 40; 16 num pacote antigo), menos o do voto lacrado. Sem justificativa. Grava a ação, o voto final, o carimbo e o passo `revisada` juntos. **Não marca habilidade** desde a ficha 5 (ADR-174): a galeria é experiência. Depois, `POST passo` com `para: \"cadeia\"`.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `manter` sem nenhum oculto aberto responde **409** `galeria-sem-inspecao`; `trocar` com o mesmo projeto do voto, ou com um id que o pacote não tem, **400** `payload-invalido`.\n- A segunda revisão — inclusive duas simultâneas — responde **409** `voto-ja-revisado`. Antes da galeria, **403** `galeria-nao-liberada`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -66059,9 +66081,9 @@
         }
       }
     },
-    "/juri-estadual/cadeia": {
+    "/juri-estadual/classificacao": {
       "post": {
-        "operationId": "JuriEstadualController_cadeia",
+        "operationId": "JuriEstadualController_classificacao",
         "parameters": [],
         "responses": {
           "200": {
@@ -66071,21 +66093,12 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "correta": {
-                      "type": "boolean",
-                      "enum": [
-                        true
-                      ]
-                    },
-                    "tentativas": {
-                      "type": "integer",
-                      "minimum": 1
-                    },
                     "passo": {
                       "type": "string",
                       "enum": [
                         "credencial",
                         "feed",
+                        "classificacao",
                         "lacrada",
                         "galeria",
                         "revisada",
@@ -66094,12 +66107,18 @@
                         "enquetes",
                         "fim"
                       ]
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ]
                     }
                   },
                   "required": [
-                    "correta",
-                    "tentativas",
-                    "passo"
+                    "passo",
+                    "etapa"
                   ],
                   "additionalProperties": false
                 }
@@ -66110,8 +66129,8 @@
         "tags": [
           "juri-estadual"
         ],
-        "summary": "Uma tentativa de montar a cadeia: Interações → Dados → Algoritmo → Bolha.",
-        "description": "Do passo `cadeia`. Cada envio é uma TENTATIVA. Na certa (200), o passo vai a `mariana` e a EF06CO03 (`cadeia`) é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu). Na errada, **422** `ordem-incorreta` com `tentativas` no corpo — a tentativa CONTA, e a resposta nunca diz qual vaga errou. Com a cadeia já montada, responde `correta: true` sem contar outra tentativa.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `ordem`: os quatro ids OPACOS desta sessão (`bl-` e três caracteres), sem repetir. (O `.refine()` some do OpenAPI; daí esta nota.) Id de outra sessão responde **400** `payload-invalido`.\n- Fora do passo `cadeia` responde **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "summary": "A separação: uma área para cada estande que a criança viu (EF06CO01).",
+        "description": "Do passo `classificacao`, logo depois do voto. `respostas` traz um item para CADA estande de `sessao.classificacao.itens` (ids OPACOS `cl-`), com a área escolhida. Uma vez só. O servidor corrige, grava e marca a EF06CO01 (`classificacao`: 90% ou mais certos = atingiu; 50% ou mais = em processo; menos = não atingiu; com menos de quatro estandes vistos, sem marca) e leva a sessão à espera (`lacrada`). **A resposta não diz quantos acertou.** Com a galeria já liberada, a criança cai nela logo depois.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Item faltando, sobrando, repetido ou de outra sessão responde **400** `payload-invalido`. (O `.refine()` some do OpenAPI; daí esta nota.)\n- Enviar de novo responde **409** `classificacao-ja-enviada`; fora do passo, **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -66128,18 +66147,189 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "ordem": {
+                  "respostas": {
                     "type": "array",
                     "items": {
-                      "type": "string",
-                      "pattern": "^bl-[a-z0-9]{3}$"
+                      "type": "object",
+                      "properties": {
+                        "itemId": {
+                          "type": "string",
+                          "pattern": "^cl-[a-z0-9]{3}$"
+                        },
+                        "area": {
+                          "type": "string",
+                          "enum": [
+                            "area_a",
+                            "area_b",
+                            "area_c",
+                            "area_d"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "itemId",
+                        "area"
+                      ],
+                      "additionalProperties": false
                     },
-                    "minItems": 4,
-                    "maxItems": 4
+                    "minItems": 1,
+                    "maxItems": 10
                   }
                 },
                 "required": [
-                  "ordem"
+                  "respostas"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/juri-estadual/regra": {
+      "post": {
+        "operationId": "JuriEstadualController_regra",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "credencial",
+                        "feed",
+                        "classificacao",
+                        "lacrada",
+                        "galeria",
+                        "revisada",
+                        "cadeia",
+                        "mariana",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ]
+                    },
+                    "revelacao": {
+                      "type": "object",
+                      "properties": {
+                        "escolha": {
+                          "type": "object",
+                          "properties": {
+                            "se": {
+                              "type": "string"
+                            },
+                            "entao": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "se",
+                            "entao"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "certa": {
+                          "type": "object",
+                          "properties": {
+                            "se": {
+                              "type": "string",
+                              "pattern": "^rg-[a-z0-9]{3}$"
+                            },
+                            "entao": {
+                              "type": "string",
+                              "pattern": "^rg-[a-z0-9]{3}$"
+                            }
+                          },
+                          "required": [
+                            "se",
+                            "entao"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "motivo": {
+                          "type": "string",
+                          "enum": [
+                            "curtidas",
+                            "permanencia",
+                            "variado"
+                          ]
+                        },
+                        "area": {
+                          "type": "string",
+                          "enum": [
+                            "area_a",
+                            "area_b",
+                            "area_c",
+                            "area_d"
+                          ],
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "escolha",
+                        "certa",
+                        "motivo",
+                        "area"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "etapa",
+                    "revelacao"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "A regra SE … ENTÃO: a condição e a ação que o programa do feed executou (EF06CO03).",
+        "description": "Do passo `cadeia` (o nome ficou; desde a 0.6.0 a tela é a da regra). `se` e `entao`: uma peça de cada lado, ids OPACOS `rg-` desta sessão. Uma vez só: o servidor corrige, grava, marca a EF06CO03 (`regra`: as duas certas = atingiu; uma = em processo; nenhuma = não atingiu) e leva a sessão ao caso Mariana. Responde a REVELAÇÃO — as peças escolhidas e as certas, e o que a regra fez no feed desta criança. Enviar de novo devolve a mesma revelação, sem trocar a escolha.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Peça de outra sessão, ou do lado errado, responde **400** `payload-invalido`.\n- Fora do passo `cadeia` responde **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "se": {
+                    "type": "string",
+                    "pattern": "^rg-[a-z0-9]{3}$"
+                  },
+                  "entao": {
+                    "type": "string",
+                    "pattern": "^rg-[a-z0-9]{3}$"
+                  }
+                },
+                "required": [
+                  "se",
+                  "entao"
                 ],
                 "additionalProperties": false
               }
@@ -66165,6 +66355,7 @@
                       "enum": [
                         "credencial",
                         "feed",
+                        "classificacao",
                         "lacrada",
                         "galeria",
                         "revisada",
@@ -66196,7 +66387,7 @@
           "juri-estadual"
         ],
         "summary": "O caso Mariana: um cartão de mecanismo e um de atitude.",
-        "description": "Grava a escolha e o passo `enquetes`. **Não marca evidência e não diz qual é o certo**: é a transferência, conversada na plenária. Escolher de novo devolve o estado, sem trocar a primeira escolha.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Fora do passo `mariana` responde **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "Grava a escolha e CONCLUI a missão (passo `fim` e o carimbo, no mesmo update) — as enquetes saíram com a ficha 5 (ADR-174). **Não marca evidência e não diz qual é o certo**: é a transferência, conversada na plenária. Escolher de novo devolve o estado, sem trocar a primeira escolha.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Fora do passo `mariana` responde **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -66257,6 +66448,7 @@
                       "enum": [
                         "credencial",
                         "feed",
+                        "classificacao",
                         "lacrada",
                         "galeria",
                         "revisada",
@@ -66287,8 +66479,8 @@
         "tags": [
           "juri-estadual"
         ],
-        "summary": "O crachá homologado — conclui a missão, idempotente.",
-        "description": "Leva a sessão de `enquetes` a `fim` e carimba a conclusão, no mesmo update. As três enquetes vão pelas rotas genéricas de `/evidencias/exp06ef1b/perguntas`, e não são exigidas para concluir.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes das enquetes responde **409** `passo-invalido`. Concluir de novo devolve o mesmo estado.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "summary": "Conclui uma sessão ANTIGA que parou nas enquetes — idempotente.",
+        "description": "Leva a sessão de `enquetes` a `fim` e carimba a conclusão, no mesmo update. Só serve às sessões anteriores à 0.6.0: desde ela, os cartões do caso Mariana já concluem (ADR-174).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Fora de `enquetes` (e de `fim`) responde **409** `passo-invalido`. Concluir de novo devolve o mesmo estado.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -66553,6 +66745,7 @@
                             "enum": [
                               "credencial",
                               "feed",
+                              "classificacao",
                               "lacrada",
                               "galeria",
                               "revisada",
@@ -66568,23 +66761,14 @@
                           "ocioso": {
                             "type": "boolean"
                           },
+                          "separou": {
+                            "type": "boolean"
+                          },
                           "abriuAGaleria": {
                             "type": "boolean"
                           },
                           "buscou": {
                             "type": "boolean"
-                          },
-                          "categoriasBuscadas": {
-                            "type": "array",
-                            "items": {
-                              "type": "string",
-                              "enum": [
-                                "area_a",
-                                "area_b",
-                                "area_c",
-                                "area_d"
-                              ]
-                            }
                           },
                           "revisou": {
                             "type": "boolean"
@@ -66602,9 +66786,9 @@
                           "passo",
                           "votou",
                           "ocioso",
+                          "separou",
                           "abriuAGaleria",
                           "buscou",
-                          "categoriasBuscadas",
                           "revisou",
                           "concluiu"
                         ],
@@ -66623,6 +66807,10 @@
                           "minimum": 0
                         },
                         "votaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "separaram": {
                           "type": "integer",
                           "minimum": 0
                         },
@@ -66776,6 +66964,7 @@
                         "total",
                         "entraram",
                         "votaram",
+                        "separaram",
                         "revisaram",
                         "concluiram",
                         "ociosos",
@@ -68829,24 +69018,53 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "blocos": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "posicao": {
-                            "type": "integer"
-                          },
-                          "rotulo": {
-                            "type": "string"
+                    "pecas": {
+                      "type": "object",
+                      "properties": {
+                        "se": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "texto": {
+                                "type": "string"
+                              },
+                              "certa": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "texto",
+                              "certa"
+                            ],
+                            "additionalProperties": false
                           }
                         },
-                        "required": [
-                          "posicao",
-                          "rotulo"
-                        ],
-                        "additionalProperties": false
-                      }
+                        "entao": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "texto": {
+                                "type": "string"
+                              },
+                              "certa": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "texto",
+                              "certa"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "se",
+                        "entao"
+                      ],
+                      "additionalProperties": false
                     },
                     "mariana": {
                       "type": "object",
@@ -68914,22 +69132,6 @@
                         "type": "string"
                       }
                     },
-                    "feedbackDaCadeia": {
-                      "type": "object",
-                      "properties": {
-                        "correta": {
-                          "type": "string"
-                        },
-                        "incorreta": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "correta",
-                        "incorreta"
-                      ],
-                      "additionalProperties": false
-                    },
                     "regra": {
                       "type": "object",
                       "properties": {
@@ -68960,10 +69162,9 @@
                     }
                   },
                   "required": [
-                    "blocos",
+                    "pecas",
                     "mariana",
                     "plenaria",
-                    "feedbackDaCadeia",
                     "regra"
                   ],
                   "additionalProperties": false
@@ -68976,7 +69177,7 @@
           "juri-estadual"
         ],
         "summary": "O esqueleto da missão com o gabarito, a plenária e a regra do feed.",
-        "description": "**Professor e gestores.** É o bloco vivo do guia: a cadeia Interações → Dados → Algoritmo → Bolha, o caso Mariana com os cartões certos marcados, as quatro perguntas de contraste da plenária e os números do motor (o que a Etapa 5 ensina: duas curtidas na mesma área fecham a bolha).\n\nA MOSTRA da turma não está aqui: ela é da atividade, em `GET /juri-estadual/turmas/:turmaId/pacotes`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.\n- `mecanismos[].certo` e `atitudes[].certo` são gabarito, e só existem nesta rota de professor.",
+        "description": "**Professor e gestores.** É o bloco vivo do guia: as peças da regra SE … ENTÃO com a certa marcada (a EF06CO03, ADR-174), o caso Mariana com os cartões certos marcados, as quatro perguntas de contraste da plenária e os números do motor (o que a Etapa 5 ensina: duas curtidas na mesma área fecham a bolha).\n\nA MOSTRA da turma não está aqui: ela é da atividade, em `GET /juri-estadual/turmas/:turmaId/pacotes`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.\n- `pecas.*[].certa`, `mecanismos[].certo` e `atitudes[].certo` são gabarito, e só existem nesta rota de professor.",
         "security": [
           {
             "token-da-plataforma": []

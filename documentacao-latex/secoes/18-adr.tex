@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{173 decisões}, numeradas até ADR-173: a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{174 decisões}, numeradas até ADR-174: a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -201,20 +201,20 @@ que a cercam.
 \adrr{ADR-148} & As duas chamadas curtas de IA em sala não têm teto de saída, e as missões revisadas se testam com a IA real & 2026-10-05 & Aceita; revê o teto da \adrr{ADR-115} e da \adrr{ADR-117}\\
 \zebra \adrr{ADR-149} & A plataforma publica a base que o gerador de missões lê & 2026-10-06 & Aceita\\
 \adrr{ADR-150} & O podcast de recapitulação vira recurso da plataforma, com rotas únicas, e o professor revisa as falas do tema na customização & 2026-10-06 & Aceita; revê a \adrr{ADR-119}\\
-\zebra \adrr{ADR-151} & O Júri Estadual volta ao foco EF06CO10, aprova as imagens antes da turma e ganha o podcast & 2026-10-06 & Aceita; substitui em parte a \adrr{ADR-137}; complementada pela \adrr{ADR-152}\\
-\adrr{ADR-152} & O Júri Estadual recupera o ciclo do voto: salvar pesa, a justificativa vem antes e depois, complementar, e a rodada de desvio & 2026-10-07 & Aceita; complementa a \adrr{ADR-151}\\
+\zebra \adrr{ADR-151} & O Júri Estadual volta ao foco EF06CO10, aprova as imagens antes da turma e ganha o podcast & 2026-10-06 & Aceita; substitui em parte a \adrr{ADR-137}; complementada pela \adrr{ADR-152}; superada em parte pela \adrr{ADR-174} (a EF06CO10 sai)\\
+\adrr{ADR-152} & O Júri Estadual recupera o ciclo do voto: salvar pesa, a justificativa vem antes e depois, complementar, e a rodada de desvio & 2026-10-07 & Aceita; complementa a \adrr{ADR-151}; superada em parte pela \adrr{ADR-174} (a galeria não marca)\\
 \zebra \adrr{ADR-153} & O Unoovista mede a evidência pelas três perguntas do PO, depois da reflexão, numa rodada só & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}; superada em parte pela \adrr{ADR-167}\\
 \adrr{ADR-154} & A Missão Tempestade mede a evidência numa atividade sintética, com rodada da turma, a melhor resposta e o nível só ao encerrar a missão & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}; superada em parte pela \adrr{ADR-172}\\
 \zebra \adrr{ADR-155} & Zerar a turma apaga a evidência pedagógica da atividade & 2026-10-09 & Aceita; reverte parte da \adrr{ADR-112}\\
 \adrr{ADR-156} & O Unoovista ganha o podcast com as falas revisadas no Ativar, e a Missão Tempestade ganha o primeiro podcast fixo & 2026-10-10 & Aceita; aplica a \adrr{ADR-150}\\
-\zebra \adrr{ADR-157} & O Júri Estadual segue o PRD v2 (0.4.0) & 2026-10-10 & Aceita; supera em parte a \adrr{ADR-151} e a \adrr{ADR-152}; superada em parte pela \adrr{ADR-164}\\
+\zebra \adrr{ADR-157} & O Júri Estadual segue o PRD v2 (0.4.0) & 2026-10-10 & Aceita; supera em parte a \adrr{ADR-151} e a \adrr{ADR-152}; superada em parte pela \adrr{ADR-164} e pela \adrr{ADR-174} (a cadeia, o par simulado e as enquetes saem)\\
 \adrr{ADR-158} & O mascote na Ajuda: voz do Gemini Live por um proxy na api, rosto 3D no hub, e o padrão escolhido no painel & 2026-10-12 & Aceita; complementa a \adrr{ADR-132}\\
 \zebra \adrr{ADR-159} & O hub no celular e no tablet: \cd{min-w-0} na coluna ao lado da \cd{SideBar}, e a \cd{Tag} que quebra linha & 2026-10-12 & Aceita; complementa a \adrr{ADR-83}\\
 \adrr{ADR-160} & O painel de habilidades abre pelo total, e o contrato desce pela regional & 2026-10-13 & Aceita; complementa a \adrr{ADR-144}\\
 \adrr{ADR-161} & Custos de IA: o consumo medido por dia, produto, escola e modelo, e o custo derivado na leitura, com preço datado e a PTAX do dia & 2026-10-13 & Aceita; complementa a \adrr{ADR-105} e a \adrr{ADR-158}\\
 \zebra \adrr{ADR-162} & Acessibilidade WCAG 2.2 AA: o axe como portão, e a correção no \emph{design system}, não na tela & 2026-10-13 & Aceita; reclassifica o risco R-07\\
 \adrr{ADR-163} & O texto alternativo da imagem do post é o \emph{brief} que a gerou; as fotos fixas são descritas no \emph{bundle} & 2026-10-13 & Aceita; corrige uma consequência da \adrr{ADR-162}\\
-\zebra \adrr{ADR-164} & O Júri Estadual com quarenta projetos: o feed sem repetir post, a galeria mostra O QUE sumiu, e o banco padrão ganha imagens & 2026-10-14 & Aceita; supera em parte a \adrr{ADR-157}\\
+\zebra \adrr{ADR-164} & O Júri Estadual com quarenta projetos: o feed sem repetir post, a galeria mostra O QUE sumiu, e o banco padrão ganha imagens & 2026-10-14 & Aceita; supera em parte a \adrr{ADR-157}; superada em parte pela \adrr{ADR-174} (a ficha da evidência)\\
 \adrr{ADR-165} & As instruções da Ajuda no painel: o \enquote{como responder} de cada atendente é dado & 2026-10-15 & Aceita; complementa a \adrr{ADR-132} e a \adrr{ADR-158}\\
 \zebra \adrr{ADR-166} & De onde veio o nível: a evidência guarda o marcador que a deu, e o consolidado conta à parte o \enquote{em processo} limitado pela atividade & 2026-10-16 & Aceita; complementa a \adrr{ADR-112} e a \adrr{ADR-144}\\
 \adrr{ADR-167} & O Canal A do Unoovista: toda habilidade por ação --- o Raio-x antes do debate, os termos e o envio depois do cinza, e a reflexão lida pela IA; as perguntas do fim saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-153}\\
@@ -222,8 +222,9 @@ que a cercam.
 \adrr{ADR-169} & A quota de avaliação: a leitura da plataforma para a evidência pedagógica tem teto próprio, por escola, fora da quota do estudante & 2026-10-16 & Aceita; segunda exceção à regra 5, complementa a \adrr{ADR-105}\\
 \zebra \adrr{ADR-170} & O Canal A da A Seleção: a legenda lida por indicadores, a marcação do post do colega entre o Mural e as fichas, e as enquetes saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-115}; usa a \adrr{ADR-166} e a \adrr{ADR-169}\\
 \adrr{ADR-171} & Quem mandou isso? só com o Canal A: o cartão de frases depois dos crachás e a regra do tio montada com peças & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-131} e a \adrr{ADR-145}\\
-\zebra \adrr{ADR-172} & O Canal A da Missão Tempestade: toda habilidade por ação --- a ligação da Saúde, o registro da operação, o \enquote{E se\ldots} pareado e o fechamento aberto pelo professor; as perguntas saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-154}\\
+\zebra \adrr{ADR-172} & O Canal A da Missão Tempestade: toda habilidade por ação --- a ligação da Saúde, o registro da operação, o \enquote{E se…} pareado e o fechamento aberto pelo professor; as perguntas saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-154}\\
 \adrr{ADR-173} & Clone dentro de clone: a peça de outra plataforma dentro de uma experiência disfarçada & 2026-10-16 & Aceita; estende a \adrr{ADR-117}\\
+\zebra \adrr{ADR-174} & O Júri Estadual mede pelo que a criança faz: a separação (EF06CO01) e a regra SE … ENTÃO (EF06CO03); a EF06CO10 sai & 2026-10-18 & Aceita; supera em parte a \adrr{ADR-151}, a \adrr{ADR-152}, a \adrr{ADR-157} e a \adrr{ADR-164}\\
 \bottomrule
 \end{tabularx}
 
@@ -13354,6 +13355,9 @@ pela \adrr{ADR-152}} (2026-10-07): o ciclo do voto que a esteira perdeu
 volta, a régua de quem não explora a galeria muda e o podcast fica opcional.
 \textbf{Superada em parte pela \adrr{ADR-157}} (2026-10-10): o banco padrão
 volta, a régua da EF06CO01 muda e o podcast vira recurso fixo.
+\textbf{Superada em parte pela \adrr{ADR-174}} (2026-10-18): a EF06CO10 sai
+da missão, a galeria deixa de marcar habilidade, as enquetes \cd{p1}--\cd{p3}
+saem e a EF06CO01 passa a ser a principal, medida pela separação.
 \textbf{Substitui em
 parte} a \adrr{ADR-137} (as habilidades medidas e a remontagem dos pacotes;
 o feed no servidor, a taxa real e a mostra sem acervo padrão continuam).
@@ -13526,7 +13530,9 @@ recorte por missão da descrição oficial.
 
 \textbf{Data.} 2026-10-07. \textbf{Status.} Aceita; \textbf{superada pela
 \adrr{ADR-157}} (2026-10-10) no ciclo do voto: salvar deixa de pesar, e a
-justificativa, o complementar e a rodada de desvio saem. \textbf{Complementa} a
+justificativa, o complementar e a rodada de desvio saem; \textbf{superada em
+parte pela \adrr{ADR-174}} (2026-10-18) na régua da Galeria Oculta: a revisão
+do voto deixa de marcar a EF06CO10 e a EF06CO01. \textbf{Complementa} a
 \adrr{ADR-151} (recupera as diretrizes do PO que ela declarou fora) e a
 \adrr{ADR-137} (o feed no servidor e a taxa real continuam). \textbf{Revê} a
 régua de quem não explora a Galeria Oculta (a ficha sobe para a versão 3) e o
@@ -14034,7 +14040,11 @@ outras).
 pela \adrr{ADR-164}} (2026-10-14): os dezesseis projetos, a saturação por
 formatos (o desvio 1) e a taxa de invisibilidade como a prova da Galeria Oculta
 deram lugar aos quarenta projetos, ao feed sem repetir post e à galeria que
-mostra O QUE sumiu; o resto continua valendo. \textbf{Supera} a
+mostra O QUE sumiu; o resto continua valendo. \textbf{Superada em parte
+pela \adrr{ADR-174}} (2026-10-18): a cadeia de quatro blocos, o par simulado
+(melhoria 7), o 422 \cd{ordem-incorreta}, as enquetes nos Stories e a ficha
+versão 4 deram lugar à separação, à regra SE \ldots{} ENTÃO e à ficha versão 5.
+\textbf{Supera} a
 \adrr{ADR-151} e a \adrr{ADR-152} no que conflitam com ela (o ciclo do voto, o
 salvar com peso, a rodada de desvio, a ausência de banco padrão, o podcast
 opcional, a régua da EF06CO01); o resto delas (duas fases de aprovação,
@@ -14743,7 +14753,10 @@ a ser a descrição, como na exp08ef1b).
 saturação por formatos (o desvio 1 dela) e a taxa de invisibilidade como a prova
 da Galeria Oculta. O resto da \adrr{ADR-157} continua valendo (o ciclo do voto
 em dois botões, os 8 minutos do servidor, o batimento da cédula, a cadeia, o caso
-Mariana, a ficha da evidência).
+Mariana, a ficha da evidência). \textbf{Superada em parte pela \adrr{ADR-174}}
+(2026-10-18): a cadeia e a ficha da evidência que este parágrafo dá como
+vigentes foram trocadas pela separação, pela regra SE \ldots{} ENTÃO e pela
+ficha versão 5.
 
 \begin{especificacao}{Contexto}
 \begin{itemize}
@@ -15664,3 +15677,160 @@ outra tela usa o prefixo.
 
 \textbf{Gatilho.} Uma segunda peça de outra seção dentro de um clone: aí a
 regra pede o próprio teste de fronteira, e não só o desta peça.
+
+% ---------------------------------------------------------------------------
+\section{ADR-174 --- O Júri Estadual mede pelo que a criança faz: a separação (EF06CO01) e a regra SE … ENTÃO (EF06CO03); a EF06CO10 sai}
+\label{adr:exp06ef1b-canal-a}
+
+\textbf{Data.} 2026-10-18. \textbf{Status.} Aceita (decidida pelo PO no card da
+missão, revisada com a equipe pedagógica). \textbf{Supera em parte} a
+\adrr{ADR-151} (a EF06CO10 como foco primário e as enquetes \cd{p1}--\cd{p3}),
+a \adrr{ADR-152} (a régua da Galeria Oculta), a \adrr{ADR-157} (a cadeia de
+quatro blocos, o par simulado da melhoria 7, o 422 \cd{ordem-incorreta}, as
+enquetes nos Stories e a ficha versão 4) e a \adrr{ADR-164} (que dava a cadeia
+e a ficha como vigentes). O resto delas --- o feed no servidor, os 40 projetos,
+os 8 minutos, o ciclo do voto em dois botões, a Galeria Oculta, o caso Mariana,
+as duas fases de aprovação, atividade = pacote e rodada = zerar --- continua
+valendo. \textbf{Segue} a \adrr{ADR-167}, a \adrr{ADR-170}, a \adrr{ADR-171} e
+a \adrr{ADR-172}, que fizeram o mesmo nas outras missões, e \textbf{usa} a
+\adrr{ADR-166} (de onde veio o nível) e a \adrr{ADR-162} (sem arrastar).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O pedido.} O dono do produto pediu evidência por AÇÃO em todas
+    as habilidades das missões (o Canal A). No Júri Estadual de Projetos
+    (\cd{exp06ef1b}, 6º ano, unidade 1), a ficha versão 4 media três
+    habilidades, cada uma por uma ação OU por uma pergunta de múltipla escolha
+    nos Stories (vale o melhor): a EF06CO10 pela auditoria da galeria, a
+    EF06CO01 pela busca por \emph{hashtag} de uma categoria fora da bolha e a
+    EF06CO03 pelas tentativas da cadeia de quatro blocos.
+  \item \textbf{A proposta do PO pedagógico} comparava a missão com o
+    \emph{one-pager} v1.5.8 e descrevia as habilidades por paráfrase. Revisada
+    com a equipe pedagógica, a régua passou a ser o \textbf{texto oficial da
+    BNCC}. Lida assim, a EF06CO10 (consumo de tecnologia, produção,
+    obsolescência, sustentabilidade) não é o que o Júri trabalha; a EF06CO01
+    (\enquote{classificar informações, agrupando-as em coleções e associando
+    cada coleção a um tipo de dados}) pede que a criança CLASSIFIQUE, não que
+    busque; e a EF06CO03 (\enquote{descrever com precisão a solução,
+    construindo o programa}) pede que ela CONSTRUA a instrução, não que
+    reconheça uma ordem.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{A EF06CO10 sai da missão, e as enquetes P1--P3 também.} A ficha
+    sobe para a \textbf{versão 5} (\arq{evidencias/fichas/exp06ef1b.ts}), sem
+    perguntas, com dois marcadores de ação rotulados: \cd{classificacao}
+    (\enquote{Separação dos estandes}) e \cd{regra} (\enquote{Regra SE \ldots{}
+    ENTÃO}). A EF06CO01 vira a \textbf{principal}; a EF06CO03, a secundária.
+    \cd{regra} é um id NOVO, para a régua nova não se misturar com a contagem
+    de tentativas da cadeia; \cd{auditoria}, \cd{cadeia} e as enquetes ficam só
+    no histórico, gravadas com a versão 4. Sai o \cd{registrarContexto} das
+    enquetes.
+  \item \textbf{A separação (EF06CO01)}, um passo novo, \cd{classificacao},
+    entre o voto e a espera (\cd{feed} \seta{} o voto \seta{}
+    \cd{classificacao} \seta{} \cd{lacrada} \seta{} \cd{galeria} \seta{}
+    \cd{revisada} \seta{} \cd{cadeia} \seta{} \cd{mariana} \seta{} \cd{fim}).
+    A criança põe cada estande DISTINTO que o feed lhe mostrou (até dez) numa
+    das quatro áreas. A tela mostra só o título e a imagem --- sem
+    \emph{hashtag} e sem perfil, porque o perfil do post é a própria
+    \emph{hashtag} ---, com ids opacos \cd{cl-xxx} embaralhados pela semente, e
+    a escolha é por toque ou teclado (\cd{Chip} em grupo de rádio, sem arrastar,
+    \adrr{ADR-162}), na voz da comissão (o clone Unoovista, porque vem antes da
+    galeria). Uma tentativa; o servidor corrige; régua por fração: 0,9 ou mais
+    \enquote{atingiu} (9 ou 10 de 10), 0,5 ou mais \enquote{em processo} (5 a
+    8), abaixo disso \enquote{não atingiu}. Com menos de quatro estandes vistos
+    (o relógio de 8 minutos levou ao voto), \textbf{sem marca}
+    (\enquote{Não avaliado}). A resposta é só o estado: a criança não vê o
+    acerto. Se o professor liberou a galeria antes de ela separar, ela termina a
+    separação e só então entra na galeria. Reenviar é 409
+    \cd{classificacao-ja-enviada}; corpo de outra sessão ou incompleto, 400.
+  \item \textbf{A regra SE \ldots{} ENTÃO (EF06CO03)} substitui a cadeia de
+    quatro blocos e o par simulado, no passo \cd{cadeia} (o nome ficou). Três
+    peças de cada lado (\arq{juri-estadual/conteudo.ts}, \cd{PECAS\_DO\_SE} e
+    \cd{PECAS\_DO\_\B{}ENTAO}), uma certa em cada, ids opacos \cd{rg-xxx}, dois
+    \cd{RadioGroup} na tela da escola (Unooria). Uma tentativa: as duas certas
+    \enquote{atingiu}, uma \enquote{em processo}, nenhuma \enquote{não
+    atingiu}; no chute, 1 em 9 atinge. A resposta traz a \textbf{revelação} ---
+    as peças escolhidas, as certas e o \cd{motivo} (\cd{curtidas},
+    \cd{permanencia} ou \cd{variado}, com a área em foco do feed DESTA criança,
+    \arq{regras/regra.ts}, \cd{revelacaoDaRegra}) ---, que a tela mostra antes
+    de seguir para o caso Mariana. \enquote{Ficar muito tempo} não é
+    distrator, de propósito: o motor pesa a permanência, e a peça seria meio
+    certa.
+  \item \textbf{A galeria continua como experiência} (busca, contraste,
+    \enquote{manter} exige um oculto aberto), mas \textbf{não marca mais
+    habilidade}. Os \textbf{cartões do caso Mariana concluem} a missão (passo
+    \cd{fim} e \cd{concluida\_em} no mesmo \emph{update});
+    \rota{POST /juri-estadual/\B{}concluir} fica só para sessões antigas paradas em
+    \cd{enquetes}.
+  \item \textbf{Rotas.} Entram \rota{POST /juri-estadual/\B{}classificacao} e
+    \rota{POST /juri-estadual/\B{}regra}; sai \rota{POST /juri-estadual/\B{}cadeia} (e o
+    422 \cd{ordem-incorreta}). \rota{GET /juri-estadual/\B{}sessao} ganha
+    \cd{classificacao} e a \cd{cadeia} nova (\cd{se}, \cd{entao}, \cd{enviada},
+    \cd{revelacao}). A linha do painel troca \cd{categoriasBuscadas} por
+    \cd{separou} (progresso: o acerto NUNCA vai à folha, que é projetada) e o
+    resumo ganha \cd{separaram}. O material do professor troca \cd{blocos} e
+    \cd{feedbackDaCadeia} por \cd{pecas}, com a certa marcada.
+  \item \textbf{Banco.} Seis colunas novas em \cd{exp06ef1b\_\B{}sessoes},
+    na migração \arq{20261018090000\_\B{}exp06ef1b\_\B{}canal\_\B{}a}
+    (\cd{classificacao\_\B{}respostas}, em \cd{JSONB},
+    \cd{classificacao\_\B{}acertos}, \cd{classificacao\_\B{}total},
+    \cd{classificada\_\B{}em}, \cd{regra\_se}, \cd{regra\_entao}), o
+    \emph{CHECK} de passo com \cd{classificacao}, o de status que aceita
+    \cd{classificacao\_\B{}status} vindo da separação OU da revisão (as linhas
+    antigas), e dois \emph{CHECKs} novos, fracos de propósito: uma sessão da
+    0.5.0 em \cd{lacrada} sem separação continua válida. Nada é apagado.
+    Instrumento \textbf{4.0.0}, experiência \textbf{0.6.0}.
+  \item \textbf{O que NÃO é segredo, e não se finge que é}: o feed já entrega ao
+    aparelho a área de cada post (a \emph{hashtag} que a criança viu). A
+    separação tira a resposta da TELA; quem corrige é o servidor (regra 3).
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{\enquote{Qual área mais (ou menos) apareceu no seu feed?}}
+    Empata nos dois perfis que o motor produz --- 7/1/1/1 (três áreas empatam
+    no \enquote{menos}) e 3/3/2/2 (duas empatam no \enquote{mais} e duas no
+    \enquote{menos}) ---, então não tem gabarito único; e é contagem, não
+    classificação.
+  \item \textbf{A cadeia de quatro blocos em tentativa única, pontuada por
+    posições certas.} \enquote{3 certas} é impossível com quatro blocos (trocar
+    dois de lugar erra dois); no chute, \enquote{em processo} sai na maioria
+    das vezes; e a cadeia inteira deslocada de uma posição --- a ordem entendida,
+    começada no lugar errado --- leva zero.
+  \item \textbf{Autodeclaração para a EF06CO10} (\enquote{qual projeto de fora
+    te influenciou?}). É pergunta com resposta óbvia e pune o \enquote{nenhum}
+    honesto.
+  \item \textbf{Manter a EF06CO10 como \enquote{trabalhada sem avaliação}.}
+    Contradiz o Canal A obrigatório e fica sempre vazia no painel de
+    habilidades.
+  \item \textbf{Manter as enquetes como Canal B}, fora do nível. Como no 8º ano
+    (\adrr{ADR-167}) e em Quem mandou isso? (\adrr{ADR-171}): pergunta que não
+    conta ainda ocupa a aula e confunde a leitura do painel.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Cada habilidade depende de UMA medida}: sem a separação ou sem a
+    regra, a habilidade fica \enquote{Não avaliado}, e o professor ajusta à
+    mão.
+  \item \textbf{A separação com poucos estandes vistos fica \enquote{Não
+    avaliado}}: a criança que o relógio de 8 minutos levou ao voto com menos de
+    quatro estandes não tem marca da EF06CO01.
+  \item \textbf{Sessões em andamento no \emph{deploy} que já passaram do voto
+    ficam sem a EF06CO01}: o passo novo vem logo depois do voto, e elas não
+    voltam a ele.
+  \item \textbf{Num F5 logo depois de enviar a regra, a tela pula a
+    revelação}: a api já está no caso Mariana.
+  \item \textbf{Sem foto gerada, a arte procedural da separação difere da do
+    feed}: o título é a chave para reconhecer o estande.
+\end{itemize}
+
+\textbf{Gatilho.} Se a regra SE \ldots{} ENTÃO travar a aula, ou o chute
+aparecer alto na distribuição dos níveis, o PO autorizou voltar à ordenação,
+com régua por pares vizinhos.

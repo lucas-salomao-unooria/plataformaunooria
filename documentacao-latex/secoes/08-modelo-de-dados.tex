@@ -1772,12 +1772,16 @@ tabela, guardado.
   cédula aberta (\cd{cedula\_batimento\_em}, \cd{cedula\_inativa\_desde},
   um par que só existe antes do voto); o voto, a convicção e o carimbo do
   \emph{latch} 1; a \cd{auditoria} da galeria (\cd{JSONB}
-  \cd{\{abertos, buscas\}}, sem o texto da busca); a ação da revisão, o voto
-  final e o carimbo do \emph{latch} 2; os \cd{*\_status} das três ações; as
-  tentativas e o
-  carimbo da cadeia (as colunas dos pacotes, \cd{pacotes\_tentativas} e
+  \cd{\{abertos, buscas\}}, sem o texto da busca); a \textbf{separação}
+  (\cd{classificacao\_\B{}respostas}, \cd{classificacao\_\B{}acertos},
+  \cd{classificacao\_\B{}total}, \cd{classificada\_\B{}em}, \adrr{ADR-174}); a ação
+  da revisão, o voto final e o carimbo do \emph{latch} 2; os \cd{*\_status}
+  (desde a 0.6.0, só \cd{classificacao\_\B{}status} e \cd{logica\_status} são
+  escritos; \cd{auditoria\_status} fica nas linhas antigas); a \textbf{regra
+  SE \ldots{} ENTÃO} (\cd{regra\_se}, \cd{regra\_entao}) com o carimbo da
+  cadeia (as colunas dos pacotes, \cd{pacotes\_tentativas} e
   \cd{pacotes\_remontados\_em}, saíram com a \adrr{ADR-151}); os cartões de Mariana; a conclusão e a
-  versão do instrumento (\cd{3.0.0} desde a \adrr{ADR-164}). \textbf{Nenhum campo de texto livre.} Desde a
+  versão do instrumento (\cd{4.0.0} desde a \adrr{ADR-174}). \textbf{Nenhum campo de texto livre.} Desde a
   \adrr{ADR-157} ficam SEM USO a justificativa (\cd{voto\_motivo},
   \cd{voto\_trecho}, \cd{revisao\_*}), o \cd{complemento\_projeto} e as
   colunas \cd{desvio\_*}; \cd{enquete\_*\_alt} existem e não são escritas
@@ -1788,12 +1792,16 @@ tabela, guardado.
 \begin{regra}
 \textbf{Os \emph{latches} são EQUIVALÊNCIAS com o passo gravado}, como no
 Jornal: \cd{votado\_em} existe se e só se o passo saiu de \cd{credencial} e
-\cd{feed}; \cd{revisado\_em}, se e só se está de \cd{revisada} em diante
+\cd{feed} (desde a \adrr{ADR-174}, o primeiro passo depois do voto é
+\cd{classificacao}, e \cd{classificada\_\B{}em} nunca existe com o passo nele);
+\cd{revisado\_em}, se e só se está de \cd{revisada} em diante
 (até a \adrr{ADR-151}, de \cd{pacotes}, o passo que saiu; até a
 \adrr{ADR-152}, de \cd{cadeia}); \cd{desvio\_concluido\_em} só existe
 nas sessões antigas, e só depois da revisão (a equivalência com a cadeia caiu
-na \adrr{ADR-157}); \cd{cadeia\_montada\_em}, de \cd{mariana} em diante; \cd{cartoes\_em}, de
-\cd{enquetes} em diante; e \cd{fim} se e só se há \cd{concluida\_em}. O voto,
+na \adrr{ADR-157}); \cd{cadeia\_\B{}montada\_em}, de \cd{mariana} em diante; \cd{cartoes\_em}, de
+\cd{enquetes} em diante (desde a \adrr{ADR-174}, os cartões levam direto a
+\cd{fim}, com \cd{concluida\_em} no mesmo \cd{UPDATE}; \cd{enquetes} só
+existe nas sessões antigas); e \cd{fim} se e só se há \cd{concluida\_em}. O voto,
 a convicção e o carimbo andam juntos, e a revisão também: \cd{manter}
 repete o voto lacrado e \cd{trocar} escolhe outro (\cd{complementar} segue
 aceito no \emph{CHECK} pelas linhas da 0.3.0 e é lido como manter). O passo
@@ -2357,6 +2365,22 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   uma das quatro condições) e \cd{exp05ef1b\_sessoes\_regra\_final\_check}
   (regra e carimbo nulos juntos). O nível não mora aqui: é da evidência. Sem
   RLS nova.\\
+\zebra \arq{20261018090000\_\B{}exp06ef1b\_\B{}canal\_\B{}a} & O Júri
+  Estadual só com o Canal A (\adrr{ADR-174}): em \cd{exp06ef1b\_sessoes}, a
+  separação (\cd{classificacao\_\B{}respostas} \cd{JSONB}, \cd{classificacao\_\B{}acertos},
+  \cd{classificacao\_\B{}total}, \cd{classificada\_\B{}em}) e a regra SE \ldots{}
+  ENTÃO (\cd{regra\_se}, \cd{regra\_entao}, os ids das peças; o carimbo é o
+  \cd{cadeia\_\B{}montada\_em} de sempre, com \cd{cadeia\_\B{}tentativas = 1}). O
+  \emph{CHECK} de passo ganha \cd{classificacao}, entre o voto e
+  \cd{lacrada} (\cd{enquetes} fica, pelas sessões paradas ali); o de status
+  aceita \cd{classificacao\_\B{}status} vindo da separação OU da revisão (as linhas
+  da 0.5.0). Dois \emph{CHECKs} novos, fracos de propósito:
+  \cd{exp06ef1b\_\B{}sessoes\_\B{}classificacao\_\B{}check} (as quatro colunas juntas, só
+  depois do voto, \emph{array}, total de 0 a 10, acertos dentro do total) e
+  \cd{exp06ef1b\_\B{}sessoes\_\B{}regra\_\B{}check} (as duas peças juntas, só com o
+  carimbo da cadeia). Uma sessão que votou na 0.5.0 está em \cd{lacrada} SEM
+  separação e continua válida. Nenhuma coluna sai, nenhuma linha muda, a RLS
+  não afrouxa.\\
 \bottomrule
 \end{tabularx}
 

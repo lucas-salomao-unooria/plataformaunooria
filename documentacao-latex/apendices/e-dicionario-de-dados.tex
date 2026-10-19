@@ -109,7 +109,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp06ef2b\_gates\_turma} & Tenant & A etapa da aula, por turma\\
 \cd{exp06ef1b\_pacotes} & Tenant & A ATIVIDADE do Júri Estadual de Projetos: as 4 áreas e os 40 projetos (16 nos pacotes da 0.4.x, ainda legíveis, \adrr{ADR-164}) que a IA gerou ou o banco padrão trouxe (\adrr{ADR-157}) e o professor aprovou, a telemetria docente, as URLs das imagens e \cd{imagens\_aprovadas\_em}, a segunda fase da aprovação (\adrr{ADR-151})\\
 \zebra \cd{exp06ef1b\_gates\_turma} & Tenant & A etapa da aula (a Galeria Oculta; o desvio saiu com a \adrr{ADR-157}), a atividade em andamento e a rodada, por turma\\
-\cd{exp06ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o feed servido e o relógio dele, as curtidas e os salvos, o batimento da cédula, os dois votos, a auditoria da galeria, os status das ações, a cadeia e os cartões --- sem texto livre (as colunas da justificativa e do desvio ficam sem uso, \adrr{ADR-157})\\
+\cd{exp06ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o feed servido e o relógio dele, as curtidas e os salvos, o batimento da cédula, os dois votos, a separação dos estandes, a auditoria da galeria, os status das ações, a regra SE \ldots{} ENTÃO (no carimbo da cadeia) e os cartões --- sem texto livre (as colunas da justificativa e do desvio ficam sem uso, \adrr{ADR-157})\\
 \zebra \cd{exp06ef1b\_gates\_historico} & Tenant & Uma linha por etapa liberada pelo professor (\adrr{ADR-157})\\
 \zebra \cd{exp07ef1b\_coberturas} & Tenant & A ATIVIDADE da A Seleção: o tema homologado, os 12 posts com o gabarito (e os comentários com autor), as URLs da mídia, o carimbo da aprovação das imagens (\adrr{ADR-146}) e as três falas do podcast\\
 \cd{exp07ef1b\_gates\_turma} & Tenant & A etapa da aula, a cobertura e a rodada, por turma\\
@@ -1695,51 +1695,70 @@ as colunas da sessão, que é onde o feed e os \emph{latches} moram.
   estande votado. Par: os dois juntos, e só com \cd{votado\_em}. Nulos nas
   sessões que votaram antes da migração.\\
 \cd{auditoria} & \cd{JSONB} & \cd{\{abertos: string[], buscas: [\{tipo,
-  area\}]\}}: o que a criança abriu e buscou na galeria, a base da EF06CO10
-  (os ocultos abertos) e da EF06CO01 (a busca pela \emph{hashtag} de outra
-  área), com réguas diferentes (\adrr{ADR-151}). O texto digitado nunca chega
-  aqui. Quem revisa sem abrir nem buscar nada fica sem marca de ação
-  (\adrr{ADR-152}).\\
-\zebra \cd{revisao\_acao}, \cd{voto\_\B{}revisado}, \cd{revisado\_em} & \cd{TEXT?},
+  area\}]\}}: o que a criança abriu e buscou na galeria. O texto digitado nunca
+  chega aqui. Até a 0.5.0 foi a base da EF06CO10 e da EF06CO01
+  (\adrr{ADR-151}, \adrr{ADR-152}); desde a \adrr{ADR-174} não marca
+  habilidade: o painel mostra quem abriu e quem buscou.\\
+\zebra \cd{classificacao\_\B{}respostas}, \cd{classificacao\_\B{}acertos},
+  \cd{classificacao\_\B{}total}, \cd{classificada\_\B{}em} & \cd{JSONB?},
+  \cd{INTEGER?}, \cd{INTEGER?}, \cd{TIMESTAMPTZ?} & A separação
+  (EF06CO01, \adrr{ADR-174}): as respostas (\emph{array} de \cd{\{itemId,
+  area\}}, ids opacos \cd{cl-} da sessão), os acertos, o total de estandes
+  distintos vistos (0 a 10) e o carimbo. As quatro juntas, só depois do voto,
+  acertos dentro do total (\cd{exp06ef1b\_\B{}sessoes\_\B{}classificacao\_\B{}check}); com
+  o passo em \cd{classificacao}, nulas. Nulas também nas sessões que votaram na
+  0.5.0.\\
+\cd{revisao\_acao}, \cd{voto\_\B{}revisado}, \cd{revisado\_em} & \cd{TEXT?},
   \cd{TIMESTAMPTZ?} & O \emph{latch} 2: \cd{manter} (o voto final repete o
   lacrado) $|$ \cd{trocar} (outro projeto do pacote) (\cd{complementar}, da 0.3.0, segue aceito e é lido
   como manter). O carimbo leva o passo a \cd{revisada}.\\
-\cd{auditoria\_status}, \cd{classificacao\_status}, \cd{logica\_status} &
-  \cd{VARCHAR(16)?} & O nível das três ações (\cd{atingiu} $|$
-  \cd{em\_processo} $|$ \cd{nao\_atingiu}), ou nulo (sem marca).\\
-\zebra \cd{enquete\_ef06co*\_alt} & \cd{VARCHAR(64)?} & Criadas pelo PRD v2 e
-  não escritas: a resposta mora em \cd{evidencias\_marcas}.\\
-\cd{complemento\_\B{}projeto} & \cd{TEXT?} & SEM USO desde a \adrr{ADR-157}. O estande indicado no
+\zebra \cd{auditoria\_status}, \cd{classificacao\_\B{}status}, \cd{logica\_status} &
+  \cd{VARCHAR(16)?} & O nível das ações (\cd{atingiu} $|$
+  \cd{em\_processo} $|$ \cd{nao\_atingiu}), ou nulo (sem marca). Desde a
+  \adrr{ADR-174}, \cd{classificacao\_\B{}status} vem da separação (exige
+  \cd{classificada\_\B{}em}; nas linhas antigas, da revisão, com
+  \cd{revisado\_em}), \cd{logica\_status} da regra, e \cd{auditoria\_status}
+  não é mais escrito.\\
+\cd{enquete\_ef06co*\_alt} & \cd{VARCHAR(64)?} & Criadas pelo PRD v2 e
+  nunca escritas; as enquetes saíram com a \adrr{ADR-174}.\\
+\zebra \cd{complemento\_\B{}projeto} & \cd{TEXT?} & SEM USO desde a \adrr{ADR-157}. O estande indicado no
   \cd{complementar}: existia só nele, e nunca igual ao voto (\emph{CHECK}).\\
-\zebra \cd{revisao\_motivo}, \cd{revisao\_trecho} & \cd{TEXT?}, \cd{INTEGER?} &
+\cd{revisao\_motivo}, \cd{revisao\_trecho} & \cd{TEXT?}, \cd{INTEGER?} &
   SEM USO desde a \adrr{ADR-157}. A justificativa de depois: o cartão (\cd{r1}--\cd{r3}) e o índice da frase
   da legenda do estande da decisão (o do voto, ao manter). Par, e só com
   \cd{revisado\_em}.\\
-\cd{desvio\_\B{}servidos}, \cd{desvio\_\B{}curtidos}, \cd{desvio\_\B{}salvos},
+\zebra \cd{desvio\_\B{}servidos}, \cd{desvio\_\B{}curtidos}, \cd{desvio\_\B{}salvos},
   \cd{desvio\_\B{}permanencias} & \cd{JSONB} & SEM USO desde a \adrr{ADR-157}. O feed da rodada de desvio
   (\adrr{ADR-152}), com os pesos só dele; os servidos, até seis.\\
-\zebra \cd{desvio\_\B{}concluido\_em} & \cd{TIMESTAMPTZ?} & SEM USO desde a
+\cd{desvio\_\B{}concluido\_em} & \cd{TIMESTAMPTZ?} & SEM USO desde a
   \adrr{ADR-157}; nas sessões antigas, exige \cd{revisado\_em}. A migração o preencheu
   com \cd{revisado\_em} nas sessões que já tinham passado da revisão. Sem
   evidência.\\
-\cd{cadeia\_\B{}tentativas}, \cd{cadeia\_\B{}montada\_em} & \cd{INTEGER},
-  \cd{TIMESTAMPTZ?} & A base da EF06CO03: uma tentativa = atingiu, duas ou
-  três = em processo, mais = não atingiu. Montada exige ao menos uma
+\zebra \cd{cadeia\_\B{}tentativas}, \cd{cadeia\_\B{}montada\_em} & \cd{INTEGER},
+  \cd{TIMESTAMPTZ?} & Até a 0.5.0, a base da EF06CO03 (as tentativas da
+  cadeia). Desde a \adrr{ADR-174}, o CARIMBO da regra SE \ldots{} ENTÃO:
+  \cd{cadeia\_\B{}montada\_em} com \cd{cadeia\_\B{}tentativas = 1}, para os
+  \emph{CHECKs} de passo continuarem fechando. Montada exige ao menos uma
   tentativa. (As colunas \cd{pacotes\_tentativas} e
   \cd{pacotes\_remontados\_em}, da EF06CO07, foram apagadas pela
   \arq{20261006120000}, \adrr{ADR-151}.)\\
+\cd{regra\_se}, \cd{regra\_entao} & \cd{VARCHAR(32)?} & A regra SE
+  \ldots{} ENTÃO (EF06CO03, \adrr{ADR-174}): os ids das peças escolhidas
+  (\cd{PECAS\_DO\_SE} e \cd{PECAS\_DO\_\B{}ENTAO} de \arq{conteudo.ts}, não os
+  opacos). Juntas, e só com \cd{cadeia\_\B{}montada\_em}
+  (\cd{exp06ef1b\_\B{}sessoes\_\B{}regra\_\B{}check}).\\
 \zebra \cd{mecanismo}, \cd{atitude}, \cd{cartoes\_em} & \cd{TEXT?},
   \cd{TIMESTAMPTZ?} & O caso Mariana: \cd{m1}--\cd{m3} e \cd{t1}--\cd{t2}. Não é
-  evidência.\\
+  evidência. Desde a \adrr{ADR-174}, gravar os cartões conclui a missão.\\
 \cd{concluida\_em} & \cd{TIMESTAMPTZ?} & EQUIVALENTE ao passo \cd{fim}.\\
-\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{3.0.0} desde a \adrr{ADR-164}
-  (\cd{2.0.0} da \adrr{ADR-157}, \cd{1.1.0} da \adrr{ADR-152}, \cd{1.0.0} antes).\\
+\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{4.0.0} desde a \adrr{ADR-174}
+  (\cd{3.0.0} da \adrr{ADR-164}, \cd{2.0.0} da \adrr{ADR-157}, \cd{1.1.0} da \adrr{ADR-152}, \cd{1.0.0} antes).\\
 \bottomrule
 \end{tabularx}
 
 \begin{regra}
-A ordem certa da cadeia e o cartão certo de Mariana \textbf{não
-estão no banco}: são o esqueleto da missão, em \arq{conteudo.ts}, e só
+A peça certa da regra SE \ldots{} ENTÃO e o cartão certo de Mariana
+\textbf{não estão no banco}: são o esqueleto da missão, em \arq{conteudo.ts}, e só
 \rota{GET /juri-estadual/professor/material} os devolve. A mostra --- os
 quarenta projetos (dezesseis nos pacotes da 0.4.x) --- mora no \cd{JSONB} de \cd{exp06ef1b\_pacotes}, e o
 estudante só recebe os posts que o feed serviu até a galeria abrir
