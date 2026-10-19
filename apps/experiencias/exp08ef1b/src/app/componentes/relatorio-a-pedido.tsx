@@ -21,6 +21,11 @@ import { Dossie } from './dossie/dossie';
  * Enquanto ele está aberto, o hub o expande para fora do aparelho (o `passo`
  * `relatorio` do `exp:estado`); ao sair, o estado volta sem `passo`, e o
  * aparelho volta ao lugar.
+ *
+ * "Ao sair" inclui SAIR DA TELA sem o botão (1.4.1): o desvio por fase pode
+ * montá-lo por um instante e trocá-lo pelo cinza quando as tarefas chegam, e
+ * sem a limpeza do efeito o `passo` ficava publicado — o cinza preso em tela
+ * cheia e a moldura do hub nunca aparecia.
  */
 export function RelatorioComSaida({
   runId,
@@ -35,6 +40,7 @@ export function RelatorioComSaida({
 }) {
   useEffect(() => {
     experiencia().enviarEstado({ fase, passo: 'relatorio' });
+    return () => experiencia().enviarEstado({ fase });
   }, [fase]);
 
   return (
