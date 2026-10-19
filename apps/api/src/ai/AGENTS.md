@@ -89,6 +89,9 @@ geração de imagem cair no fallback procedural), e PEDE a proporção
 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9 e 21:9 pelo MESMO custo em tokens —
 experiência com outro formato deve pedir o formato, não recortar depois.
 
+**O Vertex enfileira no pico** (ADR-175): quem tem gente na tela passa
+`tetoPorChamadaMs`/`prazoMs` ao `conversar`; o aborto se reconhece pelo `name`.
+
 **Raciocínio conta como saída.** Nos modelos 2.5 e 3.x os tokens de pensamento saem do
 `maxOutputTokens`: com pensamento livre o plano anual volta VAZIO com
 `finishReason: MAX_TOKENS`. `VERTEX_THINKING_BUDGET` (default `0`, desligado)

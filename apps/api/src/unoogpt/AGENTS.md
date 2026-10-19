@@ -18,6 +18,12 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
   manda dois POSTs e justificar passa pela mesma rota), `coberturaDoRisco`,
   `posicaoNaFaixa` (`regras/trilha.ts`, `regras/desfecho.ts`). Só se grava o
   que não dá para recalcular: o cronômetro do marco e `simulacoes.esperado`.
+- **O turno cabe em 40 s, ou vira recusa** (ADR-175). O cliente desiste em
+  45 s (`TIMEOUT_DO_TURNO_MS`), e a fila do Vertex já levou turnos a 194 s no
+  dev. `TETO_POR_CHAMADA_DO_CIENTISTA_MS` (12 s) e
+  `PRAZO_DO_TURNO_DO_CIENTISTA_MS` (40 s), em `regras/defaults.ts`, vão ao
+  `conversar`; passado o prazo, o `ErroDeGeracao` vira `cientista-indisponivel`
+  sem debitar pergunta. Os "10–30 s" acima são o turno NORMAL, não o teto.
 - **A fala do estudante é datada por `agora`** (a hora do envio), porque a
   gravação acontece depois do `await` do provedor. Sem isso a hora é o fim do
   turno.

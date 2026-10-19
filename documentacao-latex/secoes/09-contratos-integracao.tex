@@ -532,6 +532,10 @@ export interface AiConversaRequest {
   socorro?: string;              // o que pedir na ULTIMA tentativa
   maxVoltas?: number;            // teto de idas e voltas de ferramenta (6)
   tentativas?: number;           // default 3
+  /** Opcionais (ADR-175): a chamada acima do teto e abortada e repetida (ate 3
+   *  por volta); passado o prazo do turno, vira ErroDeGeracao. Sem eles, nada muda. */
+  tetoPorChamadaMs?: number;
+  prazoMs?: number;
 }
 
 export interface AiSpeechRequest {

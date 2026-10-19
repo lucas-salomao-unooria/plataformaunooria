@@ -311,6 +311,51 @@ describe("VertexProvider.conversar", () => {
     expect(decl.parameters.properties.fonte?.description).toBe("previsao, censo ou viaria");
   });
 
+  /** Um `fetch` que só termina quando o sinal aborta — a requisição presa na fila do vendor. */
+  function preso(_url: unknown, init: unknown) {
+    const { signal } = init as { signal?: AbortSignal };
+    return new Promise((_ok, falha) => {
+      signal?.addEventListener("abort", () => falha(signal.reason));
+    });
+  }
+
+  it("chamada acima do teto é ABORTADA e repetida — a seguinte responde", async () => {
+    let chamadas = 0;
+    global.fetch = jest.fn(async (url: unknown, init: unknown) => {
+      chamadas += 1;
+      if (chamadas === 1) return preso(url, init);
+      const corpo = fala("O Vale Verde tem mais moradores.");
+      return { ok: true, status: 200, json: async () => corpo, text: async () => JSON.stringify(corpo) };
+    }) as unknown as typeof fetch;
+
+    const r = await provider.conversar({ ...base, tetoPorChamadaMs: 30, prazoMs: 5_000 });
+
+    expect(chamadas).toBe(2);
+    expect(r.texto).toBe("O Vale Verde tem mais moradores.");
+  });
+
+  it("passado o PRAZO do turno, nenhuma chamada nova começa: vira ErroDeGeracao", async () => {
+    global.fetch = jest.fn(preso) as unknown as typeof fetch;
+    const inicio = Date.now();
+
+    await expect(provider.conversar({ ...base, tetoPorChamadaMs: 40, prazoMs: 100 })).rejects.toThrow(ErroDeGeracao);
+    // Preso para sempre sem o prazo: ele é o que devolve o turno ao estudante.
+    expect(Date.now() - inicio).toBeLessThan(2_000);
+  });
+
+  it("sem teto nem prazo, a chamada segue sem sinal de aborto — o comportamento de antes", async () => {
+    const sinais: unknown[] = [];
+    global.fetch = jest.fn(async (_url: unknown, init: unknown) => {
+      sinais.push((init as { signal?: unknown }).signal);
+      const corpo = fala("ok");
+      return { ok: true, status: 200, json: async () => corpo, text: async () => JSON.stringify(corpo) };
+    }) as unknown as typeof fetch;
+
+    await provider.conversar(base);
+
+    expect(sinais).toEqual([undefined]);
+  });
+
   it("propaga falha HTTP do Vertex como ErroDeGeracao", async () => {
     global.fetch = jest.fn(async () => ({
       ok: false,

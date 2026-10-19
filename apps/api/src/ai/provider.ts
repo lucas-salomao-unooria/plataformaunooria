@@ -135,6 +135,19 @@ export interface AiConversaRequest {
   maxVoltas?: number;
   /** Tentativas com reforço do erro anterior (default 3). */
   tentativas?: number;
+  /**
+   * Teto de UMA chamada ao vendor, em ms (opcional). Estourado, a chamada é
+   * abortada e REPETIDA (até 3 vezes por volta): a fila da capacidade
+   * compartilhada do Vertex prende uma requisição por 50–80 s em horário de
+   * pico enquanto a seguinte sai em 3 s (medido no dev em 2026-10-19).
+   */
+  tetoPorChamadaMs?: number;
+  /**
+   * Prazo do turno INTEIRO, em ms (opcional): passado, nenhuma chamada nova
+   * começa e o turno vira `ErroDeGeracao`. Existe para caber no teto do
+   * cliente — acima dele o navegador desiste e a resposta chega a ninguém.
+   */
+  prazoMs?: number;
 }
 
 /**
