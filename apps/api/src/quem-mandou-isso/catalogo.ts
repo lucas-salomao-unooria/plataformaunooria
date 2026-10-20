@@ -20,8 +20,11 @@ export const EXP_ID = "exp05ef1b";
  * mudar. 2.3.0: sem a regra Se/Então, as perguntas são a reflexão (ADR-145).
  * 2.4.0: só o Canal A — saem as perguntas P1/P2, entram o cartão de frases
  * (EF05CO03) e a regra do tio montada com peças (EF05CO04).
+ * 2.5.0: o cartão vira o ALERTA DO GRUPO (o filtro com E, OU e NÃO sobre o
+ * quadro das oito mensagens) e a regra vira o ROBÔ DO GRUPO (blocos com laço,
+ * ligado em quatro mensagens, sem previsão).
  */
-export const VERSAO_DO_INSTRUMENTO = "2.4.0";
+export const VERSAO_DO_INSTRUMENTO = "2.5.0";
 
 // ───────────────────────────────────────────────────────────── vocabulário
 
@@ -113,8 +116,9 @@ export const CALLBACK_DO_MOTIVO: Readonly<Record<Motivo, string>> = {
 };
 
 /**
- * O `SE` da regra do tio (Etapa 6). Saiu com o texto livre na ADR-145 e voltou
- * na 2.4.0, agora como PEÇA da regra montada (`regras/regra.ts`). O mesmo
+ * O `SE` do robô do grupo (Etapa 6). Saiu com o texto livre na ADR-145, voltou
+ * na 2.4.0 como PEÇA da regra montada e é, na 2.5.0, o bloco de condição do
+ * robô (`regras/robo.ts`). O mesmo
  * vocabulário do CHECK `exp05ef1b_reflexoes_condicional_check` (a tabela da
  * 2.2 guarda o que já foi escrito) e do CHECK das regras da sessão — a suíte
  * de Postgres compara os textos.
@@ -373,24 +377,17 @@ export function falaDaNina(tema: string): string {
 }
 
 /**
- * O encerramento da Nina, depois da regra do tio — texto da equipe, à espera
+ * O encerramento da Nina, depois do robô do grupo — texto da equipe, à espera
  * da revisão do PO.
  */
 export const ENCERRAMENTO_DA_NINA =
   "Muito obrigada pela ajuda! Antes de repassar qualquer coisa, eu vou conferir de onde veio. Até a próxima!";
 
 /**
- * A fala da Nina que abre o CARTÃO DE FRASES no Mural revelado (EF05CO03),
- * logo depois dos crachás. Texto da equipe, à espera da revisão do PO.
- */
-export const FALA_DO_CARTAO =
-  "Agora que você viu os crachás, me ajuda a conferir: essas frases sobre as suas mensagens estão certas?";
-
-/**
  * O desafio do tio (Etapa 6, casca): a versão curta da copy da v2.2, 41
- * palavras, FIXA. Voltou na 2.4.0 como o caso em que a regra montada com
- * peças é testada (EF05CO04). Ele precisa ser URGENTE E ALARMANTE e mandado
- * por um PARENTE — é o que `regras/regra.ts` assume sobre o áudio.
+ * palavras, FIXA. Abre o robô do grupo (EF05CO04, 2.5.0), e o áudio é a
+ * PRIMEIRA mensagem que o robô recebe: URGENTE E ALARMANTE e mandado por um
+ * PARENTE — os sinais que `regras/robo.ts#MENSAGENS_DO_ROBO` mostra nele.
  */
 export const FALA_DO_TIO =
   "Valeu pela ajuda no grupo! Mas olha o que rolou agora: meu tio mandou um áudio na família com voz assustada dizendo que as aulas vão ser canceladas por causa do temporal e pediu pra repassar correndo. O que você faz?";
@@ -407,7 +404,7 @@ export const ROTEIRO_DA_RODA = [
 /** As instruções fixas dos gatilhos docentes (D0-5), literais. */
 export const INSTRUCOES_DO_CONSOLE = {
   revelacao:
-    "Aguarde a conclusão da maioria dos estudantes. Chame a atenção da turma para o telão e clique em Liberar Revelação para projetar o Termômetro da Turma.",
+    "Aguarde a conclusão da maioria dos estudantes. Chame a atenção da turma para o telão e clique em Liberar Revelação para projetar o Termômetro da Turma. Depois dos crachás, cada estudante monta os 4 alertas do grupo; os alertas fecham quando você apresentar a síntese.",
   reflexao:
-    "Conduza a roda de conversa com as 3 perguntas sugeridas. Ao concluir o debate, clique em Liberar Reflexão: cada estudante monta a própria regra para o áudio do tio e a testa antes de enviar.",
+    "Conduza a roda de conversa com as 3 perguntas sugeridas. Ao concluir o debate, clique em Liberar Reflexão: cada estudante monta o robô do grupo com blocos, liga o robô para ver o que ele faz com 4 mensagens e envia.",
 } as const;

@@ -1,27 +1,28 @@
 import type { FichaPedagogica } from "./tipos";
 
 /**
- * A FICHA DE "QUEM MANDOU ISSO?" (exp05ef1b, 5º ano, unidade 1) — versão 4,
- * de 2026-10-16: só o Canal A. Toda habilidade é medida pelo que a criança
- * FAZ; as perguntas P1 e P2 do PO (ficha v3, ADR-131) saíram, como no 8º ano
- * (ADR-167). Os níveis que elas deram em atividades já jogadas ficam no
- * histórico, gravados com a versão 3.
+ * A FICHA DE "QUEM MANDOU ISSO?" (exp05ef1b, 5º ano, unidade 1) — versão 5,
+ * de 2026-10-20: só o Canal A, com as duas ações da 2.5.0. Toda habilidade é
+ * medida pelo que a criança FAZ (as perguntas P1 e P2 saíram na v4, como no
+ * 8º ano, ADR-167). Os níveis das versões anteriores ficam no histórico,
+ * gravados com a versão delas.
  *
  *   - **EF05CO08** pela SELEÇÃO do Mural, marcada no `POST /mural`, na mesma
  *     transação do latch. Só três verdadeiras atingem
  *     (`quem-mandou-isso/regras/evidencia.ts#nivelCO08`).
- *   - **EF05CO03** pelo CARTÃO DE FRASES com E, OU e NÃO sobre as três
- *     mensagens que a criança encaminhou, depois dos crachás
- *     (`regras/operacoes.ts#nivelCO03`).
- *   - **EF05CO04** pela REGRA DO TIO montada com peças, com a previsão antes
- *     de cada teste (`regras/regra.ts#nivelCO04`).
+ *   - **EF05CO03** pelo ALERTA DO GRUPO: quatro filtros com E, OU e NÃO sobre
+ *     o quadro das oito mensagens, depois dos crachás, marcado no quarto envio
+ *     (`regras/alerta.ts#nivelCO03`). Substitui o cartão de frases da v4.
+ *   - **EF05CO04** pelo ROBÔ DO GRUPO montado com blocos (laço, SE, ENTÃO e
+ *     E DEPOIS), ligado nas quatro mensagens e enviado
+ *     (`regras/robo.ts#nivelCO04`). Substitui a regra do tio com previsão.
  *
  * Toda rodada mede as três de novo (ADR-145). Quem não fez a ação fica "Não
  * avaliado" — a AUSÊNCIA de marca —, nunca "não atingiu", e o professor ajusta.
  */
 export const FICHA_EXP05EF1B: FichaPedagogica = {
   expId: "exp05ef1b",
-  versao: 4,
+  versao: 5,
   habilidades: [
     {
       codigo: "EF05CO08",
@@ -36,26 +37,28 @@ export const FICHA_EXP05EF1B: FichaPedagogica = {
     },
     {
       codigo: "EF05CO03",
-      marcadores: [{ id: "cartao-de-frases", tipo: "acao", rotulo: "Cartão de frases" }],
+      marcadores: [{ id: "alerta-do-grupo", tipo: "acao", rotulo: "Alerta do grupo" }],
       criterios: {
-        atingiu: "No cartão de frases, acerta 5 ou 6 das 6 frases com E, OU e NÃO sobre as mensagens que encaminhou.",
-        em_processo: "No cartão de frases, acerta 3 ou 4 das 6 frases.",
-        nao_atingiu: "No cartão de frases, acerta 2 frases ou menos.",
+        atingiu:
+          "Nos 4 alertas do grupo, monta filtros com E, OU e NÃO que destacam as mensagens pedidas, quase sempre já no primeiro teste (6 a 8 pontos de 8).",
+        em_processo:
+          "Chega aos filtros certos depois de ver o resultado, ou acerta só parte dos 4 alertas (3 a 5 pontos de 8).",
+        nao_atingiu: "Envia alertas com filtros que não destacam as mensagens pedidas (0 a 2 pontos de 8).",
         observacao:
-          'O cartão vem depois dos crachás: a criança já sabe se cada mensagem é verdadeira e se é emocional ou neutra, e precisa combinar esses valores. Responder tudo igual acerta só 3. Sem o cartão enviado, a habilidade fica "Não avaliado", e você pode ajustar.',
+          'Cada alerta vale 2 pontos se o primeiro "Ver resultado" já tinha o filtro certo, 1 se só o enviado está certo, e 0 se o enviado está errado. O alerta abre depois dos crachás e fecha quando você apresenta a síntese. Sem os 4 alertas enviados, a habilidade fica "Não avaliado", e você pode ajustar.',
       },
     },
     {
       codigo: "EF05CO04",
-      marcadores: [{ id: "regra-do-tio", tipo: "acao", rotulo: "Regra do tio" }],
+      marcadores: [{ id: "robo-do-grupo", tipo: "acao", rotulo: "Robô do grupo" }],
       criterios: {
         atingiu:
-          "Monta, já na primeira tentativa, uma regra que pega o áudio do tio e manda checar antes de encaminhar, e prevê certo o que ela vai fazer.",
+          "Monta, já na primeira vez que liga o robô, um robô que repete para cada mensagem nova, pega o áudio do tio e checa antes de encaminhar — e envia esse robô.",
         em_processo:
-          "Chega à regra que checa antes de encaminhar só depois de testar, ou erra a previsão, ou monta uma regra que só manda esperar, que não pega o áudio ou que checa e encaminha de qualquer jeito.",
-        nao_atingiu: "Envia uma regra que encaminha a mensagem antes de checar.",
+          "Chega a esse robô só depois de ligá-lo, ou envia um robô sem a repetição, que não pega o áudio do tio, que só espera ou que checa e encaminha de qualquer jeito, ou envia sem ligar.",
+        nao_atingiu: "Envia um robô que encaminha a mensagem antes de checar.",
         observacao:
-          'A previsão antes do teste é a simulação que a habilidade pede: a criança diz o que a regra vai fazer antes de ver. A missão cobre a seleção condicional e a sequência de duas ações; repetição e colaboração ficam fora. Sem a regra enviada, a habilidade fica "Não avaliado", e você pode ajustar.',
+          'Ligar o robô é a simulação que a habilidade pede: a criança vê o que ele faz com 4 mensagens, uma a uma. O robô cobre repetição (o laço), seleção condicional (o SE) e sequência (as duas ações em ordem); a colaboração fica fora. Sem o robô enviado, a habilidade fica "Não avaliado", e você pode ajustar.',
       },
     },
   ],

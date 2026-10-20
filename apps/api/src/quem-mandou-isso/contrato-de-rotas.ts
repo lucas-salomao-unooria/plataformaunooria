@@ -16,10 +16,10 @@ import {
   TOTAL_DE_MENSAGENS,
   VERACIDADES,
 } from "./catalogo";
-import { OPERADORES, RESPOSTAS, TOTAL_DE_FRASES } from "./regras/operacoes";
+import { ATRIBUTOS, CONECTORES, MAX_EXECUCOES, PONTOS_MAXIMOS, TOTAL_DE_PEDIDOS } from "./regras/alerta";
 import { validarAssuntos, validarContexto, validarPacote, validarTema } from "./regras/pacote";
 import { ACOES_DO_GATE, FASES, PASSOS } from "./regras/passos";
-import { ACOES, CONDICOES, SITUACOES } from "./regras/regra";
+import { ACOES, CONDICOES, MAX_LIGACOES, SITUACOES } from "./regras/robo";
 
 /**
  * O contrato HTTP da exp05ef1b v2.2 — só schemas Zod. O OpenAPI é derivado
@@ -53,28 +53,36 @@ export const MuralSchema = SelecaoSchema;
 
 export const EnqueteSchema = z.object({ motivo: MotivoSchema });
 
-const FraseIdSchema = z.enum(["f1", "f2", "f3", "f4", "f5", "f6"]);
+/** Uma condição do filtro: o chip (Falsa ou Emocional) e o interruptor NÃO antes dele. */
+const CondicaoDoFiltroSchema = z.object({ attr: z.enum(ATRIBUTOS), nao: z.boolean() });
 
 /**
- * O CARTÃO DE FRASES (EF05CO03): as seis respostas, todas de uma vez — sem
- * resultado parcial. Os ids precisam ser os seis, sem repetir (o serviço
- * confere); a resposta esperada nunca veio ao cliente.
+ * O filtro do alerta (EF05CO03): uma condição sozinha, ou duas ligadas por E
+ * ou OU. `op` e `b` andam JUNTOS — os dois, ou nenhum (36 filtros possíveis).
  */
-export const OperacoesSchema = z.object({
-  respostas: z
-    .array(z.object({ fraseId: FraseIdSchema, resposta: z.enum(RESPOSTAS) }))
-    .length(TOTAL_DE_FRASES)
-    .refine((r) => new Set(r.map((x) => x.fraseId)).size === TOTAL_DE_FRASES, "cada frase uma vez"),
+export const ExpressaoSchema = z
+  .object({ a: CondicaoDoFiltroSchema, op: z.enum(CONECTORES).optional(), b: CondicaoDoFiltroSchema.optional() })
+  .strict()
+  .refine((e) => (e.op === undefined) === (e.b === undefined), "o conector e a segunda condição andam juntos");
+
+/**
+ * "Ver resultado" e "Enviar alerta ao grupo": o número do pedido e o filtro
+ * que está NA TELA. O servidor executa; a tela só pinta.
+ */
+export const JogadaDoAlertaSchema = z.object({
+  pedido: z.number().int().min(1).max(TOTAL_DE_PEDIDOS),
+  expressao: ExpressaoSchema,
 });
 
-/** A regra montada com peças: a condição e uma ou duas ações, em ordem. */
-export const RegraSchema = z.object({
+/**
+ * O robô do grupo (EF05CO04): o laço (ou não), a condição e uma ou duas
+ * ações, em ordem. O mesmo corpo liga o robô e o envia.
+ */
+export const RoboSchema = z.object({
+  laco: z.boolean(),
   condicao: z.enum(CONDICOES),
   acoes: z.array(z.enum(ACOES)).min(1).max(2),
 });
-
-/** O teste no áudio do tio: a regra e a PREVISÃO, que vem antes do resultado. */
-export const TesteDaRegraSchema = RegraSchema.extend({ previsao: z.enum(SITUACOES) });
 
 /**
  * O recorte da aula (E0-PROF-02). Os tetos chegam por `superRefine` das MESMAS
@@ -171,34 +179,68 @@ export const RevelacaoSchema = z.object({
   }),
 });
 
+/** Um filtro executado: a expressão e os ids das mensagens que passaram, na ordem do grupo. */
+const ExecucaoSchema = z.object({ expressao: ExpressaoSchema, passam: z.array(MensagemIdSchema) });
+
 /**
- * O CARTÃO DE FRASES do estudante — `null` até a revelação dele (depende do
- * gabarito das três mensagens). As frases saem SEM a resposta esperada.
+ * O ALERTA DO GRUPO do estudante (EF05CO03) — `null` até a revelação dele.
+ * O quadro traz as OITO mensagens com os dois crachás (decisão de produto: a
+ * revelação abriu), e os pedidos saem SEM a expressão esperada.
  */
-export const CartaoSchema = z.object({
-  frases: z.array(z.object({ id: FraseIdSchema, operador: z.enum(OPERADORES), texto: z.string() })).length(TOTAL_DE_FRASES),
-  /** Já enviou? Depois do envio o cartão trava (o latch). */
-  enviado: z.boolean(),
+export const AlertaSchema = z.object({
+  quadro: z
+    .array(
+      z.object({
+        id: MensagemIdSchema,
+        /** "Mensagem de {remetente}" — derivado, sem campo novo no pacote. */
+        rotulo: z.string(),
+        veracidade: z.enum(VERACIDADES),
+        tom: z.enum(TONS),
+        /** Uma das três que ele encaminhou ao Mural. */
+        voceEnviou: z.boolean(),
+      }),
+    )
+    .length(TOTAL_DE_MENSAGENS),
+  pedidos: z.array(z.object({ n: z.number().int().positive(), texto: z.string() })).length(TOTAL_DE_PEDIDOS),
+  /** Um por pedido já aberto, em ordem: as execuções (até 3) e o alerta enviado. */
+  andamento: z.array(
+    z.object({
+      pedido: z.number().int().positive(),
+      execucoes: z.array(ExecucaoSchema).max(MAX_EXECUCOES),
+      enviado: ExecucaoSchema.nullable(),
+    }),
+  ),
+  /** Aceita jogada? Fecha na síntese, e não reabre. */
+  aberto: z.boolean(),
 });
 
-const RegraMontadaSchema = RegraSchema.extend({
-  /** A regra em palavras ("Se a mensagem for…, então eu…"). */
+const RoboMontadoSchema = RoboSchema.extend({
+  /** O robô em palavras ("Para cada mensagem nova, se a mensagem for…, o robô…"). */
   emPalavras: z.string(),
 });
 
-/** A regra do tio do estudante: os testes feitos e a regra enviada. */
-export const RegraDoEstudanteSchema = z.object({
-  testes: z.array(
-    RegraMontadaSchema.extend({
-      previsao: z.enum(SITUACOES),
-      /** O que a regra fez com o áudio — e a frase que a tela mostra. */
-      situacao: z.enum(SITUACOES),
-      resultado: z.string(),
+/** O ROBÔ DO GRUPO do estudante (EF05CO04): as quatro mensagens, as ligações e o enviado. */
+export const RoboDoEstudanteSchema = z.object({
+  /** As quatro mensagens que chegam, com os sinais ABERTOS (não há gabarito escondido na condição). */
+  mensagens: z.array(
+    z.object({
+      id: z.string(),
+      remetente: z.string(),
+      texto: z.string(),
+      tipo: z.enum(["audio", "texto"]),
+      atributos: z.array(z.enum(CONDICOES)),
     }),
   ),
-  /** Ainda pode testar? (limite técnico de testes) */
-  podeTestar: z.boolean(),
-  enviada: RegraMontadaSchema.nullable(),
+  ligacoes: z.array(
+    RoboMontadoSchema.extend({
+      /** O que o robô fez com cada mensagem — o servidor executa, a tela anima. */
+      resultados: z.array(z.object({ mensagemId: z.string(), situacao: z.enum(SITUACOES), texto: z.string() })),
+      resumo: z.string(),
+    }),
+  ),
+  /** Ainda pode ligar? (limite técnico de ligações) */
+  podeLigar: z.boolean(),
+  enviado: RoboMontadoSchema.nullable(),
 });
 
 export const EstadoSchema = z.object({
@@ -215,13 +257,15 @@ export const EstadoSchema = z.object({
   motivo: MotivoSchema.nullable(),
   concluido: z.boolean(),
   revelacao: RevelacaoSchema.nullable(),
-  /** O cartão de frases (EF05CO03) — `null` antes da revelação do estudante. */
-  cartao: CartaoSchema.nullable(),
-  /** A regra do tio (EF05CO04) — `null` antes do passo `regra`. */
-  regra: RegraDoEstudanteSchema.nullable(),
+  /** O alerta do grupo (EF05CO03) — `null` antes da revelação do estudante. */
+  alerta: AlertaSchema.nullable(),
+  /** O robô do grupo (EF05CO04) — `null` antes do passo `regra` (a reflexão). */
+  robo: RoboDoEstudanteSchema.nullable(),
 });
 
 const OpcaoSchema = z.object({ id: z.string(), rotulo: z.string() });
+/** Um bloco do robô: id, rótulo curto e o ícone (emoji provisório do Figma). */
+const BlocoSchema = OpcaoSchema.extend({ icone: z.string() });
 
 export const SessaoSchema = EstadoSchema.extend({
   /** O grupo da turma — `null` enquanto o professor não aprovou. As mensagens saem SEM o gabarito. */
@@ -235,22 +279,28 @@ export const SessaoSchema = EstadoSchema.extend({
     .nullable(),
   /**
    * As falas da experiência que dependem do servidor (a da Nina leva o tema)
-   * ou que são da missão: a que abre o cartão de frases e o desafio do tio.
+   * ou que são da missão: o desafio do tio, que abre o robô.
    */
   textos: z.object({
-    nina: z.object({ convite: z.string().nullable(), encerramento: z.string(), cartao: z.string(), tio: z.string() }),
+    nina: z.object({ convite: z.string().nullable(), encerramento: z.string(), tio: z.string() }),
   }),
   /**
-   * Os rótulos das peças. O tipo de cada ação e quais condições pegam o áudio
-   * ficam no servidor: a tela recebe só id e rótulo.
+   * Os blocos do robô. O TIPO de cada ação fica no servidor: a tela recebe
+   * id, rótulo e ícone.
    */
   opcoes: z.object({
     motivos: z.array(OpcaoSchema),
-    condicoes: z.array(OpcaoSchema),
-    acoes: z.array(OpcaoSchema),
-    previsoes: z.array(OpcaoSchema),
+    laco: z.object({ rotulo: z.string(), icone: z.string() }),
+    condicoes: z.array(BlocoSchema),
+    acoes: z.array(BlocoSchema),
   }),
-  limites: z.object({ encaminhamentos: z.number().int().positive(), testes: z.number().int().positive() }),
+  limites: z.object({
+    encaminhamentos: z.number().int().positive(),
+    /** Execuções do filtro por pedido do alerta. */
+    execucoes: z.number().int().positive(),
+    /** Ligações do robô. */
+    ligacoes: z.number().int().positive(),
+  }),
 });
 
 export const GateDoEstudanteSchema = z.object({
@@ -361,10 +411,10 @@ const ProgressoSchema = z.object({
   entraram: z.number().int().nonnegative(),
   confirmaram: z.number().int().nonnegative(),
   votaram: z.number().int().nonnegative(),
-  /** Enviaram o cartão de frases (EF05CO03). */
-  responderamCartao: z.number().int().nonnegative(),
-  /** Enviaram a regra do tio (EF05CO04). */
-  enviaramRegra: z.number().int().nonnegative(),
+  /** Enviaram os QUATRO alertas do grupo (EF05CO03). */
+  enviaramAlertas: z.number().int().nonnegative(),
+  /** Enviaram o robô do grupo (EF05CO04). */
+  enviaramRobo: z.number().int().nonnegative(),
   concluiram: z.number().int().nonnegative(),
 });
 
@@ -398,15 +448,19 @@ const LinhaDoPainelSchema = z.object({
   selecao: z.array(MensagemIdSchema).nullable(),
   motivo: MotivoSchema.nullable(),
   tempoFeedSegundos: z.number().int().nonnegative().nullable(),
-  /** O cartão de frases enviado: acertos (0–6) e por operador. O nível é da evidência. */
-  cartao: z
+  /**
+   * Os alertas enviados: os pontos (0–8, 2 por pedido) sobre os enviados, e
+   * quantos de 4. `null` sem alerta enviado. O nível é da evidência, e só
+   * existe com os 4.
+   */
+  alertas: z
     .object({
-      acertos: z.number().int().min(0).max(TOTAL_DE_FRASES),
-      porOperador: z.object({ E: z.number().int(), OU: z.number().int(), NAO: z.number().int() }),
+      pontos: z.number().int().min(0).max(PONTOS_MAXIMOS),
+      enviados: z.number().int().min(1).max(TOTAL_DE_PEDIDOS),
     })
     .nullable(),
-  /** A regra enviada, em palavras, e quantos testes ela levou. */
-  regra: z.object({ emPalavras: z.string(), testes: z.number().int().nonnegative() }).nullable(),
+  /** O robô enviado, em palavras, e quantas vezes ele foi ligado. */
+  robo: z.object({ emPalavras: z.string(), ligacoes: z.number().int().min(0).max(MAX_LIGACOES) }).nullable(),
 });
 
 export const PainelSchema = z.object({
@@ -425,21 +479,41 @@ export const PainelSchema = z.object({
 
 /**
  * O guia da aula: o banco curado COM gabarito, o roteiro, e as duas AÇÕES de
- * evidência que o professor precisa conhecer (o cartão de frases e a regra do
- * tio) — com um exemplo do cartão já respondido e o que cada peça é.
+ * evidência que o professor precisa conhecer — os quatro pedidos do alerta
+ * COM a expressão esperada, e o robô (os blocos com o tipo de cada ação e as
+ * quatro mensagens com os sinais).
  */
 export const MaterialSchema = z.object({
   padrao: PadraoSchema.extend({ convite: z.string() }),
   roteiro: z.object({ perguntas: z.array(z.string()), instrucoes: z.object({ revelacao: z.string(), reflexao: z.string() }) }),
-  textos: z.object({ encerramento: z.string(), cartao: z.string(), tio: z.string() }),
-  cartao: z.object({
-    /** Um cartão do banco curado, COM a resposta esperada — é o roteiro do professor. */
-    exemplo: z.array(z.object({ operador: z.enum(OPERADORES), texto: z.string(), esperado: z.enum(RESPOSTAS) })),
+  textos: z.object({ encerramento: z.string(), tio: z.string() }),
+  alerta: z.object({
+    /** Os quatro pedidos, com a expressão esperada (o gabarito) e quantas mensagens do banco curado passam nela. */
+    pedidos: z.array(
+      z.object({
+        n: z.number().int().positive(),
+        texto: z.string(),
+        esperada: ExpressaoSchema,
+        emPalavras: z.string(),
+        passamNoPadrao: z.number().int().min(0).max(TOTAL_DE_MENSAGENS),
+      }),
+    ),
+    execucoes: z.number().int().positive(),
   }),
-  regra: z.object({
-    condicoes: z.array(OpcaoSchema.extend({ pegaOAudio: z.boolean() })),
-    acoes: z.array(OpcaoSchema.extend({ tipo: z.enum(["checagem", "espera", "condicional", "repasse"]) })),
-    previsoes: z.array(OpcaoSchema),
+  robo: z.object({
+    laco: z.object({ rotulo: z.string(), icone: z.string() }),
+    condicoes: z.array(BlocoSchema.extend({ pegaOTio: z.boolean() })),
+    acoes: z.array(BlocoSchema.extend({ tipo: z.enum(["checagem", "espera", "condicional", "repasse"]) })),
+    mensagens: z.array(
+      z.object({
+        id: z.string(),
+        remetente: z.string(),
+        texto: z.string(),
+        tipo: z.enum(["audio", "texto"]),
+        atributos: z.array(z.enum(CONDICOES)),
+      }),
+    ),
+    ligacoes: z.number().int().positive(),
   }),
   /** O nível de cada ação, contado em palavras (a ficha). */
   habilidades: z.array(

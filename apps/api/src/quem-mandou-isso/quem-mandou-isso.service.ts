@@ -18,7 +18,6 @@ import {
   ENCAMINHAMENTOS,
   ENCERRAMENTO_DA_NINA,
   EXP_ID,
-  FALA_DO_CARTAO,
   FALA_DO_TIO,
   GRUPO,
   INSTRUCOES_DO_CONSOLE,
@@ -41,41 +40,44 @@ import { MensagemDoPacoteSchema, type CorpoDaAprovacao, type RevelacaoSchema } f
 import { gravarFalasDoPodcast } from "../podcast/podcast.service";
 import { erroDeJogo } from "./erros";
 import { PreparoDaExp05ef1bService, type MotivoDoPadrao } from "./preparo.service";
-import { MARCADOR_DA_REGRA, MARCADOR_DA_SELECAO, MARCADOR_DO_CARTAO, nivelCO08 } from "./regras/evidencia";
 import {
-  RESPOSTAS,
-  acertosDoCartao,
-  acertosPorOperador,
-  frasesDoCartao,
+  MAX_EXECUCOES,
+  PEDIDOS,
+  TOTAL_DE_PEDIDOS,
+  conferirExpressao,
+  expressaoEmPalavras,
+  mesmaExpressao,
   nivelCO03,
-  sementeDoCartao,
-  type FraseDoCartao,
-  type Resposta,
-} from "./regras/operacoes";
+  passamNoFiltro,
+  pedidoDe,
+  pontosDoPedido,
+  rotuloNoQuadro,
+  type Expressao,
+} from "./regras/alerta";
+import { MARCADOR_DA_SELECAO, MARCADOR_DO_ALERTA, MARCADOR_DO_ROBO, nivelCO08 } from "./regras/evidencia";
 import {
   ACOES,
   CONDICOES,
-  MAX_TESTES,
-  RESULTADO_DO_TESTE,
+  ICONE_DA_ACAO,
+  ICONE_DA_CONDICAO,
+  LACO,
+  MAX_LIGACOES,
+  MENSAGENS_DO_ROBO,
   ROTULO_DA_ACAO,
   ROTULO_DA_CONDICAO,
-  ROTULO_DA_PREVISAO,
-  SITUACOES,
-  conferirRegra,
-  ehSituacao,
-  mesmaRegra,
+  conferirRobo,
+  ligar,
+  mesmoRobo,
   nivelCO04,
-  pegaOAudio,
-  regraEmPalavras,
-  simular,
+  pegaOTio,
+  roboEmPalavras,
   tipoDaAcao,
-  type Regra,
-  type Situacao,
-  type TesteDaRegra,
-} from "./regras/regra";
+  type Robo,
+} from "./regras/robo";
 import {
   FASE_DA_ACAO,
   FASE_INICIAL,
+  alertaAberto,
   avancarFase,
   faseAtingiu,
   normalizarFase,
@@ -125,9 +127,8 @@ type LinhaDaSessao = Pick<
   | "confirmadoEm"
   | "motivo"
   | "votouEm"
-  | "frasesOperacoes"
-  | "respostasOperacoes"
-  | "operacoesEm"
+  | "alertas"
+  | "alertasEm"
   | "regraTestes"
   | "regraFinal"
   | "regraEm"
@@ -142,9 +143,8 @@ const CAMPOS_DA_SESSAO = {
   confirmadoEm: true,
   motivo: true,
   votouEm: true,
-  frasesOperacoes: true,
-  respostasOperacoes: true,
-  operacoesEm: true,
+  alertas: true,
+  alertasEm: true,
   regraTestes: true,
   regraFinal: true,
   regraEm: true,
@@ -159,7 +159,6 @@ function marcosDe(s: LinhaDaSessao | null | undefined): MarcosDaSessao | null {
     entrou: true,
     confirmou: s.confirmadoEm !== null,
     votou: s.votouEm !== null,
-    respondeuCartao: s.operacoesEm !== null,
     concluiu: s.concluidoEm !== null,
   };
 }
@@ -172,47 +171,83 @@ function ehObjeto(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-function lerRegra(bruto: unknown): Regra | null {
-  if (!ehObjeto(bruto) || typeof bruto.condicao !== "string" || !Array.isArray(bruto.acoes)) return null;
-  return conferirRegra(bruto.condicao, bruto.acoes.filter((a): a is string => typeof a === "string"));
+/** O robô gravado. Linha da 2.4.0 (a regra do tio, sem `laco`) = robô sem laço. */
+function lerRobo(bruto: unknown): Robo | null {
+  if (!ehObjeto(bruto) || !Array.isArray(bruto.acoes)) return null;
+  return conferirRobo(bruto.laco === true, bruto.condicao, bruto.acoes);
 }
 
-function lerTestes(bruto: Prisma.JsonValue): TesteDaRegra[] {
+/** As ligações em ordem. Os testes da 2.4.0 (com `previsao`) são lidos como ligações sem laço. */
+function lerLigacoes(bruto: Prisma.JsonValue): Robo[] {
   if (!Array.isArray(bruto)) return [];
-  return bruto.flatMap((t) => {
-    const regra = lerRegra(t);
-    if (!regra || !ehObjeto(t) || typeof t.previsao !== "string" || typeof t.situacao !== "string") return [];
-    if (!ehSituacao(t.previsao) || !ehSituacao(t.situacao)) return [];
-    return [{ regra, previsao: t.previsao, situacao: t.situacao }];
+  return bruto.flatMap((l) => {
+    const robo = lerRobo(l);
+    return robo ? [robo] : [];
   });
 }
 
-function lerRespostas(bruto: Prisma.JsonValue | null): Map<string, Resposta> {
-  const mapa = new Map<string, Resposta>();
-  if (!Array.isArray(bruto)) return mapa;
-  for (const r of bruto) {
-    if (ehObjeto(r) && typeof r.fraseId === "string" && (RESPOSTAS as readonly unknown[]).includes(r.resposta)) {
-      mapa.set(r.fraseId, r.resposta as Resposta);
-    }
-  }
-  return mapa;
+function roboMontado(robo: Robo) {
+  return { laco: robo.laco, condicao: robo.condicao, acoes: [...robo.acoes], emPalavras: roboEmPalavras(robo) };
 }
 
-function lerFrases(bruto: Prisma.JsonValue | null): FraseDoCartao[] {
+/** Um filtro executado, como ele fica gravado e como desce. */
+interface Execucao {
+  expressao: Expressao;
+  passam: string[];
+}
+
+/** Um pedido do alerta já aberto: as execuções e o enviado. */
+interface AndamentoDoPedido {
+  pedido: number;
+  execucoes: Execucao[];
+  enviado: Execucao | null;
+}
+
+function lerExecucao(bruto: unknown): Execucao | null {
+  if (!ehObjeto(bruto) || !Array.isArray(bruto.passam)) return null;
+  const expressao = conferirExpressao(bruto.expressao);
+  if (!expressao) return null;
+  return { expressao, passam: bruto.passam.filter((id): id is string => typeof id === "string") };
+}
+
+/** Os pedidos abertos, em ordem. Entrada fora da forma (outra versão) é ignorada. */
+function lerAlertas(bruto: Prisma.JsonValue): AndamentoDoPedido[] {
   if (!Array.isArray(bruto)) return [];
-  return bruto.filter(
-    (f): f is FraseDoCartao & Prisma.JsonObject =>
-      ehObjeto(f) &&
-      typeof f.id === "string" &&
-      typeof f.texto === "string" &&
-      typeof f.msgId === "string" &&
-      (f.operador === "E" || f.operador === "OU" || f.operador === "NAO") &&
-      (f.esperado === "sim" || f.esperado === "nao"),
-  );
+  return bruto.flatMap((p) => {
+    if (!ehObjeto(p) || typeof p.pedido !== "number" || !Array.isArray(p.execucoes)) return [];
+    const execucoes = p.execucoes.flatMap((e) => {
+      const lida = lerExecucao(e);
+      return lida ? [lida] : [];
+    });
+    return [{ pedido: p.pedido, execucoes, enviado: p.enviado ? lerExecucao(p.enviado) : null }];
+  });
 }
 
-function regraMontada(regra: Regra) {
-  return { condicao: regra.condicao, acoes: [...regra.acoes], emPalavras: regraEmPalavras(regra) };
+/** O pedido da vez: o primeiro sem alerta enviado. `null` com os quatro enviados. */
+function pedidoDaVez(andamento: readonly AndamentoDoPedido[]): number | null {
+  for (const p of PEDIDOS) {
+    const dele = andamento.find((a) => a.pedido === p.n);
+    if (!dele?.enviado) return p.n;
+  }
+  return null;
+}
+
+/** Os pontos dos pedidos ENVIADOS (0–2 cada). */
+function pontosDosAlertas(andamento: readonly AndamentoDoPedido[]): { pontos: number; enviados: number } {
+  let pontos = 0;
+  let enviados = 0;
+  for (const a of andamento) {
+    const pedido = pedidoDe(a.pedido);
+    if (!pedido || !a.enviado) continue;
+    enviados += 1;
+    pontos += pontosDoPedido(pedido, a.execucoes.map((e) => e.expressao), a.enviado.expressao);
+  }
+  return { pontos, enviados };
+}
+
+/** O JSON gravado — o `em` de cada jogada fica para o histórico. */
+function paraGravar(andamento: readonly (AndamentoDoPedido & { em?: Record<string, string> })[]): Prisma.InputJsonValue {
+  return andamento as unknown as Prisma.InputJsonValue;
 }
 
 function ehMotivo(v: string | null): v is Motivo {
@@ -302,13 +337,17 @@ function opcoes() {
   };
 }
 
-/** As peças da regra e as previsões — só id e rótulo: o tipo de cada uma fica aqui. */
-function pecas() {
+/** Os blocos do robô — id, rótulo e ícone: o TIPO de cada ação fica aqui. */
+function blocos() {
   return {
-    condicoes: CONDICOES.map((id) => ({ id, rotulo: ROTULO_DA_CONDICAO[id] })),
-    acoes: ACOES.map((id) => ({ id, rotulo: ROTULO_DA_ACAO[id] })),
-    previsoes: SITUACOES.map((id) => ({ id, rotulo: ROTULO_DA_PREVISAO[id] })),
+    laco: { rotulo: LACO.rotulo, icone: LACO.icone },
+    condicoes: CONDICOES.map((id) => ({ id, rotulo: ROTULO_DA_CONDICAO[id], icone: ICONE_DA_CONDICAO[id] })),
+    acoes: ACOES.map((id) => ({ id, rotulo: ROTULO_DA_ACAO[id], icone: ICONE_DA_ACAO[id] })),
   };
+}
+
+function mensagensDoRobo() {
+  return MENSAGENS_DO_ROBO.map((m) => ({ ...m, atributos: [...m.atributos] }));
 }
 
 function padrao() {
@@ -335,8 +374,8 @@ function paraAConta(l: LinhaDaTurma): UnidadeDaConta {
     entrou: Boolean(s),
     selecao: s?.confirmadoEm ? s.selecao : null,
     motivo: s && ehMotivo(s.motivo) ? s.motivo : null,
-    respondeuCartao: Boolean(s?.operacoesEm),
-    enviouRegra: Boolean(s?.regraEm),
+    enviouAlertas: Boolean(s?.alertasEm),
+    enviouRobo: Boolean(s?.regraEm),
     concluiu: Boolean(s?.concluidoEm),
   };
 }
@@ -392,12 +431,11 @@ export class QuemMandouIssoService {
           nina: {
             convite: ctx.pacote ? falaDaNina(ctx.pacote.tema) : null,
             encerramento: ENCERRAMENTO_DA_NINA,
-            cartao: FALA_DO_CARTAO,
             tio: FALA_DO_TIO,
           },
         },
-        opcoes: { ...opcoes(), ...pecas() },
-        limites: { encaminhamentos: ENCAMINHAMENTOS, testes: MAX_TESTES },
+        opcoes: { ...opcoes(), ...blocos() },
+        limites: { encaminhamentos: ENCAMINHAMENTOS, execucoes: MAX_EXECUCOES, ligacoes: MAX_LIGACOES },
       };
     }, escolaId);
   }
@@ -528,102 +566,133 @@ export class QuemMandouIssoService {
   }
 
   /**
-   * O CARTÃO DE FRASES (EF05CO03) — o latch 3, e a marca na MESMA transação.
+   * "Ver resultado" no alerta do grupo (EF05CO03): executa o filtro do pedido
+   * da vez e GRAVA a execução — a primeira de cada pedido é a que vale 2
+   * pontos. Até `MAX_EXECUCOES` por pedido.
    *
-   * Abre quando O ESTUDANTE vê os crachás (voto dado E revelação aberta pela
-   * turma), em qualquer fase dali em diante, e fecha quando ele envia: o
-   * cartão segue o caminho da criança, não o botão do professor. Quem votou
-   * atrasado também responde, e na reflexão ele vem antes da regra.
-   *
-   * As frases são RECALCULADAS aqui da mesma semente que a tela recebeu (a
-   * sessão), e gravadas com a resposta esperada: o cliente só manda "sim" ou
-   * "não" por id. A mesma resposta de novo é idempotente; outra, 409.
+   * Só na janela do alerta: voto dado, revelação DELA aberta e a turma ainda
+   * na revelação. A síntese fecha (409 `alerta-fechado`); um pedido por vez,
+   * em ordem (409 `alerta-fora-de-ordem`).
    */
-  responderCartao(escolaId: string, estudanteId: string, respostas: readonly { fraseId: string; resposta: Resposta }[]) {
+  executarAlerta(escolaId: string, estudanteId: string, n: number, bruta: Expressao) {
+    return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
+      this.exigirJanelaDoAlerta(sessao, fase);
+      const expressao = conferirExpressao(bruta);
+      if (!expressao) throw erroDeJogo("payload-invalido");
+      const andamento = lerAlertas(sessao.alertas);
+      if (pedidoDaVez(andamento) !== n) throw erroDeJogo("alerta-fora-de-ordem");
+
+      const doPedido = andamento.find((a) => a.pedido === n) ?? { pedido: n, execucoes: [], enviado: null };
+      if (doPedido.execucoes.length >= MAX_EXECUCOES) throw erroDeJogo("limite-execucoes");
+      const execucao = { expressao, passam: passamNoFiltro(expressao, pacote.mensagens), em: new Date().toISOString() };
+      const novo = { ...doPedido, execucoes: [...doPedido.execucoes, execucao] };
+      const proximo = [...andamento.filter((a) => a.pedido !== n), novo].sort((x, y) => x.pedido - y.pedido);
+      await tx.exp05ef1bSessao.update({
+        where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
+        data: { alertas: paraGravar(proximo) },
+      });
+    });
+  }
+
+  /**
+   * "Enviar alerta ao grupo" — trava o pedido e abre o próximo. A expressão
+   * enviada é a que está NA TELA, e precisa ser a ÚLTIMA executada (400
+   * `execute-antes`): a criança envia o que viu passar.
+   *
+   * No QUARTO envio, o latch `alertas_em` e a marca da EF05CO03 na MESMA
+   * transação (a soma dos quatro, `regras/alerta.ts#nivelCO03`). O mesmo
+   * envio de novo é idempotente — inclusive depois de a janela fechar —, e
+   * outro, para um pedido já enviado, é 409 `alerta-ja-enviado`.
+   */
+  enviarAlerta(escolaId: string, estudanteId: string, n: number, bruta: Expressao) {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
       if (!sessao) throw erroDeJogo("grupo-nao-aberto");
-      if (!sessao.votouEm) throw erroDeJogo("enquete-nao-votada");
-      if (!revelacaoAberta(marcosDe(sessao), fase)) throw erroDeJogo("cartao-nao-liberado");
-      const enviadas = new Map(respostas.map((r) => [r.fraseId, r.resposta]));
-
-      if (sessao.operacoesEm) {
-        const anteriores = lerRespostas(sessao.respostasOperacoes);
-        const iguais = anteriores.size === enviadas.size && [...enviadas].every(([id, r]) => anteriores.get(id) === r);
-        if (iguais) return;
-        throw erroDeJogo("cartao-ja-enviado");
+      const expressao = conferirExpressao(bruta);
+      if (!expressao) throw erroDeJogo("payload-invalido");
+      const andamento = lerAlertas(sessao.alertas);
+      const doPedido = andamento.find((a) => a.pedido === n);
+      if (doPedido?.enviado) {
+        if (mesmaExpressao(doPedido.enviado.expressao, expressao)) return;
+        throw erroDeJogo("alerta-ja-enviado");
       }
+      this.exigirJanelaDoAlerta(sessao, fase);
+      if (pedidoDaVez(andamento) !== n) throw erroDeJogo("alerta-fora-de-ordem");
+      const ultima = doPedido?.execucoes.at(-1);
+      if (!doPedido || !ultima || !mesmaExpressao(ultima.expressao, expressao)) throw erroDeJogo("execute-antes");
 
-      const frases = this.frasesDe(escolaId, estudanteId, pacote, sessao);
-      if (!frases || frases.some((f) => !enviadas.has(f.id))) throw erroDeJogo("payload-invalido");
-
+      const enviado = { expressao: ultima.expressao, passam: ultima.passam, em: new Date().toISOString() };
+      const proximo = andamento.map((a) => (a.pedido === n ? { ...a, enviado } : a));
+      const fechou = proximo.length === TOTAL_DE_PEDIDOS && proximo.every((a) => a.enviado);
       await tx.exp05ef1bSessao.update({
         where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
-        data: {
-          frasesOperacoes: frases as unknown as Prisma.InputJsonValue,
-          respostasOperacoes: frases.map((f) => ({ fraseId: f.id, resposta: enviadas.get(f.id) ?? null })),
-          operacoesEm: new Date(),
-        },
+        data: { alertas: paraGravar(proximo), ...(fechou ? { alertasEm: new Date() } : {}) },
       });
+      if (!fechou) return;
       await this.evidencias.marcar(tx, {
         ...this.marcaDe(escolaId, estudanteId, pacote),
-        marcador: MARCADOR_DO_CARTAO,
-        status: nivelCO03(acertosDoCartao(frases, enviadas)),
+        marcador: MARCADOR_DO_ALERTA,
+        status: nivelCO03(pontosDosAlertas(proximo).pontos),
       });
     });
   }
 
   /**
-   * "Testar no áudio do tio" — a regra e a PREVISÃO. Grava o teste e devolve,
-   * no estado, o que a regra fez. Só na reflexão, com o cartão enviado e a
-   * regra ainda não enviada; no máximo `MAX_TESTES` (limite técnico).
-   *
-   * A previsão vem ANTES do resultado e não muda depois: é ela que mostra que
-   * a criança simulou a regra. O primeiro teste é o que a régua lê.
+   * "Ligar o robô" (EF05CO04): o servidor executa o robô nas quatro mensagens
+   * e grava a ligação (o cliente só anima o resultado). Só na reflexão, antes
+   * de enviar o robô e de concluir; SEM exigir o alerta. No máximo
+   * `MAX_LIGACOES` (limite técnico). A régua lê a PRIMEIRA.
    */
-  testarRegra(escolaId: string, estudanteId: string, condicao: string, acoes: readonly string[], previsao: Situacao) {
+  ligarRobo(escolaId: string, estudanteId: string, laco: boolean, condicao: string, acoes: readonly string[]) {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
-      this.exigirEtapaDaRegra(sessao, fase);
-      const regra = conferirRegra(condicao, acoes);
-      if (!regra) throw erroDeJogo("regra-invalida");
-      const testes = Array.isArray(sessao?.regraTestes) ? sessao.regraTestes : [];
-      if (testes.length >= MAX_TESTES) throw erroDeJogo("testes-esgotados");
-      const teste = { condicao: regra.condicao, acoes: [...regra.acoes], previsao, situacao: simular(regra), em: new Date().toISOString() };
+      this.exigirEtapaDoRobo(sessao, fase);
+      const robo = conferirRobo(laco, condicao, acoes);
+      if (!robo) throw erroDeJogo("robo-invalido");
+      const ligacoes = Array.isArray(sessao.regraTestes) ? sessao.regraTestes : [];
+      if (ligacoes.length >= MAX_LIGACOES) throw erroDeJogo("ligacoes-esgotadas");
+      const ligacao = {
+        laco: robo.laco,
+        condicao: robo.condicao,
+        acoes: [...robo.acoes],
+        resultados: ligar(robo).resultados.map((r) => ({ mensagemId: r.mensagemId, situacao: r.situacao })),
+        em: new Date().toISOString(),
+      };
       await tx.exp05ef1bSessao.update({
         where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
-        data: { regraTestes: [...testes, teste] as Prisma.InputJsonValue },
+        data: { regraTestes: [...ligacoes, ligacao] as Prisma.InputJsonValue },
       });
     });
   }
 
   /**
-   * "Enviar minha regra" — o latch 4, e a marca da EF05CO04 na MESMA
-   * transação. Enviar sem testar é permitido (fica "em processo" no máximo).
-   * A mesma regra de novo é idempotente; outra, 409.
+   * "Enviar meu robô" — o latch do robô, e a marca da EF05CO04 na MESMA
+   * transação. Enviar sem ligar é permitido (fica "em processo" no máximo). O
+   * mesmo robô de novo é idempotente; outro, 409. Quem fecha a missão é o
+   * `POST /concluir`, que a tela chama logo depois.
    */
-  enviarRegra(escolaId: string, estudanteId: string, condicao: string, acoes: readonly string[]) {
+  enviarRobo(escolaId: string, estudanteId: string, laco: boolean, condicao: string, acoes: readonly string[]) {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
-      const regra = conferirRegra(condicao, acoes);
-      if (!regra) throw erroDeJogo("regra-invalida");
+      const robo = conferirRobo(laco, condicao, acoes);
+      if (!robo) throw erroDeJogo("robo-invalido");
       if (sessao?.regraEm) {
-        const enviada = lerRegra(sessao.regraFinal);
-        if (enviada && mesmaRegra(enviada, regra)) return;
-        throw erroDeJogo("regra-ja-enviada");
+        const enviado = lerRobo(sessao.regraFinal);
+        if (enviado && mesmoRobo(enviado, robo)) return;
+        throw erroDeJogo("robo-ja-enviado");
       }
-      this.exigirEtapaDaRegra(sessao, fase);
+      this.exigirEtapaDoRobo(sessao, fase);
       await tx.exp05ef1bSessao.update({
         where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
-        data: { regraFinal: { condicao: regra.condicao, acoes: [...regra.acoes] }, regraEm: new Date() },
+        data: { regraFinal: { laco: robo.laco, condicao: robo.condicao, acoes: [...robo.acoes] }, regraEm: new Date() },
       });
       await this.evidencias.marcar(tx, {
         ...this.marcaDe(escolaId, estudanteId, pacote),
-        marcador: MARCADOR_DA_REGRA,
-        status: nivelCO04(regra, lerTestes(sessao?.regraTestes ?? [])),
+        marcador: MARCADOR_DO_ROBO,
+        status: nivelCO04(robo, lerLigacoes(sessao.regraTestes)),
       });
     });
   }
 
   /**
-   * O fim da missão, depois da regra do tio. NÃO exige o cartão nem a regra:
+   * O fim da missão, depois do robô do grupo. NÃO exige o alerta nem o robô:
    * quem sai antes fica "Não avaliado" nelas (a ausência de marca), nunca "não
    * atingiu". Idempotente.
    */
@@ -937,8 +1006,8 @@ export class QuemMandouIssoService {
    * (`colapsarEmUnidades`): a linha de quem jogou representa o computador.
    *
    * Antes da revelação, SÓ progresso; o Termômetro é `null`. Nenhum nome entra
-   * nele. Não há texto livre de menor: o cartão vai como acertos e a regra
-   * em palavras montadas das peças — a mesma linha para professor e gestor.
+   * nele. Não há texto livre de menor: o alerta vai como pontos e o robô em
+   * palavras montadas dos blocos — a mesma linha para professor e gestor.
    */
   async painel(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
@@ -965,10 +1034,13 @@ export class QuemMandouIssoService {
             selecao: s?.confirmadoEm ? s.selecao : null,
             motivo: s && ehMotivo(s.motivo) ? s.motivo : null,
             tempoFeedSegundos: s?.tempoFeedSegundos ?? null,
-            cartao: s?.operacoesEm ? this.cartaoDaFolha(s) : null,
-            regra: (() => {
-              const enviada = s?.regraEm ? lerRegra(s.regraFinal) : null;
-              return enviada && s ? { emPalavras: regraEmPalavras(enviada), testes: lerTestes(s.regraTestes).length } : null;
+            alertas: (() => {
+              const conta = s ? pontosDosAlertas(lerAlertas(s.alertas)) : null;
+              return conta && conta.enviados > 0 ? conta : null;
+            })(),
+            robo: (() => {
+              const enviado = s?.regraEm ? lerRobo(s.regraFinal) : null;
+              return enviado && s ? { emPalavras: roboEmPalavras(enviado), ligacoes: lerLigacoes(s.regraTestes).length } : null;
             })(),
           };
         }),
@@ -979,26 +1051,34 @@ export class QuemMandouIssoService {
 
   /**
    * O material do GUIA DA AULA: o banco curado COM gabarito, o roteiro, e as
-   * duas ações de evidência por dentro — um cartão de frases do banco curado
-   * já com a resposta esperada, e as peças da regra com o tipo de cada uma
-   * (o gabarito da regra, que só o professor vê). Catálogo da missão, igual
-   * para todo contrato: sem tenancy.
+   * duas ações de evidência por dentro — os quatro pedidos do alerta com a
+   * expressão esperada (e quantas mensagens do banco curado passam nela), e os
+   * blocos do robô com o tipo de cada ação e as quatro mensagens (o gabarito
+   * do robô, que só o professor vê). Catálogo da missão, igual para todo
+   * contrato: sem tenancy.
    */
   material() {
-    /* O exemplo do guia: as três primeiras mensagens do banco curado, que
-       misturam verdadeira e falsa — uma trinca como as que a criança forma. */
-    const exemplo = mensagensDoPadrao().slice(0, ENCAMINHAMENTOS);
+    const curado = mensagensDoPadrao();
     return {
       padrao: { ...padrao(), convite: falaDaNina(PACOTE_PADRAO.tema) },
       roteiro: ROTEIRO,
-      textos: { encerramento: ENCERRAMENTO_DA_NINA, cartao: FALA_DO_CARTAO, tio: FALA_DO_TIO },
-      cartao: {
-        exemplo: frasesDoCartao(exemplo, "guia").map((f) => ({ operador: f.operador, texto: f.texto, esperado: f.esperado })),
+      textos: { encerramento: ENCERRAMENTO_DA_NINA, tio: FALA_DO_TIO },
+      alerta: {
+        pedidos: PEDIDOS.map((p) => ({
+          n: p.n,
+          texto: p.texto,
+          esperada: p.esperada,
+          emPalavras: expressaoEmPalavras(p.esperada),
+          passamNoPadrao: passamNoFiltro(p.esperada, curado).length,
+        })),
+        execucoes: MAX_EXECUCOES,
       },
-      regra: {
-        condicoes: CONDICOES.map((id) => ({ id, rotulo: ROTULO_DA_CONDICAO[id], pegaOAudio: pegaOAudio(id) })),
-        acoes: ACOES.map((id) => ({ id, rotulo: ROTULO_DA_ACAO[id], tipo: tipoDaAcao(id) })),
-        previsoes: SITUACOES.map((id) => ({ id, rotulo: ROTULO_DA_PREVISAO[id] })),
+      robo: {
+        laco: { rotulo: LACO.rotulo, icone: LACO.icone },
+        condicoes: CONDICOES.map((id) => ({ id, rotulo: ROTULO_DA_CONDICAO[id], icone: ICONE_DA_CONDICAO[id], pegaOTio: pegaOTio(id) })),
+        acoes: ACOES.map((id) => ({ id, rotulo: ROTULO_DA_ACAO[id], icone: ICONE_DA_ACAO[id], tipo: tipoDaAcao(id) })),
+        mensagens: mensagensDoRobo(),
+        ligacoes: MAX_LIGACOES,
       },
       habilidades: FICHA_EXP05EF1B.habilidades.map((h) => ({
         codigo: h.codigo,
@@ -1010,13 +1090,6 @@ export class QuemMandouIssoService {
   }
 
   // ─────────────────────────────────────────────────────────── privados
-
-  /** O cartão enviado, como a folha do professor o lê: acertos e por operador (o nível é da evidência). */
-  private cartaoDaFolha(s: LinhaDaSessao) {
-    const frases = lerFrases(s.frasesOperacoes);
-    const respostas = lerRespostas(s.respostasOperacoes);
-    return { acertos: acertosDoCartao(frases, respostas), porOperador: acertosPorOperador(frases, respostas) };
-  }
 
   /** O estado do estudante, depois de uma leitura ou de uma mutação. */
   private async montarEstado(
@@ -1052,31 +1125,40 @@ export class QuemMandouIssoService {
       };
     }
 
-    /* O cartão desce junto com a revelação do estudante (depende do gabarito
-       das três dele) — e sem a resposta esperada. */
-    const frases = revelacao && pacote && sessao ? this.frasesDe(escolaId, estudanteId, pacote, sessao) : null;
-    const cartao = frases
-      ? {
-          frases: frases.map((f) => ({ id: f.id, operador: f.operador, texto: f.texto })),
-          enviado: Boolean(sessao?.operacoesEm),
-        }
-      : null;
+    /* O alerta desce junto com a revelação do estudante: o quadro das OITO
+       mensagens com os crachás (decisão de produto) e os pedidos SEM a
+       expressão esperada. Fica visível depois de fechar (os enviados). */
+    const alerta =
+      revelacao && pacote && sessao
+        ? {
+            quadro: pacote.mensagens.map((m) => ({
+              id: m.id,
+              rotulo: rotuloNoQuadro(m),
+              veracidade: m.veracidade,
+              tom: m.tom,
+              voceEnviou: sessao.selecao.includes(m.id),
+            })),
+            pedidos: PEDIDOS.map((p) => ({ n: p.n, texto: p.texto })),
+            andamento: lerAlertas(sessao.alertas).map((a) => ({
+              pedido: a.pedido,
+              execucoes: a.execucoes.map((e) => ({ expressao: e.expressao, passam: e.passam })),
+              enviado: a.enviado ? { expressao: a.enviado.expressao, passam: a.enviado.passam } : null,
+            })),
+            aberto: alertaAberto(marcos, ctx.fase) && !sessao.alertasEm,
+          }
+        : null;
 
     const passo = passoEfetivo(marcos, ctx.fase);
-    const regra =
-      sessao && (passo === "regra" || passo === "concluida") && sessao.operacoesEm
+    const robo =
+      sessao && (passo === "regra" || passo === "concluida") && sessao.votouEm
         ? (() => {
-            const testes = lerTestes(sessao.regraTestes);
-            const enviada = lerRegra(sessao.regraFinal);
+            const ligacoes = lerLigacoes(sessao.regraTestes);
+            const enviado = lerRobo(sessao.regraFinal);
             return {
-              testes: testes.map((t) => ({
-                ...regraMontada(t.regra),
-                previsao: t.previsao,
-                situacao: t.situacao,
-                resultado: RESULTADO_DO_TESTE[t.situacao],
-              })),
-              podeTestar: !sessao.regraEm && !sessao.concluidoEm && testes.length < MAX_TESTES,
-              enviada: enviada ? regraMontada(enviada) : null,
+              mensagens: mensagensDoRobo(),
+              ligacoes: ligacoes.map((r) => ({ ...roboMontado(r), ...ligar(r) })),
+              podeLigar: !sessao.regraEm && !sessao.concluidoEm && ligacoes.length < MAX_LIGACOES,
+              enviado: enviado ? roboMontado(enviado) : null,
             };
           })()
         : null;
@@ -1091,8 +1173,8 @@ export class QuemMandouIssoService {
       motivo: sessao && ehMotivo(sessao.motivo) ? sessao.motivo : null,
       concluido: Boolean(sessao?.concluidoEm),
       revelacao,
-      cartao,
-      regra,
+      alerta,
+      robo,
     };
   }
 
@@ -1182,33 +1264,20 @@ export class QuemMandouIssoService {
     return { escolaId, expId: EXP_ID, turmaId: pacote.turmaId, atividadeId: pacote.id, rodada: pacote.rodada, estudanteId };
   }
 
-  /**
-   * As seis frases do cartão desta sessão: as GRAVADAS, se ele já foi enviado
-   * (a foto da tentativa), ou as calculadas da semente — as mesmas que a tela
-   * recebeu. `null` sem as três mensagens do Mural.
-   */
-  private frasesDe(
-    escolaId: string,
-    estudanteId: string,
-    pacote: PacoteDaTurma,
-    sessao: LinhaDaSessao,
-  ): FraseDoCartao[] | null {
-    if (sessao.operacoesEm) {
-      const gravadas = lerFrases(sessao.frasesOperacoes);
-      if (gravadas.length > 0) return gravadas;
-    }
-    const mensagens = sessao.selecao.flatMap((id) => pacote.mensagens.filter((m) => m.id === id));
-    if (mensagens.length !== ENCAMINHAMENTOS) return null;
-    return frasesDoCartao(mensagens, sementeDoCartao(escolaId, estudanteId, pacote));
+  /** A janela do alerta: voto dado, revelação DELA aberta e a turma ainda na revelação. */
+  private exigirJanelaDoAlerta(sessao: LinhaDaSessao | null, fase: Fase | null): asserts sessao is LinhaDaSessao {
+    if (!sessao) throw erroDeJogo("grupo-nao-aberto");
+    if (!sessao.votouEm) throw erroDeJogo("enquete-nao-votada");
+    if (!revelacaoAberta(marcosDe(sessao), fase)) throw erroDeJogo("alerta-nao-liberado");
+    if (!alertaAberto(marcosDe(sessao), fase) || sessao.alertasEm) throw erroDeJogo("alerta-fechado");
   }
 
-  /** A guarda da regra do tio: na reflexão, depois do cartão, antes de enviar e de concluir. */
-  private exigirEtapaDaRegra(sessao: LinhaDaSessao | null, fase: Fase | null): asserts sessao is LinhaDaSessao {
+  /** A guarda do robô: na reflexão, antes de enviar e de concluir. O alerta NÃO é exigido. */
+  private exigirEtapaDoRobo(sessao: LinhaDaSessao | null, fase: Fase | null): asserts sessao is LinhaDaSessao {
     if (!sessao) throw erroDeJogo("grupo-nao-aberto");
     if (!sessao.votouEm) throw erroDeJogo("enquete-nao-votada");
     if (fase !== "reflexao") throw erroDeJogo("reflexao-nao-liberada");
-    if (!sessao.operacoesEm) throw erroDeJogo("cartao-pendente");
-    if (sessao.regraEm || sessao.concluidoEm) throw erroDeJogo("regra-ja-enviada");
+    if (sessao.regraEm || sessao.concluidoEm) throw erroDeJogo("robo-ja-enviado");
   }
 
   private sessaoDe(
