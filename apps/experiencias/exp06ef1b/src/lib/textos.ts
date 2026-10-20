@@ -22,12 +22,13 @@ import type { Conviccao } from "./tipos";
  *   `textos.test.ts` conta.
  *
  * O CONTEÚDO da missão (os quarenta estandes, as categorias e hashtags, as
- * peças da regra, o caso Mariana e os cartões) NÃO mora aqui: vem da api, e corrigir uma palavra dele não pode exigir
+ * peças da regra) NÃO mora aqui: vem da api, e corrigir uma palavra dele não pode exigir
  * republicar um caminho imutável no bucket.
  *
  * **Duas vozes**: a comissão da mostra dentro do Unoovista (crachá, feed,
- * cédula, separação, espera, galeria, conclusão) e a Unooria (a regra com a
- * ponte do Léo, o caso Mariana e o infográfico final — PRD §10.1).
+ * pastas, cédula, espera, galeria, conclusão) e a Unooria (a regra com a
+ * ponte do Léo e o infográfico final — PRD §10.1). O caso Mariana saiu na
+ * 0.7.0 (ADR-176).
  *
  * A 0.6.0 (ADR-174) tirou as enquetes e a cadeia de quatro blocos e pôs a
  * SEPARAÇÃO e a REGRA SE … ENTÃO; os textos delas são ESCRITA AQUI, levados ao
@@ -141,6 +142,39 @@ export const E2 = {
   notificacaoDoCracha: "credenciou você como jurado oficial da 10ª Mostra Estadual de Projetos Escolares.",
 } as const;
 
+// ─────────────────── as PASTAS do salvar, no feed (clone, ADR-176, 0.7.0)
+
+/**
+ * ESCRITA AQUI (0.7.0) — a EF06CO01 no feed: o "Salvar" do post abre as
+ * quatro pastas da mostra, como as coleções do app. Quem pede é a COMISSÃO e o
+ * disfarce está de pé: nada aqui pode nomear a descoberta (o teste do "antes
+ * da galeria" cobra). Sem certo/errado depois de guardar: o nível é do
+ * professor.
+ */
+export const PASTAS = {
+  /** O pedido no topo do feed, na voz da comissão. */
+  pedido: "A comissão pede: salve cada estande na pasta da área dele.",
+  /** O título da folha que o "Salvar" abre. */
+  salvarEm: "Salvar em",
+  /** A linha da folha, embaixo do título. */
+  instrucao: "Escolha a pasta da área deste estande.",
+  /** O nome acessível de cada pasta (o nome vem do pacote do professor). */
+  pastaDe: (nome: string) => `Pasta ${nome}`,
+  /** Tirar o post de todas as pastas. */
+  remover: "Remover dos salvos",
+  /** O aviso curto depois de guardar. */
+  salvoEm: (nome: string) => `Salvo em ${nome}`,
+  removido: "Removido dos salvos",
+  /** A aba Jurado: as pastas com quantos estandes cada uma guarda. */
+  titulo: "Suas pastas",
+  quantos: (n: number) => (n === 1 ? "1 estande" : `${n} estandes`),
+  /** A cédula fica travada enquanto falta estande sem pasta. */
+  faltam: (n: number) =>
+    n === 1
+      ? "Antes de votar, salve na pasta da área o estande que ainda falta."
+      : `Antes de votar, salve cada estande na pasta da área dele: faltam ${n}.`,
+} as const;
+
 // ──────────────────────────────────────────── E3: a cédula (clone)
 
 export const E3 = {
@@ -165,25 +199,6 @@ export const E3 = {
   brasao: "Brasão da Comissão Estadual",
 } as const;
 
-// ─────────────────────────── a separação, depois do voto (clone, ADR-174)
-
-/**
- * ESCRITA AQUI (0.6.0) — a EF06CO01: a criança põe cada estande que viu numa
- * área. É ANTES da galeria, e quem pede é a comissão: nada aqui pode nomear a
- * descoberta (o teste do "antes da galeria" cobra). Sem certo/errado depois do
- * envio: o nível é do professor.
- */
-export const SEPARACAO = {
-  titulo: "Organize o que você viu",
-  instrucao: "Antes da auditoria, a comissão quer saber como você organizaria a mostra.",
-  pedido: "Para cada estande que apareceu no seu feed, escolha a área dele.",
-  /** O nome acessível do grupo de áreas de cada estande. */
-  areaDo: (titulo: string) => `Área do estande ${titulo}`,
-  contador: (feitos: number, total: number) => `${feitos} de ${total} estandes separados`,
-  enviar: "Enviar Organização à Comissão",
-  enviada: "Organização registrada na ata do júri.",
-} as const;
-
 // ─────────────────────────────────────── E4: a Galeria Oculta (clone)
 
 export const E4 = {
@@ -198,17 +213,6 @@ export const E4 = {
    * Lucas): "X de Y", os dois números REAIS da sessão, sem porcentagem.
    */
   badge: (ocultos: number, total: number) => `${ocultos} de ${total} estandes nunca chegaram ao seu feed`,
-  /** ESCRITA AQUI (0.5.0) — o título da contagem por área. */
-  porArea: "O que chegou ao seu feed, por área:",
-  /** ESCRITA AQUI (0.5.0) — uma linha da contagem por área (o nome vem do pacote). */
-  vistosNaArea: (nome: string, vistos: number, total: number) => `${nome}: você viu ${vistos} de ${total}`,
-  /**
-   * ESCRITA AQUI (0.5.0) — o CONTRASTE: o feed que esta criança teria tido sem
-   * as curtidas (calculado na api). O total escondido é igual para todos; o que
-   * muda é QUAL área sumiu.
-   */
-  semCurtidas: "Sem as suas curtidas, o seu feed teria trazido:",
-  semCurtidasDaArea: (nome: string, posts: number) => `${nome} ${posts}`,
   /** `e4.narrativa.galeria_subtitulo` — com a contagem REAL da ÁREA escolhida nos chips (0.5.0). */
   subtitulo: (ocultos: number) =>
     ocultos === 0
@@ -267,22 +271,12 @@ export const E5 = {
       `Você não curtiu dois posts do mesmo tema, mas parou mais tempo em ${hashtag}. O aplicativo também leva isso em conta.`,
     variado: "Seu feed ficou variado: a regra não disparou, porque nenhum tema juntou curtidas suficientes.",
   },
-  /** `e5.rotulo.btn_avancar_reflexao` */
-  avancar: "Continuar para a Reflexão",
-} as const;
-
-// ─────────────────────────────────── E6-ALU-01: o caso Mariana (ESCOLA)
-
-export const E6 = {
-  /** ESCRITA AQUI — o título de página que só o leitor de tela ouve. */
-  tituloDaTela: "O caso de Mariana",
-  /** `e6.instrucao.selecione_cartoes` */
-  instrucao: "Selecione exatamente 1 explicação sobre o mecanismo e 1 atitude para furar a bolha:",
-  /** ESCRITA AQUI — os nomes dos dois grupos. */
-  grupoDoMecanismo: "Explicação sobre o mecanismo",
-  grupoDaAtitude: "Atitude para furar a bolha",
-  /** `e6.rotulo.btn_submeter_analise` */
-  submeter: "Submeter Análise do Júri",
+  /**
+   * ESCRITA AQUI (0.7.0) — era `e5.rotulo.btn_avancar_reflexao` ("Continuar
+   * para a Reflexão"): a reflexão era o caso Mariana, que saiu (ADR-176), e a
+   * regra leva à conclusão.
+   */
+  avancar: "Concluir o Julgamento",
 } as const;
 
 // ─────────────────────────────────────────── E6-ALU-03: a conclusão

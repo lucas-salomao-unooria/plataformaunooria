@@ -7,6 +7,7 @@ import {
   type TipoDeBusca,
 } from "../vocabulario";
 import { FEED_VAZIO, projetoFoiExibido, type EstadoDoFeed } from "./afunilamento";
+import type { Pastas } from "./classificacao";
 
 /**
  * O que a sessão grava do feed e da Galeria Oculta, lido do JSONB — puro.
@@ -24,6 +25,22 @@ function listaDePosts(bruto: unknown): string[] {
 }
 
 /** As quatro listas do feed do júri. */
+/**
+ * As pastas da linha (0.7.0, ADR-176): só chave de post válida e valor de área
+ * conhecido — o JSONB pode trazer o que um bundle antigo não mandava.
+ */
+export function pastasDaLinha(linha: { pastas: unknown }): Pastas {
+  const bruto = linha.pastas;
+  if (bruto === null || typeof bruto !== "object" || Array.isArray(bruto)) return {};
+  const pastas: Record<string, Area> = {};
+  for (const [postId, area] of Object.entries(bruto as Record<string, unknown>)) {
+    if (ID_DE_POST_RE.test(postId) && typeof area === "string" && (AREAS as readonly string[]).includes(area)) {
+      pastas[postId] = area as Area;
+    }
+  }
+  return pastas;
+}
+
 export function feedDaLinha(linha: {
   postsServidos: unknown;
   curtidos: unknown;

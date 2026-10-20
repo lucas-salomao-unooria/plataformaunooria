@@ -223,9 +223,9 @@ export function PainelDaAulaJuriEstadual({
             </div>
           ) : (
             <p className="text-[13px] leading-snug text-unooria-neutral-700">
-              A auditoria está liberada. Quem ainda separava os estandes termina a separação e entra na galeria em
-              seguida. Cada computador segue no próprio ritmo pela Galeria Oculta, pela regra do feed e pelo caso
-              Mariana. Depois que a turma concluir a Etapa 4 e o debate da virada, toque o podcast de recapitulação,
+              A auditoria está liberada. Quem ainda está no feed guarda os estandes nas pastas, vota e entra na
+              galeria em seguida. Cada computador segue no próprio ritmo pela Galeria Oculta e pela regra do feed,
+              que encerra a missão. Depois que a turma concluir a Etapa 4 e o debate da virada, toque o podcast de recapitulação,
               mais abaixo. Para aplicar de novo, use Reiniciar Missão, mais abaixo.
             </p>
           )}
@@ -242,7 +242,7 @@ export function PainelDaAulaJuriEstadual({
         <MetricCard
           title="Separaram os estandes"
           value={`${resumo.separaram}/${y}`}
-          description="Cada estande visto numa área, logo depois do voto. Quantos acertaram está no painel de habilidades, não aqui."
+          description="Cada estande visto guardado na pasta de uma área, no feed; o voto só fecha assim. Quantos acertaram está no painel de habilidades, não aqui."
         />
         <MetricCard title="Revisaram o voto" value={`${resumo.revisaram}/${y}`} />
         <MetricCard

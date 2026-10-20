@@ -95,7 +95,7 @@ type FalhaDaIa = { tipo: "sem-saldo" | "indisponivel"; de: "gerar" | string };
  * NOVA ATIVIDADE do JÚRI ESTADUAL DE PROJETOS (ADR-130): o preparo da mostra é
  * o passo de conteúdo da criação, no molde do Jornal da Escola
  * (`criar-jornal-escola.tsx`). A missão é o esqueleto (o feed, a cédula, a
- * galeria, a cadeia, Mariana); o PACOTE — os quarenta estandes em quatro
+ * galeria, a regra); o PACOTE — os quarenta estandes em quatro
  * áreas, dez em cada, sobre o tema do professor — é a atividade.
  *
  * O caminho, na ordem da tela:

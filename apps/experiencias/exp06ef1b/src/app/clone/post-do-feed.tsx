@@ -27,7 +27,9 @@ export function recolher(texto: string, limite = LEGENDA_CURTA): string {
  *
  * **Curtir** é o gesto que afunila o feed, no servidor: pelo coração da pílula
  * ou pelo toque duplo na mídia, como no app real. O toque duplo só CURTE.
- * **Salvar** grava o evento e não pesa (PRD v2). **Comentar e compartilhar**
+ * **Salvar** abre as PASTAS da mostra (ADR-176, a separação da EF06CO01): a
+ * folha é do feed (`feed.tsx`), aqui só o toque. Salvar grava e não pesa
+ * (PRD v2). **Comentar e compartilhar**
  * respondem com a linha da comissão (`e2.rotulo.comentarios_desabilitados`):
  * um botão morto parece defeito para a criança.
  *
@@ -68,7 +70,8 @@ export function PostDoFeed({
   comDica: boolean;
   refDoCartao: Ref<HTMLElement>;
   aoCurtir: (curtiu: boolean, gesto: Gesto) => void;
-  aoSalvar: (salvou: boolean) => void;
+  /** O toque no "Salvar": abre as pastas (guardado ou não, a folha mostra onde está). */
+  aoSalvar: () => void;
   /** Comentar ou compartilhar: a comissão responde que estão fechados. */
   aoFechado: (acao: "comentar" | "compartilhar") => void;
   aoDeslizar: (lamina: number) => void;
@@ -197,7 +200,7 @@ export function PostDoFeed({
         currentIndex={lamina}
         totalCount={total}
         onLike={() => aoCurtir(!curtido, "coracao")}
-        onSave={() => aoSalvar(!salvo)}
+        onSave={aoSalvar}
         onComment={() => aoFechado("comentar")}
         onShare={() => aoFechado("compartilhar")}
       />

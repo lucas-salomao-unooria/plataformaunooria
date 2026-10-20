@@ -2,12 +2,11 @@
  * A memória de F5 — `sessionStorage`, só com IDS, NÚMEROS e booleanos, e só
  * conveniência. Molde: `exp07ef1b/src/lib/memoria.ts`.
  *
- * O que VALE mora na api: as curtidas, as permanências, o voto lacrado, a
- * separação enviada, a revisão, a regra enviada, os cartões. Aqui fica só o
- * que a api não guarda ANTES de o toque virar latch, e cuja perda num F5 seria
- * injusta com a criança: a dica do carrossel já usada, as permanências já
- * enviadas, a separação feita pela metade, as peças da regra e os cartões
- * tocados antes de enviar.
+ * O que VALE mora na api: as curtidas, as pastas, as permanências, o voto
+ * lacrado, a revisão, a regra enviada. Aqui fica só o que a api não guarda
+ * ANTES de o toque virar latch, e cuja perda num F5 seria injusta com a
+ * criança: a dica do carrossel já usada, as permanências já enviadas e as
+ * peças da regra tocadas antes de enviar.
  *
  * Três regras, e as três já custaram em outra missão:
  *
@@ -27,23 +26,16 @@ export interface Memoria {
   gestoUsado: boolean;
   /** Os posts cuja permanência já foi enviada (o servidor deduplica; isto poupa a ida). */
   permanencias: string[];
-  /** A área tocada em cada estande da separação (id opaco → `area_x`), antes de enviar. */
-  separacao: Record<string, string>;
   /** As peças da regra tocadas antes de enviar (ids opacos). */
   se: string | null;
   entao: string | null;
-  mecanismo: string | null;
-  atitude: string | null;
 }
 
 const VAZIA: Memoria = {
   gestoUsado: false,
   permanencias: [],
-  separacao: {},
   se: null,
   entao: null,
-  mecanismo: null,
-  atitude: null,
 };
 
 export interface ChaveDaSessao {
@@ -67,17 +59,6 @@ function id(valor: unknown): string | null {
   return typeof valor === "string" && ID_RE.test(valor) ? valor : null;
 }
 
-/** Um mapa id → id (a separação: estande → área). Quem confere se a área existe é a tela. */
-function mapaDeIds(valor: unknown): Record<string, string> {
-  if (!valor || typeof valor !== "object" || Array.isArray(valor)) return {};
-  const saida: Record<string, string> = {};
-  for (const [k, v] of Object.entries(valor as Record<string, unknown>)) {
-    const alvo = id(v);
-    if (ID_RE.test(k) && alvo) saida[k] = alvo;
-  }
-  return saida;
-}
-
 /** O que está guardado para esta sessão — ou a memória vazia, nunca exceção. */
 export function lerMemoria(c: ChaveDaSessao): Memoria {
   try {
@@ -87,11 +68,8 @@ export function lerMemoria(c: ChaveDaSessao): Memoria {
     return {
       gestoUsado: dado.gestoUsado === true,
       permanencias: ids(dado.permanencias),
-      separacao: mapaDeIds(dado.separacao),
       se: id(dado.se),
       entao: id(dado.entao),
-      mecanismo: id(dado.mecanismo),
-      atitude: id(dado.atitude),
     };
   } catch {
     return { ...VAZIA };

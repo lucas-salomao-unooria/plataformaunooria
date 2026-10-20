@@ -27,30 +27,31 @@ describe("a memória de F5 (sessionStorage, só ids e números)", () => {
     delete global.window;
   });
 
-  test("grava e lê de volta a separação, a regra e os cartões", () => {
-    gravarMemoria(CHAVE, { separacao: { "cl-a1b": "area_a" }, se: "rg-x1y", entao: "rg-z2w", mecanismo: "m1" });
+  test("grava e lê de volta as peças da regra e a dica do gesto", () => {
+    gravarMemoria(CHAVE, { se: "rg-x1y", entao: "rg-z2w" });
     gravarMemoria(CHAVE, { gestoUsado: true });
     const m = lerMemoria(CHAVE);
-    expect(m.separacao).toEqual({ "cl-a1b": "area_a" });
     expect([m.se, m.entao]).toEqual(["rg-x1y", "rg-z2w"]);
-    expect(m.mecanismo).toBe("m1");
     expect(m.gestoUsado).toBe(true);
+    /* A separação e os cartões da 0.6.0 saíram (ADR-176): a memória não os guarda mais. */
+    expect(m).not.toHaveProperty("separacao");
+    expect(m).not.toHaveProperty("mecanismo");
   });
 
   test("a rodada nova (e o estudante seguinte) não herdam nada", () => {
-    gravarMemoria(CHAVE, { separacao: { "cl-xyz": "area_b" } });
-    expect(lerMemoria({ ...CHAVE, rodada: 2 }).separacao).toEqual({});
-    expect(lerMemoria({ ...CHAVE, estudanteId: "e2" }).separacao).toEqual({});
+    gravarMemoria(CHAVE, { se: "rg-xyz" });
+    expect(lerMemoria({ ...CHAVE, rodada: 2 }).se).toBeNull();
+    expect(lerMemoria({ ...CHAVE, estudanteId: "e2" }).se).toBeNull();
   });
 
   test("o que não tem cara de id não entra — nem texto escrito por engano", () => {
     armazenamento.setItem(
       "exp06ef1b:e1:p1:1",
-      JSON.stringify({ separacao: { "cl-a1b": "area_a", "cl-c2d": "um texto com espaço" }, mecanismo: 3, se: "texto livre" }),
+      JSON.stringify({ permanencias: ["proj-a1:apresentacao", "um texto com espaço"], entao: 3, se: "texto livre" }),
     );
     const m = lerMemoria(CHAVE);
-    expect(m.separacao).toEqual({ "cl-a1b": "area_a" });
-    expect(m.mecanismo).toBeNull();
+    expect(m.permanencias).toEqual(["proj-a1:apresentacao"]);
+    expect(m.entao).toBeNull();
     expect(m.se).toBeNull();
   });
 

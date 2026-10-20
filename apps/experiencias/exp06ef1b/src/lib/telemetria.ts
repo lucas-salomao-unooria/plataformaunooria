@@ -48,9 +48,9 @@ export const telemetria = {
   /** Curtiu ou descurtiu (`gesto`: o coração ou o toque duplo). */
   curtiu: (postId: string, curtiu: boolean, gesto: "coracao" | "toque-duplo") =>
     track("interacted", "feed:curtir", { resultado: { curtiu }, contexto: { postId, gesto } }),
-  /** Salvou ou tirou dos salvos. O servidor grava e NÃO pesa no feed (PRD v2). */
-  salvou: (postId: string, salvou: boolean) =>
-    track("interacted", "feed:salvar", { resultado: { salvou }, contexto: { postId } }),
+  /** Salvou numa pasta (a área, ADR-176) ou tirou dos salvos. O servidor grava e NÃO pesa no feed (PRD v2). */
+  salvou: (postId: string, salvou: boolean, pasta: string | null) =>
+    track("interacted", "feed:salvar", { resultado: { salvou }, contexto: { postId, pasta: pasta ?? "nenhuma" } }),
   /** Tocou comentar, compartilhar ou a aba Busca: a comissão avisou que estão fechados (não pesa no feed). */
   tocouFechado: (acao: "comentar" | "compartilhar" | "buscar") => track("interacted", "feed:fechado", { contexto: { acao } }),
   /** Trocou de aba na barra do app (Início, Busca, Notificações, Jurado). */
@@ -76,8 +76,6 @@ export const telemetria = {
   // E4
   /** Entrou na espera (o latch do voto). */
   esperou: () => track("progressed", "plenaria:espera"),
-  /** Enviou a separação dos estandes (EF06CO01). Quantos estandes; nunca quantos acertou. */
-  separou: (estandes: number) => track("attempted", "separacao:enviar", { resultado: { estandes } }),
   /**
    * A galeria abriu: "{ocultos} de {total}", os números REAIS da sessão (0.5.0:
    * sem percentual — com quarenta estandes o total escondido é o mesmo para
@@ -98,11 +96,7 @@ export const telemetria = {
   /** Enviou a regra SE … ENTÃO. Sem a peça nem o acerto. */
   enviouARegra: () => track("attempted", "regra:enviar"),
 
-  // E6
-  /** Registrou os dois cartões (sem dizer quais: não vira nota). */
-  escolheuOsCartoes: () => track("progressed", "mariana:cartoes"),
-
-  /** A missão concluída: os cartões (0.6.0) ou o `POST concluir` de uma sessão antiga. */
+  /** A missão concluída: a regra (0.7.0) ou o `POST concluir` de uma sessão antiga. */
   concluiu: () => track("completed", "missao:concluida"),
 
   /** Um aviso global acendeu (rede ou sessão). Sem detalhe: é diagnóstico de sala. */

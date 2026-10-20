@@ -5,7 +5,6 @@ import {
   casaComABusca,
   classificarBusca,
   comCerquilha,
-  contagemSemCurtidas,
   curtidosNaTela,
   esperaAteEncerrar,
   estandesDoFeed,
@@ -18,8 +17,9 @@ import {
   ocultosDaArea,
   opcoesDaTroca,
   protocoloDoVoto,
-  respostasDaSeparacao,
-  separacaoValida,
+  estandesPorPasta,
+  pastasNaTela,
+  semPastaNaTela,
   vozDaTela,
 } from "./regras";
 import type { Categoria, PostPublico, ProjetoDaGaleria } from "./tipos";
@@ -80,22 +80,6 @@ describe("a galeria por área e o contraste sem as curtidas (0.5.0)", () => {
       "area_c",
     );
     expect(areaComMaisOcultos([])).toBeNull();
-  });
-
-  test("o contrafactual é CONTADO por área: a lista vem da api, a tela não escolhe", () => {
-    expect(
-      contagemSemCurtidas([
-        { area: "area_a", posts: ["proj-a1", "proj-a2", "proj-a10"] },
-        { area: "area_b", posts: ["proj-b1", "proj-b2"] },
-        { area: "area_c", posts: ["proj-c1", "proj-c2", "proj-c3"] },
-        { area: "area_d", posts: ["proj-d1", "proj-d2"] },
-      ]),
-    ).toEqual([
-      { area: "area_a", posts: 3 },
-      { area: "area_b", posts: 2 },
-      { area: "area_c", posts: 3 },
-      { area: "area_d", posts: 2 },
-    ]);
   });
 
   test("a grade mostra só os OCULTOS da área; a troca, a área inteira menos o voto", () => {
@@ -173,22 +157,38 @@ describe("a busca da galeria", () => {
   });
 });
 
-describe("a separação (ADR-174)", () => {
-  const itens = [{ id: "cl-aaa" }, { id: "cl-bbb" }];
-  const areas = ["area_a", "area_b", "area_c", "area_d"] as const;
-
-  test("a escolha guardada só vale para os itens desta rodada e para as áreas do vocabulário", () => {
-    expect(separacaoValida({ "cl-aaa": "area_b", "cl-old": "area_a", "cl-bbb": "robotica" }, itens, areas)).toEqual({
-      "cl-aaa": "area_b",
-    });
+describe("as pastas do salvar (ADR-176)", () => {
+  test("a tela mostra as pastas do servidor com a fila por cima: guardar, mover e tirar", () => {
+    const doServidor = { "proj-a1:apresentacao": "area_a" as const, "proj-b1:apresentacao": "area_b" as const };
+    const fila = new Map([
+      ["proj-a1:apresentacao", { salvou: true, pasta: "area_c" as const }],
+      ["proj-b1:apresentacao", { salvou: false }],
+      ["proj-c1:apresentacao", { salvou: true, pasta: "area_c" as const }],
+    ]);
+    expect(pastasNaTela(doServidor, fila)).toEqual({ "proj-a1:apresentacao": "area_c", "proj-c1:apresentacao": "area_c" });
+    /* Salvar sem pasta na fila não inventa pasta. */
+    expect(pastasNaTela({}, new Map([["proj-d1:apresentacao", { salvou: true }]]))).toEqual({});
   });
 
-  test("o envio só existe com TODOS os estandes separados", () => {
-    expect(respostasDaSeparacao(itens, { "cl-aaa": "area_b" })).toBeNull();
-    expect(respostasDaSeparacao(itens, { "cl-aaa": "area_b", "cl-bbb": "area_d" })).toEqual([
-      { itemId: "cl-aaa", area: "area_b" },
-      { itemId: "cl-bbb", area: "area_d" },
-    ]);
+  test("a aba Jurado conta ESTANDES por pasta, um por projeto", () => {
+    const posts = [
+      { id: "proj-a1:apresentacao", projetoId: "proj-a1" },
+      { id: "proj-a1:bastidor", projetoId: "proj-a1" },
+      { id: "proj-b1:apresentacao", projetoId: "proj-b1" },
+    ];
+    const pastas = { "proj-a1:apresentacao": "area_a" as const, "proj-a1:bastidor": "area_b" as const, "proj-b1:apresentacao": "area_b" as const };
+    expect(estandesPorPasta(posts, pastas)).toEqual({ area_a: 0, area_b: 2, area_c: 0, area_d: 0 });
+  });
+
+  test("o que falta guardar é contado por ESTANDE: um post guardado basta para o projeto", () => {
+    const posts = [
+      { id: "proj-a1:apresentacao", projetoId: "proj-a1" },
+      { id: "proj-a1:bastidor", projetoId: "proj-a1" },
+      { id: "proj-b1:apresentacao", projetoId: "proj-b1" },
+    ];
+    expect(semPastaNaTela(posts, {})).toBe(2);
+    expect(semPastaNaTela(posts, { "proj-a1:bastidor": "area_a" })).toBe(1);
+    expect(semPastaNaTela(posts, { "proj-a1:bastidor": "area_a", "proj-b1:apresentacao": "area_c" })).toBe(0);
   });
 });
 
@@ -206,10 +206,9 @@ describe("pequenas coisas da tela", () => {
     expect(protocoloDoVoto("pacote", 1, "proj-b2")).not.toBe(a);
   });
 
-  test("a regra e o caso Mariana falam pela escola (PRD §10.1); a separação, antes da galeria, é da comissão", () => {
+  test("a regra fala pela escola (PRD §10.1); as pastas, no feed, são da comissão", () => {
     expect(vozDaTela("regra")).toBe("escola");
-    expect(vozDaTela("mariana")).toBe("escola");
-    for (const t of ["credencial", "feed", "separacao", "espera", "galeria", "avancando", "concluindo", "fim"] as const) {
+    for (const t of ["credencial", "feed", "saindoDaSeparacao", "espera", "galeria", "avancando", "concluindo", "fim"] as const) {
       expect(vozDaTela(t)).toBe("clone");
     }
   });
