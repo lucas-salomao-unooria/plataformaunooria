@@ -76,13 +76,13 @@ describe("a trava confere de verdade", () => {
   });
 });
 
-test("a ficha da exp05ef1b está no registro: o Canal A nas três habilidades, sem pergunta (v4)", () => {
+test("a ficha da exp05ef1b está no registro: o alerta e o robô do grupo, sem pergunta (v5)", () => {
   const ficha = FICHAS.find((f) => f.expId === "exp05ef1b");
-  expect(ficha?.versao).toBe(4);
-  expect(ficha?.habilidades.map((h) => [h.codigo, h.marcadores.map((m) => [m.id, m.tipo, m.perguntaId ?? null])])).toEqual([
-    ["EF05CO08", [["selecao-do-mural", "acao", null]]],
-    ["EF05CO03", [["cartao-de-frases", "acao", null]]],
-    ["EF05CO04", [["regra-do-tio", "acao", null]]],
+  expect(ficha?.versao).toBe(5);
+  expect(ficha?.habilidades.map((h) => [h.codigo, h.marcadores.map((m) => [m.id, m.tipo, m.rotulo, m.perguntaId ?? null])])).toEqual([
+    ["EF05CO08", [["selecao-do-mural", "acao", "Seleção do Mural", null]]],
+    ["EF05CO03", [["alerta-do-grupo", "acao", "Alerta do grupo", null]]],
+    ["EF05CO04", [["robo-do-grupo", "acao", "Robô do grupo", null]]],
   ]);
   expect(ficha?.perguntas).toEqual([]);
   /* Toda ação tem rótulo: é o "de onde veio o nível" do painel (ADR-166). */

@@ -8,12 +8,15 @@
  *   que o professor aprovou, e corrigir uma palavra dele não pode exigir
  *   republicar um caminho imutável no bucket;
  * - as falas da Nina que dependem do servidor (o convite leva o `{tema}`), o
- *   encerramento, a fala do cartão, o desafio do tio, os rótulos dos motivos e
- *   o callback do motivo — a api é quem sabe o motivo gravado;
- * - as frases do cartão (o servidor as gera das três mensagens e guarda a
- *   resposta certa), os rótulos das peças da regra e das previsões, e o
- *   resultado de cada teste — o que cada peça faz com o áudio é o gabarito da
- *   regra, e não desce.
+ *   encerramento, o desafio do tio, os rótulos dos motivos e o callback do
+ *   motivo — a api é quem sabe o motivo gravado;
+ * - os pedidos do alerta e os rótulos do quadro, os blocos do robô (rótulo e
+ *   ícone), as quatro mensagens que o robô recebe e o que ele fez com cada uma
+ *   — o tipo de cada ação e a expressão esperada de cada pedido são o
+ *   gabarito, e não descem.
+ *
+ * Os textos marcados **[Figma]** são os das telas E4-ALU-01 e E6-ALU-01/02 do
+ * wireframe de 20/10 (chaves e4.alerta_* e e6.* da proposta do PO).
  *
  * Tudo em pt-BR (ADR-91). Os textos marcados **[novo]** não existem no sheet:
  * foram escritos nesta frente e esperam a revisão do PO.
@@ -192,58 +195,121 @@ export const TEXTOS = {
     trava: "Participe da conversa na sala. O professor liberará a atividade final em instantes.",
   },
 
-  // ──────────────────────── Etapa 4: o cartão de frases (EF05CO03), no clone
-  cartao: {
-    /** `e4.instrucao.operacoes_corpo` [novo] */
-    instrucao: "Responda Sim se a frase está certa e Não se está errada.",
-    /** `e4.instrucao.operacoes_dica_ou` [novo] — "ou" em português costuma soar exclusivo. */
+  // ────────────────────── Etapa 4: o alerta do grupo (EF05CO03), no clone
+  alerta: {
+    /** [Figma] A faixa que abre o alerta, depois dos crachás. */
+    faixa: "Alerta do grupo · Role para montar os alertas ↓",
+    /** [Figma] */
+    titulo: "Alerta do grupo",
+    /** [Figma] */
+    contador: (n: number, total: number) => `Alerta ${n} de ${total}`,
+    /** [Figma] A instrução, só no primeiro pedido. */
+    instrucao:
+      "Monte o filtro do pedido e toque em Ver resultado. As mensagens que passam ficam destacadas. Quando achar que está certo, envie o alerta ao grupo.",
+    /** [Figma] */
+    quadro: "Mensagens do grupo",
+    /** [Figma] O crachá de quem encaminhou ao Mural. */
+    voceEnviou: "Você enviou",
+    /** [novo] A etiqueta de quem passou no filtro executado — a forma, não a cor, é que diz. */
+    destacada: { icone: "🔦", rotulo: "Destacada" },
+    /** [Figma] */
+    montar: "Destacar mensagens que são:",
+    /** [Figma] O interruptor antes de cada condição, e os dois chips. */
+    nao: "NÃO",
+    atributo: { falsa: "Falsa", emocional: "Emocional" },
+    /** [Figma] Os conectores. */
+    conector: { E: "E", OU: "OU" },
+    /** [novo] Os nomes acessíveis de cada grupo de chips. */
+    primeiraCondicao: "Primeira condição",
+    segundaCondicao: "Segunda condição",
+    ligacao: "Juntar com outra condição",
+    /** [Figma] A dica fixa do OU (em português "ou" costuma soar exclusivo). */
     dicaOu: "OU vale se uma das partes for verdadeira, ou as duas.",
-    /** `e4.rotulo.operacoes_sim` / `_nao` [novo] */
-    sim: "Sim",
-    nao: "Não",
-    /** `e4.rotulo.operacoes_enviar` [novo] */
-    enviar: "Enviar respostas",
-    /** `e4.feedback.operacoes_pendente` [novo] */
-    pendente: "Responda as 6 frases para enviar.",
-    /** `e4.feedback.operacoes_enviado` [novo] */
-    enviado: "Respostas enviadas.",
-    /** [novo] Na reflexão, para quem ainda não respondeu: o cartão vem antes do desafio final. */
-    antesDoDesafio: "Responda as frases para seguir para o desafio final.",
+    /** [Figma] */
+    verResultado: "Ver resultado",
+    /** [Figma] */
+    enviar: "Enviar alerta ao grupo",
+    /** [Figma] */
+    executeAntes: "Toque em Ver resultado antes de enviar o alerta.",
+    /** [Figma] */
+    passam: (n: number) => (n === 1 ? "1 mensagem passa no filtro." : `${n} mensagens passam no filtro.`),
+    /** [Figma] */
+    execucao: (k: number, total: number) => `Execução ${k} de ${total}`,
+    /** [novo] Esgotou as execuções do pedido. */
+    semExecucoes: "Você já viu o resultado 3 vezes. Envie o alerta ao grupo.",
+    /** [Figma] A bolha enviada ao grupo. */
+    bolhaTitulo: "⚠ Alerta do grupo",
+    bolha: (referencias: readonly string[]) =>
+      referencias.length === 0
+        ? "Nenhuma mensagem destacada."
+        : `${referencias.length} ${referencias.length === 1 ? "mensagem destacada" : "mensagens destacadas"}: ${referencias.join(", ")}.`,
+    /** [Figma] Depois do 4º. */
+    enviados: "Alertas enviados.",
+    /** [novo] O professor apresentou a síntese antes dos quatro. */
+    fechou: "O alerta do grupo fechou.",
   },
 
-  // ─────────────────────────── Etapa 6: a regra do tio (EF05CO04), na casca
-  regra: {
-    /** [novo] */
-    titulo: "O desafio do tio",
-    /** `e6.instrucao.desafio_comando` [novo] */
-    comando: "Monte sua regra antes de encaminhar. Depois, teste no áudio do tio.",
-    /** `e6.rotulo.regra_se` / `_entao` / `_depois` [novo] */
-    se: "SE a mensagem for…",
-    entao: "ENTÃO eu…",
-    depois: "E DEPOIS (se quiser)…",
-    /** [novo] A opção vazia da segunda ação. */
-    semDepois: "Nada depois",
-    /** [novo] A previsão: prever é simular a regra antes de ver o resultado. */
-    previsao: "O que a sua regra vai fazer com o áudio do tio?",
-    /** `e6.rotulo.btn_testar` [novo] */
-    testar: "Testar no áudio do tio",
-    /** `e6.rotulo.btn_enviar_regra` [novo] */
-    enviar: "Enviar minha regra",
-    /** `e6.feedback.teste_pendente` [novo] */
-    testePendente: "Escolha a condição, a ação e o que você acha que a regra vai fazer.",
-    /** [novo] O título de cada teste já feito. */
-    teste: (n: number) => `Teste ${n}`,
-    /** [novo] A previsão que a criança escolheu, ao lado do resultado. */
-    voceDisse: (previsao: string) => `Você previu: ${previsao}`,
-    /** [novo] Esgotou o limite técnico de testes. */
-    testesEsgotados: "Você já testou bastante. Agora envie a sua regra.",
+  // ────────────────────────── Etapa 6: o robô do grupo (EF05CO04), na casca
+  robo: {
+    /** [Figma] */
+    etapa: "Etapa 6 · Refletir",
+    /** [Figma] */
+    comando: "Monte o robô do grupo para as mensagens não passarem sem checar. Depois, ligue e veja o que ele faz.",
+    /** [Figma] O título da calha. */
+    cabeca: "🤖 Cabeça do robô",
+    /** [Figma] As legendas das vagas, em ordem (laço, SE, ENTÃO, E DEPOIS). */
+    vagas: {
+      laco: "PARA CADA mensagem nova (opcional)",
+      condicao: "SE a mensagem for…",
+      acao1: "ENTÃO o robô…",
+      acao2: "E DEPOIS (se quiser)…",
+    },
+    /** [Figma] O que falta em cada vaga vazia (lido também pelo leitor de tela). */
+    vazias: {
+      laco: "Toque no laço 🔁 para encaixar (opcional)",
+      condicao: "escolha a condição",
+      acao1: "escolha uma ação",
+      acao2: "ação 2 (opcional)",
+    },
+    /** [novo] O nome acessível de cada vaga vazia. */
+    vagaVazia: (legenda: string, falta: string) => `${legenda} ${falta}, vazia`,
+    /** [Figma] A bandeja. */
+    blocos: "Blocos",
+    repeticao: "Repetição",
+    condicoes: "Condição (SE)",
+    acoes: "Ação (ENTÃO, até 2 em ordem)",
+    /** [Figma] */
+    pronto: "Seu robô está pronto para ligar.",
+    /** [Figma] */
+    ligar: "Ligar o robô",
+    /** [Figma] */
+    faltaParaLigar: "Escolha uma condição e uma ação para ligar.",
+    /** [novo] Esgotou as ligações. */
+    semLigacoes: "Você já ligou o robô 5 vezes. Envie o seu robô.",
+    /** [Figma] */
+    ligado: (k: number, total: number) => `Robô ligado · ${k} de ${total}`,
+    /** [Figma] */
+    chegando: "As mensagens chegam uma a uma. O robô age em cada uma.",
+    /** [Figma] */
+    olhando: "Olhando esta mensagem…",
+    aguardando: "Chegando…",
+    /** [Figma] A mensagem sem sinal (a de controle). */
+    semSinais: "sem sinais de alerta",
+    /** [novo] O nome acessível da linha do que o robô fez. */
+    oRobo: "🤖",
+    /** [Figma] */
+    mudar: "Mudar o robô",
+    /** [Figma] */
+    enviar: "Enviar meu robô",
   },
 
   conclusao: {
     /** `e6.rotulo.conclusao_titulo` */
     titulo: "Missão Concluída",
-    /** `e6.rotulo.card_titulo` — o card com a regra enviada (`e6.rotulo.card_regra_pessoal`). */
-    cardTitulo: "Sua regra",
+    /** [Figma] O card do robô enviado. */
+    cardTitulo: "Seu robô do grupo",
+    /** [Figma] */
+    registrado: "Seu robô foi registrado e enviado ao professor.",
     /** `e6.instrucao.conclusao_rodape` */
     rodape: "Você completou todas as etapas desta missão no Unooria Hub.",
   },

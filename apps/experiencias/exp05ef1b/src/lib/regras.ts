@@ -1,4 +1,18 @@
-import type { Atividade, Estado, FraseDoCartao, Gate, MensagemPublica, Passo, Resposta, Revelacao, Sessao } from "./tipos";
+import type {
+  Alerta,
+  Atividade,
+  Atributo,
+  Conector,
+  Estado,
+  Execucao,
+  Expressao,
+  Gate,
+  MensagemPublica,
+  Passo,
+  Revelacao,
+  Robo,
+  Sessao,
+} from "./tipos";
 import type { GateVisto } from "./telemetria";
 
 /**
@@ -6,11 +20,12 @@ import type { GateVisto } from "./telemetria";
  *
  * Tudo o que decide o que vale mora no servidor
  * (`apps/api/src/quem-mandou-isso/regras/`): o passo (`passoEfetivo`), o limite
- * de três, o latch de cada etapa, o filtro de texto sem sentido, a régua da
- * EF05CO08, a resposta certa de cada frase do cartão e o que a regra do tio
- * faz com o áudio. O que sobra aqui é o que o servidor não tem como saber:
+ * de três, o latch de cada etapa, a régua da EF05CO08, a expressão esperada de
+ * cada pedido do alerta, quais mensagens passam num filtro e o que o robô faz
+ * com cada mensagem. O que sobra aqui é o que o servidor não tem como saber:
  * qual VISTA da mesma etapa está aberta (grupo ou Mural, lista ou chat da
- * Nina) e há quanto tempo a tela está parada.
+ * Nina), o que a criança está MONTANDO antes de tocar (o filtro, o robô) e há
+ * quanto tempo a tela está parada.
  */
 
 /** O polling do gate (ADR-93: HTTP de 3 s, nunca WebSocket). */
@@ -39,7 +54,6 @@ export type Tela =
   | "espera"
   | "revelacao"
   | "sintese"
-  | "cartao"
   | "regra"
   | "concluida";
 
@@ -70,11 +84,9 @@ export const VISTA_INICIAL: Vista = {
  * no grupo com `pacote === null` seria um mensageiro sem mensagem nenhuma — que
  * a criança leria como app quebrado.
  *
- * **O cartão segue o caminho da criança.** Na revelação e na síntese ele está
- * dentro do Mural, embaixo dos crachás. Na reflexão, quem ainda não o enviou
- * cai no passo `cartao` — o Mural inteiro (crachás, termômetro, lâmina) com o
- * cartão no fim —, e só depois na `regra`. É o que cobre quem votou atrasado:
- * ninguém chega ao tio sem ter visto os crachás e respondido o cartão.
+ * **O alerta não é tela própria**: ele vive no fim do Mural revelado, só
+ * enquanto a turma está na revelação (`alerta.aberto`). Na reflexão, todo
+ * mundo vai ao robô (`regra`), tenha enviado os alertas ou não.
  */
 export function telaDe(estado: Pick<Estado, "passo" | "preparada">, vista: Vista): Tela {
   if (!estado.preparada) return "preparo";
@@ -87,7 +99,6 @@ export function telaDe(estado: Pick<Estado, "passo" | "preparada">, vista: Vista
     case "espera":
     case "revelacao":
     case "sintese":
-    case "cartao":
     case "regra":
     case "concluida":
       return estado.passo;
@@ -98,8 +109,8 @@ export function telaDe(estado: Pick<Estado, "passo" | "preparada">, vista: Vista
 export function gateDoPasso(passo: Passo): GateVisto | null {
   if (passo === "revelacao") return "revelacao";
   if (passo === "sintese") return "sintese";
-  /* O cartão pendente e a regra são a reflexão: o gate que o professor abriu. */
-  if (passo === "cartao" || passo === "regra") return "reflexao";
+  /* O robô é a reflexão: o gate que o professor abriu. */
+  if (passo === "regra") return "reflexao";
   return null;
 }
 
@@ -189,36 +200,129 @@ export function percentualDaBarra(valor: number): number {
   return Math.min(100, Math.max(0, Math.round(valor)));
 }
 
-// ─────────────────────────────────────────── o cartão de frases
+// ─────────────────────────────────────────── o alerta do grupo
 
-/** O cartão só envia com as seis respondidas: não existe resultado parcial. */
-export function cartaoCompleto(frases: readonly FraseDoCartao[], respostas: Readonly<Record<string, Resposta>>): boolean {
-  return frases.length > 0 && frases.every((f) => respostas[f.id] === "sim" || respostas[f.id] === "nao");
+/** O pedido da vez: o primeiro sem alerta enviado. `null` com os quatro enviados. */
+export function pedidoDaVez(alerta: Pick<Alerta, "pedidos" | "andamento">): { n: number; texto: string } | null {
+  return alerta.pedidos.find((p) => !alerta.andamento.find((a) => a.pedido === p.n)?.enviado) ?? null;
+}
+
+/** As execuções e o enviado de um pedido (vazio se ainda não foi aberto). */
+export function andamentoDo(alerta: Pick<Alerta, "andamento">, n: number): { execucoes: Execucao[]; enviado: Execucao | null } {
+  const dele = alerta.andamento.find((a) => a.pedido === n);
+  return { execucoes: dele?.execucoes ?? [], enviado: dele?.enviado ?? null };
+}
+
+/** O que a criança está montando: cada peça pode estar vazia. Só desta aba. */
+export interface MontadorDoFiltro {
+  a: { attr: Atributo | null; nao: boolean };
+  op: Conector | null;
+  b: { attr: Atributo | null; nao: boolean };
+}
+
+export const MONTADOR_VAZIO: MontadorDoFiltro = { a: { attr: null, nao: false }, op: null, b: { attr: null, nao: false } };
+
+/**
+ * A expressão que o montador forma, ou `null` se falta peça: a 1ª condição é
+ * obrigatória; com conector, a 2ª também ("Ver resultado" só acende com uma
+ * expressão inteira).
+ */
+export function expressaoDoMontador(m: MontadorDoFiltro): Expressao | null {
+  if (!m.a.attr) return null;
+  const a = { attr: m.a.attr, nao: m.a.nao };
+  if (!m.op) return { a };
+  if (!m.b.attr) return null;
+  return { a, op: m.op, b: { attr: m.b.attr, nao: m.b.nao } };
+}
+
+/** O montador a partir de uma expressão (o F5 volta à última executada). */
+export function montadorDe(e: Expressao | null): MontadorDoFiltro {
+  if (!e) return MONTADOR_VAZIO;
+  return { a: { ...e.a }, op: e.op ?? null, b: e.b ? { ...e.b } : { attr: null, nao: false } };
+}
+
+/** A MESMA expressão, peça a peça — espelho de `regras/alerta.ts#mesmaExpressao` da api. */
+export function mesmaExpressao(x: Expressao | null, y: Expressao | null): boolean {
+  if (!x || !y) return false;
+  const igual = (c?: Expressao["a"], d?: Expressao["a"]) =>
+    c === undefined || d === undefined ? c === d : c.attr === d.attr && c.nao === d.nao;
+  return igual(x.a, y.a) && x.op === y.op && igual(x.b, y.b);
 }
 
 /**
- * A frase em pedaços, com os operadores marcados para o destaque (E, OU,
- * NÃO). Só o operador ISOLADO, em maiúsculas: "verdadeira" e "Então" não
- * acendem nada.
+ * "Enviar alerta ao grupo" acende? Só se o que está NA TELA é a última
+ * execução do pedido — a criança envia o que viu passar (o servidor cobra o
+ * mesmo, 400 `execute-antes`).
  */
-export function partesDaFrase(texto: string): { texto: string; operador: boolean }[] {
-  return texto
-    .split(/(?<= )(E|OU|NÃO)(?= )/u)
-    .filter((p) => p !== "")
-    .map((p) => ({ texto: p, operador: p === "E" || p === "OU" || p === "NÃO" }));
+export function podeEnviarAlerta(execucoes: readonly Execucao[], naTela: Expressao | null): boolean {
+  const ultima = execucoes.at(-1);
+  return Boolean(ultima && mesmaExpressao(ultima.expressao, naTela));
 }
 
-// ─────────────────────────────────────────── a regra do tio
-
-/** A regra está montada o bastante para testar ou enviar: condição e a primeira ação. */
-export function regraMontada(condicao: string | null, acao1: string | null): boolean {
-  return Boolean(condicao && acao1);
+/** "a mensagem de Pedro" a partir do rótulo do quadro ("Mensagem de Pedro"). */
+export function referenciaNoAlerta(rotulo: string): string {
+  return `a ${rotulo.charAt(0).toLowerCase()}${rotulo.slice(1)}`;
 }
 
-/** As ações da regra, em ordem: a segunda só se escolhida e diferente da primeira. */
-export function acoesDaRegra(acao1: string, acao2: string | null): string[] {
-  return acao2 && acao2 !== acao1 ? [acao1, acao2] : [acao1];
+/** As referências das mensagens que passaram, na ordem do grupo. */
+export function referenciasDoAlerta(passam: readonly string[], quadro: Alerta["quadro"]): string[] {
+  return quadro.filter((m) => passam.includes(m.id)).map((m) => referenciaNoAlerta(m.rotulo));
 }
+
+// ─────────────────────────────────────────── o robô do grupo
+
+/** As quatro vagas do robô, na ordem da calha. */
+export const VAGAS_DO_ROBO = ["laco", "condicao", "acao1", "acao2"] as const;
+export type VagaDoRobo = (typeof VAGAS_DO_ROBO)[number];
+
+/** O robô em montagem: cada vaga pode estar vazia. Só desta aba. */
+export interface MontagemDoRobo {
+  laco: boolean;
+  condicao: string | null;
+  acao1: string | null;
+  acao2: string | null;
+}
+
+export const MONTAGEM_VAZIA: MontagemDoRobo = { laco: false, condicao: null, acao1: null, acao2: null };
+
+export type BlocoTocado = { tipo: "laco" } | { tipo: "condicao"; id: string } | { tipo: "acao"; id: string };
+
+/**
+ * O toque num bloco da bandeja: o laço e a condição vão para a vaga deles (a
+ * condição troca a anterior); a ação vai para a primeira vaga de ação livre,
+ * e não entra duas vezes. Com as duas ações cheias, nada muda.
+ */
+export function encaixar(m: MontagemDoRobo, bloco: BlocoTocado): MontagemDoRobo {
+  if (bloco.tipo === "laco") return { ...m, laco: true };
+  if (bloco.tipo === "condicao") return { ...m, condicao: bloco.id };
+  if (m.acao1 === bloco.id || m.acao2 === bloco.id) return m;
+  if (!m.acao1) return { ...m, acao1: bloco.id };
+  if (!m.acao2) return { ...m, acao2: bloco.id };
+  return m;
+}
+
+/** O toque num bloco encaixado: volta para a bandeja. Tirar a 1ª ação sobe a 2ª. */
+export function tirar(m: MontagemDoRobo, vaga: VagaDoRobo): MontagemDoRobo {
+  if (vaga === "laco") return { ...m, laco: false };
+  if (vaga === "condicao") return { ...m, condicao: null };
+  if (vaga === "acao1") return { ...m, acao1: m.acao2, acao2: null };
+  return { ...m, acao2: null };
+}
+
+/** O robô que a montagem forma, ou `null` sem condição e sem a 1ª ação ("Ligar" apagado). */
+export function roboDaMontagem(m: MontagemDoRobo): Robo | null {
+  if (!m.condicao || !m.acao1) return null;
+  return { laco: m.laco, condicao: m.condicao, acoes: m.acao2 ? [m.acao1, m.acao2] : [m.acao1] };
+}
+
+/** A montagem a partir de um robô (o F5 volta ao último ligado). */
+export function montagemDe(r: Robo | null): MontagemDoRobo {
+  if (!r) return MONTAGEM_VAZIA;
+  return { laco: r.laco, condicao: r.condicao, acao1: r.acoes[0] ?? null, acao2: r.acoes[1] ?? null };
+}
+
+/** Quantas mensagens a animação já mostrou chegando (o servidor já executou todas). */
+export const MS_POR_MENSAGEM_DO_ROBO = 1_200;
 
 // ─────────────────────────────────────────── o desenho das mídias
 

@@ -122,11 +122,12 @@ describe("a copy literal do sheet", () => {
 
 /**
  * O que o bundle NÃO pode carregar. O pacote do grupo, as falas da Nina que
- * dependem do servidor, o desafio do tio, as peças da regra (o tipo de cada
- * uma e quais condições pegam o áudio são o gabarito dela), o resultado de
- * cada teste e o callback do motivo vêm da api — se um deles aparecer no
- * código da experiência, alguém o copiou para cá, e o gabarito (ou o texto que
- * o professor edita) passou a viajar no bundle público.
+ * dependem do servidor, o desafio do tio, os pedidos do alerta (e a expressão
+ * esperada de cada um), os blocos do robô (o tipo de cada ação é o gabarito
+ * dele), as quatro mensagens que o robô recebe, o que ele faz com cada uma e o
+ * callback do motivo vêm da api — se um deles aparecer no código da
+ * experiência, alguém o copiou para cá, e o gabarito (ou o texto que o
+ * professor edita) passou a viajar no bundle público.
  *
  * O grep é por CONTEÚDO, não por nome de prop: `veracidade` e `verdadeira`
  * aparecem aqui de propósito (as chaves dos crachás). O que prova o segredo é o
@@ -152,8 +153,10 @@ describe("o que o código da experiência não carrega", () => {
   test.each([
     ["o banco curado (remetentes)", /Pedro Henrique|Camila Duarte|Coordenação Pedagógica|Professora Helena/],
     ["o banco curado (conteúdo)", /portão lateral|Ofício Circular|museu pegou fogo|firma reconhecida/],
-    ["as peças e o resultado da regra", /comparo com uma fonte confiável|encaminho logo para avisar|Sua regra pegou o áudio|deixou o áudio passar/],
-    ["o gabarito do cartão e da regra", /\besperado\b|pegaOAudio|["'`]checagem["'`]|repassa_antes|checa_e_repassa/],
+    ["os blocos do robô e o que ele faz", /comparo com fonte confiável|encaminho e peço que todos repassem|Checou antes de encaminhar|Passou direto: a regra não pegou|Encaminhou sem checar/],
+    ["as mensagens do robô", /Tio Paulo|Banco Seguro|Dona Rita|ganha um mês de internet/],
+    ["os pedidos do alerta", /Destaque para o grupo as mensagens/],
+    ["o gabarito do alerta e do robô", /\besperada\s*[:=]|["'`]esperada["'`]|pegaOTio|["'`]checagem["'`]|["'`]repasse["'`]|repassa_antes|checa_e_repassa|Falsa E Emocional|NÃO Falsa/],
     ["o nível das alternativas", /\b(em_processo|nao_atingiu)\b|\batingiu\b/],
     ["as falas que a api serve", /meu tio mandou um áudio|Pode confiar, essa é verdadeira|não deixar a pressa decidir/],
     ["um par id ↔ gabarito", /msg_[1-8]["'`]?\s*[:,=]\s*["'`]?(verdadeira|falsa|emocional|neutra)/],

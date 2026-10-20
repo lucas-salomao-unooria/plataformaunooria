@@ -4,7 +4,6 @@ import { CHAVES_REDIGIDAS } from "../src/observabilidade/redaction";
 import {
   CALLBACK_DO_MOTIVO,
   ENCERRAMENTO_DA_NINA,
-  FALA_DO_CARTAO,
   FALA_DO_TIO,
   GRUPO,
   MURAL,
@@ -22,36 +21,44 @@ import {
 } from "../src/quem-mandou-isso/catalogo";
 import { validarSaidaDoPreparo, promptDoPreparo } from "../src/quem-mandou-isso/prompts";
 import {
-  MARCADOR_DA_REGRA,
+  PEDIDOS,
+  avaliar,
+  conferirExpressao,
+  equivalentes,
+  expressaoEmPalavras,
+  mesmaExpressao,
+  nivelCO03,
+  passamNoFiltro,
+  pontosDoPedido,
+  rotuloNoQuadro,
+  tabelaVerdade,
+  todasAsExpressoes,
+  type Expressao,
+} from "../src/quem-mandou-isso/regras/alerta";
+import {
   MARCADOR_DA_SELECAO,
-  MARCADOR_DO_CARTAO,
+  MARCADOR_DO_ALERTA,
+  MARCADOR_DO_ROBO,
   nivelCO08,
 } from "../src/quem-mandou-isso/regras/evidencia";
 import {
-  OPERADORES,
-  acertosDoCartao,
-  acertosPorOperador,
-  avaliarFrase,
-  frasesDoCartao,
-  nivelCO03,
-  referenciaDa,
-  type Resposta,
-} from "../src/quem-mandou-isso/regras/operacoes";
-import {
   ACOES,
   CONDICOES,
-  RESULTADO_DO_TESTE,
+  LACO,
+  MENSAGENS_DO_ROBO,
   ROTULO_DA_ACAO,
   ROTULO_DA_CONDICAO,
-  ROTULO_DA_PREVISAO,
-  SITUACOES,
-  conferirRegra,
+  TEXTO_DA_SITUACAO,
+  conferirRobo,
+  ligar,
   nivelCO04,
-  regraEmPalavras,
+  pegaTodosOsRiscos,
+  riscosQuePega,
   repassaSemChecar,
-  simular,
-  type Regra,
-} from "../src/quem-mandou-isso/regras/regra";
+  roboEmPalavras,
+  situacaoDasAcoes,
+  type Robo,
+} from "../src/quem-mandou-isso/regras/robo";
 import {
   contarPalavras,
   sortearMolde,
@@ -64,6 +71,7 @@ import {
 import {
   FASES,
   PASSOS,
+  alertaAberto,
   avancarFase,
   faseAtingiu,
   passoEfetivo,
@@ -276,37 +284,41 @@ describe("o tema e a fala da Nina", () => {
 });
 
 describe("as falas fixas da experiência (dentro do clone e na casca)", () => {
-  test("a ficha é só Canal A (v4): três ações com rótulo, nenhuma pergunta", () => {
-    expect(FICHA_EXP05EF1B.versao).toBe(4);
+  test("a ficha é só Canal A (v5): o alerta e o robô do grupo, com rótulo, nenhuma pergunta", () => {
+    expect(FICHA_EXP05EF1B.versao).toBe(5);
     expect(FICHA_EXP05EF1B.perguntas).toEqual([]);
     expect(FICHA_EXP05EF1B.habilidades.map((h) => [h.codigo, h.marcadores.map((m) => [m.id, m.tipo, Boolean(m.rotulo)])])).toEqual([
       ["EF05CO08", [[MARCADOR_DA_SELECAO, "acao", true]]],
-      ["EF05CO03", [[MARCADOR_DO_CARTAO, "acao", true]]],
-      ["EF05CO04", [[MARCADOR_DA_REGRA, "acao", true]]],
+      ["EF05CO03", [[MARCADOR_DO_ALERTA, "acao", true]]],
+      ["EF05CO04", [[MARCADOR_DO_ROBO, "acao", true]]],
     ]);
   });
 
-  test("o tio é URGENTE e ALARMANTE e é um PARENTE: é o que a regra assume sobre o áudio", () => {
+  test("o tio é URGENTE e ALARMANTE e é um PARENTE: são os sinais da 1ª mensagem do robô", () => {
     expect(FALA_DO_TIO).toMatch(/meu tio/);
     expect(FALA_DO_TIO).toMatch(/assustada/);
     expect(FALA_DO_TIO).toMatch(/repassar correndo/);
+    expect(MENSAGENS_DO_ROBO[0]).toMatchObject({ remetente: "Tio Paulo · áudio 0:23", tipo: "audio" });
+    expect([...(MENSAGENS_DO_ROBO[0]?.atributos ?? [])].sort()).toEqual(["parente_proximo", "urgente_alarmante"]);
   });
 
   test("tudo que a criança lê: até 45 palavras e nenhum termo proibido", () => {
     const textos = [
       falaDaNina(PACOTE_PADRAO.tema),
       ENCERRAMENTO_DA_NINA,
-      FALA_DO_CARTAO,
       FALA_DO_TIO,
       GRUPO.nome,
       MURAL.nome,
       ...Object.values(ROTULO_DO_MOTIVO),
       ...Object.values(CALLBACK_DO_MOTIVO),
+      LACO.rotulo,
       ...Object.values(ROTULO_DA_CONDICAO),
       ...Object.values(ROTULO_DA_ACAO),
-      ...Object.values(ROTULO_DA_PREVISAO),
-      ...Object.values(RESULTADO_DO_TESTE),
-      ...frasesDoCartao(mensagensDoPadrao().slice(0, 3), "qualquer").map((f) => f.texto),
+      ...Object.values(TEXTO_DA_SITUACAO),
+      ...PEDIDOS.map((p) => p.texto),
+      ...mensagensDoPadrao().map(rotuloNoQuadro),
+      ...MENSAGENS_DO_ROBO.flatMap((m) => [m.remetente, m.texto]),
+      roboEmPalavras({ laco: true, condicao: "link_nao_checado", acoes: ["encaminhar_pedir", "perguntar_adulto"] }),
     ];
     for (const texto of textos) {
       expect({ texto, palavras: contarPalavras(texto) <= 45, proibidos: termosProibidosEm(texto) }).toEqual({
@@ -335,10 +347,9 @@ describe("o gabarito não desce antes da hora", () => {
 });
 
 describe("o passo efetivo = f(sessão, fase)", () => {
-  const nada: MarcosDaSessao = { entrou: true, confirmou: false, votou: false, respondeuCartao: false, concluiu: false };
+  const nada: MarcosDaSessao = { entrou: true, confirmou: false, votou: false, concluiu: false };
   const confirmou = { ...nada, confirmou: true };
   const votou = { ...confirmou, votou: true };
-  const respondeu = { ...votou, respondeuCartao: true };
   const concluiu = { ...votou, concluiu: true };
 
   test("sem sessão (ou sem entrar) é abertura, em qualquer fase", () => {
@@ -360,15 +371,16 @@ describe("o passo efetivo = f(sessão, fase)", () => {
     expect(passoEfetivo(votou, "triagem")).toBe("espera");
     expect(passoEfetivo(votou, "revelacao")).toBe("revelacao");
     expect(passoEfetivo(votou, "explicar")).toBe("sintese");
-    /* Na reflexão, o cartão vem ANTES da regra do tio: quem não o enviou
-       (inclusive quem votou atrasado) cai nele primeiro. */
-    expect(passoEfetivo(votou, "reflexao")).toBe("cartao");
-    expect(passoEfetivo(respondeu, "reflexao")).toBe("regra");
+    /* Na reflexão, direto ao robô: o alerta não é passo, e não o segura. */
+    expect(passoEfetivo(votou, "reflexao")).toBe("regra");
   });
 
-  test("o cartão enviado não muda o passo antes da reflexão (ele vive na revelação e na síntese)", () => {
-    expect(passoEfetivo(respondeu, "revelacao")).toBe("revelacao");
-    expect(passoEfetivo(respondeu, "explicar")).toBe("sintese");
+  test("o passo do cartão saiu (2.5.0): o alerta é uma janela da revelação, não um passo", () => {
+    expect((PASSOS as readonly string[]).includes("cartao")).toBe(false);
+    expect(alertaAberto(votou, "revelacao")).toBe(true);
+    for (const fase of [null, "triagem", "explicar", "reflexao"] as const) expect(alertaAberto(votou, fase)).toBe(false);
+    expect(alertaAberto(confirmou, "revelacao")).toBe(false);
+    expect(alertaAberto(null, "revelacao")).toBe(false);
   });
 
   test("o latch do estudante vence a fase: concluída = concluída", () => {
@@ -487,8 +499,8 @@ describe("as contas do Termômetro", () => {
     entrou: true,
     selecao,
     motivo,
-    respondeuCartao: false,
-    enviouRegra: false,
+    enviouAlertas: false,
+    enviouRobo: false,
     concluiu: false,
   });
   /* Pelo preset: VE = msg_1, msg_5; VN = msg_3, msg_8; FE = msg_4, msg_7; FN = msg_2, msg_6. */
@@ -569,8 +581,8 @@ describe("as contas do Termômetro", () => {
       entraram: 2,
       confirmaram: 2,
       votaram: 0,
-      responderamCartao: 0,
-      enviaramRegra: 0,
+      enviaramAlertas: 0,
+      enviaramRobo: 0,
       concluiram: 0,
     });
     expect(termometro(unidades, gabarito).falsaNeutra).toEqual({ unidades: 1, percentual: 50 });
@@ -655,157 +667,220 @@ describe("o molde sorteado da IA", () => {
   });
 });
 
-describe("o cartão de frases da EF05CO03", () => {
+describe("o alerta do grupo da EF05CO03", () => {
   const padrao = mensagensDoPadrao();
-  /** As 56 trincas de 3 entre as 8 mensagens do preset. */
-  const trincas = padrao.flatMap((a, i) =>
-    padrao.slice(i + 1).flatMap((b, j) => padrao.slice(i + j + 2).map((c) => [a, b, c] as const)),
-  );
+  const todas = todasAsExpressoes();
+  const F = (nao = false) => ({ attr: "falsa" as const, nao });
+  const EMO = (nao = false) => ({ attr: "emocional" as const, nao });
 
-  /** Lê a frase de volta, do texto, e recalcula a resposta do zero — sem confiar no gerador. */
-  function respostaPeloTexto(texto: string, m: (typeof padrao)[number]): { operador: string; resposta: Resposta } {
-    const corpo = texto.slice(referenciaDa(m).length);
-    const nao = /^ NÃO é (\w+)\.$/u.exec(corpo);
-    if (nao) return { operador: "NAO", resposta: avaliarFrase(m, "NAO", nao[1] as never) };
-    const comp = /^ é (\w+) (E|OU) (\w+)\.$/u.exec(corpo);
-    if (!comp) throw new Error(`frase fora do molde: ${texto}`);
-    const [, a, op, b] = comp;
-    expect(["verdadeira", "falsa"]).toContain(a);
-    expect(["emocional", "neutra"]).toContain(b);
-    return { operador: op as string, resposta: avaliarFrase(m, op as "E" | "OU", a as never, b as never) };
-  }
-
-  test("nas 56 trincas: 2 E, 2 OU e 2 NÃO; 3 Sim e 3 Não; cada mensagem em 2 frases com operadores diferentes", () => {
-    expect(trincas).toHaveLength(56);
-    for (const [k, trinca] of trincas.entries()) {
-      const frases = frasesDoCartao(trinca, `sessao-${k}`);
-      expect(frases.map((f) => f.id)).toEqual(["f1", "f2", "f3", "f4", "f5", "f6"]);
-      for (const op of OPERADORES) expect(frases.filter((f) => f.operador === op)).toHaveLength(2);
-      expect(frases.filter((f) => f.esperado === "sim")).toHaveLength(3);
-      for (const m of trinca) {
-        const dela = frases.filter((f) => f.msgId === m.id);
-        expect(dela).toHaveLength(2);
-        expect(dela[0]?.operador).not.toBe(dela[1]?.operador);
-        for (const f of dela) {
-          expect(f.texto.startsWith(referenciaDa(m))).toBe(true);
-          expect(respostaPeloTexto(f.texto, m)).toEqual({ operador: f.operador, resposta: f.esperado });
-        }
-      }
-    }
+  test("são 36 filtros possíveis, todos diferentes, e a forma exige conector e 2ª condição JUNTOS", () => {
+    expect(todas).toHaveLength(36);
+    expect(new Set(todas.map((e) => JSON.stringify(e))).size).toBe(36);
+    expect(conferirExpressao({ a: F(), op: "E" })).toBeNull();
+    expect(conferirExpressao({ a: F(), b: EMO() })).toBeNull();
+    expect(conferirExpressao({ a: { attr: "verdadeira", nao: false } })).toBeNull();
+    expect(conferirExpressao({ a: F(), op: "XOU", b: EMO() })).toBeNull();
+    expect(conferirExpressao({ a: F(), op: "OU", b: EMO(true), extra: 1 })).toEqual({ a: F(), op: "OU", b: EMO(true) });
+    expect(conferirExpressao({ a: EMO(true) })).toEqual({ a: EMO(true) });
   });
 
-  test("a mesma sessão dá as mesmas frases (o F5); outra sessão sorteia de novo", () => {
-    const trinca = trincas[10] as (typeof trincas)[number];
-    expect(frasesDoCartao(trinca, "a")).toEqual(frasesDoCartao(trinca, "a"));
-    const variam = new Set(Array.from({ length: 20 }, (_, i) => JSON.stringify(frasesDoCartao(trinca, `s${i}`))));
-    expect(variam.size).toBeGreaterThan(1);
+  test("a tabela-verdade sobre as quatro combinações (VN, VE, FN, FE)", () => {
+    expect(tabelaVerdade({ a: F(), op: "E", b: EMO() })).toEqual([false, false, false, true]);
+    expect(tabelaVerdade({ a: F(), op: "OU", b: EMO() })).toEqual([false, true, true, true]);
+    expect(tabelaVerdade({ a: F(true) })).toEqual([true, true, false, false]);
+    expect(tabelaVerdade({ a: F(true), op: "E", b: EMO(true) })).toEqual([true, false, false, false]);
+    // A ordem não importa: E e OU comutam.
+    expect(equivalentes({ a: EMO(), op: "E", b: F() }, { a: F(), op: "E", b: EMO() })).toBe(true);
+    // Mas a mesma expressão é PEÇA A PEÇA: a comutada é equivalente e não é a mesma.
+    expect(mesmaExpressao({ a: EMO(), op: "E", b: F() }, { a: F(), op: "E", b: EMO() })).toBe(false);
+    expect(mesmaExpressao({ a: F() }, { a: F() })).toBe(true);
   });
 
-  test("a referência é quem mandou e o começo do texto — nunca 'mensagem 1'", () => {
-    const m = padrao[0] as (typeof padrao)[number];
-    expect(referenciaDa(m)).toBe(`A mensagem de ${m.remetente} “Gente, vocês viram isso…”`);
-    expect(referenciaDa({ remetente: "Ana", texto: "Oi gente" })).toBe("A mensagem de Ana “Oi gente”");
-  });
-
-  test("a régua 5–6 / 3–4 / 0–2 e as chances no chute: 10,9% / 54,7% / 34,4%", () => {
-    expect([0, 1, 2, 3, 4, 5, 6].map(nivelCO03)).toEqual([
-      "nao_atingiu", "nao_atingiu", "nao_atingiu", "em_processo", "em_processo", "atingiu", "atingiu",
+  test("os 4 pedidos: E, OU, e os dois que exigem o NÃO — e no banco curado o E deixa passar 2 e o OU, 6", () => {
+    expect(PEDIDOS.map((p) => [p.n, expressaoEmPalavras(p.esperada)])).toEqual([
+      [1, "Falsa E Emocional"],
+      [2, "Falsa OU NÃO Emocional"],
+      [3, "NÃO Falsa OU Emocional"],
+      [4, "NÃO Falsa E NÃO Emocional"],
     ]);
-    expect(() => nivelCO03(7)).toThrow();
-    const frases = frasesDoCartao(trincas[0] as (typeof trincas)[number], "chute");
+    expect(PEDIDOS.map((p) => passamNoFiltro(p.esperada, padrao).length)).toEqual([2, 6, 6, 2]);
+    /* Cada pedido diz em palavras o que a expressão diz: as mensagens que
+       passam são exatamente as do quadrante pedido. */
+    const quadrantesQuePassam = (e: Expressao) => [...new Set(padrao.filter((m) => avaliar(e, m)).map(quadranteDe))].sort();
+    expect(PEDIDOS.map((p) => quadrantesQuePassam(p.esperada))).toEqual([
+      ["FE"],
+      ["FE", "FN", "VN"],
+      ["FE", "VE", "VN"],
+      ["VN"],
+    ]);
+  });
+
+  test("cada pedido tem EXATAMENTE 2 dos 36 filtros equivalentes (a ordem das duas condições)", () => {
+    for (const p of PEDIDOS) expect(todas.filter((e) => equivalentes(e, p.esperada))).toHaveLength(2);
+  });
+
+  test("os pontos de um pedido: 2 de primeira, 1 corrigindo, 0 enviando errado", () => {
+    const pedido = PEDIDOS[0]!;
+    const certa = pedido.esperada;
+    const comutada: Expressao = { a: EMO(), op: "E", b: F() };
+    const errada: Expressao = { a: F(), op: "OU", b: EMO() };
+    expect(pontosDoPedido(pedido, [certa], certa)).toBe(2);
+    expect(pontosDoPedido(pedido, [comutada], comutada)).toBe(2);
+    expect(pontosDoPedido(pedido, [errada, certa], certa)).toBe(1);
+    expect(pontosDoPedido(pedido, [errada, errada, comutada], comutada)).toBe(1);
+    expect(pontosDoPedido(pedido, [errada], errada)).toBe(0);
+    // Acertou de primeira e trocou por uma errada: o alerta enviado está errado.
+    expect(pontosDoPedido(pedido, [certa, errada], errada)).toBe(0);
+  });
+
+  test("a régua sobre a soma (0–8): 6–8 atingiu, 3–5 em processo, 0–2 não atingiu", () => {
+    expect([0, 1, 2, 3, 4, 5, 6, 7, 8].map(nivelCO03)).toEqual([
+      "nao_atingiu", "nao_atingiu", "nao_atingiu", "em_processo", "em_processo", "em_processo", "atingiu", "atingiu", "atingiu",
+    ]);
+    expect(() => nivelCO03(9)).toThrow();
+    expect(() => nivelCO03(-1)).toThrow();
+  });
+
+  test("no chute (um filtro ao acaso por pedido, executado e enviado): EXAUSTIVO nas 36⁴ = 1.679.616 combinações", () => {
+    /* Os pontos de cada um dos 36 filtros em cada pedido, executado uma vez e
+       enviado (no chute, a 1ª execução é a enviada: 2 ou 0). */
+    const pontos = PEDIDOS.map((p) => todas.map((e) => pontosDoPedido(p, [e], e)));
     const conta = { atingiu: 0, em_processo: 0, nao_atingiu: 0 };
-    for (let bits = 0; bits < 64; bits++) {
-      const respostas = new Map<string, Resposta>(frases.map((f, i) => [f.id, bits & (1 << i) ? "sim" : "nao"]));
-      conta[nivelCO03(acertosDoCartao(frases, respostas))] += 1;
-    }
-    expect(conta).toEqual({ atingiu: 7, em_processo: 35, nao_atingiu: 22 });
+    const [p1, p2, p3, p4] = pontos as [number[], number[], number[], number[]];
+    for (const a of p1) for (const b of p2) for (const c of p3) for (const d of p4) conta[nivelCO03(a + b + c + d)] += 1;
+    const total = 36 ** 4;
+    expect(conta.atingiu + conta.em_processo + conta.nao_atingiu).toBe(total);
+    /* Cada pedido certo de primeira vale 2: ≥ 3 certos (6–8) = 4·2³·34 + 2⁴ =
+       1.104; exatamente 2 certos (4) = 6·2²·34² = 27.744; o resto (0 ou 2
+       pontos) não atinge. */
+    expect(conta).toEqual({ atingiu: 1104, em_processo: 27744, nao_atingiu: 1650768 });
+    const pct = (n: number) => Math.round((10000 * n) / total) / 100;
+    expect([pct(conta.atingiu), pct(conta.em_processo), pct(conta.nao_atingiu)]).toEqual([0.07, 1.65, 98.28]);
   });
 
-  test("responder tudo igual acerta só 3 — em processo, nunca atingiu", () => {
-    const frases = frasesDoCartao(trincas[5] as (typeof trincas)[number], "igual");
-    for (const r of ["sim", "nao"] as const) {
-      const respostas = new Map<string, Resposta>(frases.map((f) => [f.id, r]));
-      expect(acertosDoCartao(frases, respostas)).toBe(3);
-    }
-  });
-
-  test("os acertos por operador somam os acertos", () => {
-    const frases = frasesDoCartao(trincas[3] as (typeof trincas)[number], "op");
-    const respostas = new Map<string, Resposta>(frases.map((f, i) => [f.id, i % 2 ? f.esperado : "sim"]));
-    const por = acertosPorOperador(frases, respostas);
-    expect(por.E + por.OU + por.NAO).toBe(acertosDoCartao(frases, respostas));
+  test("o rótulo do quadro é derivado do remetente — nunca 'mensagem 1'", () => {
+    expect(rotuloNoQuadro({ remetente: "Pedro Henrique" })).toBe("Mensagem de Pedro Henrique");
   });
 });
 
-describe("a regra do tio da EF05CO04", () => {
-  const r = (condicao: string, ...acoes: string[]) => conferirRegra(condicao, acoes) as Regra;
-  /** Todas as regras possíveis: 4 condições × (8 ações sozinhas + 8×7 pares em ordem). */
-  const todas: Regra[] = CONDICOES.flatMap((c) =>
-    ACOES.flatMap((a1) => [r(c, a1), ...ACOES.filter((a2) => a2 !== a1).map((a2) => r(c, a1, a2))]),
-  );
+describe("o robô do grupo da EF05CO04", () => {
+  const r = (laco: boolean, condicao: string, ...acoes: string[]) => conferirRobo(laco, condicao, acoes) as Robo;
+  /** As sequências de ação: 8 sozinhas + 8×7 pares em ordem. */
+  const sequencias = ACOES.flatMap((a1) => [[a1], ...ACOES.filter((a2) => a2 !== a1).map((a2) => [a1, a2])]);
+  /** Todos os robôs possíveis: 2 (laço) × 4 condições × 64 sequências. */
+  const todos: Robo[] = [false, true].flatMap((laco) => CONDICOES.flatMap((c) => sequencias.map((s) => r(laco, c, ...s))));
 
   test("a forma: condição conhecida, 1 ou 2 ações conhecidas, sem repetir", () => {
-    expect(todas).toHaveLength(256);
-    expect(conferirRegra("chuva", ["esperar"])).toBeNull();
-    expect(conferirRegra("urgente_alarmante", [])).toBeNull();
-    expect(conferirRegra("urgente_alarmante", ["esperar", "esperar"])).toBeNull();
-    expect(conferirRegra("urgente_alarmante", ["esperar", "comparar_fonte", "encaminhar_logo"])).toBeNull();
-    expect(conferirRegra("urgente_alarmante", ["voar"])).toBeNull();
+    expect(sequencias).toHaveLength(64);
+    expect(todos).toHaveLength(512);
+    expect(conferirRobo(true, "chuva", ["esperar"])).toBeNull();
+    expect(conferirRobo(true, "urgente_alarmante", [])).toBeNull();
+    expect(conferirRobo(true, "urgente_alarmante", ["esperar", "esperar"])).toBeNull();
+    expect(conferirRobo(true, "urgente_alarmante", ["esperar", "comparar_fonte", "encaminhar_logo"])).toBeNull();
+    expect(conferirRobo(false, "urgente_alarmante", ["voar"])).toBeNull();
   });
 
-  test("o que a regra faz com o áudio: as cinco situações", () => {
-    expect(simular(r("link_nao_checado", "comparar_fonte"))).toBe("deixa_passar");
-    expect(simular(r("promessa_incrivel", "encaminhar_logo"))).toBe("deixa_passar");
-    expect(simular(r("urgente_alarmante", "comparar_fonte"))).toBe("checa");
-    expect(simular(r("parente_proximo", "perguntar_adulto", "encaminhar_se_confirmar"))).toBe("checa");
-    expect(simular(r("urgente_alarmante", "comparar_fonte", "encaminhar_logo"))).toBe("checa_e_repassa");
-    expect(simular(r("urgente_alarmante", "esperar"))).toBe("sem_conferir");
-    expect(simular(r("urgente_alarmante", "encaminhar_se_confirmar"))).toBe("sem_conferir");
-    expect(simular(r("urgente_alarmante", "encaminhar_logo", "comparar_fonte"))).toBe("repassa_antes");
-    expect(simular(r("parente_proximo", "esperar", "encaminhar_pedir"))).toBe("repassa_antes");
+  test("as quatro mensagens com os sinais do Figma: só 'urgente e alarmante' está nas três de risco", () => {
+    expect(MENSAGENS_DO_ROBO.map((m) => [m.remetente, m.tipo, [...m.atributos]])).toEqual([
+      ["Tio Paulo · áudio 0:23", "audio", ["urgente_alarmante", "parente_proximo"]],
+      ["Banco Seguro", "texto", ["urgente_alarmante", "link_nao_checado"]],
+      ["Dona Rita, vizinha", "texto", []],
+      ["Corrente", "texto", ["urgente_alarmante", "promessa_incrivel"]],
+    ]);
+    expect(CONDICOES.map((c) => [c, riscosQuePega(c)])).toEqual([
+      ["urgente_alarmante", 3],
+      ["parente_proximo", 1],
+      ["link_nao_checado", 1],
+      ["promessa_incrivel", 1],
+    ]);
+    expect(CONDICOES.filter(pegaTodosOsRiscos)).toEqual(["urgente_alarmante"]);
+  });
+
+  test("o que as ações fazem com uma mensagem pega: as quatro situações", () => {
+    expect(situacaoDasAcoes(["comparar_fonte"])).toBe("checa");
+    expect(situacaoDasAcoes(["perguntar_adulto", "encaminhar_se_confirmar"])).toBe("checa");
+    expect(situacaoDasAcoes(["comparar_fonte", "encaminhar_logo"])).toBe("checa_e_repassa");
+    expect(situacaoDasAcoes(["esperar"])).toBe("sem_conferir");
+    expect(situacaoDasAcoes(["encaminhar_se_confirmar"])).toBe("sem_conferir");
+    expect(situacaoDasAcoes(["encaminhar_logo", "comparar_fonte"])).toBe("repassa_antes");
+    expect(situacaoDasAcoes(["esperar", "encaminhar_pedir"])).toBe("repassa_antes");
+  });
+
+  test("ligado SEM laço, o robô só olha a 1ª mensagem; COM laço, as quatro — e a condição decide quem passa", () => {
+    const semLaco = ligar(r(false, "urgente_alarmante", "comparar_fonte", "encaminhar_se_confirmar"));
+    expect(semLaco.resultados.map((x) => x.situacao)).toEqual(["checa", "nao_olhou", "nao_olhou", "nao_olhou"]);
+    expect(semLaco.resumo).toBe("O robô tratou 1 das 4 mensagens.");
+    expect(semLaco.resultados[1]?.texto).toBe("O robô não olhou esta mensagem");
+
+    /* O Figma, E6-ALU-01 D: com o laço e "urgente e alarmante", as três de risco checam e a vizinha passa. */
+    const comLaco = ligar(r(true, "urgente_alarmante", "comparar_fonte", "encaminhar_se_confirmar"));
+    expect(comLaco.resultados.map((x) => x.situacao)).toEqual(["checa", "checa", "passou", "checa"]);
+    expect(comLaco.resumo).toBe("O robô tratou as 4 mensagens.");
+    expect(comLaco.resultados[2]?.texto).toBe("Passou direto: a regra não pegou");
+    /* O parente pega só o tio. */
+    expect(ligar(r(true, "parente_proximo", "comparar_fonte")).resultados.map((x) => x.situacao)).toEqual([
+      "checa", "passou", "passou", "passou",
+    ]);
+
+    const doLink = ligar(r(true, "link_nao_checado", "esperar"));
+    expect(doLink.resultados.map((x) => x.situacao)).toEqual(["passou", "sem_conferir", "passou", "passou"]);
+    // A vizinha (controle) passa direto com QUALQUER condição.
+    for (const robo of todos.filter((x) => x.laco)) expect(ligar(robo).resultados[2]?.situacao).toBe("passou");
   });
 
   test("encaminhar antes de checar vale para QUALQUER condição (é o não atingiu)", () => {
-    expect(repassaSemChecar(r("link_nao_checado", "encaminhar_logo"))).toBe(true);
-    expect(repassaSemChecar(r("urgente_alarmante", "comparar_fonte", "encaminhar_logo"))).toBe(false);
-    expect(nivelCO04(r("link_nao_checado", "encaminhar_logo"), [])).toBe("nao_atingiu");
+    expect(repassaSemChecar(["encaminhar_logo"])).toBe(true);
+    expect(repassaSemChecar(["comparar_fonte", "encaminhar_logo"])).toBe(false);
+    expect(nivelCO04(r(true, "link_nao_checado", "encaminhar_logo"), [])).toBe("nao_atingiu");
   });
 
-  test("a régua lê a PRIMEIRA regra testada e a PRIMEIRA previsão", () => {
-    const boa = r("urgente_alarmante", "comparar_fonte", "encaminhar_se_confirmar");
-    const fraca = r("urgente_alarmante", "esperar");
-    const teste = (regra: Regra, previsao: (typeof SITUACOES)[number]) => ({ regra, previsao, situacao: simular(regra) });
-
-    expect(nivelCO04(boa, [teste(boa, "checa")])).toBe("atingiu");
-    // Previu errado o que a própria regra faria: não simulou.
-    expect(nivelCO04(boa, [teste(boa, "deixa_passar")])).toBe("em_processo");
-    // Chegou à regra boa só depois do retorno do teste.
-    expect(nivelCO04(boa, [teste(fraca, "sem_conferir"), teste(boa, "checa")])).toBe("em_processo");
-    // Enviou sem testar.
-    expect(nivelCO04(boa, [])).toBe("em_processo");
-    // Testou a boa e enviou outra.
-    expect(nivelCO04(fraca, [teste(boa, "checa")])).toBe("em_processo");
-    // Checa e encaminha de qualquer jeito: teto em processo.
-    const checaERepassa = r("urgente_alarmante", "comparar_fonte", "encaminhar_logo");
-    expect(nivelCO04(checaERepassa, [teste(checaERepassa, "checa_e_repassa")])).toBe("em_processo");
+  test("a régua lê o ENVIADO e a PRIMEIRA ligação", () => {
+    const bom = r(true, "urgente_alarmante", "comparar_fonte", "encaminhar_se_confirmar");
+    expect(nivelCO04(bom, [bom])).toBe("atingiu");
+    expect(nivelCO04(r(true, "urgente_alarmante", "perguntar_adulto"), [r(true, "urgente_alarmante", "conferir_origem")])).toBe("atingiu");
+    // Parente próximo pega só o tio (1 das 3 de risco): em processo, mesmo de primeira.
+    const doParente = r(true, "parente_proximo", "perguntar_adulto");
+    expect(nivelCO04(doParente, [doParente])).toBe("em_processo");
+    // Sem laço: só olha a 1ª — cobre 1 das 3 mensagens de risco.
+    const semLaco = r(false, "urgente_alarmante", "comparar_fonte", "encaminhar_se_confirmar");
+    expect(nivelCO04(semLaco, [semLaco])).toBe("em_processo");
+    // Chegou ao bom só depois de ver o robô ligado.
+    expect(nivelCO04(bom, [semLaco, bom])).toBe("em_processo");
+    // Enviou sem ligar.
+    expect(nivelCO04(bom, [])).toBe("em_processo");
+    // Ligou o bom e enviou outro.
+    expect(nivelCO04(r(true, "urgente_alarmante", "esperar"), [bom])).toBe("em_processo");
+    // A condição pega só o banco.
+    const doLink = r(true, "link_nao_checado", "comparar_fonte");
+    expect(nivelCO04(doLink, [doLink])).toBe("em_processo");
+    // Checa e encaminha de qualquer jeito.
+    const checaERepassa = r(true, "urgente_alarmante", "comparar_fonte", "encaminhar_logo");
+    expect(nivelCO04(checaERepassa, [checaERepassa])).toBe("em_processo");
     // "Só se confirmar" sem checagem antes não basta.
-    const semChecar = r("urgente_alarmante", "encaminhar_se_confirmar");
-    expect(nivelCO04(semChecar, [teste(semChecar, "sem_conferir")])).toBe("em_processo");
+    const semChecar = r(true, "urgente_alarmante", "encaminhar_se_confirmar");
+    expect(nivelCO04(semChecar, [semChecar])).toBe("em_processo");
   });
 
-  test("no chute (regra, previsão e envio ao acaso, um teste): 5,0% atingem", () => {
+  test("no chute (robô ao acaso, ligado uma vez e enviado): EXAUSTIVO nos 512 robôs", () => {
     const conta = { atingiu: 0, em_processo: 0, nao_atingiu: 0 };
-    for (const regra of todas) {
-      for (const previsao of SITUACOES) conta[nivelCO04(regra, [{ regra, previsao, situacao: simular(regra) }])] += 1;
-    }
-    const total = todas.length * SITUACOES.length;
-    expect(conta.atingiu).toBe(64);
-    expect(Math.round((1000 * conta.atingiu) / total) / 10).toBe(5);
+    for (const robo of todos) conta[nivelCO04(robo, [robo])] += 1;
+    /* Atingem: laço × "urgente e alarmante" (a única nas 3 de risco) × 32
+       sequências que checam = 32. Não atingem: as 20 sequências que
+       encaminham antes de checar, em qualquer laço e condição = 2 × 4 × 20 =
+       160. */
+    expect(conta).toEqual({ atingiu: 32, em_processo: 320, nao_atingiu: 160 });
+    const pct = (n: number) => Math.round((10000 * n) / todos.length) / 100;
+    expect([pct(conta.atingiu), pct(conta.em_processo), pct(conta.nao_atingiu)]).toEqual([6.25, 62.5, 31.25]);
+    // Enviado sem ligar: ninguém atinge.
+    expect(todos.filter((robo) => nivelCO04(robo, []) === "atingiu")).toHaveLength(0);
   });
 
-  test("a regra em palavras", () => {
-    expect(regraEmPalavras(r("urgente_alarmante", "comparar_fonte", "encaminhar_se_confirmar"))).toBe(
-      "Se a mensagem for urgente e alarmante, então eu comparo com uma fonte confiável e depois encaminho só se a notícia se confirmar.",
+  test("o robô em palavras, com e sem laço", () => {
+    expect(roboEmPalavras(r(true, "urgente_alarmante", "comparar_fonte", "encaminhar_se_confirmar"))).toBe(
+      "Para cada mensagem nova, se a mensagem for urgente e alarmante, o robô compara com fonte confiável e depois encaminha só se confirmar.",
+    );
+    expect(roboEmPalavras(r(false, "link_nao_checado", "esperar"))).toBe(
+      "Se a mensagem tiver link que ninguém checou, o robô espera antes de encaminhar.",
     );
   });
 });

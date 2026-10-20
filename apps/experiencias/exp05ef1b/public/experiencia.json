@@ -1,7 +1,7 @@
 {
   "id": "exp05ef1b",
   "nome": "Quem Mandou Isso?",
-  "versao": "0.5.0",
+  "versao": "0.6.0",
   "produto": "entre-redes",
   "series": ["5EF"],
   "unidade": 1,
@@ -11,9 +11,9 @@
   "publico": "estudante",
   "verbos": {
     "attempted": "entrou no grupo da turma a convite da Nina",
-    "interacted": "encaminhou mensagens do grupo para o Mural da Turma e testou a regra no áudio do tio",
-    "scored": "confirmou as 3 mensagens do Mural, votou na enquete de motivo, respondeu o cartão de frases e enviou a regra do tio",
+    "interacted": "encaminhou mensagens do grupo para o Mural da Turma, viu o resultado dos filtros do alerta do grupo e ligou o robô do grupo",
+    "scored": "confirmou as 3 mensagens do Mural, votou na enquete de motivo, enviou os alertas do grupo e enviou o robô do grupo",
     "progressed": "passou pela revelação, pela síntese e pela reflexão liberadas pelo professor",
-    "completed": "concluiu a missão depois de enviar a regra do tio"
+    "completed": "concluiu a missão depois de enviar o robô do grupo"
   }
 }

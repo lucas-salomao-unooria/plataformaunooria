@@ -21,11 +21,13 @@ import {
 } from "@edu/ui/ds";
 import { AVISO_POR_COMPUTADOR, chaveDaLinha } from "@/lib/equipe-no-painel";
 import {
+  alertasNaFolha,
   botoesDaAula,
   deveConsultar,
   duracaoLegivel,
   erroDaApi,
   faseAtingiu,
+  ligacoesNaFolha,
   mensagemPorId,
   mudouAEvidencia,
   quadranteDe,
@@ -217,10 +219,10 @@ export function PainelDaAulaQuemMandou({
             <MetricCard title="Entraram no grupo" value={deQuantos(progresso.entraram)} />
             <MetricCard title="Confirmaram o Mural" value={deQuantos(progresso.confirmaram)} />
             <MetricCard title="Votaram na enquete" value={deQuantos(progresso.votaram)} />
-            {/* O cartão vem com os crachás e segue o caminho da criança: é este
-                número que diz se dá para apresentar a síntese sem pressa. */}
-            <MetricCard title="Responderam o cartão de frases" value={deQuantos(progresso.responderamCartao)} />
-            <MetricCard title="Enviaram a regra do tio" value={deQuantos(progresso.enviaramRegra)} />
+            {/* Os alertas FECHAM quando a síntese é apresentada: é este número
+                que diz se dá para apresentar a síntese sem cortar ninguém. */}
+            <MetricCard title="Enviaram os 4 alertas" value={deQuantos(progresso.enviaramAlertas)} />
+            <MetricCard title="Enviaram o robô" value={deQuantos(progresso.enviaramRobo)} />
             <MetricCard title="Concluíram" value={deQuantos(progresso.concluiram)} />
           </div>
           {porComputador ? <p className="text-[12px] text-unooria-neutral-600">{AVISO_POR_COMPUTADOR}</p> : null}
@@ -367,16 +369,10 @@ export function PainelDaAulaQuemMandou({
   );
 }
 
-/** "1 teste", "3 testes", "Enviou sem testar". */
-function textoDosTestes(n: number): string {
-  if (n === 0) return "Enviou sem testar";
-  return n === 1 ? "1 teste" : `${n} testes`;
-}
-
 /**
  * E7-PROF-01 — a FOLHA DA TURMA, com os rótulos de coluna da copy. É para a
- * tela da professora, nunca para o projetor: tem nome e a regra que cada
- * criança escreveu.
+ * tela da professora, nunca para o projetor: tem nome, os alertas e o robô de
+ * cada criança.
  *
  * O que ela NÃO tem, de propósito: coluna de nível ou de acerto (o nível por
  * habilidade é do painel de habilidades, logo abaixo, onde ela também o
@@ -385,8 +381,8 @@ function textoDosTestes(n: number): string {
  * quadrante porque é o que ela precisa para ler a regra e ajustar a EF05CO08;
  * o Termômetro, que vai para a parede, não tem nome nenhum.
  *
- * A regra NÃO é texto livre de menor: é montada com peças, e o texto dela o
- * servidor escreve a partir delas — a mesma linha para professor e gestor.
+ * O robô NÃO é texto livre de menor: é montado com blocos, e a frase dele o
+ * servidor escreve a partir deles — a mesma linha para professor e gestor.
  */
 function FolhaDaTurma({
   linhas,
@@ -455,30 +451,20 @@ function FolhaDaTurma({
       render: (_, linha) => duracaoLegivel(linha.tempoFeedSegundos),
     },
     {
-      key: "cartao",
-      title: "Cartão de frases",
-      minWidth: 170,
-      render: (_, linha) =>
-        linha.cartao ? (
-          <span className="text-[12px]">
-            {`${linha.cartao.acertos} de 6 certas`}
-            <span className="block text-unooria-neutral-500">
-              {`E ${linha.cartao.porOperador.E}/2 · OU ${linha.cartao.porOperador.OU}/2 · NÃO ${linha.cartao.porOperador.NAO}/2`}
-            </span>
-          </span>
-        ) : (
-          "—"
-        ),
+      key: "alertas",
+      title: "Alertas",
+      minWidth: 150,
+      render: (_, linha) => <span className="text-[12px]">{alertasNaFolha(linha.alertas)}</span>,
     },
     {
-      key: "regra",
-      title: "Regra do tio",
+      key: "robo",
+      title: "Robô",
       minWidth: 260,
       render: (_, linha) =>
-        linha.regra ? (
+        linha.robo ? (
           <span className="text-[12px]">
-            {linha.regra.emPalavras}
-            <span className="block text-unooria-neutral-500">{textoDosTestes(linha.regra.testes)}</span>
+            {linha.robo.emPalavras}
+            <span className="block text-unooria-neutral-500">{ligacoesNaFolha(linha.robo.ligacoes)}</span>
           </span>
         ) : (
           "—"

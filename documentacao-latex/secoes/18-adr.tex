@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{175 decisões}, numeradas até ADR-175: a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{177 decisões}, numeradas até ADR-177: a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -221,12 +221,13 @@ que a cercam.
 \zebra \adrr{ADR-168} & O Jornal da Escola em Canal A puro: julgar cada pista, montar a Chave, simulá-la e decidir diante do boato --- sem múltipla escolha & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-117} e a \adrr{ADR-147}\\
 \adrr{ADR-169} & A quota de avaliação: a leitura da plataforma para a evidência pedagógica tem teto próprio, por escola, fora da quota do estudante & 2026-10-16 & Aceita; segunda exceção à regra 5, complementa a \adrr{ADR-105}\\
 \zebra \adrr{ADR-170} & O Canal A da A Seleção: a legenda lida por indicadores, a marcação do post do colega entre o Mural e as fichas, e as enquetes saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-115}; usa a \adrr{ADR-166} e a \adrr{ADR-169}\\
-\adrr{ADR-171} & Quem mandou isso? só com o Canal A: o cartão de frases depois dos crachás e a regra do tio montada com peças & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-131} e a \adrr{ADR-145}\\
+\adrr{ADR-171} & Quem mandou isso? só com o Canal A: o cartão de frases depois dos crachás e a regra do tio montada com peças & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-131} e a \adrr{ADR-145}; superada em parte pela \adrr{ADR-177} (o cartão e a regra do tio saem)\\
 \zebra \adrr{ADR-172} & O Canal A da Missão Tempestade: toda habilidade por ação --- a ligação da Saúde, o registro da operação, o \enquote{E se…} pareado e o fechamento aberto pelo professor; as perguntas saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-154}\\
 \adrr{ADR-173} & Clone dentro de clone: a peça de outra plataforma dentro de uma experiência disfarçada & 2026-10-16 & Aceita; estende a \adrr{ADR-117}\\
 \zebra \adrr{ADR-174} & O Júri Estadual mede pelo que a criança faz: a separação (EF06CO01) e a regra SE … ENTÃO (EF06CO03); a EF06CO10 sai & 2026-10-18 & Aceita; supera em parte a \adrr{ADR-151}, a \adrr{ADR-152}, a \adrr{ADR-157} e a \adrr{ADR-164}; superada em parte pela \adrr{ADR-176} (a separação vai para as pastas do feed, o caso Mariana sai)\\
 \adrr{ADR-175} & O turno da IA conversada cabe no teto do cliente: teto por chamada, com nova tentativa, e prazo do turno & 2026-10-19 & Aceita\\
 \zebra \adrr{ADR-176} & O Júri Estadual depois da aula de teste: a separação vai para as pastas do feed, o caso Mariana sai e a Galeria Oculta fica enxuta & 2026-10-20 & Aceita; supera em parte a \adrr{ADR-137}, a \adrr{ADR-157}, a \adrr{ADR-164} e a \adrr{ADR-174}\\
+\adrr{ADR-177} & Quem mandou isso? depois do teste do time: o alerta do grupo no lugar do cartão de frases e o robô do grupo no lugar da regra do tio & 2026-10-20 & Aceita; supera em parte a \adrr{ADR-171}\\
 \bottomrule
 \end{tabularx}
 
@@ -15423,7 +15424,10 @@ e a \adrr{ADR-169} (a quota de avaliação).
 \section{ADR-171 --- Quem mandou isso? só com o Canal A: o cartão de frases depois dos crachás e a regra do tio montada com peças}
 \label{adr:exp05ef1b-canal-a}
 
-\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Supera em parte} a
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita; \textbf{superada em parte
+pela \adrr{ADR-177}} (2026-10-20): o cartão de frases virou o alerta do grupo,
+e a regra do tio com previsão virou o robô do grupo, sem previsão.
+\textbf{Supera em parte} a
 \adrr{ADR-131} (as perguntas do PO, literais: a P1 e a P2 saem) e a
 \adrr{ADR-145} (o \enquote{as perguntas são a reflexão}); o resto da
 \adrr{ADR-145} --- toda rodada mede tudo, o critério no painel, sem texto livre
@@ -16061,3 +16065,134 @@ valendo.
 \enquote{atingiu} (a pasta copiada da \emph{hashtag}), voltar a uma medida sem a
 etiqueta à vista --- por exemplo, separar na galeria os estandes ocultos, que a
 criança nunca viu no feed.
+
+% ---------------------------------------------------------------------------
+\section{ADR-177 --- Quem mandou isso? depois do teste do time: o alerta do grupo no lugar do cartão de frases e o robô do grupo no lugar da regra do tio}
+\label{adr:exp05ef1b-alerta-e-robo}
+
+\textbf{Data.} 2026-10-20. \textbf{Status.} Aceita. \textbf{Supera em parte}
+a \adrr{ADR-171}: o cartão de frases e a regra do tio com previsão saem; o
+resto dela --- só Canal A, sem as P1 e P2, a marca na transação de cada
+envio, \enquote{Não avaliado} para quem não faz a ação --- continua valendo.
+A EF05CO08 (a seleção do Mural, \adrr{ADR-120}) não muda. O número 176
+estava reservado por uma frente paralela (os ajustes do Júri Estadual).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O teste do time.} Ao jogar a 0.5.0, o time registrou (o
+    documento do Artur de 20/10, com prioridade \emph{must have}) que o cartão
+    de frases \enquote{não pode ser um quiz}: seis frases com Sim ou Não sobre
+    as mensagens encaminhadas eram, para a criança, uma prova no meio da
+    história. A regra do tio, com a previsão antes de cada teste, foi lida do
+    mesmo jeito: adivinhar o resultado antes de ver.
+  \item \textbf{O desenho novo.} O Figma \enquote{Wireframes Canal A (alerta e
+    robô)} trouxe as duas ações como gestos da história: no grupo, montar um
+    filtro e mandar um alerta; na casca, montar o robô que cuida do grupo e
+    ligá-lo. Sem a previsão, e com o sinal \enquote{urgente e alarmante} em
+    três das quatro mensagens do robô.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{EF05CO03 pelo ALERTA DO GRUPO}, no fim do Mural revelado, no
+    clone. Um quadro com as oito mensagens e os dois crachás de cada uma (as
+    três encaminhadas com \enquote{Você enviou}); um montador de filtro com
+    chips (NÃO, Falsa, Emocional, E, OU); quatro pedidos fixos, um por vez
+    (\enquote{falsas e emocionais}, \enquote{falsas ou neutras},
+    \enquote{verdadeiras ou emocionais}, \enquote{verdadeiras e neutras}).
+    \enquote{Ver resultado} executa o filtro no servidor, até três vezes por
+    pedido, e destaca as que passam; \enquote{Enviar alerta ao grupo} manda a
+    ÚLTIMA executada como bolha no grupo e abre o pedido seguinte. Régua por
+    tabela-verdade (a comutada vale): 2 pontos se a primeira execução já era
+    equivalente ao pedido, 1 se só a enviada, 0 senão; com os quatro
+    enviados, 6 a 8 pontos são \enquote{atingiu}, 3 a 5 \enquote{em
+    processo}, 0 a 2 \enquote{não atingiu}; menos de quatro enviados é
+    \enquote{Não avaliado}. No chute (um filtro ao acaso por pedido, entre os
+    36 possíveis), 0,07\,\% de chance de atingir.
+  \item \textbf{O alerta FECHA quando a professora libera a síntese} (409
+    \cd{alerta-fechado}): é uma janela da revelação, não um passo. O passo
+    \cd{cartao} sai, e na reflexão todo mundo vai direto ao robô.
+  \item \textbf{O rótulo de cada mensagem é DERIVADO do remetente}
+    (\enquote{Mensagem de Pedro Henrique}; no alerta, \enquote{a mensagem
+    de\ldots}), sem campo novo no pacote.
+  \item \textbf{EF05CO04 pelo ROBÔ DO GRUPO}, na casca: blocos
+    (\cd{PuzzleBlock} e \cd{PuzzleTrack} do \emph{design system}, no padrão do
+    Montador da Chave da exp04ef1b) com o laço opcional \enquote{para cada
+    mensagem nova}, SE (uma de quatro condições), ENTÃO e E DEPOIS (uma ou
+    duas de oito ações). \enquote{Ligar o robô} faz o servidor executá-lo em
+    quatro mensagens fixas, de sinais abertos --- o tio (urgente e alarmante,
+    parente próximo), o banco (urgente e alarmante, link que ninguém checou),
+    a vizinha (nenhum: o controle) e a corrente (urgente e alarmante,
+    promessa incrível) ---; sem o laço ele só olha a primeira. Até cinco
+    ligações; enviar sem ligar é permitido, e enviar fecha a missão. Régua:
+    \enquote{atingiu} com laço, condição \enquote{urgente e alarmante} e
+    ações que checam antes de encaminhar, já na PRIMEIRA ligação e no
+    enviado; \enquote{não atingiu} quando o enviado encaminha antes de
+    checar; \enquote{em processo} em todo o resto (inclusive a condição que
+    pega uma só mensagem). No chute (512 robôs, ligado uma vez e enviado),
+    6,25\,\%.
+  \item \textbf{Sem previsão}: ligar o robô e vê-lo agir é a simulação.
+  \item Instrumento \textbf{2.5.0}, experiência \textbf{0.6.0}, ficha
+    \textbf{versão 5} (marcadores \cd{selecao-do-mural},
+    \cd{alerta-do-grupo} e \cd{robo-do-grupo}), migração
+    \arq{20261020120000\_\B{}exp05ef1b\_\B{}alerta\_\B{}e\_\B{}robo}: colunas
+    \cd{alertas} e \cd{alertas\_em} em \cd{exp05ef1b\_sessoes}, com dois
+    \emph{CHECKs} novos, e os dois \emph{CHECKs} do robô recriados sem
+    depender do cartão; \cd{regra\_testes}, \cd{regra\_final} e
+    \cd{regra\_em} são reusadas, agora com \cd{laco}. As colunas do cartão
+    ficam pelo histórico. Rotas: \rota{POST /quem-mandou-isso/alerta/execucao},
+    \rota{POST /quem-mandou-isso/alerta/envio},
+    \rota{POST /quem-mandou-isso/robo/ligar} e
+    \rota{POST /quem-mandou-isso/robo}; saem \rota{POST /operacoes},
+    \rota{POST /regra/teste} e \rota{POST /regra}.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{O alerta seguindo o caminho da criança}, como o cartão da
+    \adrr{ADR-171} (abre na revelação DELA e fecha quando ela envia, com quem
+    atrasou caindo nele na reflexão). O alerta é um gesto no grupo revelado,
+    que a síntese da professora encerra; levá-lo para a casca o tiraria da
+    história, e manter o grupo aberto depois da síntese faria a sala
+    trabalhar em dois tempos.
+  \item \textbf{Um campo de rótulo curto no pacote}, escrito pelo professor ou
+    pela IA. Seria mais uma régua no preparo e mais um texto para revisar,
+    e o remetente já é o nome que a criança reconhece no grupo.
+  \item \textbf{Manter a previsão no robô.} O Figma a tirou, e o time a leu
+    como o mesmo quiz que derrubou o cartão.
+  \item \textbf{O \enquote{Ouvir o desafio} do Figma.} Não há gravação na V1;
+    um botão de áudio sem áudio é pior que nenhum.
+  \item \textbf{Arrastar os blocos.} O \emph{design system} não tem arraste;
+    o encaixe é por toque, como no Montador da Chave.
+  \item \textbf{Trazer de volta a P1 e a P2} como informação. Continuam fora,
+    pelas razões da \adrr{ADR-171}.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Quem vota tarde fica \enquote{Não avaliado} na EF05CO03}: se a
+    professora libera a síntese antes de a criança enviar os quatro alertas,
+    a janela fecha, e o professor ajusta à mão no painel de habilidades.
+  \item \textbf{A simulação vira assistir o robô agir}: sem a previsão, a
+    criança não precisa antecipar o que o robô fará. É uma perda pedagógica
+    aceita; o que sobra de antecipação é a PRIMEIRA ligação, que a régua lê.
+  \item \textbf{O quadro mostra os crachás das oito mensagens}, inclusive das
+    cinco que a criança não encaminhou --- decisão de produto, para o filtro
+    ter sobre o que operar.
+  \item \textbf{O sinal \enquote{urgente e alarmante} no banco e na corrente
+    segue o Figma}, não um critério do PO; é ele que dá sentido ao laço, e
+    um robô que pega só o parente fica em processo.
+  \item \textbf{Cinco versões da ficha no histórico}: o painel não separa as
+    rodadas medidas pelo cartão das medidas pelo alerta.
+  \item \textbf{Os pedidos, as mensagens do robô e os critérios são texto da
+    equipe}, à espera da revisão do PO.
+\end{itemize}
+
+\textbf{Gatilho.} A distribuição dos níveis mostrar muitos \enquote{Não
+avaliado} na EF05CO03 por síntese liberada cedo (aí o alerta passa a seguir
+o caminho da criança), o robô atingir pouco por causa da primeira ligação,
+ou o PO pedir a previsão de volta.

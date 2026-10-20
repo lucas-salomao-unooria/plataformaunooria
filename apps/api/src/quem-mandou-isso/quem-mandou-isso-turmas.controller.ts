@@ -182,7 +182,7 @@ export class QuemMandouIssoTurmasController {
     resposta: PainelSchema,
     notas: [
       NOTA_DO_404,
-"Sem texto livre de menor: `cartao` traz os acertos (0–6, e por operador) e `regra` a regra em palavras, montada das peças, e o número de testes. Professor e gestor recebem a mesma linha. O NÍVEL de cada habilidade é da evidência (E14).",
+"Sem texto livre de menor: `alertas` traz os pontos (0–8, 2 por pedido) e quantos dos 4 alertas foram enviados, e `robo` o robô em palavras, montado dos blocos, e o número de ligações. Professor e gestor recebem a mesma linha. O NÍVEL de cada habilidade é da evidência (E14).",
       "Sem coluna de acerto por criança: o nível por habilidade é da evidência (E14), onde o professor também o ajusta.",
     ],
   })

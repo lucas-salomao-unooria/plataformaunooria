@@ -16,10 +16,10 @@ export interface UnidadeDaConta {
   /** As três do Mural, SÓ depois do latch 1. Antes, `null`: escolha que ainda podia mudar não conta. */
   selecao: readonly string[] | null;
   motivo: Motivo | null;
-  /** Enviou o cartão de frases (EF05CO03). */
-  respondeuCartao: boolean;
-  /** Enviou a regra do tio (EF05CO04). */
-  enviouRegra: boolean;
+  /** Enviou os QUATRO alertas do grupo (EF05CO03). */
+  enviouAlertas: boolean;
+  /** Enviou o robô do grupo (EF05CO04). */
+  enviouRobo: boolean;
   concluiu: boolean;
 }
 
@@ -35,15 +35,16 @@ export interface Progresso {
   entraram: number;
   confirmaram: number;
   votaram: number;
-  responderamCartao: number;
-  enviaramRegra: number;
+  enviaramAlertas: number;
+  enviaramRobo: number;
   concluiram: number;
 }
 
 /**
  * O progresso da turma. As duas contagens do Canal A são o que o professor
- * olha antes de avançar: o cartão de frases aparece com os crachás, e quem
- * ainda não o respondeu vai responder na reflexão, antes da regra.
+ * olha antes de avançar: os alertas do grupo FECHAM quando ele apresenta a
+ * síntese (quem não enviou os quatro fica "Não avaliado"), e o robô fecha a
+ * missão.
  */
 export function progresso(unidades: readonly UnidadeDaConta[]): Progresso {
   return {
@@ -51,8 +52,8 @@ export function progresso(unidades: readonly UnidadeDaConta[]): Progresso {
     entraram: unidades.filter((u) => u.entrou).length,
     confirmaram: unidades.filter((u) => u.selecao !== null).length,
     votaram: unidades.filter((u) => u.motivo !== null).length,
-    responderamCartao: unidades.filter((u) => u.respondeuCartao).length,
-    enviaramRegra: unidades.filter((u) => u.enviouRegra).length,
+    enviaramAlertas: unidades.filter((u) => u.enviouAlertas).length,
+    enviaramRobo: unidades.filter((u) => u.enviouRobo).length,
     concluiram: unidades.filter((u) => u.concluiu).length,
   };
 }
