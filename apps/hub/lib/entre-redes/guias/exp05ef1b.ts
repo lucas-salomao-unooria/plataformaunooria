@@ -88,7 +88,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
         "Criar e simular algoritmos representados em linguagem oral, escrita ou pictográfica, que incluam sequências, repetições e seleções condicionais para resolver problemas de forma independente e em colaboração.",
       eixo: "Pensamento Computacional",
       ondeAcontece:
-        "Etapa 6, a reflexão: a criança monta com blocos o robô do grupo — a repetição (“para cada mensagem nova”), a seleção (SE a mensagem for…) e a sequência (ENTÃO o robô… E DEPOIS…) —, liga e vê o que ele faz com 4 mensagens, a primeira delas o áudio assustado do tio. Ligar é simular o algoritmo. O painel registra o robô enviado e a primeira vez que ela ligou.",
+        "Etapa 6, a reflexão: a criança monta com blocos o robô do grupo — a repetição (“para cada mensagem nova”), a seleção (SE a mensagem for…) e a sequência (ENTÃO o robô… E DEPOIS…) —, liga e vê o que ele faz com 4 mensagens, a primeira delas o áudio assustado do tio. Três são de risco e só “urgente e alarmante” está nas três: sem o laço, ou com uma condição que pega uma só, o robô deixa passar alguma. Ligar é simular o algoritmo. O painel registra o robô enviado e a primeira vez que ela ligou.",
     },
   ],
 

@@ -144,8 +144,9 @@ export function QuemMandouOPacote({ dados }: { dados: MaterialDoProfessor | null
             Quando você aperta Liberar Reflexão, cada criança monta, com blocos, o robô do grupo: o laço{" "}
             {dados.robo.laco.icone} “{dados.robo.laco.rotulo}” (opcional, não vem montado), “SE a mensagem
             for…”, “ENTÃO o robô…” e “E DEPOIS…”. Ela liga o robô e vê as quatro mensagens chegando, com o
-            robô agindo em cada uma — sem o laço, ele só olha a primeira. Pode mudar e ligar de novo (até{" "}
-            {dados.robo.ligacoes} vezes), mas o nível olha a primeira vez que ela ligou.
+            robô agindo em cada uma — sem o laço, ele só olha a primeira. Três delas são de risco, e só “urgente
+            e alarmante” está nas três: é o laço com essa condição que cobre todas. Pode mudar e ligar de novo
+            (até {dados.robo.ligacoes} vezes), mas o nível olha a primeira vez que ela ligou.
           </p>
           <blockquote className="border-l-2 border-unooria-neutral-300 pl-3 text-[14px] text-unooria-neutral-800">
             {dados.textos.tio}
@@ -154,8 +155,7 @@ export function QuemMandouOPacote({ dados }: { dados: MaterialDoProfessor | null
           <ol className="flex flex-col gap-1 text-[13px]" data-mensagens-do-robo>
             {dados.robo.mensagens.map((m) => (
               <li key={m.id}>
-                <strong>{m.remetente}</strong>
-                {m.tipo === "audio" ? " (áudio)" : ""}: “{m.texto}” —{" "}
+                <strong>{m.remetente}</strong>: “{m.texto}” —{" "}
                 <span className="text-unooria-neutral-500">
                   {m.atributos.length === 0
                     ? "sem sinais de alerta (a de controle)"
@@ -171,7 +171,11 @@ export function QuemMandouOPacote({ dados }: { dados: MaterialDoProfessor | null
             {dados.robo.condicoes.map((c) => (
               <li key={c.id}>
                 <span aria-hidden="true">{c.icone}</span> {c.rotulo} —{" "}
-                <span className="text-unooria-neutral-500">{c.pegaOTio ? "pega o áudio do tio" : "deixa o áudio do tio passar"}</span>
+                <span className="text-unooria-neutral-500">
+                  {c.riscos === dados.robo.mensagensDeRisco
+                    ? `pega as ${c.riscos} mensagens de risco — é a do robô completo`
+                    : `pega ${c.riscos} das ${dados.robo.mensagensDeRisco} mensagens de risco`}
+                </span>
               </li>
             ))}
           </ul>

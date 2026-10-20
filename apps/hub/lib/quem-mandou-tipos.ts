@@ -298,7 +298,9 @@ export interface MaterialDoProfessor {
   };
   robo: {
     laco: { rotulo: string; icone: string };
-    condicoes: Array<BlocoDoRobo & { pegaOTio: boolean }>;
+    /** Quantas das mensagens de risco cada condição pega (só "urgente e alarmante" pega as 3). */
+    condicoes: Array<BlocoDoRobo & { riscos: number }>;
+    mensagensDeRisco: number;
     acoes: Array<BlocoDoRobo & { tipo: TipoDeAcaoDoRobo }>;
     mensagens: Array<{ id: string; remetente: string; texto: string; tipo: "audio" | "texto"; atributos: string[] }>;
     ligacoes: number;
