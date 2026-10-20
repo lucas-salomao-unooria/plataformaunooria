@@ -9,18 +9,28 @@ import {
   gateMudou,
   horarioDaMensagem,
   iniciais,
-  acoesDaRegra,
-  cartaoCompleto,
+  MONTADOR_VAZIO,
+  MONTAGEM_VAZIA,
+  encaixar,
+  expressaoDoMontador,
   mensagensDoMural,
   mesclarSessao,
+  mesmaExpressao,
+  montadorDe,
+  montagemDe,
   outrosParticipantes,
-  partesDaFrase,
+  pedidoDaVez,
   percentualDaBarra,
-  regraMontada,
+  podeEnviarAlerta,
+  referenciaNoAlerta,
+  referenciasDoAlerta,
+  roboDaMontagem,
   telaDe,
+  tirar,
   type Vista,
 } from "./regras";
-import type { Estado, Gate, MensagemPublica, Passo, Revelacao, Sessao } from "./tipos";
+import { TEXTOS } from "./textos";
+import type { Alerta, Estado, Gate, MensagemPublica, Passo, Revelacao, Sessao } from "./tipos";
 
 const REVELACAO: Revelacao = {
   mensagens: [{ id: "msg_1", veracidade: "verdadeira", tom: "emocional" }],
@@ -40,8 +50,8 @@ function estado(passo: Passo, extra: Partial<Estado> = {}): Estado {
     motivo: null,
     concluido: false,
     revelacao: null,
-    cartao: null,
-    regra: null,
+    alerta: null,
+    robo: null,
     ...extra,
   };
 }
@@ -55,17 +65,17 @@ function sessao(passo: Passo, extra: Partial<Sessao> = {}): Sessao {
     ...estado(passo),
     pacote: null,
     textos: {
-      nina: { convite: null, encerramento: "", cartao: "", tio: "" },
+      nina: { convite: null, encerramento: "", tio: "" },
     },
-    opcoes: { motivos: [], condicoes: [], acoes: [], previsoes: [] },
-    limites: { encaminhamentos: 3, testes: 5 },
+    opcoes: { motivos: [], laco: { rotulo: "", icone: "" }, condicoes: [], acoes: [] },
+    limites: { encaminhamentos: 3, execucoes: 3, ligacoes: 5 },
     ...extra,
   };
 }
 
 describe("telaDe — a tela que o passo pede", () => {
   test("sem pacote aprovado, é a espera do preparo em QUALQUER passo", () => {
-    for (const passo of ["abertura", "grupo", "espera", "cartao", "regra", "concluida"] as Passo[]) {
+    for (const passo of ["abertura", "grupo", "espera", "regra", "concluida"] as Passo[]) {
       expect(telaDe(estado(passo, { preparada: false }), vista())).toBe("preparo");
     }
   });
@@ -87,8 +97,7 @@ describe("telaDe — a tela que o passo pede", () => {
     expect(telaDe(estado("sintese", { revelacao: REVELACAO }), vista())).toBe("sintese");
   });
 
-  test("na reflexão: o cartão pendente vem antes da regra — o servidor manda, a tela segue", () => {
-    expect(telaDe(estado("cartao", { revelacao: REVELACAO }), vista())).toBe("cartao");
+  test("na reflexão: todo mundo vai ao robô — o alerta não é tela, é uma janela do Mural", () => {
     expect(telaDe(estado("regra", { revelacao: REVELACAO }), vista())).toBe("regra");
   });
 
@@ -99,8 +108,7 @@ describe("telaDe — a tela que o passo pede", () => {
   test("o gate de telemetria de cada passo que o professor abre", () => {
     expect(gateDoPasso("revelacao")).toBe("revelacao");
     expect(gateDoPasso("sintese")).toBe("sintese");
-    /* O cartão pendente e a regra são a reflexão: o gate que o professor abriu. */
-    expect(gateDoPasso("cartao")).toBe("reflexao");
+    /* O robô é a reflexão: o gate que o professor abriu. */
     expect(gateDoPasso("regra")).toBe("reflexao");
     expect(gateDoPasso("grupo")).toBeNull();
   });
@@ -178,40 +186,97 @@ describe("a seleção do Mural", () => {
   });
 });
 
-describe("o cartão de frases", () => {
-  const frases = ["f1", "f2", "f3", "f4", "f5", "f6"].map((id) => ({ id, operador: "E" as const, texto: id }));
-
-  test("só envia com as seis respondidas: não existe cartão pela metade", () => {
-    const cinco = Object.fromEntries(frases.slice(0, 5).map((f) => [f.id, "sim" as const]));
-    expect(cartaoCompleto(frases, cinco)).toBe(false);
-    expect(cartaoCompleto(frases, { ...cinco, f6: "nao" })).toBe(true);
-    expect(cartaoCompleto([], {})).toBe(false);
+describe("o alerta do grupo", () => {
+  const F = { attr: "falsa" as const, nao: false };
+  const EMO = { attr: "emocional" as const, nao: false };
+  const alerta = (andamento: Alerta["andamento"]): Alerta => ({
+    quadro: [
+      { id: "msg_1", rotulo: "Mensagem de Ana", veracidade: "verdadeira", tom: "emocional", voceEnviou: true },
+      { id: "msg_2", rotulo: "Mensagem de Bia", veracidade: "falsa", tom: "neutra", voceEnviou: false },
+      { id: "msg_3", rotulo: "Mensagem de Caio", veracidade: "falsa", tom: "emocional", voceEnviou: false },
+    ],
+    pedidos: [1, 2, 3, 4].map((n) => ({ n, texto: `pedido ${n}` })),
+    andamento,
+    aberto: true,
   });
 
-  test("o operador ISOLADO, em maiúsculas, é destacado — e só ele", () => {
-    const partes = partesDaFrase("A mensagem de Ana “Então vamos” é verdadeira E neutra.");
-    expect(partes.filter((p) => p.operador).map((p) => p.texto)).toEqual(["E"]);
-    expect(partes.map((p) => p.texto).join("")).toBe("A mensagem de Ana “Então vamos” é verdadeira E neutra.");
-    expect(partesDaFrase("A mensagem de Bia “Oi” NÃO é falsa.").filter((p) => p.operador).map((p) => p.texto)).toEqual([
-      "NÃO",
-    ]);
-    expect(partesDaFrase("A mensagem de Caio “Oi” é falsa OU emocional.").filter((p) => p.operador).map((p) => p.texto)).toEqual([
-      "OU",
-    ]);
+  test("o pedido da vez é o primeiro sem alerta enviado — e nenhum com os quatro", () => {
+    expect(pedidoDaVez(alerta([]))?.n).toBe(1);
+    expect(pedidoDaVez(alerta([{ pedido: 1, execucoes: [{ expressao: { a: F }, passam: [] }], enviado: null }]))?.n).toBe(1);
+    const enviado = (pedido: number) => ({ pedido, execucoes: [], enviado: { expressao: { a: F }, passam: [] } });
+    expect(pedidoDaVez(alerta([enviado(1), enviado(2)]))?.n).toBe(3);
+    expect(pedidoDaVez(alerta([1, 2, 3, 4].map(enviado)))).toBeNull();
+  });
+
+  test("o montador só forma expressão inteira: a 1ª condição, e a 2ª quando há conector", () => {
+    expect(expressaoDoMontador(MONTADOR_VAZIO)).toBeNull();
+    expect(expressaoDoMontador({ ...MONTADOR_VAZIO, a: { attr: "falsa", nao: true } })).toEqual({ a: { attr: "falsa", nao: true } });
+    const comConector = { ...MONTADOR_VAZIO, a: { attr: "falsa" as const, nao: false }, op: "OU" as const };
+    expect(expressaoDoMontador(comConector)).toBeNull();
+    expect(expressaoDoMontador({ ...comConector, b: { attr: "emocional", nao: true } })).toEqual({
+      a: F,
+      op: "OU",
+      b: { attr: "emocional", nao: true },
+    });
+    /* E volta: o F5 reabre o último filtro executado. */
+    const e = { a: F, op: "E" as const, b: EMO };
+    expect(expressaoDoMontador(montadorDe(e))).toEqual(e);
+  });
+
+  test("enviar só acende com o que está na tela IGUAL à última execução (peça a peça)", () => {
+    const certo = { a: F, op: "E" as const, b: EMO };
+    const comutado = { a: EMO, op: "E" as const, b: F };
+    expect(podeEnviarAlerta([], certo)).toBe(false);
+    expect(podeEnviarAlerta([{ expressao: certo, passam: [] }], certo)).toBe(true);
+    expect(podeEnviarAlerta([{ expressao: certo, passam: [] }, { expressao: comutado, passam: [] }], certo)).toBe(false);
+    expect(podeEnviarAlerta([{ expressao: certo, passam: [] }], null)).toBe(false);
+    expect(mesmaExpressao({ a: F }, { a: F, op: "E", b: EMO })).toBe(false);
+  });
+
+  test("a bolha do alerta: 'a mensagem de …', na ordem do grupo, com concordância", () => {
+    expect(referenciaNoAlerta("Mensagem de Pedro Henrique")).toBe("a mensagem de Pedro Henrique");
+    const a = alerta([]);
+    expect(TEXTOS.alerta.bolha(referenciasDoAlerta(["msg_3", "msg_2"], a.quadro))).toBe(
+      "2 mensagens destacadas: a mensagem de Bia, a mensagem de Caio.",
+    );
+    expect(TEXTOS.alerta.bolha(referenciasDoAlerta(["msg_1"], a.quadro))).toBe("1 mensagem destacada: a mensagem de Ana.");
+    expect(TEXTOS.alerta.bolha([])).toBe("Nenhuma mensagem destacada.");
+    expect(TEXTOS.alerta.passam(6)).toBe("6 mensagens passam no filtro.");
+    expect(TEXTOS.alerta.contador(2, 4)).toBe("Alerta 2 de 4");
+    expect(TEXTOS.alerta.execucao(1, 3)).toBe("Execução 1 de 3");
   });
 });
 
-describe("a regra do tio", () => {
-  test("montada = condição e a primeira ação (a segunda é opcional)", () => {
-    expect(regraMontada(null, "a")).toBe(false);
-    expect(regraMontada("c", null)).toBe(false);
-    expect(regraMontada("c", "a")).toBe(true);
+describe("o robô do grupo", () => {
+  test("o toque encaixa: laço e condição na vaga deles, a ação na primeira vaga livre, sem repetir", () => {
+    let m = encaixar(MONTAGEM_VAZIA, { tipo: "acao", id: "comparar" });
+    expect(roboDaMontagem(m)).toBeNull();
+    m = encaixar(m, { tipo: "condicao", id: "urgente" });
+    expect(roboDaMontagem(m)).toEqual({ laco: false, condicao: "urgente", acoes: ["comparar"] });
+    m = encaixar(m, { tipo: "acao", id: "comparar" });
+    expect(m.acao2).toBeNull();
+    m = encaixar(encaixar(m, { tipo: "acao", id: "confirmar" }), { tipo: "laco" });
+    expect(roboDaMontagem(m)).toEqual({ laco: true, condicao: "urgente", acoes: ["comparar", "confirmar"] });
+    /* Com as duas cheias, a terceira não entra; a condição TROCA a anterior. */
+    expect(encaixar(m, { tipo: "acao", id: "esperar" })).toEqual(m);
+    expect(encaixar(m, { tipo: "condicao", id: "parente" }).condicao).toBe("parente");
   });
 
-  test("as ações em ordem; a segunda só se escolhida e diferente da primeira", () => {
-    expect(acoesDaRegra("a", null)).toEqual(["a"]);
-    expect(acoesDaRegra("a", "b")).toEqual(["a", "b"]);
-    expect(acoesDaRegra("a", "a")).toEqual(["a"]);
+  test("o toque no bloco encaixado devolve; tirar a 1ª ação sobe a 2ª", () => {
+    const m = { laco: true, condicao: "urgente", acao1: "comparar", acao2: "confirmar" };
+    expect(tirar(m, "acao1")).toEqual({ ...m, acao1: "confirmar", acao2: null });
+    expect(tirar(m, "laco").laco).toBe(false);
+    expect(roboDaMontagem(tirar(m, "condicao"))).toBeNull();
+    expect(montagemDe({ laco: true, condicao: "urgente", acoes: ["comparar", "confirmar"] })).toEqual(m);
+    expect(montagemDe(null)).toEqual(MONTAGEM_VAZIA);
+  });
+
+  test("os textos das telas do robô (Figma E6-ALU-01/02)", () => {
+    expect(TEXTOS.robo.ligado(1, 5)).toBe("Robô ligado · 1 de 5");
+    expect(TEXTOS.robo.comando).toBe(
+      "Monte o robô do grupo para as mensagens não passarem sem checar. Depois, ligue e veja o que ele faz.",
+    );
+    expect(TEXTOS.conclusao.registrado).toBe("Seu robô foi registrado e enviado ao professor.");
   });
 });
 

@@ -9,17 +9,18 @@ ADR-114; esta é a v2.2, com o MESMO código de experiência.
 
 O percurso: lista de conversas → chat da Nina (convite) → grupo "Turma 5ºB"
 (encaminhar exatamente 3 ao Mural) → Mural (confirmar) → enquete do motivo →
-espera → revelação (crachás + **cartão de frases**) → síntese → **casca**: o
-desafio do tio (a **regra montada com peças**, prevista e testada) → "Missão
-Concluída".
+espera → revelação (crachás + **alerta do grupo**) → síntese → **casca**: o
+desafio do tio (o **robô do grupo montado com blocos**, ligado em quatro
+mensagens) → "Missão Concluída" com o card do robô.
 
-**Só o Canal A (0.5.0, ADR-171).** As três habilidades são medidas pelo que a
-criança FAZ: a seleção do Mural (EF05CO08), o cartão de frases com E/OU/NÃO
-depois dos crachás (EF05CO03) e a regra do tio montada com peças, com a
-previsão antes de cada teste (EF05CO04). As perguntas P1 e P2 saíram, como no
-8º ano. A regra voltou SEM texto livre: o PO tinha tirado o Se/Então de texto
-(ADR-145) por ser a única etapa sem critério fixo, e as peças têm critério
-fixo.
+**Só o Canal A (desde a 0.5.0, ADR-171).** As três habilidades são medidas
+pelo que a criança FAZ: a seleção do Mural (EF05CO08), o **alerta do grupo**
+(EF05CO03: quatro filtros com E/OU/NÃO sobre o quadro das oito mensagens,
+executados pelo servidor e enviados ao grupo) e o **robô do grupo**
+(EF05CO04: laço opcional, SE, ENTÃO e E DEPOIS, ligado e enviado). Na 0.6.0
+o alerta substituiu o cartão de frases e o robô substituiu a regra do tio com
+previsão (o Figma de 20/10 tirou a previsão). Nada de texto livre: o PO tirou
+o Se/Então de texto (ADR-145), e os blocos têm critério fixo.
 
 ## A fronteira do disfarce cruza UMA vez, no fim
 
@@ -33,13 +34,19 @@ aqui ele produz um vaivém que parece inconsistência e não é:
    (`MessageBubble.Media` desenhada) — mensageiro não tem gráfico, mas recebe
    foto de gráfico. É a diferença para a exp06ef2b, onde o visualizador de
    topologia não existe em app nenhum e por isso fala pela escola (ADR-72).
-2. **O cartão de frases fica no clone**, no fim do Mural revelado: a Nina
-   (`textos.nina.cartao`) pede para conferir as frases, e cada frase é um
-   grupo Sim/Não com o `Radio` do Unoochat (`fieldset` + `legend`).
+2. **O alerta do grupo fica no clone**, no fim do Mural revelado, abaixo da
+   faixa "Alerta do grupo · Role para montar os alertas ↓": o montador é um
+   balão com o quadro das oito mensagens (`MessageTag` dos crachás), os chips
+   do filtro (`FilterChip` do Unoochat: NÃO, Falsa, Emocional, E, OU — a ponte
+   ganhou o `FilterChip` na 0.6.0) e o `Button` do clone; o alerta enviado é
+   uma bolha ENVIADA no grupo. Alerta de grupo é gesto de app de mensagem.
 3. **O desafio do tio e "Missão Concluída" são a casca**: o desafio não é
-   sobre o grupo da turma, é sobre o grupo da FAMÍLIA, e montar a regra dentro
-   do clone a devolveria à ficção que a missão acabou de desmontar. A fala da
-   Nina aparece num `Card` com o rosto dela, não num balão.
+   sobre o grupo da turma, é sobre o grupo da FAMÍLIA, e montar o robô dentro
+   do clone o devolveria à ficção que a missão acabou de desmontar. A fala da
+   Nina aparece num `Card` com o rosto dela, não num balão. O robô é o
+   `PuzzleTrack` + `PuzzleBlock` da `unooria`, no padrão do Montador da Chave
+   da exp04ef1b (só toques: o bloco da bandeja encaixa na vaga dele, o
+   encaixado volta); arrastar não existe no DS e não entrou.
 
 Arquivo por família: `telas-do-clone.tsx` importa só `@edu/ui/ds-unoochat`;
 `telas-da-escola.tsx` só `@edu/ui/ds`. No CSS a fronteira está MARCADA — e
@@ -57,16 +64,18 @@ O bundle é público, e o segredo aqui não é escondido: **ele não desce**.
   a monta por `Omit`. O gabarito cruza a fronteira UMA vez, dentro de
   `revelacao`, só o das três do estudante, e só depois do voto E da revelação
   aberta pela turma.
-- As frases do cartão chegam SEM a resposta esperada (o servidor as gera das
-  três mensagens, com semente na sessão, e guarda a resposta certa no envio).
-  O recibo é o estado com `cartao.enviado` — nada diz se a criança acertou.
-- As peças da regra chegam só com `id` e rótulo: o tipo de cada ação e quais
-  condições pegam o áudio são o gabarito dela, e quem simula a regra é o
-  servidor (o resultado volta pronto em `regra.testes`).
-- O pacote (as 8 mensagens), o convite da Nina com o `{tema}`, a despedida, a
-  fala do cartão, o desafio do tio, os rótulos de motivo, das peças e das
-  previsões, e o callback do motivo vêm da api. `lib/textos.ts` tem só a copy
-  da TELA.
+- O quadro do alerta traz os crachás das OITO mensagens depois da revelação
+  (decisão de produto), mas os pedidos chegam SEM a expressão esperada, e
+  quem executa o filtro é o servidor: a tela recebe os ids que passaram e só
+  pinta (contorno + etiqueta "Destacada", sem cor de acerto).
+- Os blocos do robô chegam com `id`, rótulo e ícone: o TIPO de cada ação é o
+  gabarito dele, e quem executa o robô é o servidor (o resultado de cada
+  mensagem volta pronto em `robo.ligacoes`; a tela só anima a chegada). Os
+  sinais das quatro mensagens do robô são ABERTOS — descem em `robo.mensagens`.
+- O pacote (as 8 mensagens), o convite da Nina com o `{tema}`, a despedida, o
+  desafio do tio, os rótulos de motivo e dos blocos, os pedidos e os rótulos
+  do quadro, as mensagens do robô e o callback do motivo vêm da api.
+  `lib/textos.ts` tem só a copy da TELA.
 
 **O grep do bundle é por CONTEÚDO, não por nome de prop.** `veracidade` e
 `Verdadeira` aparecem no `dist/` e está certo: são as chaves e os rótulos dos
@@ -77,7 +86,8 @@ A=apps/experiencias/exp05ef1b/dist/assets
 grep -ohE "Pedro Henrique|portão lateral|Ofício Circular|passeio ao museu" $A/*.js   # o banco curado
 grep -ohE "msg_[1-8][^;]{0,60}(verdadeira|falsa|emocional|neutra)" $A/*.js          # o par id ↔ gabarito
 grep -ohE "nao_atingiu|em_processo" $A/*.js                                         # o nível
-grep -ohE 'comparo com uma fonte|Sua regra pegou|pegaOAudio|"checagem"|esperado' $A/*.js  # o gabarito da regra e do cartão
+grep -ohE 'comparo com fonte|Checou antes de encaminhar|Passou direto|Tio Paulo|Banco Seguro' $A/*.js  # os blocos e as mensagens do robô
+grep -ohE 'pegaOTio|"checagem"|"repasse"|esperada:|Destaque para o grupo|Falsa E Emocional' $A/*.js  # o gabarito do robô e do alerta
 ```
 
 `src/lib/textos.test.ts` faz a mesma varredura sobre o `src/` (sem precisar de
@@ -92,14 +102,21 @@ campo dela vale como estado: um F5 cai sempre numa tela certa do passo.
 
 Dois casos que não são óbvios:
 
-- **O cartão segue o caminho da criança, não o botão do professor.** Ele
-  aparece com os crachás (na revelação e na síntese) e só fecha quando ela o
-  envia. Na reflexão, quem ainda não o enviou cai no passo `cartao` — o Mural
-  inteiro, com o cartão no fim — e só depois na `regra`. É o que cobre quem
-  votou atrasado: ninguém chega ao tio sem ter visto os crachás.
-- **Enviar a regra fecha a missão**: o `POST /concluir` sai sozinho depois do
-  `POST /regra` (idempotente, e tenta de novo sem rede), e a casca "Missão
-  Concluída" mostra a regra e a despedida da Nina.
+- **O alerta não é passo, é uma janela da revelação** (`alerta.aberto`): o
+  montador só aparece com a turma na revelação, um pedido por vez ("Alerta n
+  de 4"), e a síntese o fecha — ficam as bolhas enviadas. "Ver resultado" só
+  acende com uma expressão inteira; "Enviar alerta ao grupo", só com a
+  expressão da tela IGUAL à última executada (`podeEnviarAlerta`; a api cobra
+  com 400 `execute-antes`). O montador é estado da aba; um F5 volta ao último
+  filtro executado do pedido. Na reflexão, todo mundo vai ao robô.
+- **O robô alterna MONTAR e LIGADO**: "Ligar o robô" (condição e uma ação)
+  devolve a ligação e a tela vira a simulação dela (as mensagens chegam uma a
+  uma, `MS_POR_MENSAGEM_DO_ROBO`; com `prefers-reduced-motion`, tudo de uma
+  vez); "Mudar o robô" volta à montagem. Até 5 ligações. Enviar sem ligar é
+  permitido. **Enviar o robô fecha a missão**: o `POST /concluir` sai sozinho
+  depois do `POST /robo` (idempotente, e tenta de novo sem rede), e a casca
+  "Missão Concluída" mostra o card "Seu robô do grupo" (os blocos e a frase)
+  e a despedida da Nina.
 
 ## O polling compara QUATRO coisas
 
@@ -107,7 +124,7 @@ Dois casos que não são óbvios:
 mudou `passo`, `preparada`, `fase` OU `atividade` (`gateMudou`). A `fase` é a
 que não parece necessária e é: quem ainda está no grupo quando a revelação abre
 continua no grupo (o passo não muda). A `atividade` pega "Zerar a turma" e o
-pacote novo — aí a aba zera a vista e as respostas do cartão, porque tudo
+pacote novo — aí a aba zera a vista (e o filtro e o robô em montagem), porque tudo
 era de outro grupo. Na releitura, com a mesma atividade e ainda no grupo, a
 SELEÇÃO da tela vence a do servidor: o `PUT` do último toque pode estar em voo.
 
@@ -126,12 +143,12 @@ ação que o recebeu:
 
 | Status | No clone | Na casca |
 |---|---|---|
-| sem rede, 5xx, 429 | presença do cabeçalho vira "Conectando..." (e aviso rápido se foi toque) | um `AlertBox` de erro na tela da regra |
+| sem rede, 5xx, 429 | presença do cabeçalho vira "Conectando..." (e aviso rápido se foi toque) | um `AlertBox` de erro na tela do robô |
 | 401 | janela "Sua conexão expirou. Toque para reconectar." — reconectar é RELER; o hub renova o token sozinho | a mesma janela |
 | 403 | "Este grupo ainda não abriu para a sua turma…" | idem |
 | 409 | relê a sessão (o relógio da turma andou) — sem mensagem | idem |
 
-A missão não tem texto livre de menor: a regra é montada com peças, e o
+A missão não tem texto livre de menor: o robô é montado com blocos, e o
 `POST /reflexao` (o Se/Então de texto, ADR-145) não volta.
 
 ## O mensageiro é o Unoochat, não o clone do WhatsApp (ADR-134, 0.3.0)
@@ -217,6 +234,6 @@ Os pedidos visuais do PO de 2026-10-05:
 
 ## `permissoes: ["forms"]`
 
-Os rádios do `Poll` e do cartão e os `Selection` da regra são campos de
-formulário, e sem o token no `sandbox` do iframe um formulário morre em
-silêncio (a lição da exp02em1b).
+Os rádios do `Poll` e da folha de encaminhar são campos de formulário, e sem
+o token no `sandbox` do iframe um formulário morre em silêncio (a lição da
+exp02em1b).
