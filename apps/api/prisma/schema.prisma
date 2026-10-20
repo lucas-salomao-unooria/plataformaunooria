@@ -3443,6 +3443,9 @@ model Exp06ef1bSessao {
   curtidos      Json @default("[]")
   /// Os posts salvos AGORA (tirar dos salvos tira daqui).
   salvos        Json @default("[]")
+  /// A PASTA de cada post salvo (`{postId: area}`) — a separação da EF06CO01
+  /// feita no feed desde a 0.7.0 (ADR-176); corrigida no voto.
+  pastas        Json @default("{}")
   /// Os posts em que o estudante ficou mais de 5 s (uma vez por post).
   permanencias  Json @default("[]")
 

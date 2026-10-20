@@ -58,9 +58,10 @@ dela, nas ações.
 
 A unidade 1 do 6º ano é \textbf{O Júri Estadual de Projetos}
 (\adrr{ADR-137}), no Unoovista, que nasceu na 0.1.0, na porta 5185, e está
-na 0.5.0 desde os quarenta projetos (\adrr{ADR-164}), depois da 0.2.0 dos
-ajustes do PO (\adrr{ADR-151}), da 0.3.0 do ciclo do voto (\adrr{ADR-152}) e da
-0.4.0 do PRD v2 (\adrr{ADR-157}). O 6º ano
+na 0.7.0 desde os ajustes do time que rodou a missão (\adrr{ADR-176}), depois
+da 0.2.0 dos ajustes do PO (\adrr{ADR-151}), da 0.3.0 do ciclo do voto
+(\adrr{ADR-152}), da 0.4.0 do PRD v2 (\adrr{ADR-157}), da 0.5.0 dos quarenta
+projetos (\adrr{ADR-164}) e da 0.6.0 do Canal A (\adrr{ADR-174}). O 6º ano
 passa a ter duas missões: ela e O Rastro do Boato (\cd{exp06ef2b}), da
 unidade 2.
 
@@ -244,13 +245,14 @@ da missão injeta o que só ela sabe montar:
     motor executou (curtir e ficar pesam, salvar não, o limiar e o resto do
     feed só com projetos novos da área em foco, \adrr{ADR-157},
     \adrr{ADR-164}), as peças da regra SE \ldots{} ENTÃO com a certa marcada
-    (\adrr{ADR-174}) e o caso Mariana com os cartões
-    certos marcados. O componente é \arq{guia/\B{}material-do-juri.tsx}. O
-    guia tem 29\,min em tela e o corte depois do Passo 3; a nota pedagógica da
+    (\adrr{ADR-174}); o caso Mariana saiu na 0.7.0 (\adrr{ADR-176}). O
+    componente é \arq{guia/\B{}material-do-juri.tsx}. O
+    guia tem cerca de 24\,min em tela (eram 29 com o caso Mariana; o Passo 6,
+    \enquote{Refletir}, é fora da tela) e o corte depois do Passo 3; a nota pedagógica da
     EF06CO10 saiu com ela (\adrr{ADR-174}). Com quarenta estandes, o total fora do feed é o
-    mesmo para todos; o guia manda comparar as telas ÁREA POR ÁREA e o feed
-    \enquote{sem as suas curtidas}, nunca anunciar um número
-    (\adrr{ADR-164}).
+    mesmo para todos; o guia manda comparar ÁREA POR ÁREA, pela grade de cada
+    \emph{hashtag} e pelas pastas da aba Jurado, nunca anunciar um número
+    (\adrr{ADR-164}, \adrr{ADR-176}).
   \item \textbf{backup-exp04ef1b} (o UnooTube, arquivado na \adrr{ADR-116}; o
     bloco saiu do guia com ele) --- a tabela dos 21 vídeos, com o \cd{factual} de
     cada um, vinha de \rota{GET /unootube/professor/videos}. A criança de nove
@@ -1756,32 +1758,34 @@ evidências, e exige o \emph{podcast} pronto, com a voz do TTS. Antes, a suíte 
 
 \textbf{6º ano \textperiodcentered{} Unidade 1 \textperiodcentered{} clone de
 rede social de fotos \textperiodcentered{} \cd{unoovista}, com a tela da escola
-em \cd{unooria} \textperiodcentered{} 0.6.0 (o Canal A puro)}
+em \cd{unooria} \textperiodcentered{} 0.7.0 (os ajustes do time, \adrr{ADR-176})}
 
 O estudante é jurado de uma mostra científica estadual, dentro do Unoovista. A
 comissão entrega o crachá, e ele rola um feed de dez posts dos estandes ---
 quatro áreas, dez projetos por área, nenhum post repetido --- ou oito minutos,
 o que vier primeiro, curtindo o que quiser. As curtidas e o tempo parado num
 post \textbf{afunilam o feed em silêncio}: vencida a área líder, o resto do
-feed é só dela, com projetos novos dela. Ele vota numa cédula
-lacrada de quatro elementos (o \emph{latch} 1), \textbf{separa nas quatro
-áreas os estandes que viu} (EF06CO01, ainda na voz da comissão) e espera a
-turma: é o PICO, em
+feed é só dela, com projetos novos dela. Enquanto rola, \textbf{guarda cada
+estande na pasta da área dele}, no Salvar do post, como as coleções de posts
+salvos de uma rede social (EF06CO01, na voz da comissão). Ele vota numa cédula
+lacrada de quatro elementos (o \emph{latch} 1), que só fecha com todo estande
+visto numa pasta, e espera a turma: é o PICO, em
 que o professor projeta na lousa a dispersão dos votos por área e conduz a
 plenária. Quando o professor clica \enquote{Liberar Auditoria}, cada um vê a
-\textbf{Galeria Oculta}: quantos dos estandes nunca chegaram ao feed dele,
-\textbf{o que ficou fora por área} e o \textbf{contraste sem curtidas} --- o
-feed que ele teria visto sem as próprias curtidas ---, busca por \emph{hashtag}, inspeciona estandes e \enquote{Mantém o voto
+\textbf{Galeria Oculta}: quantos dos estandes nunca chegaram ao feed dele;
+busca por \emph{hashtag}, inspeciona estandes e \enquote{Mantém o voto
 inicial} ou \enquote{Confirma o Voto Revisado} (o \emph{latch} 2). Daí segue
 sozinho: na tela da escola, monta a \textbf{regra SE \ldots{} ENTÃO} que o
-programa do feed executou (EF06CO03) e vê a regra certa ligada ao próprio feed;
-ainda na escola, resolve o caso Mariana, cujos cartões encerram a missão, e
-recebe o crachá homologado, com o infográfico da Unooria embaixo. A versão
+programa do feed executou (EF06CO03), vê a regra certa ligada ao próprio feed
+e, em \enquote{Concluir o Julgamento}, recebe o crachá homologado, com o
+infográfico da Unooria embaixo: a regra encerra a missão. A versão
 vigente segue o PRD v2 com os desvios aprovados (\adrr{ADR-157}), que supera a
 \adrr{ADR-151} e a \adrr{ADR-152} no que conflitam, os quarenta projetos
 (\adrr{ADR-164}), que substituem a saturação por formatos e a taxa de
 invisibilidade, e o Canal A puro (\adrr{ADR-174}), que tira a EF06CO10, as
-enquetes, a cadeia de quatro blocos e o par simulado; a origem está na
+enquetes, a cadeia de quatro blocos e o par simulado, e os ajustes do time
+que rodou a missão (\adrr{ADR-176}), que levam a separação para as pastas do
+feed, tiram o caso Mariana e enxugam a Galeria Oculta; a origem está na
 \adrr{ADR-137}.
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
@@ -1794,7 +1798,7 @@ O motor do feed é do servidor & \arq{regras/afunilamento.ts}, puro e
   de 5\,s com 60\,\% do post visível é um fato por post --- e manda em
   \rota{POST /juri-estadual/feed/eventos}. A abertura são quatro posts, um de
   cada área. Curtida vale 3, permanência vale 1, \textbf{salvar vale 0} (grava
-  o evento, não pesa). Com 6 numa área ela é a líder; \textbf{sem curtida
+  o evento e a pasta, não pesa). Com 6 numa área ela é a líder; \textbf{sem curtida
   nenhuma, a permanência sozinha elege}.\\
 \zebra O feed sem repetição & Desde a 0.5.0 (\adrr{ADR-164}) o motor serve
   só \cd{apresentacao} (id \cd{proj-xN:apresentacao}, de \cd{proj-a1} a
@@ -1815,30 +1819,31 @@ Os 8 minutos & O 1º \cd{proximo: true} grava \cd{feed\_iniciado\_em};
   manda \rota{POST /juri-estadual/cedula/batimento} a cada 15\,s; o painel do
   professor acende o ícone de ocioso com mais de 60\,s, e ele apaga sozinho
   sem batimento por 40\,s.\\
-A separação (EF06CO01) & O passo \cd{classificacao}, entre o voto e a
-  espera (\adrr{ADR-174}). \rota{GET /juri-estadual/\B{}sessao} traz os estandes
-  DISTINTOS que o feed serviu (até dez), com id opaco \cd{cl-xxx} embaralhado
-  pela semente, título e imagem --- sem área, \emph{hashtag} nem perfil (o
-  perfil do post é a \emph{hashtag}). A criança escolhe a área de cada um por
-  toque ou teclado (\cd{Chip} em grupo de rádio, sem arrastar,
-  \adrr{ADR-162}), na voz da comissão. \rota{POST /juri-estadual/\B{}classificacao},
-  uma vez só (409 \cd{classificacao-ja-enviada}; corpo incompleto ou de outra
-  sessão, 400), corrige no servidor (\arq{regras/classificacao.ts}) e responde
-  só o estado: a criança não vê o acerto. Com a galeria já liberada, ela
-  termina a separação e entra na galeria em seguida.\\
+A separação (EF06CO01) nas pastas & No feed, desde a 0.7.0
+  (\adrr{ADR-176}). O Salvar do post abre a folha \enquote{Salvar em} com as
+  quatro pastas (as áreas do pacote); tocar numa guarda o post, ou o MOVE, e
+  \enquote{Remover dos salvos} o tira. \rota{POST /juri-estadual/feed/eventos}
+  leva \cd{salvamentos[].pasta}; o feed devolve \cd{pastas} e \cd{semPasta}
+  (os estandes vistos ainda sem pasta). A cédula fica travada, e diz quantos
+  faltam, até \cd{semPasta} ser zero; o voto incompleto é 409
+  \cd{estandes-sem-pasta}. No mesmo \emph{update} do voto o servidor corrige as
+  pastas (\arq{regras/classificacao.ts}), grava \cd{classificacao\_*} e marca;
+  a criança não vê o acerto. O post mostra perfil e \emph{hashtag}, que a tela
+  própria da 0.6.0 escondia: é o risco aceito na \adrr{ADR-176}.\\
 \zebra O acervo não desce antes da galeria & O post é uma \emph{allowlist}
   (\arq{regras/publico.ts}). \rota{GET /juri-estadual/galeria} exige o passo
   efetivo \cd{galeria} --- o voto E a etapa (403 \cd{galeria-nao-liberada}) ---
   e traz, tudo calculado no servidor (o motor nunca desce):
   \cd{invisibilidade} \cd{\{ocultos, total\}} (\enquote{30 de 40 estandes
   nunca chegaram ao seu feed}, sem porcentagem; o total é o do pacote),
-  \cd{porArea} (\enquote{Tecnologia: você viu 7 de 10}), \cd{semCurtidas} (o
-  \textbf{contrafactual} \enquote{Sem as suas curtidas, o seu feed teria
-  trazido:\ldots}: o feed desta sessão recalculado com a mesma semente, sem
-  curtidas nem permanências, com N = os posts que a criança viu),
-  \cd{ocultosAbertos}, \cd{podeManter} e o \cd{resumo} (o bastidor, a ficha de
-  inspeção). A grade de 3 colunas mostra os ocultos de UMA área, escolhida por
-  \emph{chips}; abre na área que mais ficou fora.\\
+  \cd{porArea}, \cd{semCurtidas} (o \textbf{contrafactual}: o feed desta
+  sessão recalculado com a mesma semente, sem curtidas nem permanências, com
+  N = os posts que a criança viu), \cd{ocultosAbertos}, \cd{podeManter} e o
+  \cd{resumo} (o bastidor, a ficha de inspeção). Desde a 0.7.0
+  (\adrr{ADR-176}) a tela vai do badge direto à busca: a contagem por área e
+  o contraste \enquote{Sem as suas curtidas} saíram dela, e \cd{porArea} só
+  escolhe a área inicial da grade. A grade de 3 colunas mostra os ocultos de
+  UMA área, escolhida por \emph{chips}; abre na área que mais ficou fora.\\
 A revisão: dois botões & \cd{manter} exige ao menos um oculto aberto
   (409 \cd{galeria-sem-inspecao}); \cd{trocar} aceita os outros projetos do
   pacote (a lista é filtrada pelos mesmos \emph{chips} de área). Depois,
@@ -1858,20 +1863,23 @@ A regra SE \ldots{} ENTÃO (EF06CO03) & No passo \cd{cadeia} (o nome
   da escola. \rota{POST /juri-estadual/\B{}regra}, uma vez só, responde a
   \textbf{revelação}: as peças escolhidas, as certas e o \cd{motivo}
   (\cd{curtidas}, \cd{permanencia} ou \cd{variado}, com a área em foco do feed
-  desta criança, \arq{regras/regra.ts}); a tela a mostra antes do caso
-  Mariana. Enviar de novo devolve a mesma revelação. \enquote{Ficar muito
+  desta criança, \arq{regras/regra.ts}), e \textbf{conclui a missão} (passo
+  \cd{fim} e \cd{concluida\_em} no mesmo \emph{update}, \adrr{ADR-176}); a tela
+  mostra a revelação e o botão \enquote{Concluir o Julgamento}. Enviar de novo
+  devolve a mesma revelação. \enquote{Ficar muito
   tempo} não é distrator: o motor pesa a permanência.\\
-\zebra Mariana & O caso e os cinco cartões literais (\cd{m1}--\cd{m3},
-  \cd{t1}--\cd{t2}), embaralhados por sessão, na tela da escola. Grava a
-  escolha, não vira evidência e \textbf{conclui a missão} (passo \cd{fim} e
-  \cd{concluida\_em} no mesmo \emph{update}); \rota{POST /juri-estadual/\B{}concluir}
-  fica só para sessões antigas paradas em \cd{enquetes}.\\
+\zebra Sessões antigas & O caso Mariana e a tela da separação saíram na 0.7.0
+  (\adrr{ADR-176}); os passos \cd{mariana} e \cd{classificacao} ficam no
+  \emph{CHECK}. Parada em \cd{classificacao}, a tela pede \rota{POST passo
+  \{para: "lacrada"\}} e segue para a espera SEM marca da EF06CO01; parada em
+  \cd{mariana} ou \cd{enquetes}, \rota{POST /juri-estadual/\B{}concluir}.\\
 Atividade e rodada & A ATIVIDADE é o \textbf{pacote}, com origem
   \cd{ia} ou \cd{padrao}. Criar não põe no ar (\adrr{ADR-130}); zerar abre a
   rodada seguinte e apaga a evidência do pacote (\adrr{ADR-155}).\\
-\zebra Evidência & A ficha \arq{evidencias/fichas/exp06ef1b.ts}, \textbf{versão 5}
-  (\adrr{ADR-174}), sem perguntas, dois marcadores de ação.
-  \textbf{EF06CO01} (a principal) por \cd{classificacao}, a separação: 90\,\%
+\zebra Evidência & A ficha \arq{evidencias/fichas/exp06ef1b.ts}, \textbf{versão 6}
+  (\adrr{ADR-176}, sobre a 5 da \adrr{ADR-174}), sem perguntas, dois marcadores
+  de ação. \textbf{EF06CO01} (a principal) por \cd{classificacao}
+  (\enquote{Pastas dos estandes}), marcada no voto: 90\,\%
   ou mais certos = \cd{atingiu} (9 ou 10 de 10); 50\,\% ou mais =
   \cd{em\_processo}; menos = \cd{nao\_atingiu}; com menos de quatro estandes
   vistos, SEM marca. \textbf{EF06CO03} por \cd{regra}: as duas peças certas =
@@ -1938,9 +1946,11 @@ vagas que a IA escreve e o professor revisa na criação (\rota{homologar}).
     estandes}) e \textbf{sem post repetido} no feed (0.5.0).
   \item \textbf{Sem busca antes do voto}: a aba Busca responde fechada.
   \item \textbf{Sem contagem de curtidas} no post e \textbf{sem cronômetro}.
-  \item \textbf{Sem certo ou errado na separação}, nem depois do envio: o
-    nível é do professor (0.6.0).
-  \item \textbf{Sem arrastar} na separação nem na regra (\adrr{ADR-162}).
+  \item \textbf{Sem certo ou errado nas pastas}, nem depois do voto: o
+    nível é do professor.
+  \item \textbf{Sem arrastar} nas pastas nem na regra (\adrr{ADR-162}).
+  \item \textbf{Sem caso Mariana} e \textbf{sem contagem por área nem
+    contraste na Galeria Oculta} (0.7.0, \adrr{ADR-176}).
   \item \textbf{Sem enquetes nos Stories} nem cadeia de quatro blocos (0.6.0,
     \adrr{ADR-174}).
   \item \textbf{Sem nome ligado a escolha} na lousa.
@@ -1950,20 +1960,23 @@ vagas que a IA escreve e o professor revisa na criação (\rota{homologar}).
 O manifesto declara \cd{viewport} 375 por 812, \cd{permissoes: ["forms"]}, o
 \cd{produto} \cd{entre-redes} e a porta 5185 (\cd{strictPort}). A barra
 inferior tem \textbf{quatro abas} (Início, Busca, Notificações, Jurado),
-nenhuma com fluxo próprio. O caso Mariana e o infográfico final estão na seção
-\cd{unooria} do DS --- o infográfico numa faixa própria (\cd{.fim\_\_escola})
-embaixo do fim da comissão. A versão está na \textbf{0.6.0} nos três lugares
+nenhuma com fluxo próprio (o Jurado mostra \enquote{Suas pastas}). A regra e
+o infográfico final estão na seção \cd{unooria} do DS --- o infográfico numa faixa própria (\cd{.fim\_\_escola})
+embaixo do fim da comissão. A versão está na \textbf{0.7.0} nos três lugares
 (\arq{experiencia.json}, \arq{package.json} e \cd{EXP\_VERSION}), com o
-instrumento 4.0.0. As migrações
+instrumento 5.0.0. As migrações
 \arq{20261010120000\_\B{}exp06ef1b\_\B{}prd\_\B{}v2},
 \arq{20261014120000\_\B{}exp06ef1b\_\B{}quarenta\_\B{}projetos} e
-\arq{20261018090000\_\B{}exp06ef1b\_\B{}canal\_\B{}a} não apagam
+\arq{20261018090000\_\B{}exp06ef1b\_\B{}canal\_\B{}a} e
+\arq{20261020120000\_\B{}exp06ef1b\_\B{}ajustes\_\B{}do\_\B{}time} não apagam
 coluna; a segunda só troca dois \emph{CHECKs} (16 ou 40 projetos; o id
 \cd{proj-a10}), e a terceira acrescenta as seis colunas da separação e da
 regra, o passo \cd{classificacao} e \emph{CHECKs} fracos de propósito (uma
-sessão da 0.5.0 em \cd{lacrada} sem separação continua válida). Pacotes de
-dezesseis, sessões 2.0.0 e sessões paradas em \cd{enquetes} continuam
-legíveis.
+sessão da 0.5.0 em \cd{lacrada} sem separação continua válida); a quarta
+acrescenta a coluna \cd{pastas} (\cd{JSONB}) e afrouxa o \emph{CHECK} dos
+cartões (quem tem cartões está em \cd{enquetes} ou \cd{fim}). Pacotes de
+dezesseis, sessões 2.0.0 e sessões paradas em \cd{classificacao},
+\cd{mariana} ou \cd{enquetes} continuam legíveis.
 \end{atencao}
 
 As suítes da api (\arq{tests/\B{}juri-estadual-\B{}regras.spec.ts}, sem banco,
@@ -1972,8 +1985,11 @@ tabelas) e \arq{tests/\B{}juri-estadual-\B{}midia.spec.ts} cobrem os
 quarenta em centenas de sementes (curtiu cedo: dez distintos, 7/1/1/1; sem
 toque: 3/3/2/2; 30 de 40; o contrafactual; a concentração 70 por 30), a 0.4.x
 continuada, os \emph{CHECKs} (16 e 40 sim, 15 não; \cd{proj-d10} sim,
-\cd{proj-a11} não), o relógio, o batimento, os \emph{latches}, a separação e
-a regra (uma vez só, a correção no servidor, a revelação), o banco padrão de quarenta e as imagens dele (guarda de \cd{admin},
+\cd{proj-a11} não), o relógio, o batimento, os \emph{latches}, as pastas
+(guardar, mover, tirar, sem peso no feed), o voto que corrige a separação
+(409 sem todas as pastas; 7 de 10 = em processo), a regra (uma vez só, a
+correção no servidor, a revelação, a conclusão), as sessões antigas em
+\cd{classificacao} e \cd{mariana}, o banco padrão de quarenta e as imagens dele (guarda de \cd{admin},
 só as que faltam, atribuição no medidor), o preparo em cinco chamadas e o
 \emph{fallback}. A suíte de ponta a ponta
 \arq{scripts/e2e/estudante/\B{}13-juri-estadual.mjs} passou com IA real na
