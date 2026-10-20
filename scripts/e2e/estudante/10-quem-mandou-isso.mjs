@@ -1276,7 +1276,10 @@ await suite(
     r.exigir(
       ["condicoes", "acoes"].every(
         (k) => (opcoesDoRobo[k] ?? []).length > 0 && opcoesDoRobo[k].every((o) => Object.keys(o).sort().join() === "icone,id,rotulo"),
-      ) && !/"(tipo|checagem|repasse|pegaTodosOsRiscos|riscos)"/.test(JSON.stringify(noRobo.corpo?.robo ?? {})),
+      ) &&
+        /* `tipo` só nos BLOCOS: em `robo.mensagens` ele é o formato da mensagem (áudio, texto), aberto por desenho. */
+        !/"tipo"/.test(JSON.stringify(opcoesDoRobo)) &&
+        !/"(checagem|repasse|pegaTodosOsRiscos|riscos)"/.test(JSON.stringify(noRobo.corpo?.robo ?? {})),
       "os blocos descem com id, rótulo e ícone — o que cada ação faz fica no servidor",
     );
     const rotuloDo = (lista, id) => {
