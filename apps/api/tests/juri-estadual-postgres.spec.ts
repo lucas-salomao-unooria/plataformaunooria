@@ -19,8 +19,6 @@ import { EXP_ID, JuriEstadualService } from "../src/juri-estadual/juri-estadual.
 import { FALAS_DO_TEMA_PADRAO } from "../src/juri-estadual/podcast";
 import { fonteDoPodcastDaExp06ef1b } from "../src/juri-estadual/podcast-fonte";
 import { PreparoDaExp06ef1bService } from "../src/juri-estadual/preparo.service";
-import { itensDaClassificacao } from "../src/juri-estadual/regras/classificacao";
-import { feedDaLinha } from "../src/juri-estadual/regras/galeria";
 import { PROIBIDO_NA_LINHA_DO_PAINEL } from "../src/juri-estadual/regras/painel";
 import { ETAPAS, PASSOS } from "../src/juri-estadual/regras/passos";
 import { pecasCertas, pecasDaSessao } from "../src/juri-estadual/regras/regra";
@@ -233,28 +231,32 @@ async function rolarFeed(estudanteId: string, area?: Area, turmaId = ids.turma, 
 }
 
 /**
- * A SEPARAÇÃO (EF06CO01) de quem acabou de votar. A suíte sabe a área de cada
- * item porque lê a sessão no BANCO (a tela não sabe): `erradas` = quantos dos
- * primeiros itens vão para uma área errada.
+ * A SEPARAÇÃO (EF06CO01) nas PASTAS do feed (ADR-176): salva cada estande que
+ * o feed serviu na pasta da área dele. `erradas` = quantos dos primeiros
+ * estandes vão para uma pasta errada. Devolve o feed como o servidor o deixou.
  */
-async function respostasDaSeparacao(estudanteId: string, erradas = 0) {
-  const s = await sessaoDe(estudanteId);
-  return itensDaClassificacao(s.semente, feedDaLinha(s).servidos).map((item, i) => {
-    const certa = areaDoProjeto(item.projetoId);
-    return { itemId: item.id, area: i < erradas ? (AREAS.find((a) => a !== certa) as Area) : certa };
-  });
+async function guardarNasPastas(estudanteId: string, erradas = 0, turmaId = ids.turma, escolaId = ESCOLA) {
+  const s = SessaoSchema.parse(await service.sessao(escolaId, estudanteId, turmaId));
+  const vistos = new Set<string>();
+  const salvamentos: { postId: string; salvou: boolean; pasta: Area }[] = [];
+  for (const post of s.feed.posts) {
+    if (vistos.has(post.projetoId)) continue;
+    vistos.add(post.projetoId);
+    const certa = areaDoProjeto(post.projetoId);
+    const pasta = vistos.size <= erradas ? (AREAS.find((a) => a !== certa) as Area) : certa;
+    salvamentos.push({ postId: post.id, salvou: true, pasta });
+  }
+  return FeedSchema.parse(
+    await service.eventosDoFeed(escolaId, estudanteId, turmaId, { curtidas: [], salvamentos, permanencias: [], proximo: false }),
+  );
 }
 
-async function separar(estudanteId: string, erradas = 0) {
-  return service.classificar(ESCOLA, estudanteId, ids.turma, await respostasDaSeparacao(estudanteId, erradas));
-}
-
-/** Rola, vota e — salvo `separar: false` — separa os estandes, todos certos: a sessão chega à espera (`lacrada`). */
-async function votar(estudanteId: string, area?: Area, opcoes: { separar?: boolean } = {}) {
+/** Rola, guarda nas pastas — salvo `pastas: false` — e vota: a sessão chega à espera (`lacrada`), com a separação corrigida. */
+async function votar(estudanteId: string, area?: Area, opcoes: { pastas?: boolean; erradas?: number } = {}) {
   const feed = await rolarFeed(estudanteId, area);
+  if (opcoes.pastas !== false) await guardarNasPastas(estudanteId, opcoes.erradas ?? 0);
   const projetoId = (feed.posts.find((p) => !area || p.area === area) ?? feed.posts[0])!.projetoId;
   await service.votar(ESCOLA, estudanteId, ids.turma, ({ projetoId, conviccao: "vi_tudo" as const }));
-  if (opcoes.separar !== false) await separar(estudanteId);
   return { feed, projetoId };
 }
 
@@ -266,7 +268,7 @@ async function escolhaDaRegra(estudanteId: string, certas: { se: boolean; entao:
   return { se: certas.se ? certa.se : errada(pecas.se), entao: certas.entao ? certa.entao : errada(pecas.entao) };
 }
 
-/** Do zero até o passo `cadeia` (a regra): vota, separa, a turma libera a galeria, busca e abre dois ocultos de outras áreas, mantém e avança. */
+/** Do zero até o passo `cadeia` (a regra): guarda nas pastas, vota, a turma libera a galeria, busca e abre dois ocultos de outras áreas, mantém e avança. */
 async function ateACadeia(estudanteId: string) {
   const { projetoId } = await votar(estudanteId, "area_b");
   const gate = await service.gate(ESCOLA, estudanteId, ids.turma);
@@ -505,6 +507,11 @@ describe("os CHECKs recusam o que dizem recusar", () => {
     await naSessao("mecanismo = 'm4'");
     await naSessao("passo = 'fim'");
     await naSessao("concluida_em = now()");
+    /* Cartões fora de `enquetes`/`fim` continuam recusados; `fim` SEM cartões passou a valer (ADR-176, a regra conclui). */
+    await naSessao("mecanismo = 'm1', atitude = 't1', cartoes_em = now()");
+    expect(await def("exp06ef1b_sessoes_cartoes_check")).toContain("cartoes_em IS NULL");
+    /* As pastas são um objeto. */
+    await naSessao("pastas = '[]'");
   });
 
   test("a separação e a regra (ADR-174): as colunas andam juntas, os acertos cabem no total, e a regra só com o carimbo", async () => {
@@ -595,7 +602,9 @@ describe("a porta da sala e a atividade em andamento", () => {
   test("com a atividade no ar, a entrada abre a rodada 1, sem acervo e sem blocos do fim", async () => {
     const pacoteId = await prepararAtividade();
     const s = SessaoSchema.parse(await entrar(ids.ana));
-    expect(s).toMatchObject({ pacoteId, rodada: 1, etapa: "exploracao", passo: "credencial", voto: null, cadeia: null, mariana: null });
+    expect(s).toMatchObject({ pacoteId, rodada: 1, etapa: "exploracao", passo: "credencial", voto: null, cadeia: null });
+    expect(s).not.toHaveProperty("mariana");
+    expect(s).not.toHaveProperty("classificacao");
     expect(s).not.toHaveProperty("pacotes");
     expect(s).not.toHaveProperty("desvio");
     expect(s).not.toHaveProperty("motivos");
@@ -603,6 +612,8 @@ describe("a porta da sala e a atividade em andamento", () => {
       posts: [],
       curtidos: [],
       salvos: [],
+      pastas: {},
+      semPasta: 0,
       completo: false,
       tempoEsgotado: false,
       encerraEm: null,
@@ -679,6 +690,30 @@ describe("o feed afunilado, servido pelo motor", () => {
     /* Sem curtida nem permanência, o feed segue variado. */
     expect(new Set(feed.posts.slice(4).map((p) => p.area)).size).toBeGreaterThan(1);
     expect(SessaoSchema.parse(await entrar(ids.bia)).feed.salvos).toEqual(feed.salvos);
+    /* Salvar sem pasta (o bundle anterior à 0.7.0) não separa: os dez seguem sem pasta. */
+    expect(feed.pastas).toEqual({});
+    expect(feed.semPasta).toBe(10);
+  });
+
+  test("as PASTAS (ADR-176): salvar com pasta guarda, salvar de novo MOVE, tirar dos salvos apaga — e não pesam no feed", async () => {
+    const feed = await rolarFeed(ids.bia);
+    const [p1, p2] = feed.posts;
+    const evento = async (salvamentos: { postId: string; salvou: boolean; pasta?: Area }[]) =>
+      FeedSchema.parse(
+        await service.eventosDoFeed(ESCOLA, ids.bia, ids.turma, { curtidas: [], salvamentos, permanencias: [], proximo: false }),
+      );
+    let f = await evento([{ postId: p1!.id, salvou: true, pasta: "area_a" }, { postId: p2!.id, salvou: true, pasta: "area_b" }]);
+    expect(f.pastas).toMatchObject({ [p1!.id]: "area_a", [p2!.id]: "area_b" });
+    f = await evento([{ postId: p1!.id, salvou: true, pasta: "area_c" }]);
+    expect(f.pastas[p1!.id]).toBe("area_c");
+    f = await evento([{ postId: p2!.id, salvou: false }]);
+    expect(f.pastas).not.toHaveProperty(p2!.id);
+    expect(f.salvos).not.toContain(p2!.id);
+    /* Um F5 traz as pastas; os curtidos continuam vazios: a pasta não é curtida. */
+    const s = SessaoSchema.parse(await entrar(ids.bia));
+    expect(s.feed.pastas).toEqual(f.pastas);
+    expect(s.feed.curtidos).toEqual([]);
+    expect((await sessaoDe(ids.bia)).pastas).toEqual(f.pastas);
   });
 
   test("os 8 minutos contam no SERVIDOR desde a 1ª rolagem: esgotados, a cédula abre com menos de dez", async () => {
@@ -697,9 +732,17 @@ describe("o feed afunilado, servido pelo motor", () => {
     const esgotado = FeedSchema.parse(await service.eventosDoFeed(ESCOLA, ids.caio, ids.turma, semEventos));
     expect(esgotado).toMatchObject({ tempoEsgotado: true, cedulaLiberada: true, completo: false });
     expect(esgotado.posts).toHaveLength(5);
+    /* A cédula abriu, mas o voto espera os cinco estandes nas pastas (ADR-176) — e guardar ainda vale com o tempo esgotado. */
+    expect(esgotado.semPasta).toBe(5);
+    expect(await codigoDe(service.votar(ESCOLA, ids.caio, ids.turma, { projetoId: f.posts[0]!.projetoId, conviccao: "vi_tudo" }))).toBe(
+      "estandes-sem-pasta",
+    );
+    expect((await guardarNasPastas(ids.caio)).semPasta).toBe(0);
     expect(await service.votar(ESCOLA, ids.caio, ids.turma, { projetoId: f.posts[0]!.projetoId, conviccao: "vi_tudo" })).toMatchObject({
-      passo: "classificacao",
+      passo: "lacrada",
     });
+    /* Cinco estandes: dá para medir (o mínimo é quatro), e a separação é corrigida no voto. */
+    expect(await sessaoDe(ids.caio)).toMatchObject({ classificacaoAcertos: 5, classificacaoTotal: 5, classificacaoStatus: "atingiu" });
   });
 
   test("o batimento da cédula: grava, o painel acende o ocioso com mais de 60 s, e some com o voto", async () => {
@@ -713,6 +756,7 @@ describe("o feed afunilado, servido pelo motor", () => {
     painel = PainelSchema.parse(await service.painel(ESCOLA, ids.turma, ids.professora));
     expect(painel.linhas.find((l) => l.estudanteId === ids.duda)?.ocioso).toBe(false);
     await service.batimentoDaCedula(ESCOLA, ids.duda, ids.turma, { aberta: true, segundosSemToque: 90 });
+    await guardarNasPastas(ids.duda);
     const s = SessaoSchema.parse(await entrar(ids.duda));
     await service.votar(ESCOLA, ids.duda, ids.turma, { projetoId: s.feed.posts[0]!.projetoId, conviccao: "examinei_bem" });
     expect(await sessaoDe(ids.duda)).toMatchObject({ cedulaBatimentoEm: null, cedulaInativaDesde: null });
@@ -726,6 +770,7 @@ describe("o feed afunilado, servido pelo motor", () => {
   });
 
   test("projeto fora do feed é recusado; dois votos simultâneos: um lacra, o outro é 409", async () => {
+    await guardarNasPastas(ids.ana);
     const s = SessaoSchema.parse(await entrar(ids.ana));
     const vistos = new Set(s.feed.posts.map((p) => p.projetoId));
     const fora = conteudoDeTeste().projetos.find((p) => !vistos.has(p.id))!.id;
@@ -740,8 +785,9 @@ describe("o feed afunilado, servido pelo motor", () => {
     const recusa = [a, b].find((r) => r.status === "rejected") as PromiseRejectedResult;
     expect((recusa.reason as HttpException).getResponse()).toMatchObject({ codigo: "voto-ja-lacrado" });
     const depois = SessaoSchema.parse(await entrar(ids.ana));
-    /* Depois do voto, a SEPARAÇÃO (ADR-174): ninguém espera ainda — há tarefa. */
-    expect(depois).toMatchObject({ passo: "classificacao", aguardandoOProfessor: false });
+    /* Depois do voto, a espera: a separação já foi corrigida pelas pastas, no voto (ADR-176). */
+    expect(depois).toMatchObject({ passo: "lacrada", aguardandoOProfessor: true });
+    expect(await marcasDe("classificacao", ids.ana)).toEqual([{ status: "atingiu", rodada: 1 }]);
     expect(depois.voto).not.toBeNull();
     expect(Object.keys(depois.voto ?? {}).sort()).toEqual(["conviccao", "projetoId"]);
     expect(await codigoDe(service.eventosDoFeed(ESCOLA, ids.ana, ids.turma, semEventos))).toBe("voto-ja-lacrado");
@@ -799,8 +845,8 @@ describe("a Galeria Oculta e a revisão do voto", () => {
 
   test("PROVA 4: sem curtida nem permanência, o contrafactual é IGUAL ao feed real", async () => {
     const semToque = await rolarFeed(ids.enzo);
+    await guardarNasPastas(ids.enzo);
     await service.votar(ESCOLA, ids.enzo, ids.turma, { projetoId: semToque.posts[0]!.projetoId, conviccao: "vi_tudo" });
-    await separar(ids.enzo);
     const g = GaleriaSchema.parse(await service.galeria(ESCOLA, ids.enzo, ids.turma));
     const reais = new Set(semToque.posts.map((p) => p.projetoId));
     expect(new Set(g.semCurtidas.flatMap((a) => a.posts))).toEqual(reais);
@@ -851,7 +897,7 @@ describe("a Galeria Oculta e a revisão do voto", () => {
     await service.revisar(ESCOLA, ids.duda, ids.turma, { acao: "trocar" as const, projetoId: outro });
     expect(await evidenciaDe(ids.duda, "EF06CO10")).toEqual([]);
     expect(await marcasDe("auditoria", ids.duda)).toEqual([]);
-    /* Só a marca da separação, de antes da galeria. */
+    /* Só a marca da separação, do voto. */
     expect(await marcasDe("classificacao", ids.duda)).toHaveLength(1);
   });
 
@@ -868,41 +914,45 @@ describe("a Galeria Oculta e a revisão do voto", () => {
   });
 });
 
-describe("a separação, a regra e Mariana (ADR-174)", () => {
+describe("a separação nas pastas e a regra que conclui (ADR-174, ADR-176)", () => {
   beforeAll(async () => {
     await zerarMissao();
     await ateACadeia(ids.ana);
   });
 
-  test("a separação: depois do voto, os estandes vistos SEM área — e a galeria liberada espera quem não separou", async () => {
+  test("a separação nas pastas: o voto sem todos os estandes guardados é 409; com três erradas, 7 de 10 = em processo", async () => {
     /* A Bia vota com a galeria JÁ liberada (a Ana a liberou ao ir para a cadeia). */
-    await votar(ids.bia, "area_c", { separar: false });
-    const s = SessaoSchema.parse(await entrar(ids.bia));
-    expect(s).toMatchObject({ passo: "classificacao", etapa: "galeria", aguardandoOProfessor: false });
-    const itens = s.classificacao?.itens ?? [];
-    const distintos = new Set(feedDaLinha(await sessaoDe(ids.bia)).servidos.map((post) => post.split(":")[0]));
-    expect(itens).toHaveLength(distintos.size);
-    /* Nem área, nem hashtag, nem perfil, nem id de projeto. */
-    expect(itens.every((i) => Object.keys(i).sort().join(",") === "id,imagem,titulo")).toBe(true);
-    expect(JSON.stringify(itens)).not.toMatch(/area_|proj-|#/);
-    expect(await codigoDe(service.galeria(ESCOLA, ids.bia, ids.turma))).toBe("galeria-nao-liberada");
-  });
-
-  test("a separação: corpo de outra sessão ou incompleto é 400; uma vez só; a resposta não diz quantos acertou", async () => {
-    const respostas = await respostasDaSeparacao(ids.bia, 3);
-    expect(await codigoDe(service.classificar(ESCOLA, ids.bia, ids.turma, respostas.slice(1)))).toBe("payload-invalido");
-    const daAna = await respostasDaSeparacao(ids.ana);
-    expect(await codigoDe(service.classificar(ESCOLA, ids.bia, ids.turma, daAna))).toBe("payload-invalido");
-    const r = EstadoSchema.strict().parse(await service.classificar(ESCOLA, ids.bia, ids.turma, respostas));
-    /* Separou e caiu direto na galeria, que já estava liberada. */
+    const feed = await rolarFeed(ids.bia, "area_c");
+    const projetoId = feed.posts.find((p) => p.area === "area_c")!.projetoId;
+    expect(await codigoDe(service.votar(ESCOLA, ids.bia, ids.turma, { projetoId, conviccao: "vi_tudo" }))).toBe("estandes-sem-pasta");
+    const guardado = await guardarNasPastas(ids.bia, 3);
+    expect(guardado.semPasta).toBe(0);
+    /* A tela recebe as pastas que ELA escolheu, nunca o acerto. */
+    expect(JSON.stringify(guardado)).not.toMatch(/acert|certa|"certo"/);
+    const r = EstadoSchema.strict().parse(await service.votar(ESCOLA, ids.bia, ids.turma, { projetoId, conviccao: "vi_tudo" }));
+    /* Votou e caiu direto na galeria, que já estava liberada: não há mais tela de separação. */
     expect(r).toEqual({ passo: "galeria", etapa: "galeria" });
-    expect(await codigoDe(service.classificar(ESCOLA, ids.bia, ids.turma, respostas))).toBe("classificacao-ja-enviada");
     const linha = await sessaoDe(ids.bia);
-    expect(linha).toMatchObject({ passo: "lacrada", classificacaoAcertos: respostas.length - 3, classificacaoTotal: respostas.length });
-    /* 7 de 10 = em processo. */
+    expect(linha).toMatchObject({ passo: "lacrada", classificacaoAcertos: 7, classificacaoTotal: 10, classificacaoStatus: "em_processo" });
+    expect(linha.classificadaEm).not.toBeNull();
     expect(await marcasDe("classificacao", ids.bia)).toEqual([{ status: "em_processo", rodada: 1 }]);
     expect(await evidenciaDe(ids.bia, "EF06CO01")).toMatchObject([{ status: "em_processo", origem: "propria" }]);
-    expect(SessaoSchema.parse(await entrar(ids.bia)).classificacao).toBeNull();
+    /* Depois do voto, as pastas não mudam mais. */
+    expect(await codigoDe(service.eventosDoFeed(ESCOLA, ids.bia, ids.turma, semEventos))).toBe("voto-ja-lacrado");
+  });
+
+  test("a sessão ANTIGA parada na tela da separação (0.6.0) segue para a espera, sem marca", async () => {
+    await votar(ids.enzo, "area_a", { pastas: true });
+    await prisma.$executeRawUnsafe(
+      `UPDATE exp06ef1b_sessoes SET passo = 'classificacao', classificada_em = NULL, classificacao_respostas = NULL,
+         classificacao_acertos = NULL, classificacao_total = NULL, classificacao_status = NULL
+       WHERE escola_id = '${ESCOLA}' AND estudante_id = '${ids.enzo}'::uuid`,
+    );
+    expect(await service.pedirPasso(ESCOLA, ids.enzo, ids.turma, "lacrada")).toEqual({ passo: "galeria", etapa: "galeria" });
+    expect(await sessaoDe(ids.enzo)).toMatchObject({ passo: "lacrada", classificacaoStatus: null });
+    /* Antes do voto, pedir a espera é recusado. */
+    await entrar(ids.duda);
+    expect(await codigoDe(service.pedirPasso(ESCOLA, ids.duda, ids.turma, "lacrada"))).toBe("passo-invalido");
   });
 
   test("a separação de tudo certo é atingiu; a EF06CO10 não existe mais na missão", async () => {
@@ -915,7 +965,10 @@ describe("a separação, a regra e Mariana (ADR-174)", () => {
     const pecasDeOutra = pecasCertas(pecasDaSessao("outra-sessao"));
     expect(await codigoDe(service.montarRegra(ESCOLA, ids.ana, ids.turma, pecasDeOutra))).toBe("payload-invalido");
     const r = RespostaDaRegraSchema.parse(await service.montarRegra(ESCOLA, ids.ana, ids.turma, await escolhaDaRegra(ids.ana)));
-    expect(r).toMatchObject({ passo: "mariana", etapa: "galeria" });
+    /* A regra CONCLUI desde a 0.7.0 (ADR-176): o caso Mariana saiu. */
+    expect(r).toMatchObject({ passo: "fim", etapa: "galeria" });
+    expect(await sessaoDe(ids.ana)).toMatchObject({ passo: "fim", cartoesEm: null, mecanismo: null });
+    expect((await sessaoDe(ids.ana)).concluidaEm).not.toBeNull();
     /* A Ana curtiu a B: a regra "disparou" pelas curtidas. */
     expect(r.revelacao).toMatchObject({ motivo: "curtidas", area: "area_b" });
     expect(r.revelacao?.escolha).toEqual(r.revelacao?.certa);
@@ -931,23 +984,24 @@ describe("a separação, a regra e Mariana (ADR-174)", () => {
     expect(SessaoSchema.parse(await entrar(ids.ana)).cadeia).toMatchObject({ enviada: true, revelacao: r.revelacao });
   });
 
-  test("Mariana desce sem o certo; os cartões CONCLUEM, uma vez; concluir é idempotente em `fim`", async () => {
-    const m = SessaoSchema.parse(await entrar(ids.ana)).mariana;
-    expect(m?.mecanismos).toHaveLength(3);
-    expect(m?.atitudes).toHaveLength(2);
-    expect(JSON.stringify(m)).not.toContain("certo");
-    expect(await codigoDe(service.concluir(ESCOLA, ids.ana, ids.turma))).toBe("passo-invalido");
-    expect(EstadoSchema.parse(await service.escolherCartoes(ESCOLA, ids.ana, ids.turma, { mecanismo: "m2", atitude: "t1" }))).toEqual({
-      passo: "fim",
-      etapa: "galeria",
-    });
-    await service.escolherCartoes(ESCOLA, ids.ana, ids.turma, { mecanismo: "m1", atitude: "t2" });
+  test("concluir é idempotente em `fim`; sem enquetes nem cartões para responder", async () => {
     const s = SessaoSchema.parse(await entrar(ids.ana));
-    expect(s.mariana?.escolha).toEqual({ mecanismo: "m2", atitude: "t1" });
     expect(s.concluida).toBe(true);
+    expect(s).not.toHaveProperty("mariana");
     expect(await service.concluir(ESCOLA, ids.ana, ids.turma)).toEqual({ passo: "fim", etapa: "galeria" });
     /* Sem enquetes: as perguntas da ficha saíram, e a rota genérica não tem o que responder. */
     expect(await codigoDe(evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "D1"))).not.toBeNull();
+  });
+
+  test("a sessão ANTIGA parada no caso Mariana (0.6.0) conclui sem cartões", async () => {
+    await votar(ids.duda, "area_d");
+    await prisma.$executeRawUnsafe(
+      `UPDATE exp06ef1b_sessoes SET revisao_acao = 'manter', voto_revisado = voto_projeto, revisado_em = now(),
+         cadeia_tentativas = 1, cadeia_montada_em = now(), passo = 'mariana'
+       WHERE escola_id = '${ESCOLA}' AND estudante_id = '${ids.duda}'::uuid`,
+    );
+    expect(await service.concluir(ESCOLA, ids.duda, ids.turma)).toEqual({ passo: "fim", etapa: "galeria" });
+    expect(await sessaoDe(ids.duda)).toMatchObject({ passo: "fim", cartoesEm: null });
   });
 
   test("a sessão ANTIGA parada nas enquetes ainda conclui", async () => {

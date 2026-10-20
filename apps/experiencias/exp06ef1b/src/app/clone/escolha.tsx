@@ -2,8 +2,7 @@ import type { ReactNode } from "react";
 import { AvatarUnv, IconUnv, ListItem } from "@edu/ui/ds-unoovista";
 
 /**
- * Uma lista de escolha ÚNICA no clone — a cédula, a revisão do voto e os
- * cartões do caso Mariana.
+ * Uma lista de escolha ÚNICA no clone — a cédula e a revisão do voto.
  *
  * O Unoovista não publica rádio (o app real não tem): a linha é o `ListItem`
  * do DS como botão, com o glifo `check` à direita na escolhida — a marca não

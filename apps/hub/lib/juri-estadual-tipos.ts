@@ -24,8 +24,8 @@
  *   (`/juri-estadual/banco-padrao/imagens`): o hub só lê o progresso e pede
  *   as que faltam.
  *
- * O GABARITO (a peça certa da regra SE … ENTÃO, os cartões certos do caso
- * Mariana) aparece em `MaterialDoJuri`, que só rota de professor devolve.
+ * O GABARITO (a peça certa da regra SE … ENTÃO) aparece em `MaterialDoJuri`,
+ * que só rota de professor devolve. O caso Mariana saiu na 0.7.0 (ADR-176).
  *
  * As funções daqui são PURAS: o painel ao vivo e a criação da atividade são
  * client components e importam deste arquivo, e o `vitest` do hub só varre
@@ -486,12 +486,6 @@ export interface TurmaZerada {
   etapa: EtapaDaTurma;
 }
 
-interface CartaoComGabarito {
-  id: string;
-  texto: string;
-  certo: boolean;
-}
-
 /** Uma peça da regra SE … ENTÃO, com o gabarito (só rota de professor). */
 export interface PecaComGabarito {
   texto: string;
@@ -502,7 +496,6 @@ export interface PecaComGabarito {
 export interface MaterialDoJuri {
   /** As peças da regra (EF06CO03, ADR-174): três de cada lado, uma certa em cada. */
   pecas: { se: PecaComGabarito[]; entao: PecaComGabarito[] };
-  mariana: { caso: string; mecanismos: CartaoComGabarito[]; atitudes: CartaoComGabarito[] };
   plenaria: string[];
   regra: {
     pesoDaCurtida: number;
@@ -586,12 +579,13 @@ export function avisoDoPodcast(emAndamento: boolean, etapa: EtapaDaTurma | null)
 export const ROTULO_DO_PASSO: Record<PassoDoEstudante, string> = {
   credencial: "Na credencial de jurado",
   feed: "No feed da mostra",
-  classificacao: "Votou — separando os estandes",
-  lacrada: "Separou — esperando a plenária",
+  /* `classificacao` e `mariana` só aparecem em sessão ANTIGA (0.6.0): a tela as tira de lá sozinha (ADR-176). */
+  classificacao: "Votou",
+  lacrada: "Votou — esperando a plenária",
   galeria: "Na Galeria Oculta",
   revisada: "Revisou o voto",
   cadeia: "Montando a regra do feed",
-  mariana: "No caso Mariana",
+  mariana: "Concluindo",
   enquetes: "Concluindo",
   fim: "Concluiu",
 };
@@ -693,12 +687,12 @@ function passaramDe(linhas: readonly Pick<LinhaDoPainel, "passo">[], passo: Pass
 }
 
 /**
- * Mudou algo que a EVIDÊNCIA registra (ADR-146)? As duas ações da ficha 5
- * (ADR-174) são marcadas na MESMA transação do passo que o painel mostra: a
- * EF06CO01 na separação (`separaram`) e a EF06CO03 quando a regra é enviada (a
- * linha sai de `cadeia`). A regra não tem contador no resumo, por isso a conta
- * é sobre o passo de cada linha. A revisão do voto e os cartões não marcam
- * nada. A atividade troca com um pacote novo ou uma rodada nova. Só nesses
+ * Mudou algo que a EVIDÊNCIA registra (ADR-146)? As duas ações da ficha 6
+ * (ADR-176) são marcadas na MESMA transação do passo que o painel mostra: a
+ * EF06CO01 no VOTO, pelas pastas do feed (`separaram`), e a EF06CO03 quando a
+ * regra é enviada (a linha sai de `cadeia` para `fim`). A regra não tem
+ * contador no resumo, por isso a conta é sobre o passo de cada linha. A
+ * revisão do voto não marca nada. A atividade troca com um pacote novo ou uma rodada nova. Só nesses
  * casos o painel da aula relê a página inteira, para o painel de habilidades
  * acompanhar sem o professor apertar F5. É o mesmo desenho da exp05ef1b
  * (`mudouAEvidencia` em `quem-mandou-regras.ts`).

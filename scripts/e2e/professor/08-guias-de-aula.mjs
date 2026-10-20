@@ -74,7 +74,7 @@ const GUIAS = [
     missao: "O Júri Estadual de Projetos · 6º ano",
     /* Os dois blocos vivos vêm de `GET /juri-estadual/professor/material`: a
        regra do feed com o gabarito (as peças da regra SE … ENTÃO com a certa
-       marcada, ADR-174; os cartões do caso Mariana) e as quatro perguntas da plenária. A
+       marcada, ADR-174; o caso Mariana saiu na ADR-176) e as quatro perguntas da plenária. A
        pergunta é conferida pelo texto exato: é a mesma que o painel da aula
        projeta, e paráfrase no guia deixaria a turma comentando outra frase. */
     vivo: [
@@ -90,7 +90,7 @@ const GUIAS = [
       /outros projetos da mesma área,\s+nenhum repetido/,
       /Com 40 estandes e 10 publicações, todo computador que chega ao fim do feed\s+fica com 30 estandes fora dele/,
     ],
-    /* A principal desde a ficha 5 (ADR-174): a EF06CO10 saiu da missão. */
+    /* A principal desde a ficha 5 (ADR-174; ficha 6, ADR-176): a EF06CO10 saiu da missão. */
     bncc: "EF06CO01",
   },
   {

@@ -6,9 +6,6 @@ import {
   ehConteudoDoBancoPadrao,
 } from "../src/juri-estadual/banco-padrao";
 import {
-  CARTOES_DE_ATITUDE,
-  CARTOES_DE_MECANISMO,
-  CASO_MARIANA,
   EXCECOES_DE_TETO,
   MAX_PALAVRAS_DO_CARTAO,
   PECAS_DO_ENTAO,
@@ -16,8 +13,9 @@ import {
 } from "../src/juri-estadual/conteudo";
 import {
   ConteudoDoPacoteSchema,
+  EventosDoFeedSchema,
+  FeedSchema,
   GaleriaSchema,
-  ClassificacaoSchema,
   HomologacaoSchema,
   IdDeItemSchema,
   IdDePecaSchema,
@@ -60,10 +58,13 @@ import {
 } from "../src/juri-estadual/regras/afunilamento";
 import {
   MINIMO_PARA_CLASSIFICAR,
+  aplicarPastas,
   corrigirClassificacao,
+  estandesSemPasta,
   itensDaClassificacao,
   nivelDaClassificacao,
   projetosParaClassificar,
+  respostasDasPastas,
 } from "../src/juri-estadual/regras/classificacao";
 import { MARCADOR_DA_CLASSIFICACAO, MARCADOR_DA_REGRA } from "../src/juri-estadual/regras/evidencia";
 import {
@@ -89,7 +90,6 @@ import {
   passoEfetivo,
   pedirPasso,
   transicaoDoGate,
-  PASSOS,
   type Passo,
 } from "../src/juri-estadual/regras/passos";
 import {
@@ -405,7 +405,7 @@ describe("os passos e a etapa da turma", () => {
   const casos: Array<[Passo, "exploracao" | "galeria", Passo]> = [
     ["credencial", "galeria", "credencial"],
     ["feed", "galeria", "feed"],
-    /* A separação é da criança: a galeria liberada a ESPERA terminar (ADR-174). */
+    /* A tela da separação saiu (ADR-176); a sessão antiga parada nela não é puxada pela galeria. */
     ["classificacao", "exploracao", "classificacao"],
     ["classificacao", "galeria", "classificacao"],
     ["lacrada", "exploracao", "lacrada"],
@@ -421,10 +421,11 @@ describe("os passos e a etapa da turma", () => {
   test("só quem votou espera o professor; o pedido do feed é de sentido único; a cadeia vem da revisão", () => {
     expect(aguardandoOProfessor("lacrada", "exploracao")).toBe(true);
     expect(aguardandoOProfessor("feed", "exploracao")).toBe(false);
-    /* Quem está separando não espera: faz a tarefa. */
+    /* A sessão antiga parada na separação (0.6.0) não espera: ela pede a espera sozinha. */
     expect(aguardandoOProfessor("classificacao", "exploracao")).toBe(false);
-    expect(PASSOS.indexOf("classificacao")).toBe(PASSOS.indexOf("feed") + 1);
-    expect(PASSOS.indexOf("lacrada")).toBe(PASSOS.indexOf("classificacao") + 1);
+    expect(pedirPasso("classificacao", "lacrada")).toEqual({ ok: true, passo: "lacrada" });
+    expect(pedirPasso("revisada", "lacrada")).toEqual({ ok: true, passo: "revisada" });
+    expect(pedirPasso("feed", "lacrada")).toEqual({ ok: false, codigo: "passo-invalido" });
     expect(aguardandoOProfessor("lacrada", "galeria")).toBe(false);
     /* Sem rodada de desvio: depois da revisão ninguém espera. */
     expect(aguardandoOProfessor("revisada", "galeria")).toBe(false);
@@ -523,13 +524,42 @@ describe("a separação (EF06CO01, ADR-174)", () => {
     expect(nivelDaClassificacao({ acertos: 3, total: 3 })).toBeNull();
   });
 
-  test("o corpo da rota: uma área por item, sem repetir, até dez", () => {
-    const resposta = (itemId: string) => ({ itemId, area: "area_a" });
-    expect(ClassificacaoSchema.safeParse({ respostas: [resposta("cl-abc")] }).success).toBe(true);
-    expect(ClassificacaoSchema.safeParse({ respostas: [resposta("cl-abc"), resposta("cl-abc")] }).success).toBe(false);
-    expect(ClassificacaoSchema.safeParse({ respostas: [] }).success).toBe(false);
-    expect(ClassificacaoSchema.safeParse({ respostas: [{ itemId: "proj-a1", area: "area_a" }] }).success).toBe(false);
-    expect(ClassificacaoSchema.safeParse({ respostas: [{ itemId: "cl-abc", area: "robotica" }] }).success).toBe(false);
+  test("as PASTAS (ADR-176): salvar com pasta guarda ou move, tirar dos salvos apaga, e pasta sem salvo não sobrevive", () => {
+    const [p1, p2, p3] = servidos as [string, string, string];
+    let pastas = aplicarPastas({}, [p1, p2], [
+      { postId: p1, salvou: true, pasta: "area_a" },
+      { postId: p2, salvou: true, pasta: "area_b" },
+    ]);
+    expect(pastas).toEqual({ [p1]: "area_a", [p2]: "area_b" });
+    pastas = aplicarPastas(pastas, [p1, p2], [{ postId: p1, salvou: true, pasta: "area_c" }]);
+    expect(pastas[p1]).toBe("area_c");
+    pastas = aplicarPastas(pastas, [p1], [{ postId: p2, salvou: false }]);
+    expect(pastas).toEqual({ [p1]: "area_c" });
+    /* Salvar sem pasta (o bundle antigo) guarda o post e não lhe dá pasta. */
+    expect(aplicarPastas(pastas, [p1, p3], [{ postId: p3, salvou: true }])).toEqual({ [p1]: "area_c" });
+    /* Pasta de post que não está nos salvos não sobrevive. */
+    expect(aplicarPastas({ [p3]: "area_a" }, [], [])).toEqual({});
+  });
+
+  test("as respostas saem das pastas no formato da 0.6.0; faltando uma, não há voto", () => {
+    const itens = itensDaClassificacao("separacao", servidos);
+    const todas = Object.fromEntries(servidos.map((post) => [post, areaDoProjeto(post.split(":")[0] as string)]));
+    expect(estandesSemPasta(servidos, todas)).toBe(0);
+    const respostas = respostasDasPastas(itens, servidos, todas);
+    expect(corrigirClassificacao(itens, respostas ?? [])).toEqual({ acertos: itens.length, total: itens.length });
+    const semUma = { ...todas };
+    delete semUma[servidos[0] as string];
+    expect(estandesSemPasta(servidos, semUma)).toBe(1);
+    expect(respostasDasPastas(itens, servidos, semUma)).toBeNull();
+    expect(estandesSemPasta(servidos, {})).toBe(projetosParaClassificar(servidos).length);
+  });
+
+  test("o salvar leva a pasta no contrato, opcional; e o feed traz as pastas e quantos faltam", () => {
+    const corpo = (pasta?: string) => ({ salvamentos: [{ postId: "proj-a1:apresentacao", salvou: true, ...(pasta ? { pasta } : {}) }] });
+    expect(EventosDoFeedSchema.safeParse(corpo("area_a")).success).toBe(true);
+    expect(EventosDoFeedSchema.safeParse(corpo()).success).toBe(true);
+    expect(EventosDoFeedSchema.safeParse(corpo("robotica")).success).toBe(false);
+    expect(Object.keys(FeedSchema.shape)).toEqual(expect.arrayContaining(["pastas", "semPasta"]));
   });
 });
 
@@ -578,9 +608,9 @@ describe("a regra SE … ENTÃO (EF06CO03, ADR-174)", () => {
   });
 });
 
-describe("a ficha versão 5 (ADR-174): o Canal A puro", () => {
+describe("a ficha versão 6 (ADR-176): o Canal A puro, a separação nas pastas", () => {
   test("duas habilidades, uma ação cada, rotuladas, sem pergunta — e a EF06CO10 saiu", () => {
-    expect(FICHA_EXP06EF1B.versao).toBe(5);
+    expect(FICHA_EXP06EF1B.versao).toBe(6);
     expect(FICHA_EXP06EF1B.habilidades.map((h) => h.codigo)).toEqual(["EF06CO01", "EF06CO03"]);
     expect(FICHA_EXP06EF1B.perguntas).toEqual([]);
     expect(FICHA_EXP06EF1B.ordemDasAlternativas).toBeUndefined();
@@ -737,9 +767,8 @@ describe("o gabarito e o acervo não descem antes da hora", () => {
     expect(PROIBIDO_NA_LINHA_DO_PAINEL).toContain("concentracao");
   });
 
-  test("o cartão certo está na redação do log", () => {
+  test("o gabarito está na redação do log", () => {
     expect(CHAVES_REDIGIDAS.has("certo")).toBe(true);
-    expect(CARTOES_DE_MECANISMO.filter((c) => c.certo)).toHaveLength(1);
   });
 });
 
@@ -962,27 +991,10 @@ describe("o banco padrão (PRD v2, RF-007)", () => {
 });
 
 describe("os textos literais e os tetos (melhoria 5)", () => {
-  test("Mariana e os cinco cartões são os do 01e; o teto de 25 palavras só cede às exceções NOMEADAS", () => {
-    /* O 01e diz "79 palavras"; separando por espaço são 81 (os travessões e a citação). */
-    expect(CASO_MARIANA).toMatch(/^Na eleição para o Grêmio Estudantil da escola de Mariana/);
-    expect(CASO_MARIANA).toMatch(/Como você explicaria para Mariana o que realmente aconteceu com o feed dela\?$/);
-    expect(CARTOES_DE_MECANISMO.map((c) => c.id)).toEqual(["m1", "m2", "m3"]);
-    expect(CARTOES_DE_ATITUDE.map((c) => c.id)).toEqual(["t1", "t2"]);
-    const chaves: Record<string, string> = {
-      m1: "e6.cartao.mecanismo_correto",
-      m2: "e6.cartao.mecanismo_distrator_ingenuo",
-      m3: "e6.cartao.mecanismo_distrator_cinico",
-      t1: "e6.cartao.atitude_correta",
-      t2: "e6.cartao.atitude_distrator_passivo",
-    };
-    for (const c of [...CARTOES_DE_MECANISMO, ...CARTOES_DE_ATITUDE]) {
-      const chave = chaves[c.id] as string;
-      const excecao = EXCECOES_DE_TETO[chave];
-      const palavras = contarPalavras(c.texto);
-      if (excecao) expect(palavras).toBe(excecao.palavras);
-      else expect(palavras).toBeLessThanOrEqual(MAX_PALAVRAS_DO_CARTAO);
-    }
-    expect(Object.keys(EXCECOES_DE_TETO).sort()).toEqual(["e1.narrativa.corpo_cracha", "e6.cartao.mecanismo_correto"]);
+  test("o caso Mariana saiu (ADR-176): o teto de 25 palavras só cede à exceção NOMEADA do crachá", () => {
+    expect(Object.keys(EXCECOES_DE_TETO)).toEqual(["e1.narrativa.corpo_cracha"]);
+    expect(MAX_PALAVRAS_DO_CARTAO).toBe(25);
+    for (const p of [...PECAS_DO_SE, ...PECAS_DO_ENTAO]) expect(contarPalavras(p.texto)).toBeLessThanOrEqual(MAX_PALAVRAS_DO_CARTAO);
   });
 
   test("texto gerado por IA continua barrado: a exceção não vale para a régua do pacote", () => {

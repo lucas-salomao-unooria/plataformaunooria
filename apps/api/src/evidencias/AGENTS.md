@@ -27,9 +27,10 @@ o histórico (`evidencias_eventos.para.motivo`), para todas as missões.
 nenhuma pergunta e nenhum resolvedor de contexto. O marcador parcial tem teto
 em "em processo" e o final grava o COMBINADO: é assim que uma régua "A só com
 as duas" cabe no "vale o melhor" desta porta, sem regra nova na plataforma.
-**A quarta é o Júri Estadual (`exp06ef1b`)**: `fichas/exp06ef1b.ts` v5
-(ADR-174, que tirou as enquetes P1–P3 e a EF06CO10): só ações rotuladas, cada
-uma na transação do próprio envio — `classificacao`, a separação (EF06CO01, a
+**A quarta é o Júri Estadual (`exp06ef1b`)**: `fichas/exp06ef1b.ts` v6
+(ADR-176 sobre a 174, que tirou as enquetes P1–P3 e a EF06CO10): só ações
+rotuladas, cada uma na transação do próprio envio — `classificacao`, a
+separação nas PASTAS do feed, corrigida e marcada no VOTO (EF06CO01, a
 principal; < 4 estandes vistos = sem marca), e `regra`, a SE … ENTÃO (EF06CO03,
 id novo: a `cadeia` da v4 fica no histórico). Sem resolvedor.
 **A quinta é o Unoovista (`exp08ef1b`)**: `fichas/exp08ef1b.ts` v2 (ADR-167,

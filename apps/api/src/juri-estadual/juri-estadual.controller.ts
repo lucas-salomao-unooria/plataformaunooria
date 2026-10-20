@@ -7,12 +7,10 @@ import { Contrato } from "../openapi/contrato";
 import {
   AcaoDaGaleriaSchema,
   BatimentoDaCedulaSchema,
-  CartoesSchema,
   EstadoSchema,
   EventosDoFeedSchema,
   FeedSchema,
   GaleriaSchema,
-  ClassificacaoSchema,
   GatePublicoSchema,
   PedirPassoSchema,
   RegraSchema,
@@ -77,7 +75,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "O estado da missão: o passo, o feed servido até aqui, o voto e os blocos do fim.",
     descricao:
-      "Boot da experiência e o F5. O feed traz **só os posts que o motor serviu** — o acervo da mostra existe só no servidor até a Galeria Oculta. Nenhum peso, nenhuma área líder: a regra do feed é o que a Etapa 5 ensina, e a criança a descobre depois.\n\n`classificacao` (os estandes vistos, sem área), `cadeia` (as peças da regra; a revelação depois do envio) e `mariana` (o caso e os cartões) só vêm do passo deles, com ids OPACOS e estáveis num F5. Nenhuma peça e nenhum cartão diz se é o certo.",
+      "Boot da experiência e o F5. O feed traz **só os posts que o motor serviu** — o acervo da mostra existe só no servidor até a Galeria Oculta. Nenhum peso, nenhuma área líder: a regra do feed é o que a Etapa 5 ensina, e a criança a descobre depois.\n\n`feed.pastas` traz a pasta (a área) em que a criança guardou cada post salvo, e `feed.semPasta` quantos estandes vistos ainda não estão em pasta nenhuma (ADR-176). `cadeia` (as peças da regra; a revelação depois do envio) só vem do passo dela, com ids OPACOS e estáveis num F5. Nenhuma peça diz se é a certa.",
     resposta: SessaoSchema,
     notas: [
       "`passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o gravado. A etapa só conduz quem votou: quem ainda está no feed continua no feed com a galeria liberada.",
@@ -112,12 +110,12 @@ export class JuriEstadualController {
   @Post("passo")
   @HttpCode(200)
   @Contrato({
-    resumo: '"Acessar Feed da Mostra" (da credencial para o feed) e o "avançar" da revisão para a cadeia.',
+    resumo: '"Acessar Feed da Mostra" (da credencial para o feed), o "avançar" da revisão para a cadeia e a saída da separação antiga.',
     descricao:
-      "`para: \"feed\"` grava o passo `feed` e, com o feed vazio, serve a ABERTURA: quatro posts, a apresentação de um projeto de cada área, em ordem sorteada pela sessão. Responde o feed.\n\n`para: \"cadeia\"` leva a sessão de `revisada` (a revisão do voto gravada) para a `cadeia` (Etapa 5). Responde o estado curto. Pedir de novo devolve o estado como está (a escada é de sentido único).",
+      "`para: \"feed\"` grava o passo `feed` e, com o feed vazio, serve a ABERTURA: quatro posts, a apresentação de um projeto de cada área, em ordem sorteada pela sessão. Responde o feed.\n\n`para: \"cadeia\"` leva a sessão de `revisada` (a revisão do voto gravada) para a `cadeia` (Etapa 5). `para: \"lacrada\"` só serve à sessão ANTIGA parada na tela da separação da 0.6.0 (o passo `classificacao`, que saiu na ADR-176): ela segue para a espera, sem marca da EF06CO01. Os dois respondem o estado curto. Pedir de novo devolve o estado como está (a escada é de sentido único).",
     corpo: PedirPassoSchema,
     resposta: RespostaDoPassoSchema,
-    notas: ["`cadeia` antes da revisão responde **409** `passo-invalido`.", PORTA],
+    notas: ["`cadeia` antes da revisão, ou `lacrada` antes do voto, responde **409** `passo-invalido`.", PORTA],
   })
   passo(@Body() corpo: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
@@ -130,7 +128,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "O que a tela mediu (curtidas e permanências) e, se pedido, o próximo post.",
     descricao:
-      "A curtida e o salvo são ESTADO (`curtiu`/`salvou: true/false`), a permanência é FATO (mais de 5 s num post, uma vez por post). Curtir (3) e permanecer (1) pesam e entram antes de o motor escolher o próximo; **salvar é gravado e não pesa**. Com a área em foco, os posts seguintes são só dela — projetos NOVOS dela (são dez por área). Nenhum post se repete, e todo post servido é a `apresentacao` de um projeto; os formatos `bastidor`, `prototipo` e `depoimento` só aparecem no feed gravado de uma sessão antiga (instrumento 2.0.0). `proximo: true` quando a tela chegou ao último post servido: o servidor serve UM a mais, até dez.\n\nO primeiro `proximo: true` é a 1ª rolagem e liga o relógio de **8 minutos do servidor** (`encerraEm`); recarregar não zera. Com o tempo esgotado (`tempoEsgotado`), o feed não serve mais post e `cedulaLiberada` fica `true`.",
+      "A curtida e o salvo são ESTADO (`curtiu`/`salvou: true/false`), a permanência é FATO (mais de 5 s num post, uma vez por post). O salvo leva a `pasta` — a área em que a criança guardou o post (a separação da EF06CO01, ADR-176); salvar de novo com outra pasta MOVE o post, e tirar dos salvos apaga a pasta. Curtir (3) e permanecer (1) pesam e entram antes de o motor escolher o próximo; **salvar é gravado e não pesa**. Com a área em foco, os posts seguintes são só dela — projetos NOVOS dela (são dez por área). Nenhum post se repete, e todo post servido é a `apresentacao` de um projeto; os formatos `bastidor`, `prototipo` e `depoimento` só aparecem no feed gravado de uma sessão antiga (instrumento 2.0.0). `proximo: true` quando a tela chegou ao último post servido: o servidor serve UM a mais, até dez.\n\nO primeiro `proximo: true` é a 1ª rolagem e liga o relógio de **8 minutos do servidor** (`encerraEm`); recarregar não zera. Com o tempo esgotado (`tempoEsgotado`), o feed não serve mais post e `cedulaLiberada` fica `true`.",
     corpo: EventosDoFeedSchema,
     resposta: FeedSchema,
     notas: [
@@ -166,11 +164,11 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "A cédula lacrada — o projeto e a certeza (latch).",
     descricao:
-      "O gesto que a missão confronta, e ele é IRREVERSÍVEL: grava o projeto, a certeza (`examinei_bem` = \"Sim\", `vi_tudo` = \"Com certeza\"), o carimbo e o passo `classificacao` juntos. A cédula tem quatro elementos e nenhuma justificativa. Depois dele, a criança separa os estandes que viu (`POST classificacao`) e espera a turma (o pico): o professor projeta a dispersão de votos e libera a auditoria.",
+      "O gesto que a missão confronta, e ele é IRREVERSÍVEL: grava o projeto, a certeza (`examinei_bem` = \"Sim\", `vi_tudo` = \"Com certeza\"), o carimbo e o passo `lacrada` juntos. A cédula tem quatro elementos e nenhuma justificativa.\n\n**No mesmo update, a SEPARAÇÃO (EF06CO01, ADR-176)**: o servidor lê as pastas em que a criança guardou cada estande visto, corrige e marca (`classificacao`: 90% ou mais certos = atingiu; 50% ou mais = em processo; menos = não atingiu; com menos de quatro estandes vistos, sem marca). **A resposta não diz quantos acertou.** Depois dele, a criança espera a turma (o pico): o professor projeta a dispersão de votos e libera a auditoria.",
     corpo: VotoSchema,
     resposta: EstadoSchema,
     notas: [
-      "Antes da cédula liberada (menos de dez posts E menos de 8 minutos desde a 1ª rolagem) responde **409** `feed-incompleto`; projeto que não apareceu no feed DESTA criança, **409** `projeto-fora-do-feed`.",
+      "Antes da cédula liberada (menos de dez posts E menos de 8 minutos desde a 1ª rolagem) responde **409** `feed-incompleto`; projeto que não apareceu no feed DESTA criança, **409** `projeto-fora-do-feed`; algum estande visto fora de pasta (`feed.semPasta > 0`), **409** `estandes-sem-pasta`.",
       "O segundo voto — inclusive dois simultâneos — responde **409** `voto-ja-lacrado`.",
       PORTA,
     ],
@@ -236,32 +234,12 @@ export class JuriEstadualController {
     return this.missao.revisar(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), revisao);
   }
 
-  @Post("classificacao")
-  @HttpCode(200)
-  @Contrato({
-    resumo: "A separação: uma área para cada estande que a criança viu (EF06CO01).",
-    descricao:
-      "Do passo `classificacao`, logo depois do voto. `respostas` traz um item para CADA estande de `sessao.classificacao.itens` (ids OPACOS `cl-`), com a área escolhida. Uma vez só. O servidor corrige, grava e marca a EF06CO01 (`classificacao`: 90% ou mais certos = atingiu; 50% ou mais = em processo; menos = não atingiu; com menos de quatro estandes vistos, sem marca) e leva a sessão à espera (`lacrada`). **A resposta não diz quantos acertou.** Com a galeria já liberada, a criança cai nela logo depois.",
-    corpo: ClassificacaoSchema,
-    resposta: EstadoSchema,
-    notas: [
-      "Item faltando, sobrando, repetido ou de outra sessão responde **400** `payload-invalido`. (O `.refine()` some do OpenAPI; daí esta nota.)",
-      "Enviar de novo responde **409** `classificacao-ja-enviada`; fora do passo, **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.",
-      PORTA,
-    ],
-  })
-  classificacao(@Body() corpo: unknown, @Req() req: Autenticado) {
-    limitar(req.auth.usuarioId);
-    const { respostas } = valida(ClassificacaoSchema, corpo);
-    return this.missao.classificar(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), respostas);
-  }
-
   @Post("regra")
   @HttpCode(200)
   @Contrato({
     resumo: "A regra SE … ENTÃO: a condição e a ação que o programa do feed executou (EF06CO03).",
     descricao:
-      "Do passo `cadeia` (o nome ficou; desde a 0.6.0 a tela é a da regra). `se` e `entao`: uma peça de cada lado, ids OPACOS `rg-` desta sessão. Uma vez só: o servidor corrige, grava, marca a EF06CO03 (`regra`: as duas certas = atingiu; uma = em processo; nenhuma = não atingiu) e leva a sessão ao caso Mariana. Responde a REVELAÇÃO — as peças escolhidas e as certas, e o que a regra fez no feed desta criança. Enviar de novo devolve a mesma revelação, sem trocar a escolha.",
+      "Do passo `cadeia` (o nome ficou; desde a 0.6.0 a tela é a da regra). `se` e `entao`: uma peça de cada lado, ids OPACOS `rg-` desta sessão. Uma vez só: o servidor corrige, grava, marca a EF06CO03 (`regra`: as duas certas = atingiu; uma = em processo; nenhuma = não atingiu) e CONCLUI a missão (passo `fim` e o carimbo, no mesmo update — o caso Mariana saiu na ADR-176). Responde a REVELAÇÃO — as peças escolhidas e as certas, e o que a regra fez no feed desta criança. Enviar de novo devolve a mesma revelação, sem trocar a escolha.",
     corpo: RegraSchema,
     resposta: RespostaDaRegraSchema,
     notas: [
@@ -276,30 +254,14 @@ export class JuriEstadualController {
     return this.missao.montarRegra(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), escolha);
   }
 
-  @Post("cartoes")
-  @HttpCode(200)
-  @Contrato({
-    resumo: "O caso Mariana: um cartão de mecanismo e um de atitude.",
-    descricao:
-      "Grava a escolha e CONCLUI a missão (passo `fim` e o carimbo, no mesmo update) — as enquetes saíram com a ficha 5 (ADR-174). **Não marca evidência e não diz qual é o certo**: é a transferência, conversada na plenária. Escolher de novo devolve o estado, sem trocar a primeira escolha.",
-    corpo: CartoesSchema,
-    resposta: EstadoSchema,
-    notas: ["Fora do passo `mariana` responde **409** `passo-invalido`.", PORTA],
-  })
-  cartoes(@Body() corpo: unknown, @Req() req: Autenticado) {
-    limitar(req.auth.usuarioId);
-    const cartoes = valida(CartoesSchema, corpo);
-    return this.missao.escolherCartoes(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), cartoes);
-  }
-
   @Post("concluir")
   @HttpCode(200)
   @Contrato({
-    resumo: "Conclui uma sessão ANTIGA que parou nas enquetes — idempotente.",
+    resumo: "Conclui uma sessão ANTIGA que parou no caso Mariana ou nas enquetes — idempotente.",
     descricao:
-      "Leva a sessão de `enquetes` a `fim` e carimba a conclusão, no mesmo update. Só serve às sessões anteriores à 0.6.0: desde ela, os cartões do caso Mariana já concluem (ADR-174).",
+      "Leva a sessão de `mariana` (0.6.0) ou de `enquetes` (até a 0.5.0) a `fim` e carimba a conclusão, no mesmo update, sem marcar nada. Desde a 0.7.0 a regra SE … ENTÃO já conclui (ADR-176).",
     resposta: EstadoSchema,
-    notas: ["Fora de `enquetes` (e de `fim`) responde **409** `passo-invalido`. Concluir de novo devolve o mesmo estado.", PORTA],
+    notas: ["Fora de `mariana`, `enquetes` (e de `fim`) responde **409** `passo-invalido`. Concluir de novo devolve o mesmo estado.", PORTA],
   })
   concluir(@Req() req: Autenticado) {
     limitar(req.auth.usuarioId);

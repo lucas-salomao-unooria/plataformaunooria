@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
-import { CONTAS, E1, E2, E3, E4, E5, E6, ESCOLA, FIM, GLOBAL, SEPARACAO } from "./textos";
+import { CONTAS, E1, E2, E3, E4, E5, ESCOLA, FIM, GLOBAL, PASTAS } from "./textos";
 
 /**
  * Todas as strings de um grupo de copy — as fixas e as montadas (as funções são
@@ -21,9 +21,9 @@ function textosDo(grupo: unknown): string[] {
   return [];
 }
 
-const TODOS = [CONTAS, GLOBAL, ESCOLA, E1, E2, E3, SEPARACAO, E4, E5, E6, FIM];
-/* A separação é depois do voto e ANTES da galeria (ADR-174): também não nomeia a descoberta. */
-const ANTES_DA_GALERIA = [CONTAS, GLOBAL, E1, E2, E3, SEPARACAO];
+const TODOS = [CONTAS, GLOBAL, ESCOLA, E1, E2, PASTAS, E3, E4, E5, FIM];
+/* As pastas estão no feed, ANTES da galeria (ADR-176): também não nomeiam a descoberta. */
+const ANTES_DA_GALERIA = [CONTAS, GLOBAL, E1, E2, PASTAS, E3];
 
 /** O teto de palavras da copy (RNF-USA-001) e as exceções NOMEADAS da melhoria 5 (literais do PO). */
 const TETO_DE_PALAVRAS = 25;
@@ -55,10 +55,14 @@ describe("a copy da missão", () => {
     expect(E4.subtitulo(0)).toBe("Nenhum projeto desta área ficou fora do seu feed.");
   });
 
-  test("a galeria por área e o contraste sem as curtidas, na voz da comissão", () => {
-    expect(E4.vistosNaArea("Tecnologia", 7, 10)).toBe("Tecnologia: você viu 7 de 10");
-    expect(E4.semCurtidas).toBe("Sem as suas curtidas, o seu feed teria trazido:");
-    expect(E4.semCurtidasDaArea("Saúde", 2)).toBe("Saúde 2");
+  test("a galeria sem a contagem por área nem o contraste (ADR-176); as pastas na voz da comissão", () => {
+    expect(E4).not.toHaveProperty("porArea");
+    expect(E4).not.toHaveProperty("semCurtidas");
+    expect(PASTAS.salvarEm).toBe("Salvar em");
+    expect(PASTAS.salvoEm("Tecnologia")).toBe("Salvo em Tecnologia");
+    expect(PASTAS.faltam(3)).toBe("Antes de votar, salve cada estande na pasta da área dele: faltam 3.");
+    expect(PASTAS.faltam(1)).toMatch(/o estande que ainda falta/);
+    expect(PASTAS.quantos(1)).toBe("1 estande");
   });
 
   test("a copy literal do PRD v2 nas chaves que a e2e e o PO conferem", () => {
@@ -70,8 +74,7 @@ describe("a copy da missão", () => {
     expect(E4.manter).toBe("Manter meu voto inicial");
     expect(E4.confirmarRevisao).toBe("Confirmar Voto Revisado");
     expect(E5.enviar).toBe("Enviar a Regra");
-    expect(SEPARACAO.enviar).toBe("Enviar Organização à Comissão");
-    expect(E6.submeter).toBe("Submeter Análise do Júri");
+    expect(E5.avancar).toBe("Concluir o Julgamento");
   });
 
   test("a revelação da regra diz o que ela fez NESTE feed, no tom de \"pode\", não de certeza", () => {
