@@ -10,9 +10,10 @@ do ar, acertou a pergunta) e isso morria dentro da experiência; aqui vira o
 nível que o professor lê, corrige e leva para o boletim.
 
 A plataforma entrou primeiro; as missões entram uma a uma, cada uma com a sua
-ficha. **A primeira é Quem Mandou Isso?** (`fichas/exp05ef1b.ts` v4, ADR-171,
-sem as P1/P2): só ações rotuladas, cada uma na transação do próprio envio —
-Mural (EF05CO08), cartão de frases (CO03), regra do tio (CO04). Sem resolvedor.
+ficha. **A primeira é Quem Mandou Isso?** (`fichas/exp05ef1b.ts` v5, ADR-177;
+sem as P1/P2 desde a ADR-171): só ações rotuladas, cada uma na transação do
+próprio envio — Mural (EF05CO08), alerta do grupo no 4º envio (CO03), robô do
+grupo (CO04). Sem resolvedor.
 **A segunda é A Seleção (`exp07ef1b`)**: `fichas/exp07ef1b.ts` v2 (ADR-170,
 que tirou as enquetes P1/P2): EF07CO11 pela legenda lida por IA, marcada numa
 transação só dela DEPOIS da resposta; EF07CO08 pela marcação do post do colega,

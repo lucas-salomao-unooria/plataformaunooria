@@ -9,7 +9,7 @@ ao Mural da Turma, vota no motivo, e só então o professor abre a revelação:
 crachás e o **alerta do grupo** (EF05CO03). Depois, a síntese e a reflexão:
 o **robô do grupo montado com blocos** (EF05CO04). **Nasce com ficha (E14) e
 com equipe (E13).** **Só Canal A desde o instrumento 2.4.0 (ADR-171)**: as
-perguntas P1/P2 saíram, como no 8º ano (ADR-167). **Na 2.5.0 (ficha v5)** o
+perguntas P1/P2 saíram, como no 8º ano (ADR-167). **Na 2.5.0 (ficha v5, ADR-177)** o
 cartão de frases virou o alerta do grupo e a regra do tio com previsão virou
 o robô do grupo, sem previsão.
 A regra Se/Então de TEXTO LIVRE saiu na ADR-145 e não volta: a tabela
@@ -44,7 +44,8 @@ histórico; nenhuma rota as escreve.
 - **O alerta NÃO é passo: é uma JANELA da revelação** (`passos.ts#alertaAberto`).
   Aceita jogada com o voto dado, a revelação DELA aberta e a turma AINDA na
   `revelacao`; a síntese fecha (409 `alerta-fechado`), e não reabre. Quem
-  votou atrasado, depois da síntese, não tem alerta — fica "Não avaliado".
+  votou atrasado, depois da síntese, não tem alerta — fica "Não avaliado"
+  (ADR-177: o cartão da 2.4.0 seguia o caminho da criança; o alerta, não).
   Na reflexão, TODO mundo vai ao robô: ele não exige o alerta
   (`exigirEtapaDoRobo`), e os CHECKs dele exigem só o voto.
 - **O gabarito desce SÓ depois do voto E da revelação aberta.** `revelacao`

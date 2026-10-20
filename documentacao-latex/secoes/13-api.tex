@@ -279,7 +279,7 @@ nenhuma rota de gestão alcança
   % ---- exp05ef1b
   \node[exprot] at (0.1,-14.05) {\textbf{exp05ef1b}\\Quem mandou\\isso?};
   \node[rt, minimum height=15mm] at (4.5,-14.05)
-    {\texttt{/quem-mandou-isso/*}\desc{estudante --- o Mural, o cartão\\e a regra do tio}};
+    {\texttt{/quem-mandou-isso/*}\desc{estudante --- o Mural, o alerta\\e o robô do grupo}};
   \node[rt, minimum height=15mm] at (9.05,-14.05)
     {\texttt{/quem-mandou-isso/\B{}turmas/*}\desc{prof., gestor --- o pacote\\E o relógio da turma}};
   \node[rt, minimum height=15mm] at (13.6,-14.05)
@@ -1173,12 +1173,12 @@ aprovar o pacote curado com o Vertex indisponível.
 % gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer:
 % a tabela da v1 chegou a documentar rotas que nunca existiram.
 
-Vinte rotas em três \emph{controllers} (\adrr{ADR-118}): dez do estudante
+Vinte e uma rotas em três \emph{controllers} (\adrr{ADR-118}): onze do estudante
 (\cd{@Roles("estudante")} na classe, e \cd{exigirMissaoLiberada} no funil de
 TODAS), nove por turma e uma de catálogo. Desde a 2.4.0 do instrumento
 (\adrr{ADR-171}) a missão não tem pergunta de evidência: as três habilidades
-são marcadas aqui, na transação de cada ação (o Mural, o cartão de frases e a
-regra do tio), e \rota{/evidencias/exp05ef1b/perguntas/*}
+são marcadas aqui, na transação de cada ação --- desde a 2.5.0
+(\adrr{ADR-177}), o Mural, o alerta do grupo e o robô do grupo ---, e \rota{/evidencias/exp05ef1b/perguntas/*}
 (Seção~\ref{sec:api-evidencias}) responde 404.
 
 \begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
@@ -1204,58 +1204,68 @@ regra do tio), e \rota{/evidencias/exp05ef1b/perguntas/*}
 \zebra \rota{POST /quem-mandou-isso/enquete} & estudante & \textbf{O latch 2}: o
   motivo. O mesmo voto de novo é idempotente; outro, 409
   \cd{enquete-ja-votada}.\\
-\rota{POST /quem-mandou-isso/operacoes} & estudante & \textbf{O latch 3}: o
-  cartão de frases, as seis respostas Sim/Não de uma vez, com a marca da
-  EF05CO03 na mesma transação. Abre na revelação DO ESTUDANTE (409
-  \cd{cartao-nao-liberado} antes); a mesma resposta de novo é idempotente,
-  outra é 409 \cd{cartao-ja-enviado}. Nada do acerto volta.\\
-\zebra \rota{POST /quem-mandou-isso/regra/teste} & estudante & Um teste da regra
-  do tio: as peças e a \textbf{previsão}, que vem antes do resultado. Só na
-  reflexão, com o cartão enviado (409 \cd{cartao-pendente}); até 5 testes (409
-  \cd{testes-esgotados}); a mesma ação duas vezes é 400 \cd{regra-invalida}.\\
-\rota{POST /quem-mandou-isso/regra} & estudante & \textbf{O latch 4}: a regra
-  enviada, com a marca da EF05CO04 na mesma transação. Enviar sem testar é
-  permitido; a mesma regra de novo é idempotente, outra é 409
-  \cd{regra-ja-enviada}.\\
-\zebra \rota{POST /quem-mandou-isso/concluir} & estudante & O fim, depois da
-  regra --- sem exigir o cartão nem a regra (quem sai antes fica \enquote{Não
-  avaliado}). A experiência o chama sozinha depois do envio da regra.
+\rota{POST /quem-mandou-isso/\B{}alerta/\B{}execucao} & estudante & Um
+  \enquote{Ver resultado} do alerta do grupo: o pedido da vez e o filtro
+  \cd{\{a, op?, b?\}}; o servidor o executa no quadro e devolve quais
+  mensagens passam. Só com o voto, a revelação do estudante aberta e a turma
+  ainda na revelação (409 \cd{alerta-nao-liberado} antes, 409
+  \cd{alerta-fechado} depois da síntese); fora de ordem, 409
+  \cd{alerta-fora-de-ordem}; até 3 por pedido (409 \cd{limite-execucoes}).\\
+\zebra \rota{POST /quem-mandou-isso/\B{}alerta/\B{}envio} & estudante & Envia
+  o alerta do pedido: tem de ser a ÚLTIMA expressão executada (400
+  \cd{execute-antes}). O QUARTO envio é \textbf{o latch 3}, com a marca da
+  EF05CO03 na mesma transação. O mesmo envio de novo é idempotente; outro,
+  409 \cd{alerta-ja-enviado}. Nada do acerto volta.\\
+\rota{POST /quem-mandou-isso/\B{}robo/\B{}ligar} & estudante & Liga o robô do
+  grupo (\cd{laco}, \cd{condicao}, \cd{acoes}): o servidor o executa nas
+  quatro mensagens fixas e grava a ligação. Só na reflexão, SEM exigir o
+  alerta; até 5 (409 \cd{ligacoes-esgotadas}); blocos fora do vocabulário,
+  400 \cd{robo-invalido}.\\
+\zebra \rota{POST /quem-mandou-isso/robo} & estudante & \textbf{O latch 4}: o
+  robô enviado, com a marca da EF05CO04 na mesma transação. Enviar sem ligar
+  é permitido; o mesmo robô de novo é idempotente, outro é 409
+  \cd{robo-ja-enviado}.\\
+\rota{POST /quem-mandou-isso/concluir} & estudante & O fim, depois do robô
+  --- sem exigir o alerta nem o robô (quem sai antes fica \enquote{Não
+  avaliado}). A experiência o chama sozinha depois do envio do robô.
   Idempotente.\\
-\rota{GET /quem-mandou-isso/\B{}turmas/\B{}:id/pacote} & prof., gestor & O ativo, o
+\zebra \rota{GET /quem-mandou-isso/\B{}turmas/\B{}:id/pacote} & prof., gestor & O ativo, o
   rascunho, o banco curado e os componentes curriculares --- \textbf{com} o
   gabarito.\\
-\zebra \rota{POST .../gerar} & \textbf{só professor} & A única chamada de IA da
+\rota{POST .../gerar} & \textbf{só professor} & A única chamada de IA da
   missão, \textbf{pré-aula}, pelo \cd{QuotaService}; grava o rascunho. Sem saldo
   ou com o provedor fora, devolve o banco curado com \cd{usouIa: false} e o
   \cd{motivo} --- nunca falha para fora. A turma é conferida (404) antes de
   gastar \emph{token}.\\
-\rota{POST .../aprovar} & \textbf{só professor} & \enquote{Aprovar Pacote}, com o
+\zebra \rota{POST .../aprovar} & \textbf{só professor} & \enquote{Aprovar Pacote}, com o
   pacote INTEIRO: a régua de \cd{validarPacote} (400 \cd{pacote-invalido} com a
   lista de \cd{erros}). Pacote diferente abre atividade nova; o mesmo é
   idempotente. Leva também as três falas do podcast que o professor revisou
   (\cd{podcast}), gravadas em \cd{podcast\_roteiros} na mesma transação,
   inclusive no segundo clique (\adrr{ADR-150}).\\
-\zebra \rota{POST .../gate} & \textbf{só professor} & Os três botões
+\rota{POST .../gate} & \textbf{só professor} & Os três botões
   (\cd{liberar\_revelacao}, \cd{apresentar\_sintese}, \cd{liberar\_reflexao}).
   Só para a frente: o clique repetido ou fora de ordem não recua a fase.\\
-\rota{GET .../painel} & prof., gestor & O progresso (com quantos responderam o
-  cartão e enviaram a regra), o Termômetro (\cd{null} antes da revelação), a
-  folha por computador --- os acertos do cartão por operador e a regra em
-  palavras --- e o roteiro.\\
-\zebra \rota{POST .../nova-rodada} & \textbf{só professor} & \enquote{Zerar Turma
+\zebra \rota{GET .../painel} & prof., gestor & O progresso (com quantos enviaram
+  os quatro alertas e o robô), o Termômetro (\cd{null} antes da revelação), a
+  folha por computador --- os pontos do alerta (\enquote{\{pontos\}/8 \textperiodcentered{}
+  \{enviados\}/4 enviados}) e o robô em palavras, com o número de ligações
+  --- e o roteiro.\\
+\rota{POST .../nova-rodada} & \textbf{só professor} & \enquote{Zerar Turma
   para Nova Aplicação}: a rodada que o professor VIU no corpo torna o duplo
   clique idempotente; rodada velha é 409 \cd{rodada-desatualizada}. Apaga a
   evidência do pacote (\adrr{ADR-155}).\\
-\rota{GET .../pacotes} e \rota{GET .../pacotes/:pacoteId} & prof., gestor & As
+\zebra \rota{GET .../pacotes} e \rota{GET .../pacotes/:pacoteId} & prof., gestor & As
   atividades da turma (os pacotes aprovados) e uma delas, inteira e com o
   gabarito (\adrr{ADR-130}).\\
-\zebra \rota{POST .../pacotes/:pacoteId/em-andamento} & \textbf{só professor} &
+\rota{POST .../pacotes/:pacoteId/em-andamento} & \textbf{só professor} &
   \enquote{Usar esta atividade agora}: a atividade em andamento da turma, e a
   fase volta à triagem. Idempotente.\\
-\rota{GET /quem-mandou-isso/\B{}professor/\B{}material} & prof., gestor & O guia da aula:
-  o banco curado com gabarito, o roteiro, as falas, um cartão de frases
-  respondido e as peças da regra com o que cada uma faz (o gabarito da regra),
-  e os critérios da ficha. Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
+\zebra \rota{GET /quem-mandou-isso/\B{}professor/\B{}material} & prof., gestor & O guia da aula:
+  o banco curado com gabarito, o roteiro, as falas, os quatro pedidos do
+  alerta com a expressão esperada (e quantas do banco curado passam), os
+  blocos do robô com o tipo de cada ação e as quatro mensagens com os sinais
+  (o gabarito do robô), e os critérios da ficha. Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
 \bottomrule
 \end{tabularx}
 
@@ -1607,8 +1617,9 @@ hub divergiria na primeira revisão de \emph{copy}.
   termômetro do \emph{latch} --- o material vem da API para a lousa e os
   tablets nunca discordarem.\\
 \rota{GET /quem-mandou-isso/\B{}professor/\B{}material} & prof., gestor & O banco curado
-  da exp05ef1b com o gabarito, o roteiro da roda, as falas da Nina, um cartão
-  de frases respondido e as peças da regra do tio com o que cada uma faz.\\
+  da exp05ef1b com o gabarito, o roteiro da roda, as falas da Nina, os pedidos
+  do alerta com a expressão esperada e os blocos do robô com o tipo de cada
+  ação.\\
 \zebra \rota{GET /jornal-escola/\B{}professor/\B{}material} & prof., gestor & O
   banco padrão do Jornal da Escola com o gabarito e a reação de cada notícia,
   os seis blocos da Chave com os pilares marcados, e o roteiro: o gatilho do

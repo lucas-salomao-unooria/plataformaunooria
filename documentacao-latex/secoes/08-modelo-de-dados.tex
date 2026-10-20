@@ -880,7 +880,8 @@ VIU (\cd{evidencias\_marcas}) do nível que o professor LÊ e pode corrigir
 (\cd{evidencias}), com toda mudança no histórico (\cd{evidencias\_eventos}). A
 primeira missão a escrever nelas é a exp05ef1b (\adrr{ADR-118}): hoje só por
 ação (\adrr{ADR-171}) --- a marca da EF05CO08 na transação do Mural, a da
-EF05CO03 na do cartão de frases e a da EF05CO04 na da regra do tio.
+EF05CO03 na do quarto alerta do grupo e a da EF05CO04 na do robô do grupo
+(\adrr{ADR-177}).
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
@@ -1553,15 +1554,16 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
   pacote, chave \cd{(escola\_id, estudante\_id, pacote\_id, rodada)}: nasce no
   \enquote{Entrar no grupo}, e zerar a turma abre outra linha em vez de apagar
   esta. Guarda a seleção (0 a 3) e os carimbos dos \emph{latches} ---
-  \cd{confirmado\_em}, \cd{votou\_em}, \cd{operacoes\_em}, \cd{regra\_em},
-  \cd{concluido\_em} (\cd{reflexao\_em} só pelo histórico) ---, o motivo
-  votado, o \cd{tempo\_feed\_segundos} e a \cd{versao\_instrumento} (2.4.0
-  desde a \adrr{ADR-171}). Desde a mesma ADR, o dado bruto das duas ações do
-  Canal A: as seis frases do cartão COMO a criança as viu, com a resposta
-  esperada (\cd{frases\_operacoes}), e as respostas dela
-  (\cd{respostas\_operacoes}); os testes da regra do tio, em ordem, com a
-  previsão e o que a regra fez (\cd{regra\_testes}, até 5), e a regra enviada
-  (\cd{regra\_final}). \textbf{Não tem coluna de passo} nem de pontuação: o
+  \cd{confirmado\_em}, \cd{votou\_em}, \cd{alertas\_em}, \cd{regra\_em},
+  \cd{concluido\_em} (\cd{reflexao\_em} e \cd{operacoes\_em} só pelo
+  histórico) ---, o motivo votado, o \cd{tempo\_feed\_segundos} e a
+  \cd{versao\_instrumento} (2.5.0 desde a \adrr{ADR-177}). O dado bruto das
+  duas ações do Canal A: os alertas do grupo, um item por pedido aberto, com
+  as execuções e o enviado (\cd{alertas}, até 4); as ligações do robô, em
+  ordem, com os blocos e o que ele fez em cada mensagem (\cd{regra\_testes},
+  até 5), e o robô enviado (\cd{regra\_final}), os dois com \cd{laco}. As
+  colunas do cartão de frases da \adrr{ADR-171} (\cd{frases\_operacoes},
+  \cd{respostas\_operacoes}) ficam pelo histórico. \textbf{Não tem coluna de passo} nem de pontuação: o
   nível é da evidência.\\
 \zebra \cd{exp05ef1b\_reflexoes} & \textbf{Histórico desde a \adrr{ADR-145}}:
   nenhuma rota escreve mais nela. A regra Se/Então, 1:1 com a sessão: a
@@ -1576,15 +1578,16 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
 \begin{regra}
 \textbf{Os \emph{latches} estão em ordem no banco.} Cada carimbo exige o
 anterior: confirmar o Mural exige \textbf{exatamente três} na seleção, votar
-exige ter confirmado (e motivo e carimbo andam juntos), o cartão de frases
-exige o voto e seis frases e seis respostas, testar a regra exige o cartão (e
-no máximo cinco testes), enviar a regra exige o cartão e uma condição do
-vocabulário, e concluir exige só o voto --- quem sai antes de uma ação fica
-\enquote{Não avaliado} nela, nunca travado (\adrr{ADR-145}, \adrr{ADR-171}). O
+exige ter confirmado (e motivo e carimbo andam juntos), os alertas exigem o
+voto (até quatro, e o carimbo só com os quatro), ligar o robô exige o voto (e
+no máximo cinco ligações), enviar o robô exige o voto e uma condição do
+vocabulário --- o robô não depende do alerta ---, e concluir exige só o voto
+--- quem sai antes de uma ação fica \enquote{Não avaliado} nela, nunca
+travado (\adrr{ADR-145}, \adrr{ADR-171}, \adrr{ADR-177}). O
 \emph{CHECK} vale por \emph{statement}, então o \emph{service} grava carimbo e
 dado no MESMO \cd{UPDATE} --- a seleção com o \cd{confirmado\_em}, o motivo
-com o \cd{votou\_em}, as frases e as respostas com o \cd{operacoes\_em}, a
-regra com o \cd{regra\_em} ---, senão o estado intermediário reprova. A seleção fica dentro dos oito ids (\cd{<@ ARRAY['msg\_1'
+com o \cd{votou\_em}, o quarto alerta com o \cd{alertas\_em}, o robô com o
+\cd{regra\_em} ---, senão o estado intermediário reprova. A seleção fica dentro dos oito ids (\cd{<@ ARRAY['msg\_1'
 \ldots 'msg\_8']}) e com no máximo três; o \cd{tempo\_feed\_segundos} existe
 exatamente quando o Mural fechou.
 
@@ -2381,6 +2384,18 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   carimbo da cadeia). Uma sessão que votou na 0.5.0 está em \cd{lacrada} SEM
   separação e continua válida. Nenhuma coluna sai, nenhuma linha muda, a RLS
   não afrouxa.\\
+\arq{20261020120000\_\B{}exp05ef1b\_\B{}alerta\_\B{}e\_\B{}robo} & Quem mandou
+  isso? com o alerta e o robô do grupo (\adrr{ADR-177}): em
+  \cd{exp05ef1b\_sessoes}, \cd{alertas} (\cd{JSONB NOT NULL DEFAULT '[]'})
+  e \cd{alertas\_em}, e o padrão da \cd{versao\_instrumento} passa a 2.5.0.
+  Dois \emph{CHECKs} novos: \cd{exp05ef1b\_\B{}sessoes\_\B{}alertas\_\B{}check}
+  (\emph{array} de até quatro, e só depois do voto) e
+  \cd{exp05ef1b\_\B{}sessoes\_\B{}alertas\_\B{}em\_\B{}check} (o carimbo exige o
+  voto e os quatro). \cd{exp05ef1b\_\B{}sessoes\_\B{}regra\_\B{}testes\_\B{}check}
+  e \cd{exp05ef1b\_\B{}sessoes\_\B{}regra\_\B{}check} são recriados exigindo
+  só o voto, sem o \cd{operacoes\_em}: o robô não depende do alerta. As
+  colunas do cartão ficam pelo histórico; nenhuma coluna sai, a RLS não
+  afrouxa.\\
 \bottomrule
 \end{tabularx}
 

@@ -13,7 +13,7 @@ espera → revelação (crachás + **alerta do grupo**) → síntese → **casca
 desafio do tio (o **robô do grupo montado com blocos**, ligado em quatro
 mensagens) → "Missão Concluída" com o card do robô.
 
-**Só o Canal A (desde a 0.5.0, ADR-171).** As três habilidades são medidas
+**Só o Canal A (desde a 0.5.0, ADR-171; alerta e robô na 0.6.0, ADR-177).** As três habilidades são medidas
 pelo que a criança FAZ: a seleção do Mural (EF05CO08), o **alerta do grupo**
 (EF05CO03: quatro filtros com E/OU/NÃO sobre o quadro das oito mensagens,
 executados pelo servidor e enviados ao grupo) e o **robô do grupo**
@@ -151,28 +151,12 @@ ação que o recebeu:
 A missão não tem texto livre de menor: o robô é montado com blocos, e o
 `POST /reflexao` (o Se/Então de texto, ADR-145) não volta.
 
-## O mensageiro é o Unoochat, não o clone do WhatsApp (ADR-134, 0.3.0)
+## O mensageiro é o Unoochat (ADR-134) — o que quebra
 
-Até a 0.2.1 o clone era a seção `whatsappmobile` (só escuro, paleta do app
-real). O Unoochat é cópia ESTRUTURAL dela — mesmos componentes, props e medidas
-—, com a identidade da Unooria e dois temas; a missão usa o CLARO
-(`data-unc-theme="light"` no `index.html`). O que a troca pediu, e o que morde
-quem mexer depois:
-
-- **A dependência do DS NA EXPERIÊNCIA** tem de ser `≥ 0.2.9`: a pasta resolve a
-  própria cópia do pacote para as folhas de CSS, e a 0.2.8 que ela tinha não
-  publica `unoochat.css` (o `@edu/ui` já estava na 0.2.11 — duas cópias).
-- **A folha de fonte do clone é obrigatória**: o `Icon` do Unoochat é ligadura
-  do Material Symbols, e sem `fonts/unoochat.css` o ícone vira o nome escrito.
-- **Dois tokens sem par de nome**: `--wa-color-accent-badge` → `--unc-color-accent`
-  (os acentos foram consolidados) e `--wa-color-text-meta` →
-  `--unc-color-text-secondary`. O papel do comunicado era a INVERSÃO de dois
-  tokens do tema escuro; no claro daria branco sobre lavanda, então é
-  `surface-canvas` + `border-divider`.
-- **A suíte casa por classe do DS** (`.unc-poll`, `.unc-forwardbutton`…):
-  trocar de seção é trocar o prefixo nela também.
-- O avatar de iniciais do `ChatHeader` não tem círculo visível (o fundo é o da
-  barra) — já era assim no `whatsappmobile`; é do pacote.
+O porquê da troca e os tokens sem par estão no `README.md` da pasta. O que
+quebra sem aviso: a dependência do DS **na experiência** tem de ser `≥ 0.2.9`
+(a pasta resolve a própria cópia para o CSS); sem `fonts/unoochat.css` o
+`Icon` vira o nome escrito; a suíte casa por classe do DS (`.unc-*`).
 
 ## Props do DS que enganam (0.2.4 a 0.2.6, iguais no Unoochat)
 
@@ -200,37 +184,22 @@ quem mexer depois:
 
 ## Compensações sobre o DS: nenhuma aberta
 
-A seta esgotada que ainda responde (`exhausted`) e o toque na mídia desenhada
-(`.Media` com `onClick`) são do DS, e nenhum CSS local os compensa. Compensação nova vai marcada
-`(b) COMPENSAÇÃO` no código, com a lacuna e o pedido, e entra nesta seção.
-
-**Não são pedido**: o desenho do comunicado, da lâmina e do termômetro — são
-CONTEÚDO dentro da moldura que o DS já dá (`.Media` sem `src`), não controle.
+`exhausted` e `.Media` com `onClick` são do DS, sem CSS local. Compensação
+nova vai marcada `(b) COMPENSAÇÃO` no código e entra aqui. O desenho do
+comunicado, da lâmina e do termômetro é CONTEÚDO na moldura do `.Media`, não
+pedido.
 
 ## Zero mídia binária, zero IA no cliente, sem áudio na V1
 
-O comunicado é o texto do pacote desenhado como papel; o link é a prévia
-montada da `legenda` ("Nome do site: manchete"). A IA desta missão vive no
-PREPARO do professor, na api. O áudio assistivo (D0-4) só entra quando houver
-gravação — não há botão de "ouvir" nesta versão, e não há benchmarking.
+O comunicado é texto desenhado; o link é a prévia montada da `legenda`. A IA
+vive no PREPARO do professor, na api. Sem botão de "ouvir" (nem o "Ouvir o
+desafio" do Figma, ADR-177) até haver gravação.
 
-## O grupo chega, a Nina tem rosto, e cada imagem tem cara (0.4.0)
+## O grupo chega uma a uma (0.4.0)
 
-Os pedidos visuais do PO de 2026-10-05:
-
-- **As mensagens chegam uma a uma** (`useChegadaEmSequencia`, ~0,9 s cada:
-  `MS_ENTRE_MENSAGENS` + `MS_DIGITANDO`). Só na PRIMEIRA abertura do grupo e
-  com a seleção vazia (`grupoChegaEmSequencia`; `Vista.grupoChegou`): quem
-  volta do Mural, ou dá F5 no meio da escolha, vê tudo de uma vez. Com
-  `prefers-reduced-motion`, também. A e2e espera a OITAVA linha, nunca conta
-  logo depois da primeira.
-- **A foto da Nina é ilustração em SVG** (`src/assets/nina.svg`, importada
-  pelo Vite e inlinada no bundle), em `avatarSrc` do `ChatListItem` e do
-  `ChatHeader`. SVG é texto: a regra de "zero mídia binária" continua.
-- **Cada imagem do grupo tem um desenho** (`estiloDaImagem`): comunicado,
-  cartaz, print de tela ou bilhete, cada um com `alt` e proporção próprios.
-  As duas imagens de um pacote saem sempre diferentes, e o par muda com o
-  texto delas — o desenho não vira pista de veracidade entre turmas.
+Só na PRIMEIRA abertura e com a seleção vazia (`grupoChegaEmSequencia`); a
+e2e espera a OITAVA linha, nunca conta logo depois da primeira. O resto (a
+Nina em SVG, o desenho de cada imagem) está no `README.md`.
 
 ## `permissoes: ["forms"]`
 

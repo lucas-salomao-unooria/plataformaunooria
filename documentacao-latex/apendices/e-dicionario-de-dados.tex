@@ -122,7 +122,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp08ef4b\_gates\_turma} & Tenant & O \emph{checkpoint} do debate, por turma\\
 \cd{exp05ef1b\_pacotes} & Tenant & O pacote da turma --- as 8 mensagens com o gabarito; é a atividade da evidência\\
 \zebra \cd{exp05ef1b\_gates\_turma} & Tenant & O relógio da turma: triagem, revelação, síntese, reflexão\\
-\cd{exp05ef1b\_sessoes} & Tenant & A sessão por rodada, com os \emph{latches} (Mural, voto, cartão de frases, regra do tio, conclusão)\\
+\cd{exp05ef1b\_sessoes} & Tenant & A sessão por rodada, com os \emph{latches} (Mural, voto, alerta do grupo, robô do grupo, conclusão)\\
 \zebra \cd{exp05ef1b\_reflexoes} & Tenant & A regra Se/Então (texto livre do estudante); só histórico desde a \adrr{ADR-145}\\
 \cd{app\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
 \zebra \cd{app\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
@@ -2471,26 +2471,38 @@ máquina, e são justamente essas crianças que o debate tenta alcançar.
   regra Se/Então, que saiu (\adrr{ADR-145}); nenhuma rota o escreve. Exige
   \cd{votou\_em}.\\
 \cd{frases\_operacoes}, \cd{respostas\_operacoes}, \cd{operacoes\_em} &
-  \cd{JSONB?}, \cd{JSONB?}, \cd{TIMESTAMPTZ?} & \textbf{O latch 3}, o cartão de
-  frases da EF05CO03 (\adrr{ADR-171}): as seis frases COMO a criança as viu,
-  com o operador e a resposta esperada, e as seis respostas dela, gravadas no
-  envio. \emph{CHECK} \cd{exp05ef1b\_sessoes\_operacoes\_check}: o carimbo
-  exige \cd{votou\_em} e os dois \emph{arrays} com seis itens.\\
-\zebra \cd{regra\_testes} & \cd{JSONB} & Os testes da regra do tio, em ordem:
-  \cd{[\{condicao, acoes, previsao, situacao, em\}]}, \cd{NOT NULL DEFAULT
-  '[]'}. A régua da EF05CO04 lê o PRIMEIRO. \emph{CHECK}
+  \cd{JSONB?}, \cd{JSONB?}, \cd{TIMESTAMPTZ?} & \textbf{Histórico}: o cartão
+  de frases da EF05CO03 (\adrr{ADR-171}), que saiu na \adrr{ADR-177};
+  nenhuma rota as escreve. \emph{CHECK}
+  \cd{exp05ef1b\_sessoes\_operacoes\_check}: o carimbo exige \cd{votou\_em} e
+  os dois \emph{arrays} com seis itens.\\
+\zebra \cd{alertas}, \cd{alertas\_em} & \cd{JSONB}, \cd{TIMESTAMPTZ?} &
+  \textbf{O latch 3}, o alerta do grupo da EF05CO03 (\adrr{ADR-177}): um item
+  por pedido aberto, \cd{[\{pedido, execucoes: [\{expressao, passam\}],
+  enviado\}]}, \cd{NOT NULL DEFAULT '[]'}; a expressão é \cd{\{a, op?, b?\}}.
+  O carimbo sai no QUARTO envio, com a marca. \emph{CHECKs}
+  \cd{exp05ef1b\_sessoes\_alertas\_check} (\emph{array} de até quatro, não
+  vazio só com \cd{votou\_em}) e \cd{exp05ef1b\_sessoes\_alertas\_em\_check}
+  (o carimbo exige o voto e os quatro).\\
+\cd{regra\_testes} & \cd{JSONB} & As ligações do robô do grupo, em ordem:
+  \cd{[\{laco, condicao, acoes, resultados: [\{mensagemId, situacao\}],
+  em\}]}, \cd{NOT NULL DEFAULT '[]'} (o nome ficou da regra do tio da
+  \adrr{ADR-171}; linha antiga, com \cd{previsao} e sem \cd{laco}, é lida
+  como ligação sem laço). A régua da EF05CO04 lê a PRIMEIRA. \emph{CHECK}
   \cd{exp05ef1b\_sessoes\_regra\_testes\_check}: \emph{array} de até cinco
-  (limite técnico), e não vazio só com \cd{operacoes\_em}.\\
-\cd{regra\_final}, \cd{regra\_em} & \cd{JSONB?}, \cd{TIMESTAMPTZ?} &
-  \textbf{O latch 4}: a regra enviada, \cd{\{condicao, acoes\}}. \emph{CHECKs}
-  \cd{exp05ef1b\_sessoes\_regra\_check} (exige \cd{operacoes\_em} e uma das
-  quatro condições) e \cd{exp05ef1b\_sessoes\_regra\_final\_check} (os dois
-  nulos juntos).\\
-\zebra \cd{concluido\_em} & \cd{TIMESTAMPTZ?} & Exige \cd{votou\_em} (migração
-  \cd{20261005120000}; antes exigia \cd{reflexao\_em}) --- e não o cartão nem
-  a regra: quem sai antes deles fica \enquote{Não avaliado}.\\
-\cd{versao\_instrumento} & \cd{TEXT} & \cd{'2.4.0'} desde a \adrr{ADR-171}
-  (\cd{'2.3.0'} desde a \adrr{ADR-145}, \cd{'2.2.0'} antes). Na linha, para
+  (limite técnico), e não vazio só com \cd{votou\_em} --- não exige o
+  alerta.\\
+\zebra \cd{regra\_final}, \cd{regra\_em} & \cd{JSONB?}, \cd{TIMESTAMPTZ?} &
+  \textbf{O latch 4}: o robô enviado, \cd{\{laco, condicao, acoes\}}.
+  \emph{CHECKs} \cd{exp05ef1b\_sessoes\_regra\_check} (exige \cd{votou\_em} e
+  uma das quatro condições) e \cd{exp05ef1b\_sessoes\_regra\_final\_check}
+  (os dois nulos juntos).\\
+\cd{concluido\_em} & \cd{TIMESTAMPTZ?} & Exige \cd{votou\_em} (migração
+  \cd{20261005120000}; antes exigia \cd{reflexao\_em}) --- e não o alerta nem
+  o robô: quem sai antes deles fica \enquote{Não avaliado}.\\
+\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{'2.5.0'} desde a \adrr{ADR-177}
+  (\cd{'2.4.0'} desde a \adrr{ADR-171}, \cd{'2.3.0'} desde a \adrr{ADR-145},
+  \cd{'2.2.0'} antes). Na linha, para
   reprocessar o histórico se o instrumento mudar.\\
 \bottomrule
 \end{tabularx}
