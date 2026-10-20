@@ -60,6 +60,13 @@ export { ListItem, ChatListItem, SectionLabel, DateChip } from '@unooria/design-
 /** Escolha exclusiva e múltipla. O `Radio` é desenhado em CSS (não há glifo). */
 export { Radio, Checkbox } from '@unooria/design-system/unoochat';
 
+/**
+ * O chip de filtro da busca em conversas: um `<button>` com `aria-pressed`
+ * (`selected`). Na exp05ef1b é o montador do alerta do grupo — o interruptor
+ * NÃO, os chips Falsa/Emocional e os conectores E/OU (0.6.0).
+ */
+export { FilterChip } from '@unooria/design-system/unoochat';
+
 /** Átomos: ação, identidade, etiqueta. */
 export { TextButton, Avatar, Badge, Fab } from '@unooria/design-system/unoochat';
 
@@ -115,6 +122,7 @@ export type {
   UncBadgeProps,
   UncChatHeaderProps,
   UncCheckboxProps,
+  UncFilterChipProps,
   UncDialogProps,
   UncIconName,
   UncIconProps,
