@@ -223,7 +223,7 @@ export class QuemMandouIssoController {
   @Contrato({
     resumo: '"Enviar meu robô" — o latch do robô (EF05CO04).',
     descricao:
-      "O robô final, definitivo. Na MESMA transação, a marca da **EF05CO04**: não atingiu se as ações encaminham antes de checar; atingiu se o enviado tem o laço, a condição pega o áudio do tio e as ações checam antes de encaminhar, e a PRIMEIRA ligação já era assim; em processo em todo o resto (inclusive enviar sem ligar). Quem fecha a missão é o `POST /concluir`, que a tela chama logo depois.",
+      "O robô final, definitivo. Na MESMA transação, a marca da **EF05CO04**: não atingiu se as ações encaminham antes de checar; atingiu se o enviado tem o laço, a condição é \"urgente e alarmante\" (a única que pega as três mensagens de risco) e as ações checam antes de encaminhar, e a PRIMEIRA ligação já era assim; em processo em todo o resto (inclusive enviar sem ligar). Quem fecha a missão é o `POST /concluir`, que a tela chama logo depois.",
     corpo: RoboSchema,
     resposta: EstadoSchema,
     notas: [

@@ -87,12 +87,16 @@ histórico; nenhuma rota as escreve.
     enviado E as ligações (`POST /robo/ligar`, até 5, 409
     `ligacoes-esgotadas`). O servidor executa o robô nas quatro mensagens
     fixas (`MENSAGENS_DO_ROBO`, sinais ABERTOS; a vizinha é o controle); sem
-    o laço ele só olha a primeira. Não atingiu = encaminha antes de checar;
-    atingiu = laço + condição que pega o tio + ações que checam antes de
-    encaminhar, já na PRIMEIRA ligação, e o enviado continua assim; em
-    processo = o resto (inclusive enviar sem ligar). No chute (512 robôs,
-    ligado uma vez e enviado): 12,5% / 56,25% / 31,25%. Sem previsão: o
-    Figma a tirou, e ligar o robô é a simulação.
+    o laço ele só olha a primeira. Os sinais são os do Figma: "urgente e
+    alarmante" está nas TRÊS mensagens de risco (tio, banco, corrente), e
+    parente, link e promessa em uma só — é o que dá sentido ao laço. Não
+    atingiu = encaminha antes de checar; atingiu = laço + "urgente e
+    alarmante" + ações que checam antes de encaminhar, já na PRIMEIRA
+    ligação, e o enviado continua assim; em processo = o resto (inclusive
+    condição que pega uma só e enviar sem ligar). No chute (512 robôs,
+    ligado uma vez e enviado): 6,25% / 62,5% / 31,25%. Sem previsão: o Figma
+    a tirou, e ligar o robô é a simulação. A duração do áudio ("0:23") é
+    parte do `remetente` fixo, não campo.
 - **Não há resolvedor de contexto da E14** (saiu na 2.4.0, com o
   `OnModuleInit`): sem pergunta na ficha, `GET /evidencias/exp05ef1b/perguntas/*`
   responde 404, como na exp08ef1b. Não registre um de volta para "uma pergunta

@@ -502,7 +502,10 @@ export const MaterialSchema = z.object({
   }),
   robo: z.object({
     laco: z.object({ rotulo: z.string(), icone: z.string() }),
-    condicoes: z.array(BlocoSchema.extend({ pegaOTio: z.boolean() })),
+    /** Quantas das 3 mensagens de risco a condição pega (só "urgente e alarmante" pega as 3). */
+    condicoes: z.array(BlocoSchema.extend({ riscos: z.number().int().min(0) })),
+    /** Quantas mensagens de risco o robô recebe (as que têm sinal). */
+    mensagensDeRisco: z.number().int().positive(),
     acoes: z.array(BlocoSchema.extend({ tipo: z.enum(["checagem", "espera", "condicional", "repasse"]) })),
     mensagens: z.array(
       z.object({

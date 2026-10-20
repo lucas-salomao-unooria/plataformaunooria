@@ -52,7 +52,8 @@ import {
   conferirRobo,
   ligar,
   nivelCO04,
-  pegaOTio,
+  pegaTodosOsRiscos,
+  riscosQuePega,
   repassaSemChecar,
   roboEmPalavras,
   situacaoDasAcoes,
@@ -297,7 +298,7 @@ describe("as falas fixas da experiência (dentro do clone e na casca)", () => {
     expect(FALA_DO_TIO).toMatch(/meu tio/);
     expect(FALA_DO_TIO).toMatch(/assustada/);
     expect(FALA_DO_TIO).toMatch(/repassar correndo/);
-    expect(MENSAGENS_DO_ROBO[0]).toMatchObject({ remetente: "Tio Paulo", tipo: "audio" });
+    expect(MENSAGENS_DO_ROBO[0]).toMatchObject({ remetente: "Tio Paulo · áudio 0:23", tipo: "audio" });
     expect([...(MENSAGENS_DO_ROBO[0]?.atributos ?? [])].sort()).toEqual(["parente_proximo", "urgente_alarmante"]);
   });
 
@@ -779,14 +780,20 @@ describe("o robô do grupo da EF05CO04", () => {
     expect(conferirRobo(false, "urgente_alarmante", ["voar"])).toBeNull();
   });
 
-  test("as quatro mensagens: os sinais abertos, e a vizinha é o controle (sem sinal)", () => {
+  test("as quatro mensagens com os sinais do Figma: só 'urgente e alarmante' está nas três de risco", () => {
     expect(MENSAGENS_DO_ROBO.map((m) => [m.remetente, m.tipo, [...m.atributos]])).toEqual([
-      ["Tio Paulo", "audio", ["urgente_alarmante", "parente_proximo"]],
-      ["Banco Seguro", "texto", ["link_nao_checado"]],
+      ["Tio Paulo · áudio 0:23", "audio", ["urgente_alarmante", "parente_proximo"]],
+      ["Banco Seguro", "texto", ["urgente_alarmante", "link_nao_checado"]],
       ["Dona Rita, vizinha", "texto", []],
-      ["Corrente", "texto", ["promessa_incrivel"]],
+      ["Corrente", "texto", ["urgente_alarmante", "promessa_incrivel"]],
     ]);
-    expect(CONDICOES.filter(pegaOTio)).toEqual(["urgente_alarmante", "parente_proximo"]);
+    expect(CONDICOES.map((c) => [c, riscosQuePega(c)])).toEqual([
+      ["urgente_alarmante", 3],
+      ["parente_proximo", 1],
+      ["link_nao_checado", 1],
+      ["promessa_incrivel", 1],
+    ]);
+    expect(CONDICOES.filter(pegaTodosOsRiscos)).toEqual(["urgente_alarmante"]);
   });
 
   test("o que as ações fazem com uma mensagem pega: as quatro situações", () => {
@@ -805,10 +812,15 @@ describe("o robô do grupo da EF05CO04", () => {
     expect(semLaco.resumo).toBe("O robô tratou 1 das 4 mensagens.");
     expect(semLaco.resultados[1]?.texto).toBe("O robô não olhou esta mensagem");
 
+    /* O Figma, E6-ALU-01 D: com o laço e "urgente e alarmante", as três de risco checam e a vizinha passa. */
     const comLaco = ligar(r(true, "urgente_alarmante", "comparar_fonte", "encaminhar_se_confirmar"));
-    expect(comLaco.resultados.map((x) => x.situacao)).toEqual(["checa", "passou", "passou", "passou"]);
+    expect(comLaco.resultados.map((x) => x.situacao)).toEqual(["checa", "checa", "passou", "checa"]);
     expect(comLaco.resumo).toBe("O robô tratou as 4 mensagens.");
-    expect(comLaco.resultados[1]?.texto).toBe("Passou direto: a regra não pegou");
+    expect(comLaco.resultados[2]?.texto).toBe("Passou direto: a regra não pegou");
+    /* O parente pega só o tio. */
+    expect(ligar(r(true, "parente_proximo", "comparar_fonte")).resultados.map((x) => x.situacao)).toEqual([
+      "checa", "passou", "passou", "passou",
+    ]);
 
     const doLink = ligar(r(true, "link_nao_checado", "esperar"));
     expect(doLink.resultados.map((x) => x.situacao)).toEqual(["passou", "sem_conferir", "passou", "passou"]);
@@ -825,8 +837,11 @@ describe("o robô do grupo da EF05CO04", () => {
   test("a régua lê o ENVIADO e a PRIMEIRA ligação", () => {
     const bom = r(true, "urgente_alarmante", "comparar_fonte", "encaminhar_se_confirmar");
     expect(nivelCO04(bom, [bom])).toBe("atingiu");
-    expect(nivelCO04(r(true, "parente_proximo", "perguntar_adulto"), [r(true, "urgente_alarmante", "conferir_origem")])).toBe("atingiu");
-    // Sem laço: só olha o tio — cobre 1 das 3 mensagens de risco.
+    expect(nivelCO04(r(true, "urgente_alarmante", "perguntar_adulto"), [r(true, "urgente_alarmante", "conferir_origem")])).toBe("atingiu");
+    // Parente próximo pega só o tio (1 das 3 de risco): em processo, mesmo de primeira.
+    const doParente = r(true, "parente_proximo", "perguntar_adulto");
+    expect(nivelCO04(doParente, [doParente])).toBe("em_processo");
+    // Sem laço: só olha a 1ª — cobre 1 das 3 mensagens de risco.
     const semLaco = r(false, "urgente_alarmante", "comparar_fonte", "encaminhar_se_confirmar");
     expect(nivelCO04(semLaco, [semLaco])).toBe("em_processo");
     // Chegou ao bom só depois de ver o robô ligado.
@@ -835,7 +850,7 @@ describe("o robô do grupo da EF05CO04", () => {
     expect(nivelCO04(bom, [])).toBe("em_processo");
     // Ligou o bom e enviou outro.
     expect(nivelCO04(r(true, "urgente_alarmante", "esperar"), [bom])).toBe("em_processo");
-    // A condição não pega o tio.
+    // A condição pega só o banco.
     const doLink = r(true, "link_nao_checado", "comparar_fonte");
     expect(nivelCO04(doLink, [doLink])).toBe("em_processo");
     // Checa e encaminha de qualquer jeito.
@@ -849,12 +864,13 @@ describe("o robô do grupo da EF05CO04", () => {
   test("no chute (robô ao acaso, ligado uma vez e enviado): EXAUSTIVO nos 512 robôs", () => {
     const conta = { atingiu: 0, em_processo: 0, nao_atingiu: 0 };
     for (const robo of todos) conta[nivelCO04(robo, [robo])] += 1;
-    /* Atingem: laço × 2 condições que pegam o tio × 32 sequências que checam
-       = 64. Não atingem: as 20 sequências que encaminham antes de checar, em
-       qualquer laço e condição = 2 × 4 × 20 = 160. */
-    expect(conta).toEqual({ atingiu: 64, em_processo: 288, nao_atingiu: 160 });
+    /* Atingem: laço × "urgente e alarmante" (a única nas 3 de risco) × 32
+       sequências que checam = 32. Não atingem: as 20 sequências que
+       encaminham antes de checar, em qualquer laço e condição = 2 × 4 × 20 =
+       160. */
+    expect(conta).toEqual({ atingiu: 32, em_processo: 320, nao_atingiu: 160 });
     const pct = (n: number) => Math.round((10000 * n) / todos.length) / 100;
-    expect([pct(conta.atingiu), pct(conta.em_processo), pct(conta.nao_atingiu)]).toEqual([12.5, 56.25, 31.25]);
+    expect([pct(conta.atingiu), pct(conta.em_processo), pct(conta.nao_atingiu)]).toEqual([6.25, 62.5, 31.25]);
     // Enviado sem ligar: ninguém atinge.
     expect(todos.filter((robo) => nivelCO04(robo, []) === "atingiu")).toHaveLength(0);
   });

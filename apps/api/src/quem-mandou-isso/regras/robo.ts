@@ -174,14 +174,19 @@ export interface MensagemDoRobo {
 }
 
 /**
- * As quatro mensagens fixas que chegam quando o robô liga (a proposta do PO).
- * A 1ª é o áudio do tio da `FALA_DO_TIO`; a 3ª, da vizinha, é o CONTROLE: não
- * tem sinal nenhum, e o robô não precisa agir.
+ * As quatro mensagens fixas que chegam quando o robô liga, com os sinais do
+ * Figma (E6-ALU-01 D). A 1ª é o áudio do tio da `FALA_DO_TIO`; a 3ª, da
+ * vizinha, é o CONTROLE: não tem sinal nenhum, e o robô não precisa agir. As
+ * outras três são as mensagens de RISCO, e só "urgente e alarmante" está nas
+ * três — é o que dá sentido ao laço: sem ele, o robô cobre 1 das 3.
+ *
+ * A duração do áudio ("0:23") vai no `remetente`, como o Figma desenha a
+ * linha ("Tio Paulo · áudio 0:23"): é texto fixo do catálogo, não campo.
  */
 export const MENSAGENS_DO_ROBO: readonly MensagemDoRobo[] = [
   {
     id: "robo_1",
-    remetente: "Tio Paulo",
+    remetente: "Tio Paulo · áudio 0:23",
     tipo: "audio",
     texto: "Gente, cancelaram as aulas por causa do temporal! Repassa pra todo mundo correndo!",
     atributos: ["urgente_alarmante", "parente_proximo"],
@@ -191,7 +196,7 @@ export const MENSAGENS_DO_ROBO: readonly MensagemDoRobo[] = [
     remetente: "Banco Seguro",
     tipo: "texto",
     texto: "Sua conta será bloqueada hoje. Clique no link para evitar.",
-    atributos: ["link_nao_checado"],
+    atributos: ["urgente_alarmante", "link_nao_checado"],
   },
   {
     id: "robo_3",
@@ -205,13 +210,21 @@ export const MENSAGENS_DO_ROBO: readonly MensagemDoRobo[] = [
     remetente: "Corrente",
     tipo: "texto",
     texto: "Quem repassar para 10 pessoas ganha um mês de internet. Passa já!",
-    atributos: ["promessa_incrivel"],
+    atributos: ["urgente_alarmante", "promessa_incrivel"],
   },
 ];
 
-/** A condição pega o áudio do tio (a 1ª mensagem)? É o que a régua cobra. */
-export function pegaOTio(c: Condicao): boolean {
-  return (MENSAGENS_DO_ROBO[0]?.atributos ?? []).includes(c);
+/** As mensagens de RISCO: as que têm algum sinal (a vizinha, de controle, não tem). */
+export const MENSAGENS_DE_RISCO = MENSAGENS_DO_ROBO.filter((m) => m.atributos.length > 0);
+
+/** Quantas das mensagens de risco a condição pega — o que o guia mostra ao professor. */
+export function riscosQuePega(c: Condicao): number {
+  return MENSAGENS_DE_RISCO.filter((m) => m.atributos.includes(c)).length;
+}
+
+/** A condição pega TODAS as mensagens de risco? Só "urgente e alarmante" — é o que a régua cobra. */
+export function pegaTodosOsRiscos(c: Condicao): boolean {
+  return riscosQuePega(c) === MENSAGENS_DE_RISCO.length;
 }
 
 // ──────────────────────────────────────────────────────────── a simulação
@@ -284,21 +297,23 @@ export function ligar(robo: Robo): Ligacao {
 /** Quantas vezes o robô liga numa sessão, no máximo — limite técnico, não pedagógico. */
 export const MAX_LIGACOES = 5;
 
-/** O robô do jeito que a habilidade pede: repete, pega o tio e checa antes de encaminhar. */
+/** O robô do jeito que a habilidade pede: repete, pega as três mensagens de risco e checa antes de encaminhar. */
 function roboCompleto(r: Robo): boolean {
-  return r.laco && pegaOTio(r.condicao) && situacaoDasAcoes(r.acoes) === "checa";
+  return r.laco && pegaTodosOsRiscos(r.condicao) && situacaoDasAcoes(r.acoes) === "checa";
 }
 
 /**
  * A RÉGUA da EF05CO04, sobre o robô ENVIADO e as ligações:
  *
  *   não atingiu — as ações do enviado encaminham antes de checar;
- *   atingiu     — o enviado repete (laço), a condição pega o tio, as ações
+ *   atingiu     — o enviado repete (laço), a condição pega as TRÊS
+ *                 mensagens de risco (só "urgente e alarmante"), as ações
  *                 checam antes de encaminhar (sem encaminhar de qualquer
  *                 jeito) e a PRIMEIRA ligação já era assim;
  *   em processo — todo o resto: chegou lá só depois de ver o robô ligado,
- *                 sem laço, condição que não pega o tio, só espera, checa e
- *                 encaminha de qualquer jeito, ou enviou sem ligar.
+ *                 sem laço, condição que pega só uma das três (parente, link
+ *                 ou promessa), só espera, checa e encaminha de qualquer
+ *                 jeito, ou enviou sem ligar.
  *
  * Robô não enviado não chega aqui: é "Não avaliado".
  */

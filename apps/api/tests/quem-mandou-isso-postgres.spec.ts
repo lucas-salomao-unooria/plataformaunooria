@@ -775,10 +775,10 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     const sessao = SessaoSchema.parse(await service.sessao(ESCOLA, ids.duda));
     expect(sessao.robo).toMatchObject({ ligacoes: [], podeLigar: true, enviado: null });
     expect(sessao.robo?.mensagens.map((m) => [m.remetente, m.tipo, m.atributos])).toEqual([
-      ["Tio Paulo", "audio", ["urgente_alarmante", "parente_proximo"]],
-      ["Banco Seguro", "texto", ["link_nao_checado"]],
+      ["Tio Paulo · áudio 0:23", "audio", ["urgente_alarmante", "parente_proximo"]],
+      ["Banco Seguro", "texto", ["urgente_alarmante", "link_nao_checado"]],
       ["Dona Rita, vizinha", "texto", []],
-      ["Corrente", "texto", ["promessa_incrivel"]],
+      ["Corrente", "texto", ["urgente_alarmante", "promessa_incrivel"]],
     ]);
     /* O TIPO das ações não desce. */
     expect(JSON.stringify(sessao.robo)).not.toMatch(/checagem|repasse|"tipo":"(espera|condicional)"/);
@@ -798,7 +798,7 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     estado = EstadoSchema.parse(
       await service.ligarRobo(ESCOLA, ids.ana, true, "urgente_alarmante", ["comparar_fonte", "encaminhar_se_confirmar"]),
     );
-    expect(estado.robo?.ligacoes[1]?.resultados.map((r) => r.situacao)).toEqual(["checa", "passou", "passou", "passou"]);
+    expect(estado.robo?.ligacoes[1]?.resultados.map((r) => r.situacao)).toEqual(["checa", "checa", "passou", "checa"]);
     expect(estado.robo?.ligacoes[1]?.resumo).toBe("O robô tratou as 4 mensagens.");
     /* A ligação fica gravada com o laço e o resultado. */
     const linha = await prisma.exp05ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
@@ -830,8 +830,8 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
   });
 
   test("a Duda monta o robô completo de primeira — sem ter fechado o alerta: atingiu", async () => {
-    await service.ligarRobo(ESCOLA, ids.duda, true, "parente_proximo", ["perguntar_adulto"]);
-    await service.enviarRobo(ESCOLA, ids.duda, true, "parente_proximo", ["perguntar_adulto"]);
+    await service.ligarRobo(ESCOLA, ids.duda, true, "urgente_alarmante", ["perguntar_adulto"]);
+    await service.enviarRobo(ESCOLA, ids.duda, true, "urgente_alarmante", ["perguntar_adulto"]);
     const marca = await prisma.evidenciaMarca.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.duda, habilidade: "EF05CO04" } });
     expect(marca.status).toBe("atingiu");
   });
@@ -1167,7 +1167,13 @@ describe("o guia da aula", () => {
       [4, "NÃO Falsa E NÃO Emocional", 2],
     ]);
     expect(m.alerta.pedidos[0]?.esperada).toEqual(FILTRO.certo[0]);
-    expect(m.robo.condicoes.filter((c) => c.pegaOTio).map((c) => c.id)).toEqual(["urgente_alarmante", "parente_proximo"]);
+    expect(m.robo.condicoes.map((c) => [c.id, c.riscos])).toEqual([
+      ["urgente_alarmante", 3],
+      ["parente_proximo", 1],
+      ["link_nao_checado", 1],
+      ["promessa_incrivel", 1],
+    ]);
+    expect(m.robo.mensagensDeRisco).toBe(3);
     expect(m.robo.acoes.filter((a) => a.tipo === "checagem")).toHaveLength(4);
     expect(m.robo.mensagens).toHaveLength(4);
     expect(m.habilidades.map((h) => [h.codigo, h.rotulo])).toEqual([

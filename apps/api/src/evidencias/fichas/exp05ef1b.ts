@@ -53,9 +53,9 @@ export const FICHA_EXP05EF1B: FichaPedagogica = {
       marcadores: [{ id: "robo-do-grupo", tipo: "acao", rotulo: "Robô do grupo" }],
       criterios: {
         atingiu:
-          "Monta, já na primeira vez que liga o robô, um robô que repete para cada mensagem nova, pega o áudio do tio e checa antes de encaminhar — e envia esse robô.",
+          "Monta, já na primeira vez que liga o robô, um robô que repete para cada mensagem nova, olha as mensagens urgentes e alarmantes (o sinal que as três mensagens de risco têm) e checa antes de encaminhar — e envia esse robô.",
         em_processo:
-          "Chega a esse robô só depois de ligá-lo, ou envia um robô sem a repetição, que não pega o áudio do tio, que só espera ou que checa e encaminha de qualquer jeito, ou envia sem ligar.",
+          "Chega a esse robô só depois de ligá-lo, ou envia um robô sem a repetição, com uma condição que pega só uma das mensagens de risco (parente próximo, link ou promessa), que só espera ou que checa e encaminha de qualquer jeito, ou envia sem ligar.",
         nao_atingiu: "Envia um robô que encaminha a mensagem antes de checar.",
         observacao:
           'Ligar o robô é a simulação que a habilidade pede: a criança vê o que ele faz com 4 mensagens, uma a uma. O robô cobre repetição (o laço), seleção condicional (o SE) e sequência (as duas ações em ordem); a colaboração fica fora. Sem o robô enviado, a habilidade fica "Não avaliado", e você pode ajustar.',
