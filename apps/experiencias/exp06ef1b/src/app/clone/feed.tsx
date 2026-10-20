@@ -1,9 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BadgeUnv, FloatingButton, NotificationItem, ProfileHeader, TabBar } from "@edu/ui/ds-unoovista";
-import { FRACAO_VISIVEL, iniciais } from "../../lib/regras";
+import {
+  BadgeUnv,
+  BottomSheetUnv,
+  ButtonUnv,
+  FloatingButton,
+  IconUnv,
+  InlineHint,
+  ListItem,
+  NotificationItem,
+  ProfileHeader,
+  TabBar,
+} from "@edu/ui/ds-unoovista";
+import { FRACAO_VISIVEL, estandesPorPasta, iniciais } from "../../lib/regras";
 import { criarRastreadorDePermanencia, type RastreadorDePermanencia } from "../../lib/permanencia";
-import { CONTAS, E1, E2, GLOBAL } from "../../lib/textos";
-import type { PostPublico } from "../../lib/tipos";
+import { CONTAS, E1, E2, GLOBAL, PASTAS } from "../../lib/textos";
+import type { Area, Categoria, PostPublico } from "../../lib/tipos";
 import { usePaleta } from "../componentes/midia";
 import { ABAS, type IdDaAba } from "./abas";
 import { Cabecalho } from "./cabecalho";
@@ -19,6 +30,12 @@ import { PostDoFeed } from "./post-do-feed";
  * - **Curtir e ficar** são os sinais que pesam (a curtida pelo coração ou pelo
  *   toque duplo; a permanência de mais de 5 s, `lib/permanencia.ts`). **Salvar**
  *   grava o evento e não pesa (PRD v2).
+ * - **As PASTAS** (ADR-176, a separação da EF06CO01): o "Salvar" do post abre
+ *   a folha "Salvar em" com as quatro pastas da mostra (as áreas do pacote),
+ *   como as coleções do app. Tocar numa pasta guarda — ou MOVE — o estande;
+ *   "Remover dos salvos" tira. A comissão pede no topo do feed; a aba Jurado
+ *   mostra as pastas com quantos estandes cada uma guarda. Não há certo nem
+ *   errado na tela: quem corrige é o servidor, no voto.
  * - **A barra fixa da cédula** acende quando o SERVIDOR libera
  *   (`cedulaLiberada`: os dez chegaram, ou os 8 minutos acabaram). A rolagem
  *   continua livre: a criança pode reler antes de votar.
@@ -30,6 +47,8 @@ export function Feed({
   posts,
   curtidos,
   salvos,
+  pastas,
+  categorias,
   podeCrescer,
   cedulaLiberada,
   carregando,
@@ -48,6 +67,10 @@ export function Feed({
   posts: readonly PostPublico[];
   curtidos: ReadonlySet<string>;
   salvos: ReadonlySet<string>;
+  /** A pasta (área) de cada post salvo, com a fila por cima. */
+  pastas: Partial<Record<string, Area>>;
+  /** As quatro áreas do pacote: os nomes das pastas. */
+  categorias: readonly Categoria[];
   /** O servidor ainda serve posts (nem os dez, nem o tempo esgotado). */
   podeCrescer: boolean;
   cedulaLiberada: boolean;
@@ -55,7 +78,8 @@ export function Feed({
   comDica: boolean;
   permanenciasContadas: readonly string[];
   aoCurtir: (postId: string, curtiu: boolean, gesto: "coracao" | "toque-duplo") => void;
-  aoSalvar: (postId: string, salvou: boolean) => void;
+  /** Guardou numa pasta (`pasta`) ou tirou dos salvos (`null`). */
+  aoSalvar: (postId: string, pasta: Area | null) => void;
   /** Comentar, compartilhar ou a aba Busca: a comissão responde que estão fechados. */
   aoFechado: (acao: "comentar" | "compartilhar" | "buscar") => void;
   aoPermanecer: (postId: string) => void;
@@ -67,6 +91,15 @@ export function Feed({
 }) {
   const paleta = usePaleta();
   const [aba, setAba] = useState<IdDaAba>("inicio");
+  /** O post cuja folha de pastas está aberta. */
+  const [salvando, setSalvando] = useState<string | null>(null);
+  const pastaAtual = salvando ? (pastas[salvando] ?? null) : null;
+  const porPasta = estandesPorPasta(posts, pastas);
+
+  function guardar(postId: string, pasta: Area | null) {
+    setSalvando(null);
+    aoSalvar(postId, pasta);
+  }
 
   // ── a permanência (uma vez por post, > 5 s com ≥ 60% na tela)
   const aoPermanecerRef = useRef(aoPermanecer);
@@ -131,6 +164,10 @@ export function Feed({
       <h1 className="so-leitor">{E2.tituloDaTela}</h1>
       <Cabecalho />
       <div className="rolagem rolagem--sem-barra feed" hidden={aba !== "inicio"}>
+        <div className="feed__pedido">
+          {/* O `InlineHint` desenha o próprio ícone: um segundo ícone aqui sairia dobrado. */}
+          <InlineHint tone="neutral">{PASTAS.pedido}</InlineHint>
+        </div>
         {posts.map((post, i) => (
           <PostDoFeed
             key={post.id}
@@ -141,7 +178,7 @@ export function Feed({
             comDica={comDica && i === 0}
             refDoCartao={refDoPost(post.id)}
             aoCurtir={(curtiu, gesto) => aoCurtir(post.id, curtiu, gesto)}
-            aoSalvar={(salvou) => aoSalvar(post.id, salvou)}
+            aoSalvar={() => setSalvando(post.id)}
             aoFechado={aoFechado}
             aoDeslizar={(foto) => aoDeslizar(post.id, foto)}
             aoExpandir={() => aoExpandir(post.id)}
@@ -182,8 +219,62 @@ export function Feed({
               </>
             }
           />
+          <h2 className="aba__titulo">{PASTAS.titulo}</h2>
+          <ul className="pastas">
+            {categorias.map((c) => (
+              <li key={c.area}>
+                <ListItem
+                  as="div"
+                  size="sm"
+                  leading={<IconUnv name="bookmark" size="md" tone="inherit" />}
+                  title={c.nome}
+                  subtitle={PASTAS.quantos(porPasta[c.area])}
+                />
+              </li>
+            ))}
+          </ul>
         </div>
       )}
+
+      <BottomSheetUnv
+        open={salvando !== null}
+        modal
+        title={PASTAS.salvarEm}
+        maxHeight="70%"
+        onOpenChange={(abrir) => {
+          if (!abrir) setSalvando(null);
+        }}
+      >
+        <div className="pastas-do-salvar">
+          <p className="pastas-do-salvar__instrucao">{PASTAS.instrucao}</p>
+          <ul className="pastas">
+            {categorias.map((c) => {
+              const aqui = pastaAtual === c.area;
+              return (
+                <li key={c.area}>
+                  <ListItem
+                    size="md"
+                    aria-label={PASTAS.pastaDe(c.nome)}
+                    aria-pressed={aqui}
+                    data-pasta={c.area}
+                    leading={<IconUnv name={aqui ? "bookmarkFilled" : "bookmark"} size="md" tone="inherit" />}
+                    title={c.nome}
+                    trailing={aqui ? <IconUnv name="check" size="sm" tone="inherit" /> : undefined}
+                    onClick={() => {
+                      if (salvando) guardar(salvando, c.area);
+                    }}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+          {salvando && salvos.has(salvando) && (
+            <ButtonUnv variant="secondary" size="md" block onClick={() => guardar(salvando, null)}>
+              {PASTAS.remover}
+            </ButtonUnv>
+          )}
+        </div>
+      </BottomSheetUnv>
 
       <FloatingButton
         icon="lock"

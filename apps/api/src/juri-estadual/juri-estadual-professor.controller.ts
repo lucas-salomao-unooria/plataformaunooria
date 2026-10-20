@@ -4,9 +4,6 @@ import { OidcGuard } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { Contrato } from "../openapi/contrato";
 import {
-  CARTOES_DE_ATITUDE,
-  CARTOES_DE_MECANISMO,
-  CASO_MARIANA,
   PECAS_DO_ENTAO,
   PECAS_DO_SE,
   PERGUNTAS_DA_PLENARIA,
@@ -35,11 +32,11 @@ export class JuriEstadualProfessorController {
   @Contrato({
     resumo: "O esqueleto da missão com o gabarito, a plenária e a regra do feed.",
     descricao:
-      "**Professor e gestores.** É o bloco vivo do guia: as peças da regra SE … ENTÃO com a certa marcada (a EF06CO03, ADR-174), o caso Mariana com os cartões certos marcados, as quatro perguntas de contraste da plenária e os números do motor (o que a Etapa 5 ensina: duas curtidas na mesma área fecham a bolha).\n\nA MOSTRA da turma não está aqui: ela é da atividade, em `GET /juri-estadual/turmas/:turmaId/pacotes`.",
+      "**Professor e gestores.** É o bloco vivo do guia: as peças da regra SE … ENTÃO com a certa marcada (a EF06CO03, ADR-174), as quatro perguntas de contraste da plenária e os números do motor (o que a Etapa 5 ensina: duas curtidas na mesma área fecham a bolha).\n\nA MOSTRA da turma não está aqui: ela é da atividade, em `GET /juri-estadual/turmas/:turmaId/pacotes`.",
     resposta: MaterialSchema,
     notas: [
       "Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.",
-      "`pecas.*[].certa`, `mecanismos[].certo` e `atitudes[].certo` são gabarito, e só existem nesta rota de professor.",
+      "`pecas.*[].certa` é gabarito, e só existe nesta rota de professor. O caso Mariana saiu na 0.7.0 (ADR-176).",
     ],
   })
   material() {
@@ -47,11 +44,6 @@ export class JuriEstadualProfessorController {
       pecas: {
         se: PECAS_DO_SE.map((p) => ({ texto: p.texto, certa: p.certa })),
         entao: PECAS_DO_ENTAO.map((p) => ({ texto: p.texto, certa: p.certa })),
-      },
-      mariana: {
-        caso: CASO_MARIANA,
-        mecanismos: CARTOES_DE_MECANISMO.map((c) => ({ id: c.id, texto: c.texto, certo: c.certo })),
-        atitudes: CARTOES_DE_ATITUDE.map((c) => ({ id: c.id, texto: c.texto, certo: c.certo })),
       },
       plenaria: [...PERGUNTAS_DA_PLENARIA],
       regra: {

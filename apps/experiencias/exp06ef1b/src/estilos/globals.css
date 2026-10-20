@@ -389,8 +389,7 @@ body {
 /*
  * (b) COMPENSAÇÃO — o `ListItem` do Unoovista corta título e subtítulo numa
  * linha (`white-space: nowrap` + reticências), certo para uma lista de
- * conversas e errado para um cartão de 20 palavras do caso Mariana ou o título
- * de um estande. Aqui só a QUEBRA de linha e o alinhamento à esquerda do
+ * conversas e errado para o título de um estande. Aqui só a QUEBRA de linha e o alinhamento à esquerda do
  * `<button>`; pedido ao `storybook-unooria`: uma prop `wrap` no `ListItem`.
  */
 .escolha > .unv-list-item {
@@ -411,60 +410,39 @@ body {
   display: none;
 }
 
-/* ──────────────────────── a separação, depois do voto (EF06CO01, ADR-174) */
-
-.separacao {
-  display: flex;
-  flex-direction: column;
-  gap: var(--unv-spacing-m, 12px);
-  padding: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px) var(--unv-spacing-l, 16px);
+/* A cédula travada enquanto falta estande sem pasta (ADR-176): só o espaço da linha. */
+.cedula__pastas {
+  padding-bottom: var(--unv-spacing-xs, 8px);
 }
 
-.separacao__titulo {
-  margin: 0;
-  font-size: var(--unv-font-title-lg-size, 18px);
-  font-weight: 700;
+/* ─────────────────────────── as pastas do salvar, no feed (EF06CO01, ADR-176) */
+
+/* O pedido da comissão no topo do feed: o `InlineHint` do DS; daqui só a margem. */
+.feed__pedido {
+  padding: var(--unv-spacing-s, 10px) var(--unv-gutter, 16px) 0;
 }
 
-.separacao__instrucao,
-.separacao__contador {
-  margin: 0;
-  font-size: var(--unv-font-body-md-size, 14px);
-  line-height: 1.45;
-}
-
-.separacao__contador {
-  color: var(--unv-color-text-secondary, #475157);
-}
-
-.separacao__lista {
+/* A folha "Salvar em" e as pastas da aba Jurado: `ListItem` do DS em lista sem marcador. */
+.pastas-do-salvar {
   display: flex;
   flex-direction: column;
   gap: var(--unv-spacing-s, 10px);
+  padding-bottom: var(--unv-spacing-m, 12px);
+}
+
+.pastas-do-salvar__instrucao {
+  margin: 0;
+  font-size: var(--unv-font-body-md-size, 14px);
+  line-height: 1.45;
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+.pastas {
+  display: flex;
+  flex-direction: column;
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-/* Um estande e as quatro áreas dele: o `ListItem` do DS e os `Chip` em linha que quebra. */
-.separacao__estande {
-  display: flex;
-  flex-direction: column;
-  gap: var(--unv-spacing-xs, 8px);
-  padding-bottom: var(--unv-spacing-s, 10px);
-  box-shadow: var(--unv-elevation-hairline-bottom);
-}
-
-/* A mesma compensação de `.escolha` (b): o `ListItem` corta o título numa linha. */
-.separacao__estande > .unv-list-item .unv-list-item__title {
-  white-space: normal;
-  overflow: visible;
-}
-
-.separacao__areas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--unv-spacing-xs, 8px);
 }
 
 /* ─────────────────────────────── E3-ALU-02: o voto lacrado e a espera */
@@ -555,31 +533,6 @@ body {
 
 .galeria__resultados {
   color: var(--unv-color-text-secondary, #475157);
-}
-
-/* A contagem por área e o contraste sem as curtidas (0.5.0): `ListItem` e
-   `BadgeUnv` do DS; daqui só a lista sem marcador e o espaçamento. */
-.galeria__secao {
-  margin: 0;
-  font-size: var(--unv-font-body-md-size, 14px);
-  font-weight: 700;
-}
-
-.galeria__areas {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.galeria__contraste {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--unv-spacing-xxs, 6px);
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
 .galeria__chips {
@@ -712,7 +665,7 @@ body {
 
 /* ═══════════════════════════════════════════════════════════════════════
    A ESCOLA — tokens `--unooria-*`, e só eles.
-   A regra SE … ENTÃO, o caso Mariana, o infográfico do fim e a missão ainda não aberta.
+   A regra SE … ENTÃO, o infográfico do fim e a missão ainda não aberta.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* O `ScrollBar` do DS é o contêiner que rola (aqui a seção É a `unooria`);
@@ -768,12 +721,6 @@ body {
   margin: 0;
   font-size: 15px;
   line-height: 1.5;
-}
-
-.mariana__caso {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.55;
 }
 
 /*

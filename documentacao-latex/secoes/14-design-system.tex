@@ -33,8 +33,8 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
   \rota{/admin}, \rota{/analise}; \emph{header} de todos os papéis; telas
   \textbf{pós-revelação} do estudante; a redação INTEIRA do Jornal da Escola
   (exp04ef1b), que não é clone de nada; e a tela da escola do Júri Estadual
-  de Projetos (exp06ef1b: a regra SE \ldots{} ENTÃO, \adrr{ADR-174}, o caso
-  Mariana e, numa faixa própria embaixo do fim
+  de Projetos (exp06ef1b: a regra SE \ldots{} ENTÃO, \adrr{ADR-174} --- o caso
+  Mariana saiu com a \adrr{ADR-176} ---, e, numa faixa própria embaixo do fim
   da comissão, o infográfico final, \adrr{ADR-157})\\
 \zebra \cd{instanooria} (21 + 7 extensões) & \cd{/instanooria} & \cd{--insta-*}, \cd{insta-} &
   exp07ef1b; e só o \cd{PostCard} na gaveta do Jornal da Escola
@@ -871,10 +871,15 @@ nenhuma mistura as duas seções.
 \textbf{Desde a 0.6.0 (\adrr{ADR-174})} a missão não usa mais o
 \cd{StoryPoll} (as enquetes saíram) nem o \cd{PuzzleBlock} e o
 \cd{PuzzleTrack} (a cadeia virou a regra SE \ldots{} ENTÃO, dois
-\cd{RadioGroup} na tela da escola). A separação dos estandes, depois do voto,
-fica no clone, na voz da comissão: \cd{ListItem} com \cd{Chip} em grupo de
-rádio, por toque ou teclado, sem arrastar (\adrr{ADR-162}). O registro abaixo é
-o da 0.1.0.
+\cd{RadioGroup} na tela da escola). \textbf{Desde a 0.7.0
+(\adrr{ADR-176})} a separação dos estandes é feita no próprio feed, nas pastas
+do salvar, na voz da comissão: um \cd{BottomSheetUnv} (\enquote{Salvar em}) com
+um \cd{ListItem} por pasta (\cd{aria-label} e \cd{aria-pressed} na pasta onde o
+post está), o \cd{IconUnv} \cd{bookmark}/\cd{bookmarkFilled}, e o pedido da
+comissão e o \enquote{faltam N} da cédula em \cd{InlineHint}; por toque ou
+teclado, sem arrastar (\adrr{ADR-162}), e sem compensação nova. A tela própria
+da 0.6.0 (\cd{ListItem} com \cd{Chip} em grupo de rádio) saiu, e o caso
+Mariana também. O registro abaixo é o da 0.1.0.
 \end{nota}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}

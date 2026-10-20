@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { AlertBox, Button, Card, CardContent, CardTitle, Logo, RadioGroup, ScrollBar, SectionHeader } from "@edu/ui/ds";
 import { comCerquilha } from "../../lib/regras";
-import { E5, E6, ESCOLA } from "../../lib/textos";
-import type { Cartao, Categoria, PecaDaRegra, RevelacaoDaRegra } from "../../lib/tipos";
+import { E5, ESCOLA } from "../../lib/textos";
+import type { Categoria, PecaDaRegra, RevelacaoDaRegra } from "../../lib/tipos";
 
 /**
  * As telas em que a ESCOLA fala — a seção `unooria`, pela ponte `@edu/ui/ds`.
@@ -11,8 +11,8 @@ import type { Cartao, Categoria, PecaDaRegra, RevelacaoDaRegra } from "../../lib
  * missão sai do clone para EXPLICAR: montar a regra que guiou o feed
  * (EF06CO03, ADR-174) é a Unooria mostrando a engrenagem — dentro do app, a explicação
  * voltaria para a ficção que a missão acabou de desmontar. O caso Mariana
- * (E6-ALU-01) também é da Unooria (PRD §10.1): é a transferência para a vida
- * da criança, fora da mostra.
+ * (E6-ALU-01), que também era da Unooria, saiu na 0.7.0 (ADR-176): a regra
+ * conclui a missão.
  *
  * A rolagem é o `ScrollBar` do DS: aqui a seção É a `unooria`, e a regra das
  * duas famílias (que tira o `ScrollBar` do clone) vale ao contrário.
@@ -157,86 +157,6 @@ export function Regra({
         onClick={() => condicao && acao && aoEnviar({ se: condicao, entao: acao })}
       >
         {E5.enviar}
-      </Button>
-    </Casca>
-  );
-}
-
-// ─────────────────────────────────── E6-ALU-01: o caso Mariana
-
-/**
- * A transferência: o caso literal (da api) e os cinco cartões apresentados
- * JUNTOS e de forma neutra, em dois `RadioGroup` da plataforma (um de
- * mecanismo, um de atitude). **A tela não diz qual é o certo** — nem depois: a
- * escolha é gravada para o professor e não vira nota. Os ids tocados ficam no
- * `sessionStorage` até "Submeter", para um F5 não apagar a escolha.
- */
-export function Mariana({
-  caso,
-  mecanismos,
-  atitudes,
-  inicial,
-  enviando,
-  aoMudar,
-  aoRegistrar,
-}: {
-  caso: string;
-  mecanismos: readonly Cartao[];
-  atitudes: readonly Cartao[];
-  inicial: { mecanismo: string | null; atitude: string | null };
-  enviando: boolean;
-  aoMudar: (escolha: { mecanismo: string | null; atitude: string | null }) => void;
-  aoRegistrar: (mecanismo: string, atitude: string) => void;
-}) {
-  const [mecanismo, setMecanismo] = useState<string | null>(
-    inicial.mecanismo && mecanismos.some((c) => c.id === inicial.mecanismo) ? inicial.mecanismo : null,
-  );
-  const [atitude, setAtitude] = useState<string | null>(
-    inicial.atitude && atitudes.some((c) => c.id === inicial.atitude) ? inicial.atitude : null,
-  );
-
-  return (
-    <Casca>
-      <h1 className="so-leitor">{E6.tituloDaTela}</h1>
-      <Card variant="outlined" theme="light">
-        <CardContent>
-          <p className="mariana__caso">{caso}</p>
-        </CardContent>
-      </Card>
-      <p className="escola__instrucao">{E6.instrucao}</p>
-      <RadioGroup
-        name="mecanismo"
-        label={E6.grupoDoMecanismo}
-        theme="light"
-        disabled={enviando}
-        value={mecanismo ?? ""}
-        options={mecanismos.map((c) => ({ value: c.id, label: c.texto }))}
-        onChange={(v) => {
-          const id = String(v);
-          setMecanismo(id);
-          aoMudar({ mecanismo: id, atitude });
-        }}
-      />
-      <RadioGroup
-        name="atitude"
-        label={E6.grupoDaAtitude}
-        theme="light"
-        disabled={enviando}
-        value={atitude ?? ""}
-        options={atitudes.map((c) => ({ value: c.id, label: c.texto }))}
-        onChange={(v) => {
-          const id = String(v);
-          setAtitude(id);
-          aoMudar({ mecanismo, atitude: id });
-        }}
-      />
-      <Button
-        fullWidth
-        disabled={!mecanismo || !atitude || enviando}
-        isLoading={enviando}
-        onClick={() => mecanismo && atitude && aoRegistrar(mecanismo, atitude)}
-      >
-        {E6.submeter}
       </Button>
     </Casca>
   );

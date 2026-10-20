@@ -1,10 +1,8 @@
 import type {
   Area,
-  AreaSemCurtidas,
   Categoria,
   Etapa,
   Gate,
-  ItemDaClassificacao,
   Passo,
   PostPublico,
   ProjetoDaGaleria,
@@ -12,6 +10,7 @@ import type {
   TipoDeBusca,
   VistosPorArea,
 } from "./tipos";
+import { AREAS } from "./tipos";
 
 /**
  * As poucas regras que são do CLIENTE — e por que são tão poucas.
@@ -102,41 +101,42 @@ export function passoNoMinimo(passo: Passo, piso: Passo): boolean {
  * As telas da missão. `lacrada` é a ESPERA (E3-ALU-02: o carimbo e o latch).
  * `revisada` é a passagem para a regra: a tela pede `POST passo
  * {para:"cadeia"}` sozinha (o "avançar" do PRD, §6.3), e num F5 também. O
- * passo `cadeia` é a tela da REGRA desde a 0.6.0, e `enquetes` (só de sessão
- * antiga) é a passagem para o fim: a tela pede `POST concluir` sozinha.
+ * passo `cadeia` é a tela da REGRA desde a 0.6.0, e ela conclui desde a 0.7.0
+ * (ADR-176). Três passagens só de sessão ANTIGA: `classificacao` (a separação
+ * da 0.6.0, que saiu — a tela pede `POST passo {para:"lacrada"}` sozinha), e
+ * `mariana` e `enquetes` (a tela pede `POST concluir` sozinha).
  */
 export type Tela =
   | "credencial"
   | "feed"
-  | "separacao"
+  | "saindoDaSeparacao"
   | "espera"
   | "galeria"
   | "avancando"
   | "regra"
-  | "mariana"
   | "concluindo"
   | "fim";
 
 export const TELA_DO_PASSO: Record<Passo, Tela> = {
   credencial: "credencial",
   feed: "feed",
-  classificacao: "separacao",
+  classificacao: "saindoDaSeparacao",
   lacrada: "espera",
   galeria: "galeria",
   revisada: "avancando",
   cadeia: "regra",
-  mariana: "mariana",
+  mariana: "concluindo",
   enquetes: "concluindo",
   fim: "fim",
 };
 
 /**
  * Quem FALA em cada tela — e, por isso, em que seção do DS o aviso de rede
- * sai. PRD §10.1: a regra (E5) e o caso Mariana (E6-ALU-01) são a Unooria. A
- * separação é da comissão: é antes da galeria, com o disfarce de pé.
+ * sai. PRD §10.1: a regra (E5) é a Unooria. As pastas são da comissão: estão
+ * no feed, com o disfarce de pé.
  */
 export function vozDaTela(tela: Tela): "clone" | "escola" {
-  return tela === "regra" || tela === "mariana" ? "escola" : "clone";
+  return tela === "regra" ? "escola" : "clone";
 }
 
 /**
@@ -251,14 +251,6 @@ export function areaComMaisOcultos(porArea: readonly VistosPorArea[]): Area | nu
   return melhor?.area ?? null;
 }
 
-/**
- * O contrafactual CONTADO: quantos posts de cada área o feed teria trazido sem
- * as curtidas. A lista de projetos vem calculada da api; a tela só conta.
- */
-export function contagemSemCurtidas(semCurtidas: readonly AreaSemCurtidas[]): { area: Area; posts: number }[] {
-  return semCurtidas.map((a) => ({ area: a.area, posts: a.posts.length }));
-}
-
 /** Os estandes OCULTOS de uma área, na ordem da galeria. */
 export function ocultosDaArea(projetos: readonly ProjetoDaGaleria[], area: Area): ProjetoDaGaleria[] {
   return projetos.filter((p) => p.area === area && !p.exibidoNoSeuFeed);
@@ -324,32 +316,55 @@ export function comCerquilha(hashtag: string): string {
   return `#${hashtag.replace(/^#+/, "")}`;
 }
 
-// ───────────────────────────────────────────── a separação (ADR-174)
+// ──────────────────────────────────────── as pastas do salvar (ADR-176)
+
+/** Um salvamento ainda na fila: salvou (com a pasta) ou tirou dos salvos. */
+export type SalvamentoPendente = { salvou: boolean; pasta?: Area };
 
 /**
- * As escolhas guardadas ainda valem para estes itens? (Rodada nova = ids
- * novos; área fora do vocabulário = lixo do `sessionStorage`.)
+ * As pastas que a tela mostra: as do servidor, com o que ainda está na fila
+ * por cima — a pasta é estado, como a curtida, e o servidor devolve o mapa
+ * inteiro a cada ida.
  */
-export function separacaoValida(
-  guardada: Readonly<Record<string, string>>,
-  itens: readonly Pick<ItemDaClassificacao, "id">[],
-  areas: readonly Area[],
-): Record<string, Area> {
-  const saida: Record<string, Area> = {};
-  for (const item of itens) {
-    const area = guardada[item.id];
-    if (area && (areas as readonly string[]).includes(area)) saida[item.id] = area as Area;
+export function pastasNaTela(
+  doServidor: Partial<Record<string, Area>>,
+  pendentes: ReadonlyMap<string, SalvamentoPendente>,
+): Partial<Record<string, Area>> {
+  const saida: Partial<Record<string, Area>> = { ...doServidor };
+  for (const [postId, s] of pendentes) {
+    if (!s.salvou) delete saida[postId];
+    else if (s.pasta) saida[postId] = s.pasta;
   }
   return saida;
 }
 
-/** O corpo do envio — `null` enquanto faltar estande sem área (o botão fica apagado). */
-export function respostasDaSeparacao(
-  itens: readonly Pick<ItemDaClassificacao, "id">[],
-  escolhas: Readonly<Record<string, Area>>,
-): { itemId: string; area: Area }[] | null {
-  const respostas = itens.map((i) => ({ itemId: i.id, area: escolhas[i.id] }));
-  return respostas.every((r): r is { itemId: string; area: Area } => Boolean(r.area)) ? respostas : null;
+/**
+ * Quantos estandes vistos ainda não estão em pasta nenhuma, contado na TELA
+ * (com a fila por cima): a cédula não espera a ida ao servidor para destravar.
+ * Quem decide no voto continua sendo a api (`semPasta`, 409 `estandes-sem-pasta`).
+ */
+export function semPastaNaTela(
+  posts: readonly Pick<PostPublico, "id" | "projetoId">[],
+  pastas: Partial<Record<string, Area>>,
+): number {
+  const projetos = new Set(posts.map((p) => p.projetoId));
+  const guardados = new Set(posts.filter((p) => pastas[p.id]).map((p) => p.projetoId));
+  return projetos.size - guardados.size;
+}
+
+/** Quantos estandes cada pasta guarda — a aba Jurado. Um estande conta uma vez, na pasta do último post dele. */
+export function estandesPorPasta(
+  posts: readonly Pick<PostPublico, "id" | "projetoId">[],
+  pastas: Partial<Record<string, Area>>,
+): Record<Area, number> {
+  const doProjeto = new Map<string, Area>();
+  for (const p of posts) {
+    const pasta = pastas[p.id];
+    if (pasta) doProjeto.set(p.projetoId, pasta);
+  }
+  const contagem = Object.fromEntries(AREAS.map((a) => [a, 0])) as Record<Area, number>;
+  for (const pasta of doProjeto.values()) contagem[pasta] += 1;
+  return contagem;
 }
 
 // ─────────────────────────────────────────────── o gesto na mídia do post

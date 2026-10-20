@@ -430,7 +430,7 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
     concluiu: false,
   });
   const painel = (
-    passos: Passo[] = ["galeria", "cadeia", "cadeia", "mariana"],
+    passos: Passo[] = ["galeria", "cadeia", "cadeia", "fim"],
     resumo: Partial<{ separaram: number; revisaram: number; concluiram: number }> = {},
     rodada = 1,
     id = "p1",
@@ -456,18 +456,18 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
     },
   });
 
-  test("relê na separação, na regra enviada, e quando a atividade ou a rodada trocam (ficha 5, ADR-174)", () => {
+  test("relê na separação, na regra enviada, e quando a atividade ou a rodada trocam (ficha 6, ADR-176)", () => {
     const antes = painel();
     expect(mudouAEvidencia(antes, painel())).toBe(false);
-    // A separação marca a EF06CO01.
+    // A separação das pastas, corrigida no voto, marca a EF06CO01.
     expect(mudouAEvidencia(antes, painel(undefined, { separaram: 5 }))).toBe(true);
-    // A regra enviada: a linha sai de `cadeia` (EF06CO03), sem contador no resumo.
-    expect(mudouAEvidencia(antes, painel(["galeria", "cadeia", "mariana", "mariana"]))).toBe(true);
+    // A regra enviada: a linha sai de `cadeia` para `fim` (EF06CO03), sem contador no resumo.
+    expect(mudouAEvidencia(antes, painel(["galeria", "cadeia", "fim", "fim"]))).toBe(true);
     expect(mudouAEvidencia(antes, painel(undefined, {}, 2))).toBe(true);
     expect(mudouAEvidencia(antes, painel(undefined, {}, 1, "p2"))).toBe(true);
   });
 
-  test("o que não marca nada não relê a página: a espera, a galeria, a revisão do voto e os cartões", () => {
+  test("o que não marca nada não relê a página: a espera, a galeria, a revisão do voto e a sessão antiga que conclui", () => {
     expect(mudouAEvidencia(painel(["feed"]), painel(["classificacao"]))).toBe(false);
     expect(mudouAEvidencia(painel(["lacrada"]), painel(["galeria"]))).toBe(false);
     expect(mudouAEvidencia(painel(), painel(undefined, { revisaram: 4 }))).toBe(false);

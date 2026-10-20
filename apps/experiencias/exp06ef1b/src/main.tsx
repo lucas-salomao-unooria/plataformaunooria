@@ -12,7 +12,7 @@ import { createRoot } from "react-dom/client";
  *   Rounded, auto-hospedados no pacote. O `Icon` do Unoovista é ligadura — sem
  *   ela, o NOME do glifo aparece no lugar do desenho ("lock" onde devia haver o
  *   cadeado).
- * - **a escola** (`unooria`): a regra SE … ENTÃO, o caso Mariana, o
+ * - **a escola** (`unooria`): a regra SE … ENTÃO, o
  *   infográfico do fim e a missão ainda não aberta. A folha de FONTE também é
  *   obrigatória: os glifos do DS são ligadura do Material Symbols.
  *

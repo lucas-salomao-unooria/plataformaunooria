@@ -8,10 +8,10 @@
  * os arquivos da api como texto e reprova a divergência. Sem ele, um passo novo
  * no servidor cairia numa tela que não existe, e o typecheck não veria.
  *
- * O que NÃO está aqui, de propósito (regra 3): a área de cada estande da
- * separação, a peça certa da regra (antes do envio), o cartão certo do caso
- * Mariana, os pesos do motor do feed, a área líder. A tela recebe os itens
- * embaralhados, com ids opacos, e quem corrige é o servidor.
+ * O que NÃO está aqui, de propósito (regra 3): o acerto da separação nas
+ * pastas, a peça certa da regra (antes do envio), os pesos do motor do feed, a
+ * área líder. A tela recebe as peças embaralhadas, com ids opacos, e quem
+ * corrige é o servidor.
  */
 
 export const EXP_ID = "exp06ef1b";
@@ -21,7 +21,7 @@ export const EXP_ID = "exp06ef1b";
  * `public/experiencia.json`. O CI lê a do manifesto, e a divergência já causou
  * bug — o `versao.test.ts` compara os três (ADR-84).
  */
-export const EXP_VERSION = "0.6.0";
+export const EXP_VERSION = "0.7.0";
 
 /** O prefixo das rotas da missão na api. */
 export const ROTA = "/juri-estadual";
@@ -29,9 +29,10 @@ export const ROTA = "/juri-estadual";
 // ───────────────────────────────────────────── o vocabulário (espelho)
 
 /**
- * `regras/passos.ts#PASSOS` — na ordem em que a criança os percorre. Desde a
- * 0.6.0 (ADR-174) há a `classificacao` depois do voto; `cadeia` é a tela da
- * regra; `enquetes` só existe para as sessões antigas, que a tela conclui.
+ * `regras/passos.ts#PASSOS` — na ordem em que a criança os percorre. `cadeia`
+ * é a tela da regra, que conclui desde a 0.7.0 (ADR-176). `classificacao`
+ * (a tela da separação da 0.6.0), `mariana` (o caso da 0.6.0) e `enquetes`
+ * só existem para as sessões antigas, que a tela tira de lá sozinha.
  */
 export const PASSOS = [
   "credencial",
@@ -53,9 +54,10 @@ export type Etapa = (typeof ETAPAS)[number];
 
 /**
  * `regras/passos.ts#PASSOS_PEDIDOS` — os passos que a criança pede: o `feed`
- * ("Acessar Feed da Mostra") e a `cadeia` (o avanço depois da revisão do voto).
+ * ("Acessar Feed da Mostra"), a `cadeia` (o avanço depois da revisão do voto)
+ * e a `lacrada` (só a sessão antiga parada na separação da 0.6.0).
  */
-export const PASSOS_PEDIDOS = ["feed", "cadeia"] as const;
+export const PASSOS_PEDIDOS = ["feed", "cadeia", "lacrada"] as const;
 
 /** `vocabulario.ts#AREAS` — o slug é fixo; o nome de cada área vem do pacote do professor. */
 export const AREAS = ["area_a", "area_b", "area_c", "area_d"] as const;
@@ -146,6 +148,10 @@ export interface Feed {
   posts: PostPublico[];
   curtidos: string[];
   salvos: string[];
+  /** A pasta (área) de cada post salvo — a separação da EF06CO01 (ADR-176). */
+  pastas: Partial<Record<string, Area>>;
+  /** Quantos estandes vistos ainda não estão numa pasta: a cédula só lacra com zero. */
+  semPasta: number;
   /** Os dez chegaram. */
   completo: boolean;
   /** Os 8 minutos do servidor acabaram: o feed não serve mais. */
@@ -154,14 +160,6 @@ export interface Feed {
   encerraEm: string | null;
   /** A cédula pode abrir: `completo` OU `tempoEsgotado`. Quem decide é o servidor. */
   cedulaLiberada: boolean;
-}
-
-/** `ItemDaClassificacaoSchema` — um estande na separação: SEM área, hashtag nem perfil. */
-export interface ItemDaClassificacao {
-  /** Opaco por sessão (`cl-xxx`). */
-  id: string;
-  titulo: string;
-  imagem: ImagemPublica;
 }
 
 /** `PecaPublicaSchema` — uma peça da regra, sem dizer se é a certa. */
@@ -177,11 +175,6 @@ export interface RevelacaoDaRegra {
   certa: { se: string; entao: string };
   motivo: "curtidas" | "permanencia" | "variado";
   area: Area | null;
-}
-
-export interface Cartao {
-  id: string;
-  texto: string;
 }
 
 export interface Voto {
@@ -205,20 +198,11 @@ export interface Sessao {
   voto: Voto | null;
   /** `complementar` só nas sessões da 0.3.0. `projetoId`: o estande da troca; `null` ao manter. */
   revisao: { acao: AcaoDaRevisao | "complementar"; projetoId: string | null } | null;
-  /** Só no passo `classificacao`: os estandes vistos, embaralhados. As opções são as `categorias`. */
-  classificacao: { itens: ItemDaClassificacao[] } | null;
   /**
    * A REGRA (o passo guarda o nome `cadeia`), do passo dela em diante.
    * `enviada` sem `revelacao` = a cadeia antiga da 0.5.0, já montada.
    */
   cadeia: { se: PecaDaRegra[]; entao: PecaDaRegra[]; enviada: boolean; revelacao: RevelacaoDaRegra | null } | null;
-  /** Do passo `mariana` em diante. */
-  mariana: {
-    caso: string;
-    mecanismos: Cartao[];
-    atitudes: Cartao[];
-    escolha: { mecanismo: string; atitude: string } | null;
-  } | null;
   concluida: boolean;
 }
 
@@ -229,7 +213,7 @@ export interface Gate {
   etapa: Etapa;
 }
 
-/** `EstadoSchema` — voto, separação, revisão, cartões e concluir. */
+/** `EstadoSchema` — voto, revisão e concluir. */
 export interface Estado {
   passo: Passo;
   etapa: Etapa;
