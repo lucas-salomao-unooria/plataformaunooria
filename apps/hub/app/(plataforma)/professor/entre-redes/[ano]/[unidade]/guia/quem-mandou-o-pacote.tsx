@@ -12,8 +12,8 @@ import {
 /**
  * BLOCO VIVO do guia da exp05ef1b: o banco curado COM o gabarito, a fala da
  * Nina, o roteiro da roda de conversa, e as duas ações de evidência por dentro
- * — um cartão de frases já respondido e as peças da regra do tio com o que
- * cada uma faz.
+ * — os quatro pedidos do alerta do grupo com o filtro esperado, e os blocos do
+ * robô do grupo com o que cada um faz e as quatro mensagens que ele recebe.
  *
  * Vem de `GET /quem-mandou-isso/professor/material` (professor e gestão). Nada
  * disto é texto do guia de propósito: descrever as mensagens em vez de
@@ -23,8 +23,8 @@ import {
  *
  * Duas ressalvas que a tela diz em voz alta: este é o BANCO CURADO (a turma que
  * recebeu um pacote gerado para o tema da professora leu outras oito — estão
- * em A aula e os resultados), e cada criança recebe o cartão com as frases das
- * TRÊS mensagens dela, sem a resposta.
+ * em A aula e os resultados — e o alerta opera sobre as oito DELES), e a
+ * criança nunca vê o filtro esperado nem o tipo de cada bloco.
  */
 export function QuemMandouOPacote({ dados }: { dados: MaterialDoProfessor | null }) {
   if (!dados) {
@@ -104,58 +104,83 @@ export function QuemMandouOPacote({ dados }: { dados: MaterialDoProfessor | null
         </ol>
       </Card>
 
-      <Card variant="elevated" title="Depois dos crachás: o cartão de frases (EF05CO03)">
+      <Card variant="elevated" title="Depois dos crachás: o alerta do grupo (EF05CO03)">
         <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-unooria-neutral-800">
           <p>
-            Junto com os crachás, cada criança recebe no Mural seis frases sobre as três mensagens que ela
-            encaminhou, com E, OU e NÃO, e marca Sim (a frase está certa) ou Não. Os crachás dão o valor de
-            cada mensagem; a frase pede a operação sobre eles. Quem ainda não respondeu quando você libera
-            a reflexão responde antes da regra do tio.
+            Logo abaixo dos crachás, o Mural mostra as oito mensagens com os dois crachás de cada uma e
+            quatro pedidos, um por vez. Para cada pedido, a criança monta um filtro com os chips Falsa e
+            Emocional, o NÃO antes de cada um e o E ou o OU entre eles, toca Ver resultado (até{" "}
+            {dados.alerta.execucoes} vezes) e envia o alerta ao grupo. A tela destaca quem passou, sem dizer
+            se está certo. <strong>Os alertas fecham quando você aperta Apresentar Síntese.</strong>
           </p>
-          <p className="text-[13px] text-unooria-neutral-600">
-            <span className="text-unooria-neutral-500">A fala da Nina:</span> {dados.textos.cartao}
-          </p>
-          <ul className="flex flex-col gap-2" data-cartao-de-exemplo>
-            {dados.cartao.exemplo.map((frase) => (
-              <li key={frase.texto} className="flex flex-wrap items-start gap-2 text-[13px]">
-                <Tag variant={frase.esperado === "sim" ? "success" : "danger"} size="sm">
-                  {frase.esperado === "sim" ? "Sim" : "Não"}
-                </Tag>
-                <span className="flex-1">{frase.texto}</span>
+          <ol className="flex flex-col gap-2" data-pedidos-do-alerta>
+            {dados.alerta.pedidos.map((p) => (
+              <li key={p.n} className="rounded-lg border border-unooria-neutral-200 p-3 text-[13px]">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-unooria-neutral-500">
+                  Alerta {p.n} de {dados.alerta.pedidos.length}
+                </span>
+                <p className="mt-1 text-[14px] text-unooria-neutral-950">{p.texto}</p>
+                <p className="mt-1">
+                  <span className="text-unooria-neutral-500">Filtro esperado:</span>{" "}
+                  <strong>{p.emPalavras}</strong>{" "}
+                  <span className="text-unooria-neutral-500">
+                    (no banco curado, {p.passamNoPadrao} {p.passamNoPadrao === 1 ? "mensagem passa" : "mensagens passam"})
+                  </span>
+                </p>
               </li>
             ))}
-          </ul>
+          </ol>
           <p className="text-[12px] text-unooria-neutral-500">
-            Um exemplo com três mensagens do banco curado. Metade das frases é certa e metade é errada: quem
-            responde tudo igual acerta só três. A criança nunca vê a resposta.
+            Vale também a ordem trocada (“Emocional E Falsa”): o que conta é o que o filtro destaca. Cada
+            alerta vale 2 pontos se o primeiro Ver resultado já tinha o filtro certo e 1 se a criança chegou
+            a ele depois de ver o resultado.
           </p>
         </div>
       </Card>
 
-      <Card variant="elevated" title="O fim da missão: a regra do tio (EF05CO04)">
+      <Card variant="elevated" title="O fim da missão: o robô do grupo (EF05CO04)">
         <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-unooria-neutral-800">
           <p>
-            Quando você aperta Liberar Reflexão, cada criança monta uma regra com peças, “SE a mensagem for…
-            ENTÃO eu… E DEPOIS…”, diz o que acha que a regra vai fazer com o áudio do tio e só então testa.
-            Prever antes de ver é a simulação que a habilidade pede. Ela pode mudar e testar de novo, mas o
-            nível olha a primeira regra testada e a primeira previsão.
+            Quando você aperta Liberar Reflexão, cada criança monta, com blocos, o robô do grupo: o laço{" "}
+            {dados.robo.laco.icone} “{dados.robo.laco.rotulo}” (opcional, não vem montado), “SE a mensagem
+            for…”, “ENTÃO o robô…” e “E DEPOIS…”. Ela liga o robô e vê as quatro mensagens chegando, com o
+            robô agindo em cada uma — sem o laço, ele só olha a primeira. Pode mudar e ligar de novo (até{" "}
+            {dados.robo.ligacoes} vezes), mas o nível olha a primeira vez que ela ligou.
           </p>
           <blockquote className="border-l-2 border-unooria-neutral-300 pl-3 text-[14px] text-unooria-neutral-800">
             {dados.textos.tio}
           </blockquote>
+          <p className="text-[13px] font-semibold text-unooria-neutral-950">As quatro mensagens que o robô recebe</p>
+          <ol className="flex flex-col gap-1 text-[13px]" data-mensagens-do-robo>
+            {dados.robo.mensagens.map((m) => (
+              <li key={m.id}>
+                <strong>{m.remetente}</strong>
+                {m.tipo === "audio" ? " (áudio)" : ""}: “{m.texto}” —{" "}
+                <span className="text-unooria-neutral-500">
+                  {m.atributos.length === 0
+                    ? "sem sinais de alerta (a de controle)"
+                    : m.atributos
+                        .map((a) => dados.robo.condicoes.find((c) => c.id === a)?.rotulo ?? a)
+                        .join(" · ")}
+                </span>
+              </li>
+            ))}
+          </ol>
           <p className="text-[13px] font-semibold text-unooria-neutral-950">As condições (SE a mensagem for…)</p>
           <ul className="flex flex-col gap-1 text-[13px]">
-            {dados.regra.condicoes.map((c) => (
+            {dados.robo.condicoes.map((c) => (
               <li key={c.id}>
-                {c.rotulo} — <span className="text-unooria-neutral-500">{c.pegaOAudio ? "pega o áudio do tio" : "deixa o áudio passar"}</span>
+                <span aria-hidden="true">{c.icone}</span> {c.rotulo} —{" "}
+                <span className="text-unooria-neutral-500">{c.pegaOTio ? "pega o áudio do tio" : "deixa o áudio do tio passar"}</span>
               </li>
             ))}
           </ul>
-          <p className="text-[13px] font-semibold text-unooria-neutral-950">As ações (ENTÃO eu… / E DEPOIS…)</p>
+          <p className="text-[13px] font-semibold text-unooria-neutral-950">As ações (ENTÃO o robô… / E DEPOIS…)</p>
           <ul className="flex flex-col gap-1 text-[13px]">
-            {dados.regra.acoes.map((a) => (
+            {dados.robo.acoes.map((a) => (
               <li key={a.id}>
-                {a.rotulo} — <span className="text-unooria-neutral-500">{ROTULO_DO_TIPO_DE_ACAO[a.tipo]}</span>
+                <span aria-hidden="true">{a.icone}</span> {a.rotulo} —{" "}
+                <span className="text-unooria-neutral-500">{ROTULO_DO_TIPO_DE_ACAO[a.tipo]}</span>
               </li>
             ))}
           </ul>

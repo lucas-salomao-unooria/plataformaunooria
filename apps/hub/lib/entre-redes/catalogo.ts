@@ -685,8 +685,8 @@ export const MISSAO_FOTO_CONTA: Missao = {
  *    síntese (que pode ser pulada) e a reflexão.
  *
  * As habilidades avaliadas são SÓ as de Computação — EF05CO08 pela seleção do
- * Mural, EF05CO03 pelo cartão de frases e EF05CO04 pela regra do tio (a ficha
- * E14 da api, v4: só ações). Os códigos de Língua Portuguesa do one-pager ("a confirmar") não
+ * Mural, EF05CO03 pelo alerta do grupo e EF05CO04 pelo robô do grupo (a ficha
+ * E14 da api, v5: só ações). Os códigos de Língua Portuguesa do one-pager ("a confirmar") não
  * entram como habilidade avaliada.
  */
 export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
@@ -716,7 +716,7 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
     duracao: "1 aula de 50 min (ou 2 sessões de 25 min)",
     formato:
       "Unoochat, o aplicativo de mensagens da Unooria, em tema claro: a conversa com a Nina, o grupo da " +
-      "turma com 8 mensagens, o Mural da Turma, a enquete e o cartão de frases; o desafio final, a regra do tio, é na tela da escola.",
+      "turma com 8 mensagens, o Mural da Turma, a enquete e o alerta do grupo; o desafio final, o robô do grupo, é na tela da escola.",
     atos: [
       {
         rotulo: "1 — Desafiar: o pedido da Nina",
@@ -745,9 +745,10 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
         texto:
           "Você aperta Liberar Revelação: o painel mostra o Termômetro da Turma para projetar, e cada " +
           "aparelho ganha os dois selos sobre as 3 mensagens encaminhadas, com o motivo votado e o " +
-          "lembrete do bimestre — e o cartão de frases: seis frases com E, OU e NÃO sobre as 3 " +
-          "mensagens, que registra a EF05CO03. Quem ainda não tinha confirmado continua, confirma e vê a " +
-          "própria revelação depois.",
+          "lembrete do bimestre — e, logo abaixo, o alerta do grupo: as 8 mensagens com os dois selos e " +
+          "4 pedidos em que a criança monta um filtro com E, OU e NÃO, vê quem passa e envia o alerta ao " +
+          "grupo. É o alerta que registra a EF05CO03, e ele fecha quando você apresenta a síntese. Quem " +
+          "ainda não tinha confirmado continua, confirma e vê a própria revelação depois.",
       },
       {
         rotulo: "5 — Explicar: a síntese e a roda de conversa",
@@ -757,12 +758,12 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
           "minutos. A síntese pode ser pulada.",
       },
       {
-        rotulo: "6 — Refletir: a regra do tio",
+        rotulo: "6 — Refletir: o robô do grupo",
         texto:
-          "Liberar Reflexão leva cada aparelho ao desafio do tio: quem ainda não respondeu o cartão " +
-          "responde primeiro; depois a criança monta uma regra com peças (“SE a mensagem for… ENTÃO " +
-          "eu…”), prevê o que ela faz com o áudio assustado do tio e testa. A regra registra a EF05CO04 " +
-          "no painel de habilidades.",
+          "Liberar Reflexão leva cada aparelho ao desafio do tio: a criança monta com blocos o robô do " +
+          "grupo (“para cada mensagem nova”, “SE a mensagem for…”, “ENTÃO o robô…”), liga e vê o que ele " +
+          "faz com 4 mensagens, a primeira delas o áudio assustado do tio, e envia. O robô registra a " +
+          "EF05CO04 no painel de habilidades.",
       },
     ],
     preparo: [

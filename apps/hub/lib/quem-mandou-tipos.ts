@@ -20,8 +20,10 @@ import type { EquipeNoPainel } from "./equipe-no-painel";
  * rota de professor devolve: é com ele que a professora cura e conduz. Quem o
  * esconde do estudante é a api, por construção do tipo público.
  *
- * A regra Se/Então saiu da missão (ADR-145): a folha não tem mais texto livre
- * de menor, e as perguntas de múltipla escolha são a reflexão.
+ * A regra Se/Então saiu da missão (ADR-145): a folha não tem texto livre de
+ * menor. Desde o instrumento 2.5.0, a EF05CO03 é o ALERTA DO GRUPO (quatro
+ * filtros com E, OU e NÃO) e a EF05CO04 é o ROBÔ DO GRUPO (blocos com laço,
+ * ligado em quatro mensagens).
  */
 
 /** O eixo da verdade. Independente do tom: é a descoberta da missão (EF05CO03). */
@@ -56,7 +58,6 @@ export type Passo =
   | "espera"
   | "revelacao"
   | "sintese"
-  | "cartao"
   | "regra"
   | "concluida";
 
@@ -197,10 +198,10 @@ export interface ProgressoDaTurma {
   entraram: number;
   confirmaram: number;
   votaram: number;
-  /** Enviaram o cartão de frases (EF05CO03). */
-  responderamCartao: number;
-  /** Enviaram a regra do tio (EF05CO04). */
-  enviaramRegra: number;
+  /** Enviaram os QUATRO alertas do grupo (EF05CO03). */
+  enviaramAlertas: number;
+  /** Enviaram o robô do grupo (EF05CO04). */
+  enviaramRobo: number;
   concluiram: number;
 }
 
@@ -227,10 +228,14 @@ export interface LinhaDoPainel {
   selecao: string[] | null;
   motivo: string | null;
   tempoFeedSegundos: number | null;
-  /** O cartão enviado: acertos (0–6) e por operador. O NÍVEL é da evidência, no painel de habilidades. */
-  cartao: { acertos: number; porOperador: { E: number; OU: number; NAO: number } } | null;
-  /** A regra enviada, em palavras (montada com peças: não é texto livre), e quantos testes levou. */
-  regra: { emPalavras: string; testes: number } | null;
+  /**
+   * Os alertas enviados: os pontos (0–8, 2 por pedido) sobre os enviados, e
+   * quantos de 4. O NÍVEL é da evidência, no painel de habilidades, e só
+   * existe com os 4.
+   */
+  alertas: { pontos: number; enviados: number } | null;
+  /** O robô enviado, em palavras (montado com blocos: não é texto livre), e quantas vezes foi ligado. */
+  robo: { emPalavras: string; ligacoes: number } | null;
 }
 
 /** O roteiro da roda de conversa e as instruções fixas dos botões (D0-5), literais da api. */
@@ -263,22 +268,40 @@ export interface OpcoesDaMissao {
   motivos: OpcaoDaMissao[];
 }
 
+/** Um filtro do alerta: uma condição, ou duas ligadas por E ou OU, cada uma com o NÃO. */
+export interface ExpressaoDoAlerta {
+  a: { attr: "falsa" | "emocional"; nao: boolean };
+  op?: "E" | "OU";
+  b?: { attr: "falsa" | "emocional"; nao: boolean };
+}
+
+/** Um bloco do robô: id, rótulo e o ícone (emoji provisório do Figma). */
+export interface BlocoDoRobo extends OpcaoDaMissao {
+  icone: string;
+}
+
 /**
  * `GET /quem-mandou-isso/professor/material` — o guia da aula: o banco curado
- * COM gabarito, o roteiro e as duas ações de evidência por dentro (um cartão
- * de frases do banco curado com a resposta esperada, e as peças da regra com o
- * tipo de cada uma). Sem tenancy: é o catálogo da missão, igual em todo
- * contrato.
+ * COM gabarito, o roteiro e as duas ações de evidência por dentro (os quatro
+ * pedidos do alerta com a expressão esperada, e os blocos do robô com o tipo
+ * de cada ação e as quatro mensagens). Sem tenancy: é o catálogo da missão,
+ * igual em todo contrato.
  */
 export interface MaterialDoProfessor {
   padrao: PadraoDoPacote & { convite: string };
   roteiro: RoteiroDaAula;
-  textos: { encerramento: string; cartao: string; tio: string };
-  cartao: { exemplo: Array<{ operador: "E" | "OU" | "NAO"; texto: string; esperado: "sim" | "nao" }> };
-  regra: {
-    condicoes: Array<OpcaoDaMissao & { pegaOAudio: boolean }>;
-    acoes: Array<OpcaoDaMissao & { tipo: TipoDeAcaoDaRegra }>;
-    previsoes: OpcaoDaMissao[];
+  textos: { encerramento: string; tio: string };
+  alerta: {
+    /** Com a expressão esperada (o gabarito) e quantas mensagens do banco curado passam nela. */
+    pedidos: Array<{ n: number; texto: string; esperada: ExpressaoDoAlerta; emPalavras: string; passamNoPadrao: number }>;
+    execucoes: number;
+  };
+  robo: {
+    laco: { rotulo: string; icone: string };
+    condicoes: Array<BlocoDoRobo & { pegaOTio: boolean }>;
+    acoes: Array<BlocoDoRobo & { tipo: TipoDeAcaoDoRobo }>;
+    mensagens: Array<{ id: string; remetente: string; texto: string; tipo: "audio" | "texto"; atributos: string[] }>;
+    ligacoes: number;
   };
   /** O nível de cada ação, contado em palavras (a ficha). */
   habilidades: Array<{
@@ -289,10 +312,10 @@ export interface MaterialDoProfessor {
   opcoes: OpcoesDaMissao;
 }
 
-/** O tipo de cada peça de ação da regra — o gabarito dela, que só o professor vê. */
-export type TipoDeAcaoDaRegra = "checagem" | "espera" | "condicional" | "repasse";
+/** O tipo de cada bloco de ação do robô — o gabarito dele, que só o professor vê. */
+export type TipoDeAcaoDoRobo = "checagem" | "espera" | "condicional" | "repasse";
 
-export const ROTULO_DO_TIPO_DE_ACAO: Readonly<Record<TipoDeAcaoDaRegra, string>> = {
+export const ROTULO_DO_TIPO_DE_ACAO: Readonly<Record<TipoDeAcaoDoRobo, string>> = {
   checagem: "confere a notícia",
   espera: "só espera",
   condicional: "encaminha só se confirmar (depois de conferir)",
@@ -350,8 +373,7 @@ export const ROTULO_DO_PASSO: Readonly<Record<Passo, string>> = {
   espera: "Votou e aguarda a revelação",
   revelacao: "Vendo a revelação",
   sintese: "Vendo a síntese",
-  cartao: "Respondendo o cartão de frases",
-  regra: "Montando a regra do tio",
+  regra: "Montando o robô do grupo",
   concluida: "Concluiu",
 };
 
