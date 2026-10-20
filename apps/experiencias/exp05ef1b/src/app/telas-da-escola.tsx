@@ -332,7 +332,8 @@ function SimulacaoDoRobo({
         return (
           <Card variant="outlined" key={m.id} className="robo__mensagem">
             <CardHeader>
-              <CardTitle as="h2">{m.tipo === "audio" ? `${m.remetente} · ${TEXTOS.robo.audio}` : m.remetente}</CardTitle>
+              {/* O remetente do áudio já chega com a duração, como o Figma o desenha. */}
+              <CardTitle as="h2">{m.remetente}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="escola__fala">{m.texto}</p>

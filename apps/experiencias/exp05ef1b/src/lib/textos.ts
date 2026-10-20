@@ -293,8 +293,6 @@ export const TEXTOS = {
     /** [Figma] */
     olhando: "Olhando esta mensagem…",
     aguardando: "Chegando…",
-    /** [Figma] O tipo do áudio ao lado de quem mandou. */
-    audio: "áudio",
     /** [Figma] A mensagem sem sinal (a de controle). */
     semSinais: "sem sinais de alerta",
     /** [novo] O nome acessível da linha do que o robô fez. */
