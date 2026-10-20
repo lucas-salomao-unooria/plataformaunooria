@@ -49452,7 +49452,7 @@
           "quem-mandou-isso"
         ],
         "summary": "\"Enviar meu robô\" — o latch do robô (EF05CO04).",
-        "description": "O robô final, definitivo. Na MESMA transação, a marca da **EF05CO04**: não atingiu se as ações encaminham antes de checar; atingiu se o enviado tem o laço, a condição pega o áudio do tio e as ações checam antes de encaminhar, e a PRIMEIRA ligação já era assim; em processo em todo o resto (inclusive enviar sem ligar). Quem fecha a missão é o `POST /concluir`, que a tela chama logo depois.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Os mesmos **409** da ligação. Idempotente: o MESMO robô de novo devolve o estado; outro é **409** `robo-ja-enviado`.",
+        "description": "O robô final, definitivo. Na MESMA transação, a marca da **EF05CO04**: não atingiu se as ações encaminham antes de checar; atingiu se o enviado tem o laço, a condição é \"urgente e alarmante\" (a única que pega as três mensagens de risco) e as ações checam antes de encaminhar, e a PRIMEIRA ligação já era assim; em processo em todo o resto (inclusive enviar sem ligar). Quem fecha a missão é o `POST /concluir`, que a tela chama logo depois.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Os mesmos **409** da ligação. Idempotente: o MESMO robô de novo devolve o estado; outro é **409** `robo-ja-enviado`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -52534,18 +52534,24 @@
                               "icone": {
                                 "type": "string"
                               },
-                              "pegaOTio": {
-                                "type": "boolean"
+                              "riscos": {
+                                "type": "integer",
+                                "minimum": 0
                               }
                             },
                             "required": [
                               "id",
                               "rotulo",
                               "icone",
-                              "pegaOTio"
+                              "riscos"
                             ],
                             "additionalProperties": false
                           }
+                        },
+                        "mensagensDeRisco": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
                         },
                         "acoes": {
                           "type": "array",
@@ -52633,6 +52639,7 @@
                       "required": [
                         "laco",
                         "condicoes",
+                        "mensagensDeRisco",
                         "acoes",
                         "mensagens",
                         "ligacoes"
