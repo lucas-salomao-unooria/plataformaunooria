@@ -46,8 +46,9 @@ export const POSTS_DO_RAIO_X = 6;
 /**
  * A COMPOSIÇÃO DO RAIO-X — os 6 posts, ou `null` quando ela não fecha.
  *
- * Só entra post que chegou até ele e ficou na tela dele; nenhum da tela cinza
- * (que só mostra os do outro lado, e entregaria o gabarito):
+ * Entram primeiro os posts que chegaram até ele e ficaram na tela dele;
+ * nenhum da tela cinza (que só mostra os do outro lado, e entregaria o
+ * gabarito):
  *   - 2 do lado dele: o post desse lado em que mais parou, e outro qualquer;
  *   - 2 do outro lado: os mais sutis (menor intensidade) entre os que ele viu;
  *   - 2 neutros SOBRE o tema que ele viu (fora do tema nunca entram).
@@ -59,8 +60,14 @@ export const POSTS_DO_RAIO_X = 6;
  *     faltar, com o lado dele até 3;
  *   - viu menos de 2 do outro lado: completa com neutros até 3; se faltar, com
  *     o lado dele até 3.
- * Sem lado definido, sem post do lado dele visto, ou sem fechar 6: `null` — o
- * Raio-x não aparece, e a habilidade fica com a reflexão.
+ *
+ * QUEM VIU POUCO (ADR-179): o PO testou a missão rolando rápido e não achou o
+ * Raio-x. Quando os vistos não fecham a composição, ela COMPLETA com posts
+ * aprovados que ele NÃO viu — do lado dele e neutros sobre o tema, nunca do
+ * outro lado (um post do lado escondido, antes da revelação, mostraria que
+ * havia outro feed). Os vistos vêm sempre antes. O "post em que mais parou"
+ * é o do lado dele com mais tempo de tela, e entre não vistos, o primeiro.
+ * Sem lado definido, ou sem fechar 6 nem completando: `null`.
  */
 export function comporRaioX(e: EntradaDaComposicao): ComposicaoDoRaioX | null {
   if (!e.ladoDele) return null;
@@ -70,10 +77,12 @@ export function comporRaioX(e: EntradaDaComposicao): ComposicaoDoRaioX | null {
   const viu = (p: PostDoAcervo) => p.aprovado && (e.vistosPorPost[p.id] ?? 0) > 0;
   const dwell = (id: string) => e.dwellPorPost[id] ?? 0;
 
-  const doLadoDele = embaralhar(
-    e.posts.filter((p) => viu(p) && p.lado === ladoDele),
-    aleatorio,
-  );
+  /* Os vistos primeiro; depois, para completar, os aprovados que ele não viu. */
+  const vistosAntes = (lista: PostDoAcervo[]) => [
+    ...embaralhar(lista.filter(viu), aleatorio),
+    ...embaralhar(lista.filter((p) => p.aprovado && !viu(p)), aleatorio),
+  ];
+  const doLadoDele = vistosAntes(e.posts.filter((p) => p.aprovado && p.lado === ladoDele));
   if (doLadoDele.length === 0) return null;
   /* O de maior tempo de tela; empate, o primeiro do embaralhamento (estável). */
   const maisParou = doLadoDele.reduce((a, b) => (dwell(b.id) > dwell(a.id) ? b : a));
@@ -89,10 +98,7 @@ export function comporRaioX(e: EntradaDaComposicao): ComposicaoDoRaioX | null {
     (p) => p.aprovado && p.lado === "neutro" && p.categoria === CATEGORIA_DO_NEUTRO_NO_TEMA,
   );
   const neutros = temNeutroNoTema
-    ? embaralhar(
-        e.posts.filter((p) => viu(p) && p.lado === "neutro" && p.categoria === CATEGORIA_DO_NEUTRO_NO_TEMA),
-        aleatorio,
-      )
+    ? vistosAntes(e.posts.filter((p) => p.aprovado && p.lado === "neutro" && p.categoria === CATEGORIA_DO_NEUTRO_NO_TEMA))
     : [];
 
   /* As metas de partida, e quanto cada grupo tem para dar. */

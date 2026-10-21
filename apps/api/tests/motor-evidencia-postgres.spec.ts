@@ -350,9 +350,10 @@ describe("o 6a Raio-x", () => {
     expect(await recusa(tarefas.enviarRaioX(runs.bia!, estudantes.bia!, ESCOLA, respostas))).toMatchObject({ status: 400 });
   });
 
-  test("quem quase não rolou o feed não tem Raio-x", async () => {
-    expect((await st("eli")).raioX).toBe("indisponivel");
-    expect(await recusa(tarefas.enviarRaioX(runs.eli!, estudantes.eli!, ESCOLA, {}))).toMatchObject({ status: 409 });
+  test("quem quase não rolou o feed TAMBÉM tem Raio-x: a composição completa com posts que ele não viu (ADR-179)", async () => {
+    expect((await st("eli")).raioX).toBe("pendente");
+    const r = await tarefas.lerRaioX(runs.eli!, estudantes.eli!, ESCOLA);
+    expect(r.posts).toHaveLength(6);
   });
 
   test("a devolutiva só sai da explicabilidade em diante, e só para quem enviou", async () => {

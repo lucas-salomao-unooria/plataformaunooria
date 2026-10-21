@@ -44,7 +44,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
       eixo: "Cultura Digital",
       principal: true,
       ondeAcontece:
-        "O estudante vê a própria coleção ao lado da do colega e descobre que a abrangência do que ele leu foi decidida por outra pessoa. Medida em duas tarefas, e vale a melhor: o Raio-x do feed, logo depois da resposta (de 6 posts que ele viu, o que cada um faz — mede os vieses), e a reflexão escrita, lida pela IA uma vez só (mede o mecanismo e o que ficou de fora; o nível é sugestão, e você confere). Precisão e relevância das fontes não são medidas nesta missão.",
+        "O estudante vê a própria coleção ao lado da do colega e descobre que a abrangência do que ele leu foi decidida por outra pessoa. Medida em duas tarefas, e vale a melhor: o Raio-x do feed, logo depois da resposta (de 6 posts, primeiro os que ele viu, o que cada um faz — mede os vieses), e a reflexão escrita, lida pela IA uma vez só (mede o mecanismo e o que ficou de fora; o nível é sugestão, e você confere). Precisão e relevância das fontes não são medidas nesta missão.",
     },
     {
       codigo: "EF08CO07",
@@ -167,7 +167,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
       {
         tempo: "25–33",
         momento:
-          "A resposta e o Raio-x. Cada estudante escolhe um dos três lados e, na mesma tela, diz de 6 posts que ele viu o que cada um faz: puxa para um lado, puxa para o outro, ou informa sem tomar lado. Ninguém escreve nada ainda.",
+          "A resposta e o Raio-x. Cada estudante escolhe um dos três lados e, na mesma tela, diz de 6 posts o que cada um faz: puxa para um lado, puxa para o outro, ou informa sem tomar lado. Os posts são os que ele viu; quem rolou pouco recebe, para completar, posts do lado dele e neutros que não chegou a ver. Ninguém escreve nada ainda.",
         professor:
           "Encerre quando o monitor mostrar a maioria com coleção formada — não espere o último. Não explique o Raio-x além do que a tela diz: falar de lado, de bolha ou de algoritmo aqui entrega a revelação. Quem não terminar o Raio-x antes do debate faz na entrada da explicação.",
         botao: "Encerrar investigação",
