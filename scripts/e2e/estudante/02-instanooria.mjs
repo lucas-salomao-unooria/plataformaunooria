@@ -158,7 +158,14 @@ await suite(
        enterradas, e o botão grande. O caminho esperado é aceitar sem ler. */
     const aceitar = tela.getByRole("button", { name: "Aceitar e continuar" });
     await aceitar.waitFor({ timeout: 20_000 });
+    /* O texto chega da api depois do botão: espera a cláusula, não o "carregando". */
+    await tela.getByText(/Usamos o seu histórico de interações/).waitFor({ timeout: 20_000 });
     const termosDaEntrada = await tela.getByRole("region", { name: "Termos de uso do Unoovista" }).innerText();
+    const caixaDoBotao = await aceitar.boundingBox();
+    r.exigir(
+      Boolean(caixaDoBotao) && caixaDoBotao.y + caixaDoBotao.height <= 812 + (await tela.locator("body").boundingBox()).y,
+      "o botão \"Aceitar e continuar\" fica à vista, sem rolar a tela: quem rola é o texto",
+    );
     r.exigir(
       termosDaEntrada.includes("Usamos o seu histórico de interações para escolher quais publicações você vê"),
       "os termos da entrada trazem as regras do 6b, enterradas no texto",
@@ -541,7 +548,7 @@ await suite(
             "existe da revelação em diante, e só para quem enviou o Raio-x.",
         });
       }
-      if (await tela.getByText("Nos termos de uso — que quase ninguém lê, nem adulto.").count()) viuOsTermos = true;
+      if (await tela.getByText("Nos termos de uso que você aceitou lá na entrada — que quase ninguém lê, nem adulto.").count()) viuOsTermos = true;
       if (await tela.getByText("O registro, não.").count()) viuORegistro = true;
       const continuar = tela.locator("button", { hasText: "Continuar" });
       if (!(await continuar.count())) break;

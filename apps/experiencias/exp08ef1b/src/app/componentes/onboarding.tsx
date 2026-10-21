@@ -240,8 +240,10 @@ function TermosDeUso({ aoAceitar }: { aoAceitar: () => void }) {
   }, []);
 
   return (
-    <main className="flex min-h-dvh flex-col px-5 py-6">
-      <div className="flex flex-col items-center gap-2 pb-3">
+    /* Altura FIXA da tela (não `min-h`): o texto rola dentro da caixa dele, e o
+       botão fica sempre à vista, grande — é ele que o PO quer que puxe o clique. */
+    <main className="flex h-dvh flex-col px-5 py-6">
+      <div className="flex shrink-0 flex-col items-center gap-2 pb-3">
         <LogoUnv height={26} title="Unoovista" />
         <h1 className="text-[15px] font-semibold text-ink">Termos de Uso e Política de Privacidade</h1>
       </div>
@@ -266,7 +268,7 @@ function TermosDeUso({ aoAceitar }: { aoAceitar: () => void }) {
       <ButtonUnv
         block
         size="lg"
-        className="mt-4"
+        className="mt-4 shrink-0"
         onClick={() => {
           experiencia().track('interacted', 'termos-de-uso', {
             resultado: { segundosNaTela: Math.round((Date.now() - abertaEm.current) / 1000) },
