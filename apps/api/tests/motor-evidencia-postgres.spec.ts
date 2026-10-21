@@ -381,7 +381,7 @@ describe("a revelação e as tarefas 6b e 6c", () => {
     expect(await recusa(tarefas.concluirRevelacao(runs.caio!, estudantes.caio!, ESCOLA))).toMatchObject({ status: 409 });
     await fase(runs.caio!, "perdidos");
     expect(await st("caio")).toMatchObject({ revelacaoConcluida: false, termos: "aguardando", envio: "aguardando" });
-    expect(await recusa(tarefas.enviarTermos(runs.caio!, estudantes.caio!, ESCOLA, { marcadas: [], efeitos: {}, mudanca: "forma" }))).toMatchObject({
+    expect(await recusa(tarefas.enviarTermos(runs.caio!, estudantes.caio!, ESCOLA, { marcadas: [] }))).toMatchObject({
       status: 409,
     });
   });
@@ -398,18 +398,14 @@ describe("a revelação e as tarefas 6b e 6c", () => {
     const t = await tarefas.lerTermos(runs.caio!, estudantes.caio!, ESCOLA);
     expect(t.clausulas.map((c) => c.id)).toEqual(["c1", "c2", "c3", "c4", "c5"]);
     expect(JSON.stringify(t)).not.toMatch(/explica|"efeito"|controle"?:/);
-    await tarefas.enviarTermos(runs.caio!, estudantes.caio!, ESCOLA, {
-      marcadas: ["c1", "c3", "c5"],
-      efeitos: { c1: "e1", c3: "e2", c5: "e3" },
-      mudanca: "controle",
-    });
+    await tarefas.enviarTermos(runs.caio!, estudantes.caio!, ESCOLA, { marcadas: ["c1", "c3", "c5"] });
     expect(await evidenciaDe(estudantes.caio!, "EF08CO09")).toMatchObject({ status: "atingiu", marcador: "termos" });
   });
 
-  test("o 6b recusa efeito de cláusula não marcada", async () => {
+  test("o 6b recusa a mesma regra marcada duas vezes", async () => {
     await fase(runs.bia!, "perdidos");
     expect(
-      await recusa(tarefas.enviarTermos(runs.bia!, estudantes.bia!, ESCOLA, { marcadas: [], efeitos: { c1: "e1" }, mudanca: "controle" })),
+      await recusa(tarefas.enviarTermos(runs.bia!, estudantes.bia!, ESCOLA, { marcadas: ["c1", "c1"] })),
     ).toMatchObject({ status: 400 });
   });
 
@@ -621,7 +617,7 @@ describe("o reinício e o \"Apagar as sessões\"", () => {
     await tarefas.concluirRevelacao(runs.caio!, estudantes.caio!, ESCOLA);
     await fase(runs.caio!, "perdidos");
     await tarefas.lerTermos(runs.caio!, estudantes.caio!, ESCOLA);
-    await tarefas.enviarTermos(runs.caio!, estudantes.caio!, ESCOLA, { marcadas: [], efeitos: {}, mudanca: "aceitacao" });
+    await tarefas.enviarTermos(runs.caio!, estudantes.caio!, ESCOLA, { marcadas: [] });
     expect(await evidenciaDe(estudantes.caio!, "EF08CO09")).toMatchObject({ status: "atingiu" });
     const linha = await prisma.tarefaDaSessao.findUniqueOrThrow({ where: { runId_tarefa: { runId: runs.caio!, tarefa: "termos" } } });
     expect(linha.refeita).toBe(true);

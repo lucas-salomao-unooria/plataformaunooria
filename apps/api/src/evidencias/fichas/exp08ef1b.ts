@@ -2,7 +2,8 @@ import type { FichaPedagogica } from "./tipos";
 
 /**
  * A FICHA de "O Conteúdo que não chegou" (exp08ef1b, Unoovista, 8º ano EF,
- * unidade 1) — versão 2, de 2026-10-16 (ADR-167).
+ * unidade 1) — versão 3, de 2026-10-21 (ADR-179: as réguas do PO, validadas
+ * com a pedagogia; a versão 2 é de 2026-10-16, ADR-167).
  *
  * Toda habilidade é medida por AÇÃO (o Canal A); as três perguntas de
  * múltipla escolha da versão 1 (ADR-153) saíram. Os níveis que elas deram em
@@ -11,8 +12,8 @@ import type { FichaPedagogica } from "./tipos";
  *   - **EF08CO11** (vieses e abrangência de fontes eletrônicas) pelo 6a Raio-x
  *     do feed (vieses) e pela reflexão lida pela IA (mecanismo e abrangência).
  *     Vale a melhor das duas; o painel diz de qual veio (ADR-166).
- *   - **EF08CO09** (termos de uso) pelo 6b: localizar, explicar o efeito e
- *     julgar as regras.
+ *   - **EF08CO09** (termos de uso) pelo 6b: os termos aceitos na entrada,
+ *     revisitados depois da revelação — marcar as regras que explicam o feed.
  *   - **EF08CO07** (compartilhar com responsabilidade) pelo 6c, o envio. Na
  *     atividade sem página de fofoca ou de humor nos dois lados, a única casa
  *     que a trava muda grava `envio-sem-confiabilidade`, limitado pela
@@ -25,7 +26,7 @@ import type { FichaPedagogica } from "./tipos";
  */
 export const FICHA_EXP08EF1B: FichaPedagogica = {
   expId: "exp08ef1b",
-  versao: 2,
+  versao: 3,
   habilidades: [
     {
       codigo: "EF08CO11",
@@ -35,11 +36,11 @@ export const FICHA_EXP08EF1B: FichaPedagogica = {
       ],
       criterios: {
         atingiu:
-          "No Raio-x, acerta de onde vieram 5 ou 6 dos 6 posts, incluindo o do lado dele em que mais parou. Ou, na reflexão, explica como o feed escolheu os posts e diz o que ficou de fora por causa de algo que ele mesmo fez.",
+          "No Raio-x, classifica certo 5 ou 6 dos 6 posts. Ou, na reflexão, explica como o feed escolheu os posts e diz o que ficou de fora por causa de algo que ele mesmo fez.",
         em_processo:
-          "No Raio-x, acerta 4 posts, ou 5 errando o post em que mais parou. Ou, na reflexão, explica como o feed escolheu os posts, sem dizer o que ficou de fora por causa de algo que ele fez.",
+          "No Raio-x, classifica certo 3 ou 4 posts. Ou, na reflexão, explica como o feed escolheu os posts, sem dizer o que ficou de fora por causa de algo que ele fez.",
         nao_atingiu:
-          "No Raio-x, acerta 3 posts ou menos. Ou, na reflexão, atribui o feed inteiro ao acaso ou nega que houve escolha.",
+          "No Raio-x, classifica certo 2 posts ou menos. Ou, na reflexão, atribui o feed inteiro ao acaso ou nega que houve escolha.",
         observacao:
           "Vale o melhor entre o Raio-x e a reflexão. O Raio-x mede os vieses das fontes; a reflexão mede o mecanismo e a abrangência (o que ficou de fora). Precisão e relevância das fontes não são medidas nesta missão. O nível da reflexão é uma sugestão da IA: confira e ajuste se discordar. Sem nenhuma das duas, a habilidade fica \"Não avaliado\", e você pode ajustar.",
       },
@@ -49,13 +50,11 @@ export const FICHA_EXP08EF1B: FichaPedagogica = {
       marcadores: [{ id: "termos", tipo: "acao", rotulo: "Os termos de uso" }],
       criterios: {
         atingiu:
-          "Marca as regras que explicam o feed com no máximo um engano, liga pelo menos duas delas ao efeito certo e escolhe a mudança que dá controle ao usuário.",
-        em_processo:
-          "Marca as regras que explicam o feed com no máximo um engano e liga pelo menos uma ao efeito certo, mas não escolhe a mudança que dá controle.",
-        nao_atingiu:
-          "Erra duas regras ou mais (marcar todas também conta), ou não liga nenhuma regra ao efeito certo.",
+          "Revisitando os termos que aceitou na entrada, marca exatamente as 3 regras que explicam o feed e nenhuma das 2 que não explicam (nenhum erro).",
+        em_processo: "Comete 1 ou 2 erros: marca uma regra que não explica o feed, ou deixa sem marcar uma que explica.",
+        nao_atingiu: "Comete 3 erros ou mais. Não marcar nenhuma regra conta 3 erros.",
         observacao:
-          "Medida no 6b, depois da revelação. Sem a tarefa feita, a habilidade fica \"Não avaliado\", e você pode ajustar.",
+          "Os termos aparecem na entrada, como texto longo com o botão \"Aceitar e continuar\", e voltam no 6b, depois da revelação. Erro = regra que explica deixada sem marca + regra que não explica marcada. Sem a tarefa feita, a habilidade fica \"Não avaliado\", e você pode ajustar.",
       },
     },
     {
@@ -71,13 +70,11 @@ export const FICHA_EXP08EF1B: FichaPedagogica = {
       ],
       criterios: {
         atingiu:
-          "Manda posts dos dois lados, nenhum de página de fofoca ou de humor, com a mensagem que avisa que aquilo é só um pedaço.",
-        em_processo:
-          "Manda os dois lados com outra mensagem que não ridiculariza, ou manda fofoca ou humor junto, ou manda um lado só (ou só neutros) avisando que é só um pedaço.",
-        nao_atingiu:
-          "Ridiculariza o outro lado, ou passa um lado só como se fosse o todo, ou encerra a questão com um recorte.",
+          "Cumpre os 3 critérios: os posts cobrem os dois lados, nenhum é de página de fofoca ou de humor, e a mensagem é a que avisa que aquilo é só um pedaço.",
+        em_processo: "Cumpre 1 ou 2 dos 3 critérios.",
+        nao_atingiu: "Não cumpre nenhum dos 3 critérios.",
         observacao:
-          "Medida no 6c, depois da revelação. Numa atividade sem página de fofoca ou de humor nos dois lados, a confiabilidade não é medida e o envio vai no máximo a \"Em processo\" — a célula diz isso. Para medir, crie uma atividade nova com a mesma pergunta. Sem a tarefa feita, a habilidade fica \"Não avaliado\", e você pode ajustar.",
+          "Medida no 6c, depois da revelação: até 3 de 9 posts, 1 de 4 mensagens e uma frase opcional. Numa atividade sem página de fofoca ou de humor nos dois lados, o 2º critério não tem como falhar, então o envio vai no máximo a \"Em processo\" — a célula diz isso. Para medir, crie uma atividade nova com a mesma pergunta. Sem a tarefa feita, a habilidade fica \"Não avaliado\", e você pode ajustar.",
       },
     },
   ],

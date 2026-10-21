@@ -1,25 +1,22 @@
 import { FICHA_EXP08EF1B } from "../src/evidencias/fichas/exp08ef1b";
 import { problemaDosTiposDeTese } from "../src/geracao/prompts/personas";
 import {
-  REGUA_DO_ENVIO,
-  linhaDaSelecao,
+  criteriosDoEnvio,
   medeConfiabilidade,
   montarEnvio,
   nivelDoEnvio,
-  type LinhaDoEnvio,
   type PostDoEnvio,
 } from "../src/motor/canal-a/envio";
 import { LeituraSchema } from "../src/motor/canal-a/leitura-da-reflexao.service";
 import { MOTIVOS_DA_LEITURA, RESULTADO_DO_MOTIVO, promptDaLeitura } from "../src/motor/canal-a/prompts-da-reflexao";
 import { comporRaioX, gabaritoDoPost, nivelDoRaioX, type PostDoAcervo } from "../src/motor/canal-a/raio-x";
-import { nivelDosTermos, efeitosCoerentes } from "../src/motor/canal-a/termos";
+import { marcadasSemRepeticao, nivelDosTermos } from "../src/motor/canal-a/termos";
 import {
   CLAUSULAS,
-  EFEITOS,
   MENSAGENS,
-  MUDANCAS,
+  TERMOS_DA_ENTRADA,
+  termosDaEntrada,
   type ClausulaId,
-  type EfeitoId,
   type OpcaoDoRaioX,
 } from "../src/motor/canal-a/vocabulario";
 
@@ -29,8 +26,8 @@ import {
  * O que se prova: a composição do Raio-x (só posts vistos, a regra dos 3, os
  * casos de falta, o post em que mais parou sempre dentro, `null` quando não
  * fecha), as três réguas EXAUSTIVAMENTE (toda combinação cai em um nível), as
- * contas de chute do desenho aprovado, a montagem dos 9 posts do envio sem
- * lado, a casa ÚNICA que a atividade sem fofoca ou humor muda, e a ficha v2.
+ * réguas do PO validadas em 2026-10-21 (ADR-179), a montagem dos 9 posts do
+ * envio sem lado, os termos da entrada com as 5 cláusulas, e a ficha v3.
  */
 
 // ── 6a Raio-x ────────────────────────────────────────────────────────────
@@ -163,126 +160,66 @@ describe("o Raio-x: quais posts entram", () => {
   });
 });
 
-describe("o Raio-x: a régua", () => {
+describe("o Raio-x: a régua do PO (ADR-179)", () => {
   const ids = ["p1", "p2", "p3", "p4", "p5", "p6"];
   const gabarito: Record<string, OpcaoDoRaioX> = { p1: "A", p2: "A", p3: "B", p4: "B", p5: "neutro", p6: "neutro" };
   const errar = (o: OpcaoDoRaioX): OpcaoDoRaioX => (o === "A" ? "B" : o === "B" ? "neutro" : "A");
 
-  test("toda combinação de acertos cai em exatamente um nível", () => {
+  test("toda combinação de acertos cai em exatamente um nível: 5–6, 3–4, 0–2", () => {
     for (let mascara = 0; mascara < 64; mascara++) {
       const respostas = Object.fromEntries(
         ids.map((id, i) => [id, mascara & (1 << i) ? gabarito[id]! : errar(gabarito[id]!)]),
       ) as Record<string, OpcaoDoRaioX>;
-      const { nivel, acertos } = nivelDoRaioX({ respostas, gabarito, maisParou: "p1" });
-      const maisParouCerto = Boolean(mascara & 1);
-      if (acertos <= 3) expect(nivel).toBe("nao_atingiu");
-      else if (acertos === 4) expect(nivel).toBe("em_processo");
-      else if (acertos === 5) expect(nivel).toBe(maisParouCerto ? "atingiu" : "em_processo");
-      else expect(nivel).toBe("atingiu");
+      const { nivel, acertos } = nivelDoRaioX({ respostas, gabarito });
+      expect(nivel).toBe(acertos >= 5 ? "atingiu" : acertos >= 3 ? "em_processo" : "nao_atingiu");
     }
   });
 
-  test("marcar sempre a mesma opção dá no máximo 3 acertos: não atingiu", () => {
+  test("marcar sempre a mesma opção dá 2 acertos (nesta composição): não atingiu", () => {
     for (const o of ["A", "B", "neutro"] as const) {
       const respostas = Object.fromEntries(ids.map((id) => [id, o]));
-      expect(nivelDoRaioX({ respostas, gabarito, maisParou: "p1" }).nivel).toBe("nao_atingiu");
+      expect(nivelDoRaioX({ respostas, gabarito })).toEqual({ nivel: "nao_atingiu", acertos: 2 });
     }
-  });
-
-  test("o chute ao acaso: atingiu ~1,5%, em processo ou mais ~10%", () => {
-    let atingiu = 0;
-    let emProcessoOuMais = 0;
-    const opcoes = ["A", "B", "neutro"] as const;
-    for (let i = 0; i < 729; i++) {
-      let resto = i;
-      const respostas: Record<string, OpcaoDoRaioX> = {};
-      for (const id of ids) {
-        respostas[id] = opcoes[resto % 3]!;
-        resto = Math.floor(resto / 3);
-      }
-      const { nivel } = nivelDoRaioX({ respostas, gabarito, maisParou: "p1" });
-      if (nivel === "atingiu") atingiu++;
-      if (nivel !== "nao_atingiu") emProcessoOuMais++;
-    }
-    expect(atingiu / 729).toBeCloseTo(0.015, 2);
-    expect(emProcessoOuMais / 729).toBeCloseTo(0.1, 1);
   });
 });
 
 // ── 6b Os termos ─────────────────────────────────────────────────────────
 
-describe("os termos: a régua", () => {
-  const efeitoCerto = Object.fromEntries(CLAUSULAS.map((c) => [c.id, c.efeito])) as Record<ClausulaId, EfeitoId | null>;
+describe("os termos: a régua do PO por erros (ADR-179)", () => {
+  const explicam = CLAUSULAS.filter((c) => c.explica).map((c) => c.id);
 
-  test("toda combinação de marcadas, efeitos e mudança cai em exatamente um nível, com L e E coerentes", () => {
-    let casos = 0;
+  test("as que explicam são a 1, a 3 e a 5", () => {
+    expect(explicam).toEqual(["c1", "c3", "c5"]);
+  });
+
+  test("toda combinação de marcadas cai em exatamente um nível: 0 erros, 1–2, 3+", () => {
     for (let mascara = 0; mascara < 32; mascara++) {
-      const marcadas = CLAUSULAS.filter((_, i) => mascara & (1 << i)).map((c) => c.id);
-      const combinacoes = 3 ** marcadas.length;
-      for (let k = 0; k < combinacoes; k++) {
-        let resto = k;
-        const efeitos: Partial<Record<ClausulaId, EfeitoId>> = {};
-        for (const id of marcadas) {
-          efeitos[id] = EFEITOS[resto % 3]!.id;
-          resto = Math.floor(resto / 3);
-        }
-        for (const m of MUDANCAS) {
-          const { nivel, l, e } = nivelDosTermos({ marcadas, efeitos, mudanca: m.id });
-          casos++;
-          if (l <= 3 || e === 0) expect(nivel).toBe("nao_atingiu");
-          else if (e >= 2 && m.id === "controle") expect(nivel).toBe("atingiu");
-          else expect(nivel).toBe("em_processo");
-        }
-      }
+      const marcadas = CLAUSULAS.filter((_, i) => mascara & (1 << i)).map((c) => c.id) as ClausulaId[];
+      const { nivel, erros } = nivelDosTermos({ marcadas });
+      const esperados = CLAUSULAS.filter((c) => marcadas.includes(c.id) !== c.explica).length;
+      expect(erros).toBe(esperados);
+      expect(nivel).toBe(erros === 0 ? "atingiu" : erros <= 2 ? "em_processo" : "nao_atingiu");
     }
-    expect(casos).toBe(3 * 4 ** 5);
   });
 
-  test("marcar tudo dá L = 3: não atingiu, com qualquer efeito", () => {
-    const marcadas = CLAUSULAS.map((c) => c.id);
-    const efeitos = Object.fromEntries(CLAUSULAS.map((c) => [c.id, c.efeito ?? "e1"])) as Record<ClausulaId, EfeitoId>;
-    expect(nivelDosTermos({ marcadas, efeitos, mudanca: "controle" })).toMatchObject({ nivel: "nao_atingiu", l: 3, e: 3 });
+  test("as 3 certas: atingiu; marcar todas: 2 erros, em processo; nenhuma: 3 erros, não atingiu", () => {
+    expect(nivelDosTermos({ marcadas: ["c1", "c3", "c5"] })).toEqual({ nivel: "atingiu", erros: 0 });
+    expect(nivelDosTermos({ marcadas: ["c1", "c2", "c3", "c4", "c5"] })).toEqual({ nivel: "em_processo", erros: 2 });
+    expect(nivelDosTermos({ marcadas: [] })).toEqual({ nivel: "nao_atingiu", erros: 3 });
   });
 
-  test("as 3 que explicam, com os efeitos certos e o controle: atingiu; sem o controle, em processo", () => {
-    const marcadas: ClausulaId[] = ["c1", "c3", "c5"];
-    const efeitos = { c1: "e1", c3: "e2", c5: "e3" } as const;
-    expect(nivelDosTermos({ marcadas, efeitos, mudanca: "controle" }).nivel).toBe("atingiu");
-    expect(nivelDosTermos({ marcadas, efeitos, mudanca: "forma" }).nivel).toBe("em_processo");
-    expect(efeitoCerto.c2).toBeNull();
+  test("a mesma regra marcada duas vezes é recusada", () => {
+    expect(marcadasSemRepeticao({ marcadas: ["c1", "c3"] })).toBe(true);
+    expect(marcadasSemRepeticao({ marcadas: ["c1", "c1"] })).toBe(false);
   });
 
-  test("o chute ao acaso: atingiu ~1,2%, em processo ou mais ~11,8%", () => {
-    let atingiu = 0;
-    let emProcessoOuMais = 0;
-    for (let mascara = 0; mascara < 32; mascara++) {
-      const marcadas = CLAUSULAS.filter((_, i) => mascara & (1 << i)).map((c) => c.id);
-      const combinacoes = 3 ** marcadas.length;
-      for (let k = 0; k < combinacoes; k++) {
-        let resto = k;
-        const efeitos: Partial<Record<ClausulaId, EfeitoId>> = {};
-        for (const id of marcadas) {
-          efeitos[id] = EFEITOS[resto % 3]!.id;
-          resto = Math.floor(resto / 3);
-        }
-        /* Cada combinação tem peso (1/32) × (1/3)^marcadas × (1/3) da mudança. */
-        const peso = (1 / 32) * (1 / combinacoes) * (1 / 3);
-        for (const m of MUDANCAS) {
-          const { nivel } = nivelDosTermos({ marcadas, efeitos, mudanca: m.id });
-          if (nivel === "atingiu") atingiu += peso;
-          if (nivel !== "nao_atingiu") emProcessoOuMais += peso;
-        }
-      }
-    }
-    expect(atingiu).toBeCloseTo(0.012, 3);
-    expect(emProcessoOuMais).toBeCloseTo(0.118, 3);
-  });
-
-  test("o efeito tem de vir para cada marcada, e só para elas", () => {
-    expect(efeitosCoerentes({ marcadas: ["c1"], efeitos: { c1: "e1" }, mudanca: "controle" })).toBe(true);
-    expect(efeitosCoerentes({ marcadas: ["c1"], efeitos: {}, mudanca: "controle" })).toBe(false);
-    expect(efeitosCoerentes({ marcadas: [], efeitos: { c2: "e1" }, mudanca: "controle" })).toBe(false);
-    expect(efeitosCoerentes({ marcadas: ["c1", "c1"], efeitos: { c1: "e1" }, mudanca: "controle" })).toBe(false);
+  test("os termos da entrada trazem as 5 cláusulas, com as mesmas palavras, enterradas no texto", () => {
+    const texto = termosDaEntrada().join("\n");
+    for (const c of CLAUSULAS) expect(texto).toContain(c.texto);
+    expect(texto).not.toMatch(/\{c\d\}/);
+    expect(TERMOS_DA_ENTRADA.length).toBeGreaterThanOrEqual(6);
+    /* Nenhuma cláusula abre o texto: elas ficam no meio de parágrafos de praxe. */
+    expect(CLAUSULAS.some((c) => termosDaEntrada()[0]!.includes(c.texto))).toBe(false);
   });
 });
 
@@ -338,69 +275,52 @@ describe("o envio: os 9 posts", () => {
   });
 });
 
-describe("o envio: a régua 4×4", () => {
+describe("o envio: os 3 critérios do PO (ADR-179)", () => {
   const A = doEnvio("A");
   const Af = doEnvio("A", "fofoca_tema");
   const B = doEnvio("B");
   const N = doEnvio("neutro", "checagem");
+  const mensagens = ["aviso", "neutra", "encerra", "ridiculariza"] as const;
+  const selecoes = [[A, B], [Af, B], [A, N], [Af], [N], [A]];
 
-  test("a seleção cai em exatamente uma linha", () => {
-    expect(linhaDaSelecao([A, B])).toBe("dois-lados");
-    expect(linhaDaSelecao([Af, B])).toBe("dois-lados-com-fofoca");
-    expect(linhaDaSelecao([A, N])).toBe("um-lado");
-    expect(linhaDaSelecao([Af])).toBe("um-lado");
-    expect(linhaDaSelecao([N])).toBe("so-neutros");
-  });
-
-  test("as 16 casas, como no desenho aprovado", () => {
-    const esperado: Record<LinhaDoEnvio, string[]> = {
-      "dois-lados": ["atingiu", "em_processo", "em_processo", "nao_atingiu"],
-      "dois-lados-com-fofoca": ["em_processo", "em_processo", "em_processo", "nao_atingiu"],
-      "um-lado": ["em_processo", "nao_atingiu", "nao_atingiu", "nao_atingiu"],
-      "so-neutros": ["em_processo", "em_processo", "nao_atingiu", "nao_atingiu"],
-    };
-    const colunas = ["aviso", "neutra", "encerra", "ridiculariza"] as const;
-    for (const linha of Object.keys(esperado) as LinhaDoEnvio[]) {
-      expect(colunas.map((c) => REGUA_DO_ENVIO[linha][c])).toEqual(esperado[linha]);
-      for (const c of colunas) {
-        expect(nivelDoEnvio({ linha, mensagem: c, medeConfiabilidade: true })).toEqual({
-          nivel: REGUA_DO_ENVIO[linha][c],
+  test("o nível é a contagem dos critérios: 3 atingiu, 1–2 em processo, 0 não atingiu", () => {
+    for (const selecao of selecoes)
+      for (const mensagem of mensagens) {
+        const c = criteriosDoEnvio(selecao, mensagem);
+        const n = [c.doisLados, c.semFofoca, c.aviso].filter(Boolean).length;
+        const r = nivelDoEnvio({ selecao, mensagem, medeConfiabilidade: true });
+        expect(r).toEqual({
+          nivel: n === 3 ? "atingiu" : n > 0 ? "em_processo" : "nao_atingiu",
           marcador: "envio",
+          criterios: n,
         });
       }
-    }
   });
 
-  test("sem a confiabilidade, SÓ a casa 'dois lados sem fofoca × Aviso' muda — e só ela grava o marcador limitado", () => {
+  test("os casos do desenho", () => {
+    expect(nivelDoEnvio({ selecao: [A, B], mensagem: "aviso", medeConfiabilidade: true }).nivel).toBe("atingiu");
+    expect(nivelDoEnvio({ selecao: [Af, B], mensagem: "aviso", medeConfiabilidade: true }).nivel).toBe("em_processo");
+    expect(nivelDoEnvio({ selecao: [Af], mensagem: "encerra", medeConfiabilidade: true }).nivel).toBe("nao_atingiu");
+  });
+
+  test("sem a confiabilidade, só o envio que fecha os 3 muda — vai a em processo e grava o marcador limitado", () => {
     let mudaram = 0;
-    for (const linha of Object.keys(REGUA_DO_ENVIO) as LinhaDoEnvio[]) {
-      for (const c of ["aviso", "neutra", "encerra", "ridiculariza"] as const) {
-        const comum = nivelDoEnvio({ linha, mensagem: c, medeConfiabilidade: true });
-        const limitado = nivelDoEnvio({ linha, mensagem: c, medeConfiabilidade: false });
+    for (const selecao of selecoes)
+      for (const mensagem of mensagens) {
+        const comum = nivelDoEnvio({ selecao, mensagem, medeConfiabilidade: true });
+        const limitado = nivelDoEnvio({ selecao, mensagem, medeConfiabilidade: false });
+        expect(limitado.nivel).not.toBe("atingiu");
         if (comum.nivel !== limitado.nivel || comum.marcador !== limitado.marcador) {
           mudaram++;
-          expect([linha, c]).toEqual(["dois-lados", "aviso"]);
-          expect(limitado).toEqual({ nivel: "em_processo", marcador: "envio-sem-confiabilidade" });
+          expect(comum.criterios).toBe(3);
+          expect(limitado).toMatchObject({ nivel: "em_processo", marcador: "envio-sem-confiabilidade" });
         }
-        expect(limitado.nivel).not.toBe("atingiu");
       }
-    }
     expect(mudaram).toBe(1);
   });
 
-  test("o chute ao acaso (3 posts dos 9 e uma mensagem): atingiu ~4,8%", () => {
-    const nove = [doEnvio("A"), doEnvio("A"), doEnvio("A", "humor"), doEnvio("B"), doEnvio("B"), doEnvio("B", "fofoca_tema"), N, doEnvio("neutro"), doEnvio("neutro")];
-    let atingiu = 0;
-    let total = 0;
-    for (let i = 0; i < 9; i++)
-      for (let j = i + 1; j < 9; j++)
-        for (let k = j + 1; k < 9; k++)
-          for (const msg of MENSAGENS) {
-            total++;
-            const { nivel } = nivelDoEnvio({ linha: linhaDaSelecao([nove[i]!, nove[j]!, nove[k]!]), mensagem: msg.tipo, medeConfiabilidade: true });
-            if (nivel === "atingiu") atingiu++;
-          }
-    expect(atingiu / total).toBeCloseTo(0.048, 3);
+  test("as 4 mensagens continuam as mesmas, uma de cada tipo", () => {
+    expect(MENSAGENS.map((m) => m.tipo)).toEqual(["aviso", "neutra", "encerra", "ridiculariza"]);
   });
 });
 
@@ -422,11 +342,11 @@ describe("a leitura da reflexão: a saída que vale", () => {
   });
 });
 
-// ── a ficha v2 ───────────────────────────────────────────────────────────
+// ── a ficha v3 ───────────────────────────────────────────────────────────
 
-describe("a ficha da exp08ef1b, versão 2", () => {
+describe("a ficha da exp08ef1b, versão 3", () => {
   test("toda habilidade por ação, sem pergunta, com o rótulo de cada ação", () => {
-    expect(FICHA_EXP08EF1B.versao).toBe(2);
+    expect(FICHA_EXP08EF1B.versao).toBe(3);
     expect(FICHA_EXP08EF1B.perguntas).toEqual([]);
     const marcadores = FICHA_EXP08EF1B.habilidades.flatMap((h) => h.marcadores);
     expect(marcadores.every((mk) => mk.tipo === "acao" && Boolean(mk.rotulo))).toBe(true);
