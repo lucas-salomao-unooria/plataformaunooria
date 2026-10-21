@@ -184,11 +184,14 @@ uma régua escrita duas vezes é a que diverge. O débito vem do
 rotas que gastam IA têm também um teto de requisição por minuto.
 \enquote{Regenerar} um estande sem saldo é 429; com a IA fora, 200 com
 \cd{usouIa: false} e o estande como estava. As imagens são incrementais,
-quatro por chamada (quarenta por atividade), com custo estimado na quota do
+oito por chamada, quatro em paralelo, e quatro por estande --- as lâminas do
+carrossel do post, cada uma com o seu pedido (a foto do estande, o projeto de
+perto sem pessoas, a equipe sem rosto identificável e a bancada dos
+bastidores, \adrr{ADR-178}): 160 por atividade, com custo estimado na quota do
 professor, e sem elas a tela desenha
 a arte procedural. Desde a \adrr{ADR-151} elas têm aprovação própria: o
-professor vê a grade, pede \enquote{gerar outra imagem} para um estande (um
-arquivo NOVO, fora do \emph{hash} da descrição, sempre pago; com o provedor
+professor vê a grade, pede \enquote{gerar outra imagem} para uma lâmina de um estande (um
+arquivo NOVO, fora do \emph{hash} do pedido, sempre pago; com o provedor
 fora, 503 e o estande fica com a que tinha) e aprova. Aprovadas, nenhuma
 imagem se gera mais naquela atividade (409 \cd{imagens-ja-aprovadas}): a que
 faltasse chegaria à turma sem que ninguém a visse. O podcast de recapitulação
@@ -202,9 +205,10 @@ são a primeira barreira contra injeção de instrução.
 \textbf{As imagens do banco padrão} (\adrr{ADR-164}) são a outra porta de IA
 do Júri, e não são do professor: o \cd{admin} as gera em
 \rota{/unooria/recursos/imagens-do-juri} (\rota{POST
-/juri-estadual/banco-padrao/imagens}), até quatro por chamada, só as que faltam,
-com o mesmo nome determinístico da customização (o \emph{hash} da descrição da
-imagem do projeto) --- o storage é o registro, sem tabela. É custo da
+/juri-estadual/banco-padrao/imagens}), até oito por chamada, só as que faltam,
+quatro por projeto (as lâminas, \adrr{ADR-178}), com o mesmo nome determinístico
+da customização (o \emph{hash} do pedido de cada lâmina) --- o storage é o
+registro, sem tabela. É custo da
 plataforma: \textbf{sem quota de professor} (o \cd{QuotaService} não conhece o
 \cd{admin}), com \emph{rate limit} por usuário e medido no painel de custos
 (\adrr{ADR-161}) com atribuição explícita nas opções da imagem

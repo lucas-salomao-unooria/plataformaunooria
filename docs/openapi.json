@@ -67048,6 +67048,29 @@
                                   "alt"
                                 ],
                                 "additionalProperties": false
+                              },
+                              "laminas": {
+                                "type": "object",
+                                "properties": {
+                                  "detalhe": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "equipe": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "bastidor": {
+                                    "type": "string",
+                                    "nullable": true
+                                  }
+                                },
+                                "required": [
+                                  "detalhe",
+                                  "equipe",
+                                  "bastidor"
+                                ],
+                                "additionalProperties": false
                               }
                             },
                             "required": [
@@ -67062,7 +67085,8 @@
                               "legenda",
                               "bastidor",
                               "hashtags",
-                              "imagem"
+                              "imagem",
+                              "laminas"
                             ],
                             "additionalProperties": false
                           },
@@ -67478,6 +67502,29 @@
                                   "alt"
                                 ],
                                 "additionalProperties": false
+                              },
+                              "laminas": {
+                                "type": "object",
+                                "properties": {
+                                  "detalhe": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "equipe": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "bastidor": {
+                                    "type": "string",
+                                    "nullable": true
+                                  }
+                                },
+                                "required": [
+                                  "detalhe",
+                                  "equipe",
+                                  "bastidor"
+                                ],
+                                "additionalProperties": false
                               }
                             },
                             "required": [
@@ -67492,7 +67539,8 @@
                               "legenda",
                               "bastidor",
                               "hashtags",
-                              "imagem"
+                              "imagem",
+                              "laminas"
                             ],
                             "additionalProperties": false
                           },
@@ -67716,6 +67764,29 @@
                               "alt"
                             ],
                             "additionalProperties": false
+                          },
+                          "laminas": {
+                            "type": "object",
+                            "properties": {
+                              "detalhe": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "equipe": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "bastidor": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "detalhe",
+                              "equipe",
+                              "bastidor"
+                            ],
+                            "additionalProperties": false
                           }
                         },
                         "required": [
@@ -67730,7 +67801,8 @@
                           "legenda",
                           "bastidor",
                           "hashtags",
-                          "imagem"
+                          "imagem",
+                          "laminas"
                         ],
                         "additionalProperties": false
                       },
@@ -69984,6 +70056,21 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "lamina",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "capa",
+                "detalhe",
+                "equipe",
+                "bastidor"
+              ],
+              "default": "capa"
+            }
           }
         ],
         "responses": {
@@ -70002,6 +70089,16 @@
                       "type": "string",
                       "pattern": "^proj-[a-d](10|[1-9])$"
                     },
+                    "lamina": {
+                      "type": "string",
+                      "enum": [
+                        "capa",
+                        "detalhe",
+                        "equipe",
+                        "bastidor"
+                      ]
+                    },
+                    "chave": {},
                     "url": {
                       "type": "string"
                     }
@@ -70009,6 +70106,8 @@
                   "required": [
                     "pacoteId",
                     "projetoId",
+                    "lamina",
+                    "chave",
                     "url"
                   ],
                   "additionalProperties": false
@@ -70020,8 +70119,8 @@
         "tags": [
           "juri-estadual"
         ],
-        "summary": "\"Gerar outra imagem\": uma imagem nova para UM estande, enquanto as imagens estão em validação.",
-        "description": "O professor viu a imagem do estande e ela não serve, ou o estande ficou sem imagem. Gera outra, SEMPRE paga, num arquivo novo — sobrescrever o da descrição trocaria a imagem de todo pacote que a herdou, inclusive o de uma turma em aula.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas`: a turma pode estar olhando para elas.\n- Quota do professor, com o custo estimado de uma imagem. Sem saldo, **429** `sem-saldo-de-ia`; com o provedor fora do ar, **503** `ia-indisponivel` — e o estande fica com a imagem que tinha.\n- `projetoId` fora de `proj-a1`…`proj-d10` responde **400** `payload-invalido`.",
+        "summary": "\"Gerar outra imagem\": uma imagem nova para UMA lâmina de um estande, enquanto as imagens estão em validação.",
+        "description": "O professor viu a imagem e ela não serve, ou a lâmina ficou sem imagem. Gera outra, SEMPRE paga, num arquivo novo — sobrescrever o do pedido trocaria a imagem de todo pacote que a herdou, inclusive o de uma turma em aula. `?lamina=` escolhe qual das quatro (`capa`, `detalhe`, `equipe`, `bastidor`, ADR-178); sem ela, a capa.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas`: a turma pode estar olhando para elas.\n- Quota do professor, com o custo estimado de uma imagem. Sem saldo, **429** `sem-saldo-de-ia`; com o provedor fora do ar, **503** `ia-indisponivel` — e o estande fica com a imagem que tinha.\n- `projetoId` fora de `proj-a1`…`proj-d10`, ou `lamina` desconhecida, responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -71030,17 +71129,11 @@
                     },
                     "geradas": {
                       "type": "array",
-                      "items": {
-                        "type": "string",
-                        "pattern": "^proj-[a-d](10|[1-9])$"
-                      }
+                      "items": {}
                     },
                     "falharam": {
                       "type": "array",
-                      "items": {
-                        "type": "string",
-                        "pattern": "^proj-[a-d](10|[1-9])$"
-                      }
+                      "items": {}
                     },
                     "completo": {
                       "type": "boolean"
@@ -71236,10 +71329,7 @@
                     },
                     "faltam": {
                       "type": "array",
-                      "items": {
-                        "type": "string",
-                        "pattern": "^proj-[a-d](10|[1-9])$"
-                      }
+                      "items": {}
                     },
                     "completo": {
                       "type": "boolean"
@@ -71300,10 +71390,7 @@
                     },
                     "faltam": {
                       "type": "array",
-                      "items": {
-                        "type": "string",
-                        "pattern": "^proj-[a-d](10|[1-9])$"
-                      }
+                      "items": {}
                     },
                     "completo": {
                       "type": "boolean"
@@ -71316,17 +71403,11 @@
                     },
                     "geradas": {
                       "type": "array",
-                      "items": {
-                        "type": "string",
-                        "pattern": "^proj-[a-d](10|[1-9])$"
-                      }
+                      "items": {}
                     },
                     "falharam": {
                       "type": "array",
-                      "items": {
-                        "type": "string",
-                        "pattern": "^proj-[a-d](10|[1-9])$"
-                      }
+                      "items": {}
                     }
                   },
                   "required": [

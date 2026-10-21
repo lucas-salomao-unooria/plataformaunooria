@@ -19,7 +19,7 @@ nos CAMPOS dos schemas que a tela lê.
 | Passo | Tela | Quem fala | Componentes do DS |
 |---|---|---|---|
 | `credencial` | E1-ALU-01 — o crachá, modal sobre a timeline DESFOCADA | comissão (clone) | a casca do app desfocada e `inert` (`TopBar`, `PostCard` sem foto, `TabBar`), `BottomSheetUnv` modal (não fecha), `IconUnv`, `BadgeUnv` (`@jurado_oficial`), `ButtonUnv` |
-| `feed` | E2-ALU-01/02 — o feed | app | `TopBar` ("Unoovista" + `BadgeUnv` `@jurado_oficial`, `clone/cabecalho.tsx`), `PostCard` (carrossel de 3 fotos, "Foto 2 de 3", e a 4ª lâmina "Bastidores do estande", o `PostCard.Media` sem `src`; `errorLabel`/`errorDescription` = `PLACEHOLDER_DIEGETICO`), `GestureHint`, `ButtonUnv` (setas; "...mais"/"menos"), `FloatingButton` (a cédula), `TabBar` (4 abas), `NotificationItem` e `ProfileHeader` (as abas; "Suas pastas" no Jurado), `InlineHint` `neutral` (o pedido da comissão), `SnackbarUnv` |
+| `feed` | E2-ALU-01/02 — o feed | app | `TopBar` ("Unoovista" + `BadgeUnv` `@jurado_oficial`, `clone/cabecalho.tsx`), `PostCard` (carrossel de 3 fotos, "Foto 2 de 3", e a 4ª lâmina "Bastidores do estande" — sem foto, `Media` sem `src`; com foto, texto embaixo (`.bastidor-do-post`); `errorLabel`/`errorDescription` = `PLACEHOLDER_DIEGETICO`), `GestureHint`, `ButtonUnv` (setas; "...mais"/"menos"), `FloatingButton` (a cédula), `TabBar` (4 abas), `NotificationItem` e `ProfileHeader` (as abas; "Suas pastas" no Jurado), `InlineHint` `neutral` (o pedido da comissão), `SnackbarUnv` |
 | `feed` (Salvar) | as PASTAS (EF06CO01): a folha "Salvar em" guarda ou MOVE o post | app | `BottomSheetUnv`, `ListItem` por pasta (`aria-pressed`), `IconUnv` `bookmark`/`bookmarkFilled`, `ButtonUnv` ("Remover dos salvos") |
 | `feed` (cédula aberta) | E3-ALU-01 — a cédula, 4 elementos; travada com `semPasta` > 0 | app | `BottomSheetUnv` modal, `InlineHint` `friction` (quantos faltam; e num `role="alert"`, E3-SIS-01, 60 s), `Escolha` (`ListItem` + `AvatarUnv`), `Chip` (Sim / Com certeza), `ButtonUnv` |
 | `classificacao` | — (sessão antiga, `saindoDaSeparacao`) | — | `POST passo {para:"lacrada"}` sozinho |
@@ -105,14 +105,14 @@ Com 40 estandes e dez posts sem repetição, o total oculto é igual para todos
 `POST /juri-estadual/passo {para:"feed"}` serve a abertura (4 posts, um de cada
 área). Quando o ÚLTIMO post fica ≥ 60% visível, a tela pede o próximo (`POST
 feed/eventos`, `proximo: true`) com as curtidas e permanências da fila. A fila
-(`juri-app.tsx`) junta por 400 ms, manda UMA ida por vez e não pede dois para o
-mesmo fim. O motor da api escolhe o post; antes do voto, a fila é esvaziada.
+(`juri-app.tsx`) junta por 400 ms e manda UMA ida por vez. O motor da api escolhe o post; antes do voto, a fila é esvaziada.
 
 A permanência (`lib/permanencia.ts`) é um FATO por post (> 5 s seguidos com
 ≥ 60% visível), não o tempo somado.
 
 O motor serve só `apresentacao`, sem repetir; o `bastidor` é a ÚLTIMA lâmina
-do carrossel. Sessões 2.0.0 trazem formatos legados: a tela os desenha.
+do carrossel. Fotos 2, 3 e bastidores: `post.laminas` (ADR-178);
+`null` = arte procedural. Sessões 2.0.0: a tela desenha os formatos legados.
 
 ## Polling SÓ na espera
 
@@ -125,10 +125,8 @@ relê a sessão. A galeria é lida (`GET galeria`) ao entrar no passo dela; o 40
 
 Da busca, a api recebe `{tipo:"buscar", busca:"hashtag"|"texto", area}` —
 `regras.ts#classificarBusca` —, NUNCA o que foi digitado (texto livre de
-menor). Uma busca conta quando a digitação para (1,2 s) ou no toque do chip, e a
-mesma busca seguida não conta duas vezes. As ações vão numa fila sem bloquear a
-tela, e a revisão do voto ESPERA a fila esvaziar, para o painel do professor ver
-a exploração inteira. Desde a 0.6.0 a galeria não marca habilidade (ADR-174).
+menor). Uma busca conta quando a digitação para (1,2 s) ou no toque do chip. As ações vão numa fila sem bloquear a
+tela, e a revisão do voto ESPERA a fila esvaziar. Desde a 0.6.0 a galeria não marca habilidade (ADR-174).
 
 `galeria/acoes` responde **204 sem corpo**, e o SDK faz `res.json()` em toda
 resposta `ok`: o `SyntaxError` sem status seria lido como queda de rede e

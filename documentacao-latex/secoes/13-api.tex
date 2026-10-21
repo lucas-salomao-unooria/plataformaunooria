@@ -1537,8 +1537,10 @@ Mariana), e a regra conclui a missão.
   segue com a arte desenhada). Idempotente. Depois dela, as imagens
   congelam.\\
 \rota{POST .../\B{}pacotes/\B{}:pacoteId/\B{}imagens/\B{}:projetoId/\B{}refazer} &
-  prof., gestor & \enquote{Gerar outra imagem} para UM estande: arquivo NOVO
-  (fora do \emph{hash} da descrição), sempre pago na quota do professor. Com
+  prof., gestor & \enquote{Gerar outra imagem} para UMA lâmina de um estande
+  (\cd{?lamina=} \cd{capa}, \cd{detalhe}, \cd{equipe} ou \cd{bastidor}; sem
+  ela, a capa, \adrr{ADR-178}): arquivo NOVO (fora do \emph{hash} do pedido),
+  sempre pago na quota do professor. Com
   o provedor fora, 503 e o estande fica com a que tinha; depois da aprovação,
   409 \cd{imagens-ja-aprovadas}.\\
 \zebra \rota{POST .../\B{}gerar-conteudo} & prof., gestor & O rascunho da mostra
@@ -1562,9 +1564,10 @@ Mariana), e a regra conclui a missão.
   não cria outro, e o segundo clique substitui as falas. Grava
   \cd{aprovado\_em}/\cd{por} e \cd{preparo\_iniciado\_em}; o banco
   padrão intocado não pede falas (roteiro fixo).\\
-\zebra \rota{POST .../gerar-midia} & prof., gestor & Até quatro imagens novas por
-  chamada, de uma atividade pronta ou da em andamento; repetir até
-  \cd{completo}. Depois da aprovação das imagens, 409
+\zebra \rota{POST .../gerar-midia} & prof., gestor & Até oito imagens novas por
+  chamada, quatro em paralelo, de uma atividade pronta ou da em andamento;
+  quatro por estande (\adrr{ADR-178}), e o progresso conta por chave
+  (\cd{proj-a1}, \cd{proj-a1:detalhe}); repetir até \cd{completo}. Depois da aprovação das imagens, 409
   \cd{imagens-ja-aprovadas}.\\
 \rota{GET /juri-estadual/\B{}professor/\B{}material} & prof., gestor & O
   esqueleto com gabarito: as peças da regra com a certa marcada, as perguntas
@@ -1572,11 +1575,12 @@ Mariana), e a regra conclui a missão.
   (salvar sem peso, o limiar, o feed sem repetição).
   Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
 \zebra \rota{GET /juri-estadual/\B{}banco-padrao/\B{}imagens} & \cd{admin} & Quantas
-  imagens do banco padrão existem, quais faltam e as URLs. O storage é o
-  registro: o nome é determinístico (o \emph{hash} da descrição da imagem),
-  o mesmo da customização (\adrr{ADR-164}).\\
+  imagens do banco padrão existem, quais faltam (por chave de lâmina,
+  quatro por projeto, \adrr{ADR-178}) e as URLs. O storage é o
+  registro: o nome é determinístico (o \emph{hash} do pedido de cada
+  lâmina), o mesmo da customização (\adrr{ADR-164}).\\
 \rota{POST /juri-estadual/\B{}banco-padrao/\B{}imagens} & \cd{admin} &
-  Gera até quatro das que faltam, na ordem do banco; idempotente (a que existe
+  Gera até oito das que faltam, na ordem do banco; idempotente (a que existe
   não se gera de novo; duas chamadas simultâneas recebem o mesmo trabalho).
   Sem quota de professor, \emph{rate limit} de 20 por minuto, e medido no
   painel de custos como \cd{juri-estadual-banco-padrao}, perfil \cd{admin},

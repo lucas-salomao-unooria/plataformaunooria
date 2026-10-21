@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{177 decisões}, numeradas até ADR-177: a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{178 decisões}, numeradas até ADR-178: a 178 (as quatro fotos do carrossel do Júri Estadual) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -228,6 +228,7 @@ que a cercam.
 \adrr{ADR-175} & O turno da IA conversada cabe no teto do cliente: teto por chamada, com nova tentativa, e prazo do turno & 2026-10-19 & Aceita\\
 \zebra \adrr{ADR-176} & O Júri Estadual depois da aula de teste: a separação vai para as pastas do feed, o caso Mariana sai e a Galeria Oculta fica enxuta & 2026-10-20 & Aceita; supera em parte a \adrr{ADR-137}, a \adrr{ADR-157}, a \adrr{ADR-164} e a \adrr{ADR-174}\\
 \adrr{ADR-177} & Quem mandou isso? depois do teste do time: o alerta do grupo no lugar do cartão de frases e o robô do grupo no lugar da regra do tio & 2026-10-20 & Aceita; supera em parte a \adrr{ADR-171}\\
+\zebra \adrr{ADR-178} & O carrossel do Júri Estadual com quatro fotos geradas: o projeto de perto, a equipe no estande e os bastidores, cada uma com o seu pedido & 2026-10-20 & Aceita; estende a \adrr{ADR-151} e a \adrr{ADR-164}\\
 \bottomrule
 \end{tabularx}
 
@@ -16196,3 +16197,103 @@ estava reservado por uma frente paralela (os ajustes do Júri Estadual).
 avaliado} na EF05CO03 por síntese liberada cedo (aí o alerta passa a seguir
 o caminho da criança), o robô atingir pouco por causa da primeira ligação,
 ou o PO pedir a previsão de volta.
+
+% ---------------------------------------------------------------------------
+\section{ADR-178 --- O carrossel do Júri Estadual com quatro fotos geradas: o projeto de perto, a equipe no estande e os bastidores, cada uma com o seu pedido}
+\label{adr:exp06ef1b-fotos-do-carrossel}
+
+\textbf{Data.} 2026-10-20. \textbf{Status.} Aceita. \textbf{Estende} a
+\adrr{ADR-151} (as imagens aprovadas pelo professor antes da turma) e a
+\adrr{ADR-164} (as imagens do banco padrão, geradas pelo \cd{admin}): as duas
+continuam valendo, agora com quatro imagens por estande em vez de uma.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O que se viu na tela.} O Lucas gerou as imagens de uma mostra
+    e, no feed, o post tinha mais três lâminas para deslizar: as fotos 2 e 3
+    eram a arte procedural (o desenho roxo do estande) e a 4ª, os
+    \enquote{Bastidores do estande}, só texto. Até a 0.7.0 o pacote tinha UMA
+    imagem por projeto, e as lâminas 2 e 3 eram o mesmo desenho com outra
+    semente.
+  \item \textbf{O pedido.} \enquote{Implementar as 3 imagens faltantes,
+    adequando o prompt de geração para o propósito.} As escolhas dele: as
+    fotos 2, 3 e os Bastidores viram imagem, com o texto dos bastidores
+    EMBAIXO da imagem; e o banco padrão do \cd{admin} também ganha as quatro.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{Quatro lâminas por estande}, na ordem do carrossel, em
+    \arq{apps/api/src/juri-estadual/regras/laminas.ts}: \cd{capa} (a foto do
+    estande, a de sempre), \cd{detalhe} (o projeto de perto), \cd{equipe} (a
+    equipe no estande) e \cd{bastidor} (a bancada de testes).
+  \item \textbf{A capa não muda}: a chave na \cd{midia} do pacote continua o
+    id do projeto (\cd{proj-a1}) e o arquivo continua o de \cd{nomeDaImagem}
+    (o \emph{hash} da descrição). As imagens já geradas e aprovadas seguem
+    valendo, sem gerar de novo.
+  \item \textbf{As outras três têm chave e arquivo próprios}: a chave leva a
+    lâmina (\cd{proj-a1:detalhe}) e o arquivo é
+    \arq{mostra/<lamina>-<hash>.webp}, com o \emph{hash} da versão do pedido,
+    da lâmina, do título, da descrição e, na dos bastidores, do texto dos
+    bastidores. Editar o texto dos bastidores troca só a imagem dos
+    bastidores.
+  \item \textbf{Um pedido próprio por lâmina} (\cd{promptDaLamina}, com as
+    regras de sempre: ilustração, sem pessoa real, sem marca, o texto do
+    professor delimitado como dado). \cd{detalhe}: o protótipo de perto,
+    sobre a mesa do estande, sem pessoas. \cd{equipe}: os estudantes
+    apresentando o projeto a visitantes, de costas, de longe ou estilizados,
+    sem rosto identificável. \cd{bastidor}: a bancada de testes do protótipo,
+    a partir do texto dos bastidores.
+  \item \textbf{160 imagens por mostra} (40 estandes vezes 4). A geração em
+    lote passa de quatro para \textbf{oito novas por chamada}, quatro em
+    paralelo, para caber no corte de 180\,s do BFF; o progresso
+    (\cd{total}, \cd{prontas}, \cd{faltam}, \cd{geradas}, \cd{falharam}) conta
+    por CHAVE, no pacote do professor e no banco padrão.
+  \item \textbf{\enquote{Gerar outra} é por lâmina}:
+    \rota{POST \ldots{}/imagens/:projetoId/refazer} ganha \cd{?lamina=}
+    (padrão \cd{capa}, o contrato de antes) e devolve \cd{lamina} e
+    \cd{chave}.
+  \item \textbf{A herança ao criar a atividade é lâmina a lâmina}, pelo nome do
+    arquivo do pedido: a lâmina com o mesmo pedido de um pacote recente da
+    turma herda a imagem dele (a refeita inclusive). O banco padrão herda as
+    do banco que existem, pela chave.
+  \item \textbf{O post e a ficha da galeria ganham \cd{laminas}}
+    (\cd{\{detalhe, equipe, bastidor\}}, URL ou \cd{null}). Sem imagem, a
+    lâmina continua com a arte procedural, e a dos bastidores com só o texto,
+    como antes. Com a imagem dos bastidores, a foto ocupa a lâmina e o texto
+    vem embaixo dela, entre as ações e a legenda.
+  \item \textbf{Sem migração}: a \cd{midia} é \cd{jsonb}, e a leitura só aceita
+    chave de lâmina conhecida. Experiência \textbf{0.8.0}.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter uma imagem só e reusar a capa recortada nas lâminas 2 e
+    3.} Não custaria nada, mas repetiria a foto: o carrossel continuaria sem
+    nada novo para ver.
+  \item \textbf{Uma chamada que gera as quatro juntas.} O \emph{provider} gera
+    uma imagem por chamada, e uma falha derrubaria as quatro de uma vez.
+  \item \textbf{O texto dos bastidores sobre a imagem.} O \cd{PostCard.Media}
+    do \emph{design system} com \cd{src} não aceita filhos, e o texto de até
+    280 caracteres taparia a foto.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Quatro vezes o custo e o tempo das imagens}: a mostra inteira
+    são 160 imagens, cerca de vinte idas do laço, na quota do professor; e as
+    120 novas do banco padrão são custo da plataforma.
+  \item \textbf{Os bastidores com foto mudam a altura do post} na 4ª lâmina,
+    porque o texto desce para baixo da imagem.
+  \item \textbf{O pedido da equipe depende do modelo respeitar \enquote{sem
+    rosto identificável}}: é o professor quem confere, na grade, antes de
+    aprovar.
+\end{itemize}
+
+\textbf{Gatilho.} O tempo de gerar as 160 incomodar o professor no preparo
+(aí as lâminas extras passam a ser opcionais), ou o modelo devolver rosto
+identificável na lâmina da equipe com frequência.
