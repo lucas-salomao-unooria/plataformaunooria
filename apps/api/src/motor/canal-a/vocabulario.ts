@@ -71,32 +71,28 @@ export const CLAUSULAS = [
 export type ClausulaId = (typeof CLAUSULAS)[number]["id"];
 export const IDS_DAS_CLAUSULAS = CLAUSULAS.map((c) => c.id) as readonly ClausulaId[];
 
-/** As três opções de efeito, as mesmas para toda cláusula marcada. */
-export const EFEITOS = [
-  { id: "e1", texto: "Cada toque e cada pausa minha virou informação para o app." },
-  { id: "e2", texto: "Os posts de um lado chegaram muito mais que os do outro." },
-  { id: "e3", texto: "O que eu fiz no começo continuou pesando até o fim." },
+/**
+ * OS TERMOS DE USO DA ENTRADA (ADR-179): o texto jurídico denso que o
+ * estudante "aceita" antes do feed, como num app real. As 5 cláusulas do 6b
+ * estão ENTERRADAS nele, com as mesmas palavras, entre parágrafos de praxe —
+ * o caminho mais fácil é pular, e é esse o comportamento esperado. Cada
+ * entrada é um parágrafo; `{c1}`…`{c5}` são as cláusulas, no lugar delas.
+ */
+export const TERMOS_DA_ENTRADA = [
+  "1. ACEITAÇÃO. Ao acessar ou utilizar o Unoovista (\"Serviço\"), o Usuário declara ter lido, compreendido e aceitado integralmente estes Termos de Uso e a Política de Privacidade, que os integra para todos os fins, ressalvadas as disposições específicas aplicáveis a funcionalidades disponibilizadas em caráter experimental, que poderão ser alteradas ou descontinuadas a qualquer tempo, independentemente de aviso prévio.",
+  "2. CONTA. O Usuário é o único responsável pela guarda de suas credenciais e por todas as atividades realizadas a partir de sua conta, comprometendo-se a manter atualizados os dados cadastrais e a comunicar imediatamente qualquer uso não autorizado. 2.1. {c1}",
+  "3. CONTEÚDO. O Usuário concede ao Unoovista licença não exclusiva, gratuita, mundial e transferível para hospedar, reproduzir, adaptar, distribuir e exibir o conteúdo que publicar, na medida necessária à operação, à melhoria e à promoção do Serviço, sem prejuízo dos direitos morais do autor nos termos da legislação aplicável. 3.1. {c2}",
+  "4. FUNCIONAMENTO DO SERVIÇO. O Unoovista poderá, a seu exclusivo critério e sem obrigação de aviso, alterar recursos, layout, limites de uso e quaisquer funcionalidades, bem como realizar testes com grupos de Usuários para avaliação de novas versões. 4.1. {c3} 4.2. O Serviço é fornecido \"no estado em que se encontra\", sem garantias de disponibilidade ininterrupta ou de adequação a finalidade específica.",
+  "5. VERIFICAÇÃO E SEGURANÇA. Para prevenir fraudes, spam e uso indevido, o Unoovista poderá adotar medidas técnicas e organizacionais, incluindo a análise automatizada de padrões de uso. 5.1. {c4} 5.2. Contas que violem estes Termos poderão ser suspensas ou encerradas, a qualquer tempo, independentemente de notificação.",
+  "6. DADOS E RETENÇÃO. O tratamento de dados pessoais observa a legislação aplicável e a Política de Privacidade. 6.1. {c5} 6.2. Determinados registros poderão ser mantidos por prazos superiores para cumprimento de obrigação legal ou regulatória, exercício regular de direitos ou prevenção de fraudes.",
+  "7. DISPOSIÇÕES GERAIS. A tolerância quanto ao descumprimento de qualquer obrigação não implica renúncia ou novação. Estes Termos poderão ser atualizados periodicamente, e o uso continuado do Serviço após a publicação de nova versão implicará concordância com as alterações.",
 ] as const;
-export type EfeitoId = (typeof EFEITOS)[number]["id"];
-export const IDS_DOS_EFEITOS = EFEITOS.map((e) => e.id) as readonly EfeitoId[];
 
-/** A mudança que daria mais controle: só uma é o julgamento crítico. */
-export const MUDANCAS = [
-  {
-    id: "controle",
-    texto: "Mostrar por que cada post aparece e deixar desligar a personalização do feed.",
-  },
-  {
-    id: "forma",
-    texto: "Escrever os termos com letra maior e frases mais curtas, para facilitar a leitura.",
-  },
-  {
-    id: "aceitacao",
-    texto: "Nenhuma: quem aceitou os termos já concordou com tudo o que está escrito.",
-  },
-] as const;
-export type MudancaId = (typeof MUDANCAS)[number]["id"];
-export const IDS_DAS_MUDANCAS = MUDANCAS.map((m) => m.id) as readonly MudancaId[];
+/** O texto da entrada com as cláusulas no lugar — o que a tela recebe. */
+export function termosDaEntrada(): string[] {
+  const porId = new Map<string, string>(CLAUSULAS.map((c) => [c.id, c.texto]));
+  return TERMOS_DA_ENTRADA.map((p) => p.replace(/\{(c[1-5])\}/g, (_, id: string) => porId.get(id)!));
+}
 
 // ── 6c Mandar pra quem não viu ───────────────────────────────────────────
 

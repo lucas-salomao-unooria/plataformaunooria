@@ -60,7 +60,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
         "Analisar criticamente as políticas de termos de uso das redes sociais e demais plataformas.",
       eixo: "Cultura Digital",
       ondeAcontece:
-        "Medida nos termos, depois do feed em cinza: de 5 regras (fictícias), o estudante marca as que explicam o que aconteceu no feed, diz o efeito de cada uma e escolhe a mudança que daria mais controle. Desdobramento para a aula seguinte: ler nos termos de uso de uma rede real o trecho que descreve a personalização do feed.",
+        "Os termos de uso aparecem na entrada, como num app real: texto longo e o botão \u201cAceitar e continuar\u201d. Depois do feed em cinza, o estudante volta a eles e marca, das 5 regras, as que explicam o que aconteceu no feed (0 erros, atingiu; 1 ou 2, em processo; 3 ou mais, não atingiu). Desdobramento para a aula seguinte: ler nos termos de uso de uma rede real o trecho que descreve a personalização do feed.",
     },
   ],
 
@@ -199,13 +199,13 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
         momento:
           "Os termos de uso, lidos em voz alta. Projete as 5 regras e leia para todos, sem comentar: (1) “Registramos suas curtidas, salvamentos, comentários e o tempo que você passa em cada publicação.” (2) “Você pode desligar os avisos de novas curtidas e comentários a qualquer momento.” (3) “Usamos o seu histórico de interações para escolher quais publicações você vê e em que ordem.” (4) “Um algoritmo confere se cada perfil com selo de verificado pertence mesmo a quem diz ser.” (5) “Guardamos o histórico das suas interações no app enquanto a sua conta existir.”",
         professor:
-          "Diga que os termos são fictícios — seriam os de uma plataforma como o Unoovista. Deixe as 5 regras projetadas durante todo o bloco seguinte: são iguais para todos e não entregam a resposta de ninguém.",
+          "Diga que os termos são fictícios — são os que a turma aceitou na entrada do Unoovista, quase sempre sem ler. Deixe as 5 regras projetadas durante todo o bloco seguinte: são iguais para todos e não entregam a resposta de ninguém.",
         botao: "Mostrar o que perderam",
       },
       {
         tempo: "63–72",
         momento:
-          "O que eles perderam, e duas tarefas. O feed volta em cinza, só com o que nunca chegou; depois, no ritmo de cada um, os termos (que regras explicam o feed, o efeito de cada uma, a mudança que daria controle) e o envio (de 9 posts, até 3 e uma mensagem para um colega que não viu nada).",
+          "O que eles perderam, e duas tarefas. O feed volta em cinza, só com o que nunca chegou; depois, no ritmo de cada um, os termos que aceitaram na entrada (que regras explicam o feed) e o envio (de 9 posts, até 3 e uma mensagem para um colega que não viu nada).",
         professor:
           "Um a dois minutos de silêncio olhando o número vale mais que qualquer explicação sua. Quem ainda está na revelação vê a revelação antes das tarefas — ninguém perde nada pelo relógio da turma.",
       },

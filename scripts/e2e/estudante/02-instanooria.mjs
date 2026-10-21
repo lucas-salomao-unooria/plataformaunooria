@@ -154,6 +154,31 @@ await suite(
     });
     await entrarNoApp.click();
 
+    /* Os termos de uso da ENTRADA (ADR-179): texto denso, com as 5 regras do 6b
+       enterradas, e o botão grande. O caminho esperado é aceitar sem ler. */
+    const aceitar = tela.getByRole("button", { name: "Aceitar e continuar" });
+    await aceitar.waitFor({ timeout: 20_000 });
+    /* O texto chega da api depois do botão: espera a cláusula, não o "carregando". */
+    await tela.getByText(/Usamos o seu histórico de interações/).waitFor({ timeout: 20_000 });
+    const termosDaEntrada = await tela.getByRole("region", { name: "Termos de uso do Unoovista" }).innerText();
+    const caixaDoBotao = await aceitar.boundingBox();
+    r.exigir(
+      Boolean(caixaDoBotao) && caixaDoBotao.y + caixaDoBotao.height <= 812 + (await tela.locator("body").boundingBox()).y,
+      "o botão \"Aceitar e continuar\" fica à vista, sem rolar a tela: quem rola é o texto",
+    );
+    r.exigir(
+      termosDaEntrada.includes("Usamos o seu histórico de interações para escolher quais publicações você vê"),
+      "os termos da entrada trazem as regras do 6b, enterradas no texto",
+    );
+    await r.registrar(p, "termos-da-entrada", {
+      titulo: "Os termos de uso, na entrada",
+      mostra: "Texto jurídico denso e miúdo, com o botão grande \"Aceitar e continuar\".",
+      prova:
+        "Como num app real, o caminho mais fácil é aceitar sem ler. As 5 regras que o 6b cobra estão no meio " +
+        "do texto, com as mesmas palavras — e só depois da revelação a criança volta a elas.",
+    });
+    await aceitar.click();
+
     const figurinhas = tela.locator('[aria-label="Escolha sua figurinha"] button');
     await figurinhas.first().waitFor({ timeout: 10_000 });
     const quantasFigurinhas = await figurinhas.count();
@@ -523,7 +548,7 @@ await suite(
             "existe da revelação em diante, e só para quem enviou o Raio-x.",
         });
       }
-      if (await tela.getByText("Nos termos de uso — que quase ninguém lê, nem adulto.").count()) viuOsTermos = true;
+      if (await tela.getByText("Nos termos de uso que você aceitou lá na entrada — que quase ninguém lê, nem adulto.").count()) viuOsTermos = true;
       if (await tela.getByText("O registro, não.").count()) viuORegistro = true;
       const continuar = tela.locator("button", { hasText: "Continuar" });
       if (!(await continuar.count())) break;
@@ -619,32 +644,29 @@ await suite(
     // ═══ AS TAREFAS DEPOIS DO CINZA: 6b os termos, 6c o envio ════════════
     await tela.getByRole("button", { name: "Continuar" }).click();
     await tela
-      .getByText("Estes seriam os termos de uso de uma plataforma como o Unoovista.")
+      .getByText("Esses são os termos de uso que você recebeu no início da experiência.")
       .waitFor({ timeout: 30_000 })
       .catch(() => {
         throw new Error(`os termos (6b) não abriram${falhasDaApi.length ? ` — falhas da api: ${falhasDaApi.join(" | ")}` : ""}`);
       });
     await r.registrar(p, "termos", {
       titulo: "Os termos (6b)",
-      mostra: "As 5 regras, fictícias: marcar as que explicam o feed, dizer o efeito de cada uma e escolher a mudança.",
+      mostra: "Os termos que ele aceitou na entrada, de volta: marcar as regras que explicam o feed.",
       prova:
-        "Os termos aparecem pela primeira vez aqui, depois da revelação. Marcar todas dá \"não atingiu\": " +
-        "a régua cobra localizar, explicar o efeito e julgar — e o gabarito fica na api.",
+        "A régua do PO conta os erros (regra que explica sem marca + regra que não explica marcada): " +
+        "0 é atingiu, 1–2 em processo, 3 ou mais não atingiu. Marcar todas dá 2 erros. O gabarito fica na api.",
     });
-    /* As três que explicam, cada uma com o seu efeito, e a mudança que dá controle. */
-    for (const [clausula, efeito] of [
-      ["Registramos suas curtidas", "e1"],
-      ["Usamos o seu histórico de interações", "e2"],
-      ["Guardamos o histórico das suas interações", "e3"],
+    /* As três que explicam. */
+    for (const clausula of [
+      "Registramos suas curtidas",
+      "Usamos o seu histórico de interações",
+      "Guardamos o histórico das suas interações",
     ]) {
       /* O `<input>` do `Checkbox` do DS é só para leitor de tela (sr-only, fora da
          área visível): quem marca é o toque no RÓTULO, como o dedo da criança. */
       await tela.getByText(new RegExp(clausula)).click();
       r.exigir(await tela.getByRole("checkbox", { name: new RegExp(clausula) }).isChecked(), `a regra "${clausula}…" ficou marcada`);
-      const grupo = clausula === "Registramos suas curtidas" ? "c1" : clausula.startsWith("Usamos") ? "c3" : "c5";
-      await tela.locator(`input[type="radio"][name="efeito-${grupo}"][value="${efeito}"]`).check({ force: true });
     }
-    await tela.locator('input[type="radio"][name="mudanca"][value="controle"]').check({ force: true });
     await tela.getByRole("button", { name: "Enviar" }).click();
 
     await tela
