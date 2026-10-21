@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
 import { AI_PROVIDER, type AiProvider } from "../ai/provider";
 import { QuotaService } from "../ai/quota.service";
@@ -7,21 +7,25 @@ import type { Perfil } from "../auth/claims";
 import { logger } from "../observabilidade/logger";
 import { erroDeJogo } from "./erros";
 import { JuriEstadualService, type PacoteLido } from "./juri-estadual.service";
-import { VERSAO_DO_PEDIDO_DE_IMAGEM, promptDaImagem } from "./prompts";
+import { chaveDaMidia, laminasDosProjetos, nomeDaLamina, promptDeLamina, type Lamina } from "./regras/laminas";
 import { EXP_ID } from "./vocabulario";
 
 /**
  * As IMAGENS dos estandes: geradas pelo professor no preparo, servidas a todos.
- * Molde: `jornal-escola/midia.service.ts` — INCREMENTAL (até quatro novas por
- * chamada: o BFF do hub corta em 180 s; as quarenta saem em umas dez idas),
+ * Molde: `jornal-escola/midia.service.ts` — INCREMENTAL (até
+ * `IMAGENS_POR_CHAMADA` novas por chamada: o BFF do hub corta em 180 s),
  * idempotente, com o custo estimado e o `falharam[]`.
+ *
+ * **Quatro imagens por estande** desde a 0.8.0 (ADR-178): a capa e as lâminas
+ * do carrossel (`regras/laminas.ts`), cada uma com o seu pedido ao modelo.
  *
  * **Sem imagem a missão roda igual**: o post chega com `imagem.url: null`, e a
  * experiência desenha a arte procedural do estande (o `alt` continua valendo).
  *
- * **O arquivo é o hash da DESCRIÇÃO** (`imagem.descricao`), em
- * `experiencias/exp06ef1b/mostra/`: a mesma cena gerada uma vez serve a toda
- * turma que a homologar, e uma descrição editada pelo professor é outro arquivo.
+ * **O arquivo é o hash do PEDIDO** (`nomeDaLamina`: a capa, só a
+ * `imagem.descricao`), em `experiencias/exp06ef1b/mostra/`: a mesma cena gerada
+ * uma vez serve a toda turma que a homologar, e um texto editado pelo professor
+ * é outro arquivo.
  *
  * **O professor VÊ e APROVA as imagens antes da turma** (pedido do PO, no molde
  * da exp07ef1b, ADR-146): gerar e refazer só valem enquanto o pacote está com
@@ -30,11 +34,13 @@ import { EXP_ID } from "./vocabulario";
  */
 
 /**
- * Quantas imagens NOVAS por chamada. Cada uma leva de 5 a 10 s, uma depois da
- * outra; o BFF do hub corta em 180 s, e quatro deixam folga larga mesmo com o
- * provedor lento. Com quarenta estandes, são umas dez idas.
+ * Quantas imagens NOVAS por chamada. Cada uma leva de 5 a 10 s; desde a 0.8.0
+ * (quatro lâminas por estande, ADR-178: 160 imagens por mostra) elas saem em
+ * paralelo, `IMAGENS_EM_PARALELO` de cada vez — oito numa chamada são duas
+ * levas de ~10 s, longe dos 180 s do BFF. Umas vinte idas para a mostra toda.
  */
-export const IMAGENS_POR_CHAMADA = 4;
+export const IMAGENS_POR_CHAMADA = 8;
+export const IMAGENS_EM_PARALELO = 4;
 
 /**
  * Custo estimado por imagem, em tokens: a geração de imagem é cobrada por
@@ -64,28 +70,20 @@ export interface ProgressoDaMidia {
   imagens: Record<string, string>;
 }
 
-/** As regerações em andamento, por pacote e projeto: dois cliques não pagam duas imagens. */
+/** As regerações em andamento, por pacote e lâmina: dois cliques não pagam duas imagens. */
 const refazendo = new Map<string, Promise<ImagemRefeita>>();
 
 export interface ImagemRefeita {
   pacoteId: string;
   projetoId: string;
+  lamina: Lamina;
+  /** A chave na `midia` (`proj-a1` para a capa, `proj-a1:detalhe` para as outras). */
+  chave: string;
   url: string;
 }
 
-/**
- * O nome do arquivo no bucket, abaixo de `experiencias/exp06ef1b/`.
- *
- * `variacao` é a imagem REFEITA: o professor recusou a da descrição, e a nova
- * não pode cair no mesmo arquivo — sobrescrevê-lo trocaria a imagem de todo
- * pacote que herdou aquela descrição, inclusive o de uma turma em aula. Sem
- * variação, o nome continua sendo só o da descrição.
- */
-export function nomeDaImagem(descricao: string, variacao?: string): string {
-  const chave = [VERSAO_DO_PEDIDO_DE_IMAGEM, descricao.trim(), ...(variacao ? [variacao] : [])].join("|");
-  const hash = createHash("sha256").update(chave).digest("hex");
-  return `mostra/${hash.slice(0, 32)}.webp`;
-}
+/** O nome do arquivo mora em `regras/laminas.ts` (puro); o re-export é dos testes e do banco padrão. */
+export { nomeDaImagem } from "./regras/laminas";
 
 @Injectable()
 export class MidiaDaExp06ef1bService {
@@ -140,45 +138,48 @@ export class MidiaDaExp06ef1bService {
     perfil: Perfil,
     pacoteId: string,
     projetoId: string,
+    /** A lâmina refeita (0.8.0, ADR-178); sem ela, a capa — o contrato de antes. */
+    lamina: Lamina = "capa",
   ): Promise<ImagemRefeita> {
     const pacote = await this.juri.pacoteParaMidia(escolaId, turmaId, professorId, pacoteId);
     const projeto = pacote.conteudo.projetos.find((p) => p.id === projetoId);
     if (!projeto) throw erroDeJogo("payload-invalido");
+    const chaveDaImagem = chaveDaMidia(projeto.id, lamina);
 
-    const chave = `${pacote.id}:${projetoId}`;
+    const chave = `${pacote.id}:${chaveDaImagem}`;
     const emCurso = refazendo.get(chave);
     if (emCurso) return emCurso;
     const trabalho = (async () => {
       if (!(await this.quota.temSaldo(escolaId, usuarioId, perfil))) throw erroDeJogo("sem-saldo-de-ia");
       let bytes: Buffer;
       try {
-        bytes = await this.ia.generateImage(promptDaImagem(projeto.imagem.descricao), { proporcao: "4:3" });
+        bytes = await this.ia.generateImage(promptDeLamina(lamina, projeto), { proporcao: "4:3" });
       } catch {
         logger.warn(
-          { codigo: "exp06ef1b-midia-falhou", escolaId, projeto: projeto.id },
+          { codigo: "exp06ef1b-midia-falhou", escolaId, projeto: projeto.id, lamina },
           "imagem não refeita — o estande segue com a que tinha",
         );
         throw erroDeJogo("ia-indisponivel");
       }
       const url = await this.assets.salvarMidiaDeExperiencia({
         expId: EXP_ID,
-        nome: nomeDaImagem(projeto.imagem.descricao, randomUUID()),
+        nome: nomeDaLamina(lamina, projeto, randomUUID()),
         bytes,
         contentType: "image/webp",
         imagem: { ...TAMANHO_DA_IMAGEM },
       });
       await this.quota.consumir(escolaId, usuarioId, CUSTO_ESTIMADO_POR_IMAGEM);
-      await this.juri.registrarMidia(escolaId, pacote.id, projeto.id, url);
-      return { pacoteId: pacote.id, projetoId: projeto.id, url };
+      await this.juri.registrarMidia(escolaId, pacote.id, chaveDaImagem, url);
+      return { pacoteId: pacote.id, projetoId: projeto.id, lamina, chave: chaveDaImagem, url };
     })().finally(() => refazendo.delete(chave));
     refazendo.set(chave, trabalho);
     return trabalho;
   }
 
   private async gerarDeVerdade(escolaId: string, usuarioId: string, perfil: Perfil, pacote: PacoteLido): Promise<ProgressoDaMidia> {
-    const projetos = pacote.conteudo.projetos;
+    const itens = laminasDosProjetos(pacote.conteudo.projetos);
     const midia: Record<string, string> = { ...pacote.midia };
-    const pendentes = projetos.filter((p) => !midia[p.id]);
+    const pendentes = itens.filter((i) => !midia[i.chave]);
 
     if (pendentes.length > 0 && !(await this.quota.temSaldo(escolaId, usuarioId, perfil))) {
       throw erroDeJogo("sem-saldo-de-ia");
@@ -186,49 +187,64 @@ export class MidiaDaExp06ef1bService {
 
     const geradas: string[] = [];
     const falharam: string[] = [];
-    let novas = 0;
-    for (const projeto of pendentes) {
-      if (novas >= IMAGENS_POR_CHAMADA) break;
-      const nome = nomeDaImagem(projeto.imagem.descricao);
-      try {
-        let url: string;
-        if (await this.assets.midiaDeExperienciaExiste(EXP_ID, nome)) {
-          url = this.assets.urlDaMidiaDeExperiencia(EXP_ID, nome);
-        } else {
-          novas += 1;
-          const bytes = await this.ia.generateImage(promptDaImagem(projeto.imagem.descricao), { proporcao: "4:3" });
-          url = await this.assets.salvarMidiaDeExperiencia({
+    /* O que já está no bucket entra de graça e não conta no lote; o resto vai
+       para a fila das NOVAS, até o lote da chamada. */
+    const novas: typeof pendentes = [];
+    for (const item of pendentes) {
+      const nome = nomeDaLamina(item.lamina, item.projeto);
+      if (await this.assets.midiaDeExperienciaExiste(EXP_ID, nome)) {
+        const url = this.assets.urlDaMidiaDeExperiencia(EXP_ID, nome);
+        await this.juri.registrarMidia(escolaId, pacote.id, item.chave, url);
+        midia[item.chave] = url;
+        geradas.push(item.chave);
+      } else if (novas.length < IMAGENS_POR_CHAMADA) {
+        novas.push(item);
+      }
+    }
+
+    for (let i = 0; i < novas.length; i += IMAGENS_EM_PARALELO) {
+      const leva = novas.slice(i, i + IMAGENS_EM_PARALELO);
+      const resultados = await Promise.allSettled(
+        leva.map(async (item) => {
+          const bytes = await this.ia.generateImage(promptDeLamina(item.lamina, item.projeto), { proporcao: "4:3" });
+          const url = await this.assets.salvarMidiaDeExperiencia({
             expId: EXP_ID,
-            nome,
+            nome: nomeDaLamina(item.lamina, item.projeto),
             bytes,
             contentType: "image/webp",
             imagem: { ...TAMANHO_DA_IMAGEM },
           });
           await this.quota.consumir(escolaId, usuarioId, CUSTO_ESTIMADO_POR_IMAGEM);
+          await this.juri.registrarMidia(escolaId, pacote.id, item.chave, url);
+          return url;
+        }),
+      );
+      resultados.forEach((r, k) => {
+        const item = leva[k]!;
+        if (r.status === "fulfilled") {
+          midia[item.chave] = r.value;
+          geradas.push(item.chave);
+        } else {
+          /* Sem `err` no log: a mensagem do provider pode carregar trecho do
+             pedido, e o pedido carrega o que o professor escreveu. */
+          logger.warn(
+            { codigo: "exp06ef1b-midia-falhou", escolaId, projeto: item.projeto.id, lamina: item.lamina },
+            "imagem não gerada — a lâmina segue com a arte procedural",
+          );
+          falharam.push(item.chave);
         }
-        await this.juri.registrarMidia(escolaId, pacote.id, projeto.id, url);
-        midia[projeto.id] = url;
-        geradas.push(projeto.id);
-      } catch {
-        /* Sem `err` no log: a mensagem do provider pode carregar trecho do
-           pedido, e o pedido carrega a descrição que o professor escreveu. */
-        logger.warn(
-          { codigo: "exp06ef1b-midia-falhou", escolaId, projeto: projeto.id },
-          "imagem não gerada — o estande segue com a arte procedural",
-        );
-        falharam.push(projeto.id);
-      }
+      });
     }
 
-    const prontas = projetos.filter((p) => midia[p.id]).length;
+    const prontas = itens.filter((i) => midia[i.chave]).length;
     return {
       pacoteId: pacote.id,
-      total: projetos.length,
+      total: itens.length,
       prontas,
-      faltam: projetos.length - prontas,
+      faltam: itens.length - prontas,
       geradas,
       falharam,
-      completo: prontas === projetos.length,
+      completo: prontas === itens.length,
       imagens: midia,
     };
   }

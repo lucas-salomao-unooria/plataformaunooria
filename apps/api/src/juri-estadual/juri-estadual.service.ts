@@ -88,12 +88,12 @@ import {
   type PassoPedido,
 } from "./regras/passos";
 import type { ConteudoDoPacote } from "./regras/preparo";
+import { LAMINAS, chaveDaMidia, ehChaveDaMidia, nomeDaLamina } from "./regras/laminas";
 import { postPublico, projetoDaGaleria, type Midia, type PostPublico } from "./regras/publico";
 import {
   AREAS,
   DISCIPLINAS,
   EXP_ID,
-  ID_DE_PROJETO_RE,
   ORIGENS_DO_PACOTE,
   POSTS_DE_ABERTURA,
   VERSAO_DO_INSTRUMENTO,
@@ -217,12 +217,12 @@ function conteudoDaLinha(bruto: Prisma.JsonValue, contexto: { escolaId: string; 
   throw erroDeJogo("atividade-nao-preparada");
 }
 
-/** As URLs de imagem do pacote, só com chave de projeto conhecida e valor texto. */
+/** As URLs de imagem do pacote, só com chave de lâmina conhecida (`proj-a1`, `proj-a1:detalhe`) e valor texto. */
 function midiaDaLinha(bruto: Prisma.JsonValue): Record<string, string> {
   if (bruto === null || typeof bruto !== "object" || Array.isArray(bruto)) return {};
   const midia: Record<string, string> = {};
-  for (const [id, url] of Object.entries(bruto)) {
-    if (ID_DE_PROJETO_RE.test(id) && typeof url === "string" && url.length > 0) midia[id] = url;
+  for (const [chave, url] of Object.entries(bruto)) {
+    if (ehChaveDaMidia(chave) && typeof url === "string" && url.length > 0) midia[chave] = url;
   }
   return midia;
 }
@@ -251,9 +251,10 @@ function projetosDoMotor(pacote: PacoteLido): ProjetoDoMotor[] {
   return pacote.conteudo.projetos.map((p) => ({ id: p.id, area: areaDoProjeto(p.id) }));
 }
 
+/** Contado por LÂMINA (ADR-178): quatro imagens por estande. */
 function resumoDaMidia(pacote: PacoteLido): { total: number; prontas: number } {
-  const projetos = pacote.conteudo.projetos;
-  return { total: projetos.length, prontas: projetos.filter((p) => pacote.midia[p.id]).length };
+  const chaves = pacote.conteudo.projetos.flatMap((p) => LAMINAS.map((l) => chaveDaMidia(p.id, l)));
+  return { total: chaves.length, prontas: chaves.filter((c) => pacote.midia[c]).length };
 }
 
 /**
@@ -1110,9 +1111,9 @@ export class JuriEstadualService {
    * do ar a de agora.
    *
    * O MESMO conteúdo do pacote mais recente não é atividade nova: é o segundo
-   * clique em "Criar atividade" (idempotente). As imagens de projeto com a
-   * MESMA descrição de um pacote recente da turma são herdadas: o arquivo no
-   * bucket é o hash da descrição.
+   * clique em "Criar atividade" (idempotente). As imagens de projeto com o
+   * MESMO pedido de um pacote recente da turma são herdadas, lâmina a lâmina: o
+   * arquivo no bucket é o hash do pedido (`nomeDaLamina`).
    */
   async homologar(
     escolaId: string,
@@ -1173,20 +1174,27 @@ export class JuriEstadualService {
         };
       }
 
-      const urlDaDescricao = new Map<string, string>();
+      /* Pelo nome do arquivo do pedido, não pela URL: a imagem refeita tem
+         outra URL, e é ela que o professor escolheu para aquele pedido. */
+      const urlDoPedido = new Map<string, string>();
       for (const velho of [...recentes].reverse()) {
         const midia = midiaDaLinha(velho.midia);
         const lido = LeituraDoConteudoSchema.safeParse(velho.conteudo);
         if (!lido.success) continue;
         for (const p of lido.data.projetos) {
-          const url = midia[p.id];
-          if (url) urlDaDescricao.set(p.imagem.descricao, url);
+          for (const lamina of LAMINAS) {
+            const url = midia[chaveDaMidia(p.id, lamina)];
+            if (url) urlDoPedido.set(nomeDaLamina(lamina, p), url);
+          }
         }
       }
       const herdada: Record<string, string> = {};
       for (const p of conteudo.projetos) {
-        const url = urlDaDescricao.get(p.imagem.descricao) ?? (origem === "padrao" ? imagensDoBanco[p.id] : undefined);
-        if (url) herdada[p.id] = url;
+        for (const lamina of LAMINAS) {
+          const chave = chaveDaMidia(p.id, lamina);
+          const url = urlDoPedido.get(nomeDaLamina(lamina, p)) ?? (origem === "padrao" ? imagensDoBanco[chave] : undefined);
+          if (url) herdada[chave] = url;
+        }
       }
 
       const agora = new Date();
@@ -1361,15 +1369,16 @@ export class JuriEstadualService {
   }
 
   /**
-   * Grava a URL de UMA imagem no pacote. Concatenação de JSONB no próprio
+   * Grava a URL de UMA imagem no pacote, pela chave da lâmina (`proj-a1`,
+   * `proj-a1:detalhe`). Concatenação de JSONB no próprio
    * UPDATE (`midia || {proj-a1: url}`), e não ler-modificar-gravar: duas abas do
    * preparo gravando imagens diferentes não podem apagar uma à outra.
    */
-  async registrarMidia(escolaId: string, pacoteId: string, projetoId: string, url: string): Promise<void> {
+  async registrarMidia(escolaId: string, pacoteId: string, chave: string, url: string): Promise<void> {
     await this.prisma.comTenancy(
       (tx) => tx.$executeRaw`
         UPDATE exp06ef1b_pacotes
-           SET midia = midia || jsonb_build_object(${projetoId}::text, ${url}::text),
+           SET midia = midia || jsonb_build_object(${chave}::text, ${url}::text),
                atualizado_em = now()
          WHERE id = ${pacoteId}::uuid AND escola_id = ${escolaId}`,
       escolaId,

@@ -1,6 +1,7 @@
 import type { z } from "zod";
 import type { PostPublicoSchema, ProjetoDaGaleriaSchema, ProjetoDoPacoteSchema } from "../contrato-de-rotas";
 import { projetoDoPost, tipoDoPost, type Area, type TipoDePost } from "../vocabulario";
+import { chaveDaMidia } from "./laminas";
 
 /**
  * O que o ESTUDANTE recebe de um projeto — ALLOWLIST explícita, nunca o
@@ -17,8 +18,17 @@ export type ProjetoDoPacote = z.infer<typeof ProjetoDoPacoteSchema>;
 export type PostPublico = z.infer<typeof PostPublicoSchema>;
 export type ProjetoDaGaleria = z.infer<typeof ProjetoDaGaleriaSchema>;
 
-/** As URLs das imagens geradas, por id de projeto. */
+/** As URLs das imagens geradas, pela chave da lâmina (`proj-a1`, `proj-a1:detalhe`). */
 export type Midia = Partial<Record<string, string>>;
+
+/** As lâminas 2 a 4 do carrossel: a URL de cada uma, ou `null` (a arte procedural). */
+function laminasPublicas(projetoId: string, midia: Midia): PostPublico["laminas"] {
+  return {
+    detalhe: midia[chaveDaMidia(projetoId, "detalhe")] ?? null,
+    equipe: midia[chaveDaMidia(projetoId, "equipe")] ?? null,
+    bastidor: midia[chaveDaMidia(projetoId, "bastidor")] ?? null,
+  };
+}
 
 /**
  * O texto de cada FORMATO do post. O motor serve só a `apresentacao` (a
@@ -52,6 +62,7 @@ export function postPublico(postId: string, projetos: readonly ProjetoDoPacote[]
     bastidor: projeto.bastidor,
     hashtags: [...projeto.hashtags],
     imagem: { url: midia[projeto.id] ?? null, alt: projeto.imagem.alt },
+    laminas: laminasPublicas(projeto.id, midia),
   };
 }
 
@@ -68,6 +79,7 @@ export function projetoDaGaleria(projeto: ProjetoDoPacote, midia: Midia, exibido
     resumo: projeto.bastidor,
     hashtags: [...projeto.hashtags],
     imagem: { url: midia[projeto.id] ?? null, alt: projeto.imagem.alt },
+    laminas: laminasPublicas(projeto.id, midia),
     exibidoNoSeuFeed,
   };
 }

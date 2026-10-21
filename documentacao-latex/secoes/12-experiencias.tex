@@ -1833,7 +1833,10 @@ O motor do feed é do servidor & \arq{regras/afunilamento.ts}, puro e
   cedo vê 7/1/1/1 projetos por área; quem não interage, 3/3/2/2 --- os dois
   ficam com 30 de 40 fora, e o que muda é QUAIS. O \cd{bastidor} é a quarta
   lâmina do carrossel do próprio post (\enquote{Bastidores do estande}, depois
-  das três fotos). A saturação por formatos da 0.4.0 (bastidor, protótipo e
+  das três fotos). Desde a 0.8.0 (\adrr{ADR-178}) as fotos 2 e 3 e os
+  bastidores têm imagem gerada (\cd{laminas} no post e na ficha da galeria,
+  URL ou \cd{null}); com a dos bastidores, o texto vem embaixo da imagem, e
+  sem imagem a lâmina é a de antes. A saturação por formatos da 0.4.0 (bastidor, protótipo e
   depoimento como posts) saiu; as sessões 2.0.0 continuam de onde pararam, só
   com apresentações novas.\\
 Os 8 minutos & O 1º \cd{proximo: true} grava \cd{feed\_iniciado\_em};
@@ -1923,8 +1926,10 @@ Equipes e o painel & O painel conta por COMPUTADOR e é PROJETADO: a
   de 30\,\% ---, que substituiu a invisibilidade média, \adrr{ADR-164}). Cada leitura conta em
   \cd{painel\_vistas}.\\
 \zebra Mídia & As imagens são do professor, no preparo, em duas fases
-  (\rota{homologar} e \rota{aprovar-imagens}), quatro por chamada, quarenta por
-  atividade; sem imagem, a arte procedural. O banco padrão já nasce com as
+  (\rota{homologar} e \rota{aprovar-imagens}), oito por chamada; quatro por
+  estande, as lâminas do carrossel (a foto do estande, o projeto de perto, a
+  equipe e os bastidores, \adrr{ADR-178}), 160 por atividade; sem imagem, a
+  arte procedural. O banco padrão já nasce com as
   imagens aprovadas: as do banco que o \cd{admin} gerou
   (\rota{/unooria/recursos/imagens-do-juri}, \adrr{ADR-164}), e a arte
   procedural no estande que ainda não tem.\\

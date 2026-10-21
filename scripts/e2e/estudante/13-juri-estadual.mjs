@@ -569,9 +569,27 @@ await suite(
     const gradeDeImagens = prof.locator("[data-imagens-do-juri]");
     const abasDasImagens = await percorrerAbas(prof, gradeDeImagens, "[data-imagem-do-estande]");
     r.exigir(
-      abasDasImagens.length === 4 && abasDasImagens.every((a) => a.itens === 10 && /\S · (10|\d+ sem imagem)$/.test(a.rotulo)),
-      `a grade de imagens: quatro abas, dez estandes em cada, e o rótulo diz quantos estão sem imagem (${resumoDasAbas(abasDasImagens)})`,
+      abasDasImagens.length === 4 && abasDasImagens.every((a) => a.itens === 10 && /\S · (10|\d+ com imagem faltando)$/.test(a.rotulo)),
+      `a grade de imagens: quatro abas, dez estandes em cada, e o rótulo diz quantos têm imagem faltando (${resumoDasAbas(abasDasImagens)})`,
     );
+    /* Quatro imagens por estande (0.8.0, ADR-178): as lâminas do carrossel do post. */
+    const laminasDoCartao = await gradeDeImagens.locator("[data-imagem-do-estande]").first().locator("[data-lamina]").evaluateAll((els) =>
+      els.map((el) => el.getAttribute("data-lamina")),
+    );
+    r.exigir(
+      laminasDoCartao.join(",") === "capa,detalhe,equipe,bastidor",
+      `cada estande da grade de imagens mostra as quatro lâminas do carrossel, na ordem do post (${laminasDoCartao.join(", ")})`,
+    );
+    await gradeDeImagens.locator("[data-imagem-do-estande]").first().scrollIntoViewIfNeeded();
+    await r.registrar(prof, "imagens-quatro-por-estande", {
+      titulo: "Quatro imagens por estande, na aprovação do professor",
+      mostra:
+        "A grade “Imagens dos estandes” da atividade: cada cartão traz a foto do estande, o projeto de perto, a " +
+        "equipe no estande e os bastidores, cada uma com o seu “Gerar outra”.",
+      prova:
+        "Desde a 0.8.0 (ADR-178) as fotos 2 e 3 do carrossel e a dos bastidores também são geradas, cada uma com o " +
+        "seu pedido; o professor confere e troca cada lâmina antes de a turma ver.",
+    });
     /* A foto enquadra a barra de abas (o contêiner é maior que a tela). */
     await estandesDaAtividade.getByRole("tablist").first().evaluate((el) => el.scrollIntoView({ block: "start" }));
     await r.registrar(prof, "estandes-em-abas", {
@@ -805,16 +823,59 @@ await suite(
       await p.mouse.move(caixa.x + caixa.width * 0.2, yDoMeio, { steps: 6 });
       await p.mouse.up();
     };
+    /* As fotos 2 e 3 (0.8.0, ADR-178): a gerada da lâmina quando a api a manda,
+       senão a arte procedural (`data:`). Os dois estados são legítimos — o
+       banco padrão pode não ter as imagens no storage —, e cada um se prova. */
+    const laminasDaApi = abertura[0].laminas ?? { detalhe: null, equipe: null, bastidor: null };
+    const srcDaLamina = async (rotulo) =>
+      primeiroPost.locator(`[aria-roledescription="carrossel"][aria-label="${rotulo}"] img`).first().getAttribute("src");
+    const fotoCerta = (src, esperada) => (esperada ? src === esperada : Boolean(src?.startsWith("data:image/svg")));
+    /* O aviso da Busca fechada ainda pode estar sobre o feed: a foto espera ele sair. */
+    await aviso(q, COPY.buscaFechada).waitFor({ state: "hidden", timeout: 10_000 }).catch(() => {});
     await arrastarParaAEsquerda();
     await primeiroPost.locator('[aria-label="Foto 2 de 3"]').first().waitFor({ timeout: 10_000 });
+    const src2 = await srcDaLamina("Foto 2 de 3");
+    r.exigir(
+      fotoCerta(src2, laminasDaApi.detalhe),
+      `a foto 2 é ${laminasDaApi.detalhe ? "a imagem gerada do projeto de perto" : "a arte procedural (a api não mandou imagem para a lâmina)"} (${String(src2).slice(0, 50)}…)`,
+    );
+    await semAnimacao(q);
+    await r.registrar(p, "carrossel-foto-2", {
+      titulo: "Foto 2 do carrossel: o projeto de perto",
+      mostra: laminasDaApi.detalhe
+        ? "A segunda lâmina do post: a imagem gerada do protótipo de perto, sobre a mesa do estande."
+        : "A segunda lâmina do post: a arte desenhada (esta mostra ainda não tem a imagem gerada da lâmina).",
+      prova: "A foto 2 é a imagem da lâmina “detalhe” que a api mandou; sem ela, a arte desenhada de antes.",
+    });
     await arrastarParaAEsquerda();
     await primeiroPost.locator('[aria-label="Foto 3 de 3"]').first().waitFor({ timeout: 10_000 });
+    const src3 = await srcDaLamina("Foto 3 de 3");
+    r.exigir(
+      fotoCerta(src3, laminasDaApi.equipe),
+      `a foto 3 é ${laminasDaApi.equipe ? "a imagem gerada da equipe no estande" : "a arte procedural (a api não mandou imagem para a lâmina)"} (${String(src3).slice(0, 50)}…)`,
+    );
+    await semAnimacao(q);
+    await r.registrar(p, "carrossel-foto-3", {
+      titulo: "Foto 3 do carrossel: a equipe no estande",
+      mostra: laminasDaApi.equipe
+        ? "A terceira lâmina do post: a imagem gerada da equipe apresentando o projeto, sem rosto identificável."
+        : "A terceira lâmina do post: a arte desenhada (esta mostra ainda não tem a imagem gerada da lâmina).",
+      prova: "A foto 3 é a imagem da lâmina “equipe” que a api mandou; sem ela, a arte desenhada de antes.",
+    });
     await arrastarParaAEsquerda();
     const laminaDoBastidor = primeiroPost.locator(`[aria-roledescription="carrossel"][aria-label="${COPY.bastidor}"]`).first();
     await laminaDoBastidor.waitFor({ timeout: 10_000 }).catch(() => {
       throw new Error(`o terceiro arrasto não levou à 4ª lâmina, “${COPY.bastidor}”`);
     });
-    const textoDaLamina = (await laminaDoBastidor.innerText()).replace(/\s+/g, " ").trim();
+    /* Com a foto dos bastidores, o texto desce para baixo da imagem; sem ela, fica na lâmina. */
+    const ondeEstaOTexto = laminasDaApi.bastidor ? primeiroPost.locator("[data-bastidor-do-post]") : laminaDoBastidor;
+    const textoDaLamina = (await ondeEstaOTexto.innerText()).replace(/\s+/g, " ").trim();
+    if (laminasDaApi.bastidor) {
+      r.exigir(
+        (await laminaDoBastidor.locator("img").first().getAttribute("src")) === laminasDaApi.bastidor,
+        "a 4ª lâmina mostra a imagem gerada dos bastidores, e o texto do teste vem embaixo dela",
+      );
+    }
     const bastidorDaApi = (abertura[0].bastidor ?? "").replace(/\s+/g, " ").trim();
     r.exigir(
       bastidorDaApi !== "" && textoDaLamina.includes(COPY.bastidor) && textoDaLamina.includes(bastidorDaApi),
@@ -827,7 +888,7 @@ await suite(
     await semAnimacao(q);
     await r.registrar(p, "carrossel-bastidor", {
       titulo: "O carrossel termina nos Bastidores do estande",
-      mostra: `O primeiro post depois de três arrastos com o mouse: a 4ª lâmina, “${COPY.bastidor}”, com o texto do protótipo em teste.`,
+      mostra: `O primeiro post depois de três arrastos com o mouse: a 4ª lâmina, “${COPY.bastidor}”, ${laminasDaApi.bastidor ? "com a imagem da bancada de testes e, embaixo dela, o texto do protótipo em teste" : "com o texto do protótipo em teste (sem imagem gerada para a lâmina)"}.`,
       prova:
         "Até a 0.4.x o bastidor era um post SEPARADO, que repetia o projeto (a saturação). Desde a 0.5.0 nenhum post " +
         "se repete: o bastidor é a última lâmina do próprio post, com o mesmo gesto e as mesmas setas das fotos.",
@@ -897,6 +958,9 @@ await suite(
     r.exigir(!SPOILER.test(COPY.pedidoDasPastas), "o pedido das pastas, antes da galeria, não diz algoritmo, bolha, filtro nem oculto");
     const categoriasDoFeed = (await sessaoDe(p)).categorias;
     const primeiroDoFeed = feed1.posts[0];
+    /* O aviso de "Comentários restritos" (4 s) do passo anterior ainda pode estar na
+       tela e cobriria a última pasta no print: espera ele sair — o desfecho, não o relógio. */
+    await aviso(q, COPY.comentariosFechados).waitFor({ state: "hidden", timeout: 10_000 }).catch(() => {});
     const artigoDoPrimeiro = q().locator(`article[data-post-id="${primeiroDoFeed.id}"]`);
     await artigoDoPrimeiro.scrollIntoViewIfNeeded();
     await artigoDoPrimeiro.getByRole("button", { name: "Salvar publicação", exact: true }).click();

@@ -3,7 +3,7 @@ import { ButtonUnv, GestureHint, IconUnv, PostCard } from "@edu/ui/ds-unoovista"
 import { FOTOS_DO_POST, iniciais, laminasDoPost, lerGesto, nomeDaConta } from "../../lib/regras";
 import { E2 } from "../../lib/textos";
 import type { PostPublico } from "../../lib/tipos";
-import { srcDaFoto, type usePaleta } from "../componentes/midia";
+import { altDaFoto, srcDaFoto, type usePaleta } from "../componentes/midia";
 
 /** Acima disto, a legenda sai recolhida com o "...mais" (o app real corta em duas linhas). */
 const LEGENDA_CURTA = 96;
@@ -84,6 +84,8 @@ export function PostDoFeed({
   const conta = nomeDaConta(post.perfil);
   const total = laminasDoPost(post);
   const noBastidor = lamina > FOTOS_DO_POST;
+  /* `?.`: o feed gravado de uma sessão antiga não tem `laminas`. */
+  const fotoDoBastidor = post.laminas?.bastidor ?? null;
 
   function irPara(nova: number) {
     if (nova === lamina || nova < 1 || nova > total) return;
@@ -175,7 +177,20 @@ export function PostDoFeed({
           )}
         </div>
       </div>
-      {noBastidor ? (
+      {noBastidor && fotoDoBastidor ? (
+        /* Com a foto gerada (0.8.0, ADR-178), a imagem ocupa a lâmina e o texto
+           desce para baixo dela (`bastidor-do-post`, depois das ações). */
+        <PostCard.Media
+          {...gestos}
+          key={lamina}
+          src={fotoDoBastidor}
+          alt={E2.altDoBastidor(post.titulo)}
+          errorLabel={E2.placeholderMidia}
+          errorDescription={E2.placeholderLegenda}
+          currentIndex={lamina}
+          totalCount={total}
+        />
+      ) : noBastidor ? (
         <PostCard.Media {...gestos} key={lamina} alt={E2.bastidor} currentIndex={lamina} totalCount={total}>
           <div className="lamina-do-bastidor">
             <p className="lamina-do-bastidor__titulo">{E2.bastidor}</p>
@@ -187,7 +202,7 @@ export function PostDoFeed({
           {...gestos}
           key={lamina}
           src={srcDaFoto(post, lamina, paleta)}
-          alt={post.imagem.alt}
+          alt={altDaFoto(post, lamina, E2.altDaFoto)}
           errorLabel={E2.placeholderMidia}
           errorDescription={E2.placeholderLegenda}
           currentIndex={lamina}
@@ -204,6 +219,12 @@ export function PostDoFeed({
         onComment={() => aoFechado("comentar")}
         onShare={() => aoFechado("compartilhar")}
       />
+      {noBastidor && fotoDoBastidor && (
+        <div className="bastidor-do-post" data-bastidor-do-post>
+          <p className="lamina-do-bastidor__titulo">{E2.bastidor}</p>
+          <p className="lamina-do-bastidor__texto">{post.bastidor}</p>
+        </div>
+      )}
       <PostCard.Caption username={conta}>
         {recolhida ? `${recolher(legenda)} ` : `${legenda} `}
         {longa && (

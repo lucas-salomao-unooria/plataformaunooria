@@ -37,7 +37,9 @@ passam no typecheck e enganam.
 
 **A 0.5.0 não abriu compensação nova.** A lâmina do bastidor é o
 `PostCard.Media` SEM `src` — o DS desenha `children` como slide;
-`.lamina-do-bastidor` é só tipografia do conteúdo. (A contagem por área e o
+`.lamina-do-bastidor` é só tipografia do conteúdo. Com a foto dos bastidores
+(0.8.0), `Media` com `src` não aceita filhos: o texto vai DEPOIS das ações
+(`.bastidor-do-post`) — antes delas quebraria o `media + actions` do DS. (A contagem por área e o
 contraste, `ListItem` e `BadgeUnv`, saíram da galeria na 0.7.0.)
 
 **A 0.7.0 também não** (ADR-176). As PASTAS do salvar são um `BottomSheetUnv`

@@ -685,7 +685,7 @@ describe("o gabarito e o acervo não descem antes da hora", () => {
     const post = postPublico("proj-c10:apresentacao", CONTEUDO.projetos, { "proj-c10": "https://cdn/x.webp" });
     expect(post).not.toBeNull();
     expect(Object.keys(post ?? {}).sort()).toEqual(
-      ["area", "bastidor", "escola", "hashtags", "id", "imagem", "legenda", "perfil", "projetoId", "texto", "tipo", "titulo"],
+      ["area", "bastidor", "escola", "hashtags", "id", "imagem", "laminas", "legenda", "perfil", "projetoId", "texto", "tipo", "titulo"],
     );
     expect(PostPublicoSchema.safeParse(post).success).toBe(true);
     const c10 = CONTEUDO.projetos.find((p) => p.id === "proj-c10");
@@ -706,12 +706,21 @@ describe("o gabarito e o acervo não descem antes da hora", () => {
     expect(postPublico("proj-c3:apresentacao", CONTEUDO.projetos, {})?.imagem.url).toBeNull();
   });
 
+  test("as lâminas 2 a 4 do carrossel descem pela chave delas; sem imagem, `null` (a arte procedural)", () => {
+    const midia = { "proj-c10": "https://cdn/capa.webp", "proj-c10:equipe": "https://cdn/equipe.webp", "proj-c9:detalhe": "https://cdn/outro.webp" };
+    const post = postPublico("proj-c10:apresentacao", CONTEUDO.projetos, midia);
+    expect(post?.laminas).toEqual({ detalhe: null, equipe: "https://cdn/equipe.webp", bastidor: null });
+    expect(post?.imagem.url).toBe("https://cdn/capa.webp");
+    const c10 = CONTEUDO.projetos.find((p) => p.id === "proj-c10")!;
+    expect(projetoDaGaleria(c10, midia, true).laminas).toEqual(post?.laminas);
+  });
+
   test("o estande da galeria também, e a galeria inteira cabe no schema", () => {
     const p = CONTEUDO.projetos[0];
     if (!p) throw new Error("fixture vazia");
     const estande = projetoDaGaleria(p, {}, true);
     expect(Object.keys(estande).sort()).toEqual(
-      ["area", "escola", "exibidoNoSeuFeed", "hashtags", "id", "imagem", "legenda", "perfil", "resumo", "titulo"],
+      ["area", "escola", "exibidoNoSeuFeed", "hashtags", "id", "imagem", "laminas", "legenda", "perfil", "resumo", "titulo"],
     );
     expect(ProjetoDaGaleriaSchema.safeParse(estande).success).toBe(true);
     const galeria = {

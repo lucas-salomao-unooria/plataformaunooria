@@ -41,20 +41,20 @@ lados têm espelhos dessas listas; mudar a forma aqui sem avisar quebra os dois.
   `ehConteudoDoBancoPadrao` reconhece também o pacote `padrao` antigo de 16 —
   `conteudoDoBancoPadraoLegado`); os 5–10 foram escritos no molde deles (o
   teste prova o sha256 dos 16). Três entradas: `POST turmas/:t/banco-padrao`
-  (o atalho, sem IA, imagens aprovadas, `porNoAr` põe em andamento); o FALLBACK
+  (atalho sem IA, `porNoAr` põe em andamento); o FALLBACK
   do `gerar-conteudo` (sem cota OU IA fora → 200 `usouIa: false`, `origem:
   "padrao"`, `motivo`, `imagens`); e homologar o conteúdo intocado. O 01e não
   tem perfil nem imagem: perfil sai da escola, imagem descreve o título.
-- **As IMAGENS DO BANCO PADRÃO** (`banco-padrao-imagens.service.ts`): uma por
-  projeto, com o MESMO nome da customização (`nomeDaImagem(descricao)`); o
-  storage É o registro (sem tabela). `GET`/`POST /juri-estadual/banco-padrao/imagens`
-  só do `admin` (403 para os outros), até quatro por chamada, idempotente,
-  SEM quota de professor, rate limit por usuário, e medido no painel de custos
-  com atribuição EXPLÍCITA (recurso `juri-estadual-banco-padrao`, perfil
-  `admin`, sem escola). A ligação: o
-  controller lê as que existem (`existentes`, que nunca lança) e o
-  `usarBancoPadrao`, o fallback e o `homologar` do banco intocado as põem na
-  `midia`; sem imagem, a arte procedural. O pacote reaproveitado FORA do ar
+- **QUATRO imagens por estande** (ADR-178, `regras/laminas.ts`): `capa` (chave =
+  id, arquivo de sempre), `detalhe`, `equipe`, `bastidor` (`proj-a1:detalhe`,
+  `promptDaLamina`). Conta por CHAVE; a desconhecida some.
+- **As IMAGENS DO BANCO PADRÃO** (`banco-padrao-imagens.service.ts`): o MESMO
+  nome da customização; o storage É o registro (sem tabela). `GET`/`POST
+  /juri-estadual/banco-padrao/imagens` só do `admin`, até oito por chamada,
+  idempotente, SEM quota de professor, rate limit, medido no
+  painel de custos com atribuição EXPLÍCITA (`juri-estadual-banco-padrao`,
+  `admin`, sem escola). O controller lê as que existem (`existentes`) e `usarBancoPadrao`, fallback e `homologar` do banco intocado as põem
+  na `midia`; sem imagem, a arte procedural. O pacote reaproveitado FORA do ar
   ganha as que faltavam; no ar, não muda.
 - **Atividade = o PACOTE; rodada = o "Zerar"** (ADR-130/155): igual à 0.3.0 —
   gate PK `turma_id`, sessão por (pacote, rodada), um ativo por turma (índice
@@ -129,9 +129,9 @@ lados têm espelhos dessas listas; mudar a forma aqui sem avisar quebra os dois.
   levaram 93 s e 9.900 tokens de saída — a 2ª tentativa estouraria os 180 s do
   BFF; por área, ~25 s e ~2.500): as categorias, depois as quatro áreas em
   PARALELO, e o estande que repetir título ou perfil de outra área é regerado
-  sozinho (`promptDaRegeneracao`, que lista os outros 39). Ponta a ponta: ~42 s. Área que falha derruba o rascunho (fallback da rota); toda
-  tentativa é debitada. A customização gera as 40 imagens quatro
-  por chamada (`IMAGENS_POR_CHAMADA`).
+  sozinho (`promptDaRegeneracao`). Ponta a ponta: ~42 s. Área que falha derruba
+  o rascunho (fallback da rota); toda tentativa é debitada. Imagens: 160, oito
+  por chamada, quatro em paralelo.
 - **O podcast** (ADR-150/151, RF-008): o banco padrão intocado tem o roteiro do
   sheet (aud-exp06ef1b-01, `ROTEIRO_DO_BANCO_PADRAO`) com os estandes DO BANCO
   nas três vagas (os 1–4, que ficaram) e sem número cravado ("mais da
@@ -164,7 +164,7 @@ só ação, sem perguntas; marcado na transação de cada tarefa (porta `marcar`
   pastas (guardar, mover, apagar; respostas no formato 0.6.0), a regra e a
   ficha 6, o banco de 40 (sha256 dos 16), o preparo por
   área e o FALLBACK.
-- `tests/juri-estadual-midia.spec.ts` — refazer, o lote de quatro, as imagens
+- `tests/juri-estadual-midia.spec.ts` — refazer por lâmina, o lote de oito, as imagens
   do BANCO (guarda de admin, só as que faltam, atribuição no medidor real) e o
   preparo em cinco chamadas com IA falsa.
 - `tests/juri-estadual-postgres.spec.ts` — RLS, CHECKs (16/40 sim, 15 não;

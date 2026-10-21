@@ -1074,7 +1074,7 @@ describe("atividade × rodada", () => {
     expect(await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, nova.id)).toMatchObject({ rodada: 1, mudou: true });
     expect(await entrar(ids.ana)).toMatchObject({ pacoteId: nova.id, rodada: 1, passo: "credencial" });
     const pacotes = PacotesSchema.parse(await service.pacotes(ESCOLA, ids.turma, ids.professora));
-    expect(pacotes.ativo).toMatchObject({ id: nova.id, midia: { total: 40, prontas: 0 } });
+    expect(pacotes.ativo).toMatchObject({ id: nova.id, midia: { total: 160, prontas: 0 } });
     expect(pacotes.historico.map((p) => [p.ativo, p.rodadas])).toEqual([
       [true, 1],
       [false, 1],
@@ -1118,13 +1118,17 @@ describe("atividade × rodada", () => {
     expect(await codigoDe(fonte.atividade(OUTRA_ESCOLA, ids.turmaVizinha, undefined, ultima.id))).toBe("atividade-nao-encontrada");
   });
 
-  test("as imagens: gravadas por concatenação, e herdadas pela mesma descrição", async () => {
+  test("as imagens: gravadas por concatenação, lâmina a lâmina, e herdadas pelo mesmo pedido", async () => {
     const ativo = await prisma.exp06ef1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turma, ativo: true } });
     await service.registrarMidia(ESCOLA, ativo.id, "proj-a1", "https://cdn/a1.webp");
     await service.registrarMidia(ESCOLA, ativo.id, "proj-b2", "https://cdn/b2.webp");
+    await service.registrarMidia(ESCOLA, ativo.id, "proj-a1:bastidor", "https://cdn/a1-bastidor.webp");
+    /* Chave que não é de lâmina conhecida não sai do banco. */
+    await service.registrarMidia(ESCOLA, ativo.id, "proj-a1:selfie", "https://cdn/x.webp");
     expect((await service.pacote(ESCOLA, ids.turma, ids.professora, ativo.id)).imagens).toEqual({
       "proj-a1": "https://cdn/a1.webp",
       "proj-b2": "https://cdn/b2.webp",
+      "proj-a1:bastidor": "https://cdn/a1-bastidor.webp",
     });
     const herdeira = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, {
       parametros: { ...PARAMETROS_DE_TESTE, contexto: "Turma da tarde" },
@@ -1132,11 +1136,18 @@ describe("atividade × rodada", () => {
       podcast: FALAS_DO_TEMA_PADRAO,
     });
     const linha = await prisma.exp06ef1bPacote.findUniqueOrThrow({ where: { id: herdeira.id } });
-    expect(linha.midia).toEqual({ "proj-a1": "https://cdn/a1.webp", "proj-b2": "https://cdn/b2.webp" });
+    expect(linha.midia).toEqual({
+      "proj-a1": "https://cdn/a1.webp",
+      "proj-b2": "https://cdn/b2.webp",
+      "proj-a1:bastidor": "https://cdn/a1-bastidor.webp",
+    });
     /* O post do estudante leva a URL. */
     await entrar(ids.bia);
     const feed = FeedSchema.parse(await service.pedirPasso(ESCOLA, ids.bia, ids.turma, "feed"));
-    for (const p of feed.posts) expect(p.imagem.url).toBe(p.projetoId === "proj-a1" ? "https://cdn/a1.webp" : p.projetoId === "proj-b2" ? "https://cdn/b2.webp" : null);
+    for (const p of feed.posts) {
+      expect(p.imagem.url).toBe(p.projetoId === "proj-a1" ? "https://cdn/a1.webp" : p.projetoId === "proj-b2" ? "https://cdn/b2.webp" : null);
+      expect(p.laminas).toEqual({ detalhe: null, equipe: null, bastidor: p.projetoId === "proj-a1" ? "https://cdn/a1-bastidor.webp" : null });
+    }
   });
 
   test("o pacote de OUTRA turma não é desta; turma que o professor não leciona é 404", async () => {
@@ -1176,11 +1187,12 @@ describe("atividade × rodada", () => {
         conteudo: conteudoDoBancoPadrao(),
         podcast: FALAS_DO_TEMA_PADRAO,
       },
-      { "proj-c10": "https://cdn/banco-c10.webp" },
+      { "proj-c10": "https://cdn/banco-c10.webp", "proj-c10:equipe": "https://cdn/banco-c10-equipe.webp" },
     );
     expect(homologado.origem).toBe("padrao");
     expect((await prisma.exp06ef1bPacote.findUniqueOrThrow({ where: { id: homologado.id } })).midia).toEqual({
       "proj-c10": "https://cdn/banco-c10.webp",
+      "proj-c10:equipe": "https://cdn/banco-c10-equipe.webp",
     });
   });
 
@@ -1397,7 +1409,7 @@ describe("PROVA 6: a 0.4.x continua legível — o pacote de 16 e a sessão 2.0.
 
   test("o painel do pacote de 16 funciona, com a concentração da sessão antiga (7 de 10 na B)", async () => {
     const painel = PainelSchema.parse(await service.painel(ESCOLA, ids.turma, ids.professora));
-    expect(painel.pacote.midia).toEqual({ total: 16, prontas: 0 });
+    expect(painel.pacote.midia).toEqual({ total: 64, prontas: 0 });
     expect(painel.resumo.concentracao).toEqual({ curtiram: 70, naoCurtiram: null });
     expect(PacotesSchema.parse(await service.pacotes(ESCOLA, ids.turma, ids.professora)).ativo?.conteudo.projetos).toHaveLength(16);
   });

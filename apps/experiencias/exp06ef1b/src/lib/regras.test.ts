@@ -37,6 +37,7 @@ const post = (projetoId: string, tipo: PostPublico["tipo"] = "apresentacao"): Po
   bastidor: "O protótipo em teste na bancada.",
   hashtags: ["#robotica"],
   imagem: { url: null, alt: "Foto do estande." },
+  laminas: { detalhe: null, equipe: null, bastidor: null },
 });
 
 const CATEGORIAS: Categoria[] = [
@@ -56,6 +57,7 @@ const projeto = (id: string, titulo: string, exibido = false): ProjetoDaGaleria 
   resumo: "Resumo técnico do estande.",
   hashtags: [],
   imagem: { url: null, alt: "" },
+  laminas: { detalhe: null, equipe: null, bastidor: null },
   exibidoNoSeuFeed: exibido,
 });
 

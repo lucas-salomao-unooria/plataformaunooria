@@ -323,3 +323,47 @@ Cena: ${semDelimitadores(descricao)}
 
 Regras: nada de fotografia realista de pessoa, nenhuma pessoa real, nenhum rosto de criança identificável (pessoas de costas, de longe ou estilizadas), nenhum logotipo, marca ou aplicativo real. Texto na imagem só se a cena pedir, curto, legível e em português.`;
 }
+
+/** As regras de toda imagem da missão — as mesmas da capa. */
+const REGRAS_DA_IMAGEM =
+  "Regras: nada de fotografia realista de pessoa, nenhuma pessoa real, nenhum rosto de criança identificável (pessoas de costas, de longe ou estilizadas), nenhum logotipo, marca ou aplicativo real. Texto na imagem só se a cena pedir, curto, legível e em português.";
+
+/** O que cada lâmina EXTRA do carrossel mostra (0.8.0, ADR-178) — a capa é o `promptDaImagem`. */
+export type ProjetoDaLamina = { titulo: string; bastidor: string; imagem: { descricao: string } };
+
+/**
+ * O pedido de uma lâmina EXTRA do carrossel do estande (0.8.0, ADR-178), no
+ * mesmo estilo da capa, para o post parecer o álbum de UM estande:
+ *
+ * - `detalhe` — o protótipo de perto, as peças e os materiais;
+ * - `equipe` — a equipe apresentando o projeto a visitantes, sem rosto
+ *   identificável (é a regra que mais pesa: são estudantes);
+ * - `bastidor` — a bancada de testes, a partir do texto dos bastidores (que
+ *   continua na lâmina, embaixo da imagem).
+ *
+ * O título, a cena e o bastidor vieram do professor ou da IA do preparo:
+ * entram sem os delimitadores, como na capa.
+ */
+export function promptDaLamina(lamina: "detalhe" | "equipe" | "bastidor", projeto: ProjetoDaLamina): string {
+  const titulo = semDelimitadores(projeto.titulo);
+  const cena = semDelimitadores(projeto.imagem.descricao);
+  const estilo =
+    "Ilustração digital colorida, com acabamento de foto de estande de feira de ciências escolar, em proporção 4:3. Luz clara de ginásio de escola, cores vivas, o mesmo estande da foto principal.";
+  const pedido =
+    lamina === "detalhe"
+      ? `Ilustração de perto (close), no mesmo traço da foto principal — não fotografia realista —, do protótipo do projeto "${titulo}" sobre a mesa do estande: as peças, os materiais reaproveitados e o funcionamento à mostra, com etiquetas curtas de papel. Sem pessoas na imagem.
+
+O estande, como na foto principal: ${cena}`
+      : lamina === "equipe"
+        ? `A equipe de estudantes apresentando o projeto "${titulo}" a visitantes da feira, apontando para o protótipo e para um cartaz. As pessoas aparecem de costas, de longe ou estilizadas — nenhum rosto identificável.
+
+O estande, como na foto principal: ${cena}`
+        : `Os bastidores do projeto "${titulo}": a bancada de testes atrás do estande, com o protótipo em teste, ferramentas, anotações e medições. Sem pessoas na imagem.
+
+O que está sendo testado: ${semDelimitadores(projeto.bastidor)}`;
+  return `${estilo}
+
+${pedido}
+
+${REGRAS_DA_IMAGEM}`;
+}

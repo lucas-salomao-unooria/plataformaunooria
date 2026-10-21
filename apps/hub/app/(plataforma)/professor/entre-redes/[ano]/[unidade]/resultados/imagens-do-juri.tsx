@@ -4,12 +4,16 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Button, Card, FeedbackAlert, Icon, ProgressBar, Tag } from "@edu/ui/ds";
 import {
+  LAMINAS,
+  ROTULO_DA_LAMINA,
   caminhoDaTurma,
+  chaveDaMidia,
   continuarGerando,
   erroDaResposta,
   estadoDaImagem,
   estandesPorArea,
   falhasAcumuladas,
+  laminasSemImagem,
   rotuloCurtoDaArea,
   rotuloDaAbaDaArea,
   textoDoProgressoDaMidia,
@@ -17,7 +21,9 @@ import {
   type EstadoDaImagem,
   type ImagemRefeita,
   type ImagensAprovadas,
+  type Lamina,
   type ProgressoDaMidia,
+  type ProjetoDoPacote,
 } from "@/lib/juri-estadual-tipos";
 
 import { AbasDasAreas } from "./estande-do-preparo";
@@ -40,13 +46,15 @@ const ROTULO_DO_ESTADO: Record<EstadoDaImagem, { texto: string; variante: "succe
  * com a aprovação da exp07ef1b (ADR-146) — UM carimbo para o pacote.
  *
  * - "Gerar imagens" é o laço de sempre (`continuarGerando`): a api gera até
- *   quatro por chamada, porque o BFF corta e quarenta não cabem numa — as
- *   quarenta levam vários minutos (aceito pelo Lucas, 2026-10-14).
+ *   oito por chamada, porque o BFF corta e as cento e sessenta não cabem numa
+ *   — levam vários minutos (aceito pelo Lucas, 2026-10-14).
  *   `?pacoteId=` diz qual atividade — a pronta também, que ainda não está no ar.
- * - Cada estande aparece com a imagem grande, o título e o que ela deveria
- *   mostrar, numa ABA por área (`AbasDasAreas`; o rótulo diz quantos estão
- *   sem imagem); "Gerar outra imagem" troca só aquela (arquivo novo, sempre
- *   pago). O total é o do PACOTE: o de dezesseis da 0.4.x continua abrindo.
+ * - Cada estande aparece com as QUATRO imagens do carrossel do post (0.8.0,
+ *   ADR-178: a foto do estande, o projeto de perto, a equipe e os bastidores),
+ *   o título e o que a foto deveria mostrar, numa ABA por área
+ *   (`AbasDasAreas`; o rótulo diz quantos estandes têm imagem faltando);
+ *   "Gerar outra" troca só aquela lâmina (arquivo novo, sempre pago). O total é
+ *   o do PACOTE: o de dezesseis da 0.4.x continua abrindo.
  * - "Aprovar as imagens" é a SEGUNDA fase. Ela não exige imagem em todo
  *   estande: o que falhou fica com a arte desenhada, e a grade diz qual é
  *   ANTES do clique. Aprovadas, as imagens congelam (a api responde 409
@@ -113,8 +121,10 @@ export function ImagensDoJuri({
 
   const base = `/api/plataforma${caminhoDaTurma(turmaId)}`;
   const projetos = conteudo.projetos;
-  const total = projetos.length;
-  const prontas = projetos.filter((p) => imagens[p.id]).length;
+  /* Contado por LÂMINA: quatro imagens por estande. */
+  const chaves = projetos.flatMap((p) => LAMINAS.map((l) => chaveDaMidia(p.id, l)));
+  const total = chaves.length;
+  const prontas = chaves.filter((c) => imagens[c]).length;
   const semImagem = total - prontas;
   const aprovadas = aprovadasEm !== null;
   const ocupado = gerando || aprovando || refazendo.size > 0;
@@ -134,7 +144,7 @@ export function ImagensDoJuri({
     setAviso(null);
     let acumuladas = falhas;
     /* Teto de voltas por precaução: `continuarGerando` já para quando uma
-       chamada não anda, e cada volta faz até quatro imagens. */
+       chamada não anda, e cada volta faz até oito imagens. */
     const tetoDeVoltas = Math.max(total, 1) + 2;
     try {
       for (let volta = 0; volta < tetoDeVoltas && vivo.current; volta += 1) {
@@ -163,12 +173,13 @@ export function ImagensDoJuri({
     }
   }
 
-  async function refazer(projetoId: string) {
-    setRefazendo((atual) => new Set(atual).add(projetoId));
+  async function refazer(projetoId: string, lamina: Lamina) {
+    const chave = chaveDaMidia(projetoId, lamina);
+    setRefazendo((atual) => new Set(atual).add(chave));
     setAviso(null);
     try {
       const r = await fetch(
-        `${base}/pacotes/${encodeURIComponent(pacoteId)}/imagens/${encodeURIComponent(projetoId)}/refazer`,
+        `${base}/pacotes/${encodeURIComponent(pacoteId)}/imagens/${encodeURIComponent(projetoId)}/refazer?lamina=${lamina}`,
         { method: "POST" },
       );
       if (!r.ok) {
@@ -179,15 +190,15 @@ export function ImagensDoJuri({
       }
       const nova = (await r.json()) as ImagemRefeita;
       if (!vivo.current) return;
-      setImagens((atual) => ({ ...atual, [nova.projetoId]: nova.url }));
-      setFalhas((atual) => atual.filter((id) => id !== nova.projetoId));
+      setImagens((atual) => ({ ...atual, [nova.chave]: nova.url }));
+      setFalhas((atual) => atual.filter((c) => c !== nova.chave));
     } catch {
       setAviso(SEM_CONEXAO);
     } finally {
       if (vivo.current) {
         setRefazendo((atual) => {
           const sem = new Set(atual);
-          sem.delete(projetoId);
+          sem.delete(chave);
           return sem;
         });
       }
@@ -224,22 +235,31 @@ export function ImagensDoJuri({
   useEffect(() => {
     if (comecou.current || !gerarAoAbrir || !podeEditar || aprovadasEmInicial) return;
     comecou.current = true;
-    if (projetos.some((p) => !imagensIniciais[p.id])) void gerar();
+    if (chaves.some((c) => !imagensIniciais[c])) void gerar();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- uma vez, ao montar
   }, []);
 
-  function estadoDe(projetoId: string): EstadoDaImagem {
+  /** O estado de UMA lâmina. */
+  function estadoDaLamina(chave: string): EstadoDaImagem {
     return estadoDaImagem({
-      temImagem: Boolean(imagens[projetoId]),
-      gerando: refazendo.has(projetoId) || (gerando && !imagens[projetoId]),
+      temImagem: Boolean(imagens[chave]),
+      gerando: refazendo.has(chave) || (gerando && !imagens[chave]),
       aprovadas,
     });
+  }
+
+  /** O estado do ESTANDE: gerando se alguma lâmina gera; "sem imagem" se alguma falta. */
+  function estadoDe(projetoId: string): EstadoDaImagem {
+    const estados = LAMINAS.map((l) => estadoDaLamina(chaveDaMidia(projetoId, l)));
+    if (estados.includes("gerando")) return "gerando";
+    if (estados.includes("sem-imagem")) return "sem-imagem";
+    return aprovadas ? "aprovada" : "aguardando";
   }
 
   const resumo = aprovadas
     ? semImagem === 0
       ? `As ${total} imagens estão aprovadas.`
-      : `Imagens aprovadas. ${semImagem === 1 ? "1 estande segue" : `${semImagem} estandes seguem`} com a arte desenhada.`
+      : `Imagens aprovadas. ${semImagem === 1 ? "1 imagem segue" : `${semImagem} imagens seguem`} com a arte desenhada.`
     : textoDoProgressoDaMidia({ total, prontas });
 
   const grade = (
@@ -261,7 +281,7 @@ export function ImagensDoJuri({
         <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
           {aprovadas
             ? "As imagens foram aprovadas e não mudam mais: é isto que a turma vê no feed e na Galeria Oculta."
-            : `As imagens são geradas por inteligência artificial e só aparecem para a turma depois do seu OK. Confira cada uma junto do estande, área por área; se uma não combinar, use “Gerar outra imagem”. Estande sem imagem aparece com uma arte desenhada. Elas saem quatro por vez, e as ${total} levam vários minutos: faça antes da aula, e deixe esta tela aberta enquanto geram.`}
+            : `As imagens são geradas por inteligência artificial e só aparecem para a turma depois do seu OK. Cada estande tem quatro, as fotos do carrossel do post: a foto do estande, o projeto de perto, a equipe e os bastidores. Confira cada uma junto do estande, área por área; se uma não combinar, use “Gerar outra”. Imagem que faltar aparece com uma arte desenhada. Elas saem oito por vez, e as ${total} levam vários minutos: faça antes da aula, e deixe esta tela aberta enquanto geram.`}
         </p>
       </div>
 
@@ -292,7 +312,7 @@ export function ImagensDoJuri({
           </Button>
           {semImagem > 0 && !gerando ? (
             <span className="text-[12px] leading-snug text-unooria-neutral-600" role="status" data-sem-imagem={semImagem}>
-              {semImagem === 1 ? "1 estande está" : `${semImagem} estandes estão`} sem imagem e{" "}
+              {semImagem === 1 ? "1 imagem falta" : `${semImagem} imagens faltam`} e{" "}
               {semImagem === 1 ? "ficará" : "ficarão"} com a arte desenhada se você aprovar agora.
             </span>
           ) : null}
@@ -301,8 +321,8 @@ export function ImagensDoJuri({
 
       {falhas.length > 0 && !gerando && !aprovadas ? (
         <p className="text-[12px] leading-snug text-unooria-neutral-700" role="status">
-          {falhas.length === 1 ? "1 estande não ganhou imagem." : `${falhas.length} estandes não ganharam imagem.`} Tente
-          de novo no cartão dele, ou aprove assim: ele aparece com a arte desenhada.
+          {falhas.length === 1 ? "1 imagem não foi gerada." : `${falhas.length} imagens não foram geradas.`} Tente
+          de novo no cartão do estande, ou aprove assim: ela aparece com a arte desenhada.
         </p>
       ) : null}
       {aviso ? <FeedbackAlert type="warning" description={aviso} /> : null}
@@ -312,19 +332,22 @@ export function ImagensDoJuri({
         abas={estandesPorArea(conteudo).map(({ categoria, projetos: daArea }) => ({
           area: categoria.area,
           rotulo: rotuloDaAbaDaArea(categoria.nome, daArea.length, {
-            quantos: daArea.filter((p) => !imagens[p.id]).length,
-            texto: "sem imagem",
+            quantos: daArea.filter((p) => laminasSemImagem(p.id, imagens) > 0).length,
+            texto: "com imagem faltando",
           }),
           conteudo: (
             <section className="flex flex-col gap-2" data-area-das-imagens={categoria.area}>
               <span className="text-[13px] font-semibold text-unooria-neutral-950">
                 {rotuloCurtoDaArea(categoria.area)} — {categoria.nome}
               </span>
-              <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label={`As imagens da ${rotuloCurtoDaArea(categoria.area)}`}>
+              <ul className="grid gap-3 lg:grid-cols-2" aria-label={`As imagens da ${rotuloCurtoDaArea(categoria.area)}`}>
                 {daArea.map((p) => {
                   const estado = estadoDe(p.id);
-                  const url = imagens[p.id];
-                  const rotulo = ROTULO_DO_ESTADO[estado];
+                  const faltam = laminasSemImagem(p.id, imagens);
+                  const rotulo =
+                    estado === "sem-imagem" && faltam < LAMINAS.length
+                      ? { texto: `${faltam} de ${LAMINAS.length} sem imagem`, variante: "neutral" as const }
+                      : ROTULO_DO_ESTADO[estado];
                   return (
                     <li
                       key={p.id}
@@ -332,47 +355,30 @@ export function ImagensDoJuri({
                       data-imagem-do-estande={p.id}
                       data-estado-da-imagem={estado}
                     >
-                      <div>
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <p className="text-[13px] font-semibold leading-snug text-unooria-neutral-950">{p.titulo}</p>
                         <Tag variant={rotulo.variante} size="sm">
                           {rotulo.texto}
                         </Tag>
                       </div>
-
-                      {/* O quadro tem a proporção da foto do estande no post (4:3). É MEDIDA, não componente. */}
-                      <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-md bg-unooria-neutral-100">
-                        {estado === "gerando" ? (
-                          <span className="flex items-center gap-2 text-[12px] text-unooria-neutral-600" role="status">
-                            <Icon name="hourglass_top" size={18} /> Gerando a imagem…
-                          </span>
-                        ) : url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={url} alt={p.imagem.alt} className="h-full w-full object-cover" />
-                        ) : (
-                          <span className="px-3 text-center text-[12px] text-unooria-neutral-600">
-                            Sem imagem: a turma vê uma arte desenhada com o título
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="text-[13px] font-semibold leading-snug text-unooria-neutral-950">{p.titulo}</p>
                       <p className="text-[12px] leading-snug text-unooria-neutral-600">
-                        <span className="font-semibold">O que a imagem deve mostrar:</span> {p.imagem.descricao}
+                        <span className="font-semibold">O que a foto do estande deve mostrar:</span> {p.imagem.descricao}
                       </p>
 
-                      {podeEditar && !aprovadas && estado !== "gerando" ? (
-                        <div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            leftIcon={<Icon name="refresh" size={16} />}
-                            onClick={() => void refazer(p.id)}
-                            isDisabled={ocupado}
-                            data-acao="gerar-outra-imagem"
-                          >
-                            {url ? "Gerar outra imagem" : "Tentar gerar a imagem"}
-                          </Button>
-                        </div>
-                      ) : null}
+                      <ul className="grid grid-cols-2 gap-2" aria-label={`As quatro imagens do carrossel de ${p.titulo}`}>
+                        {LAMINAS.map((lamina) => (
+                          <LaminaDoEstande
+                            key={lamina}
+                            projeto={p}
+                            lamina={lamina}
+                            url={imagens[chaveDaMidia(p.id, lamina)]}
+                            estado={estadoDaLamina(chaveDaMidia(p.id, lamina))}
+                            podeRefazer={podeEditar && !aprovadas}
+                            ocupado={ocupado}
+                            aoRefazer={() => void refazer(p.id, lamina)}
+                          />
+                        ))}
+                      </ul>
                     </li>
                   );
                 })}
@@ -390,5 +396,61 @@ export function ImagensDoJuri({
     </Card>
   ) : (
     grade
+  );
+}
+
+/** UMA lâmina do carrossel no cartão do estande: a imagem, o nome dela e o "Gerar outra". */
+function LaminaDoEstande({
+  projeto,
+  lamina,
+  url,
+  estado,
+  podeRefazer,
+  ocupado,
+  aoRefazer,
+}: {
+  projeto: ProjetoDoPacote;
+  lamina: Lamina;
+  url: string | undefined;
+  estado: EstadoDaImagem;
+  podeRefazer: boolean;
+  ocupado: boolean;
+  aoRefazer: () => void;
+}) {
+  const alt = lamina === "capa" ? projeto.imagem.alt : `${ROTULO_DA_LAMINA[lamina]}: ${projeto.titulo}`;
+  return (
+    <li className="flex flex-col gap-1" data-lamina={lamina} data-estado-da-lamina={estado}>
+      {/* O quadro tem a proporção da foto do post (4:3). É MEDIDA, não componente. */}
+      <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-md bg-unooria-neutral-100">
+        {estado === "gerando" ? (
+          <span className="flex items-center gap-1 text-[11px] text-unooria-neutral-600" role="status">
+            <Icon name="hourglass_top" size={16} /> Gerando…
+          </span>
+        ) : url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={url} alt={alt} className="h-full w-full object-cover" />
+        ) : (
+          <span className="px-2 text-center text-[11px] leading-snug text-unooria-neutral-600">
+            Sem imagem: a turma vê uma arte desenhada
+          </span>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-1">
+        <span className="text-[12px] font-semibold text-unooria-neutral-800">{ROTULO_DA_LAMINA[lamina]}</span>
+        {podeRefazer && estado !== "gerando" ? (
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Icon name="refresh" size={16} />}
+            onClick={aoRefazer}
+            isDisabled={ocupado}
+            aria-label={`${url ? "Gerar outra imagem" : "Tentar gerar a imagem"}: ${ROTULO_DA_LAMINA[lamina]}, ${projeto.titulo}`}
+            data-acao="gerar-outra-imagem"
+          >
+            {url ? "Gerar outra" : "Tentar gerar"}
+          </Button>
+        ) : null}
+      </div>
+    </li>
   );
 }
