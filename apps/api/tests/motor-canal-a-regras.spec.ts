@@ -81,7 +81,7 @@ describe("o Raio-x: quais posts entram", () => {
     expect(c.postIds.some((id) => foraDoTema.includes(id))).toBe(false);
   });
 
-  test("só entra post que ele VIU — o que nunca ficou na tela fica de fora", () => {
+  test("do OUTRO lado, só entra post que ele VIU — o que nunca ficou na tela fica de fora", () => {
     const posts = acervo({ A: 3, B: 3, neutro: 3 });
     const vistos = todosVistos(posts);
     const naoVisto = posts.find((p) => p.lado === "B")!.id;
@@ -142,7 +142,36 @@ describe("o Raio-x: quais posts entram", () => {
         }
   });
 
-  test("não fecha 6 dentro da regra dos 3, sem lado, ou sem post do lado dele visto: o Raio-x não aparece", () => {
+  test("viu pouco: completa com posts NÃO vistos do lado dele e neutros, nunca do outro lado (ADR-179)", () => {
+    const posts = acervo({ A: 6, B: 6, neutro: 6 });
+    /* Rolou quase nada: viu 1 do lado dele e 1 do outro. */
+    const dele = posts.find((p) => p.lado === "A")!.id;
+    const outro = posts.find((p) => p.lado === "B")!.id;
+    const c = comporRaioX({ posts, vistosPorPost: { [dele]: 1, [outro]: 1 }, dwellPorPost: { [dele]: 4000 }, ladoDele: "A", semente: "s" })!;
+    expect(c.postIds).toHaveLength(6);
+    expect(c.maisParou).toBe(dele);
+    const doOutroLado = c.postIds.filter((id) => posts.find((p) => p.id === id)!.lado === "B");
+    expect(doOutroLado).toEqual([outro]);
+    expect(Math.max(...Object.values(contar(c.postIds, posts)))).toBeLessThanOrEqual(3);
+  });
+
+  test("não viu NADA do lado dele: ainda compõe, com o lado dele tirado do acervo", () => {
+    const posts = acervo({ A: 4, B: 4, neutro: 4 });
+    const c = comporRaioX({ posts, vistosPorPost: {}, dwellPorPost: {}, ladoDele: "A", semente: "s" })!;
+    expect(c.postIds).toHaveLength(6);
+    expect(contar(c.postIds, posts)).toEqual({ A: 3, B: 0, neutro: 3 });
+  });
+
+  test("com vistos suficientes, nenhum post não visto entra", () => {
+    const posts = acervo({ A: 6, B: 6, neutro: 6 });
+    const vistos = Object.fromEntries(
+      [...posts.filter((p) => p.lado === "A").slice(0, 2), ...posts.filter((p) => p.lado === "B").slice(0, 2), ...posts.filter((p) => p.lado === "neutro").slice(0, 2)].map((p) => [p.id, 1]),
+    );
+    const c = comporRaioX({ posts, vistosPorPost: vistos, dwellPorPost: {}, ladoDele: "A", semente: "s" })!;
+    expect(c.postIds.every((id) => vistos[id])).toBe(true);
+  });
+
+  test("não fecha 6 nem completando, sem lado, ou sem post nenhum do lado dele: o Raio-x não aparece", () => {
     const pouco = acervo({ A: 3, B: 1, neutro: 1 });
     expect(comporRaioX({ posts: pouco, vistosPorPost: todosVistos(pouco), dwellPorPost: {}, ladoDele: "A", semente: "s" })).toBeNull();
     const ok = acervo({ A: 3, B: 3, neutro: 3 });
