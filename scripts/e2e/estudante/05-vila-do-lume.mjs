@@ -10,7 +10,7 @@ import { conta } from "../lib/credenciais.mjs";
 /* global state, zones, openDM, buildResults, gatilhoAtendido, construirPayloadSessao */
 
 /**
- * A Vila do Lume (exp-70): o jogo 3D em primeira pessoa dentro do iframe.
+ * A Vila do Lume (app-70): o jogo 3D em primeira pessoa dentro do iframe.
  *
  * Aqui o typecheck não cobre quase nada — o jogo é JavaScript clássico fora do
  * `tsc` (ADR-0001 da experiência), e as três coisas que podem quebrar são todas
@@ -38,7 +38,7 @@ import { conta } from "../lib/credenciais.mjs";
  * checagem que falha por limitação do ambiente e não diz isso é pior que
  * checagem nenhuma.
  */
-const EXP = "exp-70-vila-do-lume";
+const EXP = "app-70-vila-do-lume";
 
 await suite(
   {
@@ -50,7 +50,7 @@ await suite(
       "Uma vila em primeira pessoa onde a criança recebe mensagens de desconhecidos enquanto " +
       "acende fogueiras. As mensagens são golpes de três níveis de sofisticação, e cada criança " +
       "recebe apenas UMA das três bolhas — o que ela vê não é o que o colega ao lado vê. " +
-      "É o Ato 1 do Instanooria: o perfil medido aqui decide de que lado o feed nasce lá.",
+      "É o Ato 1 do Unoovista: o perfil medido aqui decide de que lado o feed nasce lá.",
     prova: [
       "Os 19 scripts do jogo injetam na ordem certa e o WebGL desenha dentro do iframe",
       "A identidade da sessão chega ao jogo — uma partida sem estudante não se atribui a ninguém",
@@ -79,7 +79,7 @@ await suite(
     });
 
     await p.goto(`${HUB}/exp/${EXP}`, { waitUntil: "domcontentloaded" });
-    const aparelho = p.locator('iframe[title="experiencia"]');
+    const aparelho = p.locator('iframe[data-experiencia]');
     await aparelho.waitFor({ state: "attached", timeout: 20_000 });
 
     const sandbox = await aparelho.getAttribute("sandbox");
@@ -88,7 +88,7 @@ await suite(
       `o manifesto pediu pointer-lock e o iframe concedeu (sandbox="${sandbox}")`,
     );
 
-    const tela = p.frameLocator('iframe[title="experiencia"]');
+    const tela = p.frameLocator('iframe[data-experiencia]');
     /* A tela inicial só monta depois do handshake do SDK e da injeção dos 19
        scripts: é a prova de que a ordem está certa e a identidade chegou. */
     await tela.locator(".hub-titulo").waitFor({ timeout: 40_000 });
@@ -135,7 +135,7 @@ await suite(
     const fogueiras = await tela.locator("#scoreStars").innerText();
 
     /* O FRAME DO JOGO, não a página: `f.url().includes(EXP)` casaria a página do
-       hub também — a rota dela é `/exp/exp-70-vila-do-lume` —, e a checagem
+       hub também — a rota dela é `/exp/app-70-vila-do-lume` —, e a checagem
        leria o `document` errado. Filtro por `parentFrame()`. */
     const quadro = p.frames().find((f) => f.parentFrame() !== null);
     const preso = quadro ? await quadro.evaluate(() => document.pointerLockElement !== null) : false;

@@ -7,9 +7,9 @@ import type { TurmaDoProfessor } from "@/lib/turmas";
 /**
  * Corpo de O RASTRO DO BOATO (6º ano · Unidade 2).
  *
- * Precisa existir mesmo parecendo o da exp-07: sem entrada no despachante, uma
+ * Precisa existir mesmo parecendo o da exp07ef1b: sem entrada no despachante, uma
  * missão publicada cai no corpo do INSTANOORIA, que oferece "Nova atividade" —
- * e a professora criaria uma configuração em `exp_01_activities` que esta
+ * e a professora criaria uma configuração em `exp08ef1b_activities` que esta
  * missão nunca lê. O bloco de atividades é do Instanooria, não da trilha.
  *
  * A ficha abre com o aviso das duas aulas em vez de deixá-lo no fim de uma
@@ -49,10 +49,8 @@ export function MissaoRastroBoato({
           <Tag variant="neutral" size="sm" pill>
             {ficha.duracao}
           </Tag>
-          <Tag variant="neutral" size="sm" pill>
-            {ficha.formato}
-          </Tag>
         </div>
+        <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-500">Formato: {ficha.formato}</p>
         <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-500">
           {ficha.competencia}
         </p>
@@ -85,7 +83,7 @@ export function MissaoRastroBoato({
         </Card>
       </section>
 
-      <Card variant="outlined" title="O que o software NÃO conta ao estudante">
+      <Card variant="outlined" title="O que a missão NÃO conta ao estudante">
         <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-unooria-neutral-800">
           <p className="max-w-3xl">
             Nenhuma mensagem é marcada como falsa.{" "}

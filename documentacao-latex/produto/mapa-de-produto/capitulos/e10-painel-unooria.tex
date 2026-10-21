@@ -1,0 +1,425 @@
+% ===========================================================================
+%  E10 — Painel da Unooria
+% ===========================================================================
+\chapter{E10 \textperiodcentered{} Painel da Unooria}
+\label{ep:e10}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] A equipe da Unooria decide o que existe em cada rede, qual
+    versão de cada missão está no ar, quanto de IA cada perfil pode usar e
+    quanto a IA está custando --- e recebe os interessados do site.
+  \item[Para quem] Administrador Unooria. O Administrador do contrato só lê o
+    histórico.
+  \item[Valor] É o que permite vender produtos separadamente, desligar uma
+    missão com problema em minutos e voltar uma versão sem esperar o time.
+  \item[Estado] \pronto{} --- faltam desligar por turma ou por prazo e alguns
+    avisos.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F10.1} & Ligar e desligar produtos e missões & \pronto\\
+\zebra \id{F10.2} & Histórico que a rede também lê & \pronto\\
+\id{F10.3} & Versões das missões & \pronto\\
+\zebra \id{F10.4} & Uso de IA & \pronto\\
+\id{F10.5} & Prospecção & \pronto\\
+\zebra \id{F10.6} & Experiências arquivadas & \pronto\\
+\id{F10.7} & Custos de IA & \pronto\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+\textbf{Por que só a Unooria opera.} O Administrador do contrato pode quase
+tudo na rede dele --- mas não pode ligar o que a rede não contratou. É a única
+capacidade que a Unooria tem e a rede não.
+\end{nota}
+
+% ---------------------------------------------------------------------------
+\feature{F10.1}{Ligar e desligar produtos e missões}{\pronto}
+
+\begin{historia}{H10.1.1}{Desligar um produto ou uma missão}{\pronto}
+\hu{Administrador Unooria}{desligar um produto ou uma missão numa rede, numa
+regional ou numa escola}{respeitar o que foi contratado ou tirar do ar uma
+missão com problema}
+\aceite
+\begin{itemize}
+  \item Em \enquote{Recursos}, escolho o Escopo: \enquote{Rede (contrato
+    inteiro)}, uma regional ou uma escola.
+  \item Vejo os seis produtos e, dentro de cada um, as missões (o agente de IA
+    do professor e a Ajuda não têm missões dentro). Cada
+    interruptor tem três estados: \enquote{Ligado}, \enquote{Desligado} e
+    \enquote{Herda de cima} (na rede, \enquote{Padrão (ligado)}).
+  \item Por padrão tudo está ligado --- menos a Ajuda, em teste interno, que
+    mostra \enquote{Padrão (desligado)} (\id{H10.1.5}); o escopo mais
+    específico vence (escola, depois regional, depois rede).
+  \item O produto é um teto: desligado, as missões dentro dele ficam
+    desligadas, com o motivo ao lado.
+  \item Desligar exige motivo; na rede, o aviso diz \enquote{Isto vale para a
+    REDE INTEIRA}.
+  \item A missão desligada sai da grade da turma (não fica com cadeado), e
+    para a criança a mensagem é a mesma de missão ainda não aberta.
+  \item Religar devolve a sala como estava: as liberações do professor nunca
+    são apagadas.
+  \item Com o produto desligado, cada pessoa continua podendo apagar os
+    próprios dados.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.1.2}{Missão nova já nasce com interruptor}{\pronto}
+\hu{Administrador Unooria}{que toda missão ou ferramenta nova apareça sozinha
+no painel}{nunca ter uma missão no ar que eu não consiga desligar}
+\aceite
+\begin{itemize}
+  \item A missão nova aparece dentro do produto a que pertence, sem ninguém
+    precisar cadastrá-la à mão.
+  \item O teste de aceite é desligá-la e ver que ela some da sala e do
+    estudante.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.1.3}{Desligar por turma ou por prazo}{\afazer}
+\hu{Administrador Unooria}{desligar um recurso só para uma turma, ou até uma
+data}{atender pilotos e contratos temporários sem mexer na escola inteira}
+\aceiteproposta
+\begin{itemize}
+  \item O Escopo passa a incluir turma.
+  \item Ao desligar, posso informar até quando; na data, o interruptor volta a
+    herdar de cima e isso fica no histórico.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.1.4}{Desligar o agente de IA do professor numa rede}{\parcial}
+\hu{Administrador Unooria}{ligar e desligar o agente de IA do professor como
+qualquer produto}{oferecê-lo só a quem contratou, ou tirá-lo do ar num
+problema}
+\aceite
+\begin{itemize}
+  \item O agente aparece em \enquote{Recursos} como um produto, com o mesmo
+    interruptor de três estados e o mesmo escopo (rede, regional, escola).
+  \item Desligado, o botão do agente some das telas do professor naquela
+    escola, e nenhuma conversa nova nem mensagem passa.
+  \item Mesmo desligado, o professor continua podendo apagar as próprias
+    conversas.
+\end{itemize}
+\pendencia{o interruptor já funciona; o agente em si ainda não está no ar nos
+ambientes da rede (\id{F08.4}).}
+\end{historia}
+
+\begin{historia}{H10.1.5}{Ligar a Ajuda com atendente numa rede}{\parcial}
+\hu{Administrador Unooria}{decidir em que rede, regional ou escola a Ajuda com
+atendente aparece}{testar o atendente com quem combinamos antes de abrir para
+todos}
+\aceite
+\begin{itemize}
+  \item A Ajuda aparece em \enquote{Recursos} como um produto, com o mesmo
+    interruptor e o mesmo escopo dos outros.
+  \item Ao contrário dos outros produtos, ela começa \textbf{desligada} em
+    toda rede: sem ninguém mexer, o item \enquote{Ajuda} não aparece no menu de
+    ninguém. Ligar numa escola ou numa rede faz o item aparecer lá.
+  \item Desligar no meio de uma conversa não deixa a conversa presa: fechar a
+    janela continua encerrando o vídeo.
+\end{itemize}
+\pendencia{abrir a Ajuda para todas as redes (deixar de nascer desligada) é
+uma decisão do dono do produto, junto com a do atendente (\id{D16}).}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F10.2}{Histórico que a rede também lê}{\pronto}
+
+\begin{historia}{H10.2.1}{Saber quem mudou o quê, e por quê}{\pronto}
+\hu{Administrador do contrato}{ver tudo o que a Unooria ligou, desligou ou
+mudou na minha rede}{explicar à secretaria por que algo sumiu}
+\aceite
+\begin{itemize}
+  \item O histórico registra quem, o quê, quando e o motivo; o nome de quem
+    mudou fica como era no dia.
+  \item Ninguém altera o histórico.
+  \item O Administrador do contrato lê em \enquote{Recursos da rede}, só
+    leitura: \enquote{Quem opera estes interruptores é a Unooria; esta tela é
+    o registro.}
+  \item As coordenações não veem esta tela.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F10.3}{Versões das missões}{\pronto}
+
+\begin{historia}{H10.3.1}{Voltar para a versão anterior}{\pronto}
+\hu{Administrador Unooria}{voltar uma missão para a versão anterior}{resolver
+em minutos um problema que apareceu numa versão nova}
+\aceite
+\begin{itemize}
+  \item A janela Versão mostra as versões publicadas, com a atual marcada
+    \enquote{(no ar)}, e \enquote{Ativar para a rede}.
+  \item Só se volta para versões que já existiram; a volta restaura também as
+    configurações daquela versão.
+  \item A tela diz se conferiu que a versão está de fato publicada.
+  \item Enquanto isso, a missão aparece com o aviso \enquote{Esta experiência
+    está em rollback}.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.3.2}{Testar uma versão nova numa escola antes}{\pronto}
+\hu{Administrador Unooria}{fixar uma versão numa escola ou regional}{testar
+uma novidade num piloto antes de levar para a rede}
+\aceite
+\begin{itemize}
+  \item Fora do escopo da rede: \enquote{Fixar neste escopo} e \enquote{Soltar
+    a fixação}.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.3.3}{Ser lembrado de uma versão fixada há muito tempo}{\pronto}
+\hu{Administrador Unooria}{ser avisado quando uma versão fixada ficar muito
+tempo sem ser solta}{não deixar uma escola esquecida numa versão antiga}
+\aceite
+\begin{itemize}
+  \item Em \enquote{Recursos}, um aviso lista as versões fixadas há mais de 30
+    dias em \emph{qualquer} escola ou regional da rede --- não só no escopo
+    aberto ---, com a missão, onde, a versão e há quantos dias.
+  \item \enquote{Abrir o escopo} leva à escola da fixação, onde a etiqueta da
+    versão aparece em destaque, \enquote{fixada há mais de 30 dias}, e abre a
+    janela para soltar.
+  \item É só um lembrete: nada solta a fixação sozinho.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F10.4}{Uso de IA}{\pronto}
+
+\begin{historia}{H10.4.1}{Definir quanto de IA cada perfil pode usar}{\pronto}
+\hu{Administrador Unooria}{definir o limite diário de IA dos estudantes e dos
+professores}{manter o custo previsível sem travar a aula}
+\aceite
+\begin{itemize}
+  \item Dois cartões, \enquote{Estudantes} e \enquote{Professores}, com o
+    limite em \enquote{Tokens por dia} traduzido em uso real (partidas da
+    Missão Tempestade, planos anuais).
+  \item Valores iniciais: cerca de 3 partidas por dia para o estudante e 6 a 9
+    planos anuais para o professor.
+  \item Mudar exige motivo e avisa \enquote{Vale para a rede inteira}; vale na
+    próxima chamada, sem esperar o time.
+  \item Zero é recusado: \enquote{para fechar a IA de um produto, desligue o
+    produto em Recursos}.
+  \item Toda mudança vai para o histórico. A rede não vê nem altera.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.4.2}{Definir quantos minutos de Ajuda cada pessoa tem}{\pronto}
+\hu{Administrador Unooria}{definir quanto tempo de conversa com o atendente da
+Ajuda cada pessoa tem}{manter previsível o custo do atendente em vídeo, que é
+cobrado por minuto}
+\aceite
+\begin{itemize}
+  \item Na mesma tela do uso de IA, o quadro \enquote{Ajuda com atendente}
+    tem dois limites: \enquote{Minutos por dia} (somando todas as conversas da
+    pessoa) e \enquote{Minutos por conversa} (ao chegar nele, o atendente se
+    despede e a janela fecha).
+  \item Valores iniciais: 30 minutos por dia e 10 por conversa. O máximo é 600
+    por dia e 60 por conversa.
+  \item Zero é recusado: \enquote{para fechar a Ajuda, desligue o produto em
+    Recursos}. Mudar exige motivo e avisa \enquote{Vale para a rede inteira},
+    a partir da próxima conversa; a que está no ar mantém o limite com que
+    começou.
+  \item O \enquote{Histórico da Ajuda} mostra quem mudou, de quanto para
+    quanto, quando e por quê.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.4.3}{Escolher quem atende na Ajuda}{\pronto}
+\hu{Administrador Unooria}{escolher se quem atende na Ajuda é o mascote da
+Unooria ou o atendente em vídeo, e se a pessoa pode trocar}{oferecer o
+atendimento que faz mais sentido para a rede, sabendo que os dois custam
+diferente}
+\aceite
+\begin{itemize}
+  \item Na mesma tela do uso de IA, acima dos minutos, o quadro
+    \enquote{Quem atende na Ajuda} mostra o \enquote{Atendente padrão}
+    (\enquote{Mascote da Unooria} ou \enquote{Atendente em vídeo}), se
+    \enquote{A pessoa pode trocar de atendente}, a voz do mascote e o modelo
+    de voz dele.
+  \item \enquote{Alterar quem atende na Ajuda} abre a janela com o atendente
+    padrão, \enquote{Deixar a pessoa trocar de atendente}, a \enquote{Voz do
+    mascote} (uma lista de vozes, cada uma com o jeito dela), o
+    \enquote{Modelo de voz do mascote} e quatro ajustes da boca do mascote:
+    \enquote{Sensibilidade da boca}, \enquote{Suavização},
+    \enquote{Antecipação (milissegundos)} e \enquote{Boca parada}.
+  \item Valor inicial: o mascote atende, a troca é permitida.
+  \item Mudar exige motivo e avisa \enquote{Vale para a rede inteira}, a partir
+    da próxima conversa aberta; a que está no ar continua como começou.
+  \item Se nenhum dos dois atendentes está disponível no ambiente, o quadro
+    avisa que a Ajuda não abre.
+  \item A mudança entra no \enquote{Histórico da Ajuda}, com quem mudou,
+    quando e por quê. A rede não vê nem altera.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.4.4}{Ajustar as instruções de cada atendente}{\pronto}
+\hu{Administrador Unooria}{ajustar o jeito de responder do mascote e do
+atendente em vídeo}{corrigir o tom ou o tamanho das respostas sem esperar o time
+técnico}
+\aceite
+\begin{itemize}
+  \item Na mesma tela do uso de IA, logo abaixo de quem atende, o quadro
+    \enquote{Instruções de cada atendente} mostra o começo do texto do
+    \enquote{Mascote da Unooria} e o do \enquote{Atendente em vídeo}, cada um
+    marcado \enquote{Texto padrão} ou \enquote{Personalizado}.
+  \item \enquote{Editar instruções} abre a janela com os dois textos inteiros.
+    Ela explica que o texto muda só o jeito de responder (tom, tamanho da
+    resposta, o que evitar): o que o atendente sabe da plataforma e quem está
+    perguntando entram sempre depois, e não precisam estar ali.
+  \item Cada texto tem de 20 a 8 mil caracteres, com o contador à vista.
+    \enquote{Restaurar o texto padrão} devolve o texto da plataforma; deixar
+    igual ao padrão é o mesmo que não personalizar, e a rede passa a receber as
+    melhorias que a Unooria fizer nele.
+  \item Mudar exige motivo e vale para a rede inteira: no atendente em vídeo, a
+    partir da próxima pergunta; no mascote, a partir da próxima conversa aberta.
+  \item A mudança entra no \enquote{Histórico da Ajuda}, com quem mudou,
+    quando e por quê. Quem conversa com a Ajuda nunca vê estas instruções, e a
+    rede não vê nem altera.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F10.5}{Prospecção}{\pronto}
+
+\begin{historia}{H10.5.1}{Receber os interessados do site}{\pronto}
+\hu{Administrador Unooria}{ver quem se cadastrou no site}{entrar em contato
+com as redes interessadas}
+\aceite
+\begin{itemize}
+  \item \enquote{Prospecção} lista Quando, Nome, E-mail, Telefone,
+    \enquote{Rede, secretaria ou escola} e Cargo, dos mais recentes aos mais
+    antigos (até 5 mil).
+  \item \enquote{Atualizar} e \enquote{Baixar CSV}.
+  \item Só a Unooria vê esta lista.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.5.2}{Eliminar um cadastro a pedido}{\pronto}
+\hu{Administrador Unooria}{apagar o cadastro de quem pedir}{atender o direito
+de eliminação da LGPD sem depender do time técnico}
+\aceite
+\begin{itemize}
+  \item Cada linha tem \enquote{Eliminar a pedido do titular}; a confirmação
+    diz o nome e a organização de quem sai e avisa que não volta.
+  \item O contato sai da base de vez --- não fica guardado como
+    \enquote{apagado}. Fica registrado só que um cadastro foi eliminado, por
+    quem e quando, sem nenhum dado da pessoa.
+  \item O cadastro nunca é editado, só eliminado.
+  \item Se a eliminação falhar, a janela continua aberta com o aviso, e o
+    cadastro continua na lista.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F10.6}{Experiências arquivadas}{\pronto}
+
+Quando uma missão nova ocupa o lugar de outra na trilha, a antiga não é apagada:
+ela é \textbf{arquivada}. Sai da sala, do catálogo e do painel de recursos, e os
+dados que as turmas produziram ficam guardados.
+
+\begin{historia}{H10.6.1}{Ver o que saiu do produto sem ser apagado}{\pronto}
+\hu{Administrador Unooria}{ver quais missões foram arquivadas e o que ficou
+guardado delas}{saber o que a plataforma já teve e responder por aqueles dados}
+\aceite
+\begin{itemize}
+  \item \enquote{Arquivados} lista cada missão arquivada com o nome, o código de
+    origem, onde ficava na trilha, a última versão, os dados guardados (turmas e
+    estudantes), o motivo e a data.
+  \item Os números de dados guardados são os do dia do arquivamento, e a tela
+    diz isso.
+  \item A lista só mostra: ninguém joga uma missão arquivada, e trazê-la de
+    volta é trabalho do time técnico.
+  \item Só a Unooria vê esta lista.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F10.7}{Custos de IA}{\pronto}
+
+A IA é o custo que cresce com o uso: cada plano de aula, cada imagem, cada
+conversa com a Ajuda é cobrada pelo fornecedor, em dólar, e a conta chega um mês
+depois, sem dizer em que produto nem em que escola. Esta tela responde isso
+para a equipe da Unooria, em reais.
+
+\begin{historia}{H10.7.1}{Saber quanto a IA custou, e em quê}{\pronto}
+\hu{Administrador Unooria}{ver quanto a IA da rede custou num período, em reais,
+e em que produto, escola e tipo de uso}{acompanhar a margem do contrato e
+descobrir cedo o que está gastando mais do que deveria}
+\aceite
+\begin{itemize}
+  \item \enquote{Custos de IA} aparece na barra do painel da Unooria. O
+    \enquote{Período} oferece \enquote{Últimos 7 dias}, \enquote{Últimos 30
+    dias} (o padrão), \enquote{Últimos 90 dias}, \enquote{Este mês},
+    \enquote{Mês passado} e \enquote{Este ano}.
+  \item Os cartões do topo mostram o custo total em real e em dólar, os \enquote{Tokens de entrada} e os
+    \enquote{Tokens de saída}, as \enquote{Chamadas de IA} (com as que
+    falharam), as \enquote{Imagens geradas}, o \enquote{Áudio gerado} e o
+    \enquote{Vídeo do avatar}, em minutos.
+  \item Uma curva mostra o custo dia a dia; dia sem uso aparece como zero, e
+    não some. Um semicírculo divide o custo por tipo de uso: texto, imagem,
+    áudio (voz e podcast) e vídeo (o avatar da Ajuda).
+  \item Três tabelas, a mais cara primeiro: \enquote{Por produto} (a parte da
+    plataforma que chamou a IA --- o plano de aula, o podcast, cada missão, a
+    Ajuda), \enquote{Por modelo} (com o que cada um produziu) e
+    \enquote{Por escola}. O que as contas da gestão da rede e da Unooria usam
+    aparece numa linha só, \enquote{Sem escola (contas do contrato)}.
+  \item \textbf{O valor em reais usa a cotação oficial do dólar do próprio
+    dia} --- a de venda que o Banco Central publica (PTAX). Fim de semana e
+    feriado usam a do último dia útil. A tela diz qual cotação usou e de
+    onde ela veio.
+  \item Se o Banco Central não responde, a tela avisa e converte com as
+    cotações que já tem; o custo nunca some por causa disso.
+  \item \textbf{A voz é estimada}: o serviço de voz não diz quanto cobrou, e o
+    número é calculado pelo tamanho do áudio. Esses valores aparecem marcados
+    com o sinal de aproximado na frente.
+  \item Uso de um modelo sem preço cadastrado entra com custo zero, e a tela
+    avisa \enquote{Há consumo sem preço}, dizendo qual modelo falta.
+  \item O painel conta \textbf{quanto} se gastou e em quê --- nunca quem gastou:
+    não há nome de pessoa em lugar nenhum da tela.
+  \item \textbf{Só a Unooria vê esta tela.} O Administrador do contrato não a
+    vê nem pela barra nem pelo endereço: o custo da IA para a Unooria é
+    informação da fornecedora, não da rede.
+  \item Se um período novo não carrega, os números do anterior ficam na tela,
+    com o aviso.
+\end{itemize}
+\pendencia{o painel mostra o custo de cada uso de IA, não a conta inteira: o
+custo fixo de manter o agente de IA do professor no ar e o da infraestrutura
+ficam fora, e o uso de antes desta tela entrar no ar não aparece. Se o total do
+mês ficar longe da conta do fornecedor, o preço ou a forma de medir precisa
+ser revisto.}
+\end{historia}
+
+\begin{historia}{H10.7.2}{Corrigir o preço de um modelo de IA}{\pronto}
+\hu{Administrador Unooria}{cadastrar o preço de cada modelo de IA, com a data
+a partir da qual ele vale}{que o painel use o preço que a Unooria de fato
+paga, inclusive um desconto descoberto depois}
+\aceite
+\begin{itemize}
+  \item Abaixo do painel, a \enquote{Tabela de preços} lista cada modelo, o
+    \enquote{O que é cobrado} (entrada, saída ou minuto de vídeo), o preço em
+    dólar, \enquote{Vale desde} e \enquote{Quem e por quê}. O preço que vale
+    hoje leva a etiqueta \enquote{vale hoje}; um preço com data futura,
+    \enquote{a partir da data}.
+  \item A tabela começa com o preço de lista do Google e do fornecedor do
+    avatar, lido em 13 de outubro de 2026, já com o aumento anunciado para
+    1º de janeiro de 2027 --- \enquote{Preço de lista inicial da plataforma}.
+  \item \enquote{Cadastrar preço} (ou \enquote{Novo preço}, numa linha) abre a
+    janela com o modelo, o que é cobrado, o preço em dólar, o
+    \enquote{Vale a partir de} e o \enquote{Motivo}, que é obrigatório.
+  \item \textbf{Nada é apagado}: o preço novo vale a partir da data escolhida,
+    e o anterior continua valendo antes dela. A mesma data para o mesmo modelo
+    substitui só aquela vigência --- é assim que se corrige um valor digitado
+    errado.
+  \item \textbf{Uma data no passado recalcula o painel daquele dia em diante},
+    na hora: é assim que um desconto de contrato entra na conta.
+  \item Um valor absurdo (acima de 10 mil dólares) é recusado, para um zero a
+    mais não virar a conta do mês.
+  \item O nome de quem gravou fica como era no dia.
+\end{itemize}
+\end{historia}

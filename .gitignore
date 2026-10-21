@@ -27,8 +27,12 @@ apps/api/storage-privado/
 # o histórico. Esta pasta é saída de teste — nada dela é entregável.
 testes/
 
-# Mídia pesada das experiências (>2MB vai para o bucket de assets, não para o git)
-apps/experiencias/exp-02-unootube/public/videos/
+# Mídia pesada das experiências (>2MB vai para o bucket de assets, não para o git).
+# Os vídeos do UnooTube eram de `exp04ef1b`; desde o arquivamento (ADR-116) o
+# código dele mora em `backup-exp04ef1b`. As duas linhas ficam: a antiga protege
+# quem ainda tem vídeo solto no caminho de antes.
+apps/experiencias/exp04ef1b/public/videos/
+apps/experiencias/backup-exp04ef1b/public/videos/
 
 # Auxiliares do LaTeX (documentacao-latex/). O main.pdf É versionado de
 # propósito: é entregável de projeto, e quem precisa dele não tem TeX instalado.

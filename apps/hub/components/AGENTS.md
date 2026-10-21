@@ -7,25 +7,17 @@ O que mora nesta pasta é composição e compensação MARCADA.
 ## A marca ancora na JANELA, e o gutter é um só (ADR-83, 2026-09-08)
 
 **O miolo do header é full-bleed: `px-6` e mais nada.** Sem `max-width`, sem
-`mx-auto`. O `HeaderPlataforma` teve um parâmetro `largura` (`5xl` | `6xl` |
-`cheia`) cujo comentário dizia, com todas as letras, que ele "casava com o
-`max-width` do `<main>` de cada área" — e é exatamente esse acoplamento que era
-o defeito: o miolo é centralizado, então a coluna da área virava a posição da
+`mx-auto`, e **sem parâmetro `largura`** (`5xl` | `6xl` | `cheia`) que case o
+header com o `max-width` do `<main>` de cada área: é exatamente esse acoplamento
+o defeito, porque o miolo é centralizado e a coluna da área vira a posição da
 marca.
 
-Medido com Playwright, logado em cada papel, a marca ocupava **quatro** X
-diferentes (viewport de 1440px):
-
-| superfície | `largura` | marca X @1440 | @1920 |
-|---|---|---|---|
-| `/admin/**`, `/exp/:expId`, `/dev-embed` | `cheia` | 20px | 20px |
-| `/analise` | `6xl` | 164px | 404px |
-| `/professor/**`, `/estudante` | `5xl` (default) | 228px | 468px |
-
-208px de salto em 1440, **448px em 1920** — num header que é o mesmo em todas as
-telas, com a mesma altura e os mesmos elementos. O dono do produto viu isso como
-"a marca desliza para a direita em algumas páginas", que é a descrição exata do
-sintoma sem a causa à vista.
+Com o parâmetro, a marca ocupou **quatro** X diferentes conforme a área (medido
+com Playwright, logado em cada papel): 208px de salto em 1440px de viewport,
+**448px em 1920** — num header que é o mesmo em todas as telas, com a mesma
+altura e os mesmos elementos. O dono do produto viu isso como "a marca desliza
+para a direita em algumas páginas", que é a descrição exata do sintoma sem a
+causa à vista.
 
 **E o acoplamento nunca teve como convergir.** `/admin` tem navegação lateral e
 `/exp` é aparelho em tela cheia: essas áreas jamais terão a coluna de
@@ -46,30 +38,51 @@ título da página nas áreas de coluna estreita (472px de distância em 1920, e
 página —, e um chrome que se move ao navegar é o defeito que esta seção existe
 para não deixar voltar.
 
-**A superfície pública ficou de fora, por decisão.** A nav de `/`,
+**A superfície pública ficou de fora, por decisão.** A nav de `/landing-anterior`,
 `/privacidade` e `/termos` (`.landing-nav__miolo`, em `components/landing/landing.css`)
 mantém miolo de 1440px centralizado e `Logo size="md"` — em 1920px a marca dela
-cai em 264px, contra os 24px do app. É outra superfície, com outro público e
-outra linguagem; mexer nela é decisão de marketing, não de chrome. Quem for
-reabrir isso um dia: a mudança é trocar o `max-width` do `.landing-nav__miolo`
-por `none`.
+cai em 264px, contra os 24px do app. O site da raiz (`/`, `components/site/`)
+tem a nav própria do porte e também não segue este gutter. São outras
+superfícies, com outro público e outra linguagem; mexer nelas é decisão de
+marketing, não de chrome. Quem for reabrir a da landing: a mudança é trocar o
+`max-width` do `.landing-nav__miolo` por `none`.
+
+## Celular e tablet: a coluna ao lado da `SideBar` leva `min-w-0` (ADR-159)
+
+**Coluna de conteúdo que é item de `flex` leva `min-w-0`.** Em `/admin` e
+`/unooria` a coluna mora ao lado da `SideBar`, e item de flex não encolhe abaixo
+do conteúdo: a tabela larga empurrava a coluna para fora da janela (419px de
+página num celular de 375, 812 num tablet de 768) e o `ScrollBar` dela nunca
+rolava — rolava a página inteira, com a coluna da direita fora da tela. No
+desktop não aparece. Área nova com barra lateral nasce com o `min-w-0`.
+
+**A `SideBar` fica no celular** (44px, só ícones): o defeito nunca foi ela.
+**`Tag` com frase quebra linha** por compensação em `plataforma.css` — a lacuna,
+e quando ela morre, estão no comentário de lá.
+
+**Medir de novo**: compare com a largura NOMINAL da tela. Emulando celular, o
+Chrome afasta o zoom para caber o transbordo e `window.innerWidth` cresce junto —
+uma página de 419px responde "419 de 419" e parece certa.
 
 ## As fontes do DS não vêm de graça
 
-**No hub, o CSS do DS não basta: as fontes também.** O `unooria.css` declara
-`Open Sans` e `Material Symbols Rounded` por `@import` de URL remota, e o **Next
-remove `@import` externo** de CSS importado por JS — silenciosamente: a regra
-continua lá, o `getComputedStyle` responde "Open Sans" e o navegador desenha com
-a fonte do sistema. Como `Material Symbols Rounded` é fonte de ligadura, o
-sintoma é o ÍCONE VIRANDO TEXTO ("addInvestigação"). Por isso
-`components/casca-plataforma.tsx` também monta `FontesDaPlataforma`
-(`@edu/ui/fontes`). Numa experiência Vite o `@import` sobrevive e isso não é
-necessário.
+**No hub, o CSS do DS não basta: as fontes também.** `components/casca-plataforma.tsx`
+(e `components/tela-de-erro.tsx`, que renderiza fora dela) importa
+`@unooria/design-system/fonts/unooria.css`, as fontes AUTO-HOSPEDADAS do DS: só
+`@font-face` com `url()` relativa, que o bundler resolve. É o que tira o
+`@import` de URL remota do caminho — o **Next remove `@import` externo** de CSS
+importado por JS, silenciosamente: a regra continua lá, o `getComputedStyle`
+responde "Open Sans" e o navegador desenha com a fonte do sistema. Como
+`Material Symbols Rounded` é fonte de ligadura, o sintoma de a família não
+carregar é o ÍCONE VIRANDO TEXTO ("addInvestigação"). O import é obrigatório, não
+decorativo, e toda tela que renderize fora da casca precisa dele por conta
+própria.
 
 **Frames: dois níveis, não empilhar.** `PhoneFrame` (instanooria, whatsappmobile,
-tiktooria) e `DesktopFrame` (unitube) são cascas de aparelho DO CLONE, para
+tiktooria) e `DesktopFrame` (unootube) são cascas de aparelho DO CLONE, para
 Storybook e telas soltas. Dentro da plataforma quem desenha o aparelho é o hub,
 em `components/DispositivoFrame.tsx`, dirigido pelo `viewport` do manifesto — a
+casca do clone por dentro dela desenharia dois aparelhos, um dentro do outro.
 
 ## Altura de tela cheia: `.tela-cheia`, nunca subtração do header
 
@@ -92,9 +105,9 @@ Duas armadilhas medidas:
   `flex-grow` dentro de um contêiner de `min-height` não é *definite*: o
   percentual cai para `auto` e o `<iframe>` volta aos 150px de altura padrão dele.
   `display: grid` com `grid-template-rows: auto 1fr` tem o mesmo problema.
-- **O `main` só vira contêiner flex via `:has(> .tela-cheia)`.** Sem isso, as
-  outras 16 páginas do professor passariam a ter os filhos como itens de flex
-  (margem que não colapsa mais, altura que muda) por causa de três telas.
+- **O `main` só vira contêiner flex via `:has(> .tela-cheia)`.** Sem isso, todas
+  as outras páginas do professor passariam a ter os filhos como itens de flex
+  (margem que não colapsa mais, altura que muda) por causa das telas de embed.
 
 `app/exp/layout.tsx` já fazia certo (`height: 100dvh` + `flex flex-col`) e não
 precisou mudar — é a referência do arranjo.
@@ -108,7 +121,7 @@ cartão**, por cima do que está ao lado, e nada acusa: não é defeito de CSS, 
 componente usado para o que ele não é.
 
 Quem descobriu foi o `Ao confirmar` do relatório individual do Instanooria, que
-mostrava `estourou — a chuva chegou` derramado sobre a página. Os outros 40
+mostrava `estourou — a chuva chegou` derramado sobre a página. Os outros
 `MetricCard` do hub são número ou `n/m`; aquele era o único com frase — e nem
 era só o caso extremo: `sem cronômetro (modo livre)` e `faltavam 1:40` também
 passavam da largura.
@@ -126,11 +139,23 @@ caracteres — o jeito barato de medir é montar um `.unooria-metric-card` no DO
 de qualquer rota da plataforma (o CSS do DS é global no bundle do hub) e ler o
 `getBoundingClientRect().width` do valor depois de `document.fonts.ready`.
 
+## `Modal` montado com `ModalTitle`: o nome acessível
+
+O `Modal` do DS liga sozinho o `ModalTitle` (`aria-labelledby`) e o
+`ModalDescription` (`aria-describedby`) ao `role="dialog"` — nas seções
+`chatgpt` e `unootube` também. É o que dá nome acessível às janelas montadas com
+`ModalHeader` + `ModalTitle`, que é o jeito de quase todas as do hub; só o atalho
+`title=` ligava o título no DS antigo, e sem a ligação o leitor de tela anuncia
+"diálogo" sem dizer qual. `aria-labelledby`/`aria-label` explícitos continuam
+vencendo: por isso as janelas de `equipes/`, que compensam com `useId` + `<Modal
+aria-labelledby={id}>` + `<ModalTitle id={id}>`, seguem como estão. Janela nova
+não precisa do par — o `ModalTitle` basta.
+
 ## Rolagem: sempre o `ScrollBar` do DS (2026-09-07)
 
 **Nenhuma tela do hub declara `overflow` para rolar.** Área que rola é um
-`<ScrollBar>` do `@edu/ui/ds` — as 24 tabelas (de `/admin`, `/analise` e
-`/professor`), o sumário de `/privacidade` e `/termos`, e as 5 tabelas largas do
+`<ScrollBar>` do `@edu/ui/ds` — as tabelas (de `/admin`, `/analise` e
+`/professor`), o sumário de `/privacidade` e `/termos`, e as tabelas largas do
 guia da aula. Dele vêm a barra, o `autoHide` e o fade; a mecânica e as
 armadilhas estão em `packages/ui/AGENTS.md`.
 

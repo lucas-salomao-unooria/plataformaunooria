@@ -27,7 +27,7 @@ export const CHAVES_REDIGIDAS: ReadonlySet<string> = new Set([
   "mensagem",
   "transcricao",
   "observacao",
-  // O parágrafo autoral da exp-08 (TEC-03 / DAD-08). `texto` acima não o
+  // O parágrafo autoral da exp08ef4b (TEC-03 / DAD-08). `texto` acima não o
   // cobre: a chave é `justificativaTexto` / `justificativa_texto`, e a
   // comparação aqui é por nome INTEIRO em minúsculas, não por substring — um
   // `err` do Prisma carrega o objeto que o service tentou gravar, e é por ele
@@ -35,6 +35,42 @@ export const CHAVES_REDIGIDAS: ReadonlySet<string> = new Set([
   "justificativatexto",
   "justificativa_texto",
   "justificativasugerida",
+  // O GABARITO de missão que classifica mensagens: se cada uma é verdadeira,
+  // em que tom ela foi escrita, e a explicação da resposta. Não é PII: é a
+  // resposta que a missão existe para não entregar antes da revelação — e um
+  // `err` do Prisma carrega o lote que o service tentou gravar, com o gabarito
+  // inteiro dentro. Log de produção é lido por gente da escola.
+  //
+  // `veracidade` e `tom` são os dois eixos de Quem Mandou Isso? v2.2
+  // (exp05ef1b) — o pacote de 8 mensagens os leva no JSONB. `explicacao` veio
+  // da primeira versão (ADR-114) e FICA: tirar chave desta lista só afrouxa a
+  // rede, e o custo de ela sobrar é redigir um campo que ninguém manda.
+  "veracidade",
+  "tom",
+  "explicacao",
+  // O pacote do Jornal da Escola (exp04ef1b): o `gabarito` de cada notícia (se
+  // é publicável e o pilar que falta) e a `consequencia` (a reação do leitor,
+  // que só desce com o portão do professor aberto). A chave inteira some, então
+  // o que está dentro dela também.
+  "gabarito",
+  "consequencia",
+  "pilaremfalta",
+  // O esqueleto do Júri Estadual (exp06ef1b): `certo` marca o cartão certo do
+  // caso Mariana. O resto do gabarito da missão (a ordem dos blocos da cadeia)
+  // não tem chave — é a POSIÇÃO —, e os ids que descem são opacos.
+  "certo",
+  // O `Então` da regra Se/Então da exp05ef1b — TEXTO LIVRE DE MENOR (RF-014).
+  // `entao` no corpo e na resposta, `acaoEntao` no Prisma, `acao_entao` na
+  // coluna: um `err` do Prisma carrega o objeto que o service tentou gravar.
+  "entao",
+  "acaoentao",
+  "acao_entao",
+  // As variações de hash de senha que `senha`/`passwordhash` NÃO cobrem: a
+  // comparação aqui é por nome INTEIRO em minúsculas, então `senha_hash` e
+  // `senhaHash` passavam inteiros.
+  "password_hash",
+  "senhahash",
+  "senha_hash",
 ]);
 
 export const MARCA = "[redigido]";

@@ -1,5 +1,5 @@
-import { HUB, suite } from "../lib/roteiro.mjs";
-import { conta, contasDe } from "../lib/credenciais.mjs";
+import { BFF, HUB, suite } from "../lib/roteiro.mjs";
+import { conta } from "../lib/credenciais.mjs";
 
 /**
  * As telas de RESULTADO das missões por ano — o que o professor abre depois da
@@ -13,50 +13,36 @@ import { conta, contasDe } from "../lib/credenciais.mjs";
  * A regra desta suíte: NENHUMA tela de resultado pode mostrar um número sem
  * dizer como ele foi computado. "Poder do viés: 68%" sozinho é numerologia.
  */
-const TURMA_UNOOTUBE = process.env.TURMA_UNOOTUBE ?? "4A";
-
 await suite(
   {
     slug: "professor/06-resultados-das-missoes",
     papel: "professor",
     titulo: "Os resultados, por missão",
-    subtitulo: "UnooTube e unooGPT: o que o professor lê depois da aula",
+    subtitulo: "o que o professor lê depois da aula",
     contexto:
       "Cada missão tem a sua tela de resultados, dentro da unidade do ano a que pertence. Elas " +
       "são recalculadas a cada visita — nada ali é número gravado que ninguém sabe mais como foi " +
       "computado.",
     prova: [
       "A tela sem turma escolhida ensina o que fazer, em vez de mostrar tabela vazia",
-      "O resumo da turma traz total, concluintes e a média — e a base de cada um",
-      "Todo número vem com um bloco de 'como ler'",
-      "A tabela lista TODOS os estudantes, inclusive quem não entrou",
       "O relógio da aula do unooGPT é operável da mesma tela dos resultados",
       "O relatório de um estudante do unooGPT diz QUANDO: até a primeira fala, com quanto relógio, se estourou",
+      "A aula da A Seleção (o botão único e a etapa) mora na mesma tela dos resultados, sem coluna de pontos",
+      "A aula do Júri Estadual mora na página da atividade: os 40 estandes, a lousa anônima dos votos por área e — depois da auditoria — da concentração do feed, a folha sem coluna de voto, taxa, concentração nem nível, e com as categorias buscadas e os parados na cédula",
     ],
     comando: "node scripts/e2e/professor/06-resultados-das-missoes.mjs",
   },
   async (r) => {
-    /* O docente precisa LECIONAR na turma pedida: o seletor lista as turmas
-       dele, não as da escola. */
-    const professor =
-      contasDe("professor").find((c) => c.turma.split(" + ").includes(TURMA_UNOOTUBE)) ??
-      conta("professor", { serie: "4EF" });
+    /* O UnooTube abria esta suíte até ser ARQUIVADO (ADR-116): a prova de que a
+       tela sem turma ENSINA o próximo passo mudou para o unooGPT, abaixo. */
     const p = await r.pagina("professor", { viewport: { width: 1440, height: 1000 } });
-    await r.entrar(p, professor.login);
 
-    // ── UnooTube (4º ano, unidade 1) ────────────────────────────────────
-    await p.goto(`${HUB}/professor/entre-redes/4-ano/unidade-1`, { waitUntil: "domcontentloaded" });
-    await p.waitForTimeout(1800);
-    await r.registrar(p, "ficha-unootube", {
-      titulo: "A ficha da missão do UnooTube",
-      mostra: "O que a missão faz, o que ela mede e o caminho para os resultados.",
-      prova:
-        "A ficha do professor pode entregar a virada — ele PRECISA saber que o ranking troca de " +
-        "critério. É a copy do estudante que não pode.",
-      inteira: true,
+    // ── unooGPT (2ª série EM, unidade 1) ────────────────────────────────
+    const professorEM = conta("professor", { serie: "2EM" });
+    await r.entrar(p, professorEM.login);
+    await p.goto(`${HUB}/professor/entre-redes/2-serie/unidade-1/resultados`, {
+      waitUntil: "domcontentloaded",
     });
-
-    await p.locator("a", { hasText: "Ver resultados da turma" }).click();
     await p.waitForSelector("select#turma", { timeout: 20_000 });
     await p.waitForTimeout(1500);
     const semTurma = await p.locator("main").innerText();
@@ -71,81 +57,6 @@ await suite(
         "Tabela vazia sem explicação faz o professor achar que a turma dele não jogou. A frase " +
         "custa uma linha e evita um chamado de suporte.",
     });
-
-    /* PORTÃO DE HIDRATAÇÃO: o `<select>` existe no HTML do SSR antes do bundle,
-       e mudá-lo nesse intervalo não dispara o `onChange` do React. */
-    const opcoes = await p
-      .locator("select#turma option")
-      .evaluateAll((os) => os.map((o) => ({ value: o.value, label: o.textContent ?? "" })));
-    const alvo = opcoes.find((o) => o.label.includes(TURMA_UNOOTUBE) && o.value) ?? opcoes.find((o) => o.value);
-    r.exigir(Boolean(alvo), `o seletor lista as turmas deste professor (${opcoes.length - 1})`);
-    await p.selectOption("select#turma", alvo.value);
-    await p.waitForURL("**turmaId=**", { timeout: 20_000 });
-    await p.waitForTimeout(2500);
-
-    const linhas = await p.locator("table tbody tr").count();
-    const corpo = await p.locator("main").innerText();
-    r.exigir(linhas > 0, `a tabela lista ${linhas} estudante(s), inclusive quem não entrou`);
-    r.exigir(/Como ler/.test(corpo), "os números vêm com um bloco de 'como ler'");
-    r.exigir(
-      /métrica-isca/.test(corpo),
-      "e o bloco explica que 'inscritos' é a isca: quem tem mais inscritos escolheu pior",
-    );
-    await r.registrar(p, "resultados-unootube", {
-      titulo: "Os resultados do UnooTube",
-      mostra: `Resumo da turma, distribuição de fontes confiáveis e ${linhas} linhas nominais.`,
-      prova:
-        "'Inscritos' e 'fontes confiáveis' andam em sentidos opostos de propósito, e a tela DIZ " +
-        "isso. Sem a explicação, um professor apressado leria o ranking de inscritos como mérito.",
-      detalhe: `${linhas} estudantes`,
-      inteira: true,
-    });
-
-    // ── O Eco no Grupo (7º ano, unidade 1) ──────────────────────────────
-    /* A suíte do estudante (estudante/06-o-eco-no-grupo.mjs) corre ANTES e
-       deixa a turma com percurso entregue: é ele que este passo lê. */
-    const professorSetimo = conta("professor", { serie: "7EF" });
-    await r.entrar(p, professorSetimo.login);
-    await p.goto(`${HUB}/professor/entre-redes/7-ano/unidade-1/resultados`, {
-      waitUntil: "domcontentloaded",
-    });
-    await p.waitForSelector("select#turma", { timeout: 20_000 });
-    await p.waitForTimeout(1500);
-    const opcoesEco = await p
-      .locator("select#turma option")
-      .evaluateAll((os) => os.map((o) => ({ value: o.value, label: o.textContent ?? "" })));
-    const alvoEco = opcoesEco.find((o) => o.value);
-    if (alvoEco) {
-      await p.selectOption("select#turma", alvoEco.value);
-      await p.waitForURL("**turmaId=**", { timeout: 20_000 });
-      await p.waitForTimeout(2500);
-    }
-    const temGates = await p.locator("[data-gate]").count();
-    r.exigir(temGates >= 3, "os três momentos da aula ficam na MESMA tela dos resultados");
-    const folhaEco = await p.locator("table").first().innerText().catch(() => "");
-    r.exigir(
-      !/\b(pontos|nota|score)\b/i.test(folhaEco),
-      "a folha do Eco no Grupo não traz coluna de pontos",
-    );
-    await r.registrar(p, "resultados-o-eco-no-grupo", {
-      titulo: "A aula de duas etapas e os resultados",
-      mostra:
-        "Os três botões que conduzem a turma — abrir a Aula 2, congelar o debate, liberar o " +
-        "percurso — e o retrato de quem abriu a matéria antes de responder.",
-      prova:
-        "É a única missão da trilha em duas aulas, e a segunda não começa sozinha. Conduzir e ler " +
-        "ficam juntos porque a condução acontece DURANTE a aula.",
-      inteira: true,
-    });
-
-    // ── unooGPT (2ª série EM, unidade 1) ────────────────────────────────
-    const professorEM = conta("professor", { serie: "2EM" });
-    await r.entrar(p, professorEM.login);
-    await p.goto(`${HUB}/professor/entre-redes/2-serie/unidade-1/resultados`, {
-      waitUntil: "domcontentloaded",
-    });
-    await p.waitForSelector("select#turma", { timeout: 20_000 });
-    await p.waitForTimeout(1500);
     const opcoesEM = await p
       .locator("select#turma option")
       .evaluateAll((os) => os.map((o) => ({ value: o.value, label: o.textContent ?? "" })));
@@ -157,9 +68,19 @@ await suite(
     }
     const temRelogio = await p.locator("text=Relógio da aula").count();
     r.exigir(temRelogio > 0, "o relógio da aula fica na MESMA tela dos resultados");
+    /* O fechamento da Tempestade (ADR-172): o WhatsApp e a moradora são abertos
+       daqui, depois do debate, e o painel conta quem enviou. */
+    r.exigir(
+      (await p.locator("[data-fechamento]").count()) > 0,
+      "o fechamento (o WhatsApp e a moradora) é aberto do mesmo painel do relógio",
+    );
+    r.exigir(
+      (await p.locator("[data-alcance-do-alerta]").count()) > 0,
+      "o card do debate traz a frase do alcance do alerta, que nunca vai ao grupo",
+    );
     await r.registrar(p, "resultados-unoogpt", {
       titulo: "O relógio e os resultados do unooGPT",
-      mostra: "O relógio da turma (largada, tempo, encerrar) acima da folha da turma.",
+      mostra: "O relógio da turma (largada, tempo, encerrar e o fechamento) acima da folha da turma.",
       prova:
         "Conduzir e ler ficam juntos aqui porque a condução É durante a aula: obrigar o professor " +
         "a trocar de tela entre dar a largada e ver quem travou seria desenhar para a demonstração, " +
@@ -212,5 +133,149 @@ await suite(
         inteira: true,
       });
     }
+
+    // ── A Seleção (7º ano, unidade 1) ───────────────────────────────────
+    /* A suíte do estudante (estudante/11-a-selecao.mjs) corre ANTES e deixa a
+       turma com duas publicações pareadas: é a folha dela que este passo lê. */
+    const professorSetimo = conta("professor", { serie: "7EF" });
+    await r.entrar(p, professorSetimo.login);
+    await p.goto(`${HUB}/professor/entre-redes/7-ano/unidade-1/resultados`, {
+      waitUntil: "domcontentloaded",
+    });
+    await p.waitForSelector("select#turma", { timeout: 20_000 });
+    await p.waitForTimeout(1500);
+    const opcoesSetimo = await p
+      .locator("select#turma option")
+      .evaluateAll((os) => os.map((o) => ({ value: o.value, label: o.textContent ?? "" })));
+    /* A turma em que a estudante/11 CRIOU a atividade e a pôs no ar (ADR-130):
+       sem atividade em andamento, a página da missão não tem aula para mostrar. */
+    const alvoSetimo = opcoesSetimo.find((o) => o.value && o.label.includes("7A")) ?? opcoesSetimo.find((o) => o.value);
+    if (alvoSetimo) {
+      await p.selectOption("select#turma", alvoSetimo.value);
+      await p.waitForURL("**turmaId=**", { timeout: 20_000 });
+      await p.waitForTimeout(2500);
+    }
+    r.exigir(
+      (await p.locator("[data-etapa]").count()) > 0,
+      "o botão único da aula e a etapa atual ficam na MESMA tela da atividade em andamento",
+    );
+    const folhaSetimo = await p.locator("main").innerText().catch(() => "");
+    r.exigir(
+      !/\b(pontos|nota|score|ranking)\b/i.test(folhaSetimo),
+      "a folha da A Seleção não traz coluna de pontos",
+    );
+    await r.registrar(p, "resultados-a-selecao", {
+      titulo: "A atividade da A Seleção: a aula e os resultados",
+      mostra:
+        "A atividade em andamento: as equipes, as imagens, o botão que avança a turma (Mural, " +
+        "fichas, explicação), a folha por computador e o painel de habilidades da BNCC.",
+      prova:
+        "Conduzir e ler ficam juntos porque a condução acontece DURANTE a aula. A folha mostra " +
+        "o par e as lentes de cada computador, nunca uma nota.",
+      inteira: true,
+    });
+
+    // ── O Júri Estadual de Projetos (6º ano, unidade 1) ─────────────────
+    /* A suíte do estudante (estudante/13-juri-estadual.mjs) corre ANTES: cria a
+       atividade na 6A, põe no ar, dois estudantes votam e a galeria abre. É a
+       página DESSA atividade que este passo lê. A tela usa o `Selection` do DS
+       (não o `select#turma`): a turma vai na URL, pela api, como a sala a abre. */
+    const professorSexto = conta("professor", { serie: "6EF" });
+    await r.entrar(p, professorSexto.login);
+    const turmasDoJuri = await p.request.get(`${BFF}/juri-estadual/turmas`);
+    const listaDoJuri = (await turmasDoJuri.json().catch(() => null))?.turmas ?? [];
+    const turmaDoJuri = listaDoJuri.find((t) => t.nome === "6A") ?? listaDoJuri[0];
+    if (!r.exigir(Boolean(turmaDoJuri), `${professorSexto.login} tem turma no seletor do Júri Estadual`)) return;
+    await p.goto(`${HUB}/professor/entre-redes/6-ano/unidade-1/resultados?turmaId=${turmaDoJuri.id}`, {
+      waitUntil: "domcontentloaded",
+    });
+    /* Os dois estados LEGÍTIMOS da página: a atividade em andamento (a da
+       estudante/13) ou nenhuma — quando esta suíte roda sozinha, sem a do
+       estudante antes. Espera a união e prova o ramo que a tela mostrou. */
+    await p
+      .locator("[data-etapa], [data-sem-atividade]")
+      .first()
+      .waitFor({ timeout: 30_000 });
+    if ((await p.locator("[data-sem-atividade]").count()) > 0) {
+      r.ressalva(
+        "a 6A não tem atividade do Júri Estadual em andamento: rode antes a estudante/13-juri-estadual, que a cria",
+      );
+      r.exigir(
+        /Nenhuma atividade em andamento nesta turma/.test(await p.locator("main").innerText()),
+        "sem atividade, a página do Júri diz que a turma vê a missão fechada",
+      );
+    } else {
+      r.exigir(
+        (await p.locator("[data-painel-para-projetar]").count()) === 1,
+        "a lousa do Júri (votos por área, sem nome) fica na MESMA tela da atividade em andamento",
+      );
+      const colunasDoJuri = await p.locator("main").getByRole("columnheader").allInnerTexts();
+      r.exigir(
+        colunasDoJuri.length > 0 &&
+          !colunasDoJuri.some((c) => /^\s*voto\b|\b(taxa|n[íi]vel|invisibilidade|concentra\w*|pontos|nota|ranking)\b/i.test(c)),
+        `a folha do Júri não tem coluna de voto, taxa, concentração nem nível (colunas: ${colunasDoJuri.join(", ")})`,
+      );
+      /* 40 projetos (2026-10-14): o total da página vem do PACOTE. */
+      const totalDeEstandes = await p.locator("[data-estandes-da-atividade]").getAttribute("data-total-de-estandes");
+      r.exigir(totalDeEstandes === "40", `a atividade do banco padrão mostra os 40 estandes, uma aba por área (${totalDeEstandes})`);
+      /* A lousa trocou a “invisibilidade média” (com 40 estandes, 30 de 40 para
+         todo computador — sempre a mesma) pela CONCENTRAÇÃO do feed, e ela só
+         aparece depois de Liberar Auditoria. A estudante/13 deixa a turma na
+         galeria; rodando sozinha, a turma pode estar antes dela — os dois ramos
+         são legítimos e cada um é provado. */
+      const lousaDoJuri = p.locator("[data-painel-para-projetar]");
+      r.exigir(
+        !/Invisibilidade média/i.test(await lousaDoJuri.innerText()),
+        "a lousa não tem mais a “invisibilidade média da turma”: com 40 estandes ela seria a mesma para todos",
+      );
+      const concentracaoDoJuri = p.locator("[data-concentracao-do-feed]");
+      if ((await p.locator('[data-etapa="galeria"]').count()) > 0) {
+        await concentracaoDoJuri.waitFor({ timeout: 15_000 });
+        const textoDaConcentracao = (await concentracaoDoJuri.innerText()).replace(/\s+/g, " ");
+        r.exigir(
+          /Quem curtiu algum post/.test(textoDaConcentracao) && /Quem não curtiu nenhum/.test(textoDaConcentracao),
+          `depois da auditoria, a lousa mostra a concentração do feed — “Quem curtiu algum post” e “Quem não curtiu nenhum” (${textoDaConcentracao.slice(0, 160)})`,
+        );
+      } else {
+        r.ressalva("a 6A ainda não liberou a auditoria: a concentração do feed não aparece por desenho (rode antes a estudante/13)");
+        r.exigir((await concentracaoDoJuri.count()) === 0, "antes da auditoria, a lousa não mostra a concentração do feed");
+      }
+      /* ADR-174: a folha diz quem SEPAROU os estandes (a EF06CO01 — o acerto é
+         nível e mora no painel de habilidades), e o painel conta quem está
+         parado na cédula — o ícone ao lado do nome é provado AO VIVO na
+         estudante/13 (ele some sozinho 40 s depois de a cédula fechar, então
+         aqui só a coluna e a métrica). */
+      r.exigir(
+        colunasDoJuri.some((c) => /Separação/.test(c)) && !colunasDoJuri.some((c) => /Categorias buscadas/.test(c)),
+        `a folha do Júri tem a coluna “Separação”, sem “Categorias buscadas” (colunas: ${colunasDoJuri.join(", ")})`,
+      );
+      r.exigir(
+        (await p.getByText("Separaram os estandes", { exact: true }).count()) > 0,
+        "o painel da aula conta quem separou os estandes",
+      );
+      r.exigir(
+        (await p.getByText("Parados na cédula", { exact: true }).count()) > 0,
+        "o painel da aula conta quem está parado na cédula (o sinalizador de ociosos)",
+      );
+      const linhasDoJuri = await p.locator("main").getByRole("row").allInnerTexts();
+      const comBusca = linhasDoJuri.filter((l) => /\(#[^)]+\)/.test(l));
+      if (comBusca.length === 0) {
+        r.ressalva("nenhuma linha da folha tem categoria buscada: rode antes a estudante/13-juri-estadual, que busca por hashtag");
+      } else {
+        r.exigir(true, `a folha mostra a categoria buscada com o nome e a hashtag (${comBusca[0].replace(/\s+/g, " ").slice(0, 120)})`);
+      }
+    }
+    await r.registrar(p, "resultados-juri-estadual", {
+      titulo: "A atividade do Júri Estadual: a aula e os resultados",
+      mostra:
+        "A atividade em andamento: os 40 estandes em abas por área, o botão Liberar Auditoria, os parados na " +
+        "cédula, a lousa com os votos por área antes e depois da galeria e a concentração do feed (quem curtiu × " +
+        "quem não curtiu), a folha por computador com as categorias buscadas e o painel de habilidades da BNCC.",
+      prova:
+        "A lousa vai para o projetor e não tem nome; a folha tem nome e por isso não liga ninguém a um voto, a uma " +
+        "taxa ou à concentração do feed. O nível de cada habilidade fica no painel de habilidades, com a " +
+        "confirmação da professora.",
+      inteira: true,
+    });
   },
 );

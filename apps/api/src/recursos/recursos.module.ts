@@ -1,7 +1,10 @@
 import { Module } from "@nestjs/common";
 import { RecursosAdminController } from "./recursos-admin.controller";
 import { RecursosAuditoriaController } from "./recursos-auditoria.controller";
+import { CustosDeIaController } from "./custos-de-ia.controller";
 import { QuotasDeIaController } from "./quotas-de-ia.controller";
+import { ConfiguracaoDaAjudaController } from "./configuracao-da-ajuda.controller";
+import { LimitesDaAjudaController } from "./limites-da-ajuda.controller";
 import { RecursosController } from "./recursos.controller";
 
 /**
@@ -18,8 +21,9 @@ import { RecursosController } from "./recursos.controller";
    registrar o de rota literal antes do de parâmetro é o hábito que evita a
    armadilha de `/planos/referencias` contra `/planos/:id`. */
 @Module({
-  /* `QuotasDeIaController` (ADR-105) vive em `recursos/quotas-de-ia/*`: dois
-     segmentos, então não colide com o `:recursoId` de um segmento do painel. */
-  controllers: [QuotasDeIaController, RecursosAuditoriaController, RecursosAdminController, RecursosController],
+  /* `QuotasDeIaController` (ADR-105) vive em `recursos/quotas-de-ia/*` e o
+     `LimitesDaAjudaController` (ADR-132) em `recursos/limites-da-ajuda/*`: dois
+     segmentos, então não colidem com o `:recursoId` de um segmento do painel. */
+  controllers: [CustosDeIaController, QuotasDeIaController, LimitesDaAjudaController, ConfiguracaoDaAjudaController, RecursosAuditoriaController, RecursosAdminController, RecursosController],
 })
 export class RecursosModule {}

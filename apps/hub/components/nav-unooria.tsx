@@ -6,8 +6,9 @@ import { Icon, SideBar, type SideBarItemData } from "@edu/ui/ds";
 /**
  * Navegação da área da Unooria (ADR-88).
  *
- * Três itens: o interruptor da rede (ADR-87), a torneira da IA (ADR-105) e os
- * cadastros de interesse do site público (ADR-107). A
+ * Cinco itens: o interruptor da rede (ADR-87), a torneira da IA (ADR-105), o
+ * custo dela (ADR-161), os cadastros de interesse do site público (ADR-107) e
+ * as experiências arquivadas (ADR-116). A
  * barra é o que diz "você está no painel da Unooria, não na área da escola" —
  * que é justamente a confusão que a ADR-88 quer evitar.
  *
@@ -29,10 +30,22 @@ const ITENS: Array<SideBarItemData & { href: string }> = [
     href: "/unooria/uso-de-ia",
   },
   {
+    id: "custos-de-ia",
+    label: "Custos de IA",
+    icon: <Icon name="payments" />,
+    href: "/unooria/custos-de-ia",
+  },
+  {
     id: "prospeccao",
     label: "Prospecção",
     icon: <Icon name="contact_mail" />,
     href: "/unooria/prospeccao",
+  },
+  {
+    id: "arquivados",
+    label: "Arquivados",
+    icon: <Icon name="archive" />,
+    href: "/unooria/arquivados",
   },
 ];
 
@@ -44,6 +57,9 @@ export function NavUnooria() {
   return (
     <SideBar
       theme="light"
+      /* Sem painel de aplicativos nesta área: o botão "Iniciativas" abriria
+         um painel vazio (H01.2.2, DS 0.2.15). */
+      showApps={false}
       items={ITENS}
       activeId={ativo}
       onItemClick={(id) => {

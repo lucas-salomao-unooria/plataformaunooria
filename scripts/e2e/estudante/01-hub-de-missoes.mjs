@@ -32,7 +32,7 @@ await suite(
       "O estudante entra na TURMA dele — a grade é a do ano dela, não o catálogo inteiro",
       "Missão não liberada aparece com CADEADO, e não some da tela",
       "Duas turmas do MESMO ano têm estados diferentes: 8A aberta, 8B fechada",
-      "Missão de outra série não entra na grade (o UnooTube é do 4º ano)",
+      "Missão de outra série não entra na grade (o UnooriaAI é da 2ª série do EM)",
       "URL direta de missão não liberada responde 404 — o cadeado não é só enfeite",
       "Cada cartão aberto leva ao aparelho certo, em outra origem, com o sandbox que o manifesto pediu",
     ],
@@ -40,7 +40,7 @@ await suite(
   },
   async (r) => {
     /* A grade do 8º ano: a transversal (Vila, `series: []`) e as missões do ano
-       (Instanooria na unidade 1, Manifesto da IA na 4 — as duas com
+       (Unoovista na unidade 1, Manifesto da IA na 4 — as duas com
        `series: ["8EF"]`). O seed libera TODAS na 8A e NENHUMA na 8B — as turmas
        "B" ficam fechadas de propósito, para o professor exercitar liberar sem
        interferir em suíte de estudante.
@@ -49,22 +49,22 @@ await suite(
        `abertos === missoes.length`: publicar uma missão para o 8º e não a
        acrescentar aqui derruba esta suíte com "as N missões da 8A estão
        abertas" — que culpa a liberação por uma lista desatualizada. Aconteceu
-       com a exp-08 em 2026-09-11, e o mesmo efeito colateral já tinha quebrado
+       com a exp08ef4b em 2026-09-11, e o mesmo efeito colateral já tinha quebrado
        `apps/api/tests/salas-postgres.spec.ts`. */
     const missoes = [
-      { texto: "Vila do Lume", expId: "exp-70-vila-do-lume", declara: ["allow-pointer-lock"] },
-      { texto: "Instanooria", expId: "exp-01-instanooria", declara: [] },
-      { texto: "Manifesto da IA", expId: "exp-08-manifesto-ia", declara: ["allow-forms"] },
+      { texto: "Vila do Lume", expId: "app-70-vila-do-lume", declara: ["allow-pointer-lock"] },
+      { texto: "Unoovista", expId: "exp08ef1b", declara: [] },
+      { texto: "Manifesto da IA", expId: "exp08ef4b", declara: ["allow-forms"] },
     ];
     const OPCIONAIS = ["allow-pointer-lock", "allow-forms"];
-    /* Do 4º ano: não pertence à grade do 8º. Não é "bloqueada" — é de outra
+    /* Da 2ª série do EM: não pertence à grade do 8º. Não é "bloqueada" — é de outra
        série, e nem aparece. São coisas diferentes, e a tela precisa distingui-las. */
-    const DE_OUTRA_SERIE = { texto: "UnooTube", expId: "exp-02-unootube" };
+    const DE_OUTRA_SERIE = { texto: "UnooriaAI", expId: "exp02em1b" };
 
     /* O 404 é PROVOCADO: esta suíte digita de propósito a URL de uma missão que
        não é desta turma, e é o servidor recusando que ela existe para provar. */
     r.provocado(
-      /404.*\/exp\/exp-02-unootube/,
+      /404.*\/exp\/exp02em1b/,
       "a porta da sala recusando a URL adivinhada de uma missão de outra série",
     );
 
@@ -94,7 +94,7 @@ await suite(
     }
     r.exigir(
       !titulos.some((t) => t.includes(DE_OUTRA_SERIE.texto)),
-      `${DE_OUTRA_SERIE.texto} NÃO entra na grade: é do 4º ano, não desta turma`,
+      `${DE_OUTRA_SERIE.texto} NÃO entra na grade: é da 2ª série do EM, não desta turma`,
     );
     const abertos = await p.locator('[data-estado="liberada"]').count();
     r.exigir(abertos === missoes.length, `as ${missoes.length} missões da 8A estão abertas`);
@@ -105,7 +105,7 @@ await suite(
       mostra: `A turma ${daOitoA.turma} no topo e um cartão por missão da grade do ano — ${titulos.join(", ")}.`,
       prova:
         "A lista não é mais o catálogo inteiro: é a grade da TURMA. A copy é a do estudante, nunca " +
-        "a do professor — a ficha docente do Instanooria entrega a virada da missão, e lê-la antes " +
+        "a do professor — a ficha docente do Unoovista entrega a virada da missão, e lê-la antes " +
         "destruiria a experiência que ela mede.",
       detalhe: `${titulos.length} missões, ${abertos} abertas`,
     });
@@ -120,7 +120,7 @@ await suite(
     );
     await r.registrar(p, "url-direta-recusada", {
       titulo: "A URL adivinhada não abre",
-      mostra: "O endereço da missão do 4º ano, digitado por um estudante do 8º.",
+      mostra: "O endereço da missão da 2ª série do EM, digitado por um estudante do 8º.",
       prova:
         "Esconder o cartão é UX; a porta é do servidor. Antes da sala de aula qualquer estudante " +
         "logado abria qualquer missão digitando /exp/<expId> — o bundle é público e o endereço é " +
@@ -145,7 +145,7 @@ await suite(
       await cartao.click();
       await p.waitForURL(`**/exp/${missao.expId}**`, { timeout: 30_000 });
 
-      const iframe = p.locator('iframe[title="experiencia"]');
+      const iframe = p.locator('iframe[data-experiencia]');
       await iframe.waitFor({ state: "attached", timeout: 20_000 });
       const sandbox = (await iframe.getAttribute("sandbox")) ?? "";
       const src = (await iframe.getAttribute("src")) ?? "";
@@ -168,7 +168,7 @@ await suite(
 
       /* Que a experiência MONTOU é o que prova o handshake: sem `exp:ready` →
          `hub:init` ela nunca recebe identidade e fica na tela de carregamento. */
-      const dentro = p.frameLocator('iframe[title="experiencia"]');
+      const dentro = p.frameLocator('iframe[data-experiencia]');
       await dentro.locator("body").waitFor({ timeout: 30_000 });
       await p.waitForTimeout(3500);
       const montou = await dentro

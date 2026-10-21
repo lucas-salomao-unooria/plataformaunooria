@@ -3,7 +3,7 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
 import { conta } from "../lib/credenciais.mjs";
 
 /**
- * O plano de aula (exp-90), embedado no hub do professor.
+ * O plano de aula (app-90), embedado no hub do professor.
  *
  * É a única experiência de FERRAMENTA que o docente usa sozinho, e o ciclo
  * inteiro dela é destrutivo em algum ponto: gerar, editar, salvar, reabrir,
@@ -52,7 +52,7 @@ await suite(
     await cartao.first().click();
     await p.waitForURL((url) => url.pathname === "/professor/plano-de-aula", { timeout: 30_000 });
 
-    const exp = p.frameLocator('iframe[title="experiencia"]');
+    const exp = p.frameLocator('iframe[data-experiencia]');
     await exp.getByText("Meus planos de aula").waitFor({ timeout: 60_000 });
     await r.registrar(p, "meus-planos", {
       titulo: "Meus planos de aula",
@@ -84,7 +84,7 @@ await suite(
     await exp.getByRole("button", { name: "Gerar plano de aula" }).click();
     await esperarOuFalharCedo(exp.locator("table"), exp.locator(ALERTA_DE_ERRO), {
       timeout: 180_000,
-      oQue: "a geração do plano (exp-90)",
+      oQue: "a geração do plano (app-90)",
     });
     await p.waitForTimeout(1500);
     await r.registrar(p, "plano-gerado", {
@@ -114,7 +114,7 @@ await suite(
     await exp.getByText(/Salvo às/).waitFor({ timeout: 20_000 });
 
     await p.reload({ waitUntil: "domcontentloaded" });
-    const exp2 = p.frameLocator('iframe[title="experiencia"]');
+    const exp2 = p.frameLocator('iframe[data-experiencia]');
     await exp2.getByText("Meus planos de aula").waitFor({ timeout: 60_000 });
     const primeiro = exp2.locator("li, [role=listitem]").filter({ hasText: /Plano|aula/ }).first();
     await primeiro.click().catch(async () => {

@@ -1,9 +1,15 @@
 import { notFound } from "next/navigation";
 
 import { Badge, Card } from "@edu/ui/ds";
+import { EquipesDaAtividade } from "@/components/equipes/equipes-da-ficha";
+import { PainelDeHabilidades } from "@/components/evidencias/painel-de-habilidades";
 import { LinkButton } from "@/components/link-button";
 import { RotuloDaTrilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
+import { auth } from "@/lib/auth";
+import { painelDeHabilidades } from "@/lib/evidencias-servidor";
+import { podcastDaAtividade } from "@/lib/podcast-servidor";
+import { CartaoDoPodcast } from "@/app/(plataforma)/professor/entre-redes/[ano]/[unidade]/resultados/podcast-da-aula";
 import {
   MISSAO_ATUAL,
   buscarMissao,
@@ -88,6 +94,26 @@ export default async function AtividadePage({
   const parse = antagonismoSchema.safeParse(atividade.antagonismo);
   const antagonismo: Antagonismo | null = parse.success ? parse.data : null;
 
+  /*
+    EVIDÊNCIA PEDAGÓGICA (E14): as habilidades da BNCC de cada estudante nesta
+    atividade. A evidência é por TURMA, então a atividade anterior à coluna
+    `turma_id` (que vale para a escola inteira) não tem painel. E a missão sem
+    ficha pedagógica responde `temFicha: false` e o bloco não aparece. A do
+    Unoovista entrou em 2026-10-07 (as três perguntas depois da reflexão, rodada
+    sempre 1), e o bloco acendeu sem mudar esta página; as outras missões com
+    ficha montam o painel nos próprios resultados. `MISSAO_ATUAL` pela mesma razão da missão de origem acima.
+  */
+  const expIdDaAtividade = MISSAO_ATUAL.expId;
+  const [painel, session, podcast] = await Promise.all([
+    atividade.turma && expIdDaAtividade
+      ? painelDeHabilidades(atividade.turma.id, expIdDaAtividade, atividade.id)
+      : Promise.resolve(null),
+    auth(),
+    atividade.turma && (atividade.status === "ativa" || atividade.status === "encerrada")
+      ? podcastDaAtividade("exp08ef1b", atividade.turma.id, atividade.id)
+      : Promise.resolve(null),
+  ]);
+
   return (
     <div className="flex flex-col gap-6">
       {/* A trilha é do layout da área; o que só esta página sabe é o NOME da
@@ -150,6 +176,17 @@ export default async function AtividadePage({
         />
       ) : null}
 
+      {/*
+        As EQUIPES desta atividade (ADR-130): a equipe é da atividade, e não da
+        missão. Aparecem a partir de `revisao` — com o conteúdo de pé, antes do
+        "Ativar" — e só na atividade com turma: a antiga, sem turma, vale para a
+        escola inteira e não tem sala para dividir.
+      */}
+      {atividade.turma &&
+      (atividade.status === "revisao" || atividade.status === "ativa" || atividade.status === "encerrada") ? (
+        <EquipesDaAtividade turmaId={atividade.turma.id} expId="exp08ef1b" atividadeId={atividade.id} />
+      ) : null}
+
       {atividade.status === "gerando" ? (
         <PainelProgresso activityId={atividade.id} />
       ) : null}
@@ -169,6 +206,40 @@ export default async function AtividadePage({
           activityId={atividade.id}
           status={atividade.status}
           qtdPostsTese={atividade.qtdPostsTese}
+          turmaId={atividade.turma?.id ?? null}
+          material={
+            antagonismo
+              ? {
+                  tema: atividade.recorte,
+                  pergunta: atividade.perguntaChave,
+                  ladoA: { rotulo: antagonismo.ladoA.label, tese: antagonismo.ladoA.tese, argumentos: antagonismo.ladoA.argumentos },
+                  ladoB: { rotulo: antagonismo.ladoB.label, tese: antagonismo.ladoB.tese, argumentos: antagonismo.ladoB.argumentos },
+                }
+              : null
+          }
+        />
+      ) : null}
+
+      {/* Depois da aula: o podcast da plataforma (ADR-150, ADR-156), com as falas
+          que o professor revisou antes de ativar. É do professor, e toca depois
+          da revelação — ele conta a virada. */}
+      {atividade.turma && (atividade.status === "ativa" || atividade.status === "encerrada") ? (
+        <CartaoDoPodcast
+          expId="exp08ef1b"
+          turmaId={atividade.turma.id}
+          atividadeId={atividade.id}
+          podcast={podcast}
+          aviso="Toque o episódio depois da revelação: ele conta à turma por que cada um viu um feed diferente."
+        />
+      ) : null}
+
+      {atividade.turma && expIdDaAtividade && painel?.temFicha ? (
+        <PainelDeHabilidades
+          turmaId={atividade.turma.id}
+          expId={expIdDaAtividade}
+          atividadeId={atividade.id}
+          inicial={painel}
+          podeEditar={session?.usuario.papel === "professor"}
         />
       ) : null}
 
@@ -176,7 +247,7 @@ export default async function AtividadePage({
         <LinkButton
           href={
             missaoDaAtividade
-              ? rotaDaMissao(missaoDaAtividade.missao)
+              ? `${rotaDaMissao(missaoDaAtividade.missao)}${atividade.turma ? `?turmaId=${encodeURIComponent(atividade.turma.id)}` : ""}`
               : "/professor"
           }
           variant="outline"

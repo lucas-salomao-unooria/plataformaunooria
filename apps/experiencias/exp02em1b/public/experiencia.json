@@ -1,0 +1,17 @@
+{
+  "id": "exp02em1b",
+  "nome": "UnooriaAI — Decidir com o que os dados mostram",
+  "versao": "1.5.0",
+  "produto": "entre-redes",
+  "series": ["2EM"],
+  "unidade": 1,
+  "capabilities": ["telemetria", "ia"],
+  "permissoes": ["forms"],
+  "verbos": {
+    "attempted": "briefing, recomeco",
+    "interacted": "turno, fontes, alocacao",
+    "progressed": "investigacao",
+    "scored": "desfecho",
+    "completed": "exp02em1b"
+  }
+}

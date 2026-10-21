@@ -37,13 +37,13 @@ recompilar: \cd{DEV\_POLLING=1 pnpm docker:dev}.
 \end{atencao}
 
 \begin{lstlisting}[language=bashunoo, caption={Experiências, uma a uma}]
-pnpm --filter @edu/exp-01-instanooria    dev   # :5173
-pnpm --filter @edu/exp-02-unootube       dev   # :5174 (videos em public/videos)
-pnpm --filter @edu/exp-90-plano-de-aula  dev   # :5175 -> /professor/plano-de-aula
-pnpm --filter @edu/exp-91-bem-estar      dev   # :5176 -> /professor/bem-estar
-pnpm --filter @edu/exp-70-vila-do-lume   dev   # :5177 -> /exp/exp-70-vila-do-lume
+pnpm --filter @edu/exp08ef1b    dev   # :5173
+pnpm --filter @edu/exp04ef1b       dev   # :5174 (videos em public/videos)
+pnpm --filter @edu/app-90-plano-de-aula  dev   # :5175 -> /professor/plano-de-aula
+pnpm --filter @edu/app-91-bem-estar      dev   # :5176 -> /professor/bem-estar
+pnpm --filter @edu/app-70-vila-do-lume   dev   # :5177 -> /exp/app-70-vila-do-lume
 
-pnpm new:exp exp-12-fracoes                    # scaffolda do _template
+pnpm new:exp exp06ef3b                         # scaffolda do _template (ADR-110)
 \end{lstlisting}
 
 \begin{lstlisting}[language=bashunoo, caption={O IdP sobe à parte}]
@@ -54,7 +54,7 @@ docker compose -f wso2/docker-compose.yml logs bootstrap   # imprime as envs OID
 
 \begin{lstlisting}[language=bashunoo, caption={Verificação e build}]
 pnpm turbo typecheck lint test                 # o portao da Definition of Done
-pnpm turbo build --filter=@edu/exp-01          # 1 experiencia (+ deps)
+pnpm turbo build --filter=@edu/exp08ef1b          # 1 experiencia (+ deps)
 pnpm turbo build --filter='...[HEAD^]'         # so o que mudou (o CI usa isso)
 pnpm build:isolado                             # build de PRODUCAO do hub
                                                # (HUB_DIST_DIR=.next-prod)
@@ -113,15 +113,15 @@ As missões conduzidas pelo professor (\arq{estudante/02-instanooria.mjs} e
 relógio da turma, outro com o estudante no aparelho. Nada avança sem o botão do
 professor --- um contexto só não chega ao fim, e passaria com o relógio quebrado.
 
-O da exp-01 mede a \cd{boundingBox} do \emph{iframe} antes e depois do
+O da exp08ef1b mede a \cd{boundingBox} do \emph{iframe} antes e depois do
 \enquote{Ver meu relatório} ($375 \rightarrow 1280 \rightarrow 349$px), escreve
 uma marca dentro do \emph{frame} para provar que ele NÃO foi remontado, e lê o
 \cd{backgroundColor} COMPUTADO --- \cd{toBeVisible()} não pega nenhuma das três.
 
 Duas armadilhas medidas ao escrevê-lo. O \emph{frame} precisa vir do próprio
-elemento (\cd{elementHandle().contentFrame()}): procurar por \cd{"exp-01"} na
+elemento (\cd{elementHandle().contentFrame()}): procurar por \cd{"exp08ef1b"} na
 lista de \emph{frames} devolve o frame DO HUB, cuja rota é
-\rota{/exp/exp-01-instanooria} --- e aí a verificação de \enquote{não
+\rota{/exp/exp08ef1b} --- e aí a verificação de \enquote{não
 recarregou} fica verde por construção, medindo a página errada. E a medição
 precisa esperar um elemento do FIM do relatório: o conteúdo vem de
 \cd{React.lazy}, e medir logo após o título pega a tela montando, o que sai como
@@ -151,7 +151,7 @@ estava justamente demonstrando o comportamento.
   nunca os dois na mesma porta: o navegador e o servidor passam a ler
   \emph{dev servers} diferentes.\\
 Chrome do \textbf{sistema} & Obrigatório para a suíte da
-  exp-70 e para o \emph{probe} de \emph{pointer lock}: o Chromium do Playwright
+  app-70 e para o \emph{probe} de \emph{pointer lock}: o Chromium do Playwright
   não concede \emph{pointer lock} nem no topo da página.\\
 \zebra Duas escolas no \emph{seed} & \cd{escola-demo} (8A, 8B, 4A, 2A) e
   \cd{escola-demo-2} (5A), com \cd{prof.demo} lotado nas DUAS --- é o que faz
@@ -159,7 +159,7 @@ Chrome do \textbf{sistema} & Obrigatório para a suíte da
   segunda.\\
 \emph{Logins} do \emph{seed} & \cd{gestor.demo} \seta{} \rota{/admin/usuarios};
   \cd{prof.demo} \seta{} \rota{/professor}; \cd{estudante01}--\cd{estudante40} \seta{}
-  \rota{/estudante}; \cd{estudante4a01} para a exp-02. Senha de todos:
+  \rota{/estudante}; \cd{estudante4a01} para a exp04ef1b. Senha de todos:
   \cd{unooria123}. Eles nascem com \cd{senha\_provisoria = false} de propósito:
   prendê-los na troca do primeiro acesso pararia as suítes de estudante na
   mesma tela. \cd{prof.demo} é matriculado nas quatro turmas --- sem isso, as
@@ -189,7 +189,7 @@ Commitar o \emph{lockfile} \textbf{e} os \arq{package.json} juntos. E lembrar:
 
 \begin{lstlisting}[language=bashunoo, caption={Reversão --- as três formas, por velocidade}]
 # 1. EXPERIENCIA (o mais rapido: sem build, sem imagem, sem deploy)
-node apps/hub/scripts/publicar-manifesto.mjs exp-02-unootube --versao 0.9.0
+node apps/hub/scripts/publicar-manifesto.mjs exp04ef1b --versao 0.9.0
 #    Requer: TOKEN_SIGNING_KEY_PEM, API_URL, HUB_ORIGIN
 
 # 2. HUB ou API (revisao do Cloud Run)
@@ -218,7 +218,7 @@ gcloud logging read 'jsonPayload.codigo="erro-cliente"' --project "$GCP_PROJECT"
   --limit 1 --format='value(jsonPayload.expId,jsonPayload.versao,jsonPayload.stack_trace)'
 # 2. A stack e minificada. O mapa da versao exata esta no bucket PRIVADO:
 EXP_MAPAS_BUCKET=$(terraform -chdir="$INFRA_DIR" output -raw bucket_exp_mapas) \
-  node scripts/mapear-stack.mjs exp-02-unootube 1.2.3 < stack.txt
+  node scripts/mapear-stack.mjs exp04ef1b 1.2.3 < stack.txt
 \end{lstlisting}
 
 \begin{lstlisting}[language=bashunoo, caption={Publicar tudo (primeiro \emph{deploy} de um contrato)}]
@@ -248,7 +248,7 @@ EXP_MAPAS_BUCKET=$(terraform -chdir="$INFRA_DIR" output -raw bucket_exp_mapas) \
     \cd{node scripts/importar-referencias-plano.mjs} com
     \env{PLANOS\_IMPORT\_TOKEN}.
   \item \textbf{Manual, e pendente de automação:} \cd{gsutil rsync} da mídia
-    pesada da exp-02 para o \emph{bucket} de \emph{assets} (\cd{R-09}).
+    pesada da exp04ef1b para o \emph{bucket} de \emph{assets} (\cd{R-09}).
   \item Rodar \cd{node scripts/e2e/rodar.mjs} contra o ambiente novo.
 \end{enumerate}
 
@@ -270,8 +270,8 @@ causa.
   falhar é MUDO: a tela abre, e mostra a ficha de OUTRA missão. Duas
   consequências caras: a professora não acha o painel da turma (o único caminho
   para congelar o debate e ver os resultados), e o botão \enquote{Nova
-  atividade} a leva a configurar uma linha em \cd{exp\_01\_activities} que a
-  missão dela nunca lê. Aconteceu com a exp-06 e de novo com a exp-08 (esta em
+  atividade} a leva a configurar uma linha em \cd{exp08ef1b\_activities} que a
+  missão dela nunca lê. Aconteceu com a exp06ef2b e de novo com a exp08ef4b (esta em
   2026-09-11), com o aviso já escrito no arquivo ao lado. A rede é
   \arq{apps/hub/lib/entre-redes/despachante-da-ficha.test.ts}, que reprova
   missão publicada sem ramo.\\
@@ -284,7 +284,7 @@ causa.
   \cd{codigo: bff-prefixo-recusado} no log do hub. O sintoma engana porque a
   rota EXISTE na api e responde bem por \cd{apiDoServidor}: a tela de resultados
   carrega (é \emph{Server Component}) e só os botões morrem. Método que falta no
-  BFF, por contraste, dá \textbf{405}. Visto na exp-08 em 2026-09-11: a
+  BFF, por contraste, dá \textbf{405}. Visto na exp08ef4b em 2026-09-11: a
   preparação, os dois botões do debate e o \enquote{zerar turma} respondiam 404
   em silêncio.\\
 \textbf{Um \emph{rollback} de versão \enquote{desfez-se} sozinho depois de um
@@ -491,7 +491,7 @@ testado no container} &
   (\arq{embed-experiencia.ts}) nomeando URL, causa e consequência --- antes o
   \cd{catch \{\}} engolia, e uma configuração errada virava bug de jogo. O
   \emph{sandbox} do \cd{iframe} é a evidência: sem o \emph{token}, o
-  suíte da exp-70 falha no primeiro passo.\\
+  suíte da app-70 falha no primeiro passo.\\
 \textbf{A câmera congela \emph{depois} de já ter andado} --- ao apertar Esc ou
   trocar de aba --- \textbf{e o aviso \enquote{clique pra voltar} não aparece} &
   O \cd{pointerlockchange} não foi registrado. No jogo de origem os
@@ -500,7 +500,7 @@ testado no container} &
   do \emph{handshake} com o hub, quando o \cd{load} já passou. Como o
   \cd{pausedHint} é o \textbf{único} \cd{controls.lock()} fora dos diálogos, a
   partida ficava sem caminho de volta. Corrigido em \arq{16-boot.js}
-  (2026-08-27); coberto pelo passo \emph{pausa-e-volta} da suíte da exp-70.\\
+  (2026-08-27); coberto pelo passo \emph{pausa-e-volta} da suíte da app-70.\\
 \zebra \textbf{Dois \emph{dev servers} da mesma experiência na mesma porta} &
   Um no \emph{host} e um no \emph{compose}. O navegador e o servidor podem
   alcançar \textbf{servidores diferentes} (\cd{localhost} resolve para um,
@@ -559,7 +559,7 @@ testado no container} &
 \textbf{A sala inteira caiu na bolha A} &
   \emph{Lock} consultivo por turma não tomado em \rota{POST /vila/sessoes}. A
   sala clica junto.\\
-\zebra \textbf{Partida da exp-70 recusada} &
+\zebra \textbf{Partida da app-70 recusada} &
   \cd{.strict()} pegou chave desconhecida, ou a varredura achou chave de nome, ou
   o \emph{payload} trouxe perfil. \textbf{Recusa é o comportamento correto};
   chave nova legítima precisa entrar no contrato \emph{de forma consciente}.\\
@@ -578,11 +578,11 @@ testado no container} &
 \textbf{Sobrescrita de classe do \emph{design system} não pega} &
   Peso igual: o CSS do pacote é injetado \emph{depois}. Usar \textbf{dois}
   seletores (\cd{.app-shell > .x}).\\
-\zebra \textbf{\cd{exp\_01\_exp\_01\_...\_pkey}} depois de uma migração de
+\zebra \textbf{\cd{exp08ef1b\_exp08ef1b\_...\_pkey}} depois de uma migração de
   renomeação &
   \cd{FOR ... IN SELECT} sobre o catálogo releu o que o laço alterou, ou
   \cd{RENAME CONSTRAINT} renomeou também o índice. Ver a migração de referência.\\
-\textbf{Na exp-03, o estudante digita a pergunta, aperta Enter e NADA acontece} ---
+\textbf{Na exp02em1b, o estudante digita a pergunta, aperta Enter e NADA acontece} ---
   a conversa parece viva, porque a fala de abertura do agente está na tela &
   Falta \cd{allow-forms} no \emph{sandbox} do \cd{iframe}: o \cd{Composer} do
   \emph{design system} é um \cd{<form>}. O manifesto tem de declarar
@@ -592,15 +592,15 @@ testado no container} &
 \zebra \textbf{Tela BRANCA dentro do \cd{iframe}, sem erro de console} &
   Uma rota de mutação devolveu a sessão \emph{crua} em vez do envelope
   \cd{\{ sessao \}}; o cliente leu \cd{undefined} e derrubou a árvore do React.
-  Toda rota de mutação da exp-03 devolve o envelope, e há teste fixando isso.\\
-\textbf{Na exp-03, \enquote{o Cientista não conseguiu responder}} em toda
+  Toda rota de mutação da exp02em1b devolve o envelope, e há teste fixando isso.\\
+\textbf{Na exp02em1b, \enquote{o Cientista não conseguiu responder}} em toda
   tentativa &
   Credencial do Vertex ausente ou \env{AI\_PROVIDER=vertex} sem ADC montado. A
   API traduz falha do provedor em \cd{cientista-indisponivel} (503) de propósito
   --- em desenvolvimento, use \env{AI\_PROVIDER=mock}. Confira também
   \cd{tokens\_gastos} da sessão: teto estourado dá a mesma cara para o estudante,
   com outra frase.\\
-\zebra \textbf{Na exp-03, a turma inteira vê o cronômetro parado} e ninguém
+\zebra \textbf{Na exp02em1b, a turma inteira vê o cronômetro parado} e ninguém
   consegue falar &
   \textbf{A largada não foi dada.} O relógio é da turma (\adrr{ADR-25}), e sai de
   \rota{/professor/entre-redes/2-serie/unidade-1/resultados}. É o motivo nº 1 de
@@ -717,7 +717,14 @@ testado no container} &
   O \cd{IntersectionObserver} do \emph{dwell} se refere ao \emph{iframe}:
   numa área larga o sinal central do motor infla em silêncio, e nada na tela
   denuncia. A condição é positiva --- \cd{fase === "explicabilidade"} E
-  \cd{passo === "relatorio"} ---, tudo o mais é aparelho.\\
+  \cd{passo === "relatorio"} ---, tudo o mais é aparelho.
+  \textbf{O inverso --- o feed em cinza preso em tela cheia, sem a moldura do
+  hub} --- é \cd{passo: "relatorio"} publicado por um relatório que já saiu da
+  tela: o desvio por fase o montou por um instante com as tarefas de antes do
+  fim da revelação. Desde a 1.4.1 o \cd{RelatorioComSaida} desfaz o \cd{passo}
+  ao desmontar e a casca recarrega as tarefas ao gravar o fim da revelação.
+  Diagnóstico: escutar as mensagens \cd{exp:estado} na página do hub --- a
+  última com \cd{passo} é a culpada.\\
 \textbf{O seed morre com \enquote{SEED\_SENHA não definida}} & Não é regressão:
   a senha das contas de demonstração saiu do fonte (\adrr{ADR-47}). Nos dois
   \emph{compose} ela já vem; no \emph{host}, ponha \cd{SEED\_SENHA} no
@@ -746,7 +753,7 @@ testado no container} &
   \cd{docker compose -f wso2/docker-compose.yml ps}.\\
 \zebra \textbf{O painel da atividade lista estudantes que não são meus} &
   Se a atividade tem turma, é bug --- abrir um chamado. Se ela NÃO tem
-  (\cd{exp\_01\_activities.turma\_id IS NULL}), é o comportamento das
+  (\cd{exp08ef1b\_activities.turma\_id IS NULL}), é o comportamento das
   atividades anteriores à \adrr{ADR-49}: elas valem para a escola inteira, e o
   painel diz isso numa faixa azul. Criar a atividade de novo, agora escolhendo a
   turma. \textbf{Antes da ADR-49 o sintoma era pior e mudo}: a consulta rodava
@@ -754,8 +761,8 @@ testado no container} &
   OUTRAS escolas do contrato.\\
 \textbf{Os perfis da Vila não mudam de lado depois de subir a
 \cd{VERSAO\_MAPEAMENTO}} &
-  Esperado: o que a constante nova recalcula é \cd{exp\_70\_perfis}, não a
-  cópia em \cd{exp\_01\_exp\_70\_perfis\_importados}, que é a que decide o
+  Esperado: o que a constante nova recalcula é \cd{app\_70\_perfis}, não a
+  cópia em \cd{exp08ef1b\_app\_70\_perfis\_importados}, que é a que decide o
   lado do feed. O painel do Ato 1 mostra quantos vieram de versão anterior;
   ``Trazer perfis da Vila do Lume'' atualiza, e NÃO desfaz quem o professor
   moveu de lado (\adrr{ADR-50}). Não há rotina automática, de propósito.\\
@@ -825,14 +832,14 @@ diferentes, e a segunda mente} &
   \emph{dispatch} com \cd{forcar} quando virarem \cd{ACTIVE}. O estado
   intermediário é seguro por desenho --- os \emph{bundles} já estão no
   \emph{bucket} e são inertes até a ativação.\\
-\zebra \textbf{Feed da exp-02 em \enquote{Carregando o vídeo\ldots} para
+\zebra \textbf{Feed da exp04ef1b em \enquote{Carregando o vídeo\ldots} para
 sempre, e Salvar/Curtir desabilitados junto} &
   \textbf{O \emph{bucket} de \emph{assets} do contrato está sem os 21
   \emph{mp4}} --- o \emph{upload} da mídia pesada é deliberado e não acontece
   no CI (\adrr{ADR-63}). Confirmar com
-  \cd{gcloud storage ls gs://\{contrato\}-assets/exp-02-unootube/videos/} e no
+  \cd{gcloud storage ls gs://\{contrato\}-assets/exp04ef1b/videos/} e no
   \emph{log} do \emph{load balancer}, onde os \cd{GET} do
-  \rota{/exp-02-unootube/videos/vNN.mp4} aparecem em 404. \textbf{Não é o
+  \rota{/exp04ef1b/videos/vNN.mp4} aparecem em 404. \textbf{Não é o
   \emph{bundle} nem a variável}: se a URL pedida traz o domínio de
   \emph{assets} e o caminho certo, a configuração está correta e o que falta é
   o arquivo. O sintoma engana porque o \cd{ShortsPlayer} não escuta \cd{error}
@@ -899,8 +906,9 @@ caiu} &
   configuração velha --- \cd{lsof -nP -iTCP:<porta> -sTCP:LISTEN} diz QUEM está
   lá, e o \cd{EADDRINUSE} no \emph{log} do processo novo é a confirmação.\\
 \textbf{A imagem gerada sai, e a voz responde \cd{403 PERMISSION\_DENIED}} &
-  ADC de \textbf{usuário} sem projeto de cota. A síntese da exp-07 não vai ao
-  \cd{aiplatform}: vai à Cloud Text-to-Speech, que exige o cabeçalho
+  ADC de \textbf{usuário} sem projeto de cota. A síntese (\cd{generateSpeech},
+  que nenhuma missão chama hoje) não vai ao \cd{aiplatform}: vai à Cloud
+  Text-to-Speech, que exige o cabeçalho
   \cd{x-goog-user-project}. O \emph{provider} o manda quando
   \env{VERTEX\_PROJECT\_ID} está definida --- confira a variável antes de
   suspeitar de papel IAM. Com \emph{service account} (produção) o sintoma não
@@ -1000,11 +1008,11 @@ escola} &
 \zebra \textbf{A suíte e2e reprova a geração, e o BANCO diz que ela ficou
 \cd{pronto} --- na mesma corrida} &
   A espera estava vigiando o alerta ANTIGO. Quando o botão que dispara a ação
-  fica DENTRO do alerta de erro anterior (o \enquote{Tentar de novo} da exp-92 é
+  fica DENTRO do alerta de erro anterior (o \enquote{Tentar de novo} da app-92 é
   o caso), o \cd{esperarOuFalharCedo} seguinte vê aquele alerta e aborta antes de
   a ação começar. Confirme pelo banco:
   \cd{SELECT ordem, status, tentativas, atualizado\_em FROM
-  exp\_92\_planos\_de\_periodo ORDER BY atualizado\_em DESC} --- \cd{tentativas}
+  app\_92\_planos\_de\_periodo ORDER BY atualizado\_em DESC} --- \cd{tentativas}
   incrementado e \cd{status = pronto} com carimbo DA corrida significa que o
   produto funcionou e o roteiro mentiu. É o pior falso negativo que existe,
   porque manda investigar o que está certo. O conserto é esperar o estado
@@ -1031,13 +1039,13 @@ estudantes não mudou} &
   versão da API é anterior à \adrr{ADR-92}: até 2026-09-10 sair da investigação
   congelava a sessão e voltar NUNCA reabria, o que tornava o retorno um
   \emph{no-op} para a turma inteira. Confirme com
-  \cd{SELECT fase, finished\_at FROM exp\_01\_runs WHERE activity\_id = ...}: fase
+  \cd{SELECT fase, finished\_at FROM exp08ef1b\_runs WHERE activity\_id = ...}: fase
   \cd{conclusao} com \cd{finished\_at} preenchido e a atividade em
   \cd{investigacao} é a assinatura do defeito.\\
 \textbf{Apertei \enquote{Pausar para Debate} e a tela do estudante não congelou}
 &
-  \textbf{Espere 5 segundos antes de investigar.} O congelamento da exp-08 não é
-  \emph{push}: é uma linha em \cd{exp\_08\_gates\_turma} que a tela lê por
+  \textbf{Espere 5 segundos antes de investigar.} O congelamento da exp08ef4b não é
+  \emph{push}: é uma linha em \cd{exp08ef4b\_gates\_turma} que a tela lê por
   \emph{polling} de 5\,s (\adrr{ADR-93}), e não há WebSocket de aplicação no
   Cloud Run. Passados dois ciclos, as causas em ordem: (1) o estudante está
   \textbf{antes} da decisão --- o \emph{polling} só roda de \cd{decisao} a
@@ -1045,9 +1053,9 @@ estudantes não mudou} &
   máquina não é tocado \textbf{de propósito}; (2) o estudante não tem turma (sem
   \cd{turma\_id} não há gate, senão ele ficaria preso sem quem o solte); (3) a
   aba está em segundo plano e o navegador desacelerou o \emph{timer}. Confirme
-  com \cd{SELECT etapa FROM exp\_08\_gates\_turma WHERE turma\_id = ...}: se está
+  com \cd{SELECT etapa FROM exp08ef4b\_gates\_turma WHERE turma\_id = ...}: se está
   \cd{debate} e a tela não congelou, é uma das três --- não é o botão.\\
-\zebra \textbf{O estudante da exp-08 diz que \enquote{não deixa escrever} a
+\zebra \textbf{O estudante da exp08ef4b diz que \enquote{não deixa escrever} a
 justificativa} &
   Dois casos, e o código HTTP separa. \textbf{422 \cd{dado-pessoal-no-texto}}: o
   filtro achou telefone, CPF, e-mail, CEP, cartão ou \cd{@perfil} e recusou
@@ -1057,7 +1065,7 @@ justificativa} &
   o \emph{nome} do padrão que casou (\cd{padroes: ["telefone"]}) e o
   \textbf{tamanho} do texto, nunca o trecho --- procurar o conteúdo no log é
   procurar o que a regra existe para não guardar.\\
-\textbf{A turma toda da exp-08 escolheu a mesma cláusula --- o painel está
+\textbf{A turma toda da exp08ef4b escolheu a mesma cláusula --- o painel está
 quebrado?} &
   Não. \textbf{As quatro cláusulas são válidas} e a distribuição é contagem, não
   acerto: unanimidade é um resultado possível, e o guia da aula trata dela como
@@ -1072,8 +1080,8 @@ Unooria} &
   IA do perfil professor esgotada no dia, provedor indisponível, ou a saída
   reprovada pela validação (balão acima de 60 palavras, termo proibido em tela,
   cardinalidade errada) --- e reprovar faz o modelo regerar até esgotar as
-  tentativas. Procure \cd{codigo: exp08-preparo-falhou} ou
-  \cd{exp08-preparo-sem-saldo} no log. \textbf{Nada disso bloqueia a aula}: o
+  tentativas. Procure \cd{codigo: exp08ef4b-preparo-falhou} ou
+  \cd{exp08ef4b-preparo-sem-saldo} no log. \textbf{Nada disso bloqueia a aula}: o
   banco curado é homologado, e o professor pode aprová-lo como está.\\
 \textbf{A suíte diz que a recusa de \emph{login} não aparece na tela --- e ela
 aparece} &
@@ -1161,6 +1169,133 @@ o que já SUBIU} &
   \cd{token\_format: access\_token} no \cd{auth@v2} e entregam o \emph{token}
   ao \cd{docker/login-action} --- um processo a menos no caminho do
   \emph{push}. Se voltar a acontecer, é transitório: re-rode o \emph{job}.\\
+\zebra \textbf{O chat do agente de IA do professor responde \enquote{O agente de
+  IA do professor não respondeu agora} a toda mensagem, e abrir conversa nova
+  dá 503} &
+  Antes de procurar defeito: \env{AGENTE\_\B PROFESSOR\_\B MODO=desligado}. É o
+  PADRÃO da api (ausente = \cd{desligado}, em qualquer ambiente) e é o que o
+  Terraform põe enquanto o Agent Engine não existe --- ele só nasce no segundo
+  \emph{apply}, depois de o CI publicar a imagem (Capítulo~\ref{cap:entrega}).
+  Com o modo certo, a linha \cd{agente-professor.\B indisponivel} traz o
+  \emph{status}: 403 é a SA da api sem o papel no engine; sem \emph{status}, o
+  ADC (em \emph{dev}, \cd{gcloud auth application-default login} e reiniciar a
+  api).\\
+\textbf{A pergunta fora do escopo não mostra resposta nenhuma: o balão do agente
+  fica vazio e o turno termina} &
+  A recusa NÃO vem em pedaços: é um evento final único, sem parcial antes
+  (não houve modelo principal), com \cd{custom\_metadata.fora\_do\_escopo}. A api
+  tem de emiti-la como \cd{delta} --- o \cd{DeduplicadorDeTexto} passa o final
+  inteiro quando não houve parcial. Quem \enquote{simplifica} o dedupe para
+  repassar só os parciais apaga a recusa da tela, sem erro em lugar nenhum. O
+  sintoma inverso, a resposta aparecendo DUAS vezes, é o mesmo arquivo: o final
+  agregado do ADK repete o texto dos parciais.\\
+\zebra \textbf{O professor cola um trecho de SQL, de HTML ou de código na
+  pergunta e a mensagem falha como \enquote{falha de rede}, sem linha no log da
+  api} &
+  Cloud Armor. A exclusão da regra 1106 tira só a 921150 (CR/LF) dos caminhos do
+  chat; os conjuntos de SQLi, XSS e os demais continuam valendo, e o 403 do LB não
+  carrega cabeçalho de CORS --- o navegador reporta falha de rede, e a
+  requisição morre antes do Cloud Run. Confira no log do LB
+  (\cd{enforced\B Security\B Policy}) qual assinatura casou. Antes da 1106, bastava um
+  Shift+Enter para dar o mesmo sintoma.\\
+\textbf{Uma conversa some da lista do professor sozinha} &
+  A sessão expirou no engine: o \rota{GET} da conversa recebe \enquote{não
+  existe}, apaga a linha de \cd{agente\_\B professor\_\B conversas} e responde 404 (a
+  linha \cd{agente-professor.\B sessao-sumiu}). Acontece se o engine recusou o
+  \cd{expire\_time} pedido e a conversa ficou mais que o TTL padrão sem mensagem,
+  ou se a renovação vem falhando (\cd{agente-professor.\B renovacao-falhou}: a SA
+  da api sem \cd{sessions.update}).\\
+\zebra \textbf{Apagar uma conversa do agente dá erro e ela continua na lista} &
+  De propósito: com o engine fora do ar, o \rota{DELETE} responde 503 e a linha
+  FICA, porque apagar só a linha deixaria a conversa guardada no engine sem
+  ninguém capaz de alcançá-la. Volte quando o engine responder.\\
+\textbf{O atendente da Ajuda fica mudo: a pessoa fala ou escreve, nada acontece,
+  e depois de 20\,s o modal diz \enquote{O atendente não respondeu}} &
+  O nosso endpoint de LLM deu erro ou passou de 10\,s até o primeiro byte, e o
+  \emph{vendor} \textbf{não avisa nada}: sem nova tentativa, sem evento
+  (\adrr{ADR-132}). Procure \cd{ajuda.turno} no horário. \textbf{Sem linha}, a
+  chamada nem passou da porta: \cd{ajuda.llm-sem-sessao} é 401 de \emph{token} de
+  sessão; sem nem isso, é o segredo (\env{AJUDA\_LLM\_SEGREDO} diferente do que
+  está no \emph{vendor}), a URL pública da configuração de LLM errada, ou o
+  caminho \rota{/ajuda/llm/} barrado no LB (IAP, \emph{allowlist} de IP, Cloud
+  Armor) ou com \emph{buffering}. \textbf{Com linha} e \cd{duracaoMs} acima de
+  10\,s, foi a demora. Sem nem o cumprimento da abertura, o problema é anterior
+  ao nosso LLM: confira \env{LIVEAVATAR\_CONTEXT\_ID} --- sem contexto válido o
+  avatar fica mudo, sem erro.\\
+\zebra \textbf{A resposta da Ajuda é cortada no meio da frase} &
+  O teto de saída foi comido pelo raciocínio: o \cd{gemini-3.7-flash} pensa 300
+  a 400 \emph{tokens} às vezes, mesmo com \cd{thinkingBudget: 0}, e o
+  pensamento sai do mesmo teto. O teto é \cd{MAXIMO\_DE\_TOKENS\_DA\_RESPOSTA =
+  2048} em \arq{ajuda.service.ts} --- com 400 cortava. Se alguém o baixou
+  \enquote{para a resposta ficar curta}, volte: a brevidade é do \emph{prompt}.
+  Trocou \env{VERTEX\_MODEL} ou \env{VERTEX\_THINKING\_BUDGET}? Meça de novo.\\
+\textbf{A primeira pergunta da Ajuda demora, e o atendente diz \enquote{Um
+  momento, estou vendo isso para você} antes de responder} &
+  Esperado na chamada FRIA: a base de cerca de 65 mil \emph{tokens} fora do
+  \emph{cache} levou 10,9\,s até o primeiro byte no \emph{spike}, além dos 10\,s
+  do \emph{vendor}. A fala de espera sai aos 7\,s justamente para segurar a
+  sala, e a resposta vem no mesmo turno. Se acontece em TODA pergunta, o
+  \emph{cache} implícito não está casando: alguém pôs algo variável antes da
+  base no \emph{prompt} (o papel tem de ficar no FIM; o teste de
+  \cd{PREFIXO\_DO\_PROMPT} cobre).\\
+\zebra \textbf{Abrir a Ajuda dá 503 \cd{AJUDA\_INDISPONIVEL} (\enquote{A Ajuda com
+  atendente não está disponível agora})} &
+  As \emph{envs} da Ajuda estão incompletas nesta \emph{stack}. Precisam estar
+  TODAS: \env{LIVEAVATAR\_API\_KEY}, \env{LIVEAVATAR\_CONTEXT\_ID},
+  \env{LIVEAVATAR\_LLM\_CONFIG\_ID}, \env{AJUDA\_LLM\_SEGREDO} e
+  \env{AJUDA\_SESSAO\_CHAVE} (os dois últimos com 32 ou mais caracteres; vazio
+  vale ausente). A api sobe normal sem elas, de propósito. \textbf{Não procure o
+  log \cd{ajuda-desligada}}: o comentário de \arq{env.ts} o promete, mas nenhum
+  código o emite (Capítulo~\ref{cap:observabilidade}). Os dois ids saem de
+  \arq{scripts/liveavatar-configurar.mjs}.\\
+\textbf{O item \enquote{Ajuda} não aparece no menu da conta} &
+  Em quem não é estudante, quase sempre é o produto \cd{ajuda} desligado ---
+  e ele \textbf{nasce desligado} (\cd{PRODUTOS\_\B DESLIGADOS\_\B POR\_\B PADRAO}, teste
+  interno): sem linha em \cd{disponibilidades}, vale desligado, ao contrário dos
+  outros produtos. O \cd{admin} liga em \rota{/unooria/recursos}, por escola ou
+  pela rede. Para o estudante, o item não existe por desenho.\\
+\zebra \textbf{Em \emph{dev}, a Ajuda funcionava e parou depois de reiniciar o
+  túnel} &
+  O \emph{vendor} precisa de URL PÚBLICA para chamar \rota{/ajuda/llm/}, e em
+  \emph{dev} local ela é um túnel (\cd{cloudflared}); túnel rápido muda de URL a
+  cada vez, e a configuração de LLM no \emph{vendor} continua apontando para a
+  antiga --- o avatar abre e fica mudo. O \emph{vendor} não tem edição
+  documentada: apague a configuração \cd{unooria-ajuda-<ambiente>} no painel
+  dele (\textbf{não} o segredo antes dela, que a quebra sem aviso), rode
+  \arq{scripts/liveavatar-configurar.mjs <ambiente> <url-nova>}, troque
+  \env{LIVEAVATAR\_LLM\_CONFIG\_ID} pelo id impresso e reinicie a api. Rodado com
+  a configuração ainda lá, o \emph{script} avisa que ela aponta para outra URL.\\
+\textbf{O modal da Ajuda diz que acabaram os minutos de hoje bem antes dos 30} &
+  Sessão sem \cd{fim} conta o TETO inteiro: modal fechado sem o aviso chegar à
+  api (aba morta, rede caída) deixa a linha aberta. A abertura seguinte fecha as
+  abertas --- com o tempo real se a sala ainda estava no prazo, com o teto se já
+  tinha passado ---, então o saldo se acerta sozinho na próxima tentativa, menos
+  o que foi contado pelo teto. É a falha para o lado do custo, de propósito.\\
+\zebra \textbf{O Jornal da Escola diagrama SEMPRE pelo modelo automático, ou a
+  legenda da A Seleção fica SEMPRE \enquote{Não avaliado}, com o Vertex no ar e
+  saldo de sobra} &
+  Procure \cd{exp04ef1b-\B{}diagramacao-\B{}modelo} e
+  \cd{exp07ef1b-\B{}canal-a-\B{}nao-\B{}avaliado} no \emph{log}. Com o motivo
+  \cd{provedor-\B{}falhou} em TODA chamada, o teto de saída foi comido pelo
+  raciocínio: o \cd{gemini-3.7-flash} pensa cerca de 28 \emph{tokens} mesmo com
+  \cd{thinkingBudget: 0}, e com 32 ou 64 a resposta voltava \cd{MAX\_TOKENS}
+  sem texto. Não há sintoma na tela: a reserva é uma saída legítima. As duas
+  chamadas ficaram sem \cd{maxTokens} (\adrr{ADR-148}); se alguém o devolveu
+  \enquote{para economizar}, tire. Com \cd{tempo-esgotado}, quem cortou foi o
+  teto de cerca de 6\,s; com \cd{sem-saldo}, a quota do estudante. A e2e do
+  Jornal (\cd{origem: "ia"} no \rota{POST /jornal-escola/\B{}diagramar}) e a da A
+  Seleção (o Canal A antes da enquete) ficam vermelhas neste caso.\\
+\textbf{A medição de acessibilidade (ou uma suíte longa) acusa
+  \enquote{Internal Server Error} e \enquote{\cd{<html>} sem \cd{lang}} em
+  dezenas de telas, e os \emph{logins} seguintes falham com \enquote{usuário ou
+  senha incorretos}} &
+  Não é o produto. Duas causas já medidas (2026-10-13, \adrr{ADR-162}): a VM do
+  Docker (cerca de 10\,GB) esgotou com pg, api, hub e cinco experiências de pé
+  --- \cd{docker ps} não responde, e a api devolve \cd{erro-interno} no
+  \emph{login} porque perdeu o banco ---; ou o Turbopack do \cd{next dev}
+  registrou erro interno e apagou o próprio \emph{cache} (está no \emph{log} do
+  hub). A página de erro é texto puro, e o axe a mede como se fosse a tela.
+  Meça por lote, só com as experiências do lote de pé.\\
 \bottomrule
 \end{tabularx}
 
@@ -1179,15 +1314,14 @@ Contínuo (fase 0 do Capítulo~\ref{cap:observabilidade}, \textbf{pendente})
   ferramenta de professor. Com a fase 0: o \emph{smoke} do \cd{deploy.yml}
   faz os três e notifica se falhar.\\
 Antes da primeira aula de cada contrato & Conferir \env{ASSETS\_BUCKET} e o
-  \env{ASSETS\_DRIVER=gcs} do \emph{environment}, e mandar o professor preparar
-  a mídia da exp-07 no painel da turma. Nada falha se ninguém fizer: a missão
-  cai na transcrição e na ilustração procedural, e o \emph{deploy} fica verde
-  (\cd{R-20}). O precedente é a exp-02, que subiu com o \emph{bucket} vazio.\\
+  \env{ASSETS\_DRIVER=gcs} do \emph{environment}. Nada falha se estiverem
+  errados, e o \emph{deploy} fica verde: o precedente é a exp04ef1b, que subiu
+  com o \emph{bucket} vazio e ficou impossível de concluir.\\
 \zebra \textbf{Semanal, e após \emph{deploy}} & Error Reporting: erro \textbf{novo}
   na revisão que acabou de receber tráfego, e erro de cliente novo por
   \cd{(expId, versao)} --- reverter pelo manifesto antes de investigar.\\
 Semanal & Taxa de 5xx do Cloud Run; conexões ativas do Cloud SQL;
-  contagem de \cd{status = 'aberta'} em \cd{exp\_70\_sessoes} (partidas
+  contagem de \cd{status = 'aberta'} em \cd{app\_70\_sessoes} (partidas
   perdidas); planos em \cd{status = 'erro'}.\\
 Mensal & \textbf{Contagem da partição \cd{DEFAULT} de telemetria} --- encher
   significa que faltou criar partição (\cd{R-08}); volume de
@@ -1218,12 +1352,12 @@ Anual, ou por \emph{release} & Revisar as ADRs cujo gatilho de reavaliação pod
 SELECT count(*) FROM particoes.telemetria_eventos_default;
 
 -- Partidas perdidas (aba fechada no meio) por turma
-SELECT turma_id, count(*) FROM exp_70_sessoes
+SELECT turma_id, count(*) FROM app_70_sessoes
  WHERE status = 'aberta' AND aberta_em < now() - interval '1 day'
  GROUP BY turma_id ORDER BY 2 DESC;
 
 -- Planos que falharam
-SELECT id, serie, disciplina, tentativas, erro FROM exp_90_planos
+SELECT id, serie, disciplina, tentativas, erro FROM app_90_planos
  WHERE status = 'erro' ORDER BY updated_at DESC;
 
 -- Consumo de IA no dia

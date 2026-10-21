@@ -1,3 +1,4 @@
+import type { AtribuicaoDoConsumo } from "./consumo-de-ia";
 export interface AiRequest {
   system: string;
   user: string;
@@ -74,10 +75,21 @@ export interface AiJsonRequest<T> {
    * É opcional porque `generateJson` devolve `T` e nem todo consumidor tem
    * quota. **Mas quem chama `QuotaService.temSaldo` TEM de passar isto** — sem
    * ele não há de onde tirar o número, e a alternativa é o que o repo fazia:
-   * a exp-92 não debitava nada e a exp-07 debitava 1.500 fixo, chute que não
+   * a app-92 não debitava nada e a exp07ef1b debitava 1.500 fixo, chute que não
    * acompanha prompt nem modelo. Ver ADR-74.
    */
-  aoUsarTokens?: (tokens: number) => void;
+  aoUsarTokens?: (tokens: number, divisao?: DivisaoDeTokens) => void;
+}
+
+/**
+ * A divisão do que o vendor cobrou, quando ele a informa. `saida` é o total
+ * MENOS a entrada — inclui o raciocínio, que o `candidatesTokenCount` não
+ * conta e a tarifa de saída cobra (ADR-161). Quem só precisa do total (a
+ * quota) ignora o segundo argumento.
+ */
+export interface DivisaoDeTokens {
+  entrada: number;
+  saida: number;
 }
 
 /**
@@ -123,10 +135,50 @@ export interface AiConversaRequest {
   maxVoltas?: number;
   /** Tentativas com reforço do erro anterior (default 3). */
   tentativas?: number;
+  /**
+   * Teto de UMA chamada ao vendor, em ms (opcional). Estourado, a chamada é
+   * abortada e REPETIDA (até 3 vezes por volta): a fila da capacidade
+   * compartilhada do Vertex prende uma requisição por 50–80 s em horário de
+   * pico enquanto a seguinte sai em 3 s (medido no dev em 2026-10-19).
+   */
+  tetoPorChamadaMs?: number;
+  /**
+   * Prazo do turno INTEIRO, em ms (opcional): passado, nenhuma chamada nova
+   * começa e o turno vira `ErroDeGeracao`. Existe para caber no teto do
+   * cliente — acima dele o navegador desiste e a resposta chega a ninguém.
+   */
+  prazoMs?: number;
 }
 
 /**
- * Proporção da imagem, neutra de vendor. Opcional porque a exp-01 — a única
+ * Uma conversa SEM ferramentas cuja resposta sai aos pedaços, à medida que o
+ * modelo escreve. Existe por causa da Ajuda (ADR-132): quem lê a resposta é
+ * o avatar do LiveAvatar, que pede `stream: true` e desiste se o primeiro byte
+ * demorar mais de 10 s — e a fala começa pelo primeiro pedaço, não pelo último.
+ *
+ * Sem `ferramentas` e sem `validar` de propósito: num stream o texto já saiu
+ * quando a validação poderia recusá-lo. Quem precisa recusar a fala usa
+ * `conversar`.
+ */
+export interface AiFluxoRequest {
+  system: string;
+  /** A conversa até aqui, em ordem. `pessoa` é quem fala com o modelo. */
+  historico: Array<{ papel: "pessoa" | "agente"; texto: string }>;
+  maxTokens?: number;
+  temperatura?: number;
+  /** Abortar corta a chamada ao vendor — quem lê foi embora. */
+  sinal?: AbortSignal;
+}
+
+/**
+ * O que o fluxo emite: pedaços de texto e, por último, UM `fim` com o total.
+ * `fim` sai também quando o vendor parou por teto (`finishReason`); erro de
+ * transporte é exceção, não evento.
+ */
+export type AiFluxoEvento = { tipo: "texto"; texto: string } | { tipo: "fim"; resultado: AiResult };
+
+/**
+ * Proporção da imagem, neutra de vendor. Opcional porque a exp08ef1b — a única
  * consumidora até aqui — depende do 4:5 que o `AssetsService` normaliza; quem
  * precisa de outro formato pede, e não recorta depois (o recorte joga fora a
  * composição que o modelo decidiu para o formato errado).
@@ -135,6 +187,14 @@ export type AiProporcao = "1:1" | "2:3" | "3:2" | "3:4" | "4:3" | "4:5" | "5:4" 
 
 export interface AiImagemOpcoes {
   proporcao?: AiProporcao;
+  /** O que a geração cobrou (o `usageMetadata` da resposta). Só o medidor passa. */
+  aoUsarTokens?: (tokens: number, divisao?: DivisaoDeTokens) => void;
+  /**
+   * A quem o painel de custos atribui a imagem (ADR-161), quando NÃO é o que a
+   * rota diz — as imagens do banco padrão do Júri, custo da plataforma e não da
+   * turma. Ausente = o contexto da requisição. Só o medidor lê.
+   */
+  atribuicao?: AtribuicaoDoConsumo;
 }
 
 /**
@@ -204,4 +264,6 @@ export interface AiProvider {
    * que foi pago, e é ele que um teto de custo por sessão precisa contar.
    */
   conversar(req: AiConversaRequest): Promise<AiResult>;
+  /** Conversa sem ferramentas, devolvida aos pedaços (ver `AiFluxoRequest`). */
+  conversarEmFluxo(req: AiFluxoRequest): AsyncIterable<AiFluxoEvento>;
 }

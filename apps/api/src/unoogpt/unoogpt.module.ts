@@ -1,11 +1,14 @@
 import { Module } from "@nestjs/common";
+import { EvidenciasModule } from "../evidencias/evidencias.module";
+import { CanalADaTempestade } from "./canal-a.service";
 import { UnoogptAgregadoController } from "./unoogpt-agregado.controller";
 import { UnoogptTurmasController } from "./unoogpt-turmas.controller";
 import { UnoogptController } from "./unoogpt.controller";
 import { UnoogptService } from "./unoogpt.service";
+import { PodcastDaExp02em1b } from "./podcast-fonte";
 
 /**
- * exp-03-unoogpt — a Missão Tempestade.
+ * exp02em1b — a Missão Tempestade.
  *
  * `PrismaModule`, `AuthModule` e `AiModule` são `@Global`: não se importam aqui
  * (ver o comentário em `bemestar.module.ts`).
@@ -15,7 +18,8 @@ import { UnoogptService } from "./unoogpt.service";
  * Transcrição de uma criança por descuido.
  */
 @Module({
+  imports: [EvidenciasModule],
   controllers: [UnoogptController, UnoogptTurmasController, UnoogptAgregadoController],
-  providers: [UnoogptService],
+  providers: [UnoogptService, CanalADaTempestade, PodcastDaExp02em1b],
 })
 export class UnoogptModule {}

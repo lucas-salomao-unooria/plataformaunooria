@@ -1,5 +1,5 @@
 /**
- * O BANCO CURADO DEFAULT da exp-08-manifesto-ia — o conteúdo homologado da
+ * O BANCO CURADO DEFAULT da exp08ef4b — o conteúdo homologado da
  * Unooria, e o que a missão usa quando o professor não personaliza nada.
  *
  * Ele não é fallback de emergência: é o padrão. A tela de preparo do professor
@@ -17,7 +17,7 @@
  *
  * A copy sai do sheet congelado da missão (passada 2, `06-copy-strings-revisada`)
  * e os textos do banco default, do sheet da passada 1. Rótulo visível que muda
- * aqui muda também em `apps/experiencias/exp-08-manifesto-ia/src/lib/textos.ts`
+ * aqui muda também em `apps/experiencias/exp08ef4b/src/lib/textos.ts`
  * — a suíte e2e casa por texto exato, e trocar só um lado a derruba com timeout.
  */
 
@@ -27,7 +27,7 @@
  * Um questionamento que o estudante dispara contra o EduPredict IA.
  *
  * `replicaIa` é a resposta que a máquina dá, e ela mora no SERVIDOR pelo mesmo
- * motivo do feed da exp-06: corrigir uma palavra da copy não pode exigir
+ * motivo do feed da exp06ef2b: corrigir uma palavra da copy não pode exigir
  * republicar um caminho imutável no bucket. Ela não é gabarito — o estudante
  * vai LER as três de qualquer jeito —, mas também não vai ao bundle antes da
  * hora, porque ver a réplica antes de perguntar desmonta a cena.
@@ -218,7 +218,7 @@ export const PRINCIPIOS_EM_DISPUTA =
 /**
  * O episódio de fechamento, em TEXTO.
  *
- * Mesma exceção declarada da exp-06: a locução de 4 minutos do brief de assets
+ * Mesma exceção declarada da exp06ef2b: a locução de 4 minutos do brief de assets
  * (`aud-manifesto-02`) ainda não foi gravada, e a transcrição integral já é
  * requisito de acessibilidade (RNF-A11Y — sala sem fone de ouvido). Quando o
  * MP3 existir ele entra pelo bucket de mídia, e este texto continua sendo a

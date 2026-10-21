@@ -57,6 +57,10 @@ export function SiteEntreRedes() {
           aparece no celular, onde "Quero conhecer a solução" não cabe ao lado
           do menu. */}
       <button className="floating-cta" type="button" aria-haspopup="dialog" aria-controls="cadastro-dialog" aria-label={ROTULO_DO_CONVITE} data-abrir-cadastro=""><span className="cta-label-full">{ROTULO_DO_CONVITE}</span><span className="cta-label-short" aria-hidden="true">Conhecer</span></button>
+      {/* ACRÉSCIMO ao porte (H11.1.2): quem chega pelo site e já tem conta
+          entra daqui, sem saber o endereço da tela de entrada. `<a>` e não
+          `next/link`, como o resto da marcação 1:1. */}
+      <a className="header-entrar" href="/login">Entrar</a>
       <button className="menu-button" id="menu-open" aria-expanded="false" aria-label="Abrir navegação" aria-haspopup="dialog" aria-controls="index-dialog"><span className="menu-label">Explorar</span> <span className="menu-symbol" aria-hidden="true">
       </span>
       </button>
@@ -674,6 +678,12 @@ export function SiteEntreRedes() {
       <a className="footer-brand" href="#inicio" aria-label="Unooria — voltar ao início">
       <img src="/site/assets/c391a425254523c1.webp" width="600" height="129" alt="Unooria" loading="lazy" />
       </a>
+      {/* ACRÉSCIMO ao porte (H11.1.2): os documentos legais a um clique de
+          qualquer ponto do site. */}
+      <nav className="footer-legal" aria-label="Documentos legais">
+      <a href="/privacidade">Política de Privacidade</a>
+      <a href="/termos">Termos de Uso</a>
+      </nav>
       <div className="footer-note">ENTRE REDES · Educação Digital e Midiática · © 2026 Unooria</div>
       <button id="back-top">Voltar ao início <span className="arrow" aria-hidden="true">↑</span>
       </button>

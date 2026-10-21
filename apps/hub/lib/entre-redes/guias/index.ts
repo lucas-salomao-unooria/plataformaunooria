@@ -1,11 +1,13 @@
-import { GUIA_EXP_01 } from "./exp-01-instanooria";
-import { GUIA_EXP_02 } from "./exp-02-unootube";
-import { GUIA_EXP_03 } from "./exp-03-unoogpt";
-import { GUIA_EXP_04 } from "./exp-04-o-que-a-foto-conta";
-import { GUIA_EXP_06 } from "./exp-06-rastro-boato";
-import { GUIA_EXP_07 } from "./exp-07-o-eco-no-grupo";
-import { GUIA_EXP_08 } from "./exp-08-manifesto-ia";
-import { GUIA_EXP_70 } from "./exp-70-vila-do-lume";
+import { GUIA_EXP08EF1B } from "./exp08ef1b";
+import { GUIA_EXP02EM1B } from "./exp02em1b";
+import { GUIA_EXP01EF1B } from "./exp01ef1b";
+import { GUIA_EXP04EF1B } from "./exp04ef1b";
+import { GUIA_EXP05EF1B } from "./exp05ef1b";
+import { GUIA_EXP06EF1B } from "./exp06ef1b";
+import { GUIA_EXP06EF2B } from "./exp06ef2b";
+import { GUIA_EXP07EF1B } from "./exp07ef1b";
+import { GUIA_EXP08EF4B } from "./exp08ef4b";
+import { GUIA_APP_70 } from "./app-70-vila-do-lume";
 import type { GuiaDaAula } from "./tipos";
 
 /**
@@ -22,14 +24,16 @@ import type { GuiaDaAula } from "./tipos";
  */
 const GUIAS: ReadonlyMap<string, GuiaDaAula> = new Map(
   [
-    GUIA_EXP_01,
-    GUIA_EXP_02,
-    GUIA_EXP_03,
-    GUIA_EXP_04,
-    GUIA_EXP_06,
-    GUIA_EXP_07,
-    GUIA_EXP_08,
-    GUIA_EXP_70,
+    GUIA_EXP08EF1B,
+    GUIA_EXP02EM1B,
+    GUIA_EXP01EF1B,
+    GUIA_EXP04EF1B,
+    GUIA_EXP05EF1B,
+    GUIA_EXP06EF1B,
+    GUIA_EXP06EF2B,
+    GUIA_EXP07EF1B,
+    GUIA_EXP08EF4B,
+    GUIA_APP_70,
   ].map((guia) => [
     guia.expId,
     guia,

@@ -1,0 +1,358 @@
+/**
+ * Estilos locais da exp04ef1b — só o que o design system não dá: o layout da
+ * tela de 375×812 e as compensações MARCADAS `(b) COMPENSAÇÃO` (medida,
+ * altura, posição). Botão, aba, gaveta, balão, página, bloco: vêm do pacote.
+ *
+ * **Cor NUNCA se escreve à mão**: sai dos tokens da seção que está falando —
+ * `--unooria-*` na redação e no desafio final, `--unv-*` só dentro do post,
+ * `--unc-*` só dentro da mensagem. As três famílias estão SEPARADAS por seção
+ * deste arquivo, e a fronteira é a PEÇA (ADR-117): token de uma seção fora da
+ * peça dela não quebra nada, só some — e é o defeito mais difícil de ver.
+ * Os `var(--x, fallback)` existem só para a tela não ficar transparente antes
+ * de a folha do DS carregar.
+ *
+ * Sobrescrever classe do DS exige DOIS seletores (`.jornal .x`): o CSS do pacote
+ * é injetado pelo módulo do componente, DEPOIS deste arquivo no grafo de
+ * importação — com peso igual, quem ganha é sempre o DS.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  /* O aparelho é desenhado pelo HUB (`DispositivoFrame`, pelo `viewport` do
+     manifesto). Aqui dentro só se preenche os 375×812 que ele reserva. */
+  background: var(--unooria-color-neutral-50, #fff);
+  color: var(--unooria-color-neutral-950, #22272a);
+  font-family: var(--unooria-font-sans, system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═════════════════════════════════════════════════ a redação (unooria) */
+
+/* `100%` e não `100dvh`: dentro do iframe, `dvh` se refere à janela do
+   navegador, não ao recorte que o hub reservou. A raiz é o contexto de posição
+   dos avisos. */
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.esqueleto__topo {
+  height: 64px;
+  border-bottom: 1px solid var(--unooria-color-neutral-150, #e4e8e9);
+}
+
+/* Uma tela: topo fixo, corpo que rola (o `ScrollBar` do DS — a redação É a
+   seção `unooria`, então a rolagem é a dela, não a do sistema) e a ação
+   principal presa embaixo. */
+.tela {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.tela--centrada {
+  align-items: center;
+  justify-content: center;
+  gap: var(--unooria-spacing-s, 16px);
+  padding: var(--unooria-spacing-m, 24px);
+}
+
+.tela__topo {
+  flex: none;
+  padding: var(--unooria-spacing-xs, 12px) var(--unooria-spacing-s, 16px);
+}
+
+.tela__faixa {
+  flex: none;
+  padding: var(--unooria-spacing-xxs, 8px) var(--unooria-spacing-s, 16px) 0;
+}
+
+.rolagem {
+  flex: 1;
+  min-height: 0;
+}
+
+.tela__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-s, 16px);
+  padding: var(--unooria-spacing-s, 16px);
+}
+
+.tela__acao {
+  flex: none;
+  padding: var(--unooria-spacing-xs, 12px) var(--unooria-spacing-s, 16px) var(--unooria-spacing-s, 16px);
+  border-top: 1px solid var(--unooria-color-neutral-150, #e4e8e9);
+}
+
+.tela__mensagem,
+.tela__texto,
+.tela__indicador,
+.tela__destaque {
+  margin: 0;
+  font-size: var(--unooria-size-body-s, 16px);
+  line-height: 1.5;
+}
+
+.tela__mensagem {
+  color: var(--unooria-color-neutral-700, #536167);
+}
+
+/* O indicador factual RECUA (a copy: "indicador neutro objetivo que recua"):
+   menor e mais claro que os balões dos leitores, que saltam primeiro. */
+.tela__indicador {
+  font-size: var(--unooria-size-body-xs, 14px);
+  color: var(--unooria-color-neutral-700, #536167);
+}
+
+.tela__destaque {
+  font-weight: var(--unooria-weight-semibold, 600);
+}
+
+/* ── a mesa em abas ─────────────────────────────────────────────── */
+
+.mesa__abas {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* O painel da aba ocupa o resto da tela e deixa o `ScrollBar` rolar dentro
+   dele. O recuo do `.unooria-tab-panel` sai: quem recua é o conteúdo. */
+.jornal .mesa__painel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+}
+
+.mesa__pautas {
+  display: grid;
+  gap: var(--unooria-spacing-s, 16px);
+  margin: 0;
+  padding: var(--unooria-spacing-s, 16px);
+  list-style: none;
+}
+
+.mesa__capa {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-s, 16px);
+  padding: var(--unooria-spacing-s, 16px);
+}
+
+.mesa__status {
+  min-height: 24px;
+  margin: 0;
+  font-size: var(--unooria-size-body-xs, 14px);
+  color: var(--unooria-color-neutral-700, #536167);
+}
+
+.mesa__status:empty {
+  display: none;
+}
+
+/* ── a gaveta ───────────────────────────────────────────────────── */
+
+.gaveta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-s, 16px);
+}
+
+.gaveta__pistas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-xxs, 8px);
+}
+
+/* ── os leitores, a Chave, o comparativo ────────────────────────── */
+
+.leitores,
+.chave__bandeja {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-xs, 12px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* O Montador: cada vaga cheia é uma coluna — a ordem, o bloco, os dois
+   cartões e o "se falhar". A vaga ocupa a largura da calha (o `PuzzleTrack`
+   empilha as vagas abaixo de 672px). */
+.chave__vaga,
+.chave__escolhas,
+.chave__bandeja-e-acao,
+.simulacao__materia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-xs, 12px);
+}
+
+.chave__ordem {
+  margin: 0;
+  font-size: var(--unooria-size-body-xs, 14px);
+  font-weight: var(--unooria-weight-semibold, 600);
+  color: var(--unooria-color-neutral-700, #536167);
+}
+
+.simulacao__materia {
+  gap: var(--unooria-spacing-s, 16px);
+}
+
+/* Os pares de decisão (Confio | Não confio, Publicar | Não publicar, Repassar
+   | Não repassar): dois `Button` do DS lado a lado, com o MESMO peso — a
+   grade é só a posição. Abaixo de 320px úteis, empilham. */
+.julgar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--unooria-spacing-xs, 12px);
+  margin-top: var(--unooria-spacing-xs, 12px);
+}
+
+.julgar__marcado {
+  margin: var(--unooria-spacing-xs, 12px) 0 0;
+}
+
+.comparativo__paginas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--unooria-spacing-xs, 12px);
+}
+
+.desafio__boato {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-xxs, 8px);
+  margin: 0;
+}
+
+/* ── os avisos globais ─────────────────────────────────────────── */
+
+/* Posição, não aparência: o `Snackbar` é inline no pacote, e aqui ele flutua
+   sobre a base da tela, acima da ação principal, sem empurrar o conteúdo. */
+.jornal__avisos {
+  position: absolute;
+  right: var(--unooria-spacing-s, 16px);
+  bottom: 96px;
+  left: var(--unooria-spacing-s, 16px);
+  z-index: 20;
+}
+
+/* ── (b) COMPENSAÇÃO: alvos de 64px na tela da criança ─────────────
+   LACUNA: o `Button` da seção para em `lg` = 52px, as abas em `lg` = 56px e a
+   opção do `RadioGroup` tem o tamanho do texto (4px de recuo). A copy e o RNF
+   de acessibilidade da missão pedem alvo ≥ 64px na tela de uma criança de 9
+   anos — o que o `RevealClue`, o `PuzzleBlock` e o `Snackbar` já dão. FAZ:
+   só a altura (e o recuo que a acompanha); cor, borda e raio continuam os do
+   DS. MORRE quando o pacote publicar um tamanho de toque infantil (pedido ao
+   `storybook-unooria`, registrado no `AGENTS.md` desta pasta). */
+.jornal .acao-crianca.unooria-button {
+  height: auto;
+  min-height: 64px;
+}
+
+.jornal .mesa__abas .unooria-tab {
+  height: 64px;
+  min-height: 64px;
+}
+
+/* ── (b) COMPENSAÇÃO: as duas abas da mesa cabem nos 375px ─────────
+   LACUNA: com `fullWidth`, o `Tab` do DS ainda não deixa o rótulo quebrar
+   (`nowrap` e largura mínima do conteúdo): "Pautas da Semana" + "Primeira
+   Página 0/3" somavam 511px numa lista de 375 (medido em 2026-09-27), a barra
+   rolava para o lado e uma das abas ficava cortada — com o contador de vagas
+   escondido. FAZ: as duas dividem a largura e o rótulo quebra em duas linhas
+   dentro dos 64px. MORRE quando o `Tab` do pacote quebrar o rótulo com
+   `fullWidth` (pedido ao `storybook-unooria`, registrado no `AGENTS.md`). */
+.jornal .mesa__abas .unooria-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: normal;
+}
+
+.jornal .mesa__abas .unooria-tab * {
+  white-space: normal;
+}
+
+.jornal .opcoes-amplas .unooria-radio {
+  display: flex;
+  align-items: center;
+  min-height: 64px;
+  padding: var(--unooria-spacing-xs, 12px);
+}
+
+/* Ainda a mesma compensação, para os pares do Montador ("A pista passa" |
+   "A pista falha", "Não publico" | "Olho a próxima pista"): no
+   `direction="horizontal"` as duas opções dividem a linha (e quebram o rótulo
+   dentro dos 64px) em vez de ficarem do tamanho do texto. Só posição e largura. */
+.jornal .opcoes-amplas .unooria-radio-group--horizontal .unooria-radio {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+/* ════════════════════════════ o post de rede social (unoovista, SÓ a peça) */
+
+/* A moldura do post dentro da gaveta: o cartão do Unoovista vai de ponta a
+   ponta num app, e aqui ele é uma peça sobre a redação — um fio da própria
+   seção o separa do fundo. Nenhuma barra, doca ou fundo do app. */
+.peca-unoovista {
+  overflow: hidden;
+  border: 1px solid var(--unv-color-border-subtle, #dfddeb);
+  border-radius: 12px;
+}
+
+/* O slide de TEXTO no lugar da fotografia — conteúdo dentro da moldura que o
+   `PostCard.Media` dá (sem `src`, `children` é o slide), não controle. */
+.post-desenhado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+  background: var(--unv-color-background-secondary, #f7f6fa);
+}
+
+.post-desenhado__texto {
+  margin: 0;
+  color: var(--unv-color-text-primary, #22272a);
+  font-family: var(--unv-font-sans, system-ui, sans-serif);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+}
+
+/* ═══════════════════════════ a mensagem encaminhada (unoochat, SÓ a peça) */
+
+/* O contêiner LAVANDA da mensagem: o balão recebido é branco e foi calibrado
+   para o fundo do app, e sobre o branco da redação ele some. É o retângulo do
+   tamanho da peça, pintado com o `--unc-color-surface-base` — não o
+   `ChatWallpaper` (que é o FUNDO do app, e a peça não traz o fundo, ADR-117). */
+.peca-unoochat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unc-spacing-xxs, 6px);
+  padding: var(--unc-spacing-m, 12px) var(--unc-spacing-l, 16px);
+  border-radius: 12px;
+  background: var(--unc-color-surface-base, #efeef5);
+}

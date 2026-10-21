@@ -9,7 +9,7 @@ import { PayloadVilaV1 } from "./contrato";
 import { VilaService } from "./vila.service";
 
 /**
- * Rotas do ESTUDANTE da exp-70-vila-do-lume.
+ * Rotas do ESTUDANTE da app-70-vila-do-lume.
  *
  * O gabarito da missão "A Noite Longa" (`legitima` por cartão) fica no servidor:
  * o cliente manda qual opção escolheu, a api corrige (regra inviolável nº 3). E

@@ -46,7 +46,7 @@ import {
 } from "./contrato-de-rotas";
 
 /**
- * Rotas do PROFESSOR da exp-92-plano-de-ensino.
+ * Rotas do PROFESSOR da app-92-plano-de-ensino.
  *
  * Identidade (professor, escola) SEMPRE do token, nunca do body: o plano é
  * autoral, e um `professorId` que viesse do corpo deixaria qualquer professor
@@ -64,7 +64,7 @@ const OrdemParam = z.object({ id: z.string().uuid(), ordem: z.coerce.number().in
 /* O interruptor da rede (ADR-87), por CLASSE: rota nova desta ferramenta nasce
    coberta. A exceção é declarada com `@SemDisponibilidade()`, e só vale para
    apagar os próprios dados. */
-@Recurso("exp-92-plano-de-ensino")
+@Recurso("app-92-plano-de-ensino")
 export class PlanejamentoController {
   constructor(private readonly planejamento: PlanejamentoService) {}
 

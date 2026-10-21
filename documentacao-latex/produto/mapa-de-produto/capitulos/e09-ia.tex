@@ -1,0 +1,203 @@
+% ===========================================================================
+%  E09 — Inteligência artificial com limites
+% ===========================================================================
+\chapter{E09 \textperiodcentered{} Inteligência artificial com limites}
+\label{ep:e09}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] Usar IA onde ela poupa trabalho do professor ou enriquece a
+    missão --- sem que ela decida nota, conheça a criança ou seja condição
+    para a aula acontecer. A única vez em que ela dá um nível é a exceção
+    declarada da A Seleção, e quem decide continua sendo o professor
+    (\id{H09.3.1}).
+  \item[Para quem] Professor e Estudante (quem usa); rede (quem precisa
+    confiar).
+  \item[Valor] IA na escola pública só é aceitável com garantia e com custo
+    previsível. Este épico é essa garantia.
+  \item[Estado] \parcial{} --- as garantias estão prontas; duas missões ainda
+    usam IA fora do limite diário.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}X X@{}}
+\toprule
+\headrow \thd{Onde} & \thd{O que a IA faz} & \thd{O que ela nunca faz}\\
+\midrule
+Preparo da aula & Adapta legendas, mensagens, casos, notícias e mídia ao tema
+  do professor (Foto Conta, Manifesto, Unoovista, Quem mandou isso?, A Seleção
+  --- o tema, os 12 posts, as imagens e as três falas do podcast que dependem
+  do tema ---, Jornal da Escola --- as oito notícias, as imagens e as três
+  falas do podcast que contam a mesa ---, Júri
+  Estadual --- as quatro áreas, os quarenta estandes, as imagens e as três
+  falas do podcast que contam a mostra, quando ela não é a pronta; e, em
+  Quem mandou isso?, também as três falas do podcast que contam o grupo);
+  gera a voz do podcast da A Seleção, do Jornal da Escola, de Quem mandou
+  isso? e do Júri Estadual. &
+  Chegar à turma sem aprovação.\\
+\zebra Durante a missão & Responde ao estudante no UnooriaAI; reações de
+  personagens no Unoovista e na Vila; na A Seleção, lê a legenda publicada e
+  dá o nível dela numa habilidade da BNCC; no Jornal da Escola, escolhe só a
+  disposição da primeira página, dentro do limite do estudante. & Dar nota,
+  mostrar nível à criança, escolher ou reescrever notícia, ou receber o nome
+  dela. O nível da legenda da A Seleção é a exceção declarada: só o professor o
+  vê, e ele confere e ajusta.\\
+Planejamento & Gera o plano anual e o das semanas. & Decidir quantas aulas
+  cabem ou inventar habilidade da BNCC.\\
+\zebra Bem-estar & Escreve o texto em volta (abertura, acolhimento). &
+  Reescrever o questionário, ou falar quando há sinal de risco.\\
+Agente de IA do professor & Responde ao professor sobre a BNCC e os livros
+  da Unooria, com as fontes (\id{F08.4}). & Responder fora desse assunto, ou
+  citar um código de habilidade inexistente sem que a plataforma avise.\\
+\zebra Ajuda & Responde, em voz e por escrito, como usar a plataforma, a partir
+  do que este mapa diz que está pronto e dos guias da aula (\id{F01.6}). & Ver
+  turma, estudante ou resultado, guardar a conversa, ou gastar o limite diário
+  de IA de alguém --- o limite dela é em minutos (\id{H10.4.2}), o mesmo
+  para o mascote e para o atendente em vídeo (\id{H01.6.4}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F09.1} & Nada gerado chega à turma sem o professor & \pronto\\
+\zebra \id{F09.2} & Nenhuma aula depende da IA & \pronto\\
+\id{F09.3} & A IA não dá nota nem conhece a criança & \pronto\\
+\zebra \id{F09.4} & Limite diário por perfil & \parcial\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\feature{F09.1}{Nada gerado chega à turma sem o professor}{\pronto}
+
+\begin{historia}{H09.1.1}{Aprovar o que a IA preparou}{\pronto}
+\hu{Professor}{revisar e aprovar tudo o que a IA preparou para a minha
+aula}{responder pelo que a turma vê}
+\aceite
+\begin{itemize}
+  \item Nas missões com preparo por IA, nada chega aos estudantes sem
+    \enquote{Aprovar} (ou \enquote{Aprovar e publicar}); no Unoovista, sem
+    \enquote{Ativar}.
+  \item Posso revisar item a item, editar, regerar ou excluir.
+  \item A tela diz: \enquote{nada gerado por inteligência artificial chega aos
+    estudantes sem aprovação}.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F09.2}{Nenhuma aula depende da IA}{\pronto}
+
+\begin{historia}{H09.2.1}{Dar a aula mesmo se a IA falhar}{\pronto}
+\hu{Professor}{que a aula aconteça mesmo se a IA estiver fora do ar ou sem
+saldo}{não perder a aula por um problema que não é meu}
+\aceite
+\begin{itemize}
+  \item Sem IA ou sem saldo, entra o material pronto da Unooria, completo
+    (Foto Conta, Manifesto, Quem mandou isso?, A Seleção); no Jornal da Escola,
+    o banco padrão fica a um toque para os textos. Mas as imagens do Jornal
+    precisam do OK do professor (\id{H06.10.6}): sem a IA de imagens, a
+    atividade NOVA não vai ao ar; a que já está no ar continua.
+  \item \textbf{O Júri Estadual de Projetos} (\id{F06.14}) deixou de ser a
+    exceção em 10 de outubro de 2026: sem IA no preparo, a tela oferece a
+    mostra pronta da Unooria. Com a mostra criada, a aula não depende da IA: durante a missão
+    ela não roda, e o estande sem imagem aparece com um desenho próprio --- o
+    professor o vê marcado antes de aprovar as imagens (\id{H06.14.1}). As
+    imagens da mostra pronta são geradas uma vez pela Unooria, por conta dela,
+    sem gastar o limite de nenhum professor (\id{H06.14.9}).
+  \item Na A Seleção, sem imagem gerada o post mostra a descrição da cena; sem
+    a voz do podcast, a transcrição continua na tela; e, se a leitura da
+    legenda falhar, nada é marcado e a enquete continua medindo a habilidade.
+    No Jornal da Escola, a notícia que não pede imagem, ou cuja imagem o
+    professor trocou com a atividade no ar e ainda não aprovou, aparece com o
+    desenho do meio de onde veio (o rádio, o jornal, o mural).
+  \item No Unoovista, se as reações ao vivo falharem, simplesmente ninguém
+    responde --- a missão segue.
+  \item No bem-estar, entra um texto fixo e o acompanhamento nunca deixa de
+    abrir.
+  \item O estudante nunca espera uma geração, exceto na conversa do UnooriaAI,
+    que é a própria missão, e na montagem da página do Jornal da Escola, que
+    espera no máximo alguns segundos: sem resposta, um modelo pronto monta a
+    página, e a criança não fica sabendo.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F09.3}{A IA não dá nota nem conhece a criança}{\pronto}
+
+\begin{historia}{H09.3.1}{Nota é da plataforma, não da IA}{\pronto}
+\hu{rede}{que nenhuma nota, correção ou classificação venha da IA, a não ser
+por uma exceção declarada e cercada de garantias}{que o resultado seja justo e
+explicável}
+\aceite
+\begin{itemize}
+  \item \textbf{A regra:} gabarito, correção e classificação são calculados
+    pela plataforma com regras fixas, e a IA só redige textos.
+  \item \textbf{A exceção declarada, e só ela:} na A Seleção, a IA lê a
+    legenda que o estudante publica nos Stories e dá o nível dela na EF07CO11
+    (atingiu, em processo ou não atingiu), porque só uma leitura do texto diz se
+    a legenda explica o critério da escolha (\id{H06.12.5}).
+  \item As garantias da exceção: a IA trabalha no modo mais previsível que tem,
+    com uma tentativa só, de poucos segundos, e a leitura conta no limite
+    diário do estudante. Se qualquer coisa falhar, nada é marcado e a
+    habilidade fica \enquote{Não avaliado}; nada do que a IA escreve é guardado.
+  \item A criança não vê o nível. O professor o vê no painel de habilidades,
+    confere e ajusta, e a primeira enquete da Amara mede a mesma habilidade
+    (vale a melhor das duas).
+  \item Nas outras missões vale a regra: nenhuma usa a IA para dar nível.
+  \item O texto da IA é conferido antes de aparecer (tamanho, termos
+    proibidos); se não passar, é refeito ou substituído pelo texto pronto.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H09.3.2}{A IA não sabe quem é a criança}{\pronto}
+\hu{família do estudante}{que a IA não receba dados que identifiquem a
+criança}{que o uso de IA não exponha o meu filho}
+\aceite
+\begin{itemize}
+  \item A IA recebe no máximo a série da turma (\enquote{4º ano}), nunca nome,
+    escola ou pontuação.
+  \item As instruções da IA nunca vão para o aparelho do estudante.
+\end{itemize}
+\pendencia{a IA processa fora do Brasil. Isso é aceito, mas precisa constar
+no contrato e no termo de tratamento de dados de cada rede (ver o
+Capítulo~\ref{cap:backlog}).}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F09.4}{Limite diário por perfil}{\parcial}
+
+\begin{historia}{H09.4.1}{Saber que cheguei ao limite do dia}{\pronto}
+\hu{Estudante ou Professor}{uma mensagem clara quando atingi o limite de IA do
+dia}{entender o que aconteceu e quando volta}
+\aceite
+\begin{itemize}
+  \item O saldo é conferido \emph{antes} de usar a IA; sem saldo, aparece
+    \enquote{limite do dia atingido} e nada é consumido.
+  \item O limite é por pessoa e por perfil (estudante ou professor), definido
+    pela Unooria (\id{H10.4.1}).
+\end{itemize}
+\pendencia{o contador zera à meia-noite no horário universal, que no Brasil é
+21h. Ver a decisão \id{D04}.}
+\end{historia}
+
+\begin{historia}{H09.4.2}{Toda IA conta no limite}{\afazer}
+\hu{Administrador Unooria}{que todo uso de IA da plataforma conte no limite
+diário}{que o custo de cada rede seja previsível}
+\aceiteproposta
+\begin{itemize}
+  \item A geração e as reações do Unoovista e as reações da Vila do Lume
+    passam a contar no limite, como as demais.
+  \item O limite do professor comporta a preparação de uma atividade completa
+    do Unoovista.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H09.4.3}{Ser avisado antes do limite estourar}{\afazer}
+\hu{Administrador Unooria}{ser avisado quando o consumo de IA de uma rede se
+aproximar do previsto}{ajustar antes que alguém fique sem IA no meio da aula}
+\aceiteproposta
+\begin{itemize}
+  \item Aviso quando o consumo do dia chega a 80\% do previsto para a rede.
+\end{itemize}
+\end{historia}

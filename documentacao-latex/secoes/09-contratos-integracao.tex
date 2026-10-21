@@ -8,7 +8,11 @@ Há quatro fronteiras nesta plataforma cuja quebra é caríssima, porque atinge
 código que já está publicado e não pode ser atualizado em conjunto: o protocolo
 \cd{postMessage} entre hub e experiência, o formato do evento de telemetria, o
 manifesto de experiências e a interface do \emph{provider} de IA. Este capítulo
-especifica os quatro e a política de versionamento de cada um.
+especifica os quatro e a política de versionamento de cada um --- e, desde
+2026-09-30, um quinto, que tem quatro pontas em vez de duas: o do agente de IA do
+professor (Seção~\ref{sec:contrato-agente}). Desde 2026-10-02 há um sexto, o
+único em que quem chama a api é o servidor de um \emph{vendor}: o do avatar da
+Ajuda (Seção~\ref{sec:contrato-ajuda}).
 
 \begin{regra}
 \textbf{Mudança em contrato exige cuidado extremo e atualização deste
@@ -64,7 +68,7 @@ hub \seta{} exp & \cd{hub:pause} / \cd{hub:resume} &
 
 \begin{nota}[title={NOTA --- o que o hub faz com o \cd{exp:estado}}]
 O \cd{ExpHost} guarda o último estado publicado e reconhece dois campos, ambos
-da exp-01: \cd{acao: "sair"} (a sessão é do HUB, em \emph{cookie} \cd{httpOnly}
+da exp08ef1b: \cd{acao: "sair"} (a sessão é do HUB, em \emph{cookie} \cd{httpOnly}
 fora do alcance do \emph{iframe}, então a experiência pede e o hub executa) e
 \cd{fase}, que acende a moldura dos posts perdidos e --- com
 \cd{passo: "relatorio"} --- solta o aparelho para o relatório ocupar a área
@@ -74,7 +78,7 @@ Duas consequências de o hub SUBSTITUIR o estado inteiro a cada mensagem:
 publicar só o \cd{passo} apagaria a \cd{fase}, então quem publica leva as duas;
 e é a própria troca de fase seguinte que desfaz o estado anterior, sem
 mensagem de ``desligar''. As outras experiências publicam estado
-(\cd{\{ tela \}} na exp-02, \cd{\{ passo, tentativa \}} na exp-03) e o hub
+(\cd{\{ tela \}} na exp04ef1b, \cd{\{ passo, tentativa \}} na exp02em1b) e o hub
 ignora --- o canal é genérico de propósito.
 \end{nota}
 
@@ -85,29 +89,40 @@ ignora --- o canal é genérico de propósito.
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \raia{1.6}{-12.2}{Experiência}{\texttt{@edu/sdk} no \texttt{iframe}}
-  \raia{6.2}{-12.2}{\texttt{ExpFrame}}{React, no hub}
-  \raia{10.8}{-12.2}{Rota do hub}{Next.js, servidor}
-  \raiaext{15.0}{-12.2}{API}{NestJS}
+  % Raias: experiência, ExpFrame, rota do hub e api. Rótulo longo quebra em
+  % duas linhas para caber no vão entre as raias (nenhum cruza uma linha de vida).
+  \raia{1.4}{-15.9}{Experiência}{\texttt{@edu/sdk} no \texttt{iframe}}
+  \raia{6.2}{-15.9}{\texttt{ExpFrame}}{React, no hub}
+  \raia{10.4}{-15.9}{Rota do hub}{Next.js, servidor}
+  \raiaext{15.0}{-15.9}{API}{NestJS}
 
-  \msgs{10.8}{6.2}{-1.0}{monta o \emph{embed}: assina \emph{token} RS256 (15 min)}
-  \msgs{10.8}{15.0}{-1.8}{\rota{GET /experiencias/:expId} --- manifesto}
-  \msgr{15.0}{10.8}{-2.6}{\texttt{\{ versaoAtiva, viewport, permissoes \}}}
+  % 1. A rota do hub monta o embed (servidor)
+  \msgs{10.4}{15.0}{-1.1}{\texttt{GET /experiencias/:expId}}
+  \msgr{15.0}{10.4}{-2.1}{manifesto \texttt{\{ versaoAtiva,}\\\texttt{viewport, permissoes \}}}
+  \msgself{10.4}{-2.6}{assina o \emph{token}\\RS256, 15 min}
+  \msgs{10.4}{6.2}{-4.0}{\emph{props}: \texttt{src}, \emph{token}, \texttt{apiUrl}}
 
-  \msgs{6.2}{1.6}{-3.6}{renderiza \texttt{iframe src=} URL versionada}
-  \msgself{1.6}{-4.4}{\texttt{connectToHub(\{ hubOrigin \})}}
-  \msgs{1.6}{6.2}{-5.4}{\texttt{exp:ready \{ protocolVersion: 2 \}}}
-  \msgself{6.2}{-6.2}{valida \texttt{ev.origin} e a versão MAIOR}
-  \msgr{6.2}{1.6}{-7.2}{\texttt{hub:init \{ token, estudante, apiUrl, config \}}}
-  \msgself{1.6}{-8.0}{valida com Zod; resolve a \emph{Promise}}
+  % 2. Handshake no navegador
+  \msgs{6.2}{1.4}{-5.0}{renderiza o \texttt{iframe}\\com a URL versionada}
+  \msgself{1.4}{-5.5}{\texttt{connectToHub}\\\texttt{(\{ hubOrigin \})}}
+  \draw[seqframe] (0.8,-6.3) rectangle (6.8,-8.0);
+  \node[frameop] at (0.8,-6.3) {loop};
+  \node[guarda] at (1.85,-6.62) {[a cada 400 ms]};
+  \msgs{1.4}{6.2}{-7.75}{\texttt{exp:ready}\\\texttt{\{ protocolVersion: 2 \}}}
+  \msgself{6.2}{-8.35}{valida \texttt{ev.origin}\\e a versão MAIOR}
+  \msgr{6.2}{1.4}{-9.9}{\texttt{hub:init \{ token, estudante,}\\\texttt{apiUrl, config \}}}
+  \msgself{1.4}{-10.4}{valida com Zod;\\resolve a \emph{Promise}}
 
-  \msgs{1.6}{15.0}{-9.2}{chamadas de domínio, \rota{/telemetry/batch}, \rota{/ai/gerar}}
-  \msgs{1.6}{6.2}{-10.0}{\texttt{exp:token-expirando}}
-  \msgs{6.2}{10.8}{-10.8}{\rota{GET /api/exp-token}}
-  \msgr{10.8}{6.2}{-11.4}{\texttt{\{ token \}}}
-  \msgr{6.2}{1.6}{-11.9}{\texttt{hub:token \{ token \}}}
+  % 3. Uso e renovação do token
+  \draw[seqmsg] (1.4,-12.3) -- (15.0,-12.3)
+    node[seqlbl, pos=0.24, above=1pt, fill=white, inner sep=1.5pt]{chamadas de domínio,\\\texttt{/telemetry/batch},\\\texttt{/ai/gerar}};
+  \msgs{1.4}{6.2}{-13.3}{\texttt{exp:token-expirando}}
+  \msgs{6.2}{10.4}{-14.1}{\texttt{GET /api/exp-token}}
+  \msgr{10.4}{6.2}{-14.8}{\texttt{\{ token \}}}
+  \msgr{6.2}{1.4}{-15.5}{\texttt{hub:token \{ token \}}}
 
-  \node[actnote, text width=42mm, anchor=north west] at (16.6,-3.4)
+  % Notas: abaixo das raias, lado a lado, para o desenho caber em 16 cm
+  \node[actnote, text width=72mm, anchor=north west] at (0.1,-16.3)
     {\textbf{Por que o reenvio do \texttt{exp:ready}:} com os \emph{assets} em
      \emph{cache} (um F5), a experiência fica pronta ANTES de o \texttt{ExpFrame}
      hidratar o \emph{listener}, e um disparo único se perderia --- o
@@ -115,7 +130,7 @@ ignora --- o canal é genérico de propósito.
      \texttt{exp:ready} com um \texttt{hub:init}; só o primeiro conta, e
      \texttt{hub:init} repetido é tratado como evento normal, não como ruído.};
 
-  \node[actnote, text width=42mm, anchor=north west] at (16.6,-9.0)
+  \node[actnote, text width=72mm, anchor=north west] at (8.2,-16.3)
     {\textbf{Por que a renovação passa pelo hub:} a experiência não tem sessão
      --- ela tem um \emph{token} de 15 minutos. Quem tem sessão é o hub, e é ele
      que pode assinar outro. O \texttt{iframe} nunca recarrega, então o estado da
@@ -215,7 +230,7 @@ Campo existente muda de tipo ou semântica & \textbf{v2} &
 \cd{hub:pause} e \cd{hub:resume} existem porque \textbf{esconder um
 \cd{iframe} não dispara \cd{visibilitychange} nele}. Sem essas mensagens, o
 cronômetro de \emph{dwell} da experiência correria com o estudante de costas --- e
-\emph{dwell} é a medida central do motor de \emph{feed} da exp-01. O hub escuta
+\emph{dwell} é a medida central do motor de \emph{feed} da exp08ef1b. O hub escuta
 \cd{visibilitychange} \emph{e} \cd{blur}/\cd{focus} da janela, porque trocar de
 janela ou de aplicativo não muda \cd{visibilityState}.
 
@@ -223,7 +238,7 @@ janela ou de aplicativo não muda \cd{visibilityState}.
 \textbf{dentro} do \cd{iframe} move o foco para a experiência, e o navegador
 dispara \cd{blur} no documento de cima. Isso \emph{não} é o estudante saindo --- e
 como o \cd{focus} correspondente não volta enquanto ele continua ali, um
-\cd{hub:pause} nesse caso é definitivo. Na exp-02 o vídeo parava no primeiro
+\cd{hub:pause} nesse caso é definitivo. Na exp04ef1b o vídeo parava no primeiro
 toque em \enquote{Salvar} e não voltava mais. Quando o foco foi para a nossa
 experiência, \cd{document.activeElement} é o próprio \cd{iframe}, e
 \arq{ExpFrame.tsx} não emite nada.
@@ -237,9 +252,9 @@ que devem concordar: o arquivo \arq{public/experiencia.json} dentro do
 \emph{bundle}, e a linha da tabela \cd{experiencias} na API --- que o CI escreve
 lendo o arquivo.
 
-\begin{lstlisting}[language=jsonunoo, caption={\arq{apps/experiencias/exp-70-vila-do-lume/public/experiencia.json}}, label={lst:manifesto}]
+\begin{lstlisting}[language=jsonunoo, caption={\arq{apps/experiencias/app-70-vila-do-lume/public/experiencia.json}}, label={lst:manifesto}]
 {
-  "id": "exp-70-vila-do-lume",
+  "id": "app-70-vila-do-lume",
   "nome": "Vila do Lume — A Noite Longa",
   "versao": "1.1.3",
   "produto": "entre-redes",
@@ -285,14 +300,14 @@ lendo o arquivo.
   plataforma.\\
 \zebra \cd{viewport} & \cd{\{largura, altura\}?} & Presente \implica{} o hub
   embeda dentro do \cd{DispositivoFrame} (casca de aparelho com escala). A
-  exp-01 e a exp-07 são 375$\times$812; a exp-02 \emph{não} tem \cd{viewport},
+  exp08ef1b e a exp06ef2b são 375$\times$812; a exp04ef1b \emph{não} tem \cd{viewport},
   porque foi desenhada para \emph{desktop}. Quem desenha o aparelho é o hub ---
   a experiência \textbf{não} empilha uma casca própria.\\
 \cd{publico} & \cd{estudante|professor} & \cd{professor} \implica{} ferramenta do
   professor, e \rota{/exp/*} responde \textbf{404} para ela.\\
 \zebra \cd{permissoes} & \emph{string[]} & Permissões que o \emph{iframe} daquela
-  experiência precisa: \cd{pointer-lock} (exp-70), \cd{forms} (exp-03, exp-07) e
-  \cd{downloads} (exp-90, exp-92), traduzidos pelo \cd{ExpFrame} nos tokens
+  experiência precisa: \cd{pointer-lock} (app-70), \cd{forms} (exp02em1b, exp04ef1b, exp05ef1b, exp06ef1b, exp07ef1b, exp08ef1b e exp08ef4b) e
+  \cd{downloads} (app-90, app-92), traduzidos pelo \cd{ExpFrame} nos tokens
   \cd{allow-pointer-lock}, \cd{allow-forms} e \cd{allow-downloads}. Vazio (o
   \emph{default}) = nenhuma. \textbf{O vocabulário é fechado em três lugares}
   --- o Zod da api, o CHECK de \cd{experiencias.permissoes} e o \cd{ExpFrame}
@@ -307,7 +322,7 @@ lendo o arquivo.
 
 \begin{regra}
 \cd{series: []} significa \textbf{todas as séries}, não nenhuma: é assim que uma
-experiência \emph{transversal} se declara (é o caso da exp-70, que não pertence a
+experiência \emph{transversal} se declara (é o caso da app-70, que não pertence a
 ano nenhum). Desde a sala de aula (\adrr{ADR-69}) este campo é \textbf{lido}: é ele
 que decide se a missão entra na grade de uma turma, e vazio continuar querendo
 dizer \enquote{todas} deixou de ser hipótese e virou o que sustenta a transversal
@@ -332,44 +347,60 @@ faz TODA experiência nova nascer errada.
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \node[actstart] (ini) at (0,0) {};
-  \node[decision, text width=26mm, right=10mm of ini] (temman)
-    {tem linha em \texttt{experiencias}?};
+  % Vertical, em duas decisões: a 1ª decide de onde vêm viewport e
+  % permissões; a 2ª, o endereço do bundle (apps/hub/lib/embed-experiencia.ts).
+  \node[actstart] (ini) at (8,0) {};
+  \node[actionsys, text width=74mm, anchor=north] (le) at (8,-0.7)
+    {lê em paralelo, na api, com o \emph{token} recém-assinado:\\
+     \texttt{GET /experiencias/:expId} (o manifesto) e\\
+     \texttt{GET /recursos/efetivos} (a versão fixada na escola)};
+  \node[decision] (d1) at (8,-3.55) {tem manifesto?};
 
-  \node[action, text width=44mm, above right=6mm and 12mm of temman] (com)
-    {\texttt{\{cdn\}/\{expId\}/\{versaoAtiva\}/index.html}\\
-     \texttt{?hubOrigin=\ldots}};
-  \node[actionsys, text width=44mm, below right=6mm and 12mm of temman] (sem)
-    {\texttt{\{baseDev\}/?hubOrigin=\ldots}\\
-     porta de \arq{lib/experiencias-dev.ts}\\
-     ou o \texttt{src} explícito de \rota{/dev-embed}};
-
-  \node[action, text width=40mm, right=12mm of com] (vp1)
+  \node[action, text width=50mm] (vp1) at (3.3,-5.3)
     {\texttt{viewport} e \texttt{permissoes}\\vêm do MANIFESTO};
-  \node[actionsys, text width=44mm, right=12mm of sem] (vp2)
+  \node[actionsys, text width=50mm] (vp2) at (12.7,-5.3)
     {lê \texttt{\{baseInterna\}/experiencia.json}\\
-     \texttt{baseInterna} = \env{EXP\_INTERNAL\_HOST} aplicado à base};
+     (\texttt{EXP\_INTERNAL\_HOST} aplicado à base)};
 
-  \node[actionok, text width=40mm, below right=10mm and -6mm of vp1] (frame)
+  \node[decision] (d2) at (8,-7.75) {produção e com manifesto?};
+
+  \node[action, text width=50mm] (com) at (3.3,-9.9)
+    {\texttt{\{cdn\}/\{expId\}/\{versao\}/}\\
+     \texttt{index.html?hubOrigin=\ldots}\\[2pt]
+     \texttt{versao}: a fixada no escopo,\\senão a \texttt{versaoAtiva}};
+  \node[actionsys, text width=50mm] (sem) at (12.7,-9.9)
+    {\texttt{\{base\}/?hubOrigin=\ldots}\\[2pt]
+     \texttt{base}: em dev, o \texttt{src} de \texttt{/dev-embed}\\
+     ou a porta de \texttt{lib/experiencias-dev.ts};\\
+     em produção, o CDN};
+
+  \node[actionok, text width=58mm] (frame) at (8,-12.6)
     {\texttt{ExpFrame}: \emph{sandbox} + \texttt{allow},\\
-     dentro de \texttt{DispositivoFrame}\\se houver \texttt{viewport}};
+     dentro de \texttt{DispositivoFrame} se houver \texttt{viewport}};
+  \node[actend] (fim) at (8,-14.0) {};
 
-  \node[actend, below=8mm of frame] (fim) {};
+  \coordinate (j1) at (8,-6.3);
+  \coordinate (j2) at (8,-11.55);
 
-  \draw[flow] (ini) -- (temman);
-  \draw[flow] (temman) -- (com) node[flowlbl, pos=0.55]{sim};
-  \draw[flow] (temman) -- (sem) node[flowlbl, pos=0.55]{não};
-  \draw[flow] (com) -- (vp1);
-  \draw[flow] (sem) -- (vp2);
-  \draw[flow] (vp1) -- (frame);
-  \draw[flow] (vp2) -- (frame);
+  \draw[flow] (ini) -- (le);
+  \draw[flow] (le) -- (d1);
+  \draw[flow] (d1.west) -| (vp1.north) node[flowlbl, pos=0.25]{sim};
+  \draw[flow] (d1.east) -| (vp2.north) node[flowlbl, pos=0.25]{não};
+  \draw[line width=0.85pt, draw=unooInkSoft] (vp1.south) |- (j1) -| (vp2.south);
+  \draw[flow] (j1) -- (d2.north);
+  \draw[flow] (d2.west) -| (com.north) node[flowlbl, pos=0.25]{sim};
+  \draw[flow] (d2.east) -| (sem.north) node[flowlbl, pos=0.25]{não};
+  \draw[line width=0.85pt, draw=unooInkSoft] (com.south) |- (j2) -| (sem.south);
+  \draw[flow] (j2) -- (frame.north);
   \draw[flow] (frame) -- (fim);
 
 \end{tikzpicture}}
 \caption[Resolução da URL do embed]{Resolução da URL do \emph{embed} e da casca
   de aparelho. Os dois caminhos convergem: mesmo sem manifesto, o hub obtém
   \cd{viewport} e \cd{permissoes} lendo o \arq{experiencia.json} servido ao lado
-  do \arq{index.html} do \emph{bundle}.}
+  do \arq{index.html} do \emph{bundle}. No caminho versionado, a versão é a
+  fixada no escopo da escola (\adrr{ADR-87}), quando há, e senão a
+  \cd{versaoAtiva} do catálogo.}
 \label{fig:fluxo-embed}
 \end{figure}
 
@@ -377,8 +408,8 @@ faz TODA experiência nova nascer errada.
 A leitura do \arq{experiencia.json} do \emph{bundle} \textbf{não é só de
 desenvolvimento}. Antes era, e uma \emph{stack} com a tabela \cd{experiencias}
 vazia --- \emph{compose} local, ou ambiente novo antes do primeiro
-\emph{publish} do CI --- servia a exp-01 \emph{esticada na janela} em vez de
-dentro do aparelho de 375$\times$812. Pelo mesmo motivo, a exp-70 abriria sem
+\emph{publish} do CI --- servia a exp08ef1b \emph{esticada na janela} em vez de
+dentro do aparelho de 375$\times$812. Pelo mesmo motivo, a app-70 abriria sem
 \cd{allow-pointer-lock}: o jogo monta, a câmera não anda, e nada no console diz
 por quê.
 \end{atencao}
@@ -423,7 +454,7 @@ plataforma efetivamente usa.
   "ts":         "ISO-8601",      // relogio do cliente
   "estudanteId":    "...",           // SOBRESCRITO pelo servidor, a partir do token
   "escolaId":   "...",           // SOBRESCRITO pelo servidor
-  "expId":      "exp-01",
+  "expId":      "exp08ef1b",
   "expVersion": "1.2.0",
   "sessaoId":   "uuid",
   "verbo":      "completed | attempted | interacted | scored | progressed | ...",
@@ -501,11 +532,15 @@ export interface AiConversaRequest {
   socorro?: string;              // o que pedir na ULTIMA tentativa
   maxVoltas?: number;            // teto de idas e voltas de ferramenta (6)
   tentativas?: number;           // default 3
+  /** Opcionais (ADR-175): a chamada acima do teto e abortada e repetida (ate 3
+   *  por volta); passado o prazo do turno, vira ErroDeGeracao. Sem eles, nada muda. */
+  tetoPorChamadaMs?: number;
+  prazoMs?: number;
 }
 
 export interface AiSpeechRequest {
   texto?: string;                                    // monologo
-  turnos?: Array<{ falante: string; texto: string }>; // dialogo (podcast)
+  turnos?: Array<{ falante: string; texto: string }>; // dialogo
   /** Timbre por falante, NEUTRO de vendor: `jovem-feminino`, `idoso-masculino`...
    *  Quem chama nunca escolhe a voz do catalogo do fornecedor. */
   falantes: AiFalante[];
@@ -527,8 +562,19 @@ export interface AiJsonRequest<T> {
   modelo?: "padrao" | "longo";   // mesma familia neutra de AiRequest
   /** Quanto o vendor cobrou, UMA VEZ POR TENTATIVA -- inclusive as que
    *  `validar` rejeitou: foram pagas igual. Quem chama `temSaldo` TEM de
-   *  passar isto; sem ele nao ha de onde tirar o numero (ADR-74). */
-  aoUsarTokens?: (tokens: number) => void;
+   *  passar isto; sem ele nao ha de onde tirar o numero (ADR-74).
+   *  `divisao` (ADR-161): entrada e saida, quando o vendor informa; a quota
+   *  ignora, o painel de custos usa. */
+  aoUsarTokens?: (tokens: number, divisao?: DivisaoDeTokens) => void;
+}
+
+/** saida = total - entrada: inclui o raciocinio, cobrado na tarifa de saida. */
+export interface DivisaoDeTokens { entrada: number; saida: number }
+
+export interface AiImagemOpcoes {
+  proporcao?: AiProporcao;
+  /** O usageMetadata da geracao. So o MedidorDeProvider passa (ADR-161). */
+  aoUsarTokens?: (tokens: number, divisao?: DivisaoDeTokens) => void;
 }
 
 export interface AiProvider {
@@ -543,7 +589,24 @@ export interface AiProvider {
   /** Conversa multi-turno com ferramentas (ADR-23). `tokensUsados` soma TODAS
    *  as voltas e TODAS as tentativas, inclusive as rejeitadas: e o que foi pago. */
   conversar(req: AiConversaRequest): Promise<AiResult>;
+  /** Conversa SEM ferramentas, devolvida aos pedacos (ADR-132). */
+  conversarEmFluxo(req: AiFluxoRequest): AsyncIterable<AiFluxoEvento>;
 }
+
+export interface AiFluxoRequest {
+  system: string;
+  historico: Array<{ papel: "pessoa" | "agente"; texto: string }>;
+  maxTokens?: number;
+  temperatura?: number;
+  sinal?: AbortSignal;           // abortar corta a chamada ao vendor
+  // sem `ferramentas` e sem `validar`: num stream o texto ja saiu
+}
+
+/** Pedacos de texto e, por ultimo, UM `fim` com o total -- tambem quando o
+ *  modelo parou pelo teto. Erro de transporte e excecao, nao evento. */
+export type AiFluxoEvento =
+  | { tipo: "texto"; texto: string }
+  | { tipo: "fim"; resultado: AiResult };
 
 export const AI_PROVIDER = "AI_PROVIDER";   // token de injecao do Nest
 \end{lstlisting}
@@ -562,6 +625,37 @@ de voz do catálogo do Google atravessando o domínio seria \emph{vendor} vazand
 para dentro da missão.
 \end{regra}
 
+\begin{regra}
+\textbf{Toda chamada de IA deixa uma linha de consumo, e quem chama não faz
+nada para isso} (\adrr{ADR-161}). O \cd{MedidorDeProvider}, que já embrulhava o
+\emph{provider} para as métricas, recebe o \cd{RegistroDeConsumo}
+(\arq{ai/consumo-de-ia.ts}) e registra cada operação no fim dela, com o que foi
+PAGO:
+\begin{itemize}
+  \item \cd{generate}, \cd{conversar} e \cd{conversarEmFluxo}: a entrada é o
+    \cd{promptTokenCount}, e a saída é o total MENOS a entrada --- o que inclui
+    o raciocínio, cobrado na tarifa de saída (Seção~\ref{sec:ia-raciocinio}).
+  \item \cd{generateJson}: a soma das TENTATIVAS, inclusive as que \cd{validar}
+    recusou, pelo \cd{aoUsarTokens(tokens, divisao)}. O segundo argumento é
+    novo e opcional: quem só precisa do total (a quota) o ignora; sem divisão,
+    o total conta como saída, a tarifa mais cara.
+  \item \cd{generateImage}: pelo \cd{aoUsarTokens} novo de \cd{AiImagemOpcoes},
+    que só o medidor passa, e uma imagem por geração que deu certo.
+  \item \cd{generateSpeech}: \textbf{estimado}, porque a Cloud TTS não devolve
+    contagem --- a duração sai do MP3 (32\,kbps), a saída de 25 \emph{tokens}
+    por segundo e a entrada de $\approx$ 4 \emph{bytes} por \emph{token} do
+    roteiro.
+\end{itemize}
+As duas portas fora do \cd{AiProvider} registram por conta própria: o agente do
+professor no fim do turno (\cd{consumoDoTurno}, só eventos não parciais) e o
+mascote uma linha por sessão, somando o \cd{usageMetadata} de cada turno. A
+\textbf{atribuição} (escola, perfil e recurso) sai do contexto da requisição: o
+\cd{contextoMiddleware} põe em \cd{ContextoDaRequisicao.recurso} o primeiro
+segmento da rota, e a voz ao vivo, que chega por WebSocket fora desse contexto,
+a recebe em \cd{PedidoDeVoz.atribuicao}. O registro \textbf{nunca} derruba a
+chamada: uma falha de banco vira o \emph{log} \cd{ia-consumo-nao-gravado}.
+\end{regra}
+
 \begin{nota}
 \cd{AiJsonSchema} é um subconjunto deliberadamente pequeno de JSON Schema
 (\cd{object}, \cd{array}, \cd{string}, \cd{number}, \cd{boolean}, \cd{enum}), e
@@ -578,7 +672,7 @@ e confundi-los não é erro de digitação: \cd{prompt}/\cd{responseSchema} cont
 compilador, e o pedido chega ao \emph{provider} sem \cd{responseSchema} ---
 a montagem do corpo estoura \emph{antes} da requisição, as três tentativas
 queimam em segundos e o professor vê \enquote{Falhou} com zero token gasto.
-Foi o que aconteceu na exp-92 (plano de aulas). \textbf{Nunca use \cd{as never}
+Foi o que aconteceu na app-92 (plano de aulas). \textbf{Nunca use \cd{as never}
 para satisfazer este contrato}: é justamente ele que o typecheck existe para
 conferir.
 
@@ -591,6 +685,418 @@ são passageiros e seguem no laço. Sem essa distinção o corpo de erro do
 vazia}, e a causa real morria atrás de uma mensagem genérica.
 \end{regra}
 
+\section{Contrato do agente de IA do professor}
+\label{sec:contrato-agente}
+
+O agente (\adrr{ADR-126}) é o único contrato da plataforma com \textbf{quatro
+pontas}: o agente em Python (\arq{apps/agente-professor}), a api
+(\arq{src/agente-professor} + \arq{src/ai/agent-engine.client.ts}), o hub (o chat
+flutuante e a rota de \emph{stream}) e a infraestrutura (o repositório de
+fundação). A fonte normativa é \arq{docs/regras/agente-professor.md}; esta seção
+o resume para quem lê a arquitetura, e os \emph{payloads} estão no
+Apêndice~\ref{ap:payloads}.
+
+\begin{lstlisting}[language=tsunoo, caption={\arq{apps/api/src/ai/agente-professor.port.ts} --- a segunda porta de \arq{src/ai} (abreviado)}, label={lst:agenteport}]
+export interface EventoAgente {        // um Event do ADK, NORMALIZADO
+  autor: string;                       // "user" ou o nome do agente
+  parcial: boolean;                    // partial=true do ADK em modo SSE
+  textos: string[];                    // sem as partes de raciocinio
+  chamadasDeFerramenta: Array<{ nome: string; args: Record<string, unknown> }>;
+  respostasDeFerramenta: Array<{ nome: string; resposta: unknown }>;
+  estadoDelta?: Record<string, unknown>;   // por aqui chega titulo_conversa
+  tokens?: number;                     // usage_metadata; so vale nos NAO parciais
+  erro?: { codigo: string; mensagem?: string };
+}
+
+export interface AgenteProfessorPort {
+  readonly modo: "agent-engine" | "local" | "mock" | "desligado";
+  criarSessao(usuarioId: string, estado: Record<string, unknown>,
+              expiraEm?: Date): Promise<{ sessaoId: string }>;
+  lerSessao(usuarioId: string, sessaoId: string): Promise<SessaoAgente>;
+  apagarSessao(usuarioId: string, sessaoId: string): Promise<void>; // idempotente
+  renovarSessao?(sessaoId: string, expiraEm: Date): Promise<void>;  // so agent-engine
+  enviar(usuarioId: string, sessaoId: string, texto: string,
+         signal: AbortSignal): AsyncIterable<EventoAgente>;
+}
+\end{lstlisting}
+
+\begin{regra}
+\textbf{Só \arq{agent-engine.client.ts} conhece o engine}, pela mesma regra do
+\cd{AiProvider}. É porta própria, e não um método a mais no \cd{AiProvider},
+porque modelo, ferramentas e instrução moram no agente: a api só conduz a
+sessão. \textbf{Um cliente, dois alvos}: \cd{agent-engine} (\cd{:query} e
+\cd{:streamQuery?alt=sse} do Agent Engine, com o ADC) e \cd{local} (o
+\emph{shim} de \arq{apps/agente-professor}, que expõe O MESMO contrato em
+\rota{/api/reasoning\_engine} e \rota{/api/stream\_reasoning\_engine}, sem
+\emph{token}). \cd{mock} é o da suíte e2e; \cd{desligado} é o padrão.
+\end{regra}
+
+\subsection{O que a api pede ao engine}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Chamada} & \thd{Uso}\\
+\midrule
+\cd{async\_create\_session} (\cd{:query}) & Cria a sessão com
+  \cd{user\_id = users.id}, o estado \cd{\{nome\_professor\}} e
+  \cd{expire\_time} distante pelos \cd{**kwargs}. Se o engine recusar o campo, a
+  criação repete sem ele (TTL padrão de 365 dias).\\
+\zebra \cd{async\_get\_session} (\cd{:query}) & Monta o histórico da tela (só o
+  texto do professor e o texto FINAL do agente) e lê o título quando o
+  \emph{stream} terminou sem ele. \enquote{Não existe} vira 404 e apaga a linha.\\
+\cd{async\_delete\_session} (\cd{:query}) & Apagar. Idempotente: sessão que já
+  não existe não é erro.\\
+\zebra \cd{async\_stream\_query} (\cd{:streamQuery?alt=sse}) & O turno, com
+  \cd{run\_config.streaming\_mode = "sse"}. A resposta vem em linhas \cd{data:}
+  \emph{ou} NDJSON --- o cliente decide por linha, e linha que não é JSON é
+  contada e vai a log, sem derrubar o turno.\\
+\cd{PATCH v1beta1/\ldots/sessions/\{id\}?\B updateMask=expireTime} & A renovação
+  depois de cada turno entregue. É a API NATIVA: o \cd{:query} do ADK não tem
+  método de atualizar sessão, e a SA da api precisa de \cd{sessions.update}.
+  Falha é só log (\cd{agente-professor.renovacao-falhou}).\\
+\bottomrule
+\end{tabularx}
+
+\subsection{As chaves de estado e as ferramentas}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{30mm}X@{}}
+\toprule
+\headrow \thd{Chave} & \thd{Quem escreve} & \thd{Quem lê}\\
+\midrule
+\cd{nome\_professor} & a api, na criação (primeiro nome de
+  \cd{users.display\_name}) & a instrução do agente\\
+\zebra \cd{titulo\_conversa} & \textbf{o agente}, com o próprio LLM, depois do
+  primeiro turno & a api (no \cd{actions.state\_delta} do \emph{stream}, ou numa
+  leitura da sessão) e o hub\\
+\bottomrule
+\end{tabularx}
+
+As duas ferramentas são de \emph{data store} (\adrr{ADR-127}).
+\cd{buscar\_habilidades} consulta o estruturado com filtro exato e paginação;
+\cd{buscar\_acervo} devolve trechos dos PDFs, e as chaves de cada trecho ---
+\cd{titulo}, \cd{pagina\_inicio}, \cd{pagina\_fim}, \cd{trecho}, \cd{fonte\_id}
+--- \textbf{são lidas pela api} para o evento \cd{fontes}. Renomear uma delas sem
+mudar a api junto faz as fontes sumirem da tela, sem erro.
+
+\subsection{O que a api emite ao navegador}
+
+\rota{POST /agente-professor/conversas/:id/mensagens} \cd{\{ texto \}} (1 a 4.000
+caracteres) responde \cd{text/event-stream} (\adrr{ADR-128}):
+
+\begin{tabularx}{\linewidth}{@{}L{18mm}X@{}}
+\toprule
+\headrow \thd{\cd{event:}} & \thd{\cd{data:}}\\
+\midrule
+\cd{delta} & \cd{\{ texto \}} --- dos eventos parciais, e do final agregado SÓ no
+  que os parciais não cobriram (a recusa de escopo chega num evento final sem
+  parcial antes, com \cd{custom\_metadata.fora\_do\_escopo = true}).\\
+\zebra \cd{fontes} & \cd{\{ fontes: [\{ titulo, paginaInicio, paginaFim \}] \}}, dos
+  retornos de \cd{buscar\_acervo}, sem repetição.\\
+\cd{titulo} & \cd{\{ titulo \}}, só quando muda.\\
+\zebra \cd{aviso} & \cd{\{ codigo: "habilidade-inexistente", mensagem \}}, um por
+  código citado que \cd{habilidadePorCodigo} não conhece.\\
+\cd{fim} & \cd{\{\}}.\\
+\zebra \cd{erro} & \cd{\{ codigo, mensagem \}}, com \cd{codigo} em \cd{QUOTA},
+  \cd{RATE\_LIMIT}, \cd{AGENTE\_INDISPONIVEL} ou \cd{TEMPO\_ESGOTADO}.\\
+\bottomrule
+\end{tabularx}
+
+Mais \cd{: ping} a cada 15\,s. O \emph{stream} termina em \cd{fim} \textbf{ou} em
+\cd{erro}; fontes, título, avisos e \cd{fim} saem depois do último evento do
+agente, nessa ordem. Tudo o que recusa responde JSON \textbf{antes} de abrir o
+\emph{stream}.
+
+\begin{atencao}
+\textbf{Três armadilhas medidas, que nenhum tipo pega.}
+\begin{enumerate}
+  \item \textbf{O ADK em SSE emite os parciais E um evento final agregado que
+    REPETE o texto inteiro.} Repassar os dois duplica a resposta na tela; o
+    \cd{DeduplicadorDeTexto} deixa passar do final só o que faltou, por segmento
+    (uma chamada ao modelo).
+  \item \textbf{\cd{:streamQuery?alt=sse} responde ora \cd{data:}, ora NDJSON}
+    (\emph{issue} aberta no \cd{python-aiplatform}). O \emph{parser} aceita os dois,
+    por linha.
+  \item \textbf{\emph{Tokens} só dos eventos NÃO parciais}, somados: um turno com
+    ferramenta faz mais de uma chamada ao modelo, e os parciais repetem o
+    \cd{usage\_metadata}. A guarda de escopo e o título somam os deles ao
+    primeiro evento não parcial seguinte.
+\end{enumerate}
+\end{atencao}
+
+\textbf{Política de evolução.} O \cd{ContratoInterceptor} não confere o SSE: quem
+confere cada \cd{data:} é o teste, contra \cd{DADOS\_POR\_EVENTO} de
+\arq{contrato-de-rotas.ts}, e \textbf{evento novo entra lá antes de sair da api}.
+O ADK está fixado no \arq{uv.lock} (\cd{\textasciitilde=2.10.0}); subir de versão
+é refazer as medições de \arq{tests/test\_e2e.py} do agente, porque é delas que
+saem as três armadilhas acima. Chave de estado, nome de ferramenta e chave de
+trecho mudam nas quatro pontas no mesmo PR.
+
+\section{Contrato com o \emph{vendor} do avatar da Ajuda}
+\label{sec:contrato-ajuda}
+
+A Ajuda com avatar (\adrr{ADR-132}, Seção~\ref{sec:ia-ajuda}) é o único contrato
+em que a api \textbf{é chamada pelo servidor de um \emph{vendor}} --- e não por
+uma pessoa logada nem por um serviço do Google. São três trechos: a api pede a
+sala ao LiveAvatar; o navegador entra na sala com o SDK do \emph{vendor}
+(WebRTC); e, a cada fala da pessoa, o \emph{vendor} chama o LLM da api, num
+formato OpenAI-compatível que \textbf{a documentação dele não descreve} --- tudo
+o que segue sobre esse trecho foi MEDIDO no \emph{spike} de 2026-10-02, no
+\emph{sandbox}. A doutrina inteira está em \arq{apps/api/src/ajuda/AGENTS.md}; os
+\emph{payloads}, na Seção~\ref{sec:payload-ajuda}.
+
+\begin{lstlisting}[language=tsunoo, caption={\arq{apps/api/src/ai/avatar-ao-vivo.port.ts} --- a terceira porta de \arq{src/ai} (abreviado)}, label={lst:avatarport}]
+export const AVATAR_AO_VIVO = "AVATAR_AO_VIVO";
+
+export interface PedidoDeSessao {
+  duracaoMaximaS: number;              // o vendor derruba a sala ao atingi-lo
+  variaveis: Record<string, string>;   // dynamic_variables: por aqui vai o token
+}
+
+export interface SessaoDeAvatar {
+  sessaoId: string;                    // o id da sala no vendor (para encerrar)
+  tokenDaSessao: string;               // o que o NAVEGADOR usa para entrar
+}
+
+export interface AvatarAoVivoPort {
+  readonly ligado: boolean;            // false = AvatarDesligado: a Ajuda da 503
+  criarSessao(pedido: PedidoDeSessao): Promise<SessaoDeAvatar>;
+  encerrarSessao(sessaoId: string): Promise<void>;   // sala ja fechada nao e erro
+}
+\end{lstlisting}
+
+\begin{regra}
+\textbf{Só \arq{liveavatar.client.ts} conhece o LiveAvatar}, pela regra do
+\cd{AiProvider}; \arq{src/ajuda} fala com a porta. É porta própria, e não método
+do \cd{AiProvider}, porque não gera texto: reserva uma sala cobrada por minuto,
+com ciclo de vida. O texto da Ajuda passa pelo \cd{AiProvider} como qualquer
+outro, pelo \cd{conversarEmFluxo} (Listagem~\ref{lst:aiprovider}).
+\end{regra}
+
+\subsection{O que a api pede ao \emph{vendor}}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Chamada} & \thd{Uso}\\
+\midrule
+\rota{POST /v1/sessions/token} & Abre a sala: \cd{mode: "FULL"},
+  \cd{interactivity\_type: "CONVERSATIONAL"}, o avatar, o teto
+  (\cd{max\_session\_duration}), \cd{llm\_configuration\_id} (o NOSSO LLM),
+  \cd{avatar\_persona} com \cd{context\_id} e \cd{language: "pt"}, e as
+  \cd{dynamic\_variables} com o \emph{token} da sessão. Devolve
+  \cd{session\_id} e \cd{session\_token}; só o segundo vai ao hub.\\
+\zebra \rota{POST /v1/sessions/stop} & Fecha a sala (\cd{reason: "USER\_CLOSED"}).
+  4xx é sala que já fechou, e é ignorado.\\
+\bottomrule
+\end{tabularx}
+
+Cabeçalho \cd{x-api-key} com \env{LIVEAVATAR\_API\_KEY}, 10\,s de \emph{timeout}
+--- abrir é o passo em que a pessoa espera olhando um vídeo preto. O contexto e a
+configuração de LLM que a sessão cita são criados uma vez por contrato e
+ambiente por \arq{scripts/liveavatar-configurar.mjs} (idempotente pelo nome
+\cd{unooria-ajuda-<ambiente>}), \textbf{fora do Terraform}.
+
+\subsection{O que o \emph{vendor} pede à api}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Chamada} & \thd{O que chega, e o que a api responde}\\
+\midrule
+\rota{GET /ajuda/llm/models} & Na abertura da sala, com 5\,s de paciência.
+  Resposta mínima: um modelo, \cd{unooria-ajuda}. O modelo de verdade
+  (\env{VERTEX\_MODEL}) não é anunciado.\\
+\zebra \rota{POST /ajuda/llm/chat/\B completions} & A cada fala. É o \emph{request}
+  do cliente OpenAI em Python (\emph{LiveKit Agents}):
+  \cd{Authorization: Bearer <segredo>} e
+  \cd{\{messages, model, stream: true, stream\_options: \{include\_usage: true\},
+  temperature: 0.5\}}. \cd{messages[0]} é \cd{system} = o \emph{prompt} do
+  contexto com as \cd{dynamic\_variables} JÁ substituídas; depois vem o
+  histórico inteiro, a começar pelo \cd{opening\_text}. Resposta:
+  \cd{chat.completion.chunk} em SSE, ou um \cd{chat.completion} inteiro quando
+  \cd{stream} é falso.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Duas trancas, e as duas são necessárias.} A rota fica fora do
+\cd{OidcGuard} --- quem chama é o \emph{vendor} ---, e no lugar dele exige:
+\begin{enumerate}
+  \item \cd{Authorization: Bearer} \env{AJUDA\_LLM\_SEGREDO}, comparado em tempo
+    constante: prova que é o \emph{vendor}. No \emph{vendor}, o mesmo valor mora
+    como segredo do tipo \cd{OPENAI\_API\_KEY} da nossa configuração de LLM;
+  \item o \emph{token} da sessão \textbf{dentro da mensagem \cd{system}}, no
+    marcador \cd{[sessao:<token>]}: prova QUEM fala, e numa sessão que esta api
+    abriu e não fechou (\cd{ajuda\_sessoes.fim} nulo). É um HS256 curto
+    (\env{AJUDA\_SESSAO\_CHAVE}; \cd{\{sub, escola, perfil, sid\}}; audiência
+    \cd{ajuda-llm}; vale o teto da sessão mais 1 minuto) que a api assina ao
+    abrir e entrega em \cd{dynamic\_variables.sessao}. HS256, e não o RS256 do
+    hub, porque quem assina e quem confere é a mesma api.
+\end{enumerate}
+Só o segredo deixaria qualquer um que o tivesse conversar em nome de ninguém; só
+o \emph{token}, qualquer um com um \emph{token} vazado usar o modelo direto.
+\emph{Token} escrito na fala da pessoa não vale: só o \cd{system} é lido. O
+\emph{token} não leva nome nem e-mail, porque o \emph{vendor} vê o \emph{prompt}
+do contexto (regra 6).
+\end{regra}
+
+\begin{atencao}
+\textbf{Quatro comportamentos medidos que a documentação do \emph{vendor} não
+diz.}
+\begin{enumerate}
+  \item \textbf{Erro do endpoint = avatar MUDO}: sem nova tentativa e sem evento
+    para o navegador. Por isso, aceita a chamada, \textbf{toda recusa de negócio
+    e toda falha do modelo viram FALA, em 200}; só a autenticação responde 401
+    (e a rota responde 503 sem as duas \emph{envs}).
+  \item \textbf{\emph{Stream} é obrigatório na prática, e o primeiro byte tem
+    10\,s} (\cd{x-stainless-read-timeout}). Daí o \cd{conversarEmFluxo}, o
+    pedaço vazio com \cd{role: "assistant"} logo ao abrir o \emph{stream} e a
+    fala de espera aos 7\,s.
+  \item \textbf{Sem \cd{context\_id} na sessão, o avatar fica mudo}, sem erro.
+  \item \textbf{O segredo do LLM é \cd{secret\_type: OPENAI\_API\_KEY}}: a
+    \emph{skill} da HeyGen ensina \cd{LLM\_API\_KEY}, que a api deles recusa.
+\end{enumerate}
+\end{atencao}
+
+\textbf{Política de evolução.} O corpo é lido com \cd{.passthrough()}: só
+\cd{messages} decide, e campo novo do \emph{vendor} é tolerado --- recusar com 400
+deixaria o avatar mudo sem erro na tela. O \cd{ContratoInterceptor} não confere a
+resposta (é \cd{text/event-stream}, escrita crua). Mudou o formato do
+\emph{request}, a substituição das \cd{dynamic\_variables} ou o \emph{timeout} do
+lado do \emph{vendor}? O desenho inteiro sai dessas medições: refaça o
+\emph{spike} no \emph{sandbox} antes de mexer na api. Trocar a URL pública da api
+ou o segredo pede recriar a configuração de LLM no \emph{vendor} (ele não tem
+edição documentada; apagar o segredo ANTES da configuração a quebra sem aviso).
+
+\section{Contrato da conexão de voz do mascote da Ajuda}
+\label{sec:contrato-ajuda-mascote}
+
+O mascote (\adrr{ADR-158}) é o segundo atendente da Ajuda, ao lado do avatar.
+Aqui o \emph{vendor} é o Gemini Live da Vertex, uma conversa de VOZ bidirecional,
+e o rosto é nosso: o mascote 3D do hub, com a boca tirada do próprio áudio. São
+dois trechos, e a api fica no meio dos dois: \textbf{o navegador fala com a api}
+por \rota{WS /ajuda/mascote/ao-vivo}, num protocolo NEUTRO e fechado; \textbf{só
+a api fala com o Gemini}, com o ADC, pela porta \cd{VOZ\_AO\_VIVO}. Nada do
+formato do \emph{vendor} atravessa --- nem para lá, nem para cá ---, e a
+instrução do sistema (a mesma base da Ajuda, com a apresentação do mascote) é
+montada na api e nunca chega ao navegador (regra 2).
+
+\begin{lstlisting}[language=tsunoo, caption={\arq{apps/api/src/ai/voz-ao-vivo.port.ts} --- a quarta porta de \arq{src/ai} (abreviado)}, label={lst:vozport}]
+export const VOZ_AO_VIVO = "VOZ_AO_VIVO";
+
+export interface PedidoDeVoz {
+  modelo: string;      // do painel (ajuda_configuracao), ex.: gemini-3.8-live
+  voz: string;         // uma das vozes pre-definidas do Gemini, ex.: Leda
+  instrucao: string;   // o prompt do atendente, com a base: nunca vai ao hub
+  /** A quem o painel de custos atribui a sessao (ADR-161): o WebSocket chega
+   *  por `upgrade`, fora do middleware que abre o contexto da requisicao. */
+  atribuicao?: { escolaId?: string | null; perfil?: string | null; recurso?: string };
+}
+
+export type EntradaDaVoz =             // o que o navegador pode mandar
+  | { tipo: "texto"; texto: string }
+  | { tipo: "audio"; base64: string }  // 100 ms de PCM 16 bits, 16 kHz
+  | { tipo: "fim-do-audio" };
+
+export type EventoDaVoz =              // o que volta ao navegador
+  | { tipo: "audio"; base64: string; taxa: number }   // PCM 16 bits, 24 kHz
+  | { tipo: "transcricao-saida"; texto: string }
+  | { tipo: "transcricao-entrada"; texto: string }
+  | { tipo: "interrompido" }           // falou por cima: descartar a fila
+  | { tipo: "fim-do-turno" };
+
+export interface VozAoVivoPort {
+  readonly ligada: boolean;            // false sem projeto da Vertex (mock)
+  abrir(pedido: PedidoDeVoz): Promise<ConversaDeVoz>;
+}
+\end{lstlisting}
+
+\begin{regra}
+\textbf{Só \arq{gemini-live.client.ts} conhece o \cd{BidiGenerateContent}}, pela
+regra do \cd{AiProvider}: \arq{src/ajuda} fala com a porta, e trocar de
+\emph{vendor} é escrever outro cliente. É porta própria pela razão da do avatar:
+não gera texto, abre uma conversa com ciclo de vida. O cliente abre
+\cd{wss://<regiao>-aiplatform.googleapis.com/ws/\B google.cloud.aiplatform.\B
+v1beta1.\B LlmBidiService/\B BidiGenerateContent} com o ADC, na região
+\env{AJUDA\_MASCOTE\_REGIAO} (o Live não está no \cd{global}), e o modelo vai com
+o caminho inteiro \cd{projects/<p>/locations/<r>/publishers/google/models/<m>}.
+\end{regra}
+
+\subsection{O protocolo entre o navegador e a api}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{18mm}X@{}}
+\toprule
+\headrow \thd{Mensagem} & \thd{Sentido} & \thd{Regra}\\
+\midrule
+\cd{\{tipo: "entrar", bilhete\}} & \textbf{1ª}, ida & SEMPRE a primeira. O
+  bilhete é o que \rota{POST /ajuda/sessoes} devolveu: HS256 com
+  \env{AJUDA\_SESSAO\_CHAVE}, audiência \cd{ajuda-mascote}, 2 minutos, claims
+  \cd{\{sub, escola, perfil, sid\}}. Vai na mensagem, e não na URL, que acaba em
+  \emph{log} de balanceador. \textbf{Uma entrada por bilhete}: a api marca a
+  linha de \cd{ajuda\_sessoes} de forma atômica. Sem bilhete em 10\,s, fecha.\\
+\zebra \cd{\{tipo: "texto", texto\}} & ida & O que a pessoa escreveu, de 1 a 500
+  caracteres.\\
+\cd{\{tipo: "audio", base64\}} & ida & 100\,ms de microfone, PCM 16 bits
+  \emph{little-endian}, 16\,kHz.\\
+\zebra \cd{\{tipo: "fim-do-audio"\}} & ida & O microfone desligou: o modelo fecha o
+  que ouviu e responde.\\
+\cd{\{tipo: "pronto", prazo\}} & volta & O Gemini confirmou a abertura; \cd{prazo}
+  é o fim da sessão (início + teto), em ISO.\\
+\zebra \cd{\{tipo: "audio", base64, taxa\}} & volta & A fala do mascote, PCM 16 bits
+  a 24\,kHz. É dela que o hub tira a boca.\\
+\cd{transcricao-saida}, \cd{transcricao-entrada} & volta & O texto do que o
+  mascote disse e do que a pessoa disse, para a conversa escrita da janela.\\
+\zebra \cd{interrompido}, \cd{fim-do-turno} & volta & A pessoa falou por cima (o
+  hub descarta o áudio na fila); o turno do mascote acabou.\\
+\bottomrule
+\end{tabularx}
+
+Mensagem que não é JSON, fora do \cd{MensagemDoNavegadorSchema} (Zod,
+\cd{.strict()}) ou acima de 30 por segundo fecha a conexão. Os fechamentos são o
+canal de erro, porque WebSocket aberto não tem \emph{status}:
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X@{}}
+\toprule
+\headrow \thd{Código} & \thd{Quando}\\
+\midrule
+4401 & O bilhete não chegou em 10\,s, não confere, venceu ou já foi usado.\\
+\zebra 4403 & O produto \cd{ajuda} está desligado para a escola --- na entrada ou
+  numa conferência.\\
+4408 & O teto da sessão chegou, ou a sessão foi encerrada (outra aba,
+  \rota{POST /ajuda/sessoes/:id/encerrar}, outra sessão aberta).\\
+\zebra 4429 & Mensagem demais, ou fora do protocolo.\\
+4502 & O Gemini não abriu a sessão, ou caiu no meio.\\
+\zebra 4503 & A stack não tem a Vertex nem a \env{AJUDA\_SESSAO\_CHAVE}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{O custo tem teto, e quem o aplica é a api.} A conexão cai no prazo da
+sessão (o mesmo cálculo de minutos do avatar), e a cada 30\,s a api confere se a
+linha de \cd{ajuda\_sessoes} continua aberta e se o produto continua ligado:
+encerrar em outra aba, ou o \cd{admin} desligar a Ajuda, derruba a conversa no
+ar. Banco fora do ar por um instante não derruba: o prazo ainda vale. A queda da
+conexão, de qualquer lado, grava o \cd{fim} da linha.
+\end{regra}
+
+\begin{atencao}
+\textbf{O \cd{Origin} é conferido à mão}, antes do \emph{upgrade}, contra a mesma
+lista do CORS (\env{CORS\_ORIGINS}, \arq{src/config/origens.ts}): o CORS não
+alcança WebSocket. Fora da lista, 403. Não é a tranca principal --- sem bilhete
+ninguém passa da primeira mensagem --- mas fecha a porta a qualquer site aberto no
+navegador. \textbf{O que foi dito ou escrito não vai ao \emph{log}} (regra 6): a
+linha da sessão é \cd{ajuda.mascote}, com \cd{sid}, \cd{perfil}, \cd{duracaoMs},
+\cd{turnos} e \cd{motivo}.
+\end{atencao}
+
+\textbf{Três comportamentos do \emph{vendor} medidos no PoC} (que a api herdou):
+\cd{responseModalities} e \cd{speechConfig} vão DENTRO de
+\cd{generationConfig}, e a \cd{systemInstruction} tem de ser um \cd{Content}
+(texto puro é recusado); o servidor valida o JSON da abertura antes da
+credencial, então campo errado volta 1007 \enquote{Unknown name} até com
+credencial ruim; e chega \cd{sessionResumptionUpdate} sem pedir, que é
+ignorado. \textbf{Política de evolução}: mensagem nova do protocolo entra no
+\cd{MensagemDoNavegadorSchema} e em \cd{EventoDaVoz} antes de sair do hub ou da
+api, e \arq{tests/ajuda-mascote.spec.ts} prende os dois lados.
+
 \section{Contrato entre duas experiências}
 
 Quando uma experiência precisa do resultado de outra, a comunicação nunca é
@@ -602,16 +1108,27 @@ direta --- módulos de domínio não se conhecem (Seção~\ref{sec:c4l3}). O con
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \node[bundle, text width=28mm] (v) at (0.8,0) {\textbf{exp-70}\desc{Vila do Lume}};
-  \node[c4component, text width=30mm] (mv) at (4.6,0)
-    {\arq{src/vila/}\desc{\texttt{quadrantes.ts}: colapso 10 \seta{} 4}};
-  \node[c4component, text width=34mm, fill=unooOrangeWash, draw=unooOrange] (t) at (9.2,0)
-    {\texttt{exp\_01\_exp\_70\_}\\\texttt{perfis\_importados}\desc{a tabela de contrato}};
-  \node[c4component, text width=30mm] (mi) at (13.6,0)
-    {\arq{src/perfis/largada.ts}\desc{decide o lado do \emph{feed}}};
-  \node[bundle, text width=28mm] (i) at (13.6,-3.2) {\textbf{exp-01}\desc{Instanooria}};
+  % Linha de cima: o jogo entrega o dado bruto; o professor dispara o colapso,
+  % que grava a tabela de contrato. Linha de baixo: o Instanooria a lê.
+  \node[c4person, text width=22mm, minimum height=10mm] (prof) at (7.0,2.7)
+    {\textbf{Professor}};
+  \node[bundle, text width=28mm] (v) at (1.7,0) {\textbf{app-70}\desc{Vila do Lume}};
+  \node[c4component, text width=34mm] (mv) at (7.0,0)
+    {\texttt{vila/quadrantes.ts}\desc{módulo \texttt{vila} da api:\\colapso 10 \seta{} 4}};
+  \node[c4component, text width=38mm, fill=unooOrangeWash, draw=unooOrange] (t) at (12.6,0)
+    {\texttt{exp08ef1b\_app\_70\_}\\\texttt{perfis\_importados}\desc{a tabela de contrato}};
+  \node[c4component, text width=38mm] (mi) at (12.6,-3.2)
+    {\texttt{perfis/largada.ts}\desc{módulo \texttt{perfis} da api:\\decide o lado do \emph{feed}}};
+  \node[bundle, text width=28mm] (i) at (7.0,-3.2) {\textbf{exp08ef1b}\desc{Instanooria}};
 
-  \node[actnote, text width=52mm, anchor=north west] at (0.2,-2.2)
+  \draw[c4rel] (v) -- (mv) node[cxlabel, midway, above=1pt]{\emph{payload}\\bruto};
+  \draw[c4rel] (prof) -- (mv) node[cxlabel, midway, right=2pt, align=left]
+    {\texttt{POST /atividades/:id/}\\\texttt{perfis/da-vila}};
+  \draw[c4rel] (mv) -- (t) node[cxlabel, midway, above=1pt]{grava\\(\emph{upsert})};
+  \draw[c4rel] (t) -- (mi) node[cxlabel, midway, right=2pt]{lê};
+  \draw[c4rel] (mi) -- (i) node[cxlabel, midway, above=1pt]{lado inicial};
+
+  \node[actnote, text width=150mm, anchor=north west] at (0.15,-4.6)
     {\textbf{Duas travas que custam estudantes, de propósito:} valor não observado
      (\texttt{indicative} ou \texttt{none}) \textbf{fica fora da média} --- nunca
      entra como zero; e quadrante \emph{sem nenhum membro observado} invalida o
@@ -619,12 +1136,13 @@ direta --- módulos de domínio não se conhecem (Seção~\ref{sec:c4l3}). O con
      honesto sobre não saber. O preço é real: parte da turma não terá perfil
      importado.};
 
-  \draw[c4rel] (v) -- (mv) node[cxlabel, midway, above]{\emph{payload} bruto};
-  \draw[c4rel] (mv) -- (t) node[cxlabel, midway, above]{\rota{POST /atividades/:id/perfis/da-vila}};
-  \draw[c4rel] (t) -- (mi) node[cxlabel, midway, above]{lê};
-  \draw[c4rel] (mi) -- (i);
-
 \end{tikzpicture}}
+\begin{legendadiag}
+\amostra{bundle} experiência (\emph{bundle}) \quad
+\amostra{c4component} módulo da api \quad
+\amostra{c4component, fill=unooOrangeWash, draw=unooOrange} a tabela de contrato \quad
+\amostra{fill=unooNavy, draw=unooNavy, rounded corners=1pt} pessoa
+\end{legendadiag}
 \caption[Contrato entre duas experiências]{O único acoplamento entre
   experiências, e como ele é explícito: uma tabela cujo nome carrega os dois
   números, escrita por um \emph{endpoint} de fronteira acionado pelo professor.}

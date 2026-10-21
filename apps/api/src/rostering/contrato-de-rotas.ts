@@ -267,6 +267,9 @@ export const RelatorioDaRegionalQuery = z.object({
  *  propósito: `estudantes` é a criança, `turmas*` é a aula. */
 export const MissaoNoRelatorioSchema = z.object({
   expId: z.string(),
+  /** O nome que a diretoria reconhece (o do catálogo); o código só quando a
+   *  missão saiu do catálogo. */
+  nome: z.string(),
   /** Turmas em que a missão está aberta agora. */
   turmasLiberadas: z.number().int().nonnegative(),
   /** Turmas em que o professor já encerrou. Turma encerrada com poucos

@@ -14,9 +14,11 @@
 \midrule
 \endhead
 ADC      & \textit{Application Default Credentials} --- cadeia de resolução de credencial do Google Cloud\\
-\zebra ADR      & \textit{Architecture Decision Record} --- registro de decisão arquitetural\\
-API      & \textit{Application Programming Interface}\\
-\zebra ANPD     & Autoridade Nacional de Proteção de Dados\\
+\zebra ADK      & \textit{Agent Development Kit} --- o \textit{framework} de agentes do Google, em Python (o agente de IA do professor)\\
+ADR      & \textit{Architecture Decision Record} --- registro de decisão arquitetural\\
+\zebra API      & \textit{Application Programming Interface}\\
+ANPD     & Autoridade Nacional de Proteção de Dados\\
+\zebra ASR      & \textit{Automatic Speech Recognition} --- reconhecimento de fala (a escuta do avatar da Ajuda)\\
 BFF      & \textit{Backend for Frontend} --- camada de \textit{proxy} do hub para a API\\
 \zebra BNCC     & Base Nacional Comum Curricular\\
 C4       & Modelo de visualização arquitetural em quatro níveis (Contexto, Contêiner, Componente, Código)\\
@@ -34,15 +36,17 @@ EF       & Ensino Fundamental (séries \cd{1EF}--\cd{9EF})\\
 ER       & Entidade-Relacionamento (modelo de dados)\\
 \zebra GCP      & \textit{Google Cloud Platform}\\
 HA       & \textit{High Availability} --- alta disponibilidade\\
-\zebra HTTP(S)  & \textit{HyperText Transfer Protocol} (\textit{Secure})\\
-IaC      & \textit{Infrastructure as Code} --- infraestrutura como código\\
-\zebra IdP      & \textit{Identity Provider} --- provedor de identidade\\
-JSON     & \textit{JavaScript Object Notation}\\
-\zebra JWK/JWKS & \textit{JSON Web Key} / \textit{JSON Web Key Set}\\
-JWT      & \textit{JSON Web Token}\\
-\zebra LB       & \textit{Load Balancer}\\
-LGPD     & Lei Geral de Proteção de Dados Pessoais (Lei 13.709/2018)\\
-\zebra LLM      & \textit{Large Language Model} --- modelo de linguagem de grande escala\\
+\zebra HS256    & HMAC com SHA-256 --- assinatura simétrica de JWT (o \textit{token} da sessão da Ajuda)\\
+HTTP(S)  & \textit{HyperText Transfer Protocol} (\textit{Secure})\\
+\zebra IaC      & \textit{Infrastructure as Code} --- infraestrutura como código\\
+IdP      & \textit{Identity Provider} --- provedor de identidade\\
+\zebra JSON     & \textit{JavaScript Object Notation}\\
+JWK/JWKS & \textit{JSON Web Key} / \textit{JSON Web Key Set}\\
+\zebra JWT      & \textit{JSON Web Token}\\
+LB       & \textit{Load Balancer}\\
+\zebra LGPD     & Lei Geral de Proteção de Dados Pessoais (Lei 13.709/2018)\\
+LLM      & \textit{Large Language Model} --- modelo de linguagem de grande escala\\
+\zebra NDJSON   & \textit{Newline-Delimited JSON} --- um objeto JSON por linha\\
 OIDC     & \textit{OpenID Connect}\\
 \zebra OTel/OTLP & \textit{OpenTelemetry} / \textit{OpenTelemetry Protocol} --- padrão aberto de instrumentação (rastros, métricas, logs) e seu protocolo de exportação\\
 ORM      & \textit{Object-Relational Mapping}\\
@@ -60,15 +64,18 @@ SA       & \textit{Service Account} --- conta de serviço do GCP\\
 SLA/SLO  & \textit{Service Level Agreement} / \textit{Objective}\\
 \zebra SLI      & \textit{Service Level Indicator} --- a medida sobre a qual um SLO promete um valor\\
 SQL      & \textit{Structured Query Language}\\
-\zebra SSR      & \textit{Server-Side Rendering}\\
-TLS      & \textit{Transport Layer Security}\\
-\zebra TTL      & \textit{Time To Live} --- tempo de validade\\
+\zebra SSE      & \textit{Server-Sent Events} --- fluxo de eventos do servidor ao cliente numa resposta HTTP aberta\\
+SSR      & \textit{Server-Side Rendering}\\
+\zebra TLS      & \textit{Transport Layer Security}\\
+TTL      & \textit{Time To Live} --- tempo de validade\\
+\zebra TTS      & \textit{Text-to-Speech} --- síntese de voz\\
 UC       & Caso de Uso (\textit{Use Case})\\
 \zebra UML      & \textit{Unified Modeling Language}\\
 VPC      & \textit{Virtual Private Cloud}\\
-\zebra WIF      & \textit{Workload Identity Federation} --- federação de identidade de carga de trabalho\\
-WSO2 IS  & WSO2 \textit{Identity Server} --- o gerenciador central de identidade do produto\\
-\zebra xAPI     & \textit{Experience API} --- especificação de telemetria de aprendizagem\\
+\zebra WebRTC   & \textit{Web Real-Time Communication} --- áudio e vídeo em tempo real no navegador (a sala do avatar da Ajuda)\\
+WIF      & \textit{Workload Identity Federation} --- federação de identidade de carga de trabalho\\
+\zebra WSO2 IS  & WSO2 \textit{Identity Server} --- o gerenciador central de identidade do produto\\
+xAPI     & \textit{Experience API} --- especificação de telemetria de aprendizagem\\
 \bottomrule
 \end{tabularx}
 
@@ -96,7 +103,7 @@ para todo o documento.
 \zebra \cd{estudante} & Usuário-estudante. É o único papel cujos dados são de menores,
   o que governa a maior parte das decisões de retenção e de log.\\
 \cd{professor} & Usuário que prepara e conduz a aula; consome relatórios de
-  turma e usa as ferramentas de professor (exp-90, exp-91).\\
+  turma e usa as ferramentas de professor (app-90, app-91).\\
 \zebra \cd{gestor} & Usuário administrativo da escola: importa usuários, redefine
   senhas. Não vê dado de bem-estar de professor.\\
 \cd{admin-contrato} & Único papel autorizado a atravessar escolas, e apenas em
@@ -121,12 +128,12 @@ para todo o documento.
   ativa, séries, \textit{capabilities}, \cd{viewport}, público e permissões.\\
 \cd{versaoAtiva} & Versão do \emph{bundle} que o hub serve. \emph{Rollback} é a
   troca deste campo --- não um novo \emph{deploy}.\\
-\zebra \cd{bolha} & Nível de dificuldade do instrumento da exp-70 (A, B ou C),
+\zebra \cd{bolha} & Nível de dificuldade do instrumento da app-70 (A, B ou C),
   atribuído pelo servidor e estável por estudante.\\
 \cd{grau} & Quanto uma partida sustenta a medida de um valor:
   \cd{scored}, \cd{indicative}, \cd{zero} ou \cd{none}. A diferença entre
   \cd{zero} e \cd{none} é invariante de API.\\
-\zebra \cd{run} & Sessão de um estudante numa atividade da exp-01: carrega o estado do
+\zebra \cd{run} & Sessão de um estudante numa atividade da exp08ef1b: carrega o estado do
   motor de feed adaptativo.\\
 \cd{comTenancy} & Porta única de acesso ao banco na API: abre transação e arma
   a RLS com a escola do \textit{token}.\\

@@ -4,7 +4,8 @@
 \chapter{Especificação da API}
 \label{cap:api}
 
-A API é um serviço NestJS~\cite{nestjs2026} com 22 módulos. Este capítulo
+A API é um serviço NestJS~\cite{nestjs2026} com 34 módulos (os \cd{imports} de
+\arq{app.module.ts} em 2026-09-25). Este capítulo
 especifica a superfície HTTP: as convenções transversais, os grupos de rotas e a
 autorização de cada um. O catálogo completo, rota por rota, está no
 Apêndice~\ref{ap:endpoints}.
@@ -39,7 +40,7 @@ Corpo & JSON com teto de \SI{2}{\mega\byte}; \cd{text/csv} cru com
 Erros & \emph{Exceptions} do Nest (\cd{BadRequestException},
   \cd{ForbiddenException}, \cd{NotFoundException}). Domínio com vocabulário
   próprio de erro usa um \cd{CodigoErro} tipado (ex.:
-  \arq{src/unootube/erros.ts}).\\
+  \arq{src/unoogpt/erros.ts}).\\
 \zebra Assincronia longa & \textbf{202 + \emph{polling}}. Nenhuma rota fica
   aberta esperando modelo de linguagem.\\
 \bottomrule
@@ -68,124 +69,289 @@ por JWT: \rota{POST /perfis/importar} (\cd{x-perfil-token}) e
 \rota{POST /planos/referencias} (\cd{x-import-token}). Ambas são chamadas por
 \emph{script} local ou por integração externa, e ambas respondem \textbf{503}
 quando a variável correspondente está ausente --- desligadas, não abertas.
+Desde a \adrr{ADR-132}, mais duas: \rota{GET /ajuda/llm/models} e
+\rota{POST /ajuda/llm/chat/completions}, chamadas pelo servidor do \emph{vendor}
+do avatar. Trancam por segredo em \cd{Authorization: Bearer} \textbf{e} por um
+\emph{token} de sessão que viaja dentro da mensagem \cd{system}, e respondem 503
+sem as duas \emph{envs} (Seção~\ref{sec:api-ajuda}). E, desde a
+\adrr{ADR-158}, a única rota da api que não é HTTP: \rota{WS
+/ajuda/mascote/ao-vivo}, a conexão de voz do mascote da Ajuda, que tranca pelo
+\cd{Origin} e por um bilhete na PRIMEIRA mensagem, não por cabeçalho.
 \end{atencao}
 
 \section{Mapa de rotas por área}
 
+O mapa vem em duas figuras: a plataforma e a exp08ef1b na
+Figura~\ref{fig:mapa-rotas}, e as demais experiências, uma linha por
+experiência, na Figura~\ref{fig:mapa-rotas-exps}. O catálogo rota por rota, com
+método e esquema, é o Apêndice~\ref{ap:endpoints}.
+
+% Duas figuras, e não uma (2026-09-25): numa só, as 45 caixas mais a legenda não
+% cabiam na página, e a versão anterior "cabia" encavalando caixas (a
+% `/salas/*` sobre a `/perfis-recebidos`, a `/telemetry/*` sobre a
+% `/rostering/*`) e deixando rota vazar da borda. Grade fixa: coluna nova é
+% linha nova, nunca caixa espremida no vão.
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    rt/.style={c4component, text width=33mm, minimum height=16mm}]
 
-  \node[camadalbl, anchor=west] at (0.3,0.8) {Plataforma --- serve a todos os papéis};
-  \node[c4component, text width=27mm] (au) at (2.3,-0.4)
-    {\rota{/auth/login}\desc{sem papel}};
-  \node[c4component, text width=27mm] (he) at (5.7,-0.4)
-    {\rota{/healthz}, \rota{/readyz}\desc{público}};
-  \node[c4component, text width=27mm] (ex) at (9.1,-0.4)
-    {\rota{/experiencias}\desc{GET: qualquer; PUT: admin}};
-  \node[c4component, text width=27mm] (pg) at (12.5,-0.4)
-    {\rota{/progresso/:expId}\desc{estudante}};
-  \node[c4component, text width=27mm] (te) at (14.4,-1.9)
-    {\rota{/telemetry/*}\desc{ver acima}};
-  \node[c4component, text width=27mm] (us) at (2.3,-1.9)
-    {\rota{/usuarios/*}\desc{gestor, admin}};
-  \node[c4component, text width=27mm] (ai) at (5.7,-1.9)
-    {\rota{/ai/gerar}\desc{autenticado + quota}};
-  \node[c4component, text width=27mm] (an) at (9.1,-1.9)
-    {\rota{/analise/*}\desc{\textbf{admin-contrato}}};
-  \node[c4component, text width=27mm] (ro) at (12.5,-1.9)
-    {\rota{/rostering/*}\desc{gestor, admin}};
-  \node[c4component, text width=27mm] (tu) at (2.3,-3.0)
-    {\rota{/turmas/*}\desc{prof.\ (as dele), gestor}};
-  \node[c4component, text width=27mm] (mt) at (5.7,-3.0)
-    {\rota{/matriculas/:id}\desc{gestor, admin}};
-  \node[c4component, text width=27mm] (pll) at (9.1,-3.0)
-    {\rota{/periodos-letivos}\desc{GET: prof.; POST: gestor}};
-  \node[c4component, text width=27mm] (pp) at (12.5,-3.0)
-    {\rota{/perfis-recebidos}\desc{gestor, admin}};
-  \node[c4component, text width=27mm, fill=unooBlueWash, draw=unooBlue] (sal) at (14.4,-3.0)
-    {\rota{/salas/*}\desc{a SALA: grade e liberação}};
-  \node[c4component, text width=27mm, fill=unooBlueWash, draw=unooBlue] (rec) at (16.3,-3.0)
-    {\rota{/recursos/*}\desc{o interruptor da REDE}};
+  \node[camadalbl, anchor=west] at (0.1,0) {Plataforma --- serve a todos os papéis};
+  \node[rt] (au) at (1.95,-1.1)
+    {\texttt{/auth/login}\desc{sem papel}};
+  \node[rt] (he) at (5.9,-1.1)
+    {\texttt{/healthz}, \texttt{/readyz}\desc{público}};
+  \node[rt] (ex) at (9.85,-1.1)
+    {\texttt{/experiencias}\desc{GET: qualquer;\\PUT: contrato, admin}};
+  \node[rt] (pg) at (13.8,-1.1)
+    {\texttt{/progresso/:expId}\desc{estudante}};
 
-  \node[camadalbl, anchor=west] at (0.3,-4.0) {exp-01 --- Instanooria};
-  \node[c4component, text width=27mm] (atv) at (2.3,-4.6)
-    {\rota{/atividades/*}\desc{professor}};
-  \node[c4component, text width=27mm] (rn) at (5.7,-4.6)
-    {\rota{/runs/*}\desc{estudante (\cd{/eventos}: professor tb.)}};
-  \node[c4component, text width=27mm] (po) at (9.1,-4.6)
-    {\rota{/posts/:id/comentarios}\desc{estudante}};
-  \node[c4component, text width=27mm] (pf) at (12.5,-4.6)
-    {\rota{/perfis/importar}\desc{chave de serviço}};
+  \node[rt] (te) at (1.95,-2.95)
+    {\texttt{/telemetry/*}\desc{ver acima}};
+  \node[rt] (us) at (5.9,-2.95)
+    {\texttt{/usuarios/*}\desc{gestor, admin}};
+  \node[rt] (ai) at (9.85,-2.95)
+    {\texttt{/ai/gerar}\desc{autenticado + quota}};
+  \node[rt] (an) at (13.8,-2.95)
+    {\texttt{/analise/*}\desc{\textbf{gestor de contrato},\\admin}};
 
-  \node[camadalbl, anchor=west] at (0.3,-6.1) {Demais experiências};
-  \node[c4component, text width=27mm] (ut) at (2.3,-7.3)
-    {\rota{/unootube/*}\desc{estudante}};
-  \node[c4component, text width=27mm] (utt) at (5.7,-7.3)
-    {\rota{/unootube/turmas/*}\desc{prof., gestor, admin}};
-  \node[c4component, text width=27mm] (vi) at (9.1,-7.3)
-    {\rota{/vila/sessoes}\desc{estudante}};
-  \node[c4component, text width=27mm] (vp) at (12.5,-7.3)
-    {\rota{/vila/professor/*}\desc{\textbf{professor}}};
-  \node[c4component, text width=27mm] (va) at (2.3,-8.8)
-    {\rota{/vila/agregado/*}\desc{prof., gestor}};
-  \node[c4component, text width=27mm] (pl) at (5.7,-8.8)
-    {\rota{/planos/*}\desc{professor}};
-  \node[c4component, text width=27mm] (pref) at (9.1,-8.8)
-    {\rota{/planos/referencias}\desc{chave de serviço}};
-  \node[c4component, text width=27mm, fill=unooRedWash, draw=unooRed] (be) at (12.5,-8.8)
-    {\rota{/bemestar/*}\desc{\textbf{só professor}, posse}};
-  \node[c4component, text width=27mm] (ug) at (2.3,-10.3)
-    {\texttt{/unoogpt/*}\desc{estudante}};
-  \node[c4component, text width=27mm, fill=unooRedWash, draw=unooRed] (ugp) at (5.7,-10.3)
-    {\texttt{/unoogpt/professor/*}\desc{\textbf{só professor}, transcrição}};
-  \node[c4component, text width=27mm] (uga) at (9.1,-10.3)
-    {\texttt{/unoogpt/agregado/*}\desc{gestor, admin --- sem \texttt{estudanteId}}};
-  \node[c4component, text width=27mm] (eco) at (12.5,-10.3)
-    {\texttt{/o-eco-no-grupo/*}\desc{estudante}};
-  \node[c4component, text width=27mm] (ecot) at (2.3,-11.8)
-    {\texttt{/o-eco-no-grupo/turmas/*}\desc{prof., gestor, admin --- o gate da aula}};
-  \node[c4component, text width=27mm] (rb) at (5.7,-11.8)
-    {\texttt{/rastro-boato/*}\desc{estudante}};
-  \node[c4component, text width=27mm] (rbt) at (9.1,-11.8)
-    {\texttt{/rastro-boato/turmas/*}\desc{prof., gestor, admin --- o gate da aula}};
-  \node[c4component, text width=27mm] (utp) at (12.5,-11.8)
-    {\texttt{/unootube/professor/*}\desc{prof., gestor --- material do guia}};
-  \node[c4component, text width=27mm] (rbp) at (2.3,-13.3)
-    {\texttt{/rastro-boato/professor/*}\desc{prof., gestor --- material do guia}};
-  \node[c4component, text width=27mm] (ecop) at (5.7,-13.3)
-    {\texttt{/o-eco-no-grupo/professor/*}\desc{prof., gestor --- material do guia}};
-  \node[c4component, text width=27mm] (mia) at (9.1,-13.3)
-    {\texttt{/manifesto-ia/*}\desc{estudante}};
-  \node[c4component, text width=27mm] (miat) at (12.5,-13.3)
-    {\texttt{/manifesto-ia/turmas/*}\desc{prof., gestor --- o debate E o conteúdo da turma}};
-  \node[c4component, text width=27mm] (fc) at (9.1,-13.3)
-    {\texttt{/foto-conta/*}\desc{estudante}};
-  \node[c4component, text width=27mm] (fct) at (12.5,-13.3)
-    {\texttt{/foto-conta/turmas/*}\desc{prof., gestor --- o latch da Roda}};
+  \node[rt] (ro) at (1.95,-4.8)
+    {\texttt{/rostering/*}\desc{gestor, admin}};
+  \node[rt] (tu) at (5.9,-4.8)
+    {\texttt{/turmas/*}\desc{prof.\ (as dele), gestor}};
+  \node[rt] (mt) at (9.85,-4.8)
+    {\texttt{/matriculas/:id}\desc{gestor, admin}};
+  \node[rt] (pll) at (13.8,-4.8)
+    {\texttt{/periodos-letivos}\desc{GET: prof.; POST: gestor}};
+
+  \node[rt] (pp) at (1.95,-6.65)
+    {\texttt{/perfis-recebidos}\desc{gestor, admin}};
+  \node[rt, fill=unooBlueWash, draw=unooBlue] (rec) at (5.9,-6.65)
+    {\texttt{/recursos/*}\desc{o interruptor da REDE}};
+  \node[rt, fill=unooBlueWash, draw=unooBlue] (sal) at (9.85,-6.65)
+    {\texttt{/salas/*}\desc{prof.\ libera, gestor lê,\\estudante: \texttt{/minhas}}};
+  \node[rt, fill=unooBlueWash, draw=unooBlue] (eq) at (13.8,-6.65)
+    {\texttt{/equipes/*}\desc{prof.\ monta, gestor lê,\\estudante: \texttt{/minha}}};
+
+  % 5a linha (2026-09-25): coluna nova é linha nova --- /evidencias/* entra
+  % embaixo, e a faixa da exp08ef1b desce 1,85.
+  \node[rt] (evi) at (1.95,-8.5)
+    {\texttt{/evidencias/*}\desc{prof.\ ajusta, gestor lê;\\estudante: só a pergunta}};
+  \node[rt, fill=unooRedWash, draw=unooRed] (agp) at (5.9,-8.5)
+    {\texttt{/agente-professor/*}\desc{\textbf{só professor}, posse;\\resposta em SSE}};
+  \node[rt] (pod) at (9.85,-8.5)
+    {\texttt{/podcast/:expId/*}\desc{prof., gestor;\\nenhuma de estudante}};
+  \node[rt] (aj) at (13.8,-8.5)
+    {\texttt{/ajuda/*}\desc{prof.\ e gestão;\\teto em minutos por dia}};
+
+  % 6a linha (2026-10-13): as áreas da plataforma que faltavam no mapa.
+  \node[rt] (obs) at (1.95,-10.35)
+    {\texttt{/observabilidade/*}\desc{autenticado;\\\texttt{/publico}: sem sessão}};
+  \node[rt] (prs) at (5.9,-10.35)
+    {\texttt{/prospeccao/*}\desc{\texttt{/publico}: visitante;\\cadastros: \textbf{admin}}};
+  \node[rt] (esc) at (9.85,-10.35)
+    {\texttt{/escolas/*}\desc{e \texttt{/lotacoes}: gestão;\\criar escola: contrato}};
+  \node[rt] (est) at (13.8,-10.35)
+    {\texttt{/estudantes/:id/*}\desc{gestão: transferência\\e portabilidade}};
+
+  \node[camadalbl, anchor=west] at (0.1,-11.65) {exp08ef1b --- Instanooria};
+  \node[rt] (atv) at (1.95,-12.75)
+    {\texttt{/atividades/*}\desc{professor}};
+  \node[rt] (rn) at (5.9,-12.75)
+    {\texttt{/runs/*}\desc{estudante (\texttt{/eventos}: professor tb.)}};
+  \node[rt] (po) at (9.85,-12.75)
+    {\texttt{/posts/:id/\B{}comentarios}\desc{estudante}};
+  \node[rt] (pf) at (13.8,-12.75)
+    {\texttt{/perfis/importar}\desc{chave de serviço}};
 
 \end{tikzpicture}}
-\caption[Mapa de rotas da API]{Mapa das rotas por área e papel autorizado. Duas
-  áreas estão destacadas por \textbf{ausência deliberada}: bem-estar não tem
-  nenhuma rota de gestor nem de agregado; e no unooGPT a transcrição do estudante só
-  existe no controller do professor --- o do gestor \textbf{não tem uma rota que
-  aceite \texttt{estudanteId}}, o que torna estrutural, e não disciplinar, o limite do
-  que ele alcança (\adrr{ADR-27}). Em \rota{/turmas/*} a autorização do professor
-  é por \textbf{matrícula}, não por escola: é a diferença entre \enquote{dá aula
-  nesta turma} e \enquote{trabalha nesta escola} (\adrr{ADR-28}). Em
-  \texttt{/o-eco-no-grupo/turmas/*} e \texttt{/rastro-boato/turmas/*} mora o
-  \emph{gate} da aula: é a professora quem move a turma de etapa, e a rota é
-  \textbf{idempotente} de propósito --- é o clique que se dá duas vezes. As
-  quatro \texttt{/<slug>/professor/*} servem o \textbf{material do guia da
-  aula}: catálogo com gabarito, sem \texttt{escolaId} e sem \emph{tenancy},
-  em que o que a guarda protege é só o papel (\adrr{ADR-86}). A exp-08
-  \textbf{não} tem uma dessas, e a ausência é o desenho: o material de mediação
-  dela é o pacote CURADO por turma, então ele mora em
-  \texttt{/manifesto-ia/turmas/:id/conteudo} --- com \emph{tenancy}, porque o
-  conteúdo não é igual para todo contrato.}
+\begin{legendadiag}
+\amostra{fill=unooBlueWash, draw=unooBlue} um dos três eixos que nenhuma
+experiência conhece pelo nome \quad
+\amostra{fill=unooRedWash, draw=unooRed} só o professor, e só o que é dele:
+nenhuma rota de gestão alcança
+\end{legendadiag}
+\caption[Mapa de rotas da API --- plataforma e exp08ef1b]{Mapa das rotas da
+  plataforma e da exp08ef1b, por papel autorizado; as das demais experiências
+  estão na Figura~\ref{fig:mapa-rotas-exps}. Em \texttt{/turmas/*} a autorização
+  do professor é por \textbf{matrícula}, não por escola: é a diferença entre
+  \enquote{dá aula nesta turma} e \enquote{trabalha nesta escola}
+  (\adrr{ADR-28}). Em destaque, os três eixos que nenhuma experiência conhece
+  pelo nome: \texttt{/recursos/*} diz se ela existe NESTA REDE (\adrr{ADR-87}),
+  \texttt{/salas/*} se está aberta NESTA TURMA (\adrr{ADR-69}) e
+  \texttt{/equipes/*} quem divide um computador nela (\adrr{ADR-111}). Nas duas
+  últimas quem escreve é só quem leciona; o gestor só lê --- como em
+  \texttt{/evidencias/*} (\adrr{ADR-112}), em que o estudante alcança só a
+  pergunta e a resposta, nunca o próprio resultado. \texttt{/agente-professor/*}
+  é só do professor, e cada um alcança só as próprias conversas na escola ativa
+  (\adrr{ADR-126}). \texttt{/podcast/:expId/*} é o podcast de recapitulação de
+  toda missão que o tem, do professor e da gestão (\adrr{ADR-150}). A
+  \texttt{/ajuda/*} tem teto em minutos por dia, e não em \emph{token}
+  (\adrr{ADR-132}); a \texttt{/prospeccao/publico} é a única escrita de
+  visitante sem sessão (\adrr{ADR-107}).}
 \label{fig:mapa-rotas}
 \end{figure}
+
+% A 13.2 ocupa quase uma página e nunca cabe junto da 13.1. Sem esta quebra, o
+% \flushbottom do preâmbulo empurra a sobra para a única cola elástica da
+% página --- o \intextsep ACIMA da 13.1 --- e abre um buraco entre o título e a
+% figura.
+\newpage
+
+\begin{figure}[H]
+\centering
+\fitpage{%
+\begin{tikzpicture}[x=1cm, y=1cm,
+    rt/.style={c4component, text width=40mm, font=\scriptsize},
+    exprot/.style={anchor=west, font=\scriptsize, text width=20mm, align=left,
+                   inner sep=0pt}]
+
+  % Uma linha por experiência, na ordem do código; a coluna diz QUEM chama.
+  % Célula vazia é ausência, e as destacadas em vermelho são ausência
+  % DELIBERADA. As linhas são empilhadas com vão fixo de 3 mm (2026-10-13).
+  \node[camadalbl] at (4.5,-0.25) {o estudante};
+  \node[camadalbl] at (9.05,-0.25) {o professor e a gestão};
+  \node[camadalbl] at (13.6,-0.25) {o guia, o agregado e o serviço};
+
+  % ---- backup-exp04ef1b
+  \node[exprot] at (0.1,-1.4) {\textbf{backup-}\\\textbf{exp04ef1b}\\UnooTube\\(arquivada)};
+  \node[rt, minimum height=15mm] at (4.5,-1.4)
+    {\texttt{---}\desc{sem rotas: fora do\\\texttt{app.module} (ADR-116)}};
+  \node[rt, minimum height=15mm] at (9.05,-1.4)
+    {\texttt{---}\desc{era \texttt{/unootube/turmas/*}}};
+  \node[rt, minimum height=15mm] at (13.6,-1.4)
+    {\texttt{---}\desc{era \texttt{/unootube/professor/*}}};
+
+  % ---- app-70
+  \node[exprot] at (0.1,-3.025) {\textbf{app-70}\\Vila do Lume};
+  \node[rt, minimum height=11.5mm] at (4.5,-3.025)
+    {\texttt{/vila/sessoes}\desc{estudante}};
+  \node[rt, minimum height=11.5mm] at (9.05,-3.025)
+    {\texttt{/vila/professor/*}\desc{\textbf{professor}}};
+  \node[rt, minimum height=11.5mm] at (13.6,-3.025)
+    {\texttt{/vila/agregado/*}\desc{prof., gestor}};
+
+  % ---- app-90
+  \node[exprot] at (0.1,-4.475) {\textbf{app-90}\\Plano de aula};
+  \node[rt, minimum height=11.5mm] at (9.05,-4.475)
+    {\texttt{/planos/*}\desc{professor}};
+  \node[rt, minimum height=11.5mm] at (13.6,-4.475)
+    {\texttt{/planos/referencias}\desc{chave de serviço}};
+
+  % ---- app-91
+  \node[exprot] at (0.1,-5.925) {\textbf{app-91}\\Bem-estar};
+  \node[rt, minimum height=11.5mm, fill=unooRedWash, draw=unooRed] at (9.05,-5.925)
+    {\texttt{/bemestar/*}\desc{\textbf{só professor}, posse}};
+
+  % ---- app-92
+  \node[exprot] at (0.1,-7.375) {\textbf{app-92}\\Plano de\\ensino};
+  \node[rt, minimum height=11.5mm] at (9.05,-7.375)
+    {\texttt{/planejamento/*}\desc{\textbf{professor}}};
+  \node[rt, minimum height=11.5mm] at (13.6,-7.375)
+    {\texttt{/planejamento/\B{}curriculo/*}\desc{prof., gestor --- a Base}};
+
+  % ---- exp01ef1b
+  \node[exprot] at (0.1,-8.825) {\textbf{exp01ef1b}\\O Que a\\Foto Conta};
+  \node[rt, minimum height=11.5mm] at (4.5,-8.825)
+    {\texttt{/foto-conta/*}\desc{estudante}};
+  \node[rt, minimum height=11.5mm] at (9.05,-8.825)
+    {\texttt{/foto-conta/\B{}turmas/*}\desc{prof., gestor --- o \emph{latch} da Roda}};
+
+  % ---- exp02em1b
+  \node[exprot] at (0.1,-10.45) {\textbf{exp02em1b}\\unooGPT};
+  \node[rt, minimum height=15mm] at (4.5,-10.45)
+    {\texttt{/unoogpt/*}\desc{estudante}};
+  \node[rt, minimum height=15mm, fill=unooRedWash, draw=unooRed] at (9.05,-10.45)
+    {\texttt{/unoogpt/professor/*}\desc{\textbf{só professor}, transcrição}};
+  \node[rt, minimum height=15mm] at (13.6,-10.45)
+    {\texttt{/unoogpt/agregado/*}\desc{gestor, admin --- sem \texttt{estudanteId}}};
+
+  % ---- exp04ef1b
+  \node[exprot] at (0.1,-12.25) {\textbf{exp04ef1b}\\Jornal da\\Escola};
+  \node[rt, minimum height=15mm] at (4.5,-12.25)
+    {\texttt{/jornal-escola/*}\desc{estudante --- toda a\\evidência por ação}};
+  \node[rt, minimum height=15mm] at (9.05,-12.25)
+    {\texttt{/jornal-escola/\B{}turmas/*}\desc{prof., gestor --- o pacote,\\os dois portões e o painel}};
+  \node[rt, minimum height=15mm] at (13.6,-12.25)
+    {\texttt{/jornal-escola/\B{}professor/*}\desc{prof., gestor --- material do guia}};
+
+  % ---- exp05ef1b
+  \node[exprot] at (0.1,-14.05) {\textbf{exp05ef1b}\\Quem mandou\\isso?};
+  \node[rt, minimum height=15mm] at (4.5,-14.05)
+    {\texttt{/quem-mandou-isso/*}\desc{estudante --- o Mural, o alerta\\e o robô do grupo}};
+  \node[rt, minimum height=15mm] at (9.05,-14.05)
+    {\texttt{/quem-mandou-isso/\B{}turmas/*}\desc{prof., gestor --- o pacote\\E o relógio da turma}};
+  \node[rt, minimum height=15mm] at (13.6,-14.05)
+    {\texttt{/quem-mandou-isso/\B{}professor/*}\desc{prof., gestor --- material do guia}};
+
+  % ---- exp06ef1b
+  \node[exprot] at (0.1,-15.85) {\textbf{exp06ef1b}\\Júri Estadual};
+  \node[rt, minimum height=15mm] at (4.5,-15.85)
+    {\texttt{/juri-estadual/*}\desc{estudante --- as pastas, o voto\\e a regra SE \ldots{} ENTÃO}};
+  \node[rt, minimum height=15mm] at (9.05,-15.85)
+    {\texttt{/juri-estadual/\B{}turmas/*}\desc{prof., gestor --- a mostra,\\a Galeria Oculta e a lousa}};
+  \node[rt, minimum height=15mm] at (13.6,-15.85)
+    {\texttt{/juri-estadual/\B{}professor/*}\desc{prof., gestor --- material do guia}};
+
+  % ---- exp06ef2b
+  \node[exprot] at (0.1,-17.65) {\textbf{exp06ef2b}\\O Rastro\\do Boato};
+  \node[rt, minimum height=15mm] at (4.5,-17.65)
+    {\texttt{/rastro-boato/*}\desc{estudante}};
+  \node[rt, minimum height=15mm] at (9.05,-17.65)
+    {\texttt{/rastro-boato/\B{}turmas/*}\desc{prof., gestor, admin ---\\o \emph{gate} da aula}};
+  \node[rt, minimum height=15mm] at (13.6,-17.65)
+    {\texttt{/rastro-boato/\B{}professor/*}\desc{prof., gestor --- material do guia}};
+
+  % ---- exp07ef1b
+  \node[exprot] at (0.1,-19.45) {\textbf{exp07ef1b}\\A Seleção};
+  \node[rt, minimum height=15mm] at (4.5,-19.45)
+    {\texttt{/a-selecao/*}\desc{estudante}};
+  \node[rt, minimum height=15mm] at (9.05,-19.45)
+    {\texttt{/a-selecao/\B{}turmas/*}\desc{prof., gestor --- as coberturas,\\as imagens e o portão}};
+  \node[rt, minimum height=15mm] at (13.6,-19.45)
+    {\texttt{/a-selecao/\B{}professor/*}\desc{prof., gestor --- material do guia}};
+
+  % ---- exp08ef4b
+  \node[exprot] at (0.1,-21.25) {\textbf{exp08ef4b}\\O Manifesto\\da IA};
+  \node[rt, minimum height=15mm] at (4.5,-21.25)
+    {\texttt{/manifesto-ia/*}\desc{estudante}};
+  \node[rt, minimum height=15mm] at (9.05,-21.25)
+    {\texttt{/manifesto-ia/\B{}turmas/*}\desc{prof., gestor --- o debate\\E o conteúdo da turma}};
+
+\end{tikzpicture}}
+\begin{legendadiag}
+\amostra{fill=unooRedWash, draw=unooRed} ausência deliberada: só o professor,
+sem rota de gestor nem de agregado que alcance o mesmo dado \quad
+célula vazia: a experiência não tem rota para aquele público
+\end{legendadiag}
+\caption[Mapa de rotas da API --- demais experiências]{Mapa das rotas das
+  demais experiências: uma linha por experiência, uma coluna por quem chama.
+  Duas áreas estão destacadas por \textbf{ausência deliberada}: bem-estar não
+  tem nenhuma rota de gestor nem de agregado; e no unooGPT a transcrição do
+  estudante só existe no controller do professor --- o do gestor \textbf{não tem
+  uma rota que aceite \texttt{estudanteId}}, o que torna estrutural, e não
+  disciplinar, o limite do que ele alcança (\adrr{ADR-27}).}
+\label{fig:mapa-rotas-exps}
+\end{figure}
+
+Na Figura~\ref{fig:mapa-rotas-exps}, em \rota{/rastro-boato/turmas/*} mora o
+\emph{gate} da aula: é a professora quem move a turma de etapa, e a rota é
+\textbf{idempotente} de propósito --- é o clique que se dá duas vezes. As
+\rota{/<slug>/professor/*} servem o \textbf{material do guia da aula}:
+catálogo com gabarito, sem \cd{escolaId} e sem \emph{tenancy}, em que o que
+a guarda protege é só o papel (\adrr{ADR-86}). A exp08ef4b \textbf{não} tem uma
+dessas, e a ausência é o desenho: o material de mediação dela é o pacote
+CURADO por turma, então ele mora em \rota{/manifesto-ia/turmas/:id/conteudo}
+--- com \emph{tenancy}, porque o conteúdo não é igual para todo contrato. A
+exp05ef1b tem \textbf{as duas coisas}, e elas respondem perguntas diferentes:
+\rota{/quem-mandou-isso/professor/material} é o banco curado da Unooria,
+igual em todo contrato, e \rota{/quem-mandou-isso/turmas/:id/pacote} é o
+pacote que AQUELA professora aprovou --- o único que a turma dela vai ler. O
+Jornal da Escola repete o desenho (\adrr{ADR-117}), e o Júri Estadual de
+Projetos também, com uma diferença: o material do guia é só o esqueleto da
+missão, porque a mostra é sempre a da atividade (\adrr{ADR-137}).
+
 
 \section{Superfície que a SDK consome}
 
@@ -230,13 +396,13 @@ export interface ExperienciaHandle {
 \begin{nota}
 Não há método de \enquote{corrigir} nem de \enquote{pontuar} na SDK, e isso é
 intencional: correção é rota de domínio da experiência na API
-(\rota{/unootube/*}, \rota{/vila/*}, \rota{/runs/*}), não capacidade genérica. Uma
+(\rota{/unoogpt/*}, \rota{/vila/*}, \rota{/runs/*}), não capacidade genérica. Uma
 API genérica de avaliação convidaria a mandar a resposta certa junto.
 \end{nota}
 
 \section{Grupos de rotas em detalhe}
 
-\subsection{Motor de \emph{feed} (exp-01)}
+\subsection{Motor de \emph{feed} (exp08ef1b)}
 
 O grupo com mais rotas da plataforma, todas escopadas por \cd{run} e todas de
 papel \cd{estudante}, com duas exceções marcadas.
@@ -259,7 +425,22 @@ papel \cd{estudante}, com duas exceções marcadas.
   o relógio coletivo da turma.\\
 \rota{POST /runs/:id/conclusao} & estudante & Inclinação escolhida (A, B ou dúvida).\\
 \zebra \rota{POST /runs/:id/reflexao}, \rota{GET .../reflexao} & estudante &
-  Texto livre de fechamento, sem limite de caracteres.\\
+  Texto livre de fechamento, sem limite de caracteres. O PRIMEIRO salvamento
+  guarda o texto lido e cria a leitura da IA, que roda depois da resposta
+  (\adrr{ADR-167}).\\
+\rota{GET /runs/:id/tarefas} & estudante & A situação das três tarefas do
+  Canal A e do fim da revelação: é por ela que a experiência decide o desvio
+  por fase (\adrr{ADR-167}).\\
+\zebra \rota{GET|POST /runs/:id/raio-x}, \rota{GET .../raio-x/devolutiva} &
+  estudante & O 6a: os 6 posts que ele viu, sem lado; o envio corrigido no
+  servidor; a devolutiva só da explicabilidade em diante. Envio repetido é
+  \textbf{409} \cd{tarefa-ja-enviada}; fora da hora, \cd{tarefa-indisponivel}.\\
+\rota{POST /runs/:id/revelacao/concluida} & estudante & O \enquote{Ver meu
+  relatório}: abre o 6b e o 6c e fecha o Raio-x. Idempotente.\\
+\zebra \rota{GET|POST /runs/:id/termos}, \rota{GET|POST .../envio} & estudante &
+  O 6b e o 6c, do cinza em diante e com a revelação terminada. O envio aceita
+  até 3 posts dos 9, uma mensagem e uma frase opcional de até 140 caracteres.
+  Todo envio responde \cd{\{ enviada: true \}}.\\
 \rota{POST /runs/:id/student-post} & estudante & Post publicado pelo estudante.\\
 \zebra \rota{POST /runs/:id/reacoes} & estudante & Dispara reações de persona ao vivo
   (se \cd{ia\_ao\_vivo}).\\
@@ -269,6 +450,38 @@ papel \cd{estudante}, com duas exceções marcadas.
   viu. É a virada pedagógica da missão.\\
 \rota{POST /runs/:id/reset} & \textbf{professor} & Zera a sessão. Recalcula a
   largada pela \emph{mesma} regra do primeiro início.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O Canal A da Missão Tempestade (exp02em1b)}
+
+As tarefas por ação da Missão Tempestade (\adrr{ADR-172}), todas de papel
+\cd{estudante}, com a identidade vinda do \emph{token} (não há id de sessão) e
+o \emph{lock} da sessão em cada uma. Nenhuma devolve nível nem gabarito: a
+resposta é o estado da tela, e os ids dos pares e das comparações são a
+posição, porque o tipo é a resposta.
+
+\begin{tabularx}{\linewidth}{@{}L{48mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Semântica}\\
+\midrule
+\rota{POST /unoogpt/mandar} & \enquote{Enviar equipes}: o portão do porquê,
+  a saída congelada e o registro da operação na resposta. O desfecho fica
+  retido: \rota{GET /unoogpt/resultado} responde \textbf{409}
+  \cd{registro-pendente} até o registro. \rota{POST /unoogpt/simular} é o
+  alias do cliente 1.4.x, sem tarefa nem marca.\\
+\zebra \rota{GET /unoogpt/saude}, \rota{POST .../saude/abrir},
+  \rota{POST .../saude} & A ligação da Saúde: o estado, a oferta ao abrir a
+  decisão (o primeiro destino também oferece) e a resposta, com
+  \cd{opcao: null} para fechar sem responder.\\
+\rota{GET /unoogpt/registro}, \rota{POST .../registro/leitura|fontes|alerta} &
+  O registro da operação, montado e gravado no servidor; cada cartão é
+  \cd{null} quando não se aplica.\\
+\zebra \rota{GET|POST /unoogpt/e-se} & As duas comparações nas mesmas 20
+  tempestades, depois do registro.\\
+\rota{GET /unoogpt/fechamento}, \rota{POST .../fechamento/whatsapp|moradora} &
+  O fechamento: \textbf{409} \cd{fechamento-fechado} até o professor abrir
+  (\cd{abrir-fechamento} em \rota{POST /unoogpt/professor/turmas/:turmaId/relogio}).\\
 \bottomrule
 \end{tabularx}
 
@@ -296,15 +509,185 @@ Três rotas, e elas são a camada entre \cd{turmas} e \cd{experiencias}
 \adrr{ADR-87} essa porta tem DUAS trancas em série: antes de perguntar se o
 professor liberou, ela pergunta se o recurso EXISTE nesta rede. Toda entrada
 de estudante em experiência --- \rota{POST /runs}, \rota{GET /runs/boot} e o funil
-de sessão do UnooTube, do unooGPT, da Vila e do Eco --- chama
+de sessão do UnooTube, do unooGPT, da Vila e das missões seguintes --- chama
 \cd{exigirMissao\-Liberada} e responde \textbf{403} \cd{missao-nao-liberada} sem
 liberação. O \emph{bundle} é público e \rota{/exp/:expId} é endereço adivinhável:
 antes disto, qualquer estudante logado abria qualquer missão digitando a URL.
 
-A guarda é PRÉ-CONDIÇÃO do relógio da exp-03 e dos \emph{gates} da exp-07, não
+A guarda é PRÉ-CONDIÇÃO do relógio da exp02em1b e dos \emph{gates} da exp06ef2b, não
 substituta --- e fica na CRIAÇÃO da sessão, não em toda rota: quem já entrou
 fica, porque encerrar fecha a entrada e não expulsa a criança no meio da aula.
 \end{regra}
+
+\subsection{As equipes na missão: quem divide um computador}
+
+Seis rotas no módulo \arq{equipes/} (\adrr{ADR-111}): cinco de professor, todas
+sob \rota{/equipes/turma/\B :turmaId/\B missao/:expId}, e uma de estudante, a literal
+\rota{/equipes/minha}. Os prefixos são distintos de propósito: assim a ordem de
+registro dos \emph{controllers} não decide quem responde, e o do estudante é
+outro arquivo, sem \cd{@Roles} misto.
+
+\begin{itemize}
+  \item \rota{GET /equipes/turma/\B :turmaId/\B missao/:expId} (professor que leciona,
+    gestor, admin) --- a montagem, as equipes com os membros e \cd{semEquipe}
+    (os ausentes inclusive). Missão que não aceita equipe responde \textbf{200}
+    com \cd{permitida: false}, e não 400: é por esta resposta que o hub decide se
+    desenha o bloco.
+  \item \rota{POST .../sugestao} (só professor) --- uma proposta que
+    \textbf{nunca grava}, e por isso responde 200: \cd{sorteio} distribui os
+    presentes por tamanhos que diferem em no máximo 1; \cd{manual} devolve N
+    equipes vazias e todos em \cd{semEquipe}. O \cd{agrupamento} (lados, neutros,
+    equipes mistas) só vem quando a missão registrou uma fonte de lado; hoje,
+    nenhuma registrou.
+  \item \rota{GET .../ultima} (só professor) --- a montagem mais recente da MESMA
+    turma em OUTRA missão com equipe, reprojetada sobre a turma de hoje: quem
+    saiu cai e é contado em \cd{saidas}, quem chegou fica em \cd{semEquipe}, e
+    os ausentes de lá não vêm. Também não grava.
+  \item \rota{PUT .../} (\textbf{só professor com matrícula na turma}) --- grava
+    a montagem INTEIRA. O corpo leva a \cd{versao} em que a tela se baseou
+    (\cd{0} sem montagem); versão velha é \textbf{409}
+    \cd{equipes-\B{}desatualizadas} com \cd{versaoAtual}. Montagem impossível é
+    \textbf{400} \cd{montagem-invalida} com \cd{erros}: a lista INTEIRA, em
+    frases para o professor e sem nome de criança. Missão fora da lista é 400
+    \cd{missao-sem-equipes}; fora do catálogo, 404; ferramenta de professor ou
+    recurso desligado na rede, 403.
+  \item \rota{DELETE .../} (só professor) --- desfaz. \textbf{Idempotente}, e
+    sem checagem de catálogo nem de disponibilidade: missão desligada na rede
+    não pode deixar equipes presas que ninguém consegue apagar.
+  \item \rota{GET /equipes/minha?expId=} (estudante) --- \textbf{sempre 200}:
+    \cd{equipe: null}, ou o nome dela e \cd{colegas} com SÓ o primeiro nome dos
+    outros membros. Um 404 viraria \cd{api-recusou} no log do hub a cada
+    abertura de missão.
+\end{itemize}
+
+Turma que o professor não leciona responde \textbf{404} em todas as rotas de
+professor, nunca 403 --- é o desenho da sala. E três respostas de outros módulos
+mudaram de forma para contar por COMPUTADOR:
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{O que mudou}\\
+\midrule
+\rota{GET /salas/turma/:turmaId} & \cd{missoes[].equipes}: quantas equipes a missão
+  tem na turma, num \cd{groupBy} para a grade inteira. SÓ no \emph{schema} do
+  professor, e não no \cd{MissaoNaGradeSchema}, que também responde
+  \rota{/salas/minhas}: a contagem da sala não é assunto do estudante.\\
+\rota{GET /unoogpt/professor/\B turmas/:turmaId} & O mesmo na folha da Missão
+  Tempestade: \cd{linhas[].equipe}, e o \cd{retrato} conta as linhas, com
+  \cd{porComputador}. \enquote{Abrir} leva ao representante.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{A evidência pedagógica: por atividade e rodada}
+\label{sec:api-evidencias}
+
+Nove rotas no módulo \arq{evidencias/} (\adrr{ADR-112}), em três
+\emph{controllers}: quatro do lado de quem dá aula --- o painel, a confirmação e
+o ajuste de uma atividade, e o perfil de um estudante ---, duas do estudante, a
+pergunta e a resposta, e três do painel de habilidades (\adrr{ADR-144}), só de
+leitura, descritas no fim desta seção. Nenhum caminho de um casa com o
+do outro --- o número de segmentos e as literais diferem ---, então a ordem de
+registro não decide quem responde; e o do estudante é outro arquivo, sem
+\cd{@Roles} misto. As duas escritas do professor devolvem o PAINEL já
+atualizado, para a tela não precisar reler.
+
+\begin{itemize}
+  \item \rota{GET /evidencias/turma/\B :turmaId/\B missao/:expId/\B atividade/:atividadeId}
+    (professor que leciona, gestores, \cd{admin}) --- o painel: as habilidades da
+    ficha com o texto da BNCC, as rodadas que têm evidência, e para cada
+    estudante da turma a equipe dele na missão, \cd{porRodada} (cada habilidade
+    com \cd{status}, \cd{origem} e \cd{situacao}) e o \cd{resultado} --- a
+    melhor rodada por habilidade, só com o que vale. Habilidade ausente é N/A.
+    Quando a ficha dá rótulo às ações, a célula traz também de onde veio o
+    nível (\cd{marcador} e \cd{rotulo}, só na evidência própria) e, se as ações
+    da habilidade divergem na rodada, \cd{acoes} com o nível de cada uma; o
+    \cd{origemDoResultado} faz o mesmo para o resultado (\adrr{ADR-166}).
+    \cd{pendentes} conta, por rodada, as cópias da projeção a revisar. Missão
+    SEM ficha responde \textbf{200} com \cd{temFicha: false} e tudo vazio, e não
+    400: é por esta resposta que o hub decide se desenha o bloco. A ordem é a
+    alfabética, e nenhum campo soma níveis.
+  \item \rota{POST .../\B rodadas/:rodada/confirmar} (só professor) ---
+    \enquote{Confirmar para a turma}: as cópias \cd{a\_revisar} da rodada
+    passam a \cd{valida}, com UM evento de turma no histórico. Responde 200,
+    e não 201 (\cd{@HttpCode(200)}), porque é ação sobre o que já existe; e
+    repetir não muda nada.
+  \item \rota{PATCH .../\B rodadas/:rodada/ajustes} (\textbf{só professor com
+    matrícula na turma}) --- de 1 a 200 ajustes
+    \cd{\{ estudanteId, habilidade, status \}}, a qualquer momento, mesmo com a
+    missão encerrada. O ajuste é a origem \cd{professor}, que nada sobrescreve
+    depois; \cd{nao\_participou} é o N/A explícito. Estudante fora da turma,
+    habilidade fora da ficha ou o mesmo par duas vezes: \textbf{400}
+    \cd{ajuste-invalido} com \cd{erros}, a lista INTEIRA em frases. Rodada
+    depois da última que a atividade teve: \textbf{400}
+    \cd{rodada-inexistente} (a rodada 1 sempre existe, para a atividade feita
+    fora da missão). Ajuste que repete o que já estava é ignorado, sem evento.
+  \item \rota{GET /evidencias/\B estudante/:estudanteId} (professor, gestores,
+    \cd{admin}) --- o perfil: em cada missão (com o nome do catálogo, ou o
+    \cd{expId} quando ela não está nele, a \cd{unidade} e \cd{ultimaEm}), da
+    mais recente para a mais antiga, \cd{habilidades} com o MELHOR nível entre
+    as atividades --- \cd{null} é \enquote{não avaliado} (\adrr{ADR-144}) ---
+    e, em cada atividade, o nível de cada habilidade: a melhor rodada, só com o
+    que vale, sem a projeção a revisar e sem \cd{nao\_participou}. Sem origem,
+    e sem juntar missões. O professor só abre quem ele ensina
+    (\cd{professorEnsinaOEstudante}); a coordenação regional pode pedir
+    \cd{?escolaId=} de uma escola da regional dela.
+  \item \rota{GET /evidencias/\B :expId/\B perguntas/:perguntaId} (estudante) --- o
+    enunciado e as alternativas, só \cd{id} e \cd{texto}: o nível de cada uma é
+    o gabarito, e fica no servidor. As alternativas saem \textbf{embaralhadas a
+    cada leitura} (\adrr{ADR-118}): a ficha as guarda na ordem da régua, e
+    \enquote{a primeira é a certa} viraria a pista --- a tela responde pelo
+    \cd{id} e carrega a pergunta uma vez. Pergunta fora da ficha: \textbf{404}
+    \cd{pergunta-nao-encontrada}.
+  \item \rota{POST /evidencias/\B :expId/\B perguntas/:perguntaId/resposta}
+    (estudante) --- o corpo leva SÓ \cd{alternativaId}; a atividade e a rodada
+    saem do resolvedor da missão. Responde \textbf{sempre}
+    \mbox{\cd{\{ enviada: true \}}}, na primeira e na segunda vez --- vale a primeira.
+    Sem atividade em andamento (ou sem resolvedor registrado): \textbf{409}
+    \cd{sem-atividade-em-andamento}; alternativa que não é da pergunta:
+    \textbf{400} \cd{alternativa-desconhecida}.
+\end{itemize}
+
+\paragraph{O painel de habilidades (\adrr{ADR-144}).} Três leituras da
+evidência somada, todas em contagem --- a tela faz a porcentagem ---, com a
+UNIDADE da missão como coluna e o nível de cada criança na missão como o
+MELHOR entre as atividades. Quem não tem evidência que conte é
+\cd{naoAvaliado}, nunca \cd{naoAtingiu}. O \enquote{em processo} que veio de
+um marcador limitado pela atividade sai à parte, em \cd{emProcessoLimitado}
+--- fora de \cd{emProcesso}, dentro do \cd{total}; no empate entre
+atividades, fica o comum (\adrr{ADR-166}).
+
+\begin{itemize}
+  \item \rota{GET /evidencias/turma/\B :turmaId/consolidado} (professor que
+    leciona --- 404 nas outras ---, gestores, \cd{admin}) --- as missões com
+    ficha da série da turma (e as que ela fez de outra série), com
+    \cd{aplicada}, e por habilidade a distribuição das crianças da turma; e a
+    lista de estudantes, alfabética, para o drill-down.
+  \item \rota{GET /evidencias/escola/consolidado} (gestores) --- as turmas do
+    ano letivo vigente que têm missão com ficha, por série e nome, com a
+    distribuição de cada habilidade; e \cd{total}, a escola inteira série a
+    série, a soma das turmas (\adrr{ADR-160}).
+  \item \rota{GET /evidencias/rede/consolidado} (\cd{gestor\_regional} e
+    perfis de contrato) --- cada escola, cada série, a soma das turmas. A
+    regional lê a PRÓPRIA (o \cd{?regionalId=} dela é ignorado); o contrato
+    escolhe a regional ou lê a rede inteira. Uma transação por escola, em
+    lotes de 8, como o relatório da diretoria (\adrr{ADR-82}). Vem também o
+    \cd{total} (a regional lida, ou a rede inteira: a soma das escolas) e, só
+    para o contrato na rede inteira, \cd{regionais}, cada uma com a soma das
+    escolas dela; cada escola diz a sua \cd{regionalId}, \cd{null} quando
+    pendurada direto no contrato (\adrr{ADR-160}).
+\end{itemize}
+
+Nas rotas de turma, escola e perfil, a coordenação REGIONAL pode pedir
+\cd{?escolaId=} de qualquer escola da regional dela (\cd{escolaDaConsulta},
+que pergunta a \cd{EscolasService.temLotacao}); fora dela, \textbf{403}.
+
+As duas do estudante passam por \cd{exigirMissaoLiberada}: missão não liberada
+na turma dele é \textbf{403} \cd{missao-nao-liberada}, e recurso desligado na
+rede, \cd{recurso-indisponivel}. Turma que o professor não leciona, e estudante
+que ele não ensina, respondem \textbf{404}, nunca 403 --- o desenho da sala. O
+gestor, que tem a escola do \emph{token} vazia quando é
+\cd{gestor\_contrato}, diz a escola em \cd{?escolaId=}. E o estudante
+\textbf{não tem rota que leia o próprio resultado}: a ausência é o contrato.
 
 \subsection{Entrada de pessoas: as duas portas, e por que só uma escreve}
 
@@ -375,7 +758,7 @@ turma, sem estudante e sem dado. Corrigido com a \adrr{ADR-79}: a regra agora
 vale nas duas portas.
 \end{atencao}
 
-\subsection{Planos de aula (exp-90)}
+\subsection{Planos de aula (app-90)}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{16mm}X@{}}
 \toprule
@@ -397,7 +780,230 @@ vale nas duas portas.
 \bottomrule
 \end{tabularx}
 
-\subsection{Planejamento de ensino (exp-92)}
+\subsection{O agente de IA do professor}
+\label{sec:api-agente}
+
+\adrr{ADR-126}. Classe com \cd{@Roles("professor")}, \cd{Disponibilidade\B Guard} e
+\cd{@Produto(\B"agente-\B professor")}: rota nova nasce coberta pelo interruptor, e o
+único escape é o \rota{DELETE}. O id de todas as rotas é o da linha de
+\cd{agente\_\B professor\_\B conversas}, nunca o \cd{sessao\_id} do engine; id que não é
+UUID responde como inexistente.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{16mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Código} & \thd{Semântica}\\
+\midrule
+\rota{GET /agente-professor/\B conversas} & 200 & As do professor na escola ativa,
+  a mais recente primeiro. \cd{titulo} é \cd{null} até o fim do primeiro turno.
+  Sai do Postgres; não toca o engine.\\
+\zebra \rota{POST /agente-professor/\B conversas} & \textbf{201} & Cria a sessão no engine
+  (com \cd{nome\_professor} e expiração distante) e a linha da posse. Não chama o
+  modelo: não consome quota. 503 \cd{AGENTE\_INDISPONIVEL} com o agente fora do
+  ar ou \cd{desligado}.\\
+\rota{GET /agente-professor/\B conversas/:id} & 200 & Título e mensagens, montados
+  da sessão: o texto do professor e o texto FINAL do agente, com as fontes de
+  cada turno. Sessão que sumiu do engine apaga a linha e responde 404.\\
+\zebra \rota{POST /agente-professor/\B conversas/:id/\B mensagens} & 200 SSE & O turno
+  (Seção~\ref{sec:contrato-agente}): \cd{text/event-stream} com
+  \cd{delta}, \cd{fontes}, \cd{titulo}, \cd{aviso}, \cd{fim} e \cd{erro}. Antes
+  de abrir o \emph{stream}, em JSON: 400 (corpo), 404 (posse), 429
+  \cd{RATE\_LIMIT} (10 por minuto) e 429 \cd{QUOTA}.\\
+\rota{DELETE /agente-professor/\B conversas/:id} & \textbf{204} & Apaga a sessão e a
+  linha. \cd{@SemDisponibilidade}: com o produto desligado, o professor continua
+  apagando o que é dele. Engine fora do ar: 503, e a linha FICA.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Outro dono é 404, nunca 403} --- 403 confirmaria que o id existe. E os
+\emph{rate limits} são por professor: 10 mensagens, 10 conversas novas, 30
+exclusões e 120 leituras por minuto. O \cd{Map} do \cd{rateLimit} é por instância,
+como nas outras rotas.
+\end{regra}
+
+\begin{atencao}
+\textbf{O \cd{ContratoInterceptor} não confere a rota de mensagens}: ela escreve na
+resposta crua (\cd{@Res()}, \cd{tipoDaResposta: text/event-stream}). Quem confere
+cada \cd{data:} é o teste, contra \cd{DADOS\_POR\_EVENTO} de
+\arq{contrato-de-rotas.ts}; no OpenAPI a resposta aparece como \cd{string}. E é a
+rota que infla o p95 da api (\adrr{ADR-128}).
+\end{atencao}
+
+\subsection{A Ajuda: o avatar e o mascote}
+\label{sec:api-ajuda}
+
+\adrr{ADR-132}, \adrr{ADR-158}. A Ajuda tem dois atendentes: o avatar em vídeo do
+LiveAvatar e, desde 2026-10-12, o mascote 3D da Unooria, que fala pelo Gemini
+Live da Vertex. Qual abre é a linha de \cd{ajuda\_configuracao}, que o
+\cd{admin} edita (abaixo); se o padrão não está montado na stack, abre o outro.
+O módulo \arq{src/ajuda} tem DUAS classes sob o mesmo prefixo, com guardas
+opostas, e mais a conexão de voz do mascote, que não é \emph{controller}:
+
+\begin{itemize}
+  \item \cd{AjudaController} --- o lado do \textbf{hub}: \cd{OidcGuard},
+    \cd{RolesGuard} com todos os papéis \textbf{menos o estudante},
+    \cd{DisponibilidadeGuard} e \cd{@Produto("ajuda")} na classe. Abre e
+    encerra a sala de vídeo; a conversa não passa por aqui.
+  \item \cd{AjudaLlmController} --- o lado do \textbf{\emph{vendor}}: sem
+    \emph{token} de usuário, porque quem chama é o servidor do LiveAvatar. As
+    trancas são o segredo no cabeçalho e o \emph{token} da sessão dentro da
+    mensagem \cd{system} (Seção~\ref{sec:contrato-ajuda}). É registrada
+    primeiro no módulo: a classe de rota literal antes da de parâmetro é o
+    hábito que evita a armadilha de \rota{/planos/:id}.
+  \item \cd{MascoteAoVivo} (\arq{mascote-ao-vivo.ts}) --- a conexão de voz
+    do mascote, \rota{WS /ajuda/mascote/ao-vivo}. \textbf{Não é um
+    \emph{gateway} do \cd{@nestjs/websockets}}: é um caminho só, pendurado no
+    \cd{upgrade} do servidor HTTP do Nest, com o \cd{ws}; sem salas nem
+    \emph{broadcast}, o \emph{adapter} inteiro seria dependência para nada. A
+    api é o \emph{proxy}: o navegador fala com ela, e só ela fala com o Gemini
+    Live (porta \cd{VOZ\_AO\_VIVO}). O protocolo está na
+    Seção~\ref{sec:contrato-ajuda-mascote}.
+\end{itemize}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{16mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Código} & \thd{Semântica}\\
+\midrule
+\rota{GET /ajuda/configuracao} & 200 & O que a janela da Ajuda precisa antes
+  de abrir: \cd{\{atendente, podeTrocar, modeloDoMascote\}}. \cd{atendente} é o
+  padrão da rede, ou o outro se o padrão não está montado, ou \cd{null}
+  (nenhum); \cd{podeTrocar} exige a troca permitida E o outro montado;
+  \cd{modeloDoMascote} é a URL do modelo 3D no bucket de assets. Nada aqui é
+  segredo.\\
+\zebra \rota{POST /ajuda/sessoes} & \textbf{201} & Corpo opcional
+  \cd{\{atendente?: "mascote" | "avatar"\}} (vale só com a troca permitida).
+  Fecha a sessão anterior da pessoa que tenha ficado aberta, confere os minutos
+  do dia (\cd{ajuda\_limites} contra \cd{ajuda\_sessoes}, os MESMOS para os dois
+  atendentes) e reserva a linha. Devolve uma união discriminada por
+  \cd{atendente}, com \cd{\{id, duracaoMaximaS, segundosRestantesHoje\}} em
+  comum. \textbf{Avatar}: pede a sala ao \emph{vendor} (o id da linha vai no
+  \emph{token}) e devolve \cd{tokenDaSessao}. \textbf{Mascote}: não pede nada a
+  ninguém; devolve o \cd{bilhete} da conexão de voz (HS256, audiência
+  \cd{ajuda-mascote}, 2 minutos, uma entrada) e os \cd{ajustes} da boca e da
+  voz. 503 \cd{AJUDA\_INDISPONIVEL} (nenhum dos dois montado), 400 (corpo fora
+  do contrato), 429 \cd{SEM\_MINUTOS} (menos de 1 minuto no dia), 429
+  \cd{RATE\_LIMIT} (6 aberturas por minuto), 502 \cd{AVATAR\_FALHOU} (a linha
+  fecha com duração zero) e 403 \cd{recurso-indisponivel}.\\
+\rota{POST /ajuda/sessoes/\B :id/encerrar} & \textbf{204} & Grava o \cd{fim} e,
+  no avatar, pede ao \emph{vendor} que feche a sala. Idempotente: encerrada,
+  inexistente, de outra pessoa ou id que não é UUID respondem 204 igual --- não
+  há o que confirmar. \cd{@SemDisponibilidade}. No mascote, a conexão de voz no
+  ar cai na conferência seguinte (até 30\,s).\\
+\zebra \rota{GET /ajuda/llm/models} & 200 & Para o \emph{vendor}, na abertura da sala:
+  um modelo só, \cd{unooria-ajuda}.\\
+\rota{POST /ajuda/llm/\B chat/completions} & 200 SSE & Um turno do atendente,
+  em \cd{chat.completion.chunk}. 401 sem segredo ou sem \emph{token} de sessão
+  válido; 503 sem \env{AJUDA\_LLM\_SEGREDO}/\env{AJUDA\_SESSAO\_CHAVE}; o resto
+  é 200.\\
+\zebra \rota{WS /ajuda/mascote/\B ao-vivo} & 101 & A conversa de voz do mascote.
+  \cd{Origin} fora de \env{CORS\_ORIGINS} recebe 403 antes do \emph{upgrade}.
+  Depois, os erros são CÓDIGOS DE FECHAMENTO, não \emph{status}: 4401 (bilhete
+  ausente, inválido, vencido ou já usado), 4403 (produto desligado), 4408 (teto
+  da sessão), 4429 (ritmo ou formato), 4502 (o Gemini não abriu ou caiu), 4503
+  (stack sem Vertex ou sem \env{AJUDA\_SESSAO\_CHAVE}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Na rota do \emph{vendor}, a recusa é uma FALA em 200.} O \emph{vendor} fica
+mudo diante de qualquer status de erro, sem avisar o navegador; então, depois de
+a autenticação passar, produto \cd{ajuda} desligado para a escola do
+\emph{token}, mais de 20 turnos por minuto e falha do modelo viram uma frase do
+atendente, no mesmo formato da resposta normal --- e as recusas nem chamam o
+modelo. Um 403 ou um 429 ali seria um avatar parado olhando para a pessoa.
+\end{regra}
+
+\begin{decisao}
+\textbf{O encerrar escapa do interruptor} (\cd{@SemDisponibilidade}), como o
+\rota{DELETE} do agente: desligar o produto no meio de uma conversa não pode
+deixar a sala do \emph{vendor} aberta e cobrando. E ele não tem \emph{status} de
+erro de posse: a linha é procurada por \cd{id} E \cd{usuario\_id} do
+\emph{token}, e o que não casa é ignorado em silêncio.
+\end{decisao}
+
+\begin{atencao}
+\textbf{\cd{ajuda\_sessoes} não tem RLS nem \cd{escola\_id} NOT NULL}: o
+\cd{gestor\_contrato} e o \cd{admin} abrem a Ajuda e não têm escola no
+\emph{token}. Toda query é por \cd{usuario\_id} do TOKEN, nunca de parâmetro; a
+tabela não guarda conversa nenhuma e não é dado de estudante (o CHECK do perfil
+o barra). O \cd{ContratoInterceptor} não confere o \rota{chat/completions}, que
+escreve na resposta crua (\cd{@Res()}); no OpenAPI a resposta aparece como
+\cd{string}, com \cd{acesso: servico}.
+\end{atencao}
+
+\begin{atencao}
+\textbf{A conexão de voz do mascote não está no OpenAPI nem no
+Apêndice~\ref{ap:endpoints}}: não é rota HTTP, e o \cd{@Contrato} não a
+alcança. Quem a confere é \arq{tests/ajuda-mascote.spec.ts}, contra o
+\cd{MensagemDoNavegadorSchema} de \arq{contrato-de-rotas.ts}. O CORS também não
+alcança WebSocket: por isso o \cd{Origin} é conferido à mão contra a MESMA lista
+(\arq{src/config/origens.ts}), que o \cd{enableCors} de \arq{main.ts} passou a
+ler. A conversa dura até o teto da sessão (no máximo 60 minutos, o limite por
+sessão): o \emph{timeout} de \emph{backend} do LB e o \emph{request timeout} do
+Cloud Run precisam cobrir a sessão inteira, ou a conexão cai no meio
+(Capítulo~\ref{cap:arqnuvem}).
+\end{atencao}
+
+\subsection{O podcast de recapitulação}
+\label{sec:api-podcast}
+
+\adrr{ADR-150}. O módulo \arq{src/podcast} é o podcast de recapitulação de
+TODA missão que o tem --- hoje a A Seleção (\cd{exp07ef1b}), o Jornal da Escola
+(\cd{exp04ef1b}), Quem Mandou Isso? (\cd{exp05ef1b}) e O Júri Estadual de
+Projetos (\cd{exp06ef1b}, \adrr{ADR-151} e \adrr{ADR-157}: o banco padrão
+tem o roteiro literal, \cd{padrao: true}; a mostra da IA tem as falas da IA, e a atividade é \cd{pacoteParaPodcast}, que aceita a de imagens
+já aprovadas), o Unoovista (\cd{exp08ef1b}, \adrr{ADR-156}: as falas vão no
+corpo do \rota{POST /atividades/:id/ativar}) e a Missão Tempestade
+(\cd{exp02em1b}, \adrr{ADR-156}: o podcast FIXO, sem vaga e sem
+\rota{falas-do-tema}, com a atividade \cd{"turma"}) ---, com rotas únicas e
+a missão entrando pelo \cd{:expId}. A classe tem \cd{OidcGuard} e
+\cd{RolesGuard} com \cd{professor} e os gestores: \textbf{nenhuma rota de
+estudante}, porque o podcast é do professor (\adrr{ADR-119}). A guarda de turma
+é da MISSÃO: cada uma registra uma \cd{FonteDoPodcast} no \cd{onModuleInit}
+(\cd{PodcastService.registrarFonte}), com o carregador da atividade que ela já
+usa para as imagens --- turma que o professor não leciona e atividade de outra
+turma são 404; sem atividade em andamento, o erro é o da missão (403
+\cd{atividade-nao-preparada} no Jornal, na A Seleção e no Júri).
+\cd{?atividadeId=} diz a atividade (\adrr{ADR-130}): um uuid, ou \cd{turma}
+para a missão sem atividade; sem ele, a em andamento.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{16mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Código} & \thd{Semântica}\\
+\midrule
+\rota{GET /podcast/:expId/\B{}turmas/\B{}:turmaId} & 200 & O roteiro inteiro
+  (a transcrição) e o estado do áudio: trechos prontos e a \cd{url} do
+  episódio, ou \cd{null}. Não gera nada. 404 \cd{experiencia-sem-podcast}
+  para missão sem podcast; 409 \cd{roteiro-indisponivel} para a atividade de
+  tema próprio criada antes do podcast, sem falas aprovadas.\\
+\zebra \rota{POST .../gerar} & 200 & Sintetiza UM trecho (um bloco, numa chamada
+  de diálogo pelo \cd{generateSpeech}) e, com todos prontos, emenda o
+  episódio num MP3. O cliente repete até \cd{completo}; \cd{falhou} diz o
+  bloco que não saiu. Idempotente (o trecho no \emph{bucket} é pulado), trava
+  de processo por episódio, quota do professor com custo ESTIMADO por trecho
+  (429 \cd{sem-saldo-de-ia}) e 20 chamadas por minuto.\\
+\rota{POST .../falas-do-tema} & 200 & As falas que contam o tema da
+  atividade, escritas pela IA a partir do conteúdo como a tela de criação o
+  tem (\cd{\{conteudo\}}, na forma da missão; fora dela, 400
+  \cd{payload-invalido}). \textbf{Rascunho: não grava} --- quem grava é a
+  homologação da missão. O banco padrão intocado volta com as falas do sheet,
+  sem IA; sem saldo ou com a IA fora do ar, 200 com as do sheet e o
+  \cd{motivo}. Cada fala tem de 12 a 60 palavras, até 400 bytes, sem link,
+  e-mail nem \enquote{@}. Quota do professor pelo que o \emph{vendor} cobrou
+  (\adrr{ADR-105}, \adrr{ADR-74}) e 10 chamadas por minuto.\\
+\bottomrule
+\end{tabularx}
+
+\begin{decisao}
+\textbf{O módulo é \cd{@Global()} e o ÚLTIMO do \cd{app.module}.} Importado
+pelas missões, ele entraria no roteador junto da primeira delas e reordenaria o
+\arq{docs/openapi.json} inteiro --- e o Apêndice~\ref{ap:endpoints} --- a cada
+missão nova com podcast. Ele não importa missão nenhuma: a dependência vai num
+sentido só, pelo registro da fonte. As rotas antigas da A Seleção
+(\rota{a-selecao/turmas/:t/podcast} e \rota{.../gerar-podcast}) saíram.
+\end{decisao}
+
+\subsection{Planejamento de ensino (app-92)}
 
 Duas famílias: a \textbf{regência} (o que o professor leciona) e o que pende
 dela --- o plano anual e as 40 semanas. Identidade sempre do \emph{token}: um
@@ -445,13 +1051,13 @@ de outro, e a posse é conferida em toda rota com id.
 \begin{nota}
 \rota{GET .../planos-anuais/:id/periodos} devolve \textbf{só as \cd{pronto}}, em
 ordem: é a fonte do documento de mais de uma semana (a entrega quinzenal e a do
-período de avaliação inteiro --- ver a Seção~\ref{sec:exp92-semanal}), e um
+período de avaliação inteiro --- ver a Seção~\ref{sec:app92-semanal}), e um
 documento entregue à coordenação não leva semana que falhou na geração. O filtro
 é no \textbf{banco}: baixar o 1º bimestre não tem por que carregar as aulas dos
 outros três.
 \end{nota}
 
-\subsection{Bem-estar (exp-91)}
+\subsection{Bem-estar (app-91)}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
@@ -499,7 +1105,7 @@ adicionada herde a permissão certa --- e é a mesma decisão tomada em
 \arq{src/vila/}.
 \end{decisao}
 
-\subsection{O Manifesto da IA (exp-08)}
+\subsection{O Manifesto da IA (exp08ef4b)}
 
 \begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
 \toprule
@@ -541,7 +1147,7 @@ adicionada herde a permissão certa --- e é a mesma decisão tomada em
 \rota{POST .../gate} & prof., gestor & \enquote{Pausar para Debate} /
   \enquote{Retomar Missão}. Idempotente: é o clique que se dá duas vezes.\\
 \zebra \rota{DELETE /manifesto-ia/turmas/:id} & prof., gestor & Zerar a turma.
-  Apaga a execução e \textbf{preserva} \cd{exp\_08\_conteudo\_turma}.\\
+  Apaga a execução e \textbf{preserva} \cd{exp08ef4b\_conteudo\_turma}.\\
 \bottomrule
 \end{tabularx}
 
@@ -561,6 +1167,438 @@ professor seria o único jeito de esta rota estragar a aula --- ele precisa pode
 aprovar o pacote curado com o Vertex indisponível.
 \end{atencao}
 
+\subsection{Quem mandou isso? (exp05ef1b)}
+
+% Esta tabela e ESCRITA A MAO; a verdade e o Apendice C (`apendices/c-endpoints.tex`),
+% gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer:
+% a tabela da v1 chegou a documentar rotas que nunca existiram.
+
+Vinte e uma rotas em três \emph{controllers} (\adrr{ADR-118}): onze do estudante
+(\cd{@Roles("estudante")} na classe, e \cd{exigirMissaoLiberada} no funil de
+TODAS), nove por turma e uma de catálogo. Desde a 2.4.0 do instrumento
+(\adrr{ADR-171}) a missão não tem pergunta de evidência: as três habilidades
+são marcadas aqui, na transação de cada ação --- desde a 2.5.0
+(\adrr{ADR-177}), o Mural, o alerta do grupo e o robô do grupo ---, e \rota{/evidencias/exp05ef1b/perguntas/*}
+(Seção~\ref{sec:api-evidencias}) responde 404.
+
+\begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Papel} & \thd{O que faz}\\
+\midrule
+\rota{GET /quem-mandou-isso/sessao} & estudante & O estado, as 8 mensagens
+  \textbf{sem} o gabarito, as falas que dependem do servidor (a da Nina leva o
+  tema), as opções e os limites --- é o que faz um F5 cair na tela certa.
+  \cd{pacote} é \cd{null} enquanto não há pacote aprovado; \cd{revelacao} é
+  \cd{null} até o voto E a revelação aberta.\\
+\zebra \rota{GET /quem-mandou-isso/gate} & estudante & O \emph{polling} de 3~s
+  (\adrr{ADR-93}): a fase da turma, o passo, se há pacote, a atividade e o
+  \cd{agora} do SERVIDOR. Sem catálogo: é a rota mais chamada.\\
+\rota{POST /quem-mandou-isso/entrar} & estudante & \enquote{Entrar no grupo}:
+  abre a sessão da rodada. Idempotente.\\
+\zebra \rota{PUT /quem-mandou-isso/selecao} & estudante & O rascunho da triagem,
+  de 0 a 3. Quatro é 400 \cd{selecao-acima-do-limite}; depois do Mural, 409
+  \cd{mural-ja-enviado}.\\
+\rota{POST /quem-mandou-isso/mural} & estudante & \textbf{O latch 1}: exatamente
+  3 (menos é 400 \cd{selecao-incompleta}), com a marca da EF05CO08 na mesma
+  transação. A mesma seleção de novo é idempotente; outra, 409.\\
+\zebra \rota{POST /quem-mandou-isso/enquete} & estudante & \textbf{O latch 2}: o
+  motivo. O mesmo voto de novo é idempotente; outro, 409
+  \cd{enquete-ja-votada}.\\
+\rota{POST /quem-mandou-isso/\B{}alerta/\B{}execucao} & estudante & Um
+  \enquote{Ver resultado} do alerta do grupo: o pedido da vez e o filtro
+  \cd{\{a, op?, b?\}}; o servidor o executa no quadro e devolve quais
+  mensagens passam. Só com o voto, a revelação do estudante aberta e a turma
+  ainda na revelação (409 \cd{alerta-nao-liberado} antes, 409
+  \cd{alerta-fechado} depois da síntese); fora de ordem, 409
+  \cd{alerta-fora-de-ordem}; até 3 por pedido (409 \cd{limite-execucoes}).\\
+\zebra \rota{POST /quem-mandou-isso/\B{}alerta/\B{}envio} & estudante & Envia
+  o alerta do pedido: tem de ser a ÚLTIMA expressão executada (400
+  \cd{execute-antes}). O QUARTO envio é \textbf{o latch 3}, com a marca da
+  EF05CO03 na mesma transação. O mesmo envio de novo é idempotente; outro,
+  409 \cd{alerta-ja-enviado}. Nada do acerto volta.\\
+\rota{POST /quem-mandou-isso/\B{}robo/\B{}ligar} & estudante & Liga o robô do
+  grupo (\cd{laco}, \cd{condicao}, \cd{acoes}): o servidor o executa nas
+  quatro mensagens fixas e grava a ligação. Só na reflexão, SEM exigir o
+  alerta; até 5 (409 \cd{ligacoes-esgotadas}); blocos fora do vocabulário,
+  400 \cd{robo-invalido}.\\
+\zebra \rota{POST /quem-mandou-isso/robo} & estudante & \textbf{O latch 4}: o
+  robô enviado, com a marca da EF05CO04 na mesma transação. Enviar sem ligar
+  é permitido; o mesmo robô de novo é idempotente, outro é 409
+  \cd{robo-ja-enviado}.\\
+\rota{POST /quem-mandou-isso/concluir} & estudante & O fim, depois do robô
+  --- sem exigir o alerta nem o robô (quem sai antes fica \enquote{Não
+  avaliado}). A experiência o chama sozinha depois do envio do robô.
+  Idempotente.\\
+\zebra \rota{GET /quem-mandou-isso/\B{}turmas/\B{}:id/pacote} & prof., gestor & O ativo, o
+  rascunho, o banco curado e os componentes curriculares --- \textbf{com} o
+  gabarito.\\
+\rota{POST .../gerar} & \textbf{só professor} & A única chamada de IA da
+  missão, \textbf{pré-aula}, pelo \cd{QuotaService}; grava o rascunho. Sem saldo
+  ou com o provedor fora, devolve o banco curado com \cd{usouIa: false} e o
+  \cd{motivo} --- nunca falha para fora. A turma é conferida (404) antes de
+  gastar \emph{token}.\\
+\zebra \rota{POST .../aprovar} & \textbf{só professor} & \enquote{Aprovar Pacote}, com o
+  pacote INTEIRO: a régua de \cd{validarPacote} (400 \cd{pacote-invalido} com a
+  lista de \cd{erros}). Pacote diferente abre atividade nova; o mesmo é
+  idempotente. Leva também as três falas do podcast que o professor revisou
+  (\cd{podcast}), gravadas em \cd{podcast\_roteiros} na mesma transação,
+  inclusive no segundo clique (\adrr{ADR-150}).\\
+\rota{POST .../gate} & \textbf{só professor} & Os três botões
+  (\cd{liberar\_revelacao}, \cd{apresentar\_sintese}, \cd{liberar\_reflexao}).
+  Só para a frente: o clique repetido ou fora de ordem não recua a fase.\\
+\zebra \rota{GET .../painel} & prof., gestor & O progresso (com quantos enviaram
+  os quatro alertas e o robô), o Termômetro (\cd{null} antes da revelação), a
+  folha por computador --- os pontos do alerta (\enquote{\{pontos\}/8 \textperiodcentered{}
+  \{enviados\}/4 enviados}) e o robô em palavras, com o número de ligações
+  --- e o roteiro.\\
+\rota{POST .../nova-rodada} & \textbf{só professor} & \enquote{Zerar Turma
+  para Nova Aplicação}: a rodada que o professor VIU no corpo torna o duplo
+  clique idempotente; rodada velha é 409 \cd{rodada-desatualizada}. Apaga a
+  evidência do pacote (\adrr{ADR-155}).\\
+\zebra \rota{GET .../pacotes} e \rota{GET .../pacotes/:pacoteId} & prof., gestor & As
+  atividades da turma (os pacotes aprovados) e uma delas, inteira e com o
+  gabarito (\adrr{ADR-130}).\\
+\rota{POST .../pacotes/:pacoteId/em-andamento} & \textbf{só professor} &
+  \enquote{Usar esta atividade agora}: a atividade em andamento da turma, e a
+  fase volta à triagem. Idempotente.\\
+\zebra \rota{GET /quem-mandou-isso/\B{}professor/\B{}material} & prof., gestor & O guia da aula:
+  o banco curado com gabarito, o roteiro, as falas, os quatro pedidos do
+  alerta com a expressão esperada (e quantas do banco curado passam), os
+  blocos do robô com o tipo de cada ação e as quatro mensagens com os sinais
+  (o gabarito do robô), e os critérios da ficha. Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{O gabarito sai em quatro respostas de PROFESSOR} --- o pacote, o
+rascunho da geração, o painel (pela folha, que nomeia o quadrante de cada
+escolha) e o material do guia --- \textbf{e em UMA de estudante}: o bloco
+\cd{revelacao} da sessão, só com os eixos das três que ele encaminhou, depois do
+voto e da revelação aberta pela turma. A turma do estudante é
+\cd{users.turma\_id}, a mesma fonte do painel e das equipes --- e não o
+\emph{claim} do \emph{token}.
+\end{regra}
+
+\subsection{Jornal da Escola (exp04ef1b)}
+\label{sec:api-jornal-escola}
+
+% Esta tabela e ESCRITA A MAO; a verdade e o Apendice C (`apendices/c-endpoints.tex`),
+% gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer.
+
+Trinta e duas rotas em três \emph{controllers} (\adrr{ADR-117}): dezoito do
+estudante (\cd{@Roles("estudante")} na classe, e \cd{exigirMissaoLiberada} no
+funil \cd{garantirSessao} de TODAS, com a disponibilidade junto), treze por turma,
+para professor e gestores (as duas das imagens são da \adrr{ADR-147}), e uma de
+catálogo. A turma do estudante sai do
+\emph{token}, nunca do corpo. Desde a 3.0.0 (\adrr{ADR-168}) a missão não tem
+pergunta de múltipla escolha: \rota{/evidencias/exp04ef1b/perguntas/*} não
+responde por ela.
+
+\begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Papel} & \thd{O que faz}\\
+\midrule
+\rota{GET /jornal-escola/sessao} & estudante & O estado e as 8 notícias na
+  ordem da mesa, \textbf{sem} gabarito, pistas nem consequência; o passo já
+  reconciliado com a etapa; as pistas já abertas, com o texto (o F5); e os seis
+  blocos da Chave na ordem da bandeja, \cd{null} até a revisão abrir. Cria o
+  banco padrão na primeira entrada da turma.\\
+\zebra \rota{GET /jornal-escola/gate} & estudante & O \emph{polling} de 5\,s
+  (\adrr{ADR-93}): etapa, rodada, pacote, passo e o \cd{agora} do SERVIDOR. Sem
+  notícias e sem JOIN.\\
+\rota{POST /jornal-escola/passo} & estudante & Os dois passos que a criança
+  pede: \cd{mesa} e \cd{simulacao}. A escada é de sentido único.\\
+\zebra \rota{POST /jornal-escola/pista} & estudante & Abre fonte, data ou
+  autoria de uma notícia e devolve o texto. Idempotente por par na mesma fase.\\
+\rota{POST /jornal-escola/julgamento} & estudante & \enquote{Confio} ou
+  \enquote{Não confio} numa pista já aberta, só na mesa da 1ª edição --- o
+  registro da EF15CO04. O primeiro de cada par vale.\\
+\rota{POST /jornal-escola/diagramar} & estudante & O layout da página com as
+  três vagas de agora. \textbf{Nunca falha por causa da IA}: \emph{cache}, IA
+  com a quota do estudante e teto de cerca de 6\,s, e o modelo automático
+  (Capítulo~\ref{cap:ia}).\\
+\zebra \rota{POST /jornal-escola/publicar} & estudante & \textbf{O latch da 1ª
+  edição}: três ids, as verificadas calculadas AQUI, e a marca da EF15CO04
+  (julgamentos e coerência da capa) na mesma transação. A resposta não traz o resultado. Outra publicação, 409
+  \cd{edicao-ja-publicada}; o professor zerou no meio, 409 \cd{rodada-mudou}.\\
+\rota{POST /jornal-escola/motivo} & estudante & A pergunta de depois do latch,
+  uma vez só (\cd{visual} $|$ \cd{checagem}).\\
+\zebra \rota{GET /jornal-escola/resultado} & estudante & As verificadas e uma
+  reação de leitor por vaga, só com o motivo respondido e a etapa
+  \cd{resultado} aberta (antes, 409 \cd{resultado-nao-liberado}).\\
+\rota{POST /jornal-escola/chave} & estudante & A Chave MONTADA, um envio sem
+  correção: três vagas (bloco, lado de cada cartão, \enquote{se falhar}) e a
+  repetição. A marca parcial da EF15CO02 (teto em processo). Outra montagem,
+  409 \cd{chave-ja-montada}.\\
+\zebra \rota{GET /jornal-escola/revisao} & estudante & O pilar em falta de cada
+  vaga da 1ª edição, depois da Chave.\\
+\rota{POST /jornal-escola/republicar} & estudante & \textbf{O latch da 2ª
+  edição}, com a marca parcial da EF04CO08 (\cd{edicao-2}, teto em processo).
+  Pode repetir as três vagas da 1ª.\\
+\zebra \rota{GET /jornal-escola/comparativo} & estudante & As duas edições, com
+  o que cada uma causou e o pilar que faltava em cada notícia.\\
+\rota{GET /jornal-escola/simulacao} & estudante & As duas matérias da
+  simulação, SEM gabarito, e a Chave da criança como roteiro.\\
+\zebra \rota{POST /jornal-escola/simulacao} & estudante & A Chave aplicada às
+  duas matérias, de uma vez: a fidelidade à regra dela marca a EF15CO02; a
+  resposta traz a regra de referência, igual para todos.\\
+\rota{GET /jornal-escola/transferencia} & estudante & O boato fixo e as três
+  pistas dele.\\
+\zebra \rota{POST /jornal-escola/transferencia} & estudante & As pistas
+  abertas antes de decidir e a decisão (repassar ou não): o combinado com a 2ª
+  edição marca a EF04CO08. Uma vez.\\
+\rota{POST /jornal-escola/concluir} & estudante & O fim, com o boato já
+  decidido (senão, 409 \cd{transferencia-pendente}). Idempotente.\\
+\zebra \rota{GET /jornal-escola/turmas} & prof., gestor & O seletor, por
+  matrícula para o professor.\\
+\rota{GET .../turmas/:id/painel} & prof., gestor & O botão da próxima etapa e o
+  progresso POR COMPUTADOR; o histograma anônimo, o motivo agregado e o radar
+  das notícias. Nenhum nível nem verificada por linha. A leitura do professor
+  conta no EVT-P04; a do gestor, não.\\
+\zebra \rota{POST .../gate} & prof., gestor & O botão único:
+  \cd{exploracao} \seta{} \cd{resultado} \seta{} \cd{revisao}. Destino igual
+  ao atual é aceito e não muda nada; fora de ordem, 409.\\
+\rota{POST .../zerar} & prof., gestor & A próxima rodada do mesmo pacote; apaga
+  a evidência dele (\adrr{ADR-155}).\\
+\zebra \rota{GET .../pacotes} & prof., gestor & O pacote em andamento
+  \textbf{com} o gabarito, e o histórico das atividades da turma (o
+  \cd{?pacote=} do painel de habilidades), cada uma com
+  \cd{imagensAprovadas}; o resumo \cd{midia} conta \cd{total}, \cd{prontas} e
+  \cd{aprovadas} (\adrr{ADR-147}).\\
+\rota{GET .../pacotes/:p} & prof., gestor & UMA atividade, inteira e com o
+  gabarito --- a página da atividade ---, com \cd{aprovadas}, as notícias cuja
+  imagem ATUAL o professor aprovou.\\
+\zebra \rota{POST .../pacotes/:p/\B{}em-andamento} & prof., gestor &
+  \enquote{Usar esta atividade agora} (\adrr{ADR-130}). Sem a imagem de TODAS
+  as notícias que pedem imagem gerada E aprovada, 409
+  \cd{imagens-nao-aprovadas} (\adrr{ADR-147}) --- só na ENTRADA no ar.\\
+\rota{POST .../pacotes/:p/\B{}aprovar-imagens} & prof., gestor & O OK do
+  professor, POR IMAGEM (\adrr{ADR-147}): o corpo \cd{\{imagens: \{n1: url\}\}}
+  traz as URLs que estavam na tela, e só se aprova a que ainda é a do pacote
+  (condição no \cd{UPDATE}); as outras voltam em \cd{desatualizadas}.
+  Devolve \cd{aprovadas}, o resumo \cd{midia} e \cd{prontaParaAula}.
+  Idempotente.\\
+\zebra \rota{POST .../pacotes/:p/\B{}imagens/\B{}:noticiaId/\B{}regerar} & prof., gestor &
+  \enquote{Gerar outra} para UMA notícia: arquivo novo (o nome leva um sal),
+  cobrado na quota. Aquela notícia some da turma até o novo OK, também na
+  atividade no ar. 400 \cd{noticia-sem-imagem}, 429 \cd{sem-saldo-de-ia}, 503
+  \cd{ia-indisponivel}.\\
+\rota{POST .../gerar-conteudo} & prof., gestor & O rascunho das 8 notícias por
+  IA, \textbf{pré-aula}, no molde sorteado. Não persiste. Sem saldo, 429; sem
+  provedor, 503.\\
+\zebra \rota{POST .../regenerar-noticia} & prof., gestor & Uma notícia nova com
+  o mesmo id, meio e papel. Falha da IA é 200 com \cd{usouIa: false} e a
+  notícia como estava.\\
+\rota{POST .../homologar} & prof., gestor & \enquote{Aprovar Pacote}, com as
+  oito notícias INTEIRAS e a régua de \arq{invariantes.ts} (400
+  \cd{pacote-invalido} com a lista de \cd{erros}). Pacote novo é atividade nova;
+  o mesmo conteúdo é idempotente. Leva também as três falas do podcast que o
+  professor revisou (\cd{podcast}), gravadas em \cd{podcast\_roteiros} na mesma
+  transação, inclusive no segundo clique (\adrr{ADR-150}).\\
+\zebra \rota{POST .../gerar-midia} & prof., gestor & Até duas imagens novas por
+  chamada, com custo estimado na quota do professor; repetir até
+  \cd{completo}. A imagem gerada não vai à turma: espera o
+  \cd{aprovar-imagens}.\\
+\rota{GET /jornal-escola/\B{}professor/\B{}material} & prof., gestor & O banco
+  padrão com gabarito, os blocos da Chave com os pilares marcados e o roteiro da
+  mediação. Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{O gestor alcança as MESMAS rotas de turma que o professor}, e isso é
+deliberado: a missão não tem texto livre de menor, então não há campo a
+recortar. O que separa os dois é a turma --- \cd{turmaVisivel} devolve 404, e
+não 403, para a turma que o professor não leciona ---, e \cd{gestor\_contrato} e
+\cd{admin} dizem \cd{?escolaId=} (\arq{comum/escola-alvo.ts}), levado explícito
+ao \cd{comTenancy}. As rotas que gastam IA do professor têm, além da quota, um
+teto de requisição por minuto.
+\end{regra}
+
+\subsection{O Júri Estadual de Projetos (exp06ef1b)}
+\label{sec:api-juri-estadual}
+
+% Esta tabela e ESCRITA A MAO; a verdade e o Apendice C (`apendices/c-endpoints.tex`),
+% gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer.
+
+Trinta rotas em quatro \emph{controllers} (\adrr{ADR-137},
+\adrr{ADR-151}, \adrr{ADR-157}, \adrr{ADR-164}, \adrr{ADR-174}): treze do
+estudante (\cd{@Roles("estudante")} na classe, e \cd{exigirMissaoLiberada} no
+funil \cd{garantirSessao} de TODAS, com a disponibilidade junto), catorze por
+turma, para professor e gestores, uma de catálogo e duas do \cd{admin} (as
+imagens do banco padrão, \cd{@Roles("admin")} numa classe própria: professor e
+gestores recebem 403). A \rota{POST
+/juri-estadual/pacotes} (a remontagem da curtida, EF06CO07) saiu com a
+\adrr{ADR-151}; as duas da rodada de desvio (\adrr{ADR-152}) saíram com a
+\adrr{ADR-157}, que trouxe o batimento da cédula e o banco padrão. O podcast não está aqui: é do módulo da plataforma
+(\rota{/podcast/exp06ef1b/turmas/:t/*}, \adrr{ADR-150}). A turma do estudante sai do
+\emph{token}, nunca do corpo. Sem atividade em andamento, toda rota de estudante
+responde 403 \cd{atividade-nao-preparada}: a plataforma não cria atividade.
+Desde a 0.6.0 (\adrr{ADR-174}) a missão não tem enquetes: as duas marcas da
+ficha (a separação e a regra) são gravadas por este módulo, e
+\rota{POST /juri-estadual/\B{}cadeia} saiu, com o 422 \cd{ordem-incorreta}.
+Desde a 0.7.0 (\adrr{ADR-176}) a separação é feita nas pastas do salvar e
+marcada no voto: saíram \rota{POST /juri-estadual/\B{}classificacao} (com o 409
+\cd{classificacao-ja-enviada}) e \rota{POST /juri-estadual/\B{}cartoes} (o caso
+Mariana), e a regra conclui a missão.
+
+\begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Papel} & \thd{O que faz}\\
+\midrule
+\rota{GET /juri-estadual/\B{}sessao} & estudante & O estado: o passo já
+  reconciliado com a etapa, o feed SERVIDO até aqui (nunca o acervo, nem peso
+  ou área líder), com as \cd{pastas} e o \cd{semPasta}, o voto e o bloco do
+  fim --- \cd{cadeia} (as peças da regra, \cd{se} e \cd{entao}, \cd{enviada}
+  e, depois do envio, a \cd{revelacao}) ---, só do passo dele, com ids opacos
+  estáveis num F5.\\
+\zebra \rota{GET /juri-estadual/gate} & estudante & O \emph{polling} de 3\,s da
+  espera do voto lacrado (\adrr{ADR-93}): etapa,
+  rodada e atividade. Sem acervo e sem JOIN.\\
+\rota{POST /juri-estadual/passo} & estudante & Da credencial para o feed, com a
+  ABERTURA: quatro posts, um de cada área; da revisão para a \cd{cadeia}; e,
+  só para a sessão ANTIGA parada na tela da separação da 0.6.0, de
+  \cd{classificacao} para \cd{lacrada}, sem marca (\adrr{ADR-176}).\\
+\zebra \rota{POST /juri-estadual/\B{}feed/\B{}eventos} & estudante & As curtidas e os
+  salvos (estado; salvar não pesa), com a \cd{pasta} de cada salvo --- a área
+  em que a criança o guardou, que MOVE o post se ele já estava em outra
+  (\adrr{ADR-176}) ---, e as permanências (fato) que a tela mediu e, com \cd{proximo: true}, um post a
+  mais, até dez ou 8\,min desde a 1ª rolagem (\cd{tempoEsgotado},
+  \cd{cedulaLiberada}). O motor escolhe o próximo sem repetir post: só
+  apresentações, e projetos NOVOS da área em foco (\adrr{ADR-164}). Post que o feed não serviu, 400 \cd{post-desconhecido}; depois
+  do voto, 409 \cd{voto-ja-lacrado}.\\
+\rota{POST /juri-estadual/\B{}cedula/\B{}batimento} & estudante & Com a cédula
+  aberta, a cada 15\,s, os segundos sem toque: o sinalizador de ociosos do
+  painel. \cd{aberta: false} apaga; fora do feed, 204 sem gravar.\\
+\zebra \rota{POST /juri-estadual/voto} & estudante & \textbf{O latch 1}: projeto e
+  certeza (a cédula de quatro elementos, sem justificativa), carimbo e passo
+  \cd{lacrada} juntos, e no MESMO \emph{update} \textbf{a separação}
+  (EF06CO01): o servidor corrige as pastas, grava e marca \cd{classificacao}
+  (90\,\% ou mais = atingiu, 50\,\% ou mais = em processo; menos de quatro
+  vistos, sem marca, \adrr{ADR-176}). A resposta é só o estado, nunca o
+  acerto. Estande visto sem pasta, 409 \cd{estandes-sem-pasta}; com menos de
+  dez servidos e o tempo não esgotado, 409 \cd{feed-incompleto}; projeto que
+  não apareceu no feed DESTA criança, 409 \cd{projeto-fora-do-feed}.\\
+\rota{GET /juri-estadual/galeria} & estudante & Os estandes do pacote
+  (quarenta; dezesseis no pacote antigo), os ocultos primeiro, a
+  \cd{invisibilidade} \cd{\{ocultos, total\}}, \cd{porArea}
+  (\cd{\{area, vistos, total\}}; desde a 0.7.0 só escolhe a área inicial da
+  grade, \adrr{ADR-176}), \cd{semCurtidas} (o contrafactual, fora da tela desde
+  a 0.7.0: o feed
+  desta sessão sem curtidas nem permanências, com N = os posts vistos,
+  calculado no servidor, \adrr{ADR-164}), \cd{ocultosAbertos} e
+  \cd{podeManter}. Antes do voto e da
+  etapa, 403 \cd{galeria-nao-liberada}.\\
+\zebra \rota{POST /juri-estadual/\B{}galeria/\B{}acoes} & estudante & Abrir um estande ou
+  buscar --- da busca, só o tipo e a área, nunca o texto. 204 sem corpo.\\
+\rota{POST /juri-estadual/revisao} & estudante & \textbf{O latch 2}, de dois
+  botões: \cd{manter} (exige um oculto aberto, senão 409
+  \cd{galeria-sem-inspecao}) ou \cd{trocar}, e o passo
+  \cd{revisada}; não marca habilidade desde a 0.6.0 (\adrr{ADR-174}); a tela pede \rota{POST passo} para a \cd{cadeia}. A segunda, 409 \cd{voto-ja-revisado}; o professor zerou no meio,
+  409 \cd{rodada-mudou}.\\
+\zebra \rota{POST /juri-estadual/\B{}regra} & estudante & \textbf{A regra SE
+  \ldots{} ENTÃO} (EF06CO03), do passo \cd{cadeia}: uma peça de cada lado (ids
+  opacos \cd{rg-}). Uma vez só; marca \cd{regra} (as duas certas = atingiu,
+  uma = em processo, nenhuma = não atingiu), \textbf{conclui a missão} (passo
+  \cd{fim} e \cd{concluida\_em} no mesmo \emph{update}, \adrr{ADR-176}) e responde a
+  revelação (as peças escolhidas e as certas, e o \cd{motivo} no feed desta
+  criança). Enviar de novo devolve a mesma revelação; peça de outra sessão ou
+  do lado errado, 400.\\
+\rota{POST /juri-estadual/\B{}concluir} & estudante & O crachá homologado
+  das sessões ANTIGAS paradas em \cd{mariana} ou \cd{enquetes}. Idempotente.\\
+\zebra \rota{GET /juri-estadual/turmas} & prof., gestor & O seletor, por matrícula
+  para o professor.\\
+\rota{GET .../\B{}turmas/\B{}:id/\B{}painel} & prof., gestor & O botão,
+  o progresso POR COMPUTADOR (com \cd{ocioso} e \cd{separou}, nunca o acerto)
+  e a lousa do pico: quantos separaram, votos por área (o lacrado e o final), quantos mantiveram ou
+  trocaram e a \cd{concentracao} \cd{\{curtiram, naoCurtiram\}} --- a média da
+  fração do feed na área mais vista, entre quem votou, que substituiu a
+  invisibilidade média (\adrr{ADR-164}) ---, tudo anônimo. Nenhum voto,
+  concentração ou nível por linha. Cada leitura conta em \cd{painel\_vistas}.\\
+\zebra \rota{POST .../gate} & prof., gestor & \enquote{Liberar Auditoria}:
+  \cd{exploracao} \seta{} \cd{galeria}, com uma linha em
+  \cd{exp06ef1b\_gates\_historico}. O segundo clique não muda nada; não
+  volta.\\
+\zebra \rota{POST .../zerar} & prof., gestor & A próxima rodada da mesma
+  atividade; apaga a evidência dela (\adrr{ADR-155}).\\
+\rota{GET .../pacotes} & prof., gestor & A atividade em andamento, inteira, e
+  a lista de todas, cada uma com \cd{imagensAprovadas}; \cd{ativo} é
+  \cd{null} sem nenhuma no ar.\\
+\zebra \rota{GET .../\B{}pacotes/\B{}:pacoteId} & prof., gestor & A página de UMA
+  atividade, em andamento ou pronta, com as imagens já geradas e
+  \cd{imagensAprovadasEm} (nulo = em preparo).\\
+\rota{POST .../\B{}pacotes/\B{}:pacoteId/\B{}em-andamento} & prof., gestor & \enquote{Usar
+  esta atividade agora} (\adrr{ADR-130}): a escolhida vai ao ar, na rodada
+  seguinte à última com sessão. Idempotente. Sem as imagens aprovadas, 409
+  \cd{imagens-nao-aprovadas} (\adrr{ADR-151}).\\
+\zebra \rota{POST .../\B{}pacotes/\B{}:pacoteId/\B{}aprovar-imagens} & prof., gestor & A
+  SEGUNDA fase da aprovação (\adrr{ADR-151}): carimba
+  \cd{imagens\_aprovadas\_em}, sem exigir imagem em todo estande (o sem imagem
+  segue com a arte desenhada). Idempotente. Depois dela, as imagens
+  congelam.\\
+\rota{POST .../\B{}pacotes/\B{}:pacoteId/\B{}imagens/\B{}:projetoId/\B{}refazer} &
+  prof., gestor & \enquote{Gerar outra imagem} para UMA lâmina de um estande
+  (\cd{?lamina=} \cd{capa}, \cd{detalhe}, \cd{equipe} ou \cd{bastidor}; sem
+  ela, a capa, \adrr{ADR-178}): arquivo NOVO (fora do \emph{hash} do pedido),
+  sempre pago na quota do professor. Com
+  o provedor fora, 503 e o estande fica com a que tinha; depois da aprovação,
+  409 \cd{imagens-ja-aprovadas}.\\
+\zebra \rota{POST .../\B{}gerar-conteudo} & prof., gestor & O rascunho da mostra
+  por IA, \textbf{pré-aula}. Não persiste. Sem saldo ou sem provedor, cai no
+  banco padrão: 200 com \cd{usouIa: false}, \cd{origem: "padrao"} e o
+  \cd{motivo} (\adrr{ADR-157}), com as imagens do banco que existem. Com IA,
+  cinco chamadas: as categorias e as quatro áreas em paralelo
+  (\adrr{ADR-164}).\\
+\rota{POST .../\B{}banco-padrao} & prof., gestor & \enquote{Usar Banco
+  Padrão Oficial}: os quarenta projetos do banco, sem IA, com as imagens já
+  aprovadas --- as do banco que existem, e a arte procedural no resto;
+  \cd{porNoAr} põe em andamento.\\
+\zebra \rota{POST .../\B{}regenerar-projeto} & prof., gestor & Um estande novo com o
+  mesmo id e a mesma área. Falha da IA é 200 com \cd{usouIa: false}.\\
+\rota{POST .../homologar} & prof., gestor & A PRIMEIRA fase, a dos textos:
+  a atividade PRONTA, não no ar e com \cd{imagens\_aprovadas\_em} nulo, com a
+  régua de \arq{invariantes.ts} (400 \cd{pacote-invalido} com a lista de
+  \cd{erros}). Exige \cd{podcast: \{dois, rafa, mesa\}}, as três falas do
+  podcast que o professor revisou, e as grava em \cd{podcast\_roteiros} na
+  mesma transação (\adrr{ADR-151}). O mesmo conteúdo do pacote mais recente
+  não cria outro, e o segundo clique substitui as falas. Grava
+  \cd{aprovado\_em}/\cd{por} e \cd{preparo\_iniciado\_em}; o banco
+  padrão intocado não pede falas (roteiro fixo).\\
+\zebra \rota{POST .../gerar-midia} & prof., gestor & Até oito imagens novas por
+  chamada, quatro em paralelo, de uma atividade pronta ou da em andamento;
+  quatro por estande (\adrr{ADR-178}), e o progresso conta por chave
+  (\cd{proj-a1}, \cd{proj-a1:detalhe}); repetir até \cd{completo}. Depois da aprovação das imagens, 409
+  \cd{imagens-ja-aprovadas}.\\
+\rota{GET /juri-estadual/\B{}professor/\B{}material} & prof., gestor & O
+  esqueleto com gabarito: as peças da regra com a certa marcada, as perguntas
+  da plenária e os números do motor
+  (salvar sem peso, o limiar, o feed sem repetição).
+  Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
+\zebra \rota{GET /juri-estadual/\B{}banco-padrao/\B{}imagens} & \cd{admin} & Quantas
+  imagens do banco padrão existem, quais faltam (por chave de lâmina,
+  quatro por projeto, \adrr{ADR-178}) e as URLs. O storage é o
+  registro: o nome é determinístico (o \emph{hash} do pedido de cada
+  lâmina), o mesmo da customização (\adrr{ADR-164}).\\
+\rota{POST /juri-estadual/\B{}banco-padrao/\B{}imagens} & \cd{admin} &
+  Gera até oito das que faltam, na ordem do banco; idempotente (a que existe
+  não se gera de novo; duas chamadas simultâneas recebem o mesmo trabalho).
+  Sem quota de professor, \emph{rate limit} de 20 por minuto, e medido no
+  painel de custos como \cd{juri-estadual-banco-padrao}, perfil \cd{admin},
+  sem escola.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{O gestor alcança as MESMAS rotas de turma que o professor}, como no
+Jornal: a missão não tem texto livre de menor. O que separa os dois é a turma
+(\cd{turmaVisivel} devolve 404 para a turma que o professor não leciona), e
+\cd{gestor\_contrato} e \cd{admin} dizem \cd{?escolaId=}. \cd{gerar-conteudo}
+e \cd{regenerar-projeto} têm, além da quota, um teto de requisição por minuto.
+As duas jogadas que MARCAM evidência (o voto, que corrige a separação, e a regra) tomam o
+\emph{lock} da turma compartilhado e relêem o \emph{gate} depois dele; o botão,
+zerar, homologar e pôr no ar o tomam exclusivo.
+\end{regra}
+
 \subsection{As rotas que alimentam o guia da aula}
 
 Duas rotas existem só para o \textbf{guia da aula} do professor
@@ -577,33 +1615,46 @@ hub divergiria na primeira revisão de \emph{copy}.
   não é servida.\\
 \zebra \rota{GET /unoogpt/professor/fontes} & professor & As 8 fontes do
   cenário com o viés de cada uma, o período e os bairros que cobrem.\\
-\rota{GET /unootube/professor/videos} & prof., gestor & Os 21 vídeos com o
-  \cd{factual} de cada um, mais \cd{resumo} (11 factuais, 10 sensacionalistas)
-  e \cd{pontuacao} --- os dois \textbf{contados} no catálogo.\\
+\rota{GET /a-selecao/professor/material} & prof., gestor & O roteiro da
+  Etapa 4 (as três perguntas do debate), os gatilhos dos três momentos, os 12
+  posts do banco curado com o gabarito e as seleções dos colegas virtuais.\\
 \zebra \rota{GET /rastro-boato/professor/material} & prof., gestor & As 3
   intervenções com \cd{desfecho} e a reação do grupo, e o ciclo na
   \textbf{ordem certa} --- o contrário do que a tela do estudante recebe.\\
-\rota{GET /o-eco-no-grupo/professor/material} & prof., gestor & As 3 respostas
-  com \cd{desfecho} e \cd{correta}, e as falas que o bairro devolve em cada
-  desfecho (o roteiro canônico, sem IA).\\
-\zebra \rota{GET /foto-conta/turmas/:id/projecao} & prof., gestor & A projeção
-  da Roda da exp-04: o par de fotos, os rótulos, as 3 perguntas do debate e o
+\rota{GET /foto-conta/turmas/:id/projecao} & prof., gestor & A projeção
+  da Roda da exp01ef1b: o par de fotos, os rótulos, as 3 perguntas do debate e o
   termômetro do \emph{latch} --- o material vem da API para a lousa e os
   tablets nunca discordarem.\\
+\rota{GET /quem-mandou-isso/\B{}professor/\B{}material} & prof., gestor & O banco curado
+  da exp05ef1b com o gabarito, o roteiro da roda, as falas da Nina, os pedidos
+  do alerta com a expressão esperada e os blocos do robô com o tipo de cada
+  ação.\\
+\zebra \rota{GET /jornal-escola/\B{}professor/\B{}material} & prof., gestor & O
+  banco padrão do Jornal da Escola com o gabarito e a reação de cada notícia,
+  os seis blocos da Chave com os pilares marcados, e o roteiro: o gatilho do
+  resultado, as três perguntas do debate e o gatilho da revisão. É também o
+  \enquote{Usar Banco Padrão} do preparo.\\
+\rota{GET /juri-estadual/\B{}professor/\B{}material} & prof., gestor & O
+  esqueleto do Júri Estadual com o gabarito --- as peças da regra SE \ldots{}
+  ENTÃO com a certa marcada ---, as quatro perguntas da
+  plenária e os números do motor do feed. A mostra NÃO está aqui: é da
+  atividade.\\
 \bottomrule
 \end{tabularx}
 
 \begin{regra}
-\textbf{As quatro últimas são catálogo; a da Vila não.} Em
-\rota{/unoogpt/professor/fontes}, \rota{/unootube/professor/videos},
-\rota{/rastro-boato/professor/material} e
-\rota{/o-eco-no-grupo/professor/material} não há \cd{escolaId} nem
+\textbf{As de \rota{/<slug>/professor/*} são catálogo; a da Vila não.} Em
+\rota{/unoogpt/professor/fontes},
+\rota{/rastro-boato/professor/material},
+\rota{/quem-mandou-isso/professor/material},
+\rota{/jornal-escola/professor/material} e
+\rota{/juri-estadual/professor/material} não há \cd{escolaId} nem
 \emph{tenancy} a aplicar --- o conteúdo é igual para todo contrato, e o que a
 guarda protege é o PAPEL. Por isso vivem em \emph{controller} separado do de
 turmas. \rota{/vila/professor/cartoes} é a exceção: ela recebe \cd{?turmaId=}
 porque a bolha servida depende da série da turma.
 
-As quatro devolvem exatamente os campos que \cd{semGabarito} retira antes de a
+As seis devolvem exatamente os campos que o servidor retira antes de a
 opção chegar ao estudante (regra inviolável nº 3): o que muda entre as duas
 superfícies é o \textbf{leitor} (\adrr{ADR-86}). No unooGPT isso é mais
 extremo --- a Missão Tempestade não revela nada por \emph{software}, de
@@ -646,7 +1697,7 @@ nenhuma. A cota do par público é por IP, somada a um teto global de instância
   \item \rota{POST /observabilidade/vitals}: um Web Vital (\cd{LCP}, \cd{INP},
     \cd{CLS}, \cd{TTFB}) amostrado a 10\% no cliente. Vira ponto num
     histograma OpenTelemetry por \cd{superficie}, \cd{rota} \textbf{normalizada}
-    (\arq{normalizar-rota.ts}: \cd{/professor/:secao}, \cd{exp-02-unootube},
+    (\arq{normalizar-rota.ts}: \cd{/professor/:secao}, \cd{exp04ef1b},
     senão \cd{outra}) e \cd{perfil} do \emph{token}. Nunca vira log.
   \item \rota{POST /observabilidade/v1/traces}: o lote OTLP/JSON que o
     OpenTelemetry Web da experiência exporta. A API valida o subconjunto
@@ -666,9 +1717,20 @@ produto:
 \begin{itemize}
   \item \rota{GET /recursos/efetivos} (\textbf{qualquer autenticado}) --- resolve
     a cadeia escola \seta{} regional \seta{} contrato, aplica o TETO do produto e
-    devolve \cd{\{produtos, experiencias\}}. \cd{produtos} traz SEMPRE os quatro,
-    ligados ou não: um mapa que só lista o ligado obriga quem lê a saber a lista
-    completa de cor --- e o hub passaria a ter a segunda fonte do vocabulário.
+    devolve \cd{\{produtos, experiencias\}}. \cd{produtos} traz SEMPRE todos os
+    do vocabulário (hoje seis), ligados ou não: um mapa que só lista o ligado
+    obriga quem lê a saber a lista completa de cor --- e o hub passaria a ter a
+    segunda fonte do vocabulário. O quinto, \cd{agente-professor}, é o primeiro
+    produto SEM experiência: no painel da Unooria ele aparece com
+    \cd{experiencias: []} (a composição é derivada de \cd{experiencias.\B produto}, e
+    nenhuma aponta para ele), e é por \cd{produtos[\B"agente-\B professor"]\B.ligado} que
+    o hub decide montar o botão flutuante do professor (\adrr{ADR-126}). O
+    sexto, \cd{ajuda}, também é sem experiência e é o primeiro que
+    \textbf{nasce DESLIGADO}: está em \cd{PRODUTOS\_\B DESLIGADOS\_\B POR\_\B PADRAO}
+    (teste interno), e sem linha em \cd{disponibilidades} vale
+    \cd{ligadoPorPadrao = false} --- o item \enquote{Ajuda} some do menu da conta
+    até o \cd{admin} ligá-la por escola ou rede. Lançar é tirar da lista
+    (\adrr{ADR-132}).
 \end{itemize}
 
 Três decisões dentro dessa rota. O escopo sai do \textbf{token} (o claim
@@ -723,7 +1785,7 @@ registro é a única resposta a \enquote{quem desligou isto, e quando?}.
     versão}. É o conserto de um defeito que ninguém havia notado:
     \cd{publicar-manifesto.mjs --versao x.y.z} manda o número antigo com o
     \arq{experiencia.json} ATUAL do repositório, então voltar a versão nunca
-    voltava \cd{viewport} nem \cd{permissoes} --- a exp-70 reabria sem
+    voltava \cd{viewport} nem \cd{permissoes} --- a app-70 reabria sem
     \cd{allow-pointer-lock}, a criança entrava na Vila e a câmera não girava,
     sem erro em lugar nenhum.
   \item \rota{PUT /recursos/experiencias/\{expId\}/versao} --- fixa (ou solta)
@@ -731,6 +1793,15 @@ registro é a única resposta a \enquote{quem desligou isto, e quando?}.
     enquanto a rede segue na anterior. \cd{versao: null} solta a fixação e
     \textbf{preserva} o \cd{ligado} da linha, que é decisão à parte.
 \end{itemize}
+
+\textbf{A fixação esquecida} (H10.3.3): o \rota{GET /recursos/painel} devolve
+\cd{fixacoesEsquecidas}, as versões fixadas há mais de 30 dias na REDE INTEIRA
+--- não só no escopo aberto, porque a escola esquecida é justamente a que
+ninguém abre ---, e marca \cd{fixacaoEsquecida} na linha da experiência. A data
+sai do histórico (\cd{recursos\_auditoria}, ação \cd{versao-fixada} com a mesma
+versão), e não de \cd{definido\_em}, que muda a cada mexida na linha; sem
+histórico, cai em \cd{definido\_em}, que erra para menos dias, nunca para mais.
+É lembrete, não regra: nada solta a fixação sozinho.
 
 \textbf{Ativar só no escopo-contrato; fixar só fora dele}, e a tela oferece uma
 alavanca por escopo. Fixar no contrato seria um segundo jeito, mais fraco, de
@@ -775,15 +1846,102 @@ na leitura:
     \cd{recursos\_auditoria} (ação \cd{quota-alterada}, \cd{detalhe = \{de,
     para\}}). Vale para a rede inteira na próxima chamada de IA: o
     \cd{QuotaService} lê a linha a cada \cd{temSaldo}, sem \emph{cache}.
+  \item \rota{GET /recursos/arquivadas} (\adrr{ADR-116}) --- as experiências
+    arquivadas, tiradas do produto sem serem apagadas, lidas de
+    \cd{experiencias\_arquivadas}: nome, código de origem, onde ficava na grade,
+    última versão, motivo, data e a FOTOGRAFIA de turmas e estudantes que a
+    migração tirou ao arquivar. Não reconta nada em tempo de uso --- contar
+    \cd{liberacoes} e \cd{progresso} de todas as escolas atravessaria a RLS.
 \end{itemize}
 
 O \rota{GET /recursos/auditoria} ganhou \cd{?prefixo=} (\cd{quota:} recorta as
 mudanças de quota) e a coluna \cd{detalhe}, só preenchida nessas linhas.
 
+\textbf{Os MINUTOS DA AJUDA moram ao lado da quota}, no
+\cd{LimitesDaAjudaController} (\adrr{ADR-132}): \cd{@Roles("admin")} e nada
+mais, pela razão da quota --- quanto de avatar uma rede gasta por dia é decisão
+comercial da fornecedora, porque o \emph{vendor} cobra por minuto. Está em
+\arq{src/recursos}, e não em \arq{src/ajuda}, porque quem a opera é o painel da
+Unooria: mesma guarda, mesmo histórico, mesmo prefixo do BFF. A Ajuda só LÊ a
+linha, a cada abertura de sessão. Ao lado dele, desde a \adrr{ADR-158}, o
+\cd{ConfiguracaoDaAjudaController}, com a mesma guarda e pela mesma razão: os
+dois atendentes custam diferente (o avatar por minuto de vídeo, o mascote por
+\emph{token} de áudio do Gemini), e a escolha é da fornecedora.
+
+\begin{itemize}
+  \item \rota{GET /recursos/limites-da-ajuda} --- uma linha por chave de
+    \cd{ajuda\_limites} (\cd{minutos-por-dia}, \cd{minutos-por-sessao}), sempre
+    as duas, com o valor da constante quando a linha falta. O uso de cada pessoa
+    (\cd{ajuda\_sessoes}) NÃO sai aqui.
+  \item \rota{PUT /recursos/limites-da-ajuda/\{chave\}} --- sobrescreve o
+    limite, com motivo obrigatório. \textbf{Zero é recusado}: fechar a Ajuda é
+    desligar o produto, não zerar o limite. Tetos de 600 minutos por dia e 60 por
+    sessão (Zod e CHECK). Valor igual devolve \cd{alterado: false}. Registra
+    \cd{codigo: ajuda-limite-alterado} e a linha de \cd{recursos\_auditoria}
+    (ação \cd{quota-alterada}, \cd{recurso\_id} \cd{ajuda:<chave>}). Vale na
+    PRÓXIMA sessão; a que está no ar mantém o teto com que nasceu.
+  \item \rota{GET /recursos/configuracao-da-ajuda} --- a linha única de
+    \cd{ajuda\_configuracao} (atendente padrão, troca, voz, modelo do Live e os
+    quatro ajustes da boca), com a autoria, o que está montado nesta stack
+    (\cd{disponiveis}, pela MESMA regra que a janela da Ajuda usa) e a lista
+    fechada das 30 vozes com o jeito de cada uma. Sem a linha, a constante.
+    Desde a \adrr{ADR-165}, também \cd{instrucoesMascote} e
+    \cd{instrucoesAvatar} (\cd{string} $|$ \cd{null}; \cd{null} = vale o texto
+    padrão do código) e \cd{instrucoesPadrao} (\cd{\{ mascote,\allowbreak{}
+    avatar \}}), o texto padrão de cada atendente, que o painel mostra e
+    oferece para restaurar.
+  \item \rota{PUT /recursos/configuracao-da-ajuda} --- sobrescreve a linha com
+    TODOS os campos (o painel manda o formulário inteiro) e motivo obrigatório.
+    Nada mudou devolve \cd{alterada: false} e não grava nem historia. Registra
+    \cd{codigo: ajuda-configuracao-alterada} com os nomes e valores dos campos
+    que mudaram, e a linha de \cd{recursos\_auditoria} (ação
+    \cd{configuracao-alterada}, \cd{recurso\_id} \cd{ajuda:configuracao}, sem
+    \cd{detalhe}). Vale na PRÓXIMA sessão. \cd{instrucoesMascote} e
+    \cd{instrucoesAvatar} são \cd{string} de 20 a \num{8000} caracteres (sem
+    os brancos das pontas) ou \cd{null}, que volta ao padrão; \textbf{texto
+    igual ao padrão é gravado como \cd{null}}, para quem nunca personalizou de
+    verdade receber a melhoria do padrão. No \emph{log}, das instruções vai só
+    o tamanho, nunca o texto. O avatar lê as instruções a cada turno, e a
+    edição vale na pergunta seguinte; o mascote, na abertura da sessão de voz
+    (\adrr{ADR-165}).
+\end{itemize}
+
+\textbf{Os CUSTOS DE IA moram no mesmo prefixo} (\adrr{ADR-161}). O
+controlador deles só aceita o \cd{admin} (\cd{@Roles("admin")} e nada mais),
+pela razão da quota --- é o custo variável da fornecedora, e mostrá-lo à rede seria entregar a
+margem do contrato. O \cd{gestor\_contrato} recebe 403 nas três rotas. Quem
+MEDE é \arq{src/ai} (\cd{Registro\B De\B Consumo}); aqui só se lê e se dá preço.
+
+\begin{itemize}
+  \item \rota{GET /recursos/custos-de-ia?de\&ate} --- o custo do período
+    (\cd{YYYY-MM-DD}, no fuso da plataforma; padrão: os últimos 30 dias, hoje
+    incluído; teto de 366 dias; início depois do fim responde 400). Antes de
+    somar, tenta trazer do BCB as PTAX que faltam; sem o BCB, converte com o
+    \emph{cache} e devolve o aviso em \cd{cotacao}. Devolve \cd{totais}
+    (US\$, R\$, \emph{tokens} de entrada e saída, chamadas, falhas, imagens,
+    segundos de áudio, minutos de vídeo), \cd{porDia}, \cd{porRecurso} (com o
+    nome da tela), \cd{porModelo}, \cd{porModalidade}, \cd{porEscola} (com o
+    nome; \cd{''} é \enquote{Sem escola}) e \cd{modelosSemPreco}. Tudo sai de
+    UMA consulta com \cd{GROUPING SETS}, para os recortes baterem entre si.
+    Nenhum \cd{usuario\_id} em lugar nenhum.
+  \item \rota{GET /recursos/custos-de-ia/precos} --- a tabela de preços
+    inteira, com o histórico de vigências (a mais nova primeiro dentro de cada
+    modelo e componente), e \cd{modelosEmUso}, para a janela de cadastro
+    oferecer os modelos que já consumiram.
+  \item \rota{POST /recursos/custos-de-ia/precos} --- grava um preço a partir
+    de uma data: \cd{\{modelo, componente, usd, vigenteDesde, motivo\}}.
+    \textbf{Motivo obrigatório} (Zod), teto de sanidade de US\$\,\num{10000}
+    por unidade. \textbf{Nunca apaga a anterior}: a mesma (modelo, componente,
+    data) substitui o valor daquela vigência, que é a correção de um valor
+    digitado errado. Data no passado recalcula o painel daquele dia em diante.
+    Registra \cd{codigo: ia-preco-definido}; o nome de quem gravou fica
+    congelado na linha. Devolve a tabela atualizada.
+\end{itemize}
+
 \section{Prospecção: a única escrita sem token (\adrr{ADR-107})}
 
 O formulário do site público (\cd{/}) grava pela api, e não num banco próprio.
-São três rotas, e o prefixo separa o que tem \emph{guard} do que não tem:
+São quatro rotas, e o prefixo separa o que tem \emph{guard} do que não tem:
 
 \begin{itemize}
   \item \rota{POST /prospeccao/publico/cadastros} --- \textbf{sem \emph{guard}},
@@ -808,6 +1966,14 @@ São três rotas, e o prefixo separa o que tem \emph{guard} do que não tem:
     \rota{/analise/exportar/\{nivel\}}: segmento de rota com ponto quebra a
     validação de tipos do App Router no hub. O nome do arquivo sai no
     \cd{content-disposition}.
+  \item \rota{DELETE /prospeccao/cadastros/\{id\}} --- \cd{admin}. A
+    eliminação a pedido do titular (LGPD art.~18, VI): apaga a linha de
+    verdade, sem exclusão lógica --- guardar o contato \enquote{marcado como
+    apagado} seria continuar tratando o dado que a pessoa pediu para eliminar.
+    Id inexistente ou fora do formato: \num{404}. O comprovante do atendimento
+    é a linha de log \cd{prospeccao-cadastro-eliminado}, com quem eliminou e
+    quando, e nenhum dado da pessoa. É por esta rota que a listagem passou a
+    devolver o \cd{id}; rota de edição não existe, e não deve existir.
 \end{itemize}
 
 \textbf{A escrita não passa pelo BFF.} O \arq{/api/plataforma/*} do hub exige

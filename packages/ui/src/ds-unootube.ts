@@ -14,7 +14,7 @@
  * desambiguados — `Icon`, `Avatar`, `Button` e `Logo` colidem com os da
  * plataforma, e quem importa daqui sabe que está no clone.
  *
- * ONDE USAR: a superfície disfarçada da exp-02-unootube — feed de Shorts,
+ * ONDE USAR: a superfície disfarçada da exp04ef1b — feed de Shorts,
  * cromo (barra superior, barra lateral, abas), playlists e canal do estudante.
  * NÃO usar nas telas pós-revelação (ranking, diálogo de conclusão): lá vale
  * `@edu/ui/ds`, porque a virada da missão é justamente sair do disfarce.
@@ -46,7 +46,7 @@ export {
 
 /**
  * Família Shorts (0.1.14). O `ShortsPlayer` monta um `<video>` REAL quando
- * recebe `src`/`sources` — é o que permitiu a exp-02 parar de manter o seu.
+ * recebe `src`/`sources` — é o que permitiu a exp04ef1b parar de manter o seu.
  * `videoRef` é o que liga o reprodutor ao IntersectionObserver do feed.
  */
 export { ShortsPlayer, ShortsActionRail, ShortsCard, ShortsShelf, ShortsLogo } from '@unooria/design-system/unootube';

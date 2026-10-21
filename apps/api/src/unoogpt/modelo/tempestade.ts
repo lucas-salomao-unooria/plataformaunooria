@@ -261,3 +261,56 @@ export function esperadoDe(
 
 /** Quantas corridas da mesma decisão o Resultado plota. */
 export const AMOSTRAS_NA_TELA = 20;
+
+/**
+ * Duas decisões nas MESMAS tempestades. PURO.
+ *
+ * Cada corrida `i` sorteia a chuva com uma semente que NÃO depende da decisão
+ * (`par:tempestade:i`) e a sorte da operação com outra que também não
+ * (`par:operacao:i`): a única coisa que muda entre as duas colunas é para onde
+ * as equipes foram. É isto que o "E se…" promete — "a mesma tempestade" — e
+ * `esperadoDe` não cumpre, porque a semente dela leva a alocação: comparar as
+ * médias de duas chamadas misturava a decisão com o sorteio.
+ *
+ * Mesma alocação nas duas pontas dá diferença zero em TODA corrida; o teste
+ * `modelo-tempestade.spec.ts` cobra isso.
+ */
+export function corridasPareadas(
+  sua: Alocacao,
+  outra: Alocacao,
+  opcoes: { saidaEmMinutos?: number } = {},
+  rodadas = 200,
+) {
+  const daSua: number[] = [];
+  const daOutra: number[] = [];
+  let maisEm = 0;
+  let menosEm = 0;
+  for (let i = 0; i < rodadas; i += 1) {
+    const sorte = {
+      sementeDaTempestade: sementeDe(`par:tempestade:${i}`),
+      saidaEmMinutos: opcoes.saidaEmMinutos ?? 0,
+    };
+    const operacao = sementeDe(`par:operacao:${i}`);
+    const a = simular(sua, operacao, sorte).totais.salvas;
+    const b = simular(outra, operacao, sorte).totais.salvas;
+    daSua.push(a);
+    daOutra.push(b);
+    if (b > a) maisEm += 1;
+    else if (b < a) menosEm += 1;
+  }
+  const resumo = (v: number[]) => {
+    const ordenadas = [...v].sort((x, y) => x - y);
+    const p10 = Math.floor(rodadas * 0.1);
+    const p90 = Math.floor(rodadas * 0.9);
+    return {
+      media: Math.round(v.reduce((x, y) => x + y, 0) / Math.max(v.length, 1)),
+      faixa: [ordenadas[p10] ?? 0, ordenadas[p90] ?? 0] as [number, number],
+    };
+  };
+  return {
+    sua: { ...resumo(daSua), corridas: daSua },
+    outra: { ...resumo(daOutra), corridas: daOutra },
+    /** Em quantas das mesmas tempestades a OUTRA decisão resgatou mais, menos ou igual. */
+    comparacao: { corridas: rodadas, maisEm, menosEm, empates: rodadas - maisEm - menosEm },
+  };
+}

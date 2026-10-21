@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 
+import { textoAlternativoDaImagem } from '../comum/insta/texto-alternativo';
 import { arteFallback } from '../geracao/arte-fallback';
 import { PERFIS, type Perfil } from '../comum/insta/defaults';
 import { FICHAS } from '../comum/insta/perfis';
@@ -475,7 +476,7 @@ async function montarRespostaDossieNaTransacao(
    * A conclusão é anexada AQUI, não no congelamento: o dossiê é computado no
    * `finish`, antes de o estudante escrever. Anexar na leitura também deixa o dado
    * comportamental (congelado) separado do reflexivo (escrito depois) — que é a
-   * distinção que o doc 06 registra ao manter `exp_01_conclusoes` fora de `exp_01_dossiers`.
+   * distinção que o doc 06 registra ao manter `exp08ef1b_conclusoes` fora de `exp08ef1b_dossiers`.
    */
   const dossie: DossierData = {
     ...dados,
@@ -501,6 +502,7 @@ async function montarRespostaDossieNaTransacao(
       caption: true,
       imageUrl: true,
       imageStatus: true,
+      imageBrief: true,
       categoria: true,
       author: { select: { handle: true } },
     },
@@ -512,6 +514,7 @@ async function montarRespostaDossieNaTransacao(
     intensidade: post.intensidade,
     caption: post.caption,
     imageUrl: post.imageStatus === 'ok' ? post.imageUrl : null,
+    imageAlt: textoAlternativoDaImagem(post),
     imageStatus: post.imageStatus,
     categoria: post.categoria,
     handle: post.author.handle,

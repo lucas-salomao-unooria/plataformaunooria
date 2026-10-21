@@ -30,8 +30,8 @@ import { RastroBoatoService } from "./rastro-boato.service";
 import { GESTORES, ehDoContrato} from "../auth/claims";
 
 /**
- * Visão do PROFESSOR (e gestor) sobre a exp-06 — classe separada para o
- * `@Roles` ficar limpo, como na exp-07. A separação é decisão de segurança, não
+ * Visão do PROFESSOR (e gestor) sobre a exp06ef2b — classe separada para o
+ * `@Roles` ficar limpo, como na exp07ef1b. A separação é decisão de segurança, não
  * de estilo: o gestor não tem rota que aceite `estudanteId`.
  *
  * `gestor_contrato` é a única exceção cross-escola (regra 1): o token dele tem

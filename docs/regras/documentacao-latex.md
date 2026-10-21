@@ -11,13 +11,14 @@ em conflito.
 ## Documentação técnica (`documentacao-latex/`) — ATUALIZAR SEMPRE
 
 A documentação técnica consolidada do projeto é **LaTeX versionado**, em
-`documentacao-latex/`, e compila em `main.pdf` (~612 páginas, `PU-DOC-001`).
+`documentacao-latex/`, e compila em `main.pdf` (`PU-DOC-001`).
 Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF),
-casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
+casos de uso, **arquitetura de software nos 4 níveis do C4** e **nos 14
+diagramas da UML 2.5.1**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
 especificação da API, design system, entrega, qualidade, **observabilidade**,
-**107 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
+**as ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
 **REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e
@@ -33,6 +34,7 @@ cd documentacao-latex && ./compilar.sh      # tectonic; --rapido p/ iterar, --li
 | Se você mudou… | Atualize |
 |---|---|
 | Módulo, componente, fronteira | `secoes/05-arquitetura-software.tex` (+ o C4 correspondente) |
+| Ponte, quota de IA, disponibilidade, sessão/token, papéis, implantação | a figura UML em `secoes/05b-modelagem-uml.tex` (ela cita os arquivos de onde saiu) + o par Mermaid |
 | Recurso de nuvem, rede, CI/CD | `secoes/06-arquitetura-nuvem.tex`, `secoes/15-entrega.tex` |
 | RLS, papel, guard, sandbox do iframe | `secoes/07-tenancy-seguranca.tex` |
 | Migração, tabela, coluna | `secoes/08-modelo-de-dados.tex` + `apendices/e-dicionario-de-dados.tex` |

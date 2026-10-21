@@ -1,0 +1,277 @@
+% ===========================================================================
+%  CAPITULO 3 — Eixo 1: Plataforma (Borda, Hub, Banco, Rede, Mensageria, Obs)
+% ===========================================================================
+\chapter{Eixo 1 --- Plataforma (Borda, Hub, Banco, Mensageria e Operação)}
+\label{cap:eixo-plataforma}
+
+O eixo \textbf{Plataforma} compreende todas as fundações compartilhadas que
+mantêm um contrato B2G no ar: a borda pública com proteção WAF e gestão de
+certificados TLS, a hospedagem do \arq{apps/hub} (Next.js App Router), o banco
+de dados relacional com isolamento por escola (\emph{Row-Level Security}), a
+rede privada, o barramento assíncrono de telemetria, a gestão de identidades sem
+chaves estáticas e a pilha de observabilidade.
+
+\begin{fichaeixo}{Ficha do Eixo 1 --- Fundação da Plataforma}
+\begin{campos}
+  \item[Arquivos Terraform] \arq{loadbalancer.tf}, \arq{cloudarmor.tf},
+    \arq{cloudrun.tf}, \arq{database.tf}, \arq{network.tf}, \arq{bastion.tf},
+    \arq{pubsub.tf}, \arq{iam\_github.tf}, \arq{secrets.tf}, \arq{registry.tf}
+    e \arq{observabilidade.tf}.
+  \item[Aderência por nuvem] \sgcp~\nativo \quad \saws~\equivalente \quad
+    \sazure~\nativo
+  \item[Ponto focal] No GCP e no Azure (via Front Door), um único recurso de
+    borda unifica o roteamento por \emph{hostname} para contêineres e buckets
+    estáticos sob a mesma política de WAF. Na AWS, o ALB não roteia para S3, o
+    que exige colocar o \textbf{Amazon CloudFront} como camada de entrada única
+    diante tanto do S3 quanto do ALB.
+\end{campos}
+\end{fichaeixo}
+
+\section{Borda única, WAF e gestão de certificados TLS}
+
+\begin{pecaarq}{PLT-01}{Load Balancer Global, Certificados por DNS e WAF OWASP}{\sgcp~\nativo\enspace\saws~\equivalente\enspace\sazure~\nativo}
+\begin{campos}
+  \item[Como é hoje (GCP)] Um \textbf{Global External Application Load Balancer}
+    detém um único IP anycast estático e um \cd{url\_map} que distribui o
+    tráfego por \emph{hostname}: \cd{hub\_domain} \seta{} Cloud Run \cd{frontend},
+    \cd{api\_domain} \seta{} Cloud Run \cd{api}, \cd{exp\_domain} \seta{}
+    Backend Bucket \cd{-exp} com Cloud CDN, e \cd{assets\_domain} \seta{}
+    Backend Bucket \cd{-assets} com Cloud CDN. A proteção de borda usa o
+    \textbf{Cloud Armor Standard} anexado aos backends de computação, aplicando
+    regras pré-configuradas \textbf{OWASP CRS 3.3} (\cd{sqli-v33-stable},
+    \cd{xss-v33-stable}, \cd{lfi-v33-stable}, \cd{rfi-v33-stable},
+    \cd{rce-v33-stable}, \cd{scannerdetection-v33-stable},
+    \cd{protocolattack-v33-stable}, \cd{sessionfixation-v33-stable}) em nível de
+    sensibilidade 2, além de \emph{rate limit} por IP (\cd{300} a \cd{2000} RPM
+    conforme o ambiente, retornando HTTP 429). Os certificados TLS usam o
+    \textbf{Certificate Manager} com validação por DNS (\cd{\_acme-challenge}):
+    cada \emph{hostname} tem certificado próprio em um \cd{Certificate Map}, o
+    que permite adicionar novos domínios sem tocar nos certificados já ativos e
+    provisionar o TLS \textbf{antes} de virar o apontamento DNS (\arq{loadbalancer.tf}).
+  \item[Equivalente AWS] \textbf{Amazon CloudFront} + \textbf{AWS WAF v2} +
+    \textbf{AWS Certificate Manager (ACM)} + \textbf{Application Load Balancer
+    (ALB)}. Como o ALB da AWS não aceita um bucket S3 como \emph{Target Group}
+    para servir arquivos estáticos diretamente, a borda unificada precisa ser o
+    CloudFront (ou múltiplos ALBs/distribuições separadas). No CloudFront,
+    associa-se uma WebACL do AWS WAF (\emph{AWSManagedRulesCommonRuleSet},
+    \emph{SQLiRuleSet}, \emph{KnownBadInputsRuleSet} e regra \emph{Rate-based}
+    por IP). O ACM emite certificados gratuitos validados por CNAME no DNS
+    (\cd{us-east-1} para CloudFront), também sem janela de indisponibilidade.
+    Para impedir que alguém contorne o WAF acessando o ALB diretamente, o ALB
+    exige cabeçalho secreto rotacionado ou \emph{prefix list} gerenciada do
+    CloudFront no Security Group.
+  \item[Equivalente Azure] \textbf{Azure Front Door (Standard ou Premium)} +
+    \textbf{Azure WAF Policy} + \textbf{Managed Certificates}. O modelo do Front
+    Door é arquiteturalmente idêntico ao do Global External LB do GCP: um ponto
+    global anycast que aceita múltiplos domínios validados por CNAME de DNS
+    (\emph{pre-validated custom domains} sem tempo fora do ar) e roteia, por
+    \emph{hostname}, tanto para origens de contêiner (Azure Container Apps)
+    quanto para origens de armazenamento (Azure Blob Storage), com cache CDN e
+    regras OWASP DRS + \emph{rate limit} na mesma borda.
+\end{campos}
+\end{pecaarq}
+
+\begin{tabularx}{\linewidth}{@{}L{32mm}L{40mm}L{40mm}X@{}}
+\toprule
+\headrow \thd{Critério de borda} & \thd{GCP (LB + Cloud Armor)} & \thd{AWS (CloudFront + ALB + WAF)} & \thd{Azure (Front Door + WAF)}\\
+\midrule
+Contêiner + Bucket no mesmo recurso &
+  \textbf{Sim} (\emph{Serverless NEG} + \emph{Backend Bucket}) &
+  \textbf{Só via CloudFront} (exige ALB adicional para Fargate) &
+  \textbf{Sim} (origens ACA e Blob no mesmo perfil)\\
+\zebra Fechamento do endereço direto do contêiner &
+  Nativo (\cd{INGRESS\_\B{}TRAFFIC\_\B{}INTERNAL\_\B{}LOAD\_\B{}BALANCER}) &
+  Exige Security Group restrito à \emph{prefix list} do CloudFront + ALB interno &
+  Nativo no ACA com VNet + \emph{Private Link} no Front Door Premium\\
+Adição de domínio sem recriar cert ativo &
+  \textbf{Sim} (\cd{Certificate Map} com 1 cert por host via DNS) &
+  \textbf{Sim} (certificados ACM independentes por domínio/SAN DNS) &
+  \textbf{Sim} (\emph{Managed Certificate} individual por domínio no Front Door)\\
+\zebra Modo \emph{preview} de regras WAF &
+  Nativo (\cd{preview = true} por regra ou na política inteira) &
+  Nativo (ação \cd{Count} em cada regra gerenciada do AWS WAF) &
+  Nativo (modo \cd{Detection} vs \cd{Prevention} na WAF Policy)\\
+\bottomrule
+\end{tabularx}
+
+\section{Hospedagem do Hub (\texttt{apps/hub}) e Identidade (OIDC)}
+
+\begin{pecaarq}{PLT-02}{Hub Next.js (SSR + BFF) e Federação OIDC / JWKS}{\sgcp~\nativo\enspace\saws~\equivalente\enspace\sazure~\nativo}
+\begin{campos}
+  \item[Como é hoje (GCP)] O \arq{apps/hub} (Next.js App Router, saída
+    \cd{standalone}) roda como serviço no \textbf{Cloud Run} (\cd{1} a \cd{2
+    vCPU}, \cd{1} a \cd{2 GiB} de RAM, concorrência 80, \cd{min\_instances = 1}
+    para eliminar \emph{cold start} no horário de entrada escolar e manter o
+    cache de sessão quente). Ele atua como BFF, autentica o usuário contra o
+    \textbf{WSO2 Identity Server} via OIDC padrão, assina em memória os tokens
+    de curta duração (15 min, RS256) das experiências com a chave privada injetada
+    do Secret Manager e publica a chave pública em \rota{/.well-known/jwks.json}.
+    A API busca esse JWKS pelo endereço do Hub (\env{OIDC\_JWKS\_URI}).
+  \item[Equivalente AWS] \textbf{Amazon ECS on AWS Fargate} (ou \textbf{AWS App
+    Runner}). Embora existam soluções específicas para Next.js (como AWS
+    Amplify Hosting), o Hub da Unooria funciona como emissor OIDC (\cd{issuer})
+    com chaves montadas via segredo e comunicação controlada com a API; mantê-lo
+    como contêiner OCI padrão (`output: 'standalone'`) no ECS Fargate preserva
+    100\% de paridade com o Dockerfile existente. Uma tarefa Fargate (\cd{1
+    vCPU / 2 GB}, \cd{desired\_count >= 1}) atrás do ALB cumpre exatamente o
+    papel do Cloud Run.
+  \item[Equivalente Azure] \textbf{Azure Container Apps (ACA)}. Recebe a mesma
+    imagem Docker do Hub sem nenhuma alteração, mantendo \cd{minReplicas = 1},
+    escalonamento automático por concorrência HTTP (via KEDA embutido) e injeção
+    de segredos do Azure Key Vault como variáveis de ambiente.
+\end{campos}
+\end{pecaarq}
+
+\begin{atencao}
+\textbf{Armadilha de roteamento entre Hub e API na nuvem.} No GCP, quando o Hub
+tem saída de rede configurada como \cd{PRIVATE\_RANGES\_ONLY} e tenta chamar a
+API pelo endereço \cd{*.run.app}, a borda do Google responde 404 (\arq{variables.tf},
+linha 240). Por isso o Hub chama a API pelo domínio público do Load Balancer (ou
+exige \cd{ALL\_TRAFFIC} via Cloud NAT). Na \textbf{AWS} (ECS Fargate) e no
+\textbf{Azure} (ACA), ambos os serviços vivem dentro da mesma VPC/VNet e podem se
+comunicar diretamente por DNS interno (\emph{ECS Service Connect} / \emph{Cloud
+Map} na AWS, ou o FQDN interno \cd{*.internal.<env>.azurecontainerapps.io} no
+Azure), economizando tráfego de NAT Gateway e evitando que as chamadas BFF
+contem no \emph{rate limit} por IP do WAF externo.
+\end{atencao}
+
+\section{Banco de Dados Relacional, RLS, Rede Privada e Acesso Dev}
+
+O coração da segurança multi-escola da Unooria mora no PostgreSQL 16: todas as
+tabelas com dados de estudante ou escola possuem \cd{escola\_id NOT NULL} e
+políticas \cd{FORCE ROW LEVEL SECURITY}, com duas \emph{roles} distintas em
+execução (\cd{app\_runtime} para o tráfego isolado por \cd{SET LOCAL
+app.escola\_id} dentro de \cd{comTenancy}, e \cd{app\_auth} restrita à resolução
+de login antes de saber a escola), nenhuma das duas com atributo \cd{BYPASSRLS}
+nem \cd{SUPERUSER}. Além disso, a tabela \cd{telemetria\_eventos} usa
+particionamento declarativo mensal.
+
+\begin{pecaarq}{PLT-03}{PostgreSQL 16 Privado, Alta Disponibilidade, Pooler e Bastion}{\sgcp~\nativo\enspace\saws~\equivalente\enspace\sazure~\nativo}
+\begin{campos}
+  \item[Como é hoje (GCP)] \textbf{Cloud SQL for PostgreSQL 16} (\cd{db-custom-2-7680}
+    em produção, \cd{availability\_type = REGIONAL} com \emph{failover}
+    automático entre zonas, backups diários + \emph{Point-in-Time Recovery} via
+    WAL, sem IPv4 público). A conectividade usa \emph{Private Service Access}
+    (peering VPC) e os serviços Cloud Run chegam ao banco via \textbf{Direct VPC
+    Egress}. Para acesso de desenvolvimento e aplicação do script de
+    endurecimento de \emph{roles}, há uma VM \textbf{Bastion} (\cd{e2-micro},
+    incluída no \emph{free tier} em \cd{us-east1}) sem IP público, acessada via
+    túnel TCP do \textbf{Identity-Aware Proxy (IAP)} autenticado pelo IAM.
+  \item[Equivalente AWS] \textbf{Amazon RDS for PostgreSQL 16 (Multi-AZ)} em
+    subnets privadas (\cd{db.t4g.large} ou \cd{db.m7g.large}). Para evitar o
+    esgotamento de conexões quando tarefas Fargate escalam, a AWS utiliza o
+    \textbf{Amazon RDS Proxy} (cobrado por vCPU do banco). O acesso seguro da
+    máquina do desenvolvedor ao RDS privado é feito de forma idêntica ao IAP por
+    meio de uma instância \cd{t4g.nano} sem IP público usando o \textbf{AWS
+    Systems Manager (SSM) Session Manager} (\cd{AWS-StartPortForwardingSessionToRemoteHost}),
+    autenticado via IAM e sem abrir a porta 22 para a internet.
+  \item[Equivalente Azure] \textbf{Azure Database for PostgreSQL --- Flexible
+    Server} (versão 16, modo \emph{Zone-redundant HA}, integrado à VNet por
+    delegação de subnet ou \emph{Private Endpoint}). Grande vantagem operacional
+    e de custo do Azure: o Flexible Server possui \textbf{PgBouncer embutido} na
+    própria instância (porta \cd{6432}), ativado por uma flag no Terraform sem
+    custo adicional de proxy separado. Para o túnel de desenvolvimento, pode-se
+    usar o \textbf{Azure Bastion} (SKU \emph{Standard} para túnel nativo via
+    \cd{az network bastion tunnel}, ou uma VM \cd{B1ls} com acesso JIT/Entra ID).
+\end{campos}
+\end{pecaarq}
+
+\begin{nota}
+\textbf{Particularidade de \emph{roles} gerenciadas nos três provedores.} No
+Cloud SQL (GCP), todo usuário criado pela Admin API recebe \cd{cloudsqlsuperuser};
+no RDS (AWS), recebe \cd{rds\_superuser}; no Flexible Server (Azure), recebe
+\cd{azure\_pg\_admin}. Nos três provedores, o passo SQL de endurecimento das
+contas de execução (\cd{NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE})
+permanece idêntico e portável, pois opera dentro do motor padrão do PostgreSQL 16.
+\end{nota}
+
+\section{Mensageria de Telemetria Analítica (Push Autenticado)}
+
+As experiências enviam lotes de eventos pedagógicos para \rota{POST
+/telemetry/batch}. A API valida o envelope com Zod, enriquece com dados do JWT
+(\cd{escola\_id}, \cd{estudante\_id} opaco) e publica no barramento em menos de
+15\,ms, respondendo \cd{HTTP 202}. O armazenamento em lote no banco particionado
+acontece em \rota{POST /telemetry/ingest}, que é uma rota da \textbf{própria API}
+protegida por token OIDC da conta de serviço do barramento --- evitando criar e
+monitorar um serviço \emph{worker} separado (\adrr{ADR-05}).
+
+\begin{pecaarq}{PLT-04}{Fila de Telemetria com Entrega Push OIDC e Fila Morta (DLQ)}{\sgcp~\nativo\enspace\saws~\adaptacao\enspace\sazure~\equivalente}
+\begin{campos}
+  \item[Como é hoje (GCP)] \textbf{Cloud Pub/Sub}: um tópico principal
+    (\cd{\{contrato\}-telemetria}), uma assinatura \textbf{Push} que faz
+    \cd{POST} direto em \cd{https://\{api\_domain\}/telemetry/ingest} assinando
+    um JWT OIDC da conta de serviço \cd{pubsub-push} (validado pelo
+    \cd{PubsubPushGuard} da API via JWKS do Google), política de \emph{backoff}
+    exponencial (10\,s a 600\,s) e redirecionamento para o tópico de fila morta
+    (\cd{\{contrato\}-telemetria-dlq}) após 5 tentativas falhas (\arq{pubsub.tf}).
+  \item[Equivalente AWS] O \textbf{Amazon SQS} padrão é puramente baseado em
+    \emph{pull} (não faz \emph{push} HTTP), e o \textbf{Amazon SNS} faz
+    \emph{push} HTTP mas não possui fila persistente longa nem assina tokens OIDC
+    dinâmicos nativamente (e exige um passo de confirmação de assinatura
+    \cd{SubscriptionConfirmation} no endpoint). Para reproduzir o mesmo desenho
+    na AWS sem manter um \emph{poller} no código da API, há dois caminhos:
+    \begin{enumerate}
+      \item \textbf{SQS + EventBridge Pipes + API Destinations:} a API publica no
+        SQS (com DLQ nativa após 5 tentativas); um \emph{EventBridge Pipe} lê da
+        fila e faz o \cd{POST} na rota \rota{/telemetry/ingest} autenticando via
+        \emph{EventBridge Connection} (OAuth/OIDC ou chave simétrica no
+        Secrets Manager).
+      \item \textbf{SQS Consumer embutido na API:} como a API na AWS já roda com
+        no mínimo 1 tarefa Fargate ligada 24/7, adicionar um consumidor SQS em
+        segundo plano dentro do módulo \arq{telemetry/} da API elimina o
+        EventBridge e mantém o tráfego 100\% interno na VPC.
+    \end{enumerate}
+  \item[Equivalente Azure] \textbf{Azure Event Grid} (modelo \emph{Push} nativo
+    com \emph{Dead-Lettering} em Blob Storage e entrega HTTP autenticada com
+    token \textbf{Microsoft Entra ID / OIDC} gerado por \emph{Managed Identity})
+    ou \textbf{Azure Service Bus} (filas mais robustas, porém baseadas em
+    \emph{pull} via SDK ou acionadas via Dapr/ACA). O Event Grid Push com
+    autenticação Entra ID é o espelho funcional exato da assinatura Push OIDC do
+    Pub/Sub.
+\end{campos}
+\end{pecaarq}
+
+\section{Identidade Federada (CI/CD), Segredos e Observabilidade}
+
+\begin{pecaarq}{PLT-05}{CI/CD Keyless, Segredos e Observabilidade OTLP}{\sgcp~\nativo\enspace\saws~\nativo\enspace\sazure~\nativo}
+\begin{campos}
+  \item[Identidade e Segredos] Nas três nuvens, o padrão de \textbf{zero chaves
+    de longa duração} é suportado de primeira classe:
+    \begin{itemize}
+      \item \textbf{GCP:} \emph{Workload Identity Federation} valida o token OIDC
+        de \cd{token.actions.githubusercontent.com} restrito a
+        \cd{assertion.repository}; segredos ficam no \textbf{Secret Manager};
+        imagens no \textbf{Artifact Registry}.
+      \item \textbf{AWS:} \emph{IAM OIDC Identity Provider} confia no GitHub
+        Actions via condição \cd{token.actions.githubusercontent.com:sub};
+        segredos no \textbf{AWS Secrets Manager} (injetados no bloco \cd{secrets}
+        da Task Definition do ECS); imagens no \textbf{Amazon ECR}.
+      \item \textbf{Azure:} \emph{Federated Identity Credentials} em uma
+        \emph{User-Assigned Managed Identity} no Entra ID; segredos no
+        \textbf{Azure Key Vault}; imagens no \textbf{Azure Container Registry
+        (ACR)}.
+    \end{itemize}
+  \item[Observabilidade e OTLP] A plataforma instrumenta logs estruturados
+    (\cd{pino}), métricas customizadas, 13 políticas de alerta, SLO de 99,5\% e
+    reexporta os \emph{spans} OpenTelemetry do navegador (enviados pelo SDK das
+    experiências para a API) para o coletor da nuvem (\arq{observabilidade.tf}):
+    \begin{itemize}
+      \item \textbf{GCP:} \textbf{Cloud Logging} (com exclusão das sondas no sink
+        \cd{\_Default} para economizar franquia), \textbf{Cloud Monitoring} (3
+        \emph{uptime checks}, alertas e Service Monitoring SLO), \textbf{Cloud
+        Error Reporting} e ingestão direta na API \textbf{OTLP} oficial
+        (\cd{telemetry.googleapis.com}).
+      \item \textbf{AWS:} \textbf{CloudWatch Logs}, \textbf{CloudWatch Metrics
+        \& Alarms}, \textbf{CloudWatch Synthetics (Canaries)} para sondas de
+        saúde (atenção: Canaries na AWS têm custo por execução significativamente
+        maior que os \emph{uptime checks} do GCP) e \textbf{AWS X-Ray} (recebendo
+        OTLP via \emph{sidecar} ADOT --- AWS Distro for OpenTelemetry --- na
+        tarefa Fargate).
+      \item \textbf{Azure:} \textbf{Azure Monitor} + \textbf{Log Analytics
+        Workspace} + \textbf{Application Insights}. O Application Insights aceita
+        OpenTelemetry nativamente, agrupa exceções equivalentes ao Error
+        Reporting e oferece \emph{Standard Availability Tests} equivalentes aos
+        \emph{uptime checks} a custo muito baixo.
+    \end{itemize}
+\end{campos}
+\end{pecaarq}

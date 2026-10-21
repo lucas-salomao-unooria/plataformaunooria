@@ -57,7 +57,7 @@ API_SERVICE="$(val api_service_name)"
 HUB_SERVICE="$(val frontend_service_name)"
 MIGRATE_JOB="$(val migrate_job_name)"
 EXP_BUCKET="$(val bucket_exp)"
-# Bucket da MIDIA pesada das experiencias (os mp4 da exp-02). O CI nao a
+# Bucket da MIDIA pesada das experiencias (os mp4 do UnooTube, hoje arquivado como backup-exp04ef1b). O CI nao a
 # publica — o runner nao tem os arquivos —, mas confere que ela esta la
 # antes de publicar o bundle que depende dela (ver `midia-externa.json`).
 ASSETS_BUCKET="$(val bucket_assets)"
@@ -68,6 +68,10 @@ DEPLOY_SA="$(val github_deployer_service_account)"
 # Bucket PRIVADO dos sourcemaps das experiencias (cap. 17). OPCIONAL: o output
 # so existe depois do apply que criou o bucket; sem ele o deploy avisa e segue.
 EXP_MAPAS_BUCKET="$(val bucket_exp_mapas)"
+# Resource name do Agent Engine do agente de IA do professor. OPCIONAL: o
+# output e null ate o apply 2 (o engine so nasce depois que o CI publicou a
+# primeira imagem); sem ele o job do agente so publica a imagem.
+AGENTE_PROFESSOR_ENGINE="$(val agente_professor_engine)"
 # `artifact_registry_repo` e a URL completa; o deploy quer so o nome do repo.
 AR_REPO="$(val artifact_registry_repo_id)"
 GCP_PROJECT="$(val gcp_project)"
@@ -102,6 +106,12 @@ if [ -n "$EXP_MAPAS_BUCKET" ]; then
 EXP_MAPAS_BUCKET=$EXP_MAPAS_BUCKET"
 else
   echo "aviso: output bucket_exp_mapas vazio — o Terraform ainda nao criou o bucket de sourcemaps; EXP_MAPAS_BUCKET fica de fora" >&2
+fi
+if [ -n "$AGENTE_PROFESSOR_ENGINE" ]; then
+  VARS="$VARS
+AGENTE_PROFESSOR_ENGINE=$AGENTE_PROFESSOR_ENGINE"
+else
+  echo "aviso: output agente_professor_engine vazio — o engine ainda nao existe (apply 2); o deploy do agente so publica a imagem" >&2
 fi
 
 if [ "$IMPRIMIR" = true ]; then

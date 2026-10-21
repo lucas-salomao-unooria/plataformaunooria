@@ -1,0 +1,15 @@
+{
+  "id": "app-70-vila-do-lume",
+  "nome": "Vila do Lume — A Noite Longa",
+  "versao": "1.1.6",
+  "produto": "entre-redes",
+  "series": [],
+  "capabilities": ["telemetria"],
+  "permissoes": ["pointer-lock"],
+  "verbos": {
+    "attempted": "entrou na vila (partida aberta)",
+    "interacted": "acendeu fogueira, gastou tocha, gravou na Pedra dos Nomes ou respondeu a uma mensagem",
+    "progressed": "acendeu mais uma das 8 fogueiras",
+    "completed": "acendeu as 8 fogueiras e reacendeu o Fogo Sagrado"
+  }
+}

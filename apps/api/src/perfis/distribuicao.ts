@@ -55,7 +55,7 @@ export async function distribuicaoDaTurma(
   antagonismo: unknown,
   escolaId: string,
   /**
-   * A turma da atividade (`exp_01_activities.turma_id`). `null`/`undefined` =
+   * A turma da atividade (`exp08ef1b_activities.turma_id`). `null`/`undefined` =
    * atividade anterior à migration `20260830090000_atividade_por_turma`, que
    * segue valendo para a escola inteira — o comportamento de antes.
    */
@@ -144,4 +144,49 @@ export async function distribuicaoDaTurma(
     semLado,
     desequilibrio: total > 0 ? Math.abs(contagem.A / total - 0.5) : 0,
   };
+}
+
+/**
+ * O LADO DO FEED DE CADA ESTUDANTE, por id — o insumo do sorteio de equipes
+ * (H13.4.1). A mesma precedência da largada e da distribuição acima: quem já
+ * começou fica no lado da corrida dele; antes disso vale o lado forçado pelo
+ * professor e, sem ele, a afinidade do perfil. Perfil ausente ou `misto` é
+ * `null` — o NEUTRO, que o sorteio usa para completar as equipes.
+ *
+ * Sem a pergunta e os dois lados aprovados (`afinidade` nula) ninguém tem lado
+ * projetado: só quem já tem corrida ou lado forçado.
+ */
+export async function ladosDaTurma(
+  prisma: Prisma.TransactionClient | PrismaService,
+  activityId: string,
+  antagonismo: unknown,
+  escolaId: string,
+  turmaId: string,
+): Promise<{ lados: Map<string, LadoTese | null>; temAfinidade: boolean }> {
+  const afinidade = afinidadeDaAtividade(antagonismo);
+  const [perfis, runs, estudantes] = await Promise.all([
+    prisma.perfilImportado.findMany({ where: { activityId } }),
+    prisma.run.findMany({ where: { activityId }, select: { estudanteId: true, ladoInicial: true } }),
+    // `users` está fora da RLS: o `escolaId` no `where` é a tranca (ver acima).
+    prisma.user.findMany({ where: { role: 'estudante', escolaId, turmaId }, select: { id: true } }),
+  ]);
+  const perfilDe = new Map(perfis.map((p) => [p.estudanteId, p]));
+  const runDe = new Map(runs.map((r) => [r.estudanteId, r]));
+  const lados = new Map<string, LadoTese | null>();
+  for (const { id } of estudantes) {
+    const run = runDe.get(id);
+    if (run?.ladoInicial === 'A' || run?.ladoInicial === 'B') {
+      lados.set(id, run.ladoInicial);
+      continue;
+    }
+    const perfil = perfilDe.get(id);
+    const forcado = perfil?.ladoForcado === 'A' || perfil?.ladoForcado === 'B' ? perfil.ladoForcado : null;
+    if (forcado) {
+      lados.set(id, forcado);
+      continue;
+    }
+    const dominante = perfil ? normalizarPerfil(perfil.escores as never).dominante : null;
+    lados.set(id, afinidade && dominante ? ladoDoPerfil(dominante, afinidade) : null);
+  }
+  return { lados, temAfinidade: Boolean(afinidade) };
 }

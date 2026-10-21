@@ -7,7 +7,7 @@ para convenções e `docs/` para arquitetura e decisões.
 ## Nomes
 Produto: **Plataforma Unooria**. Pacote raiz: `plataforma-unooria`.
 O scope interno dos workspaces segue `@edu/*` (`@edu/sdk`, `@edu/hub`, `@edu/api`,
-`@edu/exp-*`) — alias curto, não marca. Para alinhar ao produto:
+`@edu/exp*`, `@edu/app-*`) — alias curto, não marca. Para alinhar ao produto:
 `grep -rl "@edu/" --include="*.json" --include="*.ts" --include="*.tsx" . | xargs sed -i '' 's|@edu/|@unooria/|g'`
 
 ## Interface: tudo vem do `@unooria/design-system`
@@ -38,8 +38,8 @@ disso a plataforma já está usável em <http://localhost:3000>.
 A **experiência** não entra no compose: em produção ela é bundle estático num
 bucket, não um serviço. Para vê-la embedada, rode-a à parte:
 ```bash
-pnpm install && pnpm --filter @edu/exp-01-instanooria dev   # :5173
-pnpm --filter @edu/exp-02-unootube dev                       # :5174 (4º ano; vídeos em public/videos, ver README da exp)
+pnpm install && pnpm --filter @edu/exp08ef1b dev   # :5173
+pnpm --filter @edu/exp02em1b dev                       # :5178 (2ª série EM; as portas em apps/hub/lib/experiencias-dev.ts)
 ```
 
 ## Subir para desenvolver (hot reload)
@@ -125,7 +125,7 @@ roteiro paralelo.
 ## Branches
 `main` é o tronco — a migração para o monorepo está mergeada nela (histórico
 linear, 26 commits). Trabalho novo sai da `main` numa branch própria: **uma por
-experiência**, com o nome do slug (`exp-12-fracoes`); o resto usa o prefixo do
+experiência**, com o código dela (`exp06ef3b`, ADR-110); o resto usa o prefixo do
 tipo do commit (`fix/…`, `chore/…`, `ci/…`). Convenções de commit em `AGENTS.md`.
 
 Build não vai para o git: `dist/`, `.next/`, `.next-prod/`, `.turbo/` e

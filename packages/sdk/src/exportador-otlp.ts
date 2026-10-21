@@ -13,7 +13,7 @@ import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
  * sessenta linhas, e a api valida exatamente este subconjunto.
  *
  * Um span por asset (`resourceFetch` do document-load) é descartado antes de
- * sair: a exp-02 tem dezenas de vídeos e imagens, e cada um viraria um span
+ * sair: a exp04ef1b tem dezenas de vídeos e imagens, e cada um viraria um span
  * que ninguém lê e que a api limita a 64 por lote.
  */
 export const SPANS_IGNORADOS: ReadonlySet<string> = new Set(["resourceFetch"]);

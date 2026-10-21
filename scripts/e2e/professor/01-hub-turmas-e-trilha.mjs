@@ -103,8 +103,9 @@ await suite(
     const urlDaTurma = p.url().split("?")[0];
     await p.goto(`${urlDaTurma}?aba=estudantes`, { waitUntil: "domcontentloaded" });
     await p.waitForTimeout(1500);
-    /* A lista da turma é `<ul><li>`, não tabela: cada nome é um link para o que
-       a plataforma já sabe daquela criança na Vila do Lume. */
+    /* A lista da turma é `<ul><li>`, não tabela: cada linha tem o link para o
+       que a plataforma já sabe daquela criança na Vila do Lume (o nome leva ao
+       perfil de habilidades, que a `professor/11` cobre). */
     const estudantes = await p
       .locator('a[href^="/professor/entre-redes/vila-do-lume/estudantes/"]')
       .count();
@@ -157,7 +158,7 @@ await suite(
     r.exigir(/os 7 momentos/.test(guia), "o guia fala nos sete momentos da aula");
     r.exigir(/Encerrar atividade/.test(guia), "o sétimo momento está na tabela do guia");
     r.exigir(
-      /O Instanooria não é uma rede social de verdade/.test(guia),
+      /O Unoovista não é uma rede social de verdade/.test(guia),
       "o professor lê a revelação palavra por palavra, ANTES da aula",
     );
     await r.registrar(p, "guia-da-aula", {

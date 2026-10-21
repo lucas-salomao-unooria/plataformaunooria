@@ -1,0 +1,20 @@
+{
+  "id": "app-90-plano-de-aula",
+  "nome": "Gerador de Plano de Aula",
+  "versao": "1.2.8",
+  "produto": "plano-de-aula",
+  "series": [],
+  "capabilities": [
+    "telemetria",
+    "ia"
+  ],
+  "permissoes": [
+    "downloads"
+  ],
+  "publico": "professor",
+  "verbos": {
+    "attempted": "pediu a geração de um plano anual (disciplina + série)",
+    "completed": "salvou o plano pela primeira vez",
+    "interacted": "exportou .doc, restaurou o original ou excluiu um plano"
+  }
+}

@@ -77,6 +77,12 @@ DISTRIBUIÇÃO EXATA:
 - ${deTese} perfis de tese: para CADA combinação de lado (A, B) e perfil de
   linguagem (${PERFIS.join(', ')}), crie ${autoresPorCelula} perfis. São
   ${PERFIS.length} × 2 × ${autoresPorCelula} = ${deTese}.
+  Os tipos dos perfis de tese são "pagina_tema", "fofoca_tema" e "humor", e
+  EM CADA LADO (A e B) há PELO MENOS 1 perfil "fofoca_tema" (página de fofoca
+  ou de bastidor) e PELO MENOS 1 perfil "humor" (página de memes ou piadas). O
+  tipo "checagem" é reservado aos neutros. A "bio" precisa deixar o tipo
+  visível para quem lê: uma página de fofoca diz que é de fofoca; uma de humor,
+  que é de humor.
 - ${neutros} perfis neutros (lado "neutro"), distribuídos entre os
   ${PERFIS.length} perfis de linguagem e divididos em DUAS famílias:
   a) metade ligada às categorias neutras acima (assuntos fora do tema);
@@ -110,7 +116,7 @@ ${HANDLES_PROIBIDOS.join(', ')}.
 
 ${GUARDRAILS}
 
-Responda apenas o JSON do schema. Português do Brasil.
+Português do Brasil.
 `.trim();
 
   return provider.generateJson({
@@ -132,6 +138,8 @@ Responda apenas o JSON do schema. Português do Brasil.
         unicos.some((persona) => persona.lado === lado),
       );
       if (!temTodosOsLados) throw new Error('faltou perfil de algum lado (A, B ou neutro)');
+      const problema = problemaDosTiposDeTese(unicos, Math.ceil(TOTAL_PERSONAS / 3));
+      if (problema) throw new Error(problema);
 
       // O modelo às vezes devolve mais do que o pedido: corta mantendo o
       // equilíbrio entre os três lados.
@@ -144,4 +152,22 @@ Responda apenas o JSON do schema. Português do Brasil.
       return selecionadas;
     },
   });
+}
+
+/**
+ * O ACERVO PRECISA MEDIR A CONFIABILIDADE (ADR-167): o envio da exp08ef1b (6c)
+ * cobra que o estudante não mande página de fofoca ou de humor como
+ * informação, e isso só se mede quando CADA lado tem as duas. Por isso, entre
+ * os perfis de tese que ficam (a cota por lado), cada lado tem pelo menos um
+ * `fofoca_tema` e um `humor`, e nenhum `checagem` (reservado aos neutros).
+ * Devolve a frase do problema, ou `null`.
+ */
+export function problemaDosTiposDeTese(personas: readonly Persona[], cotaPorLado: number): string | null {
+  for (const lado of ['A', 'B'] as const) {
+    const doLado = personas.filter((p) => p.lado === lado).slice(0, cotaPorLado);
+    if (!doLado.some((p) => p.tipo === 'fofoca_tema')) return `o lado ${lado} ficou sem perfil de fofoca`;
+    if (!doLado.some((p) => p.tipo === 'humor')) return `o lado ${lado} ficou sem perfil de humor`;
+    if (doLado.some((p) => p.tipo === 'checagem')) return `o lado ${lado} tem perfil de checagem, que é dos neutros`;
+  }
+  return null;
 }

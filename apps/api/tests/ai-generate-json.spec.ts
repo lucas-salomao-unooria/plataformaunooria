@@ -1,7 +1,7 @@
 /**
  * Contrato de `AiProvider.generateJson()` — a geração ESTRUTURADA.
  *
- * Existe por um incidente concreto (exp-92, plano de aulas): o chamador montou
+ * Existe por um incidente concreto (app-92, plano de aulas): o chamador montou
  * o pedido com os nomes de campo de `generate()` — `user`/`schema` em vez de
  * `prompt`/`responseSchema` — e calou o compilador com `as never`. Em runtime
  * `responseSchema` chegava `undefined`, a montagem do corpo estourava ANTES do

@@ -1,14 +1,41 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { assinarTokenExperiencia } from "@/lib/chave-token";
+import {
+  cabecalhosParaApi,
+  motivoDaFalha,
+  passagemDaSessao,
+  respostaDeQuemDesistiu,
+  sinalDaChamada,
+  tokenCurto,
+  urlDaApi,
+} from "@/lib/bff";
 import { cabecalhosComoObjeto, logDaRequisicao } from "@/lib/log";
-import { traceparentDeSaida } from "@/lib/otel-propagacao";
 
 /**
  * Teto maior que o do `apiDoServidor`: por aqui passam exportações (CSV de
  * análise) e importações (planilha de 30 MB), que legitimamente demoram.
+ *
+ * Eram 30 s, calibrados para TRANSFERÊNCIA de arquivo. As rotas de geração por
+ * IA são espera de outra natureza — a api fica parada enquanto o modelo
+ * escreve — e passaram a encostar no teto. MEDIDO em 2026-09-28 (provider
+ * `vertex`, `gemini-3.6-flash`), com o ADC válido e o Vertex respondendo:
+ *
+ *   - `quem-mandou-isso/.../gerar` (8 mensagens) ......... 6 a 13 s
+ *   - `jornal-escola/.../gerar-conteudo` (8 notícias) .... 19 a 24 s
+ *   - `a-selecao/.../gerar-conteudo` (12 posts + 3 falas)  20 a 30,1 s
+ *   - `podcast/.../gerar` (UM trecho por volta) ......... ~21 s, 5 voltas
+ *
+ * A Seleção virou moeda ao ar: a MESMA chamada deu 200 em 24,9 s e 504 em
+ * 30,1 s na mesma sessão. E o 504 aqui é caro de um jeito que não aparece: o
+ * corte é do lado do hub, a api TERMINA o trabalho e debita a quota de IA do
+ * professor — só que ninguém está mais ouvindo a resposta.
+ *
+ * O número é o teto de UMA chamada, não uma promessa de que a tela espera tudo
+ * isso: o que fazer com a espera é decisão de cada tela (o podcast, por
+ * exemplo, fatia o episódio em um trecho por chamada). Se uma rota precisar de
+ * mais que 3 min, o conserto não é subir daqui de novo — é tirá-la do caminho
+ * síncrono (a api aceita, responde na hora e a tela pergunta depois).
  */
-export const TIMEOUT_DO_BFF_MS = 30_000;
+export const TIMEOUT_DO_BFF_MS = 180_000;
 
 /**
  * BFF: o client do hub NUNCA segura bearer token (a sessão é cookie
@@ -29,6 +56,17 @@ const PREFIXOS_PERMITIDOS = [
      client-side porque o professor aperta na frente da sala e o card precisa
      responder na hora. As guardas de papel estão na api. */
   "salas",
+  /* EQUIPES NA MISSÃO (E13): sortear, separar, salvar e desfazer as equipes de
+     uma missão numa turma. Client-side pela mesma razão do liberar: o professor
+     monta as equipes na frente da sala, e a ficha precisa responder na hora. As
+     guardas de papel estão na api (só `professor` escreve; gestor lê). */
+  "equipes",
+  /* EVIDÊNCIA PEDAGÓGICA (E14): "Confirmar para a turma" (POST) e o ajuste do
+     nível de uma habilidade, de um estudante ou de vários (PATCH), no painel da
+     atividade. Client-side porque o professor corrige olhando a turma, e o
+     painel volta atualizado na própria resposta. As guardas de papel estão na
+     api (só `professor` escreve; gestor lê). */
+  "evidencias",
   "matriculas",
   "periodos-letivos",
   /* A REDE: escolas do contrato, o vínculo das pessoas com elas (lotações) e a
@@ -51,45 +89,93 @@ const PREFIXOS_PERMITIDOS = [
   "perfis",
   "analise",
   "progresso",
-  /* exp-70: o botão de zerar os dados da turma é client-side, e é o único
+  /* app-70: o botão de zerar os dados da turma é client-side, e é o único
      caminho da Vila que não passa por `apiDoServidor`. As guardas de papel estão
      na api (`@Roles("professor")`); isto aqui só decide quais prefixos o BFF
      repassa. */
   "vila",
-  /* exp-03: a LARGADA do relógio da turma é client-side — o professor aperta
+  /* exp02em1b: a LARGADA do relógio da turma é client-side — o professor aperta
      durante a aula e o painel precisa responder na hora, sem recarregar a
      página. É o único caminho do unooGPT que não passa por `apiDoServidor`.
      As guardas de papel estão na api (`@Roles("professor")`). */
   "unoogpt",
-  /* exp-07: os GATES da aula (abrir a Aula 2, congelar o debate, liberar a
-     reflexão) e o preparo da mídia são client-side — a professora aperta
-     durante a aula e as 30 telas precisam andar na hora, sem recarregar
-     página. As guardas de papel estão na api (`@Roles("professor")`). */
-  "o-eco-no-grupo",
-  /* exp-06: o gate da aula (abrir a Aula 2, pausar a simulação) e o "zerar
-     turma" são client-side pela mesma razão da exp-07 — a professora aperta no
-     meio da aula e as 30 telas andam na hora. As guardas de papel estão na api
+  /* exp06ef2b: o gate da aula (abrir a Aula 2, pausar a simulação) e o "zerar
+     turma" são client-side — a professora aperta no meio da aula e as 30 telas
+     andam na hora, sem recarregar a página. As guardas de papel estão na api
      (`@Roles("professor", "gestor_escola", "gestor_contrato")`). */
   "rastro-boato",
-  /* exp-04: o latch da Roda (LIBERAR REFLEXÃO FINAL), a preparação do pacote
+  /* exp01ef1b: o latch da Roda (LIBERAR REFLEXÃO FINAL), a preparação do pacote
      (gerar/aprovar) e o "zerar turma" são client-side — o professor aperta no
      meio da aula e os tablets do 1º ano andam pelo polling deles. As guardas
      de papel estão na api (`@Roles("professor", ...GESTORES)`). */
   "foto-conta",
-  /* exp-08: a preparação do caso da escola (gerar/publicar), os dois botões do
-     debate e o "zerar turma" são client-side pela mesma razão da exp-06 — a
+  /* exp08ef4b: a preparação do caso da escola (gerar/publicar), os dois botões do
+     debate e o "zerar turma" são client-side pela mesma razão da exp06ef2b — a
      professora aperta no meio da aula e as 30 telas andam na hora, por polling
      de 5s (ADR-93). As guardas de papel estão na api (`@Roles("professor",
      "gestor_escola", "gestor_contrato")`). */
   "manifesto-ia",
-  /* Os cadastros de interesse do site público (ADR-107) — só a LEITURA, e só
-     `admin` (o `@Roles` está na api). A ESCRITA não passa por aqui: ela vem de
-     visitante sem sessão, e tem rota própria (`/api/cadastro-de-interesse`). */
+  /* exp05ef1b v2.2: o preparo (gerar e aprovar o pacote), os TRÊS botões da
+     aula — revelação, síntese e reflexão —, o "Zerar Turma para Nova
+     Aplicação" e o painel que se atualiza sozinho são client-side pela mesma
+     razão da exp08ef4b: a professora aperta no meio da aula, na frente da sala,
+     e as telas andam pelo polling de 3 s (ADR-93). O painel é relido daqui a
+     cada 5 s enquanto a aula anda. As guardas de papel estão na api (gerar,
+     aprovar, os botões e zerar são `@Roles("professor")`, e só de quem leciona;
+     gestor lê). */
+  "quem-mandou-isso",
+  /* exp07ef1b: o preparo da cobertura (gerar/aprovar), a geração das imagens
+     — um laço do cliente, duas por chamada, porque doze não cabem nos 30 s
+     deste BFF —, o botão ÚNICO da aula (Mural, fichas, conclusão), a consulta
+     leve do painel a cada 5 s e o "zerar turma" são client-side: a professora
+     aperta na frente da sala e as telas andam na hora pelo polling (ADR-93).
+     As guardas de papel estão na api (`@Roles("professor", ...GESTORES)`). */
+  "a-selecao",
+  /* O podcast de recapitulação de toda missão (ADR-150): as falas do tema na
+     criação da atividade e o áudio na aula — um laço do cliente, UM trecho por
+     chamada, porque o episódio não cabe numa. É do professor; as guardas de
+     papel e de turma estão na api. */
+  "podcast",
+  /* exp04ef1b: o preparo do pacote (gerar, regenerar uma notícia, homologar e o
+     "Usar Banco Padrão", que lê `professor/material` e homologa na hora), as
+     imagens — o mesmo laço do cliente da exp07ef1b, duas por chamada, porque
+     oito não cabem nos 30 s deste BFF —, o botão ÚNICO da aula (Liberar
+     resultado, Liberar revisão), a consulta leve do painel a cada 5 s e o
+     "zerar turma" são client-side: o professor aperta na frente da sala e as
+     telas andam pelo polling do gate (ADR-93). As guardas de papel estão na
+     api (`@Roles("professor", ...GESTORES)`, e `turmaVisivel` por turma). */
+  "jornal-escola",
+  /* exp06ef1b: o preparo da mostra (gerar os quarenta estandes — cinco
+     chamadas na api, ~42 s, dentro do teto deste BFF —, regenerar um estande,
+     homologar e o "Usar Banco Padrão"), as imagens — o mesmo laço do cliente do
+     Jornal, quatro por chamada, porque quarenta não cabem numa —, o botão ÚNICO
+     da aula (Liberar a Galeria Oculta), a consulta leve do painel a cada 5 s e
+     o "zerar turma" são client-side: o professor aperta na frente da sala e as
+     telas andam pelo polling do gate de 3 s (ADR-93). As guardas de papel estão
+     na api (`@Roles("professor", ...GESTORES)`, e a turma conferida por escola).
+     O mesmo prefixo leva as imagens do BANCO PADRÃO
+     (`juri-estadual/banco-padrao/imagens`, a tela `/unooria/recursos/imagens-do-juri`),
+     que só o `admin` alcança: o `@Roles("admin")` está na api. */
+  "juri-estadual",
+  /* Os cadastros de interesse do site público (ADR-107) — a LEITURA e a
+     eliminação a pedido do titular (H10.5.2), só `admin` (o `@Roles` está na
+     api). A ESCRITA não passa por aqui: ela vem de visitante sem sessão, e tem
+     rota própria (`/api/cadastro-de-interesse`). */
   "prospeccao",
   /* Sinais do NAVEGADOR do hub (cap. 17): erro de cliente e Web Vitals postam
      pela mesma rota que a SDK usa dentro do iframe, mas o client do hub não
      tem bearer — passa por aqui. A api aplica cota e redaction. */
   "observabilidade",
+  /* O AGENTE DE IA DO PROFESSOR (`docs/regras/agente-professor.md`): listar,
+     criar, ler e apagar conversas. O TURNO (`POST .../conversas/:id/mensagens`)
+     NÃO passa por aqui: é SSE de até 4 min e tem rota estática própria
+     (`agente-professor/conversas/[id]/mensagens/route.ts`), que vence este
+     catch-all. As guardas (`@Roles("professor")`, `@Produto`) estão na api. */
+  "agente-professor",
+  /* A Ajuda com avatar (ADR-132): abrir e encerrar a sessão de vídeo. É
+     client-side porque o modal abre no MENU, em qualquer tela; a conversa em si
+     não passa por aqui — o vendor fala direto com a api. */
+  "ajuda",
 ] as const;
 
 /**
@@ -112,16 +198,10 @@ function ehSinalDoNavegador(request: NextRequest, path: string[]): boolean {
 }
 
 async function proxy(request: NextRequest, path: string[]) {
-  const session = await auth();
   const sinalDoNavegador = ehSinalDoNavegador(request, path);
-  const semSessao = !session?.usuario;
-  if (semSessao && !sinalDoNavegador) {
-    return NextResponse.json({ mensagem: "sem sessão" }, { status: 401 });
-  }
-  // Preso na troca de senha ainda é gente usando uma tela: o erro dela conta.
-  if (session?.usuario?.precisaTrocarSenha && !sinalDoNavegador) {
-    return NextResponse.json({ mensagem: "troque a senha antes de continuar" }, { status: 403 });
-  }
+  const passagem = await passagemDaSessao({ aceitaSemSessao: sinalDoNavegador });
+  if ("recusa" in passagem) return passagem.recusa;
+
   const prefixo = path[0] ?? "";
   const cabecalhos = cabecalhosComoObjeto(request.headers);
   if (!PREFIXOS_PERMITIDOS.includes(prefixo as (typeof PREFIXOS_PERMITIDOS)[number])) {
@@ -132,32 +212,22 @@ async function proxy(request: NextRequest, path: string[]) {
     return NextResponse.json({ mensagem: "rota não permitida" }, { status: 404 });
   }
 
-  const u = session?.usuario;
-  const token = u
-    ? await assinarTokenExperiencia({
-        sub: u.id,
-        escola_id: u.escolaId,
-        turma_id: u.turmaId,
-        perfil: u.papel,
-      })
-    : null;
+  const u = passagem.usuario;
+  const token = u ? await tokenCurto(u) : null;
 
-  const apiUrl = process.env.API_INTERNAL_URL ?? "http://localhost:3001";
   // Sem sessão, o mesmo sinal vai para o par público da rota.
-  const caminho = token ? path.join("/") : `observabilidade/publico/${path[1]}`;
-  const destino = new URL(`${apiUrl}/${caminho}`);
+  const destino = urlDaApi(token ? path.join("/") : `observabilidade/publico/${path[1]}`);
   request.nextUrl.searchParams.forEach((valor, chave) => destino.searchParams.set(chave, valor));
 
   const temCorpo = request.method !== "GET" && request.method !== "HEAD";
-  // O `traceparent` do navegador (ou do LB) segue para a api: é o que faz a
-  // chamada do painel do professor aparecer no mesmo trace que o span da api.
-  const traceparent = traceparentDeSaida(cabecalhos);
   let resposta: Response;
   try {
     resposta = await fetch(destino, {
       method: request.method,
       headers: {
-        ...(token ? { authorization: `Bearer ${token}` } : {}),
+        // O `traceparent` do navegador (ou do LB) segue para a api: é o que faz a
+        // chamada do painel do professor aparecer no mesmo trace que o span da api.
+        ...cabecalhosParaApi(request, { token, temCorpo }),
         /*
          * O `user-agent` do NAVEGADOR só é repassado para os sinais de
          * observabilidade, e é o que os torna úteis: é dele que a api deriva
@@ -170,15 +240,22 @@ async function proxy(request: NextRequest, path: string[]) {
         ...(sinalDoNavegador && request.headers.get("user-agent")
           ? { "user-agent": request.headers.get("user-agent") as string }
           : {}),
-        ...(traceparent ? { traceparent } : {}),
-        ...(temCorpo ? { "content-type": request.headers.get("content-type") ?? "application/json" } : {}),
       },
       body: temCorpo ? await request.arrayBuffer() : undefined,
       cache: "no-store",
-      signal: AbortSignal.timeout(TIMEOUT_DO_BFF_MS),
+      /* O teto E a desistência do navegador: fechar a aba no meio de uma
+         exportação (ou de uma geração por IA) cancela a chamada à api, em vez
+         de o hub seguir esperando uma resposta que ninguém vai ler. */
+      signal: sinalDaChamada(request, TIMEOUT_DO_BFF_MS),
     });
   } catch (erro) {
-    const timeout = erro instanceof Error && erro.name === "TimeoutError";
+    const motivo = motivoDaFalha(erro, request);
+    if (motivo === "cliente-desistiu") {
+      // Não é falha da api nem do hub: quem pediu foi embora. Sem `warn`.
+      logDaRequisicao(cabecalhos).info({ prefixo, metodo: request.method, codigo: motivo }, "o navegador desistiu da chamada");
+      return respostaDeQuemDesistiu();
+    }
+    const timeout = motivo === "timeout";
     logDaRequisicao(cabecalhos).warn(
       { prefixo, metodo: request.method, codigo: timeout ? "api-timeout" : "api-indisponivel", err: erro },
       timeout ? "a api não respondeu ao BFF no teto" : "a api não respondeu ao BFF",

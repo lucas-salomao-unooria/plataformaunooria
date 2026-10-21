@@ -91,6 +91,11 @@ function resultadosDaMissao(segmentos: Segmentos): string {
   return `/${segmentos.slice(0, -1).join('/')}/resultados`;
 }
 
+/** `/professor/turmas/:id/estudantes` não tem tela: a lista é a aba da sala. */
+function abaDosEstudantes(segmentos: Segmentos): string {
+  return `/${segmentos.slice(0, -1).join('/')}?aba=estudantes`;
+}
+
 /**
  * A hierarquia das rotas da plataforma. Chave = PADRÃO da rota, com `[x]` nos
  * segmentos dinâmicos, exatamente como a pasta em `app/`.
@@ -110,6 +115,10 @@ const NOS: Record<string, NoDaTrilha> = {
   '/professor/entre-redes/[ano]/[unidade]/resultados': {
     rotulo: 'Resultados da turma',
   },
+  // A criação da atividade (ADR-130). O segmento `atividades` não tem tela: a
+  // lista das atividades é a própria ficha da missão.
+  '/professor/entre-redes/[ano]/[unidade]/atividades': { rotulo: 'Atividades', oculto: true },
+  '/professor/entre-redes/[ano]/[unidade]/atividades/nova': { rotulo: 'Nova atividade' },
   '/professor/entre-redes/[ano]/[unidade]/estudantes': {
     rotulo: 'Resultados da turma',
     href: resultadosDaMissao,
@@ -151,6 +160,15 @@ const NOS: Record<string, NoDaTrilha> = {
 
   '/professor/turmas': { rotulo: 'Minhas turmas' },
   '/professor/turmas/[id]': { rotulo: 'Turma' },
+  // O perfil do estudante (E14) mora DENTRO da turma de onde o professor veio.
+  // `.../estudantes` não é `oculto`: é a aba de onde ele clicou no nome, e sem
+  // ela a volta cai na aba de missões.
+  '/professor/turmas/[id]/estudantes': { rotulo: 'Estudantes', href: abaDosEstudantes },
+  '/professor/turmas/[id]/estudantes/[estudanteId]': { rotulo: 'Estudante' },
+
+  // O painel de habilidades (F14.7). O nome do estudante leva ao perfil DENTRO
+  // da sala (acima), de onde a trilha volta para a turma.
+  '/professor/habilidades': { rotulo: 'Painel de habilidades' },
 
   // Os três produtos que são experiência embedada. O rótulo é o NOME DO PRODUTO
   // (`lib/produtos.ts`), que é o que o professor clicou no cartão.
@@ -169,6 +187,16 @@ const NOS: Record<string, NoDaTrilha> = {
   '/admin/escolas': { rotulo: 'Escolas' },
   '/admin/minhas-escolas': { rotulo: 'Minhas escolas' },
   '/admin/relatorios': { rotulo: 'Relatório' },
+  // O painel de habilidades (F14.7): a escola, ou a rede, e o drill-down. Os
+  // segmentos intermediários não têm tela — `oculto`; a página publica o nome
+  // da escola, da turma ou do estudante pelo `RotuloDaTrilha`.
+  '/admin/habilidades': { rotulo: 'Habilidades' },
+  '/admin/habilidades/escolas': { rotulo: 'Escolas', oculto: true },
+  '/admin/habilidades/escolas/[escolaId]': { rotulo: 'Escola' },
+  '/admin/habilidades/turmas': { rotulo: 'Turmas', oculto: true },
+  '/admin/habilidades/turmas/[turmaId]': { rotulo: 'Turma' },
+  '/admin/habilidades/estudantes': { rotulo: 'Estudantes', oculto: true },
+  '/admin/habilidades/estudantes/[estudanteId]': { rotulo: 'Estudante' },
   '/admin/periodos-letivos': { rotulo: 'Ano letivo' },
   '/admin/recursos': { rotulo: 'Recursos' },
 
@@ -177,9 +205,15 @@ const NOS: Record<string, NoDaTrilha> = {
   // desenho de `/admin`.
   "/unooria": { rotulo: "Unooria", oculto: true },
   "/unooria/recursos": { rotulo: "Recursos" },
+  // As imagens do banco padrão do Júri Estadual (exp06ef1b): gerar as que faltam.
+  "/unooria/recursos/imagens-do-juri": { rotulo: "Imagens do banco padrão do Júri" },
   // A quota diária de IA por perfil (ADR-105).
   "/unooria/uso-de-ia": { rotulo: "Uso de IA" },
+  // O FinOps: o custo da IA em tokens, dólar e real (ADR-161).
+  "/unooria/custos-de-ia": { rotulo: "Custos de IA" },
   "/unooria/prospeccao": { rotulo: "Prospecção" },
+  // As experiências arquivadas: tiradas do produto sem serem apagadas (ADR-116).
+  "/unooria/arquivados": { rotulo: "Arquivados" },
 
   /* ---- análise de produto (admin-contrato) ----------------------------- */
   '/analise': { rotulo: 'Análise de produto' },

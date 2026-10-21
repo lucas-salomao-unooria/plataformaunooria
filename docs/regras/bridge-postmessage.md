@@ -47,7 +47,7 @@ origem REAL de quem embedou, que VENCE a query string (ADR-46). Sintoma novo:
 O `blur` da janela do hub NÃO é sempre o estudante saindo: clicar dentro do iframe
 move o foco para a experiência e dispara `blur` no documento de cima — e o
 `focus` correspondente não volta enquanto ele continuar ali, então um
-`hub:pause` ali é DEFINITIVO (o vídeo da exp-02 parava no 1º toque em "Salvar").
+`hub:pause` ali é DEFINITIVO (o vídeo do UnooTube, hoje `backup-exp04ef1b`, parava no 1º toque em "Salvar").
 Quando o foco foi para a nossa experiência, `document.activeElement` é o próprio
 `<iframe>`; o `ExpFrame` não emite nada nesse caso.
 Versione com `protocolVersion` (hoje **2**; o major é verificado nos DOIS lados
@@ -73,7 +73,7 @@ Três coisas que valem saber:
 - **O iframe é cross-origin, então a sessão do iframe é OUTRA sessão** do ponto
   de vista do navegador (cookie particionado). O que costura as duas é o
   `identify` com o mesmo UUID do estudante, chamado dos dois lados.
-- **O disfarce vaza no DevTools.** `exp-01`, `exp-02` e `exp-03` têm no
+- **O disfarce vaza no DevTools.** `exp08ef1b`, `exp02em1b` e `backup-exp04ef1b`, entre outras, têm no
   `index.html` o aviso de que nada ali pode denunciar o exercício; requisições
   para `clarity.ms` aparecem na aba de rede. Consequência aceita e registrada na
   ADR-60 — mas não acrescente nada que piore isso (um nome de tag visível, por
@@ -83,5 +83,5 @@ Três coisas que valem saber:
   vem, é a variável, não o código.
 
 **Mexeu na `@edu/sdk`? Sobe a versão de TODAS as experiências.** O filtro de
-mudanças do `deploy.yml` inclui o pacote, então uma alteração lá republica as
-seis — e publicar sem subir a versão sobrescreve um caminho imutável no bucket.
+mudanças do `deploy.yml` inclui o pacote, então uma alteração lá republica
+toda experiência publicável (toda pasta menos `_template` e `backup-*`) — e publicar sem subir a versão sobrescreve um caminho imutável no bucket.

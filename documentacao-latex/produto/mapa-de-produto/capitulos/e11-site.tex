@@ -1,0 +1,109 @@
+% ===========================================================================
+%  E11 — Site público e captação
+% ===========================================================================
+\chapter{E11 \textperiodcentered{} Site público e captação}
+\label{ep:e11}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] Quem ainda não é cliente entende a proposta do Entre Redes e
+    deixa contato; quem já é encontra a entrada e os documentos legais.
+  \item[Para quem] Visitante (secretarias, escolas, docentes e famílias).
+  \item[Valor] É a porta comercial do produto e o lugar onde a rede e a família
+    leem o que a plataforma promete.
+  \item[Estado] \parcial{} --- site e cadastro prontos; faltam os caminhos
+    para o login e para os documentos legais.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F11.1} & Site ENTRE REDES & \pronto\\
+\zebra \id{F11.2} & Cadastro de interesse & \pronto\\
+\id{F11.3} & Política de Privacidade e Termos de Uso & \parcial\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\feature{F11.1}{Site ENTRE REDES}{\pronto}
+
+\begin{historia}{H11.1.1}{Conhecer a proposta}{\pronto}
+\hu{Visitante de uma secretaria de educação}{entender o que é o Entre Redes e
+como ele funciona}{decidir se vale conversar com a Unooria}
+\aceite
+\begin{itemize}
+  \item O site tem nove seções: Programa, O desafio, Nossa resposta, O método,
+    As missões, Gestão, Currículo, Docentes e Famílias.
+  \item O botão \enquote{Explorar} abre o índice; os prints das missões podem
+    ser ampliados.
+  \item No celular, o convite encurta para \enquote{Cadastro}.
+  \item Quem já está com sessão aberta e abre o site vai direto para a própria
+    área.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H11.1.2}{Achar a entrada e os documentos a partir do site}{\pronto}
+\hu{professor da rede que chegou pelo site}{encontrar o botão de entrar e os
+documentos legais}{não depender de saber o endereço da tela de entrada}
+\aceite
+\begin{itemize}
+  \item O cabeçalho do site tem \enquote{Entrar}, ao lado de \enquote{Quero
+    conhecer a solução}, e leva à tela de entrada --- também no celular.
+  \item O rodapé leva à Política de Privacidade e aos Termos de Uso.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F11.2}{Cadastro de interesse}{\pronto}
+
+\begin{historia}{H11.2.1}{Deixar o meu contato}{\pronto}
+\hu{Visitante}{deixar os meus dados para a Unooria me procurar}{conhecer a
+solução com calma}
+\aceite
+\begin{itemize}
+  \item Os três botões \enquote{Quero conhecer a solução} abrem a mesma janela:
+    Nome, E-mail profissional, Telefone / WhatsApp, \enquote{Rede, secretaria
+    ou escola}, Seu cargo e a caixa \enquote{Autorizo o contato da Unooria
+    sobre o ENTRE REDES}.
+  \item Depois de \enquote{Enviar cadastro}: \enquote{Cadastro enviado. A
+    equipe da Unooria entrará em contato.}
+  \item A resposta é sempre a mesma --- inclusive para cadastro repetido ou
+    barrado ---, para não revelar quem já se cadastrou.
+  \item O texto exato da autorização é guardado junto com o cadastro.
+  \item Há proteção contra robôs e limite de envios por hora.
+  \item Logo abaixo da autorização, a janela leva à Política de Privacidade,
+    que abre em outra aba, sem perder o que já foi digitado.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F11.3}{Política de Privacidade e Termos de Uso}{\parcial}
+
+\begin{historia}{H11.3.1}{Ler o que a plataforma faz com os dados}{\parcial}
+\hu{família ou encarregado de dados da rede}{ler em linguagem clara o que a
+plataforma coleta e por quê}{confiar na plataforma antes de a criança usar}
+\aceite
+\begin{itemize}
+  \item A Política de Privacidade tem 17 seções e os Termos de Uso 16, com
+    sumário lateral que acompanha a leitura.
+  \item Os Termos têm \enquote{As experiências são simulações --- leia esta
+    parte}, \enquote{O que cada perfil pode fazer} e \enquote{A inteligência
+    artificial na plataforma}.
+  \item Os dois documentos só afirmam o que a plataforma faz de verdade, e
+    terminam com \enquote{O que ainda está sendo definido}.
+  \item A Política de Privacidade está na versão 1.1, em vigor desde 25 de
+    setembro de 2026. Os Termos de Uso, ainda um rascunho para revisão
+    jurídica, foram atualizados no mesmo dia.
+  \item Os dois já dizem as regras da A Seleção: o colega com quem a
+    publicação foi pareada no Mural vê os três posts, a legenda e o primeiro
+    nome do estudante; e a IA lê a legenda para sugerir ao professor um nível,
+    que a criança não vê.
+\end{itemize}
+\pendencia{razão social e CNPJ da Unooria ainda em branco; e estão declarados
+como indefinidos os prazos de guarda e eliminação, o registro de acesso
+individual, o canal para responsáveis e o relatório de impacto. Os Termos ainda
+citam o UnooTube, arquivado, como exemplo de aplicativo imitado: a frase está
+com o PO para revisar.}
+\end{historia}

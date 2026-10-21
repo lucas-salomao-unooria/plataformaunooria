@@ -1,0 +1,17 @@
+{
+  "id": "exp01ef1b",
+  "nome": "O Que a Foto Conta",
+  "versao": "1.0.7",
+  "produto": "entre-redes",
+  "series": ["1EF"],
+  "unidade": 1,
+  "capabilities": ["telemetria", "progresso"],
+  "viewport": { "largura": 375, "altura": 812 },
+  "publico": "estudante",
+  "verbos": {
+    "interacted": "Toques em marca, curtida, foto, legenda e comentários",
+    "completed": "Publicação do post e conclusão da missão",
+    "progressed": "Chegada ao latch síncrono da Roda de Conversa",
+    "attempted": "Retry formativo na reflexão final (Globo)"
+  }
+}

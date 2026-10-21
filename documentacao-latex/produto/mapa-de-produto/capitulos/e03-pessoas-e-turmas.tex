@@ -1,0 +1,319 @@
+% ===========================================================================
+%  E03 — Cadastrar pessoas e turmas
+% ===========================================================================
+\chapter{E03 \textperiodcentered{} Cadastrar pessoas e turmas}
+\label{ep:e03}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] Pôr todas as pessoas da rede na plataforma, nas turmas
+    certas, sem digitar uma por uma --- e mantê-las em dia ao longo do ano.
+  \item[Para quem] Coordenação da escola; Coordenação regional;
+    Administrador do contrato.
+  \item[Valor] Sem cadastro não há aula: o estudante sem turma não vê missão
+    nenhuma. E cadastro errado vira dado de uma criança atribuído a outra.
+  \item[Estado] \pronto{} na função, com ajustes de tela pendentes (a escola
+    digitada à mão, filtros incompletos).
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F03.1} & Importar pessoas por planilha & \pronto\\
+\zebra \id{F03.2} & Receber os dados do sistema de gestão da rede & \pronto\\
+\id{F03.3} & Balcão de usuários & \pronto\\
+\zebra \id{F03.4} & Quem pode cadastrar quem & \pronto\\
+\id{F03.5} & Turmas e enturmamento & \pronto\\
+\zebra \id{F03.6} & Transferir estudante dentro da rede & \pronto\\
+\id{F03.7} & Limpar contas sem matrícula & \pronto\\
+\zebra \id{F03.8} & Perfil portátil: o estudante que sai da rede & \pronto\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\feature{F03.1}{Importar pessoas por planilha}{\pronto}
+
+\begin{historia}{H03.1.1}{Importar a escola inteira de uma vez}{\pronto}
+\hu{Coordenação da escola}{importar estudantes, professores e coordenação por
+uma planilha}{começar a usar a plataforma sem cadastrar pessoa por pessoa}
+\aceite
+\begin{itemize}
+  \item A aba \enquote{Planilha da escola} tem três passos: \enquote{1. Baixe o
+    modelo}, \enquote{2. Escolha a senha inicial}, \enquote{3. Envie a
+    planilha}.
+  \item Colunas: matrícula, nome, usuário, e-mail, papel, turma, série, turno.
+    Só nome e papel são obrigatórios; para estudante, também turma e série.
+  \item Usuário em branco é gerado a partir do nome e devolvido no relatório.
+  \item Turma que ainda não existe é criada pela própria planilha.
+  \item Coluna desconhecida é erro --- a planilha não é aceita pela metade sem
+    aviso.
+  \item O relatório mostra criados, atualizados, enturmados e os erros linha a
+    linha.
+  \item Aceita planilhas grandes (até 50 mil linhas).
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H03.1.2}{Escolher como nasce a senha}{\pronto}
+\hu{Coordenação da escola}{escolher se o lote recebe uma senha única ou uma
+senha por pessoa}{equilibrar praticidade e segurança conforme a idade da
+turma}
+\aceite
+\begin{itemize}
+  \item Opções: \enquote{Uma senha para todo o lote} ou \enquote{Uma senha
+    diferente por pessoa (recomendado para estudantes)}.
+  \item As senhas geradas aparecem uma única vez, no relatório (\enquote{não
+    aparecem de novo}).
+  \item A senha nunca vem na planilha.
+  \item Toda senha nascida aqui é provisória: a pessoa cria a dela no primeiro
+    acesso (\id{H01.1.2}).
+\end{itemize}
+\pendencia{com senha única no lote, um estudante consegue entrar na conta de
+um colega antes do primeiro acesso dele. É risco aceito e avisado na tela; a
+recomendação é senha por pessoa.}
+\end{historia}
+
+\begin{historia}{H03.1.3}{Reimportar sem bagunçar}{\pronto}
+\hu{Coordenação da escola}{reenviar a planilha atualizada no meio do
+ano}{corrigir dados sem prejudicar quem já está usando}
+\aceite
+\begin{itemize}
+  \item Reimportar atualiza os dados e não troca a senha de quem já entrou.
+  \item Um estudante que já existe em outra escola da rede (mesmo CPF) vira
+    \textbf{transferência}; um professor, um \textbf{vínculo a mais}.
+  \item Não existe \enquote{fundir contas}: isso atribuiria o trabalho de uma
+    criança a outra.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F03.2}{Receber os dados do sistema de gestão da rede}{\pronto}
+
+Redes que já têm sistema de gestão escolar podem enviar os dados num padrão
+internacional de troca (OneRoster 1.2), em vez de preencher a planilha.
+
+\begin{historia}{H03.2.1}{Manter a plataforma igual ao sistema oficial}{\pronto}
+\hu{Administrador do contrato de uma rede que já tem sistema de gestão}{enviar
+os arquivos exportados desse sistema}{não manter dois cadastros à mão}
+\aceite
+\begin{itemize}
+  \item A aba \enquote{OneRoster 1.2} lista os 7 arquivos na ordem, cada um com
+    modelo em branco e exemplo.
+  \item Modos: \enquote{Delta --- só o que mudou desde o último envio} ou
+    \enquote{Bulk --- lote completo da rede}.
+  \item Arquivo que falta ou vem fora de ordem é apontado no relatório.
+  \item Pessoa sem papel definido entra como estudante (o menor acesso).
+  \item Senha que vier no arquivo é ignorada.
+  \item Uma carga incompleta nunca desativa ninguém por omissão, e
+    \enquote{excluir} desativa ou encerra --- nunca apaga.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F03.3}{Balcão de usuários}{\pronto}
+
+\begin{historia}{H03.3.1}{Encontrar uma pessoa}{\parcial}
+\hu{Coordenação}{achar rápido uma pessoa da escola}{resolver o problema dela
+no balcão}
+\aceite
+\begin{itemize}
+  \item \enquote{Usuários} busca por \enquote{Nome, CPF, usuário ou
+    matrícula}.
+  \item Filtros por Papel e por Situação (\enquote{Ativos},
+    \enquote{Inativos}, \enquote{Sem primeiro acesso}).
+  \item Mostra só as pessoas da escola ativa.
+\end{itemize}
+\pendencia{o filtro Papel oferece só Estudantes, Professores e Coordenação ---
+faltam Coordenação regional e Administrador do contrato.}
+\end{historia}
+
+\begin{historia}{H03.3.2}{Cadastrar uma pessoa no balcão}{\pronto}
+\hu{Coordenação da escola}{cadastrar uma pessoa que chegou no meio do
+ano}{ela começar a usar hoje, sem esperar a próxima planilha}
+\aceite
+\begin{itemize}
+  \item \enquote{Novo usuário} pede Papel, \enquote{Nome completo}, CPF,
+    \enquote{Matrícula da rede}, Usuário, E-mail, Turma, Turno e
+    \enquote{Senha do primeiro acesso} (\enquote{Gerar automaticamente} ou
+    \enquote{Definir agora}).
+  \item Usuário em branco é gerado a partir do nome; a turma é escolhida numa
+    lista, nunca digitada.
+  \item Ao salvar: \enquote{Acesso criado}, e a pessoa já nasce na turma.
+  \item Se a pessoa já existe, o cadastro é recusado (não atualiza ninguém sem
+    querer).
+  \item Se o CPF já existe em outra escola, a mensagem \emph{não} revela quem é
+    nem onde está, e orienta usar a importação.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H03.3.3}{Corrigir, desativar e reativar}{\pronto}
+\hu{Coordenação}{corrigir dados e desativar quem saiu}{manter a lista da escola
+verdadeira}
+\aceite
+\begin{itemize}
+  \item \enquote{Editar} permite corrigir Nome, E-mail e CPF.
+  \item \enquote{Desativar} tira o acesso sem apagar nada; \enquote{Reativar}
+    devolve.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H03.3.4}{Resetar a senha de quem esqueceu}{\pronto}
+\hu{Coordenação}{gerar uma senha nova para quem esqueceu a dele}{a pessoa
+voltar a usar a plataforma no mesmo dia}
+\aceite
+\begin{itemize}
+  \item \enquote{Resetar senha} mostra a senha temporária uma única vez:
+    \enquote{Anote agora --- ela não aparece de novo.}
+  \item No próximo acesso, a pessoa é obrigada a criar a própria senha.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F03.4}{Quem pode cadastrar quem}{\pronto}
+
+\begin{historia}{H03.4.1}{Só ver os papéis que posso atribuir}{\pronto}
+\hu{Coordenação}{que a tela me ofereça só os papéis que eu posso dar}{não
+tentar algo que não tenho autoridade para fazer}
+\aceite
+\begin{itemize}
+  \item A cadeia é: Administrador Unooria \seta{} Administrador do contrato
+    \seta{} Coordenação regional \seta{} Coordenação da escola \seta{}
+    Professor e Estudante.
+  \item Cada nível cria os que estão abaixo dele, nunca o próprio nível nem um
+    acima. A Coordenação da escola, por exemplo, só oferece Professor e
+    Estudante.
+  \item O papel que não pode ser dado não aparece na tela --- e, se alguém
+    tentar por outro caminho, a plataforma recusa.
+  \item Ao criar uma Coordenação regional, a janela troca Turma e Turno pelo
+    campo Regional.
+  \item Só o Administrador Unooria cria Administrador do contrato.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H03.4.2}{Escolher a escola numa lista}{\pronto}
+\hu{Administrador do contrato}{escolher a escola numa lista quando trabalho em
+Usuários, Turmas, Importar e Análise de produto}{não ter de saber de cor o
+código interno de cada escola}
+\aceite
+\begin{itemize}
+  \item Nas quatro telas, \enquote{Buscar escola} filtra por nome, código INEP
+    ou município --- sem diferenciar acento nem maiúscula --- a lista
+    \enquote{Escola}, em que cada escola aparece com o município e o código
+    INEP.
+  \item Abaixo da lista, a tela diz quantas escolas a busca encontrou, ou que
+    nenhuma combina.
+  \item O campo \enquote{Escola (id)}, que pedia o código interno digitado,
+    deixou de existir.
+  \item A escolha aparece só para quem atende a rede inteira (Administrador do
+    contrato e Administrador Unooria).
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F03.5}{Turmas e enturmamento}{\pronto}
+
+\begin{historia}{H03.5.1}{Criar as turmas do ano}{\pronto}
+\hu{Coordenação da escola}{criar as turmas da escola}{enturmar estudantes e
+professores}
+\aceite
+\begin{itemize}
+  \item \enquote{Nova turma} pede Nome, Série e Turno.
+  \item Nome repetido no mesmo ano letivo é recusado.
+  \item A lista mostra Série, Turno, Ano letivo, Estudantes e Professores, com
+    filtro por ano letivo.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H03.5.2}{Pôr, mover e tirar pessoas da turma}{\pronto}
+\hu{Coordenação da escola}{pôr pessoas na turma, mudar de turma e
+tirar}{que cada estudante esteja na sala certa}
+\aceite
+\begin{itemize}
+  \item Na turma, abas Estudantes, Professores e Missões;
+    \enquote{Adicionar estudante} e \enquote{Adicionar professor} por busca.
+  \item \enquote{Mover} leva para outra turma da escola num passo só --- o
+    estudante nunca fica \enquote{sem turma} no meio do caminho.
+  \item \enquote{Remover} encerra a matrícula sem apagar o que foi feito.
+  \item \enquote{Tornar referência} define a turma principal do estudante,
+    que é a que as missões usam.
+  \item Existem turmas regulares e turmas de componente; o estudante pode estar
+    nas duas.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H03.5.3}{Ver as missões da turma sem mexer}{\pronto}
+\hu{Coordenação da escola}{ver quais missões estão abertas numa
+turma}{responder ao professor ou à família sem precisar perguntar}
+\aceite
+\begin{itemize}
+  \item A aba Missões mostra o que está aberto e quem abriu, sem permitir
+    mudar.
+  \item Aviso na aba: \enquote{Quem abre a missão para a turma é quem dá aula
+    nela}.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F03.6}{Transferir estudante dentro da rede}{\pronto}
+
+\begin{historia}{H03.6.1}{Transferir um estudante de escola}{\pronto}
+\hu{Administrador do contrato}{transferir um estudante para outra escola da
+rede}{ele seguir na plataforma sem perder a identidade}
+\aceite
+\begin{itemize}
+  \item Na turma, \enquote{Transferir de escola}.
+  \item O que o estudante produziu fica na escola de origem; a identidade o
+    acompanha.
+  \item A escola nova vê só o \enquote{Histórico} de participações, nunca as
+    respostas dele.
+\end{itemize}
+\pendencia{o botão aparece só para o Administrador do contrato; para a
+Coordenação, a transferência acontece indiretamente, importando o CPF. Ver a
+decisão \id{D02}.}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F03.7}{Limpar contas sem matrícula}{\pronto}
+
+\begin{historia}{H03.7.1}{Desativar as contas de aparelho antigas}{\pronto}
+\hu{Coordenação}{ver as contas que não têm matrícula na rede (as antigas
+contas \enquote{de tablet})}{desativá-las sem apagar trabalho de criança}
+\aceite
+\begin{itemize}
+  \item A seção \enquote{Contas sem matrícula da rede} lista essas contas com
+    quanto dado cada uma acumulou (até 200 por vez).
+  \item Posso desativar; não existe \enquote{fundir} com a conta verdadeira.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F03.8}{Perfil portátil: o estudante que sai da rede}{\pronto}
+
+A família tem direito de levar o histórico do estudante quando ele sai da
+rede. O perfil portátil é esse histórico em forma de documento assinado.
+
+\begin{historia}{H03.8.1}{Emitir o perfil a pedido da família}{\pronto}
+\hu{Coordenação}{emitir o percurso do estudante num documento
+assinado}{atender o pedido da família quando ele muda de rede}
+\aceite
+\begin{itemize}
+  \item Na turma, \enquote{Perfil portátil} \seta{} Emitir.
+  \item Aviso: \enquote{Isto é para sair da REDE, não da escola}.
+  \item O documento nunca inclui dado de bem-estar.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H03.8.2}{Receber o perfil que veio de outra rede}{\pronto}
+\hu{Coordenação}{receber o documento que o estudante trouxe de outra
+rede}{conhecer o percurso dele sem misturar com o que ele fizer aqui}
+\aceite
+\begin{itemize}
+  \item A plataforma confere a assinatura: documento adulterado é recusado; o
+    que não pôde ser conferido aparece como \enquote{Recebido, mas não
+    conferido}.
+  \item O que chega de fora nunca vira nota nem progresso: fica anexado ao
+    estudante, identificado pelo CPF.
+  \item A lista \enquote{Recebidos} mostra os documentos já recebidos.
+\end{itemize}
+\end{historia}

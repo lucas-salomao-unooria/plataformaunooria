@@ -37,7 +37,7 @@ import { scoreDe } from "./regras/pontuacao";
 import { curvas, topologiaDe, type Topologia } from "./regras/topologia";
 
 /**
- * Persistência e regras aplicadas da exp-06-rastro-boato.
+ * Persistência e regras aplicadas da exp06ef2b.
  *
  * Assinaturas recebem `escolaId`/`estudanteId` explícitos (não o request) — os
  * testes de integração chamam direto, e toda query leva `escola_id` no `where`
@@ -51,7 +51,7 @@ import { curvas, topologiaDe, type Topologia } from "./regras/topologia";
  */
 
 /** O id que a guarda de liberação (ADR-69) e o manifesto compartilham. */
-export const EXP_ID = "exp-06-rastro-boato";
+export const EXP_ID = "exp06ef2b";
 
 /** Minutos sem ação para o painel marcar ociosidade. O alerta é para a docente
  *  ir até a carteira, não para punir. */
@@ -103,7 +103,7 @@ function paraEstado(linha: LinhaDaSessao | null | undefined): EstadoSessao {
  * `desfecho` é o campo que evita a tela comparar `opcao === "B"` — comparação
  * que iria legível para o bundle e entregaria a resposta certa no DevTools
  * antes de a criança responder (regra 3, e a mesma armadilha registrada na
- * exp-07). Ele só existe DEPOIS do envio, quando a criança já viu a cena.
+ * exp07ef1b). Ele só existe DEPOIS do envio, quando a criança já viu a cena.
  */
 export interface EstadoPublico {
   passo: Passo;
@@ -413,8 +413,10 @@ export class RastroBoatoService {
    * leitura é de PROGRESSO. A distribuição A/B/C existe porque é o material do
    * debate, e aparece como contagem da turma — nunca como "quem errou".
    *
-   * O texto da reflexão vai NESTA rota e só nela: é a leitura formativa do
-   * professor da turma. Nenhuma rota de gestor o alcança.
+   * O texto da reflexão vai NESTA rota e só nela, e só para o PROFESSOR da
+   * turma: é a leitura formativa dele. A rota aceita gestores (a folha de
+   * progresso é deles também), mas sem `professorId` o texto volta `null` e a
+   * gestão vê só "entregou" (H07.1.4, D03).
    */
   async painel(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
@@ -457,7 +459,9 @@ export class RastroBoatoService {
           latenciaSeg: estado.latenciaSeg,
           modeloCoerente: estado.coerente,
           entregouPercurso: Boolean(reflexao),
-          reflexaoTexto: reflexao?.texto ?? null,
+          // Caixa livre de menor: só o professor da turma lê (H07.1.4, D03). A
+          // gestão abre o mesmo painel sem `professorId` e vê só "entregou".
+          reflexaoTexto: professorId ? (reflexao?.texto ?? null) : null,
           ociosoMin:
             sessao && !estado.concluidoEm ? minutosDesde(sessao.atualizadoEm, agora) : null,
         };
@@ -669,7 +673,7 @@ export class RastroBoatoService {
       await this.estudanteDaEscola(tx, escolaId, estudanteId);
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`rastro:${escolaId}:${estudanteId}`}, 0))`;
       await tx.$executeRaw`
-        INSERT INTO exp_06_sessoes (escola_id, estudante_id, turma_id)
+        INSERT INTO exp06ef2b_sessoes (escola_id, estudante_id, turma_id)
         VALUES (${escolaId}, ${estudanteId}::uuid, ${turmaId}::uuid)
         ON CONFLICT DO NOTHING`;
       /* A turma pode ter mudado depois da primeira visita (transferência no

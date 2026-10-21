@@ -31,7 +31,7 @@ import { IaDaFotoContaService } from "./ia.service";
 import { PACOTE_PADRAO } from "./catalogo";
 
 /**
- * Rotas do PROFESSOR da exp-04 (preparação, dashboard ao vivo, projeção da
+ * Rotas do PROFESSOR da exp01ef1b (preparação, dashboard ao vivo, projeção da
  * lousa, latch e reset). Classe separada do estudante para o `@Roles` ficar
  * limpo — molde do `o-eco-no-grupo-turmas.controller.ts`.
  *

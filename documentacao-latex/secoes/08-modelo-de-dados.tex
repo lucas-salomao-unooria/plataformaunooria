@@ -4,8 +4,12 @@
 \chapter{Modelo de dados}
 \label{cap:dados}
 
-Um banco, um \emph{schema} lógico, 52 tabelas em \cd{public} e um \emph{schema}
-auxiliar (\cd{particoes}) fora do alcance do ORM. Este capítulo explica a
+Um banco, um \emph{schema} lógico, 84 tabelas em \cd{public} e um \emph{schema}
+auxiliar (\cd{particoes}) fora do alcance do ORM. O número é uma contagem, e
+envelhece a cada migração: são os \cd{model} do \emph{schema} do Prisma
+(\arq{apps/\B{}api/\B{}prisma/\B{}schema.prisma}) em 2026-10-06, todos com \cd{@@map}, sem a
+\cd{\_prisma\_migrations} do próprio Prisma e sem nenhuma \emph{view}, que o
+banco não tem. Este capítulo explica a
 convenção de nomes, o modelo por área e as decisões de esquema que não são
 óbvias --- que, neste projeto, são a maioria.
 
@@ -14,18 +18,24 @@ O dicionário de dados campo a campo está no Apêndice~\ref{ap:dicionario}.
 \section{A convenção de nomes}
 
 \begin{regra}
-\textbf{Tabela de experiência leva o número dela: \cd{exp\_NN\_}.} Assim:
-\cd{exp\_70\_sessoes}, \cd{exp\_02\_sessoes}, \cd{exp\_03\_sessoes},
-\cd{exp\_07\_sessoes}, \cd{exp\_08\_sessoes}, \cd{exp\_91\_checkins}.
+\textbf{Tabela de experiência leva o CÓDIGO dela (\adrr{ADR-110}):
+\cd{exp08ef1b\_} para missão, \cd{app\_70\_} para o resto.} Assim:
+\cd{app\_70\_sessoes}, \cd{exp02em1b\_sessoes},
+\cd{exp08ef4b\_sessoes}, \cd{app\_91\_checkins}. A tabela de
+uma experiência \textbf{arquivada} ganha \cd{backup\_} antes do código
+(\adrr{ADR-116}): \cd{backup\_exp04ef1b\_sessoes} é a do UnooTube, e as
+\cd{exp04ef1b\_*} são do Jornal da Escola, que tomou o código
+(\adrr{ADR-117}) --- as duas famílias convivem sem colidir.
 
 \textbf{Tabela da plataforma --- que serve a todas --- fica sem prefixo}:
 \cd{escolas}, \cd{turmas}, \cd{users}, \cd{experiencias},
-\cd{experiencias\_versoes}, \cd{disponibilidades}, \cd{ia\_quotas},
+\cd{experiencias\_versoes}, \cd{experiencias\_arquivadas}, \cd{disponibilidades}, \cd{ia\_quotas},
 \cd{recursos\_auditoria}, \cd{progresso},
-\cd{telemetria\_eventos}, \cd{ia\_uso\_diario}.
+\cd{telemetria\_eventos}, \cd{ia\_uso\_diario}, \cd{ia\_consumo\_diario},
+\cd{ia\_precos}, \cd{cotacoes\_dolar}.
 
 \textbf{Tabela que é contrato entre duas experiências carrega os dois números}:
-\cd{exp\_01\_exp\_70\_perfis\_importados} --- a exp-70 escreve, a exp-01 lê.
+\cd{exp08ef1b\_app\_70\_perfis\_importados} --- a app-70 escreve, a exp08ef1b lê.
 Chamá-la de uma só mentiria sobre quem depende dela.
 \end{regra}
 
@@ -47,14 +57,17 @@ exatamente o que um prefixo de nome já dá.
 
 \subsection{A migração de referência, e duas armadilhas registradas}
 
-A renomeação para o padrão \cd{exp\_NN\_} está em
-\arq{20260827090000\_tabelas\_por\_experiencia}, e é a migração de referência para
+A renomeação para o prefixo por experiência está em
+\arq{20260827090000\_tabelas\_por\_experiencia}; a troca do número pelo código
+(\adrr{ADR-110}) está em \arq{20260923120000\_codigo\_das\_experiencias}, que
+resolve as mesmas duas armadilhas abaixo pelo OID do objeto em vez do nome. A
+primeira é a migração de referência para
 qualquer renomeação futura: \cd{RENAME}, nunca \cd{DROP}/\cd{CREATE}, e
 renomeando \emph{constraints}, índices e políticas de RLS junto.
 
 \begin{atencao}
 Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
---- nomes duplicados como \cd{exp\_01\_exp\_01\_..\_pkey}:
+--- nomes duplicados como \cd{exp08ef1b\_exp08ef1b\_..\_pkey}:
 
 \begin{enumerate}
   \item \cd{FOR ... IN SELECT} sobre o catálogo do sistema \textbf{relê o que o
@@ -70,87 +83,146 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    tb/.style={text width=46mm, anchor=north},
+    tbl/.style={text width=50mm, anchor=north}]
+  \def\nt#1{{\color{unooInkSoft}#1}}
+  \def\sub#1{\\{\color{white}#1}}
 
-  \node[tabelaplat, text width=40mm] (esc) at (2.4,0)
-    {\etitulo{escolas}
+  % --- linha 1: o tenant e as pessoas
+  \node[tabelaplat, tb] (esc) at (2.45,0)
+    {\etitulo{escolas}\sub{tenant raiz, sem RLS}
      \nodepart{two}
      \pk{id} \texttt{TEXT}\\
-     \texttt{nome}\\
+     \texttt{nome}, \texttt{codigo\_inep}\\
+     \texttt{tipo} \nt{rede | regional | escola}\\
+     \fk{pai\_id} \seta{} \texttt{escolas}\\
      \texttt{created\_at}};
 
-  \node[tabelaplat, text width=44mm] (tur) at (8.0,0)
-    {\etitulo{turmas}
+  \node[tabelaplat, tb] (tur) at (8.65,0)
+    {\etitulo{turmas}\sub{sem RLS}
      \nodepart{two}
      \pk{id} \texttt{UUID}\\
-     \fk{escola\_id} \seta{} \texttt{escolas}\\
+     \fk{escola\_id}\\
+     \fk{periodo\_letivo\_id}\\
      \texttt{nome}, \texttt{serie}\\
-     \texttt{UNIQUE (escola\_id, nome)}};
+     \texttt{UNIQUE (escola\_id,}\\
+     \quad\texttt{periodo\_letivo\_id,}\\
+     \quad\texttt{nome)}};
 
-  \node[tabelaplat, text width=48mm] (usr) at (13.6,-0.2)
-    {\etitulo{users}
+  \node[tabelaplat, tbl] (usr) at (15.05,0)
+    {\etitulo{users}\sub{sem RLS: lida no \emph{login}}
      \nodepart{two}
      \pk{id} \texttt{UUID}\\
-     \texttt{role} \small(estudante$|$professor$|$gestor\_escola$|$\\
-     \quad gestor\_regional$|$gestor\_contrato$|$admin)\\
-     \fk{escola\_id} \small(NULL p/ gestor\_contrato/admin/regional)\\
-     \fk{regional\_id} \seta{} \texttt{escolas} \small(p/ regional)\\
-     \fk{turma\_id}, \texttt{username}, \texttt{cpf}\\
-     \texttt{display\_name}, \texttt{password\_hash}\\
-     \texttt{UNIQUE (escola\_id, username)}};
+     \texttt{role} \nt{estudante | professor |}\\
+     \quad\nt{gestor\_escola | gestor\_regional |}\\
+     \quad\nt{gestor\_contrato | admin}\\
+     \fk{escola\_id} \nt{nula nos papéis de rede}\\
+     \fk{regional\_id} \seta{} \texttt{escolas}\\
+     \fk{turma\_id} \nt{cache da principal}\\
+     \texttt{username}, \texttt{display\_name}\\
+     \texttt{password\_hash}, \texttt{cpf}\\
+     \texttt{UNIQUE (escola\_id,}\\
+     \quad\texttt{username)}};
 
-  \node[tabelacat, text width=44mm] (exp) at (2.6,-4.4)
-    {\etitulo{experiencias} \small(catálogo, sem escola)
+  % --- linha 2
+  \coordinate (r2) at ($(usr.south)+(0,-1.65)$);
+  \node[tabelacat, tb] (exp) at (esc.north |- r2)
+    {\etitulo{experiencias}\sub{catálogo, sem escola}
      \nodepart{two}
      \pk{exp\_id} \texttt{TEXT}\\
      \texttt{nome}, \texttt{versao\_ativa}\\
-     \texttt{series[]}, \texttt{capabilities[]}\\
+     \texttt{produto}, \texttt{unidade}\\
+     \texttt{series[]}\\
+     \texttt{capabilities[]}\\
      \texttt{viewport} \texttt{JSONB}\\
-     \texttt{publico} \small(estudante$|$professor)\\
+     \texttt{publico} \nt{estudante | professor}\\
      \texttt{permissoes[]}};
 
-  \node[tabelaplat, text width=40mm] (prog) at (8.2,-4.0)
+  \node[tabelaplat, tb] (tel) at (tur.north |- r2)
+    {\etitulo{telemetria\_eventos}\sub{PARTITION BY RANGE (ts)}
+     \nodepart{two}
+     \pk{event\_id, ts}\\
+     \texttt{escola\_id}, \texttt{estudante\_id}\\
+     \texttt{exp\_id}, \texttt{exp\_version}\\
+     \texttt{sessao\_id}, \texttt{verbo}\\
+     \texttt{objeto}\\
+     \texttt{resultado} \texttt{JSONB}\\
+     \texttt{contexto} \texttt{JSONB}\\
+     \texttt{INDEX (escola\_id,}\\
+     \quad\texttt{exp\_id, ts)}};
+
+  \node[tabelaplat, tbl] (agt) at (usr.north |- r2)
+    {\etitulo{agente\_professor\_conversas}
+     \nodepart{two}
+     \pk{id} \texttt{UUID}\\
+     \fk{escola\_id}, \fk{usuario\_id}\\
+     \texttt{sessao\_id} \nt{único: um dono}\\
+     \texttt{titulo} \nt{cache do agente}\\
+     \texttt{criada\_em}\\
+     \texttt{atualizada\_em}};
+
+  % --- linha 3
+  \coordinate (r3) at ($(tel.south)+(0,-1.35)$);
+  \node[tabelaplat, tb] (prog) at (esc.north |- r3)
     {\etitulo{progresso}
      \nodepart{two}
-     \pk{escola\_id, estudante\_id, exp\_id}\\
+     \pk{escola\_id, estudante\_id,}\\
+     \quad\pk{exp\_id}\\
      \texttt{dados} \texttt{JSONB}\\
      \texttt{atualizado\_em}};
 
-  \node[tabelaplat, text width=40mm] (ia) at (13.4,-4.0)
+  \node[tabelacat, tb] (part) at (tur.north |- r3)
+    {\etitulo{particoes.*}\sub{fora do Prisma}
+     \nodepart{two}
+     \texttt{telemetria\_eventos\_}\\
+     \quad\texttt{YYYY\_MM} \nt{uma por mês}\\
+     \texttt{..\_default} \nt{rede de segurança}};
+
+  \node[tabelaplat, tbl] (ia) at (usr.north |- r3)
     {\etitulo{ia\_uso\_diario}
      \nodepart{two}
      \pk{escola\_id, usuario\_id, dia}\\
      \texttt{tokens\_usados}};
 
-  \node[tabelaplat, text width=48mm] (tel) at (8.0,-7.6)
-    {\etitulo{telemetria\_eventos} \small(PARTITION BY RANGE (ts))
-     \nodepart{two}
-     \pk{event\_id, ts}\\
-     \texttt{escola\_id}, \texttt{estudante\_id}\\
-     \texttt{exp\_id}, \texttt{exp\_version}, \texttt{sessao\_id}\\
-     \texttt{verbo}, \texttt{objeto}\\
-     \texttt{resultado} \texttt{JSONB}, \texttt{contexto} \texttt{JSONB}\\
-     \texttt{INDEX (escola\_id, exp\_id, ts)}};
-
-  \node[tabelacat, text width=36mm] (part) at (14.0,-7.6)
-    {\etitulo{particoes.*} \small(fora do Prisma)
-     \nodepart{two}
-     \texttt{telemetria\_eventos\_YYYY\_MM}\\
-     \texttt{..\_default} \small(rede de segurança)};
-
-  \draw[erel] (esc.east) -- (tur.west) node[ercard, pos=0.3]{1} node[ercard, pos=0.75]{N};
-  \draw[erel] (tur.east) -- (usr.west) node[ercard, pos=0.25]{1} node[ercard, pos=0.8]{N};
-  \draw[erel] (esc.south) -- (2.4,-1.6) -- (11.6,-1.6) -- (usr.north west)
-    node[ercard, pos=0.06]{1} node[ercard, pos=0.94]{N};
-  \draw[erel, dashed] (usr.south) -- (13.4,-2.6);
-  \draw[erel, dashed] (exp.east) -- (prog.west) node[ercard, midway, above]{\texttt{exp\_id}};
-  \draw[erel, dashed] (tel.east) -- (part.west) node[ercard, midway, above]{\texttt{ATTACH}};
+  % --- relações (cheia = FK; tracejada = vínculo por coluna, sem FK)
+  \draw[erel] (esc.east |- 0,-0.85) -- (tur.west |- 0,-0.85)
+    node[ercard, pos=0.22]{1} node[ercard, pos=0.78]{N};
+  \draw[erel] (tur.east |- 0,-0.85) -- (usr.west |- 0,-0.85)
+    node[ercard, pos=0.22]{1} node[ercard, pos=0.78]{N};
+  % users.escola_id: por cima de turmas
+  \draw[erel] (esc.north) -- ++(0,0.55) -| (usr.north);
+  \node[ercard] at ($(esc.north)+(0,0.27)$) {1};
+  \node[ercard] at ($(usr.north)+(0,0.27)$) {N};
+  % agente_professor_conversas: escola e dono
+  \coordinate (g2) at ($(usr.south)+(0,-0.82)$);
+  \coordinate (ga) at ([xshift=-12mm]agt.north);
+  \draw[erel] (esc.east |- 0,-1.75) -- (5.55,-1.75) |- (g2 -| ga) -- (ga);
+  \node[ercard] at ($(esc.east |- 0,-1.75)+(0.4,0)$) {1};
+  \node[ercard] at ($(ga)+(0,0.3)$) {N};
+  \draw[erel] ([xshift=12mm]usr.south) -- ([xshift=12mm]agt.north)
+    node[ercard, pos=0.25]{1} node[ercard, pos=0.75]{N};
+  % sem FK
+  \draw[erel, dashed] (exp.south) -- (prog.north)
+    node[ercard, midway]{\texttt{exp\_id}};
+  \draw[erel, dashed] (tel.south) -- (part.north)
+    node[ercard, midway]{\texttt{ATTACH}};
 
 \end{tikzpicture}}
+\begin{legendadiag}
+\amostra{fill=unooBlue, draw=unooNavy} tabela de \emph{tenant} (tem \cd{escola\_id}) \quad
+\amostra{fill=unooMuted, draw=unooNavy} catálogo do contrato (fora da RLS) \quad
+linha cheia: chave estrangeira \quad
+linha tracejada: vínculo por coluna, sem FK
+\end{legendadiag}
 \caption[Modelo de dados da plataforma]{Modelo de dados da plataforma. As caixas
-  em azul são tabelas de \emph{tenant} (têm \cd{escola\_id} e RLS); as cinzas são
+  em azul são tabelas de \emph{tenant} (têm \cd{escola\_id}, e RLS por escola,
+  salvo as três marcadas \enquote{sem RLS}); as cinzas são
   \textbf{catálogo do contrato} --- \cd{experiencias} e as partições de
-  telemetria não pertencem a uma escola e ficam fora da RLS de propósito.}
+  telemetria não pertencem a uma escola e ficam fora da RLS de propósito.
+  \cd{escolas} guarda os três níveis da rede pelo \cd{pai\_id}, mas só a
+  \cd{escola} é \emph{tenant}. A linha de \cd{users} a \cd{escolas} vale
+  para \cd{escola\_id} e, no gestor regional, para \cd{regional\_id}.}
 \label{fig:er-plataforma}
 \end{figure}
 
@@ -189,6 +261,12 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
 \cd{experiencias\_versoes} & Catálogo & Uma linha por versão publicada, com o
   MANIFESTO INTEIRO --- é a lista do \emph{rollback} pela tela, e é o que faz
   voltar a versão voltar também \cd{viewport} e \cd{permissoes} (\adrr{ADR-87}).\\
+\zebra \cd{experiencias\_arquivadas} & Catálogo & A experiência \textbf{arquivada}
+  (\adrr{ADR-116}): a linha SAI de \cd{experiencias} e vem para cá, com a
+  fotografia do arquivamento (turmas que tinham liberado, estudantes com
+  progresso). Tabela à parte, e não coluna, para nenhum dos leitores de
+  \cd{experiencias} precisar lembrar de filtrar. \emph{CHECK}: o id é
+  \cd{backup-} mais o código de origem.\\
 \cd{recursos\_auditoria} & Catálogo & \textbf{Append-only} (\adrr{ADR-89}):
   quem ligou, desligou ou trocou versão, quando e por quê. Existe porque a linha
   de \cd{disponibilidades} é SOBRESCRITA. \cd{UPDATE} recusado por
@@ -218,6 +296,58 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
   matrícula, progresso nem perfil, e não entra em média. É a única exceção à
   contenção do CPF --- o número é o conteúdo do documento, e alterá-lo
   destruiria a assinatura.\\
+\cd{equipes\_montagens} & \emph{Tenant} & A decisão da aula por turma
+  $\times$ missão $\times$ ATIVIDADE (\adrr{ADR-111}, \adrr{ADR-130}):
+  \cd{modo} (\cd{sorteio}, \cd{manual} ou \cd{individual}), \cd{computadores}
+  (nulo só no \cd{individual}), \cd{ausentes} e a \cd{versao} da concorrência
+  otimista. PK composta \cd{(escola\_id, turma\_id, exp\_id, atividade\_id)}.
+  Ver Seção~\ref{sec:equipes}.\\
+\zebra \cd{equipes} & \emph{Tenant} & Um computador da montagem: \cd{nome}
+  (1 a 30 caracteres depois do \emph{trim}) e \cd{ordem}. Nome único dentro da
+  atividade --- duas \enquote{Equipe 3} no mesmo painel são a dúvida que
+  ninguém resolve no meio da aula.\\
+\cd{equipes\_membros} & \emph{Tenant} & Quem senta diante de cada computador,
+  com \cd{turma\_id}, \cd{exp\_id} e \cd{atividade\_id} repetidos da equipe
+  para o \cd{UNIQUE} de \textbf{uma equipe por criança por atividade}. A única
+  das três com id de criança.\\
+\zebra \cd{evidencias\_marcas} & \emph{Tenant} & O DADO BRUTO da evidência
+  pedagógica (\adrr{ADR-112}): o que a missão viu o estudante fazer, uma linha
+  por marcador da ficha $\times$ atividade $\times$ rodada. Só a missão escreve,
+  pela porta \cd{marcar}. Ver Seção~\ref{sec:evidencias}.\\
+\cd{evidencias} & \emph{Tenant} & O nível de UM estudante numa habilidade da
+  BNCC, numa atividade, numa rodada, com \cd{origem} e \cd{situacao} --- é o
+  que o painel lê. \textbf{N/A é a ausência de linha.}\\
+\zebra \cd{evidencias\_eventos} & \emph{Tenant} & O histórico da evidência, com
+  de/para, quem e quando. \textbf{Append-only no banco}: \emph{trigger} contra
+  \cd{UPDATE}, e a \emph{role} de \emph{runtime} só com \cd{SELECT, INSERT}.\\
+\cd{agente\_professor\_conversas} & \emph{Tenant} & A POSSE das conversas do
+  agente de IA do professor (\adrr{ADR-126}): de quem é cada sessão do Agent
+  Engine. O conteúdo não mora aqui. Ver
+  Seção~\ref{sec:agente-professor-dados}.\\
+\zebra \cd{ajuda\_sessoes} & \textbf{Sem RLS} & O MEDIDOR de minutos da Ajuda
+  com avatar (\adrr{ADR-132}): uma linha por sessão de vídeo, com início, teto e
+  fim --- nenhuma palavra da conversa. \cd{escola\_id} nulo para os papéis de
+  contrato; \cd{atendente} diz qual dos dois atendeu (\adrr{ADR-158}). Ver
+  Seção~\ref{sec:ajuda-dados}.\\
+\cd{ajuda\_limites} & Catálogo & Os minutos da Ajuda por pessoa e dia e por
+  sessão, escopo do contrato, \textbf{os mesmos para os dois atendentes}. O par
+  de \cd{ia\_quotas}, com o mesmo desenho: semeada, sobrescrita pelo
+  \cd{admin}, histórico em \cd{recursos\_auditoria}.\\
+\zebra \cd{ajuda\_configuracao} & Catálogo & \textbf{Uma linha só} (\cd{id = 1}):
+  quem atende na Ajuda por padrão (o mascote ou o avatar), se a pessoa pode
+  trocar, os ajustes do mascote (voz, modelo do Live, boca) e as instruções
+  de \enquote{como responder} de cada atendente (\adrr{ADR-165}). Semeada com o
+  mascote; sobrescrita só pelo \cd{admin}, histórico em
+  \cd{recursos\_auditoria} (\adrr{ADR-158}).\\
+\cd{ia\_consumo\_\B diario} & \textbf{Sem RLS} & O que cada chamada de IA PAGOU
+  (\adrr{ADR-161}), somado por dia, escola, perfil, recurso, operação e modelo:
+  \emph{tokens}, imagens, segundos de voz. \textbf{Sem \cd{usuario\_id}}.
+  Tabela de contrato, lida só pelo \cd{admin}. Ver
+  Seção~\ref{sec:custos-de-ia-dados}.\\
+\zebra \cd{ia\_precos} & Catálogo & O preço de cada modelo, com vigência e
+  motivo; só se insere, e a tabela é o histórico (\adrr{ADR-161}).\\
+\cd{cotacoes\_\B dolar} & Catálogo & A PTAX de venda do Banco Central por dia
+  útil, o \emph{cache} da conversão em reais (\adrr{ADR-161}).\\
 \bottomrule
 \end{tabularx}
 
@@ -236,14 +366,251 @@ Duas colunas merecem nota no modelo: \cd{email} é guardado em minúsculas por
 \cd{consentimento\_texto}, a FRASE marcada --- não um booleano, que provaria o
 clique e não o conteúdo do consentimento.
 
+\section{A posse das conversas do agente: \cd{agente\_professor\_conversas}}
+\label{sec:agente-professor-dados}
+
+\adrr{ADR-126}. A conversa do agente de IA do professor é a sessão do Vertex AI
+Agent Engine --- eventos, estado, expiração ---, e o banco \textbf{não a
+replica}. Esta tabela guarda só o que o engine não garante: \textbf{de quem a
+sessão é}. Os \emph{endpoints} de sessão do engine pedidos por nome não conferem o
+usuário, e a SA da api enxerga todas as sessões; sem a linha, um \cd{sessao\_id}
+conhecido abriria a conversa de outro professor (Capítulo~\ref{cap:tenancy}).
+
+\begin{itemize}
+  \item \textbf{Tabela de PLATAFORMA, sem prefixo de experiência}: o agente é o
+    produto \cd{agente-professor}, não uma experiência
+    (\adrr{ADR-110}).
+  \item \cd{escola\_id NOT NULL}, RLS \cd{ENABLE} + \cd{FORCE} com a política por
+    escola, FKs para \cd{escolas} e \cd{users} com \cd{ON DELETE CASCADE}, e o
+    \cd{GRANT} à \emph{role} de \emph{runtime}, guardado.
+  \item \cd{sessao\_id} \textbf{único}: uma sessão tem um dono só. \emph{CHECK} de
+    1 a 200 caracteres.
+  \item \cd{titulo} é \textbf{CACHE} do \cd{titulo\_conversa} que o AGENTE escreve
+    no estado da sessão depois do primeiro turno: nulo até lá, e um \emph{CHECK}
+    de 1 a 120 caracteres impede que um estado inesperado vire uma linha de lista
+    enorme (espelha \cd{TAMANHO\_MAXIMO\_DO\_TITULO}).
+  \item O índice \cd{(escola\_id, usuario\_id, atualizada\_em DESC)} é a lista do
+    painel: as do professor na escola ativa, a mais recente primeiro.
+  \item \textbf{Sessão que sumiu do engine apaga a linha} no \rota{GET} seguinte;
+    a lista nunca carrega uma conversa que não abre.
+\end{itemize}
+
+A mesma migração acrescenta \cd{agente-professor} ao \emph{CHECK}
+\cd{ck\_experiencias\_produto}. Nenhuma experiência aponta para ele --- é o
+primeiro produto SEM experiência ---, mas o \emph{CHECK} espelha a tupla
+\cd{PRODUTOS} inteira, e um teste compara os dois textos.
+
+\section{Os minutos da Ajuda: \cd{ajuda\_sessoes}, \cd{ajuda\_limites} e \cd{ajuda\_configuracao}}
+\label{sec:ajuda-dados}
+
+\adrr{ADR-132}. O vendor do avatar cobra por MINUTO de vídeo, e a decisão do dono
+do produto foi que a Ajuda \textbf{não passa pela quota de \emph{tokens}}
+(exceção à regra 5): o que limita o custo é o tempo. As duas tabelas guardam o
+tempo --- a conversa em si não é guardada em lugar nenhum. São tabelas de
+PLATAFORMA, sem prefixo: a Ajuda é o produto \cd{ajuda}, não uma experiência
+(\adrr{ADR-110}).
+
+\begin{itemize}
+  \item \textbf{\cd{ajuda\_limites} é o par de \cd{ia\_quotas}}, com o mesmo
+    desenho: uma linha por chave de um vocabulário FECHADO
+    (\cd{minutos-por-dia}, \cd{minutos-por-sessao}), escopo do contrato, semeada
+    pela migração (30 e 10 --- três conversas de dez minutos por pessoa por dia)
+    e sobrescrita só pelo \cd{admin} em \rota{/unooria/uso-de-ia}, com o
+    histórico em \cd{recursos\_auditoria} (\cd{quota-alterada}, \cd{recurso\_id}
+    \cd{ajuda:<chave>}). \textbf{Zero é recusado} pelo \emph{CHECK}: fechar a
+    Ajuda é desligar o produto (\adrr{ADR-87}), não zerar o limite. Os tetos de
+    sanidade são 600 minutos por dia e 60 por sessão. Sem a linha, vale a
+    constante do código, e o \emph{log} \cd{ajuda-limite-sem-linha} acusa.
+  \item \textbf{\cd{ajuda\_sessoes} é o medidor}: quem abriu (\cd{usuario\_id},
+    \cd{perfil}, \cd{escola\_id}), o id da sessão no vendor, \cd{inicio},
+    \cd{duracao\_max\_s} (o teto pedido ao vendor) e \cd{fim}. \textbf{Sessão sem
+    \cd{fim} conta o teto INTEIRO} --- falha para o lado do custo, porque o
+    vendor cobra até a sala fechar. Abrir fecha a sessão anterior da pessoa que
+    ficou aberta; vendor fora do ar fecha a linha com duração zero. O dia é o do
+    fuso da plataforma (\adrr{ADR-99}), não o UTC.
+  \item \textbf{\cd{ajuda\_sessoes} fica SEM RLS, e \cd{escola\_id} é nulável}:
+    \cd{gestor\_contrato} e \cd{admin} abrem a Ajuda e não têm escola no
+    \emph{token}; não é dado de estudante (o \emph{CHECK} do perfil recusa
+    \cd{estudante}); e não guarda conteúdo. Toda \emph{query} é por
+    \cd{usuario\_id} do \emph{token}. O porquê inteiro está no
+    Capítulo~\ref{cap:tenancy} (Seção~\ref{sec:ajuda-seguranca}).
+  \item \textbf{Sem FK} em \cd{usuario\_id} nem em \cd{escola\_id}, como
+    \cd{ia\_uso\_diario}: é um medidor, e uma FK com \cd{RESTRICT} travaria a
+    exclusão de quem já usou a Ajuda. O índice
+    \cd{(usuario\_id, inicio DESC)} é a soma do dia de uma pessoa.
+  \item \cd{GRANT} \cd{SELECT, INSERT, UPDATE} nas duas, \textbf{sem
+    \cd{DELETE}}, guardado pela existência da \emph{role}.
+\end{itemize}
+
+A mesma migração acrescenta \cd{ajuda} ao \emph{CHECK}
+\cd{ck\_experiencias\_produto}. Como o \cd{agente-professor}, é produto SEM
+experiência --- nenhuma linha de \cd{experiencias} aponta para ele ---, mas o
+\emph{CHECK} espelha a tupla \cd{PRODUTOS} inteira, e
+\arq{tests/disponibilidades-postgres.spec.ts} compara os dois textos.
+
+\subsection{O segundo atendente: o mascote (\adrr{ADR-158})}
+
+Desde 2026-10-12 a Ajuda tem dois atendentes: o avatar em vídeo do LiveAvatar e
+o mascote 3D da Unooria, que fala pelo Gemini Live da Vertex. \textbf{O medidor é
+o mesmo}: os minutos de \cd{ajuda\_limites} valem para os dois juntos, e cada
+sessão continua sendo uma linha de \cd{ajuda\_sessoes}. A migração
+\arq{20261012120000\_\B{}ajuda\_\B{}mascote} acrescenta três coisas:
+
+\begin{itemize}
+  \item \textbf{\cd{ajuda\_sessoes.atendente}} (\cd{TEXT NOT NULL DEFAULT
+    'avatar'}, \emph{CHECK} \cd{avatar} $|$ \cd{mascote}): qual dos dois a
+    pessoa usou. As linhas que já existiam são todas do avatar, o único até ali.
+    Na sessão do mascote não há sala no vendor, e \cd{avatar\_sessao\_id}
+    ganha outro uso: a conexão de voz grava nela a marca
+    \cd{ao-vivo:<uuid>} ao entrar, num \cd{UPDATE} condicionado à coluna nula
+    --- é a trava atômica de \textbf{uma entrada por bilhete} (duas abas com o
+    mesmo bilhete não abrem duas conversas pagas na mesma linha).
+  \item \textbf{\cd{ajuda\_configuracao}}, \textbf{uma linha só} (\emph{CHECK}
+    \cd{id = 1}), escopo do contrato inteiro, como \cd{ia\_quotas} e
+    \cd{ajuda\_limites}: \textbf{sem RLS e sem \cd{escola\_id}} --- é
+    configuração comercial da rede, e o \cd{admin} não tem escola no
+    \emph{token}. Colunas: \cd{atendente\_padrao} (\cd{mascote} $|$
+    \cd{avatar}, padrão \cd{mascote}), \cd{permitir\_troca} (padrão
+    verdadeiro), \cd{mascote\_voz} (uma das 30 vozes pré-definidas do Gemini,
+    lista fechada no Zod; o \emph{CHECK} cobra o formato de um nome, 2 a 30
+    letras), \cd{mascote\_modelo} (padrão \cd{gemini-3.8-live}, \emph{CHECK} de
+    formato de nome de modelo), \cd{mascote\_sensibilidade},
+    \cd{mascote\_suavizacao} e \cd{mascote\_boca\_repouso} (de 0 a 1),
+    \cd{mascote\_antecipacao\_ms} (de 0 a 200), e a autoria: \cd{motivo},
+    \cd{definido\_por} (sem FK, pela razão de \cd{ajuda\_limites}),
+    \cd{definido\_em}, \cd{atualizado\_em}. \textbf{A voz e o modelo vão ao
+    vendor}, e por isso os dois \emph{CHECKs} de formato: nada de texto livre
+    dentro do pedido de abertura.
+  \item A ação \cd{configuracao-alterada} no \emph{CHECK} de
+    \cd{recursos\_auditoria}, com \cd{recurso\_id} \cd{ajuda:configuracao}.
+\end{itemize}
+
+Sem a linha, vale a constante do código (\cd{CONFIGURACAO\_PADRAO}), e o
+\emph{log} \cd{ajuda-configuracao-sem-linha} acusa; por isso o \cd{GRANT} é
+\cd{SELECT, INSERT, UPDATE}, \textbf{sem \cd{DELETE}}. A configuração vale na
+PRÓXIMA sessão aberta: a conversa no ar mantém a voz e o modelo com que começou.
+
+\subsection{As instruções de cada atendente (\adrr{ADR-165})}
+
+A migração \arq{20261015120000\_\B{}ajuda\_\B{}instrucoes} acrescenta a
+\cd{ajuda\_configuracao} duas colunas \cd{TEXT} nuláveis,
+\cd{instrucoes\_mascote} e \cd{instrucoes\_avatar}: o texto de
+\enquote{como responder} de cada atendente, editado pelo \cd{admin} em
+\rota{/unooria/uso-de-ia}. \textbf{\cd{NULL} é o texto padrão do código}
+(\cd{instrucoesPadrao}, em \arq{src/ajuda/prompt.ts}), e a rota grava
+\cd{NULL} também quando o texto enviado é igual ao padrão: quem nunca
+personalizou de verdade recebe a melhoria do padrão. O \emph{CHECK}
+\cd{ck\_ajuda\_configuracao\_instrucoes} cobra, nas duas, nulo OU de 20 a
+\num{8000} caracteres depois do \cd{btrim} --- o mesmo teto do Zod
+(\cd{MAXIMO\_DAS\_INSTRUCOES}): um texto longo demais disputaria a janela de
+contexto com a base, e vazio não é instrução. \textbf{Só o comportamento mora
+aqui}: o cabeçalho \cd{CONHECIMENTO}, a base gerada e \enquote{quem está
+falando} a api monta sempre depois, e o texto nunca sai dela (regra 2). O avatar
+lê a coluna a cada turno do LLM; o mascote, na abertura da sessão de voz.
+
+\section{Os custos de IA: \cd{ia\_consumo\_diario}, \cd{ia\_precos} e \cd{cotacoes\_dolar}}
+\label{sec:custos-de-ia-dados}
+
+\adrr{ADR-161}. O painel de custos da Unooria (\rota{/unooria/custos-de-ia})
+responde quanto a IA custou, em quê e em que escola. As três tabelas guardam o
+que se MEDIU, o PREÇO e o CÂMBIO; \textbf{o custo não é gravado em lugar
+nenhum} --- é derivado na leitura (consumo $\times$ preço vigente no dia
+$\times$ PTAX do dia), para que a correção de um preço valha para trás. São
+tabelas de CONTRATO, como \cd{ia\_quotas}: \textbf{sem RLS}, fora do
+\cd{comTenancy}, lidas só pelo \cd{admin}. Migração
+\arq{20261013120000\_\B{}custos\_\B{}de\_\B{}ia}.
+
+\begin{itemize}
+  \item \textbf{\cd{ia\_consumo\_diario} é um agregado, não um evento.} PK
+    \cd{(dia, escola\_id, perfil, recurso, operacao, modelo)}, e cada chamada
+    faz \cd{INSERT ... ON CONFLICT DO UPDATE} somando \cd{chamadas},
+    \cd{falhas}, \cd{tokens\_entrada}, \cd{tokens\_saida} (\cd{BIGINT}),
+    \cd{imagens} e \cd{segundos}; \cd{estimado} vira verdadeiro se qualquer
+    chamada do grupo foi estimada (a voz). \cd{modalidade} (\emph{CHECK}
+    \cd{texto} $|$ \cd{imagem} $|$ \cd{audio} $|$ \cd{video}) acompanha o
+    modelo. O dia é o do fuso da plataforma (\adrr{ADR-99}).
+  \item \textbf{\cd{escola\_id} e \cd{perfil} usam \cd{''} como sentinela},
+    e não \cd{NULL}: a chave do agregado é a PK, e no Postgres
+    \cd{NULL} $\neq$ \cd{NULL} --- duas chamadas sem escola (papel de contrato,
+    tarefa de fundo) criariam duas linhas e o \cd{ON CONFLICT} nunca casaria.
+  \item \textbf{Sem \cd{usuario\_id}, de propósito} (regra 6): o FinOps
+    pergunta EM QUÊ, nunca QUEM, e a linha vive mais que qualquer dado de
+    pessoa. Com isso a tabela não é dado de estudante, e a falta de RLS não
+    abre nada que a política protegeria: o que sobra é escola, perfil e
+    contagem.
+  \item \textbf{\cd{ia\_precos}}: \cd{modelo} (\emph{CHECK} de formato de id de
+    modelo), \cd{componente} (\emph{CHECK} \cd{entrada} $|$ \cd{saida} $|$
+    \cd{minuto}), \cd{usd} (\cd{NUMERIC(14,6)}, $\ge 0$; por 1 milhão de
+    \emph{tokens}, ou por minuto no avatar), \cd{vigente\_desde},
+    \cd{motivo}, \cd{definido\_por} (sem FK, como \cd{ia\_quotas}),
+    \cd{definido\_por\_nome} (CONGELADO) e \cd{definido\_em}. Índice único
+    \cd{(modelo, componente, vigente\_desde)}: dois preços no mesmo dia seriam
+    uma escolha pela ordem do índice, e o segundo SUBSTITUI o primeiro.
+  \item \textbf{\cd{cotacoes\_dolar}}: PK \cd{dia} (só dias úteis),
+    \cd{compra}, \cd{venda}, \cd{cotado\_em} (o horário de publicação do BCB)
+    e \cd{buscado\_em}. O dia sem linha usa a do último dia útil anterior.
+\end{itemize}
+
+\begin{nota}
+\textbf{O avatar em vídeo não tem linha em \cd{ia\_consumo\_diario}.} O
+minuto dele já é medido em \cd{ajuda\_sessoes} (\adrr{ADR-132}), e a consulta
+do painel o soma por \cd{UNION ALL} como o modelo \cd{liveavatar-full}: sessão
+com \cd{atendente = 'avatar'} e \cd{avatar\_sessao\_id} preenchido, a duração
+real limitada ao teto, e a sessão sem \cd{fim} contando o teto inteiro --- a
+mesma regra dos minutos da Ajuda.
+\end{nota}
+
+\section{As falas do podcast de recapitulação: \cd{podcast\_roteiros}}
+\label{sec:podcast-dados}
+
+\adrr{ADR-150}. O podcast de recapitulação é um recurso da plataforma, e o
+roteiro de cada missão é fixo no código (\arq{<modulo>/\B{}podcast.ts}), com
+exceção das \textbf{falas do tema} --- as que contam o que a turma viu NAQUELA
+atividade, revisadas pelo professor na customização. Só elas moram aqui: uma
+linha por escola, missão e atividade. Tabela de PLATAFORMA, sem prefixo de
+experiência: serve a toda missão com podcast.
+
+\begin{itemize}
+  \item \cd{escola\_id NOT NULL}, RLS \cd{ENABLE} + \cd{FORCE} com a política
+    por escola e o \cd{GRANT} à \emph{role} de \emph{runtime}, guardado.
+  \item \cd{exp\_id} com \emph{CHECK} do formato da \adrr{ADR-110}
+    (\cd{exp04ef1b}, \cd{exp05ef1b} e, desde a \adrr{ADR-151}, \cd{exp06ef1b}).
+  \item \cd{atividade\_id} é \cd{uuid} \textbf{sem FK}: cada missão guarda a
+    atividade numa tabela própria (\cd{exp04ef1b\_pacotes},
+    \cd{exp05ef1b\_pacotes}, \cd{exp06ef1b\_pacotes}), e o id é de uma delas.
+  \item \cd{falas} é \cd{JSONB} com \emph{CHECK} de OBJETO
+    (\cd{\{ vaga: fala \}}); a forma de cada vaga é da missão, conferida na
+    escrita e na leitura. Uma linha torta é ignorada com aviso no \emph{log},
+    nunca derruba a tela.
+  \item \cd{aprovado\_por} e \cd{aprovado\_em}: quem aprovou e quando --- a
+    homologação da missão grava a linha na mesma transação do pacote, e o
+    segundo clique a substitui.
+  \item Único por \cd{(escola\_id, exp\_id, atividade\_id)}
+    (\cd{podcast\_roteiros\_um\_por\_atividade}).
+\end{itemize}
+
+\textbf{Sem linha}, a atividade que é o banco padrão intocado toca as falas do
+sheet, e a atividade da IA criada antes do podcast fica sem ele (409
+\cd{roteiro-indisponivel}). O Júri Estadual tem banco padrão desde a \adrr{ADR-157}: o intocado toca o
+roteiro literal sem linha; a mostra da IA precisa da linha, que a homologação
+grava com as três vagas (\cd{dois}, \cd{rafa}, \cd{mesa}) --- a de antes do
+podcast é 409.
+O Unoovista (\adrr{ADR-156}) também não tem banco padrão: a linha é gravada no
+\enquote{Ativar}, com as vagas \cd{pergunta}, \cd{ladoA} e \cd{ladoB}, e a
+\cd{atividade\_id} é a de \cd{exp08ef1b\_activities}. \textbf{A Missão
+Tempestade nunca grava aqui}: o roteiro dela é fixo, sem vaga, e a atividade é a
+\cd{turma}. \textbf{A A Seleção não grava aqui}: as falas dela
+nascem no lote do preparo e moram em \cd{exp07ef1b\_coberturas.podcast}
+(\adrr{ADR-119}).
+
 \section{A rede: escola, lotação e o CPF}
 \label{sec:rede}
 
 Uma rede estadual tem milhares de unidades, professores que dão aula em mais de
 uma e crianças que se transferem entre elas. Três colunas e uma tabela sustentam
 isso, e a decisão que as torna baratas é o que \textbf{não} muda: o \emph{token}
-continua carregando UMA escola, então as 45 tabelas com \cd{escola\_id} e a
-política de RLS forçada nas 42 tabelas de tenant ficam intocadas (\adrr{ADR-30}).
+continua carregando UMA escola, então nenhuma tabela com \cd{escola\_id} muda,
+e a política de RLS forçada das tabelas de tenant fica intocada (\adrr{ADR-30}).
 
 \begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
 \toprule
@@ -321,62 +688,98 @@ o padrão em si só aparece na fronteira de importação.
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    tb/.style={text width=46mm, anchor=north},
+    tbl/.style={text width=50mm, anchor=north}]
+  \def\nt#1{{\color{unooInkSoft}#1}}
+  \def\sub#1{\\{\color{white}#1}}
 
-  \node[tabelacat, text width=46mm] (per) at (2.6,0)
-    {\etitulo{periodos\_letivos} \small(catálogo, sem escola)
+  % --- linha 1: o calendário e a turma
+  \node[tabelacat, tb] (per) at (2.45,0)
+    {\etitulo{periodos\_letivos}\sub{catálogo, sem escola}
      \nodepart{two}
      \pk{id} \texttt{UUID}\\
-     \texttt{tipo} \small(ano\_letivo$|$semestre$|$bimestre$|$trimestre)\\
+     \texttt{tipo} \nt{ano\_letivo | semestre |}\\
+     \quad\nt{bimestre | trimestre}\\
      \texttt{titulo}, \texttt{ano}\\
      \texttt{inicio}, \texttt{fim} \texttt{DATE}\\
-     \fk{pai\_id} \small(ano letivo \seta{} bimestre)\\
-     \texttt{fonte\_id}};
+     \fk{pai\_id} \nt{ano letivo \seta{} bimestre}\\
+     \texttt{fonte\_id}\\
+     \texttt{UNIQUE (tipo, titulo)}};
 
-  \node[tabelaplat, text width=48mm] (tur) at (9.2,0)
-    {\etitulo{turmas}
+  \node[tabelaplat, tbl] (tur) at (8.85,0)
+    {\etitulo{turmas}\sub{sem RLS}
      \nodepart{two}
      \pk{id} \texttt{UUID}\\
      \fk{escola\_id}, \fk{periodo\_letivo\_id}\\
      \texttt{nome}, \texttt{serie}\\
-     \texttt{tipo} \small(regular$|$componente)\\
+     \texttt{tipo} \nt{regular | componente}\\
      \texttt{turno}, \texttt{codigo}, \texttt{fonte\_id}\\
-     \texttt{UNIQUE (escola\_id, periodo\_letivo\_id, nome)}};
+     \texttt{UNIQUE (escola\_id,}\\
+     \quad\texttt{periodo\_letivo\_id, nome)}};
 
-  \node[tabelaplat, text width=50mm] (mat) at (9.2,-4.6)
-    {\etitulo{matriculas} \small(RLS por escola)
+  % --- linha 2: quem está na sala, e o que a sala abriu
+  \coordinate (r2) at ($(per.south)+(0,-1.65)$);
+  \node[tabelaplat, tb] (lib) at (per.north |- r2)
+    {\etitulo{liberacoes}\sub{RLS por escola}
+     \nodepart{two}
+     \pk{id} \texttt{UUID}\\
+     \fk{escola\_id}, \fk{turma\_id}\\
+     \fk{liberada\_por}\\
+     \texttt{exp\_id} \nt{sem FK: catálogo do CI}\\
+     \texttt{estado} \nt{liberada | encerrada}\\
+     \texttt{liberada\_em}\\
+     \texttt{encerrada\_em}\\
+     \texttt{UNIQUE (escola\_id,}\\
+     \quad\texttt{turma\_id, exp\_id)}};
+
+  \node[tabelaplat, tbl] (mat) at (tur.north |- r2)
+    {\etitulo{matriculas}\sub{RLS por escola}
      \nodepart{two}
      \pk{id} \texttt{UUID}\\
      \fk{escola\_id}, \fk{turma\_id}, \fk{usuario\_id}\\
-     \texttt{papel} \small(estudante$|$professor)\\
+     \texttt{papel} \nt{estudante | professor}\\
      \texttt{principal} \texttt{BOOL}\\
      \texttt{inicio}, \texttt{fim} \texttt{DATE}\\
-     \texttt{UNIQUE (escola\_id, turma\_id, usuario\_id, papel)}};
+     \texttt{fonte\_id}\\
+     \texttt{UNIQUE (escola\_id, turma\_id,}\\
+     \quad\texttt{usuario\_id, papel)}};
 
-  \node[tabelaplat, text width=48mm] (usr) at (15.8,-4.6)
-    {\etitulo{users} \small(colunas de identidade)
-     \nodepart{two}
-     \texttt{matricula\_externa} \small(o RA da rede)\\
-     \texttt{fonte\_id}, \texttt{email}\\
-     \texttt{ativo}, \texttt{senha\_provisoria}\\
-     \fk{turma\_id} \small(CACHE da principal)};
-
-  \node[tabelaplat, text width=54mm] (lib) at (2.6,-4.6)
-    {\etitulo{liberacoes} \small(RLS por escola)
+  \node[tabelaplat, tb] (usr) at (15.25,0 |- r2)
+    {\etitulo{users}\sub{identidade, sem RLS}
      \nodepart{two}
      \pk{id} \texttt{UUID}\\
-     \fk{escola\_id}, \fk{turma\_id}, \fk{liberada\_por}\\
-     \texttt{exp\_id} \small(SEM FK: o catálogo é do CI)\\
-     \texttt{estado} \small(liberada$|$encerrada)\\
-     \texttt{liberada\_em}, \texttt{encerrada\_em}\\
-     \texttt{UNIQUE (escola\_id, turma\_id, exp\_id)}};
+     \texttt{matricula\_externa}\\
+     \quad\nt{o RA da rede}\\
+     \texttt{fonte\_id}, \texttt{email}\\
+     \texttt{ativo}, \texttt{senha\_provisoria}\\
+     \fk{turma\_id} \nt{cache da principal}};
 
-  \draw[erel] (per.east) -- (tur.west) node[ercard, pos=0.2]{1} node[ercard, pos=0.85]{N};
-  \draw[erel] (tur.south) -- (mat.north) node[ercard, pos=0.15]{1} node[ercard, pos=0.85]{N};
-  \draw[erel] (usr.west) -- (mat.east) node[ercard, pos=0.15]{1} node[ercard, pos=0.85]{N};
-  \draw[erel] (tur.west) -- (lib.east) node[ercard, pos=0.15]{1} node[ercard, pos=0.85]{N};
+  % --- relações
+  \draw[erel] (per.east |- 0,-0.85) -- (tur.west |- 0,-0.85)
+    node[ercard, pos=0.22]{1} node[ercard, pos=0.78]{N};
+  \draw[erel] (tur.south) -- (mat.north)
+    node[ercard, pos=0.2]{1} node[ercard, pos=0.8]{N};
+  \draw[erel] ($(usr.north west)+(0,-0.85)$) -- ($(mat.north east)+(0,-0.85)$)
+    node[ercard, pos=0.22]{1} node[ercard, pos=0.78]{N};
+  % a missão liberada DENTRO da turma
+  \coordinate (tl) at ([xshift=-14mm]tur.south);
+  \coordinate (gl) at ($(per.south)+(0,-0.7)$);
+  \draw[erel] (tl) -- (tl |- gl) -| ([xshift=12mm]lib.north);
+  \node[ercard] at ($(tl)+(0,-0.3)$) {1};
+  \node[ercard] at ($([xshift=12mm]lib.north)+(0,0.3)$) {N};
+  % quem liberou: por baixo de matriculas
+  \coordinate (gb) at ($(lib.south)+(0,-0.75)$);
+  \draw[erel] (usr.south) -- (usr.south |- gb) -| (lib.south);
+  \node[ercard] at ($(usr.south)+(0,-0.3)$) {1};
+  \node[ercard] at ($(lib.south)+(0,-0.35)$) {N};
+  \node[ercard] at ($(mat.south |- gb)$) {\texttt{liberada\_por}};
 
 \end{tikzpicture}}
+\begin{legendadiag}
+\amostra{fill=unooBlue, draw=unooNavy} tabela de \emph{tenant} (tem \cd{escola\_id}) \quad
+\amostra{fill=unooMuted, draw=unooNavy} catálogo do contrato (fora da RLS)
+\end{legendadiag}
 \caption[Enturmamento]{Enturmamento e sala de aula. A verdade é \cd{matriculas};
   \cd{users.turma\_id} permanece como \textbf{cache} da matrícula principal, porque
   o \emph{login} e o \emph{claim} \cd{turma\_id} do \emph{token} o leem antes de
@@ -417,6 +820,137 @@ Não existe estado \cd{bloqueada} & Bloqueio é a \textbf{ausência} de linha.
 \bottomrule
 \end{tabularx}
 
+\subsection{As equipes na missão}
+\label{sec:equipes}
+
+\adrr{ADR-111}. Equipe é quem DIVIDE UM COMPUTADOR numa missão: a resposta
+física a uma sala com menos máquinas que crianças. São três tabelas de
+plataforma, na migração \arq{20260925120000\_\B{}equipes\_\B{}na\_\B{}missao}, e nenhuma
+mexe na porta da sala --- a liberação continua por turma, e o dado da
+experiência continua por criança. O que muda é a LEITURA: o painel passa a
+poder contar por computador.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Decisão de esquema} & \thd{Por quê}\\
+\midrule
+Três tabelas, e não uma coluna \cd{equipe} & A montagem tem estado próprio ---
+  quantos computadores, sorteio ou manual, quem faltou, a \cd{versao} --- que não
+  pertence a criança nenhuma. Uma coluna na tabela da experiência exigiria a
+  mesma coluna em cada missão com equipe, e cada painel reinventaria a regra.\\
+\zebra \cd{turma\_id}, \cd{exp\_id} e \cd{atividade\_id} repetidos em
+  \cd{equipes\_membros} & É o que torna possível \cd{UNIQUE (escola\_id,
+  turma\_id, exp\_id, atividade\_id, estudante\_id)}: uma criança, uma equipe
+  por atividade (\adrr{ADR-130}). Sem as colunas ali, a
+  regra só existiria no código, e dois \cd{PUT} em paralelo poriam a mesma
+  criança em dois computadores.\\
+\cd{versao} começa em 1, com \emph{CHECK} & O cliente manda \cd{0} quando não
+  havia montagem. Versão 0 gravada tornaria o 409 incapaz de distinguir
+  \enquote{não existe} de \enquote{existe e ninguém mexeu}.\\
+\zebra Troca INTEIRA, com cascata & \cd{equipes} tem FK composta para a
+  montagem, e \cd{equipes\_membros} para a equipe, as duas com
+  \cd{ON DELETE CASCADE}: salvar apaga as equipes e grava as novas; desfazer
+  apaga a montagem, e o resto cai junto. Por isso nada que precise sobreviver a
+  uma edição pode pender de \cd{equipes} --- o lado da equipe no Instanooria é
+  resolvido na largada do \emph{run}, e não guardado ao lado dela.\\
+\cd{exp\_id} e \cd{atualizado\_por} \textbf{sem} FK & O primeiro pela razão de
+  \cd{liberacoes.exp\_id}: o catálogo é do CI e está vazio em desenvolvimento, e
+  quem restringe as missões é \cd{EXPERIENCIAS\_COM\_EQUIPE}, no código. O
+  segundo porque é carimbo: uma FK para \cd{users} faria a saída de um professor
+  da rede apagar ou travar a montagem da turma inteira.\\
+\zebra Membro que mudou de turma continua na linha & A linha de
+  \cd{equipes\_membros} não some quando a criança muda de turma --- ela não foi
+  apagada, só se mudou. A LEITURA filtra por \cd{users.turma\_id}, a mesma fonte
+  dos painéis; a FK de \cd{estudante\_id} para \cd{users}, com cascata, cobre só
+  a exclusão.\\
+\emph{CHECK} do nome com \cd{btrim} & Cinco espaços passariam por um
+  \cd{NOT NULL} e apareceriam no painel como uma equipe sem nome. O teto de 30 é
+  \cd{NOME\_MAX} no código, e \arq{tests/equipes-postgres.spec.ts} compara os
+  dois vocabulários, como o de \cd{modo}.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{A evidência pedagógica}
+\label{sec:evidencias}
+
+\adrr{ADR-112}. Que habilidades da BNCC cada estudante DEMONSTROU numa atividade
+de uma missão, rodada a rodada. São três tabelas de plataforma, na migração
+\arq{20260925150000\_\B{}evidencia\_\B{}pedagogica}, e elas separam o que a missão
+VIU (\cd{evidencias\_marcas}) do nível que o professor LÊ e pode corrigir
+(\cd{evidencias}), com toda mudança no histórico (\cd{evidencias\_eventos}). A
+primeira missão a escrever nelas é a exp05ef1b (\adrr{ADR-118}): hoje só por
+ação (\adrr{ADR-171}) --- a marca da EF05CO08 na transação do Mural, a da
+EF05CO03 na do quarto alerta do grupo e a da EF05CO04 na do robô do grupo
+(\adrr{ADR-177}).
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Decisão de esquema} & \thd{Por quê}\\
+\midrule
+A marca e a evidência em tabelas separadas & A evidência PRÓPRIA é derivada (a
+  melhor marca da habilidade na rodada), mas a cópia da equipe e o ajuste do
+  professor não são marca nenhuma. Guardar só a evidência perderia o que a
+  missão viu --- qual marcador, com que nível, sob que versão da ficha;
+  guardar só as marcas não teria onde pôr o ajuste, e o painel refaria a
+  precedência a cada leitura.\\
+\zebra PK da marca \textbf{sem} \cd{turma\_id} & A chave é
+  \cd{(escola\_id, exp\_id, atividade\_id, rodada, estudante\_id, marcador)}: a
+  marca é da criança naquela atividade e rodada, e a turma é só o contexto em que
+  ela foi registrada. É o \cd{INSERT ... ON CONFLICT DO NOTHING} dessa chave que
+  faz valer a PRIMEIRA resposta de uma pergunta, mesmo com duas chegando juntas.\\
+Uma evidência por habilidade por rodada & \cd{UNIQUE (escola\_id, exp\_id,
+  atividade\_id, rodada, estudante\_id, habilidade)}. O nome do índice é o que o
+  Prisma gera, truncado em 63 caracteres: trocá-lo faria o \cd{migrate diff}
+  acusar um índice a renomear.\\
+\zebra N/A é AUSÊNCIA de linha & \enquote{Não avaliado} não se grava: sem linha,
+  a habilidade não conta em lugar nenhum, e nunca como \cd{nao\_atingiu}. O N/A
+  EXPLÍCITO, \cd{nao\_participou}, é uma linha --- e só do professor
+  (\emph{CHECK} \cd{evidencias\_\B{}nao\_\B{}participou\_\B{}check}), porque existe para barrar a
+  cópia da equipe.\\
+\emph{CHECKs} de COERÊNCIA entre colunas & \cd{a\_revisar} só na origem
+  \cd{projecao}; \cd{fonte\_estudante\_id} se e só se for cópia
+  (\cd{equipe}/\cd{projecao}); \cd{editado\_por} se e só se for ajuste
+  (\cd{professor}). A linha que o código montar errada é recusada pelo banco, em
+  vez de chegar ao painel como um estado que ele não sabe mostrar.
+  \cd{marcador} (\adrr{ADR-166}, migração
+  \arq{20261016120000\_\B{}evidencia\_\B{}origem\_\B{}do\_\B{}nivel}) só na
+  origem \cd{propria}.\\
+\zebra O marcador que deu o nível NA linha & A evidência própria guarda de que
+  marcador veio (\adrr{ADR-166}). Derivá-lo das marcas a cada leitura faria o
+  consolidado da rede ler também as marcas de todas as turmas, só para separar
+  o \enquote{em processo} que mede a atividade e não o estudante.\\
+\zebra O vocabulário em dois lugares & Os \emph{CHECKs} de \cd{status},
+  \cd{origem}, \cd{situacao}, \cd{tipo} e o \emph{regex} de \cd{atividade\_id}
+  repetem as constantes de \arq{evidencias/regras.ts}, e
+  \arq{tests/evidencias-postgres.spec.ts} compara os dois --- o par que já
+  custou um \emph{deploy} em \cd{permissoes}. A marca só aceita os três níveis:
+  \enquote{não participou} nunca é o que a missão viu.\\
+\cd{estudante\_id} COM FK, em cascata --- no histórico também & É a trava da
+  identidade única (\arq{tests/identidade-unica.spec.ts}), e a evidência é dado
+  da criança: sai com ela. No histórico, cascata e não \cd{SET NULL}: anular a
+  coluna seria um \cd{UPDATE}, que o \emph{trigger} recusa, e a exclusão da
+  conta travaria.\\
+\zebra \cd{equipe\_id}, \cd{fonte\_estudante\_id}, \cd{editado\_por} e
+  \cd{autor\_id} \textbf{sem} FK & As equipes são trocadas INTEIRAS a cada
+  \cd{PUT} (\adrr{ADR-111}): uma FK para \cd{equipes} apagaria ou travaria a
+  cópia junto --- e a cópia de uma rodada passada existe justamente para guardar
+  a equipe que teve. Os outros três são carimbo: não podem travar a saída de
+  ninguém da rede. \cd{exp\_id} também fica sem FK, pela razão de
+  \cd{liberacoes.exp\_id}.\\
+Histórico append-only NO BANCO & \emph{Trigger} \cd{BEFORE UPDATE} que lança
+  para qualquer \emph{role}, a dona da tabela inclusive, no desenho de
+  \cd{recursos\_auditoria}. O \cd{DELETE} fica fora, pela retenção futura, pelo
+  isolamento de teste e pela cascata da turma; quem não apaga é a \emph{role}
+  de \emph{runtime}, que só recebe \cd{SELECT, INSERT}.\\
+\zebra Índice por \cd{registrada\_em} & A RODADA EM ANDAMENTO de uma turma
+  $\times$ missão é a da marca mais recente, e é só ela que o recálculo das
+  equipes toca: \cd{(escola\_id, turma\_id, exp\_id, registrada\_em)} a
+  encontra. Os outros índices são as duas leituras --- o painel, por
+  \cd{(escola\_id, turma\_id, exp\_id, atividade\_id, rodada)}, e o perfil, por
+  \cd{(escola\_id, estudante\_id)}.\\
+\bottomrule
+\end{tabularx}
+
 \section{Telemetria particionada}
 \label{sec:particao}
 
@@ -454,192 +988,264 @@ faixas vão até 2028-12. Verificar a contagem da partição \cd{DEFAULT} é ite
 \emph{checklist} de operação (Apêndice~\ref{ap:operacao}).
 \end{atencao}
 
-\section{Modelo da exp-01 (Instanooria)}
+\section{Modelo da exp08ef1b (Instanooria)}
 
-A exp-01 é a experiência mais rica em dados: um motor de \emph{feed} adaptativo
+A exp08ef1b é a experiência mais rica em dados: um motor de \emph{feed} adaptativo
 com geração de conteúdo por IA, sessão por estudante e dossiê de fechamento. São doze
-tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
+tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
 
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    tb/.style={text width=42mm, anchor=north},
+    tbl/.style={text width=50mm, anchor=north}]
+  \def\nt#1{{\color{unooInkSoft}#1}}
 
-  \node[tabela, text width=44mm] (act) at (2.9,0)
-    {\etitulo{exp\_01\_activities}
+  % --- linha 1: a atividade, os perfis falsos e o que eles postam
+  \node[tabela, tbl] (act) at (2.65,0)
+    {\etitulo{exp08ef1b\_activities}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{professor\_id}\\
-     \fk{turma\_id} --- NULL = escola inteira\\
-     \texttt{titulo}, \texttt{disciplina}, \texttt{tema\_geral}\\
-     \texttt{recorte}, \texttt{contexto\_aula}\\
-     \texttt{pergunta\_chave}, \texttt{pergunta\_origem}\\
-     \texttt{etapa} --- relógio COLETIVO da turma\\
-     \texttt{ia\_ao\_vivo}, \texttt{antagonismo} JSONB\\
-     \texttt{categorias\_neutras[]}, \texttt{neutros\_no\_tema[]}\\
-     \texttt{qtd\_posts\_tese}, \texttt{proporcoes}\\
-     \texttt{engine\_config}, \texttt{estilo\_visual}\\
-     \texttt{status}: rascunho\ldots{}encerrada};
+     \fk{turma\_id} \nt{nula = escola inteira}\\
+     \texttt{titulo}, \texttt{disciplina}\\
+     \texttt{tema\_geral}, \texttt{recorte}\\
+     \texttt{contexto\_aula}\\
+     \texttt{pergunta\_chave}\\
+     \texttt{pergunta\_origem} \nt{ia | professor}\\
+     \texttt{etapa} \nt{relógio COLETIVO da turma}\\
+     \texttt{ia\_ao\_vivo}\\
+     \texttt{antagonismo} \texttt{JSONB}\\
+     \texttt{categorias\_neutras[]}\\
+     \texttt{neutros\_no\_tema[]}\\
+     \texttt{qtd\_posts\_tese}\\
+     \texttt{proporcoes} \texttt{JSONB}\\
+     \texttt{engine\_config} \texttt{JSONB}\\
+     \texttt{estilo\_visual}\\
+     \texttt{status} \nt{rascunho \ldots{} encerrada}};
 
-  \node[tabela, text width=40mm] (aut) at (8.4,1.0)
-    {\etitulo{exp\_01\_authors}
+  \node[tabela, tb] (aut) at (8.85,0)
+    {\etitulo{exp08ef1b\_authors}
      \nodepart{two}
-     \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
+     \pk{id}, \fk{escola\_id}\\
+     \fk{activity\_id}\\
      \texttt{handle}, \texttt{display\_name}\\
-     \texttt{tipo}, \texttt{lado}: A$|$B$|$neutro\\
-     \texttt{perfil\_afim}, \texttt{verificado}\\
-     \texttt{bio}, \texttt{voz}\\
-     \texttt{UNIQUE (activity\_id, handle)}};
+     \texttt{tipo}, \texttt{lado} \nt{A | B | neutro}\\
+     \texttt{perfil\_afim}\\
+     \texttt{verificado}, \texttt{bio}, \texttt{voz}\\
+     \texttt{UNIQUE (activity\_id,}\\
+     \quad\texttt{handle)}};
 
-  \node[tabela, text width=44mm] (pos) at (13.6,-0.8)
-    {\etitulo{exp\_01\_posts}
+  \node[tabela, tbl] (pos) at (15.05,0)
+    {\etitulo{exp08ef1b\_posts}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
      \fk{author\_id}\\
-     \texttt{lado}, \texttt{perfil}, \texttt{intensidade} 1--3\\
+     \texttt{lado}, \texttt{perfil}\\
+     \texttt{intensidade} \nt{1 a 3}\\
      \texttt{categoria}, \texttt{formato}\\
      \texttt{caption}, \texttt{hashtags[]}\\
-     \texttt{emotional\_hook}, \texttt{image\_brief}\\
-     \texttt{image\_url}, \texttt{image\_status}\\
-     \texttt{likes\_count}, \texttt{aprovado}\\
-     \texttt{INDEX (activity, lado, perfil,}\\
-     \quad\texttt{intensidade, aprovado)}};
+     \texttt{emotional\_hook}\\
+     \texttt{image\_brief}, \texttt{image\_url}\\
+     \texttt{image\_status}, \texttt{aprovado}\\
+     \texttt{likes\_count}\\
+     \texttt{timestamp\_label}\\
+     \texttt{INDEX (activity\_id, lado,}\\
+     \quad\texttt{perfil, intensidade,}\\
+     \quad\texttt{aprovado)}};
 
-  \node[tabela, text width=40mm] (job) at (2.9,-6.4)
-    {\etitulo{exp\_01\_generation\_jobs}
+  % --- linha 2
+  \coordinate (r2) at ($(act.south)+(0,-1.65)$);
+  \node[tabela, tbl] (job) at (act.north |- r2)
+    {\etitulo{exp08ef1b\_generation\_jobs}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
-     \texttt{tipo}: personas $|$ posts\_lote $|$\\
-     \quad imagem $|$ validacao\\
-     \texttt{payload}, \texttt{status}, \texttt{tentativa}\\
-     \texttt{erro}, \texttt{updated\_at} --- recicla órfão};
+     \texttt{tipo} \nt{personas | posts\_lote |}\\
+     \quad\nt{imagem | validacao}\\
+     \texttt{payload} \texttt{JSONB}, \texttt{status}\\
+     \texttt{tentativa}, \texttt{erro}\\
+     \texttt{updated\_at} \nt{recicla o órfão}};
 
-  \node[tabela, text width=38mm] (pc) at (8.6,-6.2)
-    {\etitulo{exp\_01\_post\_comments}
+  \node[tabela, tb] (pc) at (aut.north |- r2)
+    {\etitulo{exp08ef1b\_post\_comments}
      \nodepart{two}
-     \pk{id}, \fk{escola\_id}, \fk{post\_id}\\
-     \fk{author\_id} --- NULL = handle avulso\\
+     \pk{id}, \fk{escola\_id}\\
+     \fk{post\_id}\\
+     \fk{author\_id}\\
+     \quad\nt{nulo = \emph{handle} avulso}\\
      \texttt{handle}, \texttt{texto}\\
      \texttt{likes\_count}, \texttt{ordem}};
 
-  \draw[erel] (act.east) -- (aut.west)
-    node[ercard, pos=0.22]{1} node[ercard, pos=0.80]{N};
-  \draw[erel] (aut.east) -- (pos.north west)
-    node[ercard, pos=0.20]{1} node[ercard, pos=0.82]{N};
+  % --- relações
+  \draw[erel] (act.east |- 0,-0.85) -- (aut.west |- 0,-0.85)
+    node[ercard, pos=0.22]{1} node[ercard, pos=0.78]{N};
+  \draw[erel] (aut.east |- 0,-0.85) -- (pos.west |- 0,-0.85)
+    node[ercard, pos=0.22]{1} node[ercard, pos=0.78]{N};
+  % posts.activity_id: por cima de authors
+  \draw[erel] (act.north) -- ++(0,0.55) -| (pos.north);
+  \node[ercard] at ($(act.north)+(0,0.27)$) {1};
+  \node[ercard] at ($(pos.north)+(0,0.27)$) {N};
   \draw[erel] (act.south) -- (job.north)
-    node[ercard, pos=0.25]{1} node[ercard, pos=0.75]{N};
-  \draw[erel] (pos.south) -- (13.6,-5.4) -- (pc.east)
-    node[ercard, pos=0.86]{N};
+    node[ercard, pos=0.22]{1} node[ercard, pos=0.78]{N};
+  % comentários: do post (1:N) e, opcional, do autor
+  \draw[erel] (aut.south) -- (pc.north)
+    node[ercard, pos=0.22]{0..1} node[ercard, pos=0.78]{N};
+  \draw[erel] (pos.south) |- ($(pc.east)+(0,0.3)$);
+  \node[ercard] at ($(pos.south)+(0,-0.3)$) {1};
+  \node[ercard] at ($(pc.east)+(0.35,0.3)$) {N};
 
 \end{tikzpicture}}
-\caption[Modelo de dados da exp-01: atividade e conteúdo]{Modelo de dados da
-  exp-01, parte 1: a atividade preparada pelo professor e o conteúdo gerado.
+\caption[Modelo de dados da exp08ef1b: atividade e conteúdo]{Modelo de dados da
+  exp08ef1b, parte 1: a atividade preparada pelo professor e o conteúdo gerado.
   \texttt{lado}, \texttt{perfil} e \texttt{intensidade} em
-  \cd{exp\_01\_posts} são a variável independente do experimento --- estão no
+  \cd{exp08ef1b\_posts} são a variável independente do experimento --- estão no
   banco, e o sanitizador da API os remove antes de o \emph{feed} sair
   (Seção~\ref{sec:fluxos}).}
-\label{fig:er-exp01a}
+\label{fig:er-exp08ef1ba}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    tb/.style={text width=44mm, anchor=north},
+    tbl/.style={text width=48mm, anchor=north}]
+  \def\nt#1{{\color{unooInkSoft}#1}}
+  \def\sub#1{\\{\color{white}#1}}
 
-  \node[tabela, text width=46mm] (run) at (3.1,0)
-    {\etitulo{exp\_01\_runs} --- sessão de um estudante
+  % --- coluna central: a sessão
+  \node[tabela, tbl] (run) at (8.7,0)
+    {\etitulo{exp08ef1b\_runs}\sub{a sessão de um estudante}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
      \fk{estudante\_id}\\
-     \texttt{fase}: onboarding\ldots{}comparacao\\
-     \texttt{lado\_inicial}, \texttt{lado\_origem}\\
-     \texttt{perfil\_jogo} JSONB, \texttt{perfil\_origem}\\
-     \texttt{engine\_state} JSONB --- estado do motor\\
-     \texttt{nome\_no\_app}, \texttt{avatar\_escolhido}\\
+     \texttt{fase} \nt{onboarding \ldots{} comparacao}\\
+     \texttt{lado\_inicial}\\
+     \texttt{lado\_origem}\\
+     \texttt{perfil\_jogo} \texttt{JSONB}\\
+     \texttt{perfil\_origem}\\
+     \texttt{engine\_state} \texttt{JSONB} \nt{o motor}\\
+     \texttt{nome\_no\_app}\\
+     \texttt{avatar\_escolhido}\\
      \texttt{started\_at}, \texttt{finished\_at}\\
-     \texttt{UNIQUE (activity\_id, estudante\_id)}};
+     \texttt{UNIQUE (activity\_id,}\\
+     \quad\texttt{estudante\_id)}};
 
-  \node[tabela, text width=40mm] (ev) at (9.2,0.6)
-    {\etitulo{exp\_01\_events} --- canal OPERACIONAL
+  % --- coluna da esquerda
+  \node[tabela, tb] (ev) at (2.4,0)
+    {\etitulo{exp08ef1b\_events}\sub{canal OPERACIONAL}
      \nodepart{two}
-     \pk{id} BIGSERIAL, \fk{escola\_id}\\
-     \fk{run\_id}, \fk{post\_id}\\
-     \texttt{tipo}: visto $|$ curtiu $|$ comentou\ldots{}\\
-     \texttt{payload}: \{dwellMs, dwellNorm\}\\
+     \pk{id} \texttt{BIGSERIAL}, \fk{escola\_id}\\
+     \fk{run\_id}, \fk{post\_id} \nt{\seta{} posts}\\
+     \texttt{tipo} \nt{visto | curtiu | comentou \ldots}\\
+     \texttt{payload} \nt{\{dwellMs, dwellNorm\}}\\
      \texttt{client\_ts}, \texttt{created\_at}\\
      \texttt{INDEX (run\_id, id)}};
 
-  \node[tabela, text width=36mm] (sp) at (14.2,0.2)
-    {\etitulo{exp\_01\_student\_posts}
+  \node[tabela, tb] (con) at ($(ev.south)+(0,-0.9)$)
+    {\etitulo{exp08ef1b\_conclusoes}
+     \nodepart{two}
+     \pk{run\_id}, \fk{escola\_id}\\
+     \texttt{inclinacao} \nt{A | B | duvida}\\
+     \texttt{inclinacao\_inicial}\\
+     \texttt{trocas}, \texttt{texto}\\
+     \texttt{atualizado\_em}};
+
+  % --- coluna da direita
+  \node[tabela, tb] (sp) at (15.0,0)
+    {\etitulo{exp08ef1b\_student\_posts}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{run\_id}\\
      \texttt{texto}, \texttt{template}\\
-     \texttt{lado\_inferido}};
+     \texttt{lado\_inferido}, \texttt{created\_at}};
 
-  \node[tabela, text width=32mm] (con) at (2.2,-5.2)
-    {\etitulo{exp\_01\_conclusoes}
-     \nodepart{two}
-     \pk{run\_id}, \fk{escola\_id}\\
-     \texttt{inclinacao}: A$|$B$|$duvida\\
-     \texttt{inclinacao\_inicial}\\
-     \texttt{trocas}, \texttt{atualizado\_em}\\
-     \texttt{texto}};
-
-  \node[tabela, text width=30mm] (ref) at (6.2,-5.2)
-    {\etitulo{exp\_01\_reflexoes}
-     \nodepart{two}
-     \pk{run\_id}, \fk{escola\_id}\\
-     \texttt{texto} --- sem limite};
-
-  \node[tabela, text width=28mm] (dos) at (10.0,-5.2)
-    {\etitulo{exp\_01\_dossiers}
-     \nodepart{two}
-     \pk{run\_id}, \fk{escola\_id}\\
-     \texttt{data} JSONB};
-
-  \node[tabela, text width=38mm] (cs) at (14.2,-5.4)
-    {\etitulo{exp\_01\_comentarios\_da\_sessao}
+  \node[tabela, tb] (cs) at ($(sp.south)+(0,-1.55)$)
+    {\etitulo{exp08ef1b\_comentarios\_\\da\_sessao}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{run\_id}\\
-     \fk{post\_id} \textbf{XOR} \fk{student\_post\_id}\\
-     \texttt{handle} --- NULL = o próprio estudante\\
+     \fk{post\_id} \nt{\seta{} posts} \textbf{XOR}\\
+     \fk{student\_post\_id}\\
+     \texttt{handle} \nt{nulo = o estudante}\\
      \texttt{de\_ia}, \texttt{texto}};
 
-  \node[tabela, text width=48mm, rectangle split part fill={unooOrange, unooOrangeWash}] (pi) at (5.4,-9.6)
-    {\etitulo{exp\_01\_exp\_70\_perfis\_importados}
+  % --- linha de baixo
+  \coordinate (r2) at ($(con.south)+(0,-1.55)$);
+  \node[tabela, tb] (dos) at (ev.north |- r2)
+    {\etitulo{exp08ef1b\_dossiers}
      \nodepart{two}
-     \pk{id}, \fk{escola\_id}, \fk{activity\_id}, \fk{estudante\_id}\\
-     \texttt{escores} JSONB --- 4 quadrantes, 0--1\\
-     \texttt{dominante}, \texttt{origem}: jogo $|$ professor\\
-     \texttt{lado\_forcado} --- redistribuição do professor\\
-     \texttt{vila\_sessao\_id} --- rastro, SEM FK\\
-     \texttt{versao\_mapeamento}, \texttt{medido\_em}\\
-     \texttt{UNIQUE (activity\_id, estudante\_id)}};
+     \pk{run\_id}, \fk{escola\_id}\\
+     \texttt{data} \texttt{JSONB}};
 
-  \node[actnote, text width=52mm, anchor=north west] at (11.0,-8.4)
-    {\textbf{A tabela laranja é o contrato entre duas experiências.} A exp-70
-     escreve (\rota{POST /atividades/:id/perfis/da-vila}); a exp-01 lê em
-     \arq{perfis/largada.ts} para decidir de que lado o \emph{feed} de cada estudante
-     nasce. O nome carrega os dois números porque a dependência é real --- e um
-     nome com um número só faria parecer que apagar a exp-70 não afeta ninguém.};
+  \node[tabela, tbl] (ref) at (run.north |- r2)
+    {\etitulo{exp08ef1b\_reflexoes}
+     \nodepart{two}
+     \pk{run\_id}, \fk{escola\_id}\\
+     \texttt{texto} \nt{sem limite}\\
+     \texttt{updated\_at}};
 
-  \draw[erel] (run.east) -- (ev.west)
-    node[ercard, pos=0.18]{1} node[ercard, pos=0.82]{N};
-  \draw[erel] (ev.east) -- (sp.west) node[ercard, pos=0.85]{N};
-  \draw[erel] (run.south) -- (con.north) node[ercard, pos=0.75]{1};
-  \draw[erel] (run.south) -- (ref.north) node[ercard, pos=0.78]{1};
-  \draw[erel] (run.south east) -- (dos.north) node[ercard, pos=0.82]{1};
-  \draw[erel] (run.south east) -- (11.4,-2.4) -- (cs.north) node[ercard, pos=0.88]{N};
-  \draw[erel, dashed] (con.south) -- (2.2,-9.6) -- (pi.west)
-    node[ercard, pos=0.72, above]{mesmo estudante};
+  \node[tabela, tb, rectangle split part fill={unooOrange, unooOrangeWash}] (pi)
+    at (sp.north |- r2)
+    {\etitulo{exp08ef1b\_app\_70\_\\perfis\_importados}
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}\\
+     \fk{activity\_id}, \fk{estudante\_id}\\
+     \texttt{escores} \texttt{JSONB}\\
+     \quad\nt{4 quadrantes, 0 a 1}\\
+     \texttt{dominante}\\
+     \texttt{origem} \nt{jogo | professor}\\
+     \texttt{lado\_forcado} \nt{do professor}\\
+     \texttt{vila\_sessao\_id} \nt{sem FK}\\
+     \texttt{versao\_mapeamento}\\
+     \texttt{medido\_em}\\
+     \texttt{UNIQUE (activity\_id,}\\
+     \quad\texttt{estudante\_id)}};
+
+  \node[actnote, text width=100mm, anchor=north west] (nota)
+    at ($(dos.north west |- ref.south)+(0,-0.6)$)
+    {\textbf{A tabela laranja é o contrato entre duas experiências.} A rota
+     \texttt{POST /atividades/:id/perfis/da-vila}, que o professor dispara, grava
+     nela o perfil medido na app-70; a exp08ef1b o lê em
+     \texttt{perfis/largada.ts} para decidir de que lado o \emph{feed} de cada
+     estudante nasce. O nome carrega os dois códigos porque a dependência é real
+     --- e um nome com um só faria parecer que apagar a app-70 não afeta
+     ninguém.};
+
+  % --- relações: todas saem de exp08ef1b_runs
+  \draw[erel] (run.west |- 0,-0.85) -- (ev.east |- 0,-0.85)
+    node[ercard, pos=0.22]{1} node[ercard, pos=0.78]{N};
+  \draw[erel] (run.east |- 0,-0.85) -- (sp.west |- 0,-0.85)
+    node[ercard, pos=0.22]{1} node[ercard, pos=0.78]{N};
+  % 1:1 com conclusoes (pela esquerda) e N com comentarios (pela direita)
+  \coordinate (cl) at ($(con.east)+(0,0.4)$);
+  \draw[erel] (run.west |- 0,-3.2) -- (5.5,-3.2) |- (cl);
+  \node[ercard] at ($(run.west |- 0,-3.2)+(-0.3,0)$) {1};
+  \node[ercard] at ($(cl)+(0.3,0)$) {1};
+  \coordinate (cr) at ($(cs.west)+(0,0.4)$);
+  \draw[erel] (run.east |- 0,-3.2) -- (11.9,-3.2) |- (cr);
+  \node[ercard] at ($(run.east |- 0,-3.2)+(0.3,0)$) {1};
+  \node[ercard] at ($(cr)+(-0.3,0)$) {N};
+  % comentário sobre o post do próprio estudante
+  \draw[erel] (sp.south) -- (cs.north)
+    node[ercard, pos=0.22]{0..1} node[ercard, pos=0.78]{N};
+  % 1:1 com reflexoes e dossiers
+  \draw[erel] (run.south) -- (ref.north)
+    node[ercard, pos=0.22]{1} node[ercard, pos=0.78]{1};
+  \coordinate (gd) at ($(r2)+(0,0.6)$);
+  \draw[erel] ([xshift=-14mm]run.south) |- (gd -| dos.north) -- (dos.north);
+  \node[ercard] at ($([xshift=-14mm]run.south)+(0,-0.3)$) {1};
+  \node[ercard] at ($(dos.north)+(0,0.3)$) {1};
+  % o perfil importado é do mesmo estudante na mesma atividade
+  \draw[erel, dashed] ([xshift=14mm]run.south) |- (gd -| pi.north) -- (pi.north);
+  \node[ercard] at ($(gd -| pi.north)+(-2.2,0)$) {mesmo estudante e atividade};
 
 \end{tikzpicture}}
-\caption[Modelo de dados da exp-01: sessão do estudante]{Modelo de dados da exp-01,
+\caption[Modelo de dados da exp08ef1b: sessão do estudante]{Modelo de dados da exp08ef1b,
   parte 2: a sessão do estudante. A \cd{run} é o centro --- carrega o estado do motor
-  em JSONB e é a unidade de \emph{lock} da curadoria. \cd{exp\_01\_events} é o
+  em JSONB e é a unidade de \emph{lock} da curadoria. \cd{exp08ef1b\_events} é o
   canal \emph{operacional} de telemetria, síncrono e transacional, e não deve ser
   confundido com \cd{telemetria\_eventos}, o canal analítico
   (Capítulo~\ref{cap:telemetria}).}
-\label{fig:er-exp01b}
+\label{fig:er-exp08ef1bb}
 \end{figure}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
@@ -663,213 +1269,208 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
   está na migração.\\
 \zebra \cd{de\_ia} & Permite ao professor distinguir, na auditoria, o comentário
   escrito pela persona (modelo) do escrito pelo estudante.\\
+\cd{exp08ef1b\_tarefas} e \cd{runs.revelacao\_concluida\_em} (\adrr{ADR-167},
+  migração \arq{20261016180000\_\B{}exp08ef1b\_\B{}canal\_\B{}a}) & As tarefas
+  do Canal A, uma linha por (sessão, tarefa), criada na PRIMEIRA leitura com a
+  composição que a tela mostra: os posts do Raio-x e do envio não mudam entre a
+  leitura e o envio. É produção do estudante e sai no reinício, junto com o fim
+  da revelação; a MARCA de evidência fica, e vale o primeiro envio. \emph{CHECKs}
+  do vocabulário (\cd{raio-x}, \cd{termos}, \cd{envio}), de respondida com
+  data, e da frase só no envio, até 140 caracteres.\\
+\zebra \cd{exp08ef1b\_leituras\_da\_reflexao} e \cd{reflexoes.primeiro\_texto} &
+  A leitura da reflexão pela IA é UMA só por (atividade, estudante): a
+  unicidade impede a segunda, inclusive depois de um reinício, que não apaga a
+  sessão. A linha não guarda texto; o texto lido fica em \cd{primeiro\_texto},
+  gravado só na criação da reflexão, e sai com ela. \cd{run\_id} e
+  \cd{estudante\_id} em cascata: \enquote{Apagar as sessões} e a exclusão da
+  conta levam a leitura. As duas tabelas com \cd{escola\_id NOT NULL} e RLS
+  forçada.\\
 \bottomrule
 \end{tabularx}
 
-\section{Modelo das experiências 02, 70, 90 e 91}
+\section{Modelo do UnooTube arquivado e das apps 70, 90 e 91}
 
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    tb/.style={text width=60mm, anchor=north}]
+  \def\nt#1{{\color{unooInkSoft}#1}}
+  \def\sub#1{\\{\color{white}#1}}
 
-  \node[camadalbl, anchor=west] at (0.2,2.1) {exp-02 --- UnooTube};
-  \node[tabela, text width=46mm] (u) at (3.4,-0.2)
-    {\etitulo{exp\_02\_sessoes}
+  % --- o UnooTube arquivado
+  \node[camadalbl, anchor=south west] at (0,0.15)
+    {backup-exp04ef1b --- UnooTube (arquivada)};
+  \node[tabela, tb] (u) at (3.15,0)
+    {\etitulo{backup\_exp04ef1b\_sessoes}
      \nodepart{two}
-     \pk{escola\_id, estudante\_id} --- 1 linha por estudante\\
-     \texttt{salvos[]} --- ids do catálogo, CHECK $\leq$ 3\\
+     \pk{escola\_id, estudante\_id}\\
+     \quad\nt{uma linha por estudante}\\
+     \texttt{salvos[]} \nt{ids do catálogo; CHECK $\leq$ 3}\\
      \texttt{curtidos[]}\\
-     \texttt{ranking\_desbloqueado} --- \emph{latch}\\
-     \texttt{credibilidade\_adicionada} --- congela\\
+     \texttt{ranking\_desbloqueado} \nt{\emph{latch}}\\
+     \texttt{credibilidade\_adicionada} \nt{congela}\\
      \texttt{concluido\_em}, \texttt{reinicios}\\
      \texttt{criado\_em}, \texttt{atualizado\_em}};
 
-  \node[actnote, text width=54mm, anchor=north west] at (7.6,1.2)
+  \node[actnote, text width=58mm, anchor=north] at (12.85,0)
     {O gabarito (\texttt{factual}) \textbf{não} está aqui e não é devolvido em
-     nenhuma rota de estudante: vive em \arq{src/unootube/catalogo.ts}. Os
-     \emph{CHECK} de cardinalidade dos salvos e de \enquote{conclusão implica
+     nenhuma rota de estudante: vive em \texttt{src/backup-unootube/catalogo.ts}.
+     Os \emph{CHECK} de cardinalidade dos salvos e de \enquote{conclusão implica
      \texttt{concluido\_em}} vivem na migração, porque o Prisma não os modela.};
 
-  \node[camadalbl, anchor=west] at (0.2,-4.2) {exp-70 --- Vila do Lume};
-  \node[tabela, text width=50mm] (vs) at (3.6,-8.0)
-    {\etitulo{exp\_70\_sessoes} --- uma partida
+  % --- a app-70
+  \coordinate (g2) at ($(u.south)+(0,-1.2)$);
+  \node[camadalbl, anchor=south west] at (0,0 |- g2) {app-70 --- Vila do Lume};
+  \coordinate (r2) at ($(g2)+(0,-0.15)$);
+  \node[tabela, tb] (vs) at (3.15,0 |- r2)
+    {\etitulo{app\_70\_sessoes}\sub{uma partida}
      \nodepart{two}
-     \pk{id}, \fk{escola\_id}, \fk{estudante\_id}, \fk{turma\_id}\\
+     \pk{id}, \fk{escola\_id}, \fk{estudante\_id}\\
+     \texttt{turma\_id} \nt{a da hora da partida, sem FK}\\
      \texttt{exp\_version}, \texttt{schema\_version}\\
-     \texttt{bolha}: A$|$B$|$C --- do SERVIDOR\\
-     \texttt{cartoes\_servidos} --- $\neq$ apareceram\\
-     \texttt{aberta\_em}, \texttt{concluida\_em} --- do servidor\\
+     \texttt{bolha} \nt{A | B | C, do SERVIDOR}\\
+     \texttt{cartoes\_servidos} \nt{$\neq$ apareceram}\\
+     \texttt{aberta\_em}, \texttt{concluida\_em}\\
+     \quad\nt{relógio do servidor}\\
      \texttt{duracao\_seg}, \texttt{duracao\_total\_seg}\\
-     \texttt{status}: aberta $|$ completa $|$ abandonada\\
+     \texttt{status} \nt{aberta | completa | abandonada}\\
      \texttt{fogueiras\_acesas} \ldots{} \texttt{distancia\_m}\\
-     \quad --- resumo tipado, o que o painel ordena\\
-     \texttt{payload} JSONB --- bruto, fonte do\\
-     \quad reprocessamento\\
-     \texttt{leitura\_mensagens} JSONB};
+     \quad\nt{resumo tipado: o que o painel ordena}\\
+     \texttt{payload} \texttt{JSONB}\\
+     \quad\nt{bruto: a fonte do reprocessamento}\\
+     \texttt{leitura\_mensagens} \texttt{JSONB}};
 
-  \node[tabela, text width=48mm] (vp) at (11.4,-7.6)
-    {\etitulo{exp\_70\_perfis} --- retrato Schwartz
+  \node[tabela, tb] (vp) at (12.85,0 |- r2)
+    {\etitulo{app\_70\_perfis}\sub{retrato Schwartz}
      \nodepart{two}
-     \pk{id}, \fk{escola\_id}, \fk{sessao\_id}, \fk{estudante\_id}\\
-     \texttt{versao\_mapeamento} --- hoje 3\\
-     \texttt{valores} JSONB --- 10 valores; \texttt{null} $\neq$ 0\\
-     \texttt{graus} JSONB --- scored $|$ indicative $|$\\
-     \quad zero $|$ none\\
+     \pk{id}, \fk{escola\_id}, \fk{sessao\_id}\\
+     \fk{estudante\_id}\\
+     \texttt{versao\_mapeamento} \nt{hoje 3}\\
+     \texttt{valores} \texttt{JSONB} \nt{10 valores; \texttt{null} $\neq$ 0}\\
+     \texttt{graus} \texttt{JSONB} \nt{scored | indicative |}\\
+     \quad\nt{zero | none}\\
      \texttt{abertura\_vs\_conservacao}\\
      \texttt{transcendencia\_vs\_autopromocao}\\
-     \quad --- NULL se um polo não foi observado\\
+     \quad\nt{nulo se um polo não foi observado}\\
      \texttt{amostra\_suficiente}\\
-     \texttt{UNIQUE (sessao\_id, versao\_mapeamento)}};
+     \texttt{UNIQUE (sessao\_id,}\\
+     \quad\texttt{versao\_mapeamento)}};
 
-  \node[tabela, text width=40mm] (vb) at (11.6,-12.4)
-    {\etitulo{exp\_70\_bolhas} --- 1 linha por ESTUDANTE
+  \node[tabela, tb] (vb) at ($(vp.south)+(0,-1.1)$)
+    {\etitulo{app\_70\_bolhas}\sub{uma linha por ESTUDANTE}
      \nodepart{two}
      \pk{escola\_id, estudante\_id}\\
      \texttt{bolha}, \texttt{atribuida\_em}};
 
-  \node[actnote, text width=48mm, anchor=north west] at (3.0,-13.4)
-    {Por \textbf{estudante}, não por partida: repetir a partida não pode trocar o
-     nível, porque a folha do professor diz \enquote{esse estava na C} e o
-     relatório abre pelo nível. A atribuição é balanceada \emph{dentro da turma}
-     --- \emph{hash} de UUID pode dar 14/6/5 numa sala de 25, e aí o debate da
-     missão não acontece, porque ele depende de as três bolhas estarem na mesma
-     sala.};
+  \node[actnote, text width=58mm, anchor=north] at ($(vs.south)+(0,-0.6)$)
+    {\texttt{app\_70\_bolhas} é por \textbf{estudante}, não por partida: repetir a
+     partida não pode trocar o nível, porque a folha do professor diz
+     \enquote{esse estava na C} e o relatório abre pelo nível. A atribuição é
+     balanceada \emph{dentro da turma} --- \emph{hash} de UUID pode dar 14/6/5
+     numa sala de 25, e aí o debate da missão não acontece, porque ele depende
+     de as três bolhas estarem na mesma sala.};
 
-  \draw[erel] (vs.east) -- (vp.west)
-    node[ercard, pos=0.16]{1} node[ercard, pos=0.84]{N};
+  \draw[erel] ($(vs.north east)+(0,-1.0)$) -- ($(vp.north west)+(0,-1.0)$)
+    node[ercard, pos=0.12]{1} node[ercard, pos=0.88]{N}
+    node[ercard, midway, above=1pt]{\texttt{sessao\_id}};
   \draw[erel, dashed] (vp.south) -- (vb.north)
-    node[ercard, pos=0.5, right=2pt]{mesmo estudante};
+    node[ercard, midway]{mesmo estudante};
 
 \end{tikzpicture}}
-\caption[Modelo de dados das exps 02 e 70]{Modelo de dados da exp-02 e da
-  exp-70. Em \cd{exp\_70\_perfis}, \cd{null} \textbf{não é zero}: é valor que não
+\caption[Modelo de dados do UnooTube arquivado e da app-70]{Modelo de dados do UnooTube
+  arquivado (\cd{backup-exp04ef1b}, \adrr{ADR-116}) e da app-70. Em \cd{app\_70\_perfis}, \cd{null} \textbf{não é zero}: é valor que não
   recebeu número. \cd{graus} diz por quê, e é essa distinção que impede um
   relatório de afirmar recusa onde houve ausência de oportunidade.}
-\label{fig:er-exp02-70}
+\label{fig:er-exp04ef1b-app70}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    tb/.style={text width=60mm, anchor=north},
+    sens/.style={rectangle split part fill={unooRed, unooRedWash}}]
+  \def\nt#1{{\color{unooInkSoft}#1}}
+  \def\sub#1{\\{\color{white}#1}}
 
-  \node[camadalbl, anchor=west] at (0.2,1.9) {exp-90 --- Plano de aula};
-  \node[tabela, text width=46mm] (pl) at (3.4,-0.8)
-    {\etitulo{exp\_90\_planos}
+  % --- app-90
+  \node[camadalbl, anchor=south west] at (0,0.15) {app-90 --- Plano de aula};
+  \node[tabela, tb] (pl) at (3.15,0)
+    {\etitulo{app\_90\_planos}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{professor\_id}\\
      \texttt{serie}, \texttt{disciplina}, \texttt{titulo}\\
-     \texttt{status}: pendente $|$ gerando $|$\\
-     \quad pronto $|$ erro\\
+     \texttt{status} \nt{pendente | gerando | pronto | erro}\\
      \texttt{tentativas}, \texttt{iniciado\_em}, \texttt{erro}\\
      \texttt{tokens\_usados}\\
-     \texttt{caminho\_gerado\_md} --- imutável\\
-     \texttt{caminho\_html} --- o que o editor salvou};
+     \texttt{caminho\_gerado\_md} \nt{imutável}\\
+     \texttt{caminho\_html} \nt{o que o editor salvou}};
 
-  \node[tabelacat, text width=44mm] (pr) at (10.4,-0.6)
-    {\etitulo{exp\_90\_referencias} --- catálogo do contrato
+  \node[tabelacat, tb] (pr) at (12.85,0)
+    {\etitulo{app\_90\_referencias}\sub{catálogo do contrato}
      \nodepart{two}
      \pk{id}\\
-     \texttt{disciplina}, \texttt{serie} --- NULL = todas\\
+     \texttt{disciplina}, \texttt{serie} \nt{nula = todas}\\
      \texttt{nome}, \texttt{texto}, \texttt{ordem}\\
-     \texttt{UNIQUE (disciplina, serie, nome)}\\
-     \textbf{sem \texttt{escola\_id}}, fora da RLS};
+     \texttt{UNIQUE (disciplina, serie,}\\
+     \quad\texttt{nome)}\\
+     \nt{sem \texttt{escola\_id}: fora da RLS}};
 
-  \node[camadalbl, anchor=west] at (0.2,-5.2) {exp-91 --- Bem-estar do professor};
-  \node[tabela, text width=44mm, rectangle split part fill={unooRed, unooRedWash}] (bc) at (3.4,-7.6)
-    {\etitulo{exp\_91\_ciclos} --- DADO SENSÍVEL
+  % --- app-91
+  \coordinate (g2) at ($(pl.south)+(0,-1.2)$);
+  \node[camadalbl, anchor=south west] at (0,0 |- g2) {app-91 --- Bem-estar do professor};
+  \coordinate (r2) at ($(g2)+(0,-0.15)$);
+  \node[tabela, tb, sens] (bc) at (3.15,0 |- r2)
+    {\etitulo{app\_91\_ciclos}\sub{DADO SENSÍVEL}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{professor\_id}\\
-     \texttt{status}: aberto $|$ concluido $|$ expirado\\
-     \texttt{ordem\_itens[]} --- permutação de 1..21\\
-     \texttt{iniciado\_em}, \texttt{expira\_em} --- 21 dias\\
+     \texttt{status} \nt{aberto | concluido | expirado}\\
+     \texttt{ordem\_itens[]} \nt{permutação de 1 a 21}\\
+     \texttt{iniciado\_em}, \texttt{expira\_em} \nt{21 dias}\\
      \texttt{concluido\_em}\\
      \texttt{depressao}, \texttt{ansiedade}, \texttt{estresse}\\
-     \quad --- somas $\times 2$, preenchidas ao concluir};
+     \quad\nt{somas $\times$2, preenchidas ao concluir}};
 
-  \node[tabela, text width=46mm, rectangle split part fill={unooRed, unooRedWash}] (bk) at (11.0,-8.4)
-    {\etitulo{exp\_91\_checkins}
+  \node[tabela, tb, sens] (bk) at (12.85,0 |- r2)
+    {\etitulo{app\_91\_checkins}\sub{DADO SENSÍVEL}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{professor\_id}\\
      \fk{ciclo\_id}\\
-     \texttt{numero} 1..7, \texttt{dia}, \texttt{status}\\
-     \texttt{itens[]} --- 3 itens do DASS-21\\
-     \texttt{respostas} JSONB --- [\{item, valor 0..3\}]\\
-     \texttt{texto\_livre} --- nunca em log nem\\
-     \quad telemetria\\
+     \texttt{numero} \nt{1 a 7}, \texttt{dia}, \texttt{status}\\
+     \texttt{itens[]} \nt{3 itens do DASS-21}\\
+     \texttt{respostas} \texttt{JSONB}\\
+     \quad\nt{[\{item, valor de 0 a 3\}]}\\
+     \texttt{texto\_livre} \nt{nunca em log nem telemetria}\\
      \texttt{abertura}, \texttt{pergunta}, \texttt{acolhimento}\\
-     \texttt{origem\_texto}: ia $|$ fallback $|$ seguranca\\
+     \texttt{origem\_texto} \nt{ia | fallback | seguranca}\\
      \texttt{sinal\_de\_apoio}, \texttt{tokens\_ia}\\
-     \texttt{UNIQUE (escola\_id, professor\_id, dia)}};
+     \texttt{respondido\_em}\\
+     \texttt{UNIQUE (escola\_id,}\\
+     \quad\texttt{professor\_id, dia)}};
 
-  \draw[erel, dashed] (pl.east) -- (pr.west)
-    node[ercard, midway, above]{monta o \emph{prompt}};
-  \draw[erel] (bc.east) -- (bk.west)
-    node[ercard, pos=0.18]{1} node[ercard, pos=0.84]{7};
+  \draw[erel, dashed] ($(pl.north east)+(0,-1.0)$) -- ($(pr.north west)+(0,-1.0)$)
+    node[ercard, midway, above=1pt]{monta o \emph{prompt}};
+  \draw[erel] ($(bc.north east)+(0,-1.0)$) -- ($(bk.north west)+(0,-1.0)$)
+    node[ercard, pos=0.12]{1} node[ercard, pos=0.88]{7};
 
 \end{tikzpicture}}
-\caption[Modelo de dados das exps 90 e 91]{Modelo de dados da exp-90 e da
-  exp-91. As caixas vermelhas são dado \emph{sensível} de saúde (LGPD art.~11):
+\caption[Modelo de dados das apps 90 e 91]{Modelo de dados da app-90 e da
+  app-91. As caixas vermelhas são dado \emph{sensível} de saúde (LGPD art.~11):
   RLS \emph{e} posse por \cd{professor\_id} em toda \emph{query}, sem nenhuma rota
-  de gestor ou agregado. \cd{exp\_90\_referencias} é catálogo do contrato e fica
+  de gestor ou agregado. \cd{app\_90\_referencias} é catálogo do contrato e fica
   \textbf{fora} da RLS, como \cd{experiencias}.}
-\label{fig:er-exp90-91}
+\label{fig:er-app90-91}
 \end{figure}
 
-\section{As quatro tabelas da exp-07}
-\label{sec:tabelas-exp07}
-
-\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
-\toprule
-\headrow \thd{Tabela} & \thd{O que guarda}\\
-\midrule
-\cd{exp\_07\_sessoes} & O estado da missão, uma linha por estudante. Chave
-  \cd{(escola\_id, estudante\_id)}, como na exp-03. O \cd{passo} são \textbf{nove}
-  valores, não os dezessete estados de tela do desenho: modal aberto, cutucão de
-  ociosidade e os sete segundos da cascata são do cliente, e gravá-los faria o
-  banco mudar de schema a cada ajuste de layout. Inclui \cd{reacoes} (JSONB), que
-  guarda a cena que o bairro fez --- reger no F5 mostraria o grupo reagindo de
-  outro jeito à mesma mensagem.\\
-\zebra \cd{exp\_07\_mensagens} & A conversa com Amara, \textbf{depois} da decisão.
-  \cd{texto} é caixa livre escrita por menor de idade, com teto de 600
-  caracteres e 3 turnos (\adrr{ADR-66}). Fora de log, fora da telemetria, e sem
-  rota de gestor que a alcance.\\
-\cd{exp\_07\_reflexoes} & O \enquote{Meu percurso}: duas estratégias e uma
-  justificativa, todas de lista fechada --- \textbf{zero texto livre aqui}. Mais
-  a \cd{devolutiva} escrita pelo modelo, que não é nota e não entra no
-  \cd{score}.\\
-\zebra \cd{exp\_07\_gates\_turma} & A etapa da aula, por \textbf{turma}. É o que
-  deixa a professora fechar a Aula 1 em trinta telas ao mesmo tempo e congelar
-  todas no debate. Chave \cd{(escola\_id, turma\_id)}.\\
-\bottomrule
-\end{tabularx}
-
-\begin{regra}
-O \cd{score} só aceita \textbf{0, 70 ou 100} --- um \emph{CHECK} no banco, e não
-só uma constante no código. São os três valores que \arq{regras/pontuacao.ts}
-produz; qualquer outro número ali seria pontuação vinda do cliente (regra
-inviolável nº 3). Um segundo \emph{CHECK} amarra \cd{passo = 'fim'} a
-\cd{concluido\_em} não nulo: uma tela dizendo \enquote{missão cumprida} sobre uma
-linha sem carimbo é um relatório que mente para o professor.
-\end{regra}
-
-\begin{atencao}
-\cd{exp\_07\_mensagens} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
-\textbf{sequência}, além do \emph{grant} de tabela --- a mesma armadilha das
-duas tabelas da exp-03. Sem ele o \cd{INSERT} falha para a \emph{role} de
-runtime, e só em produção, que é onde ela existe.
-\end{atencao}
-
-
-\section{As cinco tabelas da exp-08}
-\label{sec:tabelas-exp08}
+\section{As cinco tabelas da exp08ef4b}
+\label{sec:tabelas-exp08ef4b}
 
 \begin{tabularx}{\linewidth}{@{}L{44mm}X@{}}
 \toprule
 \headrow \thd{Tabela} & \thd{O que guarda}\\
 \midrule
-\cd{exp\_08\_conteudo\_turma} & O \textbf{pacote curado} que o professor
+\cd{exp08ef4b\_conteudo\_turma} & O \textbf{pacote curado} que o professor
   homologa antes da aula --- é a tabela que não existe nas outras experiências.
   Uma linha por turma, com o contexto, os 3 questionamentos (com as réplicas) e
   as 4 cláusulas (com os argumentos de mediação) em \cd{JSONB}. O booleano
@@ -877,25 +1478,25 @@ runtime, e só em produção, que é onde ela existe.
   verdadeiro, a experiência do estudante lê o banco curado da Unooria, e
   rascunho de IA \textbf{não conta}. \textbf{Sobrevive ao \enquote{Zerar
   turma}}: a curadoria custou tempo do professor.\\
-\zebra \cd{exp\_08\_sessoes} & O estado da missão, uma linha por estudante.
+\zebra \cd{exp08ef4b\_sessoes} & O estado da missão, uma linha por estudante.
   Chave \cd{(escola\_id, estudante\_id)}. O que é \textbf{1:1} com a sessão é
   \emph{coluna} dela: a \cd{clausula\_id} fixada, a
   \cd{latencia\_clausula\_seg}, o \cd{confirmou\_provocacao} e o
   \cd{manifesto\_markdown} compilado. \textbf{Não há coluna \cd{score}}, e a
   ausência é o desenho: a missão não pontua.\\
-\cd{exp\_08\_auditorias} & Cada questionamento disparado contra a máquina ---
+\cd{exp08ef4b\_auditorias} & Cada questionamento disparado contra a máquina ---
   \textbf{1:N} de propósito. A cota é sobre questionamentos \emph{distintos}, e
   um contador perderia \emph{quais} a criança escolheu fazer, que é o dado da
   hipótese pedagógica (a contradição só aparece no do preconceito histórico). Um
   \cd{UNIQUE (escola\_id, estudante\_id, prompt\_id)} faz a dedupe valer mesmo
   se um caminho novo esquecer de checar.\\
-\zebra \cd{exp\_08\_respostas\_percurso} & O \enquote{Meu Percurso}: duas
+\zebra \cd{exp08ef4b\_respostas\_percurso} & O \enquote{Meu Percurso}: duas
   palavras-chave e um parágrafo de 20 a 800 caracteres escrito por menor de
   idade. Fora de \emph{log}, fora da telemetria analítica, alcançável só pelo
   professor da turma dela. \textbf{Sem \emph{flag} de moderação}: o texto com
   dado pessoal é recusado com \textbf{422} e não chega a esta tabela --- não há
   registro moderado a marcar.\\
-\cd{exp\_08\_gates\_turma} & O \textbf{Checkpoint~A}, por turma ---
+\cd{exp08ef4b\_gates\_turma} & O \textbf{Checkpoint~A}, por turma ---
   \cd{missao | debate}. Chave \cd{(escola\_id, turma\_id)}. É esta linha que o
   \emph{polling} de 5 segundos lê, porque não há WebSocket de aplicação no
   Cloud Run (\adrr{ADR-93}).\\
@@ -918,39 +1519,410 @@ apareceria na aula, não no \emph{deploy}.
 \end{regra}
 
 \begin{atencao}
-\cd{exp\_08\_auditorias} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
+\cd{exp08ef4b\_auditorias} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
 \textbf{sequência}, além do \emph{grant} de tabela --- a quarta aparição da
 mesma armadilha. Sem ele o \cd{INSERT} falha para a \emph{role} de runtime, e só
 em produção, que é onde ela existe.
 \end{atencao}
 
 
-\section{As quatro tabelas da exp-06}
-\label{sec:tabelas-exp06}
+\section{As quatro tabelas da exp05ef1b}
+\label{sec:tabelas-exp05ef1b}
+
+A v2.2 de Quem mandou isso? (\adrr{ADR-118}), na migração
+\arq{20260926130000\_\B{}exp05ef1b\_\B{}quem\_\B{}mandou\_\B{}isso\_\B{}v2}. As quatro têm
+\cd{escola\_id NOT NULL}, RLS \cd{ENABLE} + \cd{FORCE} com a política por escola, e
+nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
+\emph{role} de \emph{runtime} é só de tabela.
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
 \headrow \thd{Tabela} & \thd{O que guarda}\\
 \midrule
-\cd{exp\_06\_sessoes} & O estado da missão, uma linha por estudante. Chave
+\cd{exp05ef1b\_pacotes} & O \textbf{pacote de uma turma}: o recorte do preparo
+  (componente curricular, tema, fatos, contexto) e as oito mensagens
+  \textbf{com} o gabarito em \cd{JSONB} --- lido e aprovado sempre inteiro, então
+  não há tabela-filha. \cd{ativo} marca o que a turma usa, \cd{rodada\_atual} é a
+  reaplicação, \cd{aprovado\_em} nulo é rascunho. \textbf{É a ATIVIDADE da
+  evidência}: o \cd{id} é o \cd{atividade\_id} das marcas.\\
+\zebra \cd{exp05ef1b\_gates\_turma} & O \textbf{relógio da turma} --- \cd{triagem},
+  \cd{revelacao}, \cd{explicar}, \cd{reflexao} ---, que só anda para a frente e
+  volta a \cd{triagem} ao aprovar um pacote e ao zerar. Chave
+  \cd{(escola\_id, turma\_id)}; é a linha que o \emph{polling} de 3~s lê
+  (\adrr{ADR-93}).\\
+\cd{exp05ef1b\_sessoes} & A sessão do estudante numa \textbf{rodada} de um
+  pacote, chave \cd{(escola\_id, estudante\_id, pacote\_id, rodada)}: nasce no
+  \enquote{Entrar no grupo}, e zerar a turma abre outra linha em vez de apagar
+  esta. Guarda a seleção (0 a 3) e os carimbos dos \emph{latches} ---
+  \cd{confirmado\_em}, \cd{votou\_em}, \cd{alertas\_em}, \cd{regra\_em},
+  \cd{concluido\_em} (\cd{reflexao\_em} e \cd{operacoes\_em} só pelo
+  histórico) ---, o motivo votado, o \cd{tempo\_feed\_segundos} e a
+  \cd{versao\_instrumento} (2.5.0 desde a \adrr{ADR-177}). O dado bruto das
+  duas ações do Canal A: os alertas do grupo, um item por pedido aberto, com
+  as execuções e o enviado (\cd{alertas}, até 4); as ligações do robô, em
+  ordem, com os blocos e o que ele fez em cada mensagem (\cd{regra\_testes},
+  até 5), e o robô enviado (\cd{regra\_final}), os dois com \cd{laco}. As
+  colunas do cartão de frases da \adrr{ADR-171} (\cd{frases\_operacoes},
+  \cd{respostas\_operacoes}) ficam pelo histórico. \textbf{Não tem coluna de passo} nem de pontuação: o
+  nível é da evidência.\\
+\zebra \cd{exp05ef1b\_reflexoes} & \textbf{Histórico desde a \adrr{ADR-145}}:
+  nenhuma rota escreve mais nela. A regra Se/Então, 1:1 com a sessão: a
+  condição (\cd{condicional\_se}) e o \enquote{Então} (\cd{acao\_entao}, 15 a
+  240 caracteres) --- \textbf{texto livre escrito por menor de idade}. Tabela à
+  parte de propósito: não vai a \emph{log} (\cd{acao\_entao}, \cd{acaoEntao} e
+  \cd{entao} estão na redação), não vai à telemetria, e o painel só a preenche
+  para quem leciona na turma.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Os \emph{latches} estão em ordem no banco.} Cada carimbo exige o
+anterior: confirmar o Mural exige \textbf{exatamente três} na seleção, votar
+exige ter confirmado (e motivo e carimbo andam juntos), os alertas exigem o
+voto (até quatro, e o carimbo só com os quatro), ligar o robô exige o voto (e
+no máximo cinco ligações), enviar o robô exige o voto e uma condição do
+vocabulário --- o robô não depende do alerta ---, e concluir exige só o voto
+--- quem sai antes de uma ação fica \enquote{Não avaliado} nela, nunca
+travado (\adrr{ADR-145}, \adrr{ADR-171}, \adrr{ADR-177}). O
+\emph{CHECK} vale por \emph{statement}, então o \emph{service} grava carimbo e
+dado no MESMO \cd{UPDATE} --- a seleção com o \cd{confirmado\_em}, o motivo
+com o \cd{votou\_em}, o quarto alerta com o \cd{alertas\_em}, o robô com o
+\cd{regra\_em} ---, senão o estado intermediário reprova. A seleção fica dentro dos oito ids (\cd{<@ ARRAY['msg\_1'
+\ldots 'msg\_8']}) e com no máximo três; o \cd{tempo\_feed\_segundos} existe
+exatamente quando o Mural fechou.
+
+\textbf{Os vocabulários estão em DOIS lugares}, e de propósito: componente
+curricular, origem, fase, motivo e condição são \emph{CHECK} aqui e constante em
+\arq{catalogo.ts} e \arq{regras/passos.ts}, e a suíte de Postgres compara os dois
+textos. É o par que já custou um \emph{deploy} em \cd{permissoes}.
+
+\textbf{A matriz 2$\times$2 NÃO entra no banco.} O \emph{CHECK} cobra que
+\cd{mensagens\_json} é um \emph{array} de oito; contar os quadrantes e o
+equilíbrio de formato exigiria desmontar o \cd{JSONB} dentro do \emph{CHECK}, e o
+gabarito tem uma gramática só --- a de \arq{regras/pacote.ts\#validarPacote}.
+\end{regra}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}X@{}}
+\toprule
+\headrow \thd{Decisão de esquema} & \thd{Por quê}\\
+\midrule
+Dois índices únicos \textbf{parciais} por turma & Um \cd{WHERE ativo} e um
+  \cd{WHERE aprovado\_em IS NULL}: um pacote ativo e um rascunho por turma. O
+  \cd{@@unique} do Prisma não os expressa, e sem eles dois cliques em
+  \enquote{Aprovar} deixariam a turma com dois pacotes ativos --- e o estudante
+  com o que o \cd{findFirst} achasse primeiro.\\
+\zebra \emph{CHECKs} de aprovação & \cd{ativo} só com \cd{aprovado\_em};
+  \cd{aprovado\_em} e \cd{aprovado\_por} nulos juntos; rascunho sempre na rodada
+  1. \cd{aprovado\_por} é carimbo sem FK: a saída de um professor da rede não
+  pode travar o pacote da turma.\\
+O tema com teto de caracteres E de palavras & \cd{btrim} entre 3 e 60 e até 8
+  palavras: o tema entra na fala da Nina, e cinco espaços não são um tema.\\
+\zebra FK composta \cd{(escola\_id, pacote\_id)} & A sessão de uma escola não pode
+  apontar para o pacote de outra --- o alvo é o \cd{@@unique([escolaId, id])} do
+  pacote.\\
+O \enquote{Então} com \cd{btrim} & \cd{char\_length(btrim(acao\_entao)) BETWEEN
+  15 AND 240}: quinze espaços não são uma regra, e contariam como entregue no
+  painel.\\
+\zebra Retenção & A da vigência contratual, sem rotina de expurgo, como nas
+  outras missões (\adrr{ADR-13}). Declarar um prazo aqui seria escrever o que
+  nenhum \emph{scheduler} cumpre.\\
+\bottomrule
+\end{tabularx}
+
+
+\section{As quatro tabelas da exp04ef1b}
+\label{sec:tabelas-exp04ef1b}
+
+O Jornal da Escola (\adrr{ADR-117}), na migração
+\arq{20260927120000\_\B{}exp04ef1b\_\B{}jornal\_\B{}da\_\B{}escola}, e o Canal A
+puro da 3.0.0 (\adrr{ADR-168}) na \arq{20261016130000\_\B{}exp04ef1b\_\B{}canal\_\B{}a},
+que só acrescenta colunas e \emph{CHECKs}. As quatro têm
+\cd{escola\_id NOT NULL}, RLS \cd{ENABLE} + \cd{FORCE} com a política por escola, e
+nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
+\emph{role} de \emph{runtime} é só de tabela, guardado. O prefixo não colide com
+\cd{backup\_exp04ef1b\_sessoes}, a do UnooTube arquivado.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp04ef1b\_pacotes} & A \textbf{atividade} da evidência: a disciplina, o
+  tema, os tópicos e as oito notícias \textbf{com} o gabarito (publicável, pilar
+  em falta, explicação) e a consequência, em \cd{JSONB}; a \cd{midia} (as URLs
+  geradas, por notícia), a \cd{origem} (\cd{padrao} $|$ \cd{ia}), o carimbo de
+  aprovação e os contadores da telemetria do professor (\cd{geracoes},
+  \cd{tokens\_usados}, \cd{painel\_vistas}). \cd{ativo} marca o que a turma
+  usa. \cd{midia\_aprovada} (\cd{JSONB}, \cd{\{n1: url\}}, \emph{CHECK} de
+  objeto) guarda a URL que o professor APROVOU por notícia (\adrr{ADR-147}): a
+  imagem só chega ao estudante quando é a mesma de \cd{midia}, e o
+  \enquote{Gerar outra} troca \cd{midia} e deixa só aquela notícia à espera do
+  novo OK. \cd{simulacao} (\cd{JSONB}, \emph{array} de duas ou nulo) guarda as
+  duas matérias da simulação com o gabarito; nula nos pacotes anteriores à
+  3.0.0, que usam as do banco padrão.\\
+\zebra \cd{exp04ef1b\_gates\_turma} & O \textbf{relógio da turma}:
+  \cd{exploracao} $|$ \cd{resultado} $|$ \cd{revisao}, o pacote em andamento, a
+  \textbf{rodada} e os carimbos dos dois portões. Chave
+  \cd{(escola\_id, turma\_id)}; é a linha que o \emph{polling} de 5\,s lê
+  (\adrr{ADR-93}). Zerar e homologar voltam a etapa e limpam os carimbos no
+  mesmo \cd{UPDATE}.\\
+\cd{exp04ef1b\_sessoes} & Uma linha por estudante, pacote e rodada (\cd{UNIQUE}
+  de cinco colunas, com o nome dado à mão). O passo gravado, as pistas abertas
+  (\cd{JSONB}, uma entrada por par e fase), as vagas, o layout, a origem do
+  layout e as verificadas de cada edição, o motivo, as tentativas da Chave e os
+  carimbos dos \emph{latches}. Desde a 3.0.0: os \cd{julgamentos} da mesa
+  (\cd{JSONB}, o primeiro de cada par), a \cd{chave\_montagem} (a Chave como foi
+  montada), a \cd{simulacao} e a \cd{transferencia} com os seus carimbos.
+  \textbf{Nenhum campo de texto livre.}\\
+\zebra \cd{exp04ef1b\_diagramacoes} & O \emph{cache} da diagramação por IA:
+  pacote e as três vagas NA ORDEM (a \cd{chave}, como \cd{n1,n5,n3}) \seta{} layout, com
+  os \emph{tokens} gastos. É o que limita o custo às combinações usadas. Fica sob
+  RLS também: a chave diz quais três notícias uma turma escolheu.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Os \emph{latches} são EQUIVALÊNCIAS com o passo gravado}, e não só
+implicações: \cd{publicada1\_em} existe se e só se o passo saiu de \cd{desafio} e
+\cd{mesa}; o motivo, se e só se saiu também de \cd{motivo}; a Chave formada, se e
+só se o passo está de \cd{revisao} em diante; \cd{publicada2\_em}, de
+\cd{comparativo} em diante; e \cd{fim}, se e só se há \cd{concluida\_em}. Os da
+3.0.0 são IMPLICAÇÕES, porque a sessão da 2.x passou por passos que não
+existiam: a montagem só com a Chave formada; a simulação e a transferência, cada
+uma com o seu carimbo, só de \cd{transferencia} em diante. Cada
+edição publicada exige as três vagas DIFERENTES dentro dos oito ids, o layout, a
+origem e as verificadas no mesmo gesto. Os passos \cd{resultado} e \cd{chave}
+\textbf{nunca} são gravados --- a etapa os impõe a quem está em
+\cd{publicada} ---, e um \emph{CHECK} recusa os dois: gravados, fariam o F5 de
+uma rodada zerada abrir a Chave sem a revisão liberada. O \emph{CHECK} vale por
+\emph{statement}, então o \emph{service} grava carimbo e passo no MESMO
+\cd{UPDATE}.
+\end{regra}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}X@{}}
+\toprule
+\headrow \thd{Decisão de esquema} & \thd{Por quê}\\
+\midrule
+Um índice único \textbf{parcial} por turma & \cd{exp04ef1b\_pacotes\_um\_ativo},
+  \cd{WHERE ativo}: sem ele, duas homologações simultâneas --- ou duas primeiras
+  entradas criando o banco padrão --- deixariam a turma com duas atividades em
+  andamento. O Prisma não o enxerga, e ele não aparece no \emph{schema}.\\
+\zebra O pacote de IA exige quem o aprovou & \emph{CHECK}
+  \cd{origem = 'padrao' OR aprovado\_por IS NOT NULL}: o pacote \cd{ia} sem
+  aprovação é um rascunho que escapou do preparo: nada gerado chega à turma sem
+  a curadoria do professor. O \cd{padrao}
+  pode nascer sozinho, na primeira entrada da turma.\\
+Oito notícias, e a régua fora do banco & O \emph{CHECK} cobra um \emph{array} de
+  oito; meios, composição e réguas de palavras são o Zod da homologação
+  (\arq{invariantes.ts}). Contá-los no banco exigiria desmontar o \cd{JSONB}
+  dentro do \emph{CHECK} --- duas gramáticas para a mesma regra.\\
+\zebra Os portões andam com a etapa & \cd{resultado\_liberado\_em} existe se e só
+  se a etapa é \cd{resultado} ou \cd{revisao}, e \cd{revisao\_liberada\_em} se e
+  só se é \cd{revisao}.\\
+Os vocabulários em DOIS lugares & Etapa, passo, meio, layout, motivo e origem
+  são \emph{CHECK} aqui e constante em \arq{vocabulario.ts} e
+  \arq{regras/passos.ts}, e a suíte de Postgres compara os dois textos.\\
+\zebra Retenção & A da vigência contratual, sem rotina de expurgo, como nas
+  outras missões (\adrr{ADR-13}).\\
+\bottomrule
+\end{tabularx}
+
+\section{As quatro tabelas da exp06ef1b}
+\label{sec:tabelas-exp06ef1b}
+
+O Júri Estadual de Projetos (\adrr{ADR-137}), com o Jornal da Escola como
+molde. A migração é a
+\arq{20261002180000\_\B{}exp06ef1b\_\B{}juri\_\B{}estadual} (a quarta,
+\cd{exp06ef1b\_gates\_historico}, entrou na
+\arq{20261010120000\_\B{}exp06ef1b\_\B{}prd\_\B{}v2}, \adrr{ADR-157}), e as quatro têm \cd{escola\_id NOT NULL}, RLS \cd{ENABLE} +
+\cd{FORCE} com a política por escola --- o pacote entra junto: o tema e os
+assuntos que um professor escreveu são da escola dele, e o acervo inteiro é o
+que a galeria só revela com o portão aberto ---, e nenhuma sequência: as chaves
+são \cd{uuid} ou a turma, e o \cd{GRANT} à \emph{role} de \emph{runtime} é só de
+tabela, guardado.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp06ef1b\_pacotes} & A \textbf{atividade} da evidência: a disciplina, o
+  tema, os assuntos, o contexto opcional e a mostra em \cd{JSONB} (quatro
+  categorias e quarenta projetos --- dez por área, \adrr{ADR-164}; os pacotes
+  de dezesseis da 0.4.x continuam legíveis ---, com o título, a escola, o
+  perfil, a legenda, o bastidor, as \emph{hashtags} e a descrição da imagem); a
+  \cd{midia} (as URLs geradas, por projeto; no banco padrão, as imagens do
+  banco que existem), \cd{imagens\_aprovadas\_em} (a SEGUNDA fase da
+  aprovação, \adrr{ADR-151}: nulo, a atividade não vai ao ar e as imagens
+  ainda se refazem; preenchido, elas congelam), a \cd{origem} (\cd{ia} ou \cd{padrao}, o banco padrão da
+  \adrr{ADR-157}), a telemetria docente (\cd{preparo\_iniciado\_em},
+  \cd{aprovado\_em}, \cd{aprovado\_por}, \cd{painel\_visto\_em},
+  \cd{painel\_vistas}), \cd{ativo} (a em andamento) e os contadores da IA do
+  preparo (\cd{ia\_geracoes}, \cd{ia\_tokens}).\\
+\zebra \cd{exp06ef1b\_gates\_turma} & O \textbf{relógio da turma}, com a turma
+  como chave: o pacote em andamento, a \textbf{rodada}, a etapa
+  (\cd{exploracao} $|$ \cd{galeria}; o \cd{desvio} da \adrr{ADR-152} saiu
+  com a \adrr{ADR-157}) e o carimbo do portão (\cd{galeria\_liberada\_em};
+  \cd{desvio\_liberado\_em} fica, sempre nulo). É a linha que o \emph{polling} de 3\,s lê
+  (\adrr{ADR-93}). Zerar e pôr outra atividade no ar voltam a etapa e limpam os
+  carimbos no mesmo \cd{UPDATE}.\\
+\cd{exp06ef1b\_gates\_historico} & Uma linha por etapa liberada (EVT-P05,
+  \adrr{ADR-157}): turma, etapa e \cd{liberada\_em}.\\
+\zebra \cd{exp06ef1b\_sessoes} & Uma linha por estudante, pacote e rodada
+  (\cd{exp06ef1b\_sessao\_unica\_por\_rodada}). O passo gravado, a \cd{semente}
+  e as quatro listas do feed (servidos, curtidos, salvos, permanências; desde o
+  instrumento 3.0.0, os servidos são só apresentações, sem repetir projeto, e as
+  sessões 2.0.0 trazem também os outros três formatos), o
+  relógio do feed (\cd{feed\_iniciado\_em}, os 8\,min) e o batimento da
+  cédula aberta (\cd{cedula\_batimento\_em}, \cd{cedula\_inativa\_desde},
+  um par que só existe antes do voto); as \textbf{pastas} do salvar
+  (\cd{pastas}, \cd{JSONB} post \seta{} área, a separação desde a 0.7.0,
+  \adrr{ADR-176}); o voto, a convicção e o carimbo do
+  \emph{latch} 1; a \cd{auditoria} da galeria (\cd{JSONB}
+  \cd{\{abertos, buscas\}}, sem o texto da busca); a \textbf{separação}
+  (\cd{classificacao\_\B{}respostas}, \cd{classificacao\_\B{}acertos},
+  \cd{classificacao\_\B{}total}, \cd{classificada\_\B{}em}, \adrr{ADR-174}; desde a
+  \adrr{ADR-176}, gravadas no voto a partir das pastas); a ação
+  da revisão, o voto final e o carimbo do \emph{latch} 2; os \cd{*\_status}
+  (desde a 0.6.0, só \cd{classificacao\_\B{}status} e \cd{logica\_status} são
+  escritos; \cd{auditoria\_status} fica nas linhas antigas); a \textbf{regra
+  SE \ldots{} ENTÃO} (\cd{regra\_se}, \cd{regra\_entao}) com o carimbo da
+  cadeia (as colunas dos pacotes, \cd{pacotes\_tentativas} e
+  \cd{pacotes\_remontados\_em}, saíram com a \adrr{ADR-151}); os cartões de Mariana (sem uso desde a \adrr{ADR-176}); a conclusão e a
+  versão do instrumento (\cd{5.0.0} desde a \adrr{ADR-176}). \textbf{Nenhum campo de texto livre.} Desde a
+  \adrr{ADR-157} ficam SEM USO a justificativa (\cd{voto\_motivo},
+  \cd{voto\_trecho}, \cd{revisao\_*}), o \cd{complemento\_projeto} e as
+  colunas \cd{desvio\_*}; \cd{enquete\_*\_alt} existem e não são escritas
+  (a resposta mora em \cd{evidencias\_marcas}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Os \emph{latches} são EQUIVALÊNCIAS com o passo gravado}, como no
+Jornal: \cd{votado\_em} existe se e só se o passo saiu de \cd{credencial} e
+\cd{feed} (desde a \adrr{ADR-176}, o voto leva direto a \cd{lacrada} e grava
+\cd{classificada\_\B{}em} no mesmo \cd{UPDATE}; \cd{classificacao}, o passo da
+\adrr{ADR-174}, só existe nas sessões antigas, e \cd{classificada\_\B{}em} nunca
+existe com o passo nele);
+\cd{revisado\_em}, se e só se está de \cd{revisada} em diante
+(até a \adrr{ADR-151}, de \cd{pacotes}, o passo que saiu; até a
+\adrr{ADR-152}, de \cd{cadeia}); \cd{desvio\_concluido\_em} só existe
+nas sessões antigas, e só depois da revisão (a equivalência com a cadeia caiu
+na \adrr{ADR-157}); \cd{cadeia\_\B{}montada\_em}, de \cd{mariana} em diante; \cd{cartoes\_em}, de
+\cd{enquetes} em diante (na \adrr{ADR-174}, os cartões levavam direto a
+\cd{fim}; desde a \adrr{ADR-176}, é a regra que grava \cd{fim} e
+\cd{concluida\_em} no mesmo \cd{UPDATE}, e o \emph{CHECK} dos cartões só cobra
+a direção que continua verdadeira: quem tem cartões está em \cd{enquetes} ou
+\cd{fim}; \cd{mariana} e \cd{enquetes} só existem nas sessões antigas); e \cd{fim} se e só se há \cd{concluida\_em}. O voto,
+a convicção e o carimbo andam juntos, e a revisão também: \cd{manter}
+repete o voto lacrado e \cd{trocar} escolhe outro (\cd{complementar} segue
+aceito no \emph{CHECK} pelas linhas da 0.3.0 e é lido como manter). O passo
+\cd{galeria} \textbf{nunca} é gravado --- a etapa o impõe a quem está em
+\cd{lacrada} ---, e um \emph{CHECK} o recusa: gravado, faria o F5 de uma rodada zerada abrir a galeria sem o
+professor ter liberado. O \emph{CHECK} vale por \emph{statement}, então o
+\emph{service} grava carimbo e passo no MESMO \cd{UPDATE}.
+\end{regra}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}X@{}}
+\toprule
+\headrow \thd{Decisão de esquema} & \thd{Por quê}\\
+\midrule
+Um índice único \textbf{parcial} por turma & \cd{exp06ef1b\_pacotes\_um\_ativo},
+  \cd{WHERE ativo}: os inativos são vários (as atividades prontas e as
+  passadas, com as sessões delas), e a turma tem uma só em andamento. O Prisma
+  não o enxerga.\\
+\zebra Os pesos não são gravados & A sessão guarda as listas de posts servidos,
+  curtidos, salvos e com permanência; os pesos por área e a área líder são DERIVADOS delas pelo motor
+  puro. Um valor derivado não diverge do que o gerou. O \emph{CHECK} limita
+  os servidos a dez.\\
+Quatro categorias e quarenta projetos, e a régua fora do banco & O
+  \emph{CHECK} cobra os dois \emph{arrays} com o tamanho certo (16 ou 40
+  projetos desde a \adrr{ADR-164}: a leitura aceita o pacote antigo, e é o Zod
+  da escrita que exige 40); ids, áreas,
+  \emph{hashtags}, réguas de palavras e termos proibidos são o Zod da
+  homologação (\arq{invariantes.ts}).\\
+\zebra Os ids do voto têm forma & \cd{voto\_projeto}, \cd{voto\_revisado} e
+  \cd{complemento\_projeto} casam \cd{\textasciicircum{}proj-[a-d](10|[1-9])\$}
+  (de \cd{proj-a1} a \cd{proj-d10}, \adrr{ADR-164}), e
+  convicção, ação da revisão, cartões de motivo (\cd{v1}--\cd{v3},
+  \cd{r1}--\cd{r3}) e cartões de Mariana são vocabulário fechado. O trecho
+  é um índice de 0 a 11: o texto da frase nunca é gravado.\\
+Os portões andam com a etapa & \cd{galeria\_liberada\_em} existe se e só se a etapa
+  é \cd{galeria} ou \cd{desvio}; \cd{desvio\_liberado\_em}, se e só se é
+  \cd{desvio}.\\
+\zebra Os vocabulários em DOIS lugares & Etapa, passo, origem, disciplina,
+  convicção, ação da revisão e cartões são \emph{CHECK} aqui e constante em
+  \arq{vocabulario.ts}, \arq{regras/passos.ts} e \arq{conteudo.ts}, e a suíte de
+  Postgres compara os dois textos.\\
+Retenção & A da vigência contratual, sem rotina de expurgo (\adrr{ADR-13}).\\
+\bottomrule
+\end{tabularx}
+
+\section{As quatro tabelas da exp07ef1b}
+\label{sec:tabelas-exp07ef1b}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp07ef1b\_coberturas} & A \textbf{atividade} da evidência: o tema que a
+  professora homologou, os 12 posts \textbf{com} o gabarito (enquadramento, fonte
+  ouvida, ângulo) em \cd{JSONB}, as URLs da mídia gerada e a \cd{origem}
+  (\cd{padrao} $|$ \cd{ia}). Um índice único parcial deixa só uma cobertura
+  \cd{ativa} por turma; \emph{CHECK} cobra os 12 posts e o \cd{aprovada\_por} da
+  cobertura de IA. \cd{podcast} guarda as três falas do Bloco 2 do podcast de
+  recapitulação no tema dela (nulo = as do roteiro aprovado, \adrr{ADR-119});
+  a A Seleção é a única missão com podcast que não usa \cd{podcast\_roteiros}
+  (\adrr{ADR-150}).
+  \cd{imagens\_aprovadas\_em} é a segunda fase da aprovação (\adrr{ADR-146}):
+  nulo, a cobertura existe mas não vai ao ar.\\
+\zebra \cd{exp07ef1b\_gates\_turma} & O relógio da turma: \cd{exploracao} $|$
+  \cd{mural} $|$ \cd{fichas} $|$ \cd{explicacao}, mais a cobertura e a
+  \textbf{rodada}. Zerar incrementa a rodada e apaga a evidência da
+  cobertura (\adrr{ADR-155}); as sessões ficam.\\
+\cd{exp07ef1b\_sessoes} & Uma linha por estudante, cobertura e rodada. A tríade
+  (três ids distintos do feed), a legenda (10 a 140 \emph{code points}), a matriz
+  (as três lentes somando 3), o par (\cd{par\_sessao\_id} sem FK ou
+  \cd{par\_virtual}, e o rótulo congelado). Os \emph{CHECK} amarram o
+  \emph{latch}: publicado equivale a tríade, legenda e matriz. Desde a
+  \adrr{ADR-170}: a leitura da legenda (\cd{legenda\_leitura}
+  \cd{pendente}/\cd{ia}/\cd{reserva}, os três indicadores, o nível ou a
+  sugestão, que na reserva nunca é \cd{nao\_atingiu}), a poda
+  (\cd{n\_podados}) e a marcação do post do colega (\cd{marcacao\_post\_id}
+  ou \cd{marcacao\_nenhum}, nunca os dois, e o \cd{marcacao\_porque}, texto de
+  menor só do professor).\\
+\zebra \cd{exp07ef1b\_reflexoes} & A reflexão: 100 a 500 caracteres de
+  \textbf{texto livre de menor}, com \cd{chars = char\_length(texto)}. Fora de
+  \emph{log} e da telemetria, e só sai para quem leciona a turma
+  (\adrr{ADR-108}).\\
+\bottomrule
+\end{tabularx}
+
+\section{As quatro tabelas da exp06ef2b}
+\label{sec:tabelas-exp06ef2b}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp06ef2b\_sessoes} & O estado da missão, uma linha por estudante. Chave
   \cd{(escola\_id, estudante\_id)}. O que é \textbf{1:1} com a sessão é
   \emph{coluna} dela: a \cd{opcao} da intervenção, a \cd{latencia\_seg}, a
   \cd{ordem\_blocos} do ciclo e o \cd{coerente}. As tabelas
-  \cd{exp\_06\_decisoes} e \cd{exp\_06\_modelagens} que o insumo pedia dariam
+  \cd{exp06ef2b\_decisoes} e \cd{exp06ef2b\_modelagens} que o insumo pedia dariam
   uma linha por estudante com uma \emph{FK} cada, e o \emph{JOIN} existiria
   para nada.\\
-\zebra \cd{exp\_06\_auditorias} & Cada abertura do painel de dados de envio ---
+\zebra \cd{exp06ef2b\_auditorias} & Cada abertura do painel de dados de envio ---
   \textbf{1:N} de propósito. A cota é sobre mensagens \emph{distintas}, e um
   contador perderia \emph{quais} o estudante escolheu auditar, que é o dado
   pedagógico. Um \cd{UNIQUE (escola\_id, estudante\_id, mensagem\_id)} faz a
   dedupe valer mesmo se um caminho novo esquecer de checar antes.\\
-\cd{exp\_06\_reflexoes} & O \enquote{Meu percurso}: 280 caracteres de texto
-  livre escrito por menor de idade --- \textbf{diferente da exp-07}, que fechou
-  essa porta. Aqui o insumo pede a redação como instrumento metacognitivo, e ela
+\cd{exp06ef2b\_reflexoes} & O \enquote{Meu percurso}: 280 caracteres de texto
+  livre escrito por menor de idade --- \textbf{diferente do Eco no Grupo}
+  (retirado, \adrr{ADR-113}), que tinha fechado essa porta. Aqui o insumo
+  pede a redação como instrumento metacognitivo, e ela
   vem com o mesmo isolamento: fora de log, fora da telemetria analítica, e
   alcançável só pelo professor da turma dela.\\
-\zebra \cd{exp\_06\_gates\_turma} & A etapa da aula, por \textbf{turma} ---
-  \cd{aula1 | aula2}, duas e não as quatro da exp-07. Chave
+\zebra \cd{exp06ef2b\_gates\_turma} & A etapa da aula, por \textbf{turma} ---
+  \cd{aula1 | aula2}. Chave
   \cd{(escola\_id, turma\_id)}.\\
 \bottomrule
 \end{tabularx}
@@ -962,33 +1934,34 @@ qualquer outro seria pontuação vinda do cliente (regra inviolável nº 3).
 \cd{cardinality(ordem\_blocos) IN (0, 4)} amarra o modelo do ciclo: 1, 2 ou 3
 blocos é slot vazio, e um quarto \emph{CHECK} exige que \cd{coerente} seja nulo
 exatamente quando a ordem está vazia. E \cd{passo = 'fim'} está amarrado a
-\cd{concluido\_em} não nulo, pela mesma razão da exp-07.
+\cd{concluido\_em} não nulo: uma tela dizendo \enquote{missão cumprida} sobre
+uma linha sem carimbo é um relatório que mente para o professor.
 \end{regra}
 
 \begin{atencao}
-\cd{exp\_06\_auditorias} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
+\cd{exp06ef2b\_auditorias} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
 \textbf{sequência}, além do \emph{grant} de tabela --- a terceira aparição da
 mesma armadilha. Sem ele o \cd{INSERT} falha para a \emph{role} de runtime, e só
 em produção, que é onde ela existe.
 \end{atencao}
 
 
-\section{As cinco tabelas da exp-03}
-\label{sec:tabelas-exp03}
+\section{As sete tabelas da exp02em1b}
+\label{sec:tabelas-exp02em1b}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
 \headrow \thd{Tabela} & \thd{O que guarda}\\
 \midrule
-\cd{exp\_03\_sessoes} & O estado da partida, uma linha por estudante. Chave
+\cd{exp02em1b\_sessoes} & O estado da partida, uma linha por estudante. Chave
   \cd{(escola\_id, estudante\_id)} --- \textbf{não há id de sessão}: a identidade vem
   do \emph{token}, e foi isso que dispensou a guarda de posse do projeto de
   origem, onde a sessão era um \emph{uuid} na URL. Inclui
   \cd{tokens\_gastos} e \cd{chamadas\_ia} (\adrr{ADR-24}).\\
-\zebra \cd{exp\_03\_mensagens} & A \textbf{Transcrição}: a conversa entre o estudante e
+\zebra \cd{exp02em1b\_mensagens} & A \textbf{Transcrição}: a conversa entre o estudante e
   o agente. \cd{texto} é caixa livre escrita por menor de idade --- o dado mais
   sensível da experiência (\adrr{ADR-27}).\\
-\cd{exp\_03\_marcos} & A trilha da decisão: o que a criança fez, em que minuto da
+\cd{exp02em1b\_marcos} & A trilha da decisão: o que a criança fez, em que minuto da
   cidade --- e com \textbf{que cronômetro na tela} (\cd{segundos\_restantes},
   \cd{motivo\_do\_fim}), recalculado do relógio da turma no instante da
   gravação (\adrr{ADR-64}). Seis tipos: \cd{fontes}, \cd{leitura},
@@ -996,13 +1969,28 @@ em produção, que é onde ela existe.
   \cd{recomeco} (o clique em Recomeçar, na tentativa que fecha). \cd{dados}
   traz \textbf{só dado público} --- nada de viés, Lacuna ou parâmetro oculto,
   porque este JSON chega ao navegador.\\
-\zebra \cd{exp\_03\_simulacoes} & O desfecho de cada tentativa, com
+\zebra \cd{exp02em1b\_simulacoes} & O desfecho de cada tentativa, com
   \cd{versao\_prompt} gravada junto: sem ela não se sabe qual \emph{prompt}
   produziu o que está em produção. E a \textbf{faixa da decisão}
   (\cd{esperado}), gravada no confirmar em vez de recomputada a cada leitura
   (\adrr{ADR-64}).\\
-\cd{exp\_03\_relogio\_turma} & O Relógio da Aula, por \textbf{turma}
+\cd{exp02em1b\_relogio\_turma} & O Relógio da Aula, por \textbf{turma}
   (\adrr{ADR-25}). Chave \cd{(escola\_id, turma\_id)}.\\
+\zebra \cd{exp02em1b\_gate\_turma} & A \textbf{rodada da turma} para a evidência
+  pedagógica (\adrr{ADR-154}): só o \enquote{Zerar a turma} a sobe, e ela
+  sobrevive ao zerar, que apaga o relógio e a evidência da turma
+  (\adrr{ADR-155}). Ausência de linha = rodada 1.\\
+\cd{exp02em1b\_tarefas} & As \textbf{tarefas do Canal A} (\adrr{ADR-172},
+  migração \arq{20261016200000\_\B{}exp02em1b\_\B{}canal\_\B{}a}): uma linha
+  por (sessão, rodada da turma, tentativa, tarefa), com a APRESENTAÇÃO que o
+  servidor montou --- os pares da leitura, os cartões das fontes, as
+  comparações do \enquote{E se\ldots}, a ordem das opções --- e as respostas.
+  Só ids de escolha fechada, nenhum texto livre. \emph{CHECKs} do vocabulário
+  (sete tarefas) e de respondida com data. Sai com a sessão (cascata do par),
+  e o \enquote{Zerar a turma} apaga as sessões. A sessão ganhou
+  \cd{registro\_concluido\_em} (o desfecho fica retido até ele),
+  \cd{oferta\_saude\_em} e \cd{inicio\_com\_relogio\_aberto}; o relógio da
+  turma, \cd{fechamento\_aberto\_em}.\\
 \bottomrule
 \end{tabularx}
 
@@ -1025,29 +2013,29 @@ que nunca começou, duração de relógio igual a zero (dividiria por zero no mi
 narrativo) e \cd{debitou} numa fala que não é do estudante.
 
 \begin{atencao}
-As duas tabelas com \cd{BIGSERIAL} (\cd{exp\_03\_mensagens} e
-\cd{exp\_03\_marcos}) exigem \cd{GRANT USAGE} na \textbf{sequência}, além do
+As duas tabelas com \cd{BIGSERIAL} (\cd{exp02em1b\_mensagens} e
+\cd{exp02em1b\_marcos}) exigem \cd{GRANT USAGE} na \textbf{sequência}, além do
 \emph{grant} de tabela. Sem ele o \cd{INSERT} falha para a \emph{role} de
 \emph{runtime} mesmo com todos os privilégios de tabela concedidos.
 \end{atencao}
 
-\section{As três tabelas da exp-92}
-\label{sec:tabelas-exp92}
+\section{As três tabelas da app-92}
+\label{sec:tabelas-app92}
 
-A exp-92 (Planejamento de Ensino dirigido pela BNCC, \adrr{ADR-73}, \adrr{ADR-76})
+A app-92 (Planejamento de Ensino dirigido pela BNCC, \adrr{ADR-73}, \adrr{ADR-76})
 persiste o plano curricular do docente em três tabelas:
 
 \begin{tabularx}{\linewidth}{@{}L{44mm}X@{}}
 \toprule
 \headrow \thd{Tabela} & \thd{O que guarda}\\
 \midrule
-\cd{exp\_92\_configuracoes} & Regência anual do professor (ano letivo, série,
+\cd{app\_92\_configuracoes} & Regência anual do professor (ano letivo, série,
   componente, divisão do ano, aulas semanais e grade de horários em JSON). Chave
   única em \cd{(escola\_id, professor\_id, ano\_letivo, serie, componente)}.\\
-\zebra \cd{exp\_92\_planos\_anuais} & Plano consolidado gerado com IA
+\zebra \cd{app\_92\_planos\_anuais} & Plano consolidado gerado com IA
   (objetivos gerais, cronograma de unidades temáticas e competências BNCC),
   com controle de versão, \emph{prompt} imutável e \cd{tokens\_gastos}.\\
-\cd{exp\_92\_planos\_de\_periodo} & O detalhamento do plano em granularidade
+\cd{app\_92\_planos\_de\_periodo} & O detalhamento do plano em granularidade
   \textbf{estritamente semanal} (\adrr{ADR-76}), amarrado à configuração e ao
   plano anual, contendo semanas letivas, habilidades BNCC trabalhadas, estratégias
   didáticas e instrumentos de avaliação.\\
@@ -1057,7 +2045,7 @@ persiste o plano curricular do docente em três tabelas:
 % ---------------------------------------------------------------------------
 \section{Decisões de esquema por experiência}
 
-\subsection{exp-70 --- as decisões que custam informação de propósito}
+\subsection{app-70 --- as decisões que custam informação de propósito}
 
 \begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
 \toprule
@@ -1092,7 +2080,7 @@ Nova linha por \cd{versao\_mapeamento} & O mapeamento é hipótese de \emph{desi
 \bottomrule
 \end{tabularx}
 
-\subsection{exp-90 --- conteúdo fora do banco}
+\subsection{app-90 --- conteúdo fora do banco}
 
 \begin{decisao}
 O \textbf{conteúdo} do plano de aula não fica no PostgreSQL: fica em
@@ -1107,7 +2095,7 @@ histórico}. Um professor que sobrescreveu o plano por engano tem recuperação,
 ninguém escreveu uma tabela de versões.
 \end{decisao}
 
-\subsection{exp-91 --- ausência como decisão de esquema}
+\subsection{app-91 --- ausência como decisão de esquema}
 
 \begin{decisao}
 Não existe tabela de agregado de bem-estar, e não existe \emph{view} por escola.
@@ -1125,27 +2113,27 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
 \headrow \thd{Migração} & \thd{Conteúdo}\\
 \midrule
 \arq{20260824145301\_init} & Esquema inicial: \emph{tenancy} (\cd{escolas},
-  \cd{turmas}, \cd{users}), tabelas da exp-01, tabelas de plataforma, e o laço
+  \cd{turmas}, \cd{users}), tabelas da exp08ef1b, tabelas de plataforma, e o laço
   que aplica \cd{ENABLE}/\cd{FORCE ROW LEVEL SECURITY} + política por escola.\\
 \zebra \arq{20260825011950\_unootube\_sessoes} & Estado \emph{server-side} da
-  exp-02, com \emph{CHECK} de cardinalidade dos salvos.\\
+  exp04ef1b, com \emph{CHECK} de cardinalidade dos salvos.\\
 \arq{20260825120000\_planos\_de\_aula} & Planos e referências curriculares.\\
 \zebra \arq{20260825225016\_bem\_estar} & Ciclos e \emph{check-ins} do DASS-21,
   com RLS e \cd{GRANT}.\\
 \arq{20260826120000\_permissoes\_de\_iframe} & Coluna \cd{permissoes} no
   manifesto, com \emph{CHECK} do vocabulário aceito.\\
 \zebra \arq{20260826140000\_vila\_do\_lume} & Sessões, perfis e bolhas da
-  exp-70.\\
+  app-70.\\
 \arq{20260826170000\_vila\_sem\_prazo} & Remoção da coluna \cd{expires\_at}
   (\adrr{ADR-13}).\\
-\zebra \arq{20260827090000\_tabelas\_por\_experiencia} & Renomeação para o padrão
-  \cd{exp\_NN\_}: \cd{RENAME} de tabelas, \emph{constraints}, índices e políticas.
+\zebra \arq{20260827090000\_tabelas\_por\_experiencia} & Renomeação para o prefixo
+  por experiência (então \cd{exp\_NN\_}): \cd{RENAME} de tabelas, \emph{constraints}, índices e políticas.
   É a migração de referência.\\
 \arq{20260827100000\_telemetria\_particionada} & Particionamento mensal de
   \cd{telemetria\_eventos} no \emph{schema} \cd{particoes}, com partição
   \cd{DEFAULT} e faixas até 2028-12.\\
 \zebra \arq{20260827184956\_exp\_03\_unoogpt} & Sessões e marcos de conversa da
-  exp-03 (UnooGPT), com isolamento por escola e RLS.\\
+  exp02em1b (UnooGPT), com isolamento por escola e RLS.\\
 \arq{20260828093000\_enturmamento\_e\_identidade} & \cd{periodos\_letivos},
   \cd{matriculas} (com RLS), colunas de identidade em \cd{users} e o
   \emph{backfill} de \cd{users.turma\_id} para matrícula principal.\\
@@ -1163,26 +2151,27 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \emph{CHECK} do vocabulário de \cd{verificacao} e único por
   (escola, estudante, emissor, emissão) --- \adrr{ADR-35}.\\
 \arq{20260829120000\_conclusao\_primeira\_e\_ultima} & Registro de inclinação inicial,
-  trocas de rota e convergência no término da exp-01.\\
+  trocas de rota e convergência no término da exp08ef1b.\\
 \zebra \arq{20260830090000\_atividade\_por\_turma} & Adição da coluna \cd{turma\_id}
-  nas atividades da exp-01 para agregação analítica docente.\\
+  nas atividades da exp08ef1b para agregação analítica docente.\\
 \arq{20260830100000\_perfil\_importado\_sabe\_a\_partida} & Vínculo de proveniência entre
-  \cd{exp\_01\_exp\_70\_perfis\_importados} e a sessão da Vila do Lume.\\
+  \cd{exp08ef1b\_app\_70\_perfis\_importados} e a sessão da Vila do Lume.\\
 \zebra \arq{20260902120000\_exp\_03\_trilha\_com\_relogio} & Rastreamento temporal nos
   marcos do diálogo com o bot (segundos restantes e causa de encerramento).\\
-\arq{20260903120000\_exp\_07\_o\_eco\_no\_grupo} & Estado \emph{server-side} da exp-07
-  (WhatsApp / Desinformação), com RLS e validações de progresso.\\
+\arq{20260903120000\_exp\_07\_o\_eco\_no\_grupo} & Estado \emph{server-side} da exp07ef1b
+  (WhatsApp / Desinformação), com RLS e validações de progresso. As quatro
+  tabelas caíram na \arq{20260925180000\_remover\_eco\_no\_grupo}.\\
 \zebra \arq{20260905120000\_liberacoes\_por\_turma} & Tabela de controle de abertura de missões
   por turma (\cd{liberacoes}), governança docente com RLS (\adrr{ADR-69}).\\
 \arq{20260905160000\_experiencia\_declara\_unidade} & Adição da coluna \cd{unidade} (1 a 4)
   ao catálogo curricular de experiências.\\
-\zebra \arq{20260906120000\_exp\_92\_plano\_de\_ensino} & Tabelas da exp-92:
-  \cd{exp\_92\_configuracoes}, \cd{exp\_92\_planos\_anuais} e \cd{exp\_92\_planos\_de\_periodo}
+\zebra \arq{20260906120000\_exp\_92\_plano\_de\_ensino} & Tabelas da app-92:
+  \cd{app\_92\_configuracoes}, \cd{app\_92\_planos\_anuais} e \cd{app\_92\_planos\_de\_periodo}
   (\adrr{ADR-73}).\\
 \arq{20260906140000\_exp\_92\_inicio\_do\_ano\_por\_regencia} & Início do ano letivo
   parametrizado na configuração curricular por escola/ano (\adrr{ADR-73}).\\
 \zebra \arq{20260906170000\_exp\_06\_rastro\_boato} & Tabelas de sessão e simulação de rede da
-  exp-06 (Rastro do Boato) com tema escuro e topologia restrita (\adrr{ADR-72}).\\
+  exp06ef2b (Rastro do Boato) com tema escuro e topologia restrita (\adrr{ADR-72}).\\
 \arq{20260907120000\_exp\_92\_planejamento\_sempre\_semanal} & Reestruturação do período de
   planejamento com cardinalidade estritamente semanal de 40 semanas (\adrr{ADR-76}).\\
 \zebra \arq{20260907130000\_permissao\_downloads} & Liberação do token \cd{allow-downloads}
@@ -1198,12 +2187,241 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \cd{gestor\_regional} e \cd{admin}), \cd{users.regional\_id} com FK,
   \emph{CHECK} bicondicional e \emph{trigger}, e o \cd{lotacoes\_papel\_check}
   acompanhando --- \adrr{ADR-80}.\\
+\arq{20260923120000\_codigo\_das\_experiencias} & O código da experiência
+  (\adrr{ADR-110}): \cd{RENAME} por OID de tabela, \emph{constraint}, índice,
+  política e \emph{sequence} (\cd{exp\_01\_} \seta{} \cd{exp08ef1b\_},
+  \cd{exp\_70\_} \seta{} \cd{app\_70\_}) e o \cd{UPDATE} do \cd{exp\_id} em
+  sete tabelas, com o \cd{FORCE ROW LEVEL SECURITY} e o \emph{trigger}
+  \emph{append-only} afrouxados só dentro da transação.\\
+\zebra \arq{20260925120000\_\B{}equipes\_\B{}na\_\B{}missao} & As equipes na missão
+  (\adrr{ADR-111}): \cd{equipes\_montagens}, \cd{equipes} e
+  \cd{equipes\_membros}, as três com RLS forçada; o \cd{UNIQUE} de uma equipe por
+  criança por missão, os \emph{CHECKs} de \cd{modo}, \cd{computadores},
+  \cd{versao}, nome e ordem, e o \cd{GRANT} à \emph{role} de \emph{runtime}.\\
+\arq{20260925150000\_\B{}evidencia\_\B{}pedagogica} & A evidência pedagógica
+  (\adrr{ADR-112}): \cd{evidencias\_marcas}, \cd{evidencias} e
+  \cd{evidencias\_eventos}, as três com RLS forçada e FK de \cd{turma\_id} e
+  \cd{estudante\_id} em cascata; os \emph{CHECKs} de vocabulário e de
+  coerência, o \emph{trigger} que recusa \cd{UPDATE} no histórico e o
+  \cd{GRANT} à \emph{role} de \emph{runtime} (só \cd{SELECT, INSERT} no
+  histórico).\\
+\zebra \arq{20260925180000\_\B{}remover\_\B{}eco\_\B{}no\_\B{}grupo} & A retirada
+  do Eco no Grupo (\adrr{ADR-113}): \cd{DROP} das quatro tabelas
+  \cd{exp07ef1b\_*} e \cd{DELETE} das linhas \cd{exp07ef1b} em
+  \cd{experiencias}, \cd{experiencias\_versoes}, \cd{liberacoes}, \cd{progresso}
+  e \cd{disponibilidades}, porque o código vai significar outra missão.
+  \cd{liberacoes} e \cd{progresso} perdem o \cd{FORCE} só durante o
+  \cd{DELETE} e a asserção --- o molde da \arq{20260923120000}. Ficam
+  \cd{telemetria\_eventos} (o \cd{exp\_version} separa as duas missões) e
+  \cd{recursos\_auditoria}, que é só de inserção.\\
+\arq{20260925190000\_\B{}retira\_\B{}exp05ef1b\_\B{}v1} & A retirada da
+  primeira versão de Quem mandou isso? (\adrr{ADR-114}): \cd{DROP} das cinco
+  tabelas \cd{exp05ef1b\_*} e \cd{DELETE} das linhas \cd{exp05ef1b} em
+  \cd{experiencias}, \cd{experiencias\_versoes}, \cd{liberacoes},
+  \cd{progresso} e \cd{disponibilidades}, porque o código volta com a v2.2.
+  \cd{liberacoes} e \cd{progresso} perdem o \cd{FORCE} só durante o
+  \cd{DELETE} e a asserção --- o molde da \arq{20260923120000}. Ficam
+  \cd{telemetria\_eventos} (o \cd{exp\_version} separa as duas versões) e
+  \cd{recursos\_auditoria}, que é só de inserção.\\
+\arq{20260926120000\_\B{}arquivar\_\B{}unootube} & O UnooTube ARQUIVADO, e não
+  apagado (\adrr{ADR-116}): cria \cd{experiencias\_arquivadas} e move para lá a
+  linha de \cd{experiencias}, com a fotografia de turmas e estudantes;
+  \cd{RENAME} de \cd{exp04ef1b\_sessoes} para \cd{backup\_exp04ef1b\_sessoes}
+  (\emph{constraints}, índices e política junto, por OID); e o código como valor
+  vira \cd{backup-exp04ef1b} em versões, liberações, progresso, equipes,
+  evidência, disponibilidades e auditoria. \cd{equipes\_membros} precisa do
+  próprio \cd{UPDATE}: a FK dela é para \cd{equipes(id)}, e o código ali é
+  cópia. Fica \cd{telemetria\_eventos}. Asserção no fim.\\
+\arq{20260926130000\_\B{}exp05ef1b\_\B{}quem\_\B{}mandou\_\B{}isso\_\B{}v2} & A v2.2 de
+  Quem mandou isso? (\adrr{ADR-118}): \cd{exp05ef1b\_pacotes},
+  \cd{\_gates\_turma}, \cd{\_sessoes} e \cd{\_reflexoes}, as quatro com RLS
+  forçada; os índices únicos parciais (um pacote ativo e um rascunho por turma),
+  os \emph{CHECKs} de vocabulário e de ordem dos \emph{latches}, o
+  \enquote{Então} de 15 a 240 depois do \cd{btrim}, e o \cd{GRANT} à \emph{role}
+  de \emph{runtime}, guardado. O DDL saiu do \cd{prisma migrate diff} contra um
+  banco sombra, só com os comandos da missão.\\
+\zebra \arq{20260926140000\_\B{}exp07ef1b\_\B{}a\_\B{}selecao} & As quatro tabelas
+  da A Seleção (\adrr{ADR-115}), com \cd{escola\_id NOT NULL}, RLS \cd{FORCE},
+  \emph{policy} por escola e \emph{grant} guardado para \cd{app\_runtime}.\\
+\arq{20260927090000\_\B{}exp07ef1b\_\B{}podcast} & A coluna \cd{podcast} em
+  \cd{exp07ef1b\_coberturas} (\adrr{ADR-119}), \cd{JSONB} nulo com \emph{CHECK}
+  de objeto; sem \emph{backfill}, porque nulo é a leitura das falas aprovadas, e
+  sem RLS nova --- a tabela já tem a dela.\\
+\zebra \arq{20260927120000\_\B{}exp04ef1b\_\B{}jornal\_\B{}da\_\B{}escola} & As
+  quatro tabelas do Jornal da Escola (\adrr{ADR-117}): \cd{exp04ef1b\_pacotes},
+  \cd{\_gates\_turma}, \cd{\_sessoes} e \cd{\_diagramacoes}, com
+  \cd{escola\_id NOT NULL}, RLS \cd{FORCE} e política por escola; o índice único
+  parcial de um pacote ativo por turma, os \emph{CHECKs} de vocabulário, de
+  vagas e de \emph{latch} (equivalências com o passo), e o \cd{GRANT} à
+  \emph{role} de \emph{runtime}, guardado. Os nomes de índice e de \cd{UNIQUE}
+  são dados à mão: o que o Prisma inventaria para cinco colunas passa de 63
+  caracteres, e o Postgres o cortaria em silêncio.\\
+\arq{20260930120000\_\B{}agente\_\B{}professor} & A posse das conversas do agente
+  de IA do professor (\adrr{ADR-126}): \cd{agente\_professor\_conversas} com
+  \cd{escola\_id NOT NULL}, RLS \cd{FORCE}, \cd{sessao\_id} único, os \emph{CHECKs}
+  de título (1 a 120) e de \cd{sessao\_id}, o índice da lista e o \cd{GRANT},
+  guardado. E \cd{agente-professor} no \emph{CHECK} \cd{ck\_experiencias\_produto}.\\
+\zebra \arq{20261002120000\_\B{}ajuda\_\B{}com\_\B{}avatar} & Os minutos da Ajuda
+  com avatar (\adrr{ADR-132}): \cd{ajuda\_sessoes}, o medidor, \textbf{sem RLS e
+  com \cd{escola\_id} nulável} --- a exceção escrita à regra nº 1, com as três
+  razões no comentário ---, e \cd{ajuda\_limites}, catálogo, semeada com 30
+  minutos por dia e 10 por sessão. Os \emph{CHECKs} de perfil (sem
+  \cd{estudante}), de teto (30\,s a 1\,h), de fim, de chave e de valor; o índice
+  por pessoa; o \cd{GRANT} sem \cd{DELETE}, guardado. E \cd{ajuda} no
+  \emph{CHECK} \cd{ck\_experiencias\_produto}.\\
+\arq{20261002180000\_\B{}exp06ef1b\_\B{}juri\_\B{}estadual} & As três
+  tabelas do Júri Estadual de Projetos (\adrr{ADR-137}):
+  \cd{exp06ef1b\_pacotes}, \cd{\_gates\_turma} e \cd{\_sessoes}, com
+  \cd{escola\_id NOT NULL}, RLS \cd{FORCE} e política por escola; o índice
+  único parcial de um pacote ativo por turma, os \emph{CHECKs} de vocabulário,
+  de cardinalidade da mostra e de \emph{latch} (equivalências com o passo, e o
+  passo \cd{galeria} recusado), e o \cd{GRANT} à \emph{role} de \emph{runtime},
+  guardado. Os nomes de índice e de \cd{UNIQUE} são dados à mão, pelo mesmo
+  motivo do Jornal.\\
+\zebra \arq{20261005120000\_\B{}exp05ef1b\_\B{}perguntas\_\B{}sao\_\B{}a\_\B{}reflexao} &
+  O \emph{latch} do fim da exp05ef1b (\adrr{ADR-145}): o \emph{CHECK}
+  \cd{exp05ef1b\_sessoes\_concluido\_check} passa a exigir o voto
+  (\cd{votou\_em}) em vez da regra enviada, porque a regra Se/Então saiu e as
+  perguntas da Nina são a reflexão. \cd{reflexao\_em} e
+  \cd{exp05ef1b\_reflexoes} ficam, só pelo histórico. Sem RLS nova.\\
+\arq{20261005150000\_\B{}exp07ef1b\_\B{}imagens\_\B{}aprovadas} & A coluna
+  \cd{imagens\_aprovadas\_em} em \cd{exp07ef1b\_coberturas} (\adrr{ADR-146}),
+  \cd{TIMESTAMPTZ} nula: a segunda fase da aprovação, sem a qual a atividade não
+  vai ao ar. As coberturas que já existiam entram aprovadas, com o carimbo da
+  última alteração --- nenhuma turma trava por uma regra posterior. Sem RLS
+  nova.\\
+\zebra \arq{20261005190000\_\B{}exp04ef1b\_\B{}midia\_\B{}aprovada} & A coluna
+  \cd{midia\_aprovada} em \cd{exp04ef1b\_pacotes} (\adrr{ADR-147}),
+  \cd{JSONB NOT NULL DEFAULT '\{\}'} com o \emph{CHECK}
+  \cd{jsonb\_typeof = 'object'}: a URL aprovada por notícia, e não um carimbo
+  do pacote, porque o Jornal gera imagem também na atividade no ar. Os pacotes
+  que já existiam entram com \cd{midia\_aprovada = midia} --- nenhuma turma
+  perde imagem por uma regra posterior. Sem RLS nova: a coluna herda a da
+  tabela.\\
+\arq{20261006120000\_\B{}exp06ef1b\_\B{}ajustes\_\B{}do\_\B{}po} & O Júri
+  Estadual sem os pacotes e com as imagens aprovadas (\adrr{ADR-151}). As
+  sessões em \cd{pacotes} vão para \cd{cadeia}; \cd{pacotes\_tentativas} e
+  \cd{pacotes\_remontados\_em} são APAGADAS (a marca da EF06CO07 continua em
+  \cd{evidencias\_marcas}, e nenhum dado morava só nelas); os \emph{CHECKs} de
+  passo, de \emph{latch} 2 e de tentativas são recriados sem o passo. E
+  \cd{imagens\_aprovadas\_em} em \cd{exp06ef1b\_pacotes}, com os pacotes que já
+  existiam entrando aprovados. Sem RLS nova: as colunas herdam a da tabela.\\
+\zebra \arq{20261006200000\_\B{}podcast\_\B{}roteiros} & As falas do tema do podcast
+  de recapitulação (\adrr{ADR-150}): \cd{podcast\_roteiros}, tabela da
+  plataforma, com \cd{escola\_id NOT NULL}, RLS \cd{FORCE} e política por
+  escola; o único por escola, missão e atividade; os \emph{CHECKs} do formato
+  de \cd{exp\_id} e de \cd{falas} como objeto; e o \cd{GRANT} à \emph{role} de
+  \emph{runtime}, guardado. \cd{atividade\_id} sem FK: a atividade mora na
+  tabela de cada missão.\\
+\arq{20261007120000\_\B{}exp06ef1b\_\B{}ciclo\_\B{}do\_\B{}voto} & O ciclo do
+  voto do Júri Estadual (\adrr{ADR-152}): \cd{desvio\_liberado\_em} em
+  \cd{exp06ef1b\_gates\_turma}; em \cd{exp06ef1b\_sessoes}, \cd{salvos}, a
+  justificativa (\cd{voto\_motivo}, \cd{voto\_trecho},
+  \cd{revisao\_motivo}, \cd{revisao\_trecho}), \cd{complemento\_projeto},
+  as quatro listas \cd{desvio\_*} e \cd{desvio\_concluido\_em}. As sessões
+  já em \cd{cadeia} ou adiante recebem \cd{desvio\_concluido\_em =
+  revisado\_em}, para a equivalência nova valer sem mudar o passo de ninguém;
+  as que já votaram ficam sem justificativa. Os \emph{CHECKs} de etapa,
+  portão, passo, feed, vocabulário, revisão e \emph{latch} 2 são recriados, e
+  entram o da justificativa (o par) e o do desvio. Sem RLS nova: as colunas
+  herdam a das tabelas.\\
+\zebra \arq{20261010120000\_\B{}exp06ef1b\_\B{}prd\_\B{}v2} & O Júri
+  Estadual no PRD v2 (\adrr{ADR-157}). Nenhuma coluna sai: a origem aceita
+  \cd{padrao}; a etapa e o passo \cd{desvio} saem dos \emph{CHECKs} (os
+  \emph{gates} no desvio voltam à \cd{galeria}); entram a telemetria docente
+  no pacote, o relógio do feed, o batimento da cédula, os \cd{*\_status} e
+  \cd{enquete\_*\_alt} na sessão, e a tabela
+  \cd{exp06ef1b\_gates\_historico}, com \cd{escola\_id NOT NULL}, RLS
+  \cd{FORCE}, política por escola e o \cd{GRANT} guardado. Os
+  \cd{UPDATE}s rodam com \cd{NO FORCE} e o recolocam.\\
+\arq{20261012120000\_\B{}ajuda\_\B{}mascote} & O mascote como segundo atendente
+  da Ajuda (\adrr{ADR-158}): \cd{ajuda\_sessoes.atendente} (padrão
+  \cd{avatar}, com \emph{CHECK}); \cd{ajuda\_configuracao}, linha única
+  (\emph{CHECK} \cd{id = 1}), sem RLS e sem \cd{escola\_id}, com os
+  \emph{CHECKs} de atendente, de formato da voz e do modelo e das faixas da
+  boca, semeada com o mascote; \cd{configuracao-alterada} no \emph{CHECK} de
+  \cd{recursos\_auditoria}; o \cd{GRANT} sem \cd{DELETE}, guardado.\\
+\zebra \arq{20261013120000\_\B{}custos\_\B{}de\_\B{}ia} & O painel de custos de
+  IA (\adrr{ADR-161}): \cd{ia\_consumo\_diario} (PK do agregado, \cd{''} como
+  sentinela de escola e perfil, \emph{CHECK} de modalidade, índice por dia),
+  \cd{ia\_precos} (\emph{CHECKs} de componente, valor e formato do modelo,
+  vigência única por modelo e componente, semeada com o preço de lista de
+  13/10/2026) e \cd{cotacoes\_dolar}. Sem RLS nas três; sem
+  \cd{usuario\_id}.\\
+\arq{20261014120000\_\B{}exp06ef1b\_\B{}quarenta\_\B{}projetos} & O Júri
+  Estadual com quarenta projetos (\adrr{ADR-164}). Nenhuma coluna entra nem sai,
+  nenhuma linha muda e a RLS não afrouxa: dois \emph{CHECKs} são recriados. O
+  de conteúdo de \cd{exp06ef1b\_pacotes} aceita 16 OU 40 projetos (os pacotes
+  de dezesseis da 0.4.x continuam legíveis; a escrita só produz 40), e o de
+  vocabulário de \cd{exp06ef1b\_sessoes} passa o id de projeto a
+  \cd{\textasciicircum{}proj-[a-d](10|[1-9])\$} nas três colunas que o guardam
+  --- a regex nova contém a antiga.\\
+\zebra \arq{20261015120000\_\B{}ajuda\_\B{}instrucoes} & As instruções de cada
+  atendente da Ajuda no painel (\adrr{ADR-165}): \cd{instrucoes\_mascote} e
+  \cd{instrucoes\_avatar} (\cd{TEXT}, nulas = o texto padrão do código) em
+  \cd{ajuda\_configuracao}, com o \emph{CHECK}
+  \cd{ck\_ajuda\_configuracao\_instrucoes} (nulo ou de 20 a \num{8000}
+  caracteres sem os brancos das pontas). Sem RLS e sem \cd{escola\_id}, como a
+  linha.\\
+\arq{20261017090000\_\B{}exp05ef1b\_\B{}canal\_\B{}a} & Quem mandou isso? só com o
+  Canal A (\adrr{ADR-171}): em \cd{exp05ef1b\_sessoes}, o cartão de frases
+  (\cd{frases\_operacoes}, \cd{respostas\_operacoes}, \cd{operacoes\_em}) e a
+  regra do tio (\cd{regra\_testes} \cd{JSONB NOT NULL DEFAULT '[]'},
+  \cd{regra\_final}, \cd{regra\_em}), e o padrão da \cd{versao\_instrumento}
+  passa a 2.4.0. Quatro \emph{CHECKs} novos: \cd{exp05ef1b\_sessoes\_operacoes\_check}
+  (o cartão exige o voto, seis frases e seis respostas),
+  \cd{exp05ef1b\_sessoes\_regra\_testes\_check} (\emph{array} de até cinco, e só
+  com o cartão), \cd{exp05ef1b\_sessoes\_regra\_check} (a regra exige o cartão e
+  uma das quatro condições) e \cd{exp05ef1b\_sessoes\_regra\_final\_check}
+  (regra e carimbo nulos juntos). O nível não mora aqui: é da evidência. Sem
+  RLS nova.\\
+\zebra \arq{20261018090000\_\B{}exp06ef1b\_\B{}canal\_\B{}a} & O Júri
+  Estadual só com o Canal A (\adrr{ADR-174}): em \cd{exp06ef1b\_sessoes}, a
+  separação (\cd{classificacao\_\B{}respostas} \cd{JSONB}, \cd{classificacao\_\B{}acertos},
+  \cd{classificacao\_\B{}total}, \cd{classificada\_\B{}em}) e a regra SE \ldots{}
+  ENTÃO (\cd{regra\_se}, \cd{regra\_entao}, os ids das peças; o carimbo é o
+  \cd{cadeia\_\B{}montada\_em} de sempre, com \cd{cadeia\_\B{}tentativas = 1}). O
+  \emph{CHECK} de passo ganha \cd{classificacao}, entre o voto e
+  \cd{lacrada} (\cd{enquetes} fica, pelas sessões paradas ali); o de status
+  aceita \cd{classificacao\_\B{}status} vindo da separação OU da revisão (as linhas
+  da 0.5.0). Dois \emph{CHECKs} novos, fracos de propósito:
+  \cd{exp06ef1b\_\B{}sessoes\_\B{}classificacao\_\B{}check} (as quatro colunas juntas, só
+  depois do voto, \emph{array}, total de 0 a 10, acertos dentro do total) e
+  \cd{exp06ef1b\_\B{}sessoes\_\B{}regra\_\B{}check} (as duas peças juntas, só com o
+  carimbo da cadeia). Uma sessão que votou na 0.5.0 está em \cd{lacrada} SEM
+  separação e continua válida. Nenhuma coluna sai, nenhuma linha muda, a RLS
+  não afrouxa.\\
+\arq{20261020120000\_\B{}exp05ef1b\_\B{}alerta\_\B{}e\_\B{}robo} & Quem mandou
+  isso? com o alerta e o robô do grupo (\adrr{ADR-177}): em
+  \cd{exp05ef1b\_sessoes}, \cd{alertas} (\cd{JSONB NOT NULL DEFAULT '[]'})
+  e \cd{alertas\_em}, e o padrão da \cd{versao\_instrumento} passa a 2.5.0.
+  Dois \emph{CHECKs} novos: \cd{exp05ef1b\_\B{}sessoes\_\B{}alertas\_\B{}check}
+  (\emph{array} de até quatro, e só depois do voto) e
+  \cd{exp05ef1b\_\B{}sessoes\_\B{}alertas\_\B{}em\_\B{}check} (o carimbo exige o
+  voto e os quatro). \cd{exp05ef1b\_\B{}sessoes\_\B{}regra\_\B{}testes\_\B{}check}
+  e \cd{exp05ef1b\_\B{}sessoes\_\B{}regra\_\B{}check} são recriados exigindo
+  só o voto, sem o \cd{operacoes\_em}: o robô não depende do alerta. As
+  colunas do cartão ficam pelo histórico; nenhuma coluna sai, a RLS não
+  afrouxa.\\
+\arq{20261020120000\_\B{}exp06ef1b\_\B{}ajustes\_\B{}do\_\B{}time} & Os ajustes do
+  time no Júri Estadual (\adrr{ADR-176}): a coluna \cd{pastas} (\cd{JSONB},
+  \cd{NOT NULL}, padrão \cd{'\{\}'}) em \cd{exp06ef1b\_sessoes}, com o
+  \emph{CHECK} \cd{exp06ef1b\_\B{}sessoes\_\B{}pastas\_\B{}check} (é objeto; a
+  leitura tolera chave e valor desconhecidos); e o
+  \cd{exp06ef1b\_\B{}sessoes\_\B{}cartoes\_\B{}check} refeito: os três campos dos
+  cartões juntos, e cartões só em \cd{enquetes} ou \cd{fim} --- antes ele
+  exigia \cd{cartoes\_em} em TODA sessão em \cd{fim}, e a regra que conclui
+  sem cartões seria recusada. \cd{classificacao} e \cd{mariana} ficam no
+  \emph{CHECK} de passo, pelas sessões paradas ali. Nenhuma coluna sai, a RLS
+  não muda.\\
 \bottomrule
 \end{tabularx}
 
 \begin{regra}
 \textbf{Nenhuma migração remove \cd{escola\_id} ou afrouxa RLS.} Renomeação usa
-\cd{RENAME}; nada de \cd{DROP}/\cd{CREATE} em tabela com dado. Em produção, a
+\cd{RENAME}; nada de \cd{DROP}/\cd{CREATE} em tabela com dado. A exceção é a
+retirada de uma missão inteira (\adrr{ADR-113}, \adrr{ADR-114}), que apaga as tabelas dela de
+propósito, numa migração própria. Em produção, a
 migração roda como Cloud Run Job dentro da VPC \textbf{antes} do \emph{deploy} do
 serviço, com \cd{--wait} --- porque o \emph{schema} novo tem de estar no banco
 antes de a revisão nova receber tráfego.
@@ -1217,18 +2435,18 @@ campos correspondentes são \cd{TEXT}/\cd{SMALLINT} no \emph{schema} e a valida�
 de aplicação é feita com Zod.
 \end{atencao}
 
-\section{As três tabelas da exp-04}
-\label{sec:tabelas-exp04}
+\section{As três tabelas da exp01ef1b}
+\label{sec:tabelas-exp01ef1b}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
 \headrow \thd{Tabela} & \thd{O que guarda}\\
 \midrule
-\cd{exp\_04\_turma\_config} & A aula, por \textbf{turma}: tema, nível de
+\cd{exp01ef1b\_turma\_config} & A aula, por \textbf{turma}: tema, nível de
   leitura, o pacote APROVADO (JSONB validado pelo mesmo \emph{schema} da
   geração; nulo = banco curado padrão), o \cd{latch\_liberado} da Roda e a
   \cd{tentativa} corrente. Chave \cd{(escola\_id, turma\_id)}.\\
-\zebra \cd{exp\_04\_runs} & A execução de um estudante numa
+\zebra \cd{exp01ef1b\_runs} & A execução de um estudante numa
   \textbf{tentativa}: etapa (\emph{CHECK} de vocabulário fechado), marca, o
   par foto+legenda escolhido, a latência de decisão (teto de 2h no
   \emph{CHECK}: acima é aba esquecida) e a reflexão --- que só aceita
@@ -1236,7 +2454,7 @@ de aplicação é feita com Zod.
   turma INCREMENTA a tentativa em vez de apagar: as \emph{runs} antigas ficam
   imutáveis na tentativa anterior (DAD-06). Única por
   \cd{(escola\_id, turma\_id, estudante\_id, tentativa)}.\\
-\cd{exp\_04\_posts\_turma} & A publicação no mural coletivo, assinada pela
+\cd{exp01ef1b\_posts\_turma} & A publicação no mural coletivo, assinada pela
   \textbf{marca} (coruja/estrela/sol) --- nome de criança não existe aqui.
   1:1 com a \emph{run} (\cd{UNIQUE run\_id}): toque duplo e \emph{retry} de
   rede não criam segundo post.\\

@@ -1,5 +1,5 @@
 /**
- * O que o hub lê da exp-06 — espelho de `apps/api/src/rastro-boato`.
+ * O que o hub lê da exp06ef2b — espelho de `apps/api/src/rastro-boato`.
  *
  * Note o que NÃO existe aqui: coluna de pontos, e nenhum campo `nivel`. A
  * leitura do professor é de PROGRESSO, nunca uma ordenação de crianças por
@@ -22,7 +22,7 @@ export type PassoDoEstudante =
   | "percurso"
   | "fim";
 
-/** O `SeletorDeTurma` é compartilhado com a exp-03 e a exp-07 e exige
+/** O `SeletorDeTurma` é compartilhado com a exp02em1b e exige
  *  `estudantes`; a api o devolve sempre. */
 export interface TurmaDoRastro {
   id: string;

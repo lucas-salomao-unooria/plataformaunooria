@@ -1,0 +1,14 @@
+{
+  "id": "app-91-bem-estar",
+  "nome": "Como você está? — acompanhamento de bem-estar",
+  "versao": "1.1.11",
+  "produto": "bem-estar",
+  "series": [],
+  "capabilities": ["telemetria", "ia"],
+  "publico": "professor",
+  "verbos": {
+    "attempted": "abriu o check-in do dia (contexto: numero do check-in no ciclo)",
+    "completed": "enviou o check-in (objeto `checkin`) ou fechou um ciclo de 7 (objeto `ciclo`) — sem pontuação nem texto",
+    "interacted": "abriu o histórico ou apagou os próprios dados"
+  }
+}

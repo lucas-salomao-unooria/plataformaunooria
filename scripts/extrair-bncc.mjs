@@ -69,16 +69,27 @@ function paginasComCoordenadas(pdf, primeira, ultima) {
 
   const paginas = [];
   const rePagina = /<page\b[^>]*>([\s\S]*?)<\/page>/g;
-  const reBloco = /<block\s+xMin="([\d.]+)"\s+yMin="([\d.]+)"[^>]*>([\s\S]*?)<\/block>/g;
+  const reBloco =
+    /<block\s+xMin="([\d.]+)"\s+yMin="([\d.]+)"\s+xMax="([\d.]+)"\s+yMax="([\d.]+)"[^>]*>([\s\S]*?)<\/block>/g;
   const rePalavra = /<word[^>]*>([\s\S]*?)<\/word>/g;
 
   for (let pagina; (pagina = rePagina.exec(xhtml)); ) {
     const blocos = [];
     for (let bloco; (bloco = reBloco.exec(pagina[1])); ) {
       const palavras = [];
-      for (let p; (p = rePalavra.exec(bloco[3])); ) palavras.push(decodificar(p[1]));
+      for (let p; (p = rePalavra.exec(bloco[5])); ) palavras.push(decodificar(p[1]));
       const texto = normalizar(palavras.join(" "));
-      if (texto) blocos.push({ x: Number(bloco[1]), y: Number(bloco[2]), texto });
+      /* `y2` entra por causa da BNCC de Computação, onde o rótulo é CENTRADO na
+         célula e não alinhado ao topo: sem a altura do bloco não há centro, e
+         sem centro a associação vira a do outro layout — que erra aqui. */
+      if (texto)
+        blocos.push({
+          x: Number(bloco[1]),
+          y: Number(bloco[2]),
+          x2: Number(bloco[3]),
+          y2: Number(bloco[4]),
+          texto,
+        });
     }
     paginas.push(blocos);
   }
@@ -115,6 +126,87 @@ function rotuloNaAltura(celulas, y) {
   for (const celula of celulas) if (celula.y <= y + MARGEM_Y) escolhido = celula.texto;
   return escolhido;
 }
+
+/** O centro vertical de um bloco. */
+const centroY = (b) => (b.y + b.y2) / 2;
+
+/**
+ * Distribui as habilidades de uma página entre os rótulos de UMA coluna (o eixo
+ * ou o objeto de conhecimento), devolvendo o rótulo de cada habilidade.
+ *
+ * **Por que não é "o último rótulo acima", nem "o rótulo mais perto".** A BNCC
+ * de Computação (2022) CENTRA o rótulo na célula; a BNCC regular o alinha ao
+ * topo. `rotuloNaAltura`, escrita para a segunda, erra sistematicamente na
+ * primeira: um eixo que cobre quatro habilidades aparece na altura da terceira,
+ * então as duas primeiras ficavam com o eixo anterior e a primeira de cada ano
+ * ficava com `null`. Eram 80 das 129 linhas do dataset com eixo e/ou objeto
+ * errados — e nenhuma delas de um jeito que o `tsc` ou a tela mostrassem: a
+ * tela do plano de ensino agrupa por eixo e lista o objeto, então o defeito era
+ * um agrupamento plausível e inteiramente falso.
+ *
+ * Trocar por "o rótulo de centro mais próximo" resolve a maioria e erra na
+ * fronteira entre células de tamanhos diferentes: na página do 5º ano o
+ * PENSAMENTO COMPUTACIONAL cobre UMA habilidade e o MUNDO DIGITAL cobre três,
+ * e a EF05CO05 fica mais perto do centro da célula pequena.
+ *
+ * **A regra correta sai da própria centragem.** As células ladrilham a coluna
+ * sem buraco nem sobreposição, então as habilidades se dividem em blocos
+ * CONSECUTIVOS, um por rótulo — e o centro do bloco é o centro da célula, que é
+ * onde o rótulo está. Escolhemos, então, a divisão em blocos consecutivos que
+ * minimiza a distância entre o centro de cada rótulo e o centro do bloco dele.
+ * É uma busca exaustiva, e ela cabe: uma página tem no máximo oito habilidades.
+ *
+ * O que a torna verificável é a CONTIGUIDADE, que ela garante por construção e
+ * que `tests/curriculo-bncc-dataset.spec.ts` cobra sobre o arquivo gerado: se a
+ * atribuição estivesse errada, as habilidades de um rótulo não sairiam em
+ * sequência dentro do ano.
+ */
+function distribuirRotulos(celulas, habilidades) {
+  if (!celulas.length || !habilidades.length) return habilidades.map(() => null);
+  if (celulas.length === 1) return habilidades.map(() => celulas[0].texto);
+  if (celulas.length >= habilidades.length) {
+    // Mais rótulos que habilidades não acontece num documento bem formado; cair
+    // no vizinho mais próximo é melhor que devolver nada.
+    return habilidades.map((h) => {
+      const c = centroY(h);
+      return celulas.reduce((a, b) =>
+        Math.abs(centroY(b) - c) < Math.abs(centroY(a) - c) ? b : a,
+      ).texto;
+    });
+  }
+
+  const centroDoBloco = (i, j) => (habilidades[i].y + habilidades[j].y2) / 2;
+  let melhor = null;
+  /** Corta `habilidades` em `celulas.length` blocos consecutivos não vazios. */
+  const buscar = (rotulo, inicio, custo, cortes) => {
+    if (melhor && custo >= melhor.custo) return;
+    if (rotulo === celulas.length - 1) {
+      if (inicio > habilidades.length - 1) return;
+      const total = custo + Math.abs(centroY(celulas[rotulo]) - centroDoBloco(inicio, habilidades.length - 1));
+      if (!melhor || total < melhor.custo) melhor = { custo: total, cortes: [...cortes, inicio] };
+      return;
+    }
+    const sobram = celulas.length - rotulo - 1;
+    for (let fim = inicio; fim <= habilidades.length - 1 - sobram; fim += 1) {
+      buscar(
+        rotulo + 1,
+        fim + 1,
+        custo + Math.abs(centroY(celulas[rotulo]) - centroDoBloco(inicio, fim)),
+        [...cortes, inicio],
+      );
+    }
+  };
+  buscar(0, 0, 0, []);
+  if (!melhor) return habilidades.map(() => null);
+
+  const saida = new Array(habilidades.length).fill(null);
+  melhor.cortes.forEach((inicio, r) => {
+    const fim = r + 1 < melhor.cortes.length ? melhor.cortes[r + 1] - 1 : habilidades.length - 1;
+    for (let k = inicio; k <= fim; k += 1) saida[k] = celulas[r].texto;
+  });
+  return saida;
+}
+
 
 // ------------------------------------------------------- domínio: os códigos
 
@@ -157,7 +249,12 @@ const AREA_DO_COMPONENTE = {
   computacao: "computacao",
 };
 
-const RE_EF = /^EF(\d{2})([A-Z]{2})(\d{2})([A-Z]?)$/;
+/* `\d{2,3}` na cauda por causa da EF05CO011, que a BNCC de Computação publica
+   com três dígitos. Com `\d{2}` o código não casava aqui: `anosDoCodigo`
+   devolvia `[]` e `componenteDoCodigo` devolvia `null`, então a habilidade
+   existia no array e não era servida a NENHUM ano — invisível para a
+   professora, e sem nada em tela que dissesse por quê. */
+const RE_EF = /^EF(\d{2})([A-Z]{2})(\d{2,3})([A-Z]?)$/;
 const RE_EM = /^EM13([A-Z]{2,3})(\d{2,3})$/;
 
 /**
@@ -212,7 +309,11 @@ function ehRuido(texto) {
   if (texto.length < 3) return true;
   if (/^\d+$/.test(texto)) return true;
   if (
-    /^(BASE NACIONAL COMUM CURRICULAR|UNIDADES TEM|OBJETOS DE CONHECIMENTO|HABILIDADES|PRÁTICAS DE LINGUAGEM|CAMPOS DE ATUAÇÃO|TODOS OS CAMPOS)/i.test(
+    /* "OBJETO DE CONHECIMENTO" no SINGULAR e "EIXO" são os cabeçalhos da BNCC
+       de Computação, que a lista plural da BNCC regular não pegava: eles caíam
+       na faixa do meio e 11 habilidades saíram com a palavra "OBJETO DE
+       CONHECIMENTO" gravada como o objeto de conhecimento delas. */
+    /^(BASE NACIONAL COMUM CURRICULAR|UNIDADES TEM|OBJETOS? DE CONHECIMENTO|EIXO|COMPETÊNCIA ESPECÍFICA|HABILIDADES?|PRÁTICAS DE LINGUAGEM|CAMPOS DE ATUAÇÃO|TODOS OS CAMPOS)$/i.test(
       texto,
     )
   ) {
@@ -341,7 +442,12 @@ function extrairComputacao(pdf, { totalDePaginas }) {
     todas.forEach((blocos, i) => {
       const continuacao = blocos.some((b) => /\(CONTINUA[ÇC][ÃA]O\)/i.test(b.texto));
       const naTabela = blocos
-        .filter((b) => /^\(E[FM]\d{2}CO\d{2}\)/.test(b.texto))
+        /* `\d{2,3}` porque a BNCC publica "(EF05CO011)" — três dígitos, no
+           que é erro de digitação DELA. Com `\d{2}` a habilidade sumia do
+           dataset inteiro, em silêncio: 129 linhas onde o documento tem 130. O
+           código fica como está no documento oficial; "corrigi-lo" para
+           EF05CO11 inventaria um código que nenhuma rede vai procurar. */
+        .filter((b) => /^\(E[FM]\d{2}CO\d{2,3}\)/.test(b.texto))
         .sort((a, b) => a.y - b.y);
       if (!naTabela.length) return;
 
@@ -373,8 +479,14 @@ function extrairComputacao(pdf, { totalDePaginas }) {
         .filter((b) => naColuna(b, COLUNA_CO.exemplos, 20) && b.texto.length > 40)
         .sort((a, b) => a.y - b.y);
 
+      /* A distribuição é da PÁGINA inteira, não de uma habilidade por vez: a
+         regra é uma partição em blocos consecutivos, e uma partição não se
+         decide olhando uma linha só. */
+      const eixoDe = distribuirRotulos(eixos, naTabela);
+      const objetoDe = distribuirRotulos(objetos, naTabela);
+
       naTabela.forEach((bloco, ordem) => {
-        const m = /^\((E[FM]\d{2}CO\d{2})\)\s*([\s\S]+)$/.exec(bloco.texto);
+        const m = /^\((E[FM]\d{2}CO\d{2,3})\)\s*([\s\S]+)$/.exec(bloco.texto);
         if (!m) return;
         const [, codigo, descricao] = m;
         const jaVista = habilidades.get(codigo);
@@ -387,9 +499,8 @@ function extrairComputacao(pdf, { totalDePaginas }) {
           anos: anosDoCodigo(codigo),
           componente: "computacao",
           area: "computacao",
-          eixo: rotuloNaAltura(eixos, bloco.y) ?? (continuacao ? heranca.eixo : null),
-          objetoDeConhecimento:
-            rotuloNaAltura(objetos, bloco.y) ?? (continuacao ? heranca.objeto : null),
+          eixo: eixoDe[ordem] ?? (continuacao ? heranca.eixo : null),
+          objetoDeConhecimento: objetoDe[ordem] ?? (continuacao ? heranca.objeto : null),
           explicacao: explicacoes.length === naTabela.length ? explicacoes[ordem].texto : null,
           exemplos: exemplos.length === naTabela.length ? exemplos[ordem].texto : null,
         });
@@ -454,7 +565,19 @@ function main() {
     const habilidades = doc.computacao
       ? extrairComputacao(pdf, { totalDePaginas: paginas })
       : extrairDocumento(pdf, { totalDePaginas: paginas, etapa: doc.etapa });
-    habilidades.sort((a, b) => a.codigo.localeCompare(b.codigo));
+    /* A ordem é a do DOCUMENTO, e por isso o número final entra como NÚMERO.
+       `localeCompare` puro põe "EF05CO011" entre a CO01 e a CO02, porque
+       compara caractere a caractere — e aí a sequência dos eixos dentro do 5º
+       ano deixa de ser PENSAMENTO → MUNDO → CULTURA, que é justamente o que o
+       teste do dataset usa para provar que a atribuição está certa. O prefixo
+       continua alfabético; só a cauda numérica vira número. */
+    const prefixo = (c) => c.replace(/\d+$/, "");
+    const sufixo = (c) => Number((/(\d+)$/.exec(c) ?? [0, 0])[1]);
+    habilidades.sort(
+      (a, b) =>
+        prefixo(a.codigo).localeCompare(prefixo(b.codigo)) ||
+        sufixo(a.codigo) - sufixo(b.codigo),
+    );
 
     const nomeDaConstante = doc.saida
       .replace(/\.ts$/, "")

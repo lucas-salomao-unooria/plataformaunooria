@@ -1,3 +1,4 @@
+import { textoAlternativoDaImagem } from "../comum/insta/texto-alternativo";
 import {
   BadRequestException,
   Body,
@@ -45,6 +46,8 @@ import { normalizarEstado } from "../motor/estado";
 import { PrismaService } from "../prisma/prisma.service";
 import { logger } from "../observabilidade/logger";
 import { excluirAtividade, limparDadosDosEstudantes } from "./manutencao";
+import { EXP_ID } from "./podcast-fonte";
+import { gravarFalasDoPodcast } from "../podcast/podcast.service";
 import { Contrato } from "../openapi/contrato";
 import {
   EstudanteDaAtividadeSchema,
@@ -269,8 +272,8 @@ export class AtividadesController {
   @Post(":id/limpar")
   @HttpCode(200)
   @Contrato({
-    resumo: "Apaga as sessões dos estudantes, mantendo a atividade e os posts.",
-    descricao: "É o botão de rodar a mesma atividade com outra turma.",
+    resumo: "Apaga as sessões dos estudantes e a evidência pedagógica da atividade, mantendo a atividade e os posts.",
+    descricao: "É o botão de rodar a mesma atividade com outra turma, ou de a mesma turma passar de novo pela missão (ADR-155).",
     params: z.object({ id: z.string().uuid() }),
     resposta: LimpaSchema,
   })
@@ -279,7 +282,7 @@ export class AtividadesController {
     return this.prisma.comTenancy(async (tx) => {
       const atividade = await atividadeDoProfessor(tx, id, req.auth.usuarioId, req.auth.escolaId);
       if (!atividade) naoEncontrado();
-      const { sessoes } = await limparDadosDosEstudantes(tx, id);
+      const { sessoes } = await limparDadosDosEstudantes(tx, atividade);
       return { ok: true, sessoes };
     });
   }
@@ -313,11 +316,21 @@ export class AtividadesController {
     params: z.object({ id: z.string().uuid() }),
     corpo: AtivarSchema,
     resposta: AtivadaSchema,
-    notas: ["`forcar: true` ativa com a matriz incompleta, de propósito — e a resposta devolve `forcado: true` para a tela dizer isso."],
+    notas: [
+      "`forcar: true` ativa com a matriz incompleta, de propósito — e a resposta devolve `forcado: true` para a tela dizer isso.",
+      "`podcast` traz as três falas do podcast de recapitulação revisadas pelo professor (ADR-156): de 12 a 60 palavras, sem link, e-mail ou @. Vêm na mesma transação da ativação; ausentes, valem as já gravadas.",
+    ],
   })
   async ativar(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     const parsed = AtivarSchema.safeParse(body ?? {});
+    /* Falas do podcast tortas não podem sumir em silêncio no `forcar: false`
+       de antes: a régua volta ao professor, frase por frase. */
+    if (!parsed.success && body && typeof body === "object" && "podcast" in body) {
+      const problemas = parsed.error.issues.map((i) => i.message);
+      throw new BadRequestException({ codigo: "payload-invalido", mensagem: problemas.join(" "), problemas });
+    }
     const forcar = parsed.success ? parsed.data.forcar : false;
+    const podcast = parsed.success ? parsed.data.podcast : undefined;
 
     return this.prisma.comTenancy(async (tx) => {
       const atividade = await atividadeDoProfessor(tx, id, req.auth.usuarioId, req.auth.escolaId);
@@ -390,6 +403,17 @@ export class AtividadesController {
         );
       }
       if (vazias.length > 0) pendencias.push(`Sem nenhum post nestas combinações de lado e perfil: ${vazias.join(", ")}.`);
+      /* O envio (6c) só mede a confiabilidade com página de fofoca ou de humor
+         nos DOIS lados (ADR-167). A atividade antiga não tem: a geração passou
+         a exigir depois. Aviso com a saída — não há "gerar de novo" no lugar. */
+      const deFofocaOuHumor = await tx.post.groupBy({
+        by: ["lado"],
+        where: { activityId: id, aprovado: true, lado: { in: ["A", "B"] }, author: { tipo: { in: ["fofoca_tema", "humor"] } } },
+        _count: { _all: true },
+      });
+      if (!["A", "B"].every((lado) => deFofocaOuHumor.some((l) => l.lado === lado))) {
+        pendencias.push(AVISO_SEM_CONFIABILIDADE);
+      }
       if (rasas.length > 0) {
         pendencias.push(
           `Combinações com pouquíssimo conteúdo (menos de ${Math.round(
@@ -402,13 +426,36 @@ export class AtividadesController {
         throw new HttpException({ mensagem: pendencias.join(" "), pendencias }, 422);
       }
 
-      // Uma turma por vez: ativar encerra a atividade ativa anterior do
-      // professor, senão `POST /runs` (que pega a mais recente) sequestraria a turma.
+      /*
+       * UMA EM ANDAMENTO POR TURMA (ADR-130). Ativar encerra a ativa da MESMA
+       * turma — de qualquer professor dela: duas ativas na sala e o `POST /runs`
+       * (que pega a mais recente) escolheria por ordem de criação, não pelo que
+       * o professor pôs no ar. A da turma do lado fica: era "uma por PROFESSOR",
+       * e o 8A e o 8B do mesmo professor não rodavam juntos.
+       *
+       * A atividade antiga SEM turma vale para a escola inteira; ativá-la
+       * mantém a regra de antes — encerra as ativas do professor —, porque ela
+       * concorre com todas as turmas dele.
+       */
       await tx.activity.updateMany({
-        where: { professorId: req.auth.usuarioId, escolaId: req.auth.escolaId, status: "ativa", id: { not: id } },
+        where: {
+          escolaId: req.auth.escolaId,
+          status: "ativa",
+          id: { not: id },
+          ...(atividade.turmaId ? { turmaId: atividade.turmaId } : { professorId: req.auth.usuarioId }),
+        },
         data: { status: "encerrada" },
       });
       await tx.activity.update({ where: { id }, data: { status: "ativa" } });
+      if (podcast) {
+        await gravarFalasDoPodcast(tx, {
+          escolaId: req.auth.escolaId,
+          expId: EXP_ID,
+          atividadeId: id,
+          falas: podcast,
+          aprovadoPor: req.auth.usuarioId,
+        });
+      }
 
       return {
         ok: true,
@@ -600,11 +647,23 @@ export class AtividadesController {
       const atividade = await atividadeDoProfessor(tx, id, req.auth.usuarioId, req.auth.escolaId);
       if (!atividade) naoEncontrado();
 
-      const [metricas, dossies] = await Promise.all([
+      const [metricas, dossies, doCanalA] = await Promise.all([
         metricasDaAtividade(tx, id),
         tx.dossier.findMany({ where: { run: { activityId: id } }, select: { runId: true } }),
+        /* O Canal A (ADR-167): sim/não por run — a frase do envio entra só
+           como "tem frase", nunca o texto. */
+        tx.run.findMany({
+          where: { activityId: id },
+          select: {
+            id: true,
+            fase: true,
+            revelacaoConcluidaEm: true,
+            tarefas: { select: { tarefa: true, enviadaEm: true, refeita: true, frase: true } },
+          },
+        }),
       ]);
       const comDossie = new Set(dossies.map((registro) => registro.runId));
+      const canalA = new Map(doCanalA.map((r) => [r.id, resumoDoCanalA(r)]));
 
       const linhas = metricas.map((estudante) => ({
         runId: estudante.runId,
@@ -649,6 +708,7 @@ export class AtividadesController {
          * conteúdo, que é texto de criança e não passeia por listagem.
          */
         caracteresDaReflexao: estudante.reflexao?.caracteres ?? 0,
+        canalA: canalA.get(estudante.runId)?.linha ?? CANAL_A_VAZIO,
       }));
 
       const comLado = linhas.filter((linha) => linha.ladoDominante !== "neutro");
@@ -677,6 +737,7 @@ export class AtividadesController {
           ociosos: linhas.filter((l) => l.alertaDeOcioso).length,
           salvosNaTurma: linhas.reduce((soma, l) => soma + l.colecao.total, 0),
           salvosDoOutroLado: linhas.reduce((soma, l) => soma + l.colecao.doOutroLado, 0),
+          naRevelacao: [...canalA.values()].filter((c) => c.naRevelacao).length,
         },
         limiteDeOciosidadeMs: OCIOSO_ALERTA_MS,
       };
@@ -717,8 +778,14 @@ export class AtividadesController {
           engineState: true,
           estudante: { select: { username: true, displayName: true } },
           conclusao: { select: { inclinacao: true } },
-          reflexao: { select: { texto: true } },
+          reflexao: { select: { texto: true, primeiroTexto: true, createdAt: true } },
           studentPosts: { select: { texto: true, ladoInferido: true, createdAt: true } },
+          revelacaoConcluidaEm: true,
+          tarefas: { select: { tarefa: true, enviadaEm: true, refeita: true, frase: true } },
+          leiturasDaReflexao: {
+            where: { activityId: id },
+            select: { resultado: true, nivel: true, motivo: true, tentativas: true, criadaEm: true, lidaEm: true },
+          },
         },
       });
       if (!run) naoEncontrado();
@@ -780,6 +847,7 @@ export class AtividadesController {
           caption: true,
           imageUrl: true,
           imageStatus: true,
+          imageBrief: true,
           author: { select: { handle: true } },
         },
       });
@@ -805,6 +873,7 @@ export class AtividadesController {
           handle: post.author.handle,
           caption: post.caption,
           imageUrl: post.imageStatus === "ok" ? post.imageUrl : null,
+          imageAlt: textoAlternativoDaImagem(post),
           fallbackArt: post.imageStatus === "ok" ? null : arteFallback(post.id, post.categoria),
           lado: post.lado,
           ladoRotulo: rotulo(post.lado),
@@ -845,6 +914,7 @@ export class AtividadesController {
           respondeuRotulo: run.conclusao ? rotulo(run.conclusao.inclinacao) : null,
           reflexao: run.reflexao?.texto ?? null,
           postouNoApp: run.studentPosts[0]?.texto ?? null,
+          canalA: canalADoEstudante(run),
         },
         resumo: {
           salvos: salvosDoLado + salvosDoOutro + salvosNeutros,
@@ -858,4 +928,85 @@ export class AtividadesController {
       };
     });
   }
+}
+
+/**
+ * O aviso de atividade que não mede a confiabilidade do envio (ADR-167), com
+ * a saída: uma atividade nova com a mesma pergunta já nasce com as páginas.
+ */
+export const AVISO_SEM_CONFIABILIDADE =
+  "Esta atividade não tem página de fofoca ou de humor nos dois lados, então o envio não mede a confiabilidade e vai no máximo a \"em processo\". Para medir, crie uma atividade nova com a mesma pergunta: o acervo novo já vem com essas páginas.";
+
+const CANAL_A_VAZIO = {
+  revelacaoConcluida: false,
+  raioX: false,
+  termos: false,
+  envio: false,
+  comFrase: false,
+  refeita: false,
+};
+
+type TarefaDaRun = { tarefa: string; enviadaEm: Date | null; refeita: boolean; frase: string | null };
+
+const enviada = (tarefas: readonly TarefaDaRun[], t: string) => tarefas.some((x) => x.tarefa === t && x.enviadaEm !== null);
+
+/** A linha do Canal A no monitor: sim/não, nunca o que a criança escreveu. */
+function resumoDoCanalA(r: { fase: string; revelacaoConcluidaEm: Date | null; tarefas: TarefaDaRun[] }) {
+  const naRevelacao =
+    ["explicabilidade", "perdidos", "reflexao", "fim", "revelacao", "dossie"].includes(r.fase) && r.revelacaoConcluidaEm === null;
+  return {
+    naRevelacao,
+    linha: {
+      revelacaoConcluida: r.revelacaoConcluidaEm !== null,
+      raioX: enviada(r.tarefas, "raio-x"),
+      termos: enviada(r.tarefas, "termos"),
+      envio: enviada(r.tarefas, "envio"),
+      comFrase: r.tarefas.some((x) => x.tarefa === "envio" && x.frase !== null),
+      refeita: r.tarefas.some((x) => x.refeita),
+    },
+  };
+}
+
+/**
+ * O Canal A no detalhe do estudante — só o professor lê esta rota.
+ *
+ * O "texto lido" só é o primeiro texto da reflexão de AGORA quando ela é
+ * anterior à leitura (decisão 7a de 2026-10-16): a reflexão mais nova que a
+ * leitura nasceu depois de um reinício, e o texto que a IA leu saiu com a
+ * reflexão antiga. Aí o professor vê o nível e o motivo, e não o texto.
+ */
+function canalADoEstudante(run: {
+  revelacaoConcluidaEm: Date | null;
+  tarefas: TarefaDaRun[];
+  reflexao: { primeiroTexto: string | null; createdAt: Date } | null;
+  leiturasDaReflexao: {
+    resultado: string | null;
+    nivel: string | null;
+    motivo: string | null;
+    tentativas: number;
+    criadaEm: Date;
+    lidaEm: Date | null;
+  }[];
+}) {
+  const leitura = run.leiturasDaReflexao[0] ?? null;
+  const reflexaoLida = Boolean(leitura && run.reflexao && run.reflexao.createdAt.getTime() <= leitura.criadaEm.getTime());
+  return {
+    revelacaoConcluida: run.revelacaoConcluidaEm !== null,
+    raioX: enviada(run.tarefas, "raio-x"),
+    termos: enviada(run.tarefas, "termos"),
+    envio: enviada(run.tarefas, "envio"),
+    refeita: run.tarefas.some((x) => x.refeita),
+    fraseDoEnvio: run.tarefas.find((x) => x.tarefa === "envio")?.frase ?? null,
+    leitura: leitura
+      ? {
+          resultado: leitura.resultado as "nivel" | "sem_marca" | "falha" | null,
+          nivel: leitura.nivel as "atingiu" | "em_processo" | "nao_atingiu" | null,
+          motivo: leitura.motivo,
+          tentativas: leitura.tentativas,
+          lidaEm: leitura.lidaEm?.toISOString() ?? null,
+        }
+      : null,
+    textoLido: reflexaoLida ? (run.reflexao?.primeiroTexto ?? null) : null,
+    textoLidoApagado: leitura !== null && !reflexaoLida,
+  };
 }

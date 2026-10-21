@@ -1,11 +1,15 @@
 import { MISSAO_TEMPESTADE } from '../cenario';
 import { CONJUNTOS, CONJUNTO_POR_SLUG } from '../modelo/conjuntos';
-import { chegaATempo } from '../modelo/tempestade';
+import { chegaATempo, type Desfecho } from '../modelo/tempestade';
 import { FERRAMENTAS, rodarModelo } from '../ferramentas';
 import { validarOpcoes, type Opcoes } from '../regras/opcoes';
 import type { AiProvider } from '../../ai/provider';
 import { erroDeJogo } from '../erros';
-import { TETO_TOKENS_RESPOSTA } from '../regras/defaults';
+import {
+  PRAZO_DO_TURNO_DO_CIENTISTA_MS,
+  TETO_POR_CHAMADA_DO_CIENTISTA_MS,
+  TETO_TOKENS_RESPOSTA,
+} from '../regras/defaults';
 import { protocoloDoTurno, type TipoDeTurno } from './turno';
 import { problemasDeTamanho } from './tamanho';
 
@@ -24,13 +28,17 @@ import { problemasDeTamanho } from './tamanho';
  * 4: a reestruturação que saiu do playtest de 24/08 — teto de tamanho no topo e
  * no fim, protocolo por tipo de turno, e a cidade com quatro bairros. O painel
  * do professor usa isto para não misturar partidas de prompts diferentes.
+ *
+ * 5 (ADR-172): quem manda as equipes é o estudante, no botão "Enviar equipes" —
+ * `confirmar_alocacao` ABRE essa tela em vez de mandar; e o Cientista não
+ * comenta a contagem da Secretaria de Saúde.
  */
-export const VERSAO_PROMPT = 4;
+export const VERSAO_PROMPT = 5;
 
 const REGRAS = `
 TAMANHO DA RESPOSTA — esta é a primeira regra porque foi a que mais falhou.
-No máximo 4 frases, cerca de 350 caracteres. Cada linha de lista conta como uma
-frase. Ao lado da sua fala a tela mostra um QUADRO com a tabela completa da
+No máximo 4 frases, cerca de 350 caracteres (acima de 450 caracteres ou de 5
+frases a resposta é recusada e reescrita). Cada linha de lista conta como uma frase. Ao lado da sua fala a tela mostra um QUADRO com a tabela completa da
 cidade: você APONTA o que importa, você não reescreve o quadro em texto.
 
 Você é o Cientista de Dados da sala de operações de Serra do Sauá.
@@ -94,23 +102,18 @@ dentro da sua fala.
 - Nomear bairro é alocar_equipe. Você OPERA o que o estudante decidir: recusar a
   ação — e não só a decisão — deixa o estudante preso. São duas equipes; se ele não
   disser qual, pergunte antes de registrar.
-- Confirmar é confirmar_alocacao. "Confirmo", "pode mandar", "manda ver", "pode
-  enfrentar a tempestade" são confirmação, não alocação: se as duas equipes já
-  têm destino e ele confirma, NÃO chame alocar_equipe de novo.
+- Confirmar é confirmar_alocacao ("confirmo", "pode mandar", "manda ver",
+  "vamos nessa"). Ela NÃO manda as equipes: ABRE na tela dele o botão "Enviar
+  equipes", e quem manda é ele. Com destino já registrado, não chame
+  alocar_equipe de novo.
 - Só chame confirmar_alocacao se a ÚLTIMA mensagem dele for a confirmação. Um
-  "confirmo" dito antes de existir destino não vale: registre os destinos,
-  mostre o que muda e pergunte se pode mandar.
-- Com as duas equipes alocadas, ofereça enfrentar a tempestade e avise que
-  depois disso não dá para voltar. Uma equipe sem destino não impede o envio: se
-  ele mandar assim, ela fica na base e você diz isso em uma frase.
-- Avise UMA vez sobre desvio ou chegada em cima da hora e pergunte se ele quer
-  trocar. Se ele reafirmar, CHAME confirmar_alocacao na mesma resposta, mesmo
-  que uma das equipes não passe — a decisão é dele, inclusive a de mandar assim.
-  Repetir o mesmo aviso duas vezes prende o estudante na tela e a Missão nunca
-  fecha: é o pior defeito possível.
-- Quando ele confirmar, você DEVE chamar confirmar_alocacao. NUNCA narre a
-  tempestade, a chegada das equipes ou qualquer desfecho sem ter chamado a
-  ferramenta e recebido o resultado: quem decide o que aconteceu é o sistema.
+  "confirmo" antes de existir destino não vale: registre os destinos e pergunte
+  se pode abrir o envio. Equipe sem destino fica na base: diga isso em uma frase.
+- Avise UMA vez sobre desvio ou chegada em cima da hora. Se ele reafirmar, CHAME
+  confirmar_alocacao na mesma resposta — a decisão é dele. Repetir o aviso
+  prende o estudante na tela: é o pior defeito possível.
+- NUNCA narre a saída das equipes, a tempestade ou o desfecho: quem decide o
+  que aconteceu é o sistema.
 - Ao registrar um destino, alocar_equipe devolve a rota daquela equipe. Se vier
   "atencao", repasse em uma frase, com os horários que vieram na ferramenta.
   Isso é informação, não impedimento: nenhum destino é proibido, e você nunca
@@ -122,6 +125,9 @@ aparece no fim desta instrução ("restam cerca de 3 minutos"). Nunca dê a hora
 relógio nem uma contagem em minutos da cidade: o estudante tem um cronômetro na tela
 e é com ele que a sua fala tem de bater. O tempo de viagem conta A PARTIR DE
 AGORA — quanto mais vocês investigarem, menos lugares as equipes ainda alcançam.
+
+A contagem da Secretaria de Saúde que aparece na tela dele não é fonte sua:
+não a comente nem a cite.
 
 NUNCA. Nunca revele a falha, o viés ou a limitação de um conjunto: você pode
 dizer o que ele contém e para que serve. Nunca use as palavras "algoritmo",
@@ -184,7 +190,7 @@ const SOCORRO: Record<TipoDeTurno, string> = {
   'escolha-numerada':
     'Responda UMA frase confirmando o que ele escolheu, e pergunte se pode mandar as equipes.',
   'nomeia-bairro': 'Responda UMA frase confirmando o destino, e pergunte se pode mandar.',
-  confirmacao: 'Responda UMA frase perguntando se pode enfrentar a tempestade agora.',
+  confirmacao: 'Responda UMA frase perguntando se pode abrir a tela de envio, onde ele manda as equipes.',
   // Estes dois ficaram vazios na primeira volta e caíam no socorro genérico —
   // que é justamente o que produz mais uma pergunta no vazio. São os dois tipos
   // de turno mais comuns da Missão.
@@ -236,9 +242,19 @@ export function montarSystemPrompt(entrada: {
     // escrever. No meio de trinta regras ele era ignorado — a resposta que
     // encheu a tela do playtest tinha 640 caracteres com "no máximo 4 frases"
     // escrito no prompt.
-    'LEMBRE: até 4 frases, no máximo DOIS bairros citados pelo nome. Se a pergunta pede risco, gente ou comparação, carregue a fonte E chame rodar_modelo na mesma resposta — é o que faz aparecer o quadro na tela, e aí você aponta dois bairros em vez de reescrever a tabela. Termine com uma pergunta.',
+    `LEMBRE: até 4 frases${entrada.primeiraFala ? ' (na primeira fala, até 5: uma por passo)' : ''}, no máximo DOIS bairros citados pelo nome. Se a pergunta pede risco, gente ou comparação, carregue a fonte E chame rodar_modelo na mesma resposta — é o que faz aparecer o quadro na tela, e aí você aponta dois bairros em vez de reescrever a tabela. Termine com uma pergunta.`,
   ].join('\n');
 }
+
+/**
+ * O que o portão do envio (`aoConfirmar`, no serviço) responde. A recusa tem
+ * MOTIVO, porque o Cientista precisa dizer ao estudante o que fazer — antes
+ * ela voltava como `null`, e "falta o porquê" e "nenhuma equipe tem destino"
+ * viravam a mesma frase errada.
+ */
+export type ResultadoDaConfirmacao =
+  | { desfecho: Desfecho }
+  | { recusa: 'falta-justificar' | 'sem-destino' };
 
 export interface RespostaDoCientista {
   texto: string;
@@ -254,8 +270,11 @@ export interface RespostaDoCientista {
   dadosUsados: string[] | null;
   /** Alocação registrada nesta resposta, quando houve. */
   alocou: { alfa: string | null; bravo: string | null } | null;
-  /** Desfecho, quando a tempestade foi enfrentada nesta resposta. */
-  confirmou: unknown | null;
+  /**
+   * Ele confirmou na conversa, e a ferramenta pediu para a tela abrir a decisão
+   * com "Enviar equipes" (ADR-172). As equipes NÃO saíram: quem manda é o botão.
+   */
+  pediuEnvio: boolean;
   /** As duas alternativas que ele pôs na mesa nesta resposta, se pôs. */
   opcoes: Opcoes | null;
   /** Cartão que acompanha a fala na Transcrição (ADR-0007). */
@@ -283,10 +302,10 @@ function tempoRestante(segundos: number | null): string {
  */
 function aberturaDaConversa(tempo: string): string {
   return [
-    'ESTA É A PRIMEIRA FALA DA CONVERSA. Estrutura obrigatória, em no máximo 5 frases:',
+    'ESTA É A PRIMEIRA FALA DA CONVERSA. EXCEÇÃO ao teto de 4 frases: estrutura obrigatória, no máximo 5 frases, uma por passo:',
     '1. Cumprimente em meia frase.',
     `2. Situe a urgência: ${tempo} até a chuva, e há duas equipes para quatro bairros.`,
-    '3. Diga o que você faz: consulta informações da cidade e cruza o que estiver carregado para mostrar tendências — e que agora não tem nada carregado, então não enxerga nada.',
+    '3. Diga o que você faz: consulta informações da cidade e cruza o que estiver carregado para mostrar o que os dados apontam — e que agora não tem nada carregado, então não enxerga nada.',
     '4. Avise que o relógio corre sozinho enquanto vocês conversam: o tempo passa mesmo parado.',
     '5. Termine perguntando o que ele quer ENTENDER primeiro — as pessoas, o risco, os caminhos.',
     'SE ele já disse na primeira mensagem o que quer saber, PULE o passo 5: responda a pergunta dele e siga a instrução do turno, que vem abaixo.',
@@ -312,12 +331,12 @@ export async function responder(
   tempo: { segundosAteFechar: number | null; minutosGastos: number },
   historico: { papel: 'estudante' | 'agente'; texto: string }[],
   texto: string,
-  aoUsarDados: (dados: string[]) => Promise<string[]>,
+  /** Devolve as fontes em uso E a rodada depois da carga: o cartão sorteia com ela, como o mapa. */
+  aoUsarDados: (dados: string[]) => Promise<{ conjuntos: string[]; rodadas: number }>,
   aoAlocar: (destinos: {
     alfa?: string;
     bravo?: string;
   }) => Promise<{ alfa: string | null; bravo: string | null } | null>,
-  aoConfirmar: () => Promise<unknown>,
   /**
    * O que o servidor já sabe sobre o estado da Missão. Sem isto o mesmo texto
    * ("manda ver") é indistinguível entre confirmar um envio e pedir que a IA
@@ -339,9 +358,14 @@ export async function responder(
   let executada: ReturnType<typeof rodarModelo> | null = null;
   let usados: string[] | null = null;
   let alocou: { alfa: string | null; bravo: string | null } | null = null;
-  let confirmou: unknown = null;
+  let pediuEnvio = false;
   let opcoes: Opcoes | null = null;
   let emUso = [...conjuntos];
+  /* A rodada do sorteio ANDA com a carga: `aoUsarDados` soma 1 quando entra
+     fonte nova, e o mapa (que o serviço monta depois do turno) sorteia com a
+     rodada nova. O cartão deste turno tem de sortear igual — com a de antes, o
+     cartão e o mapa mostravam números diferentes para a mesma leitura. */
+  let rodadaAtual = rodada;
   let ultimaFonte: string | undefined;
   const tempoQueResta = tempoRestante(tempo.segundosAteFechar);
 
@@ -353,6 +377,9 @@ export async function responder(
     // guarda de 450 caracteres com retry (agente/tamanho.ts). Este número só
     // impede geração que não para — e o RACIOCÍNIO do modelo conta aqui dentro.
     maxTokens: TETO_TOKENS_RESPOSTA,
+    // O turno cabe no teto do cliente mesmo com a fila do Vertex cheia (regras/defaults.ts).
+    tetoPorChamadaMs: TETO_POR_CHAMADA_DO_CIENTISTA_MS,
+    prazoMs: PRAZO_DO_TURNO_DO_CIENTISTA_MS,
     // Protocolo curto é seguido com mais fidelidade com menos temperatura, e
     // isto não afeta a escolha de ferramenta.
     temperatura: 0.5,
@@ -372,24 +399,21 @@ export async function responder(
       // Número sem ferramenta nenhuma ter rodado é número inventado — o defeito
       // mais grave possível numa Missão sobre confiar em dados.
       //
-      // `confirmou` conta: ao narrar o desfecho, os números vêm da tempestade,
-      // não do modelo. Sem essa ressalva a guarda derrubava a última fala da
-      // Missão e o estudante via "não consegui responder" no fim de tudo.
-      if (!executada && !confirmou && /\d+\s?%|\b\d{3,}\b|\d\.\d{3}/.test(saida)) {
+      if (!executada && /\d+\s?%|\b\d{3,}\b|\d\.\d{3}/.test(saida)) {
         problemas.push(
           'você deu números sem chamar rodar_modelo. Chame a ferramenta e use os números dela, ou responda sem número nenhum',
         );
       }
 
-      // Narrar a tempestade sem ter disparado é inventar o desfecho: quem
-      // decide o que aconteceu é o sistema.
+      // Narrar a tempestade é inventar o desfecho: as equipes só saem no botão
+      // "Enviar equipes", e quem decide o que aconteceu é o sistema.
       const narrouDesfecho =
-        /tempestade (chegou|passou|atingiu)|as equipes (foram|estão a caminho|chegaram)|operação (começou|terminou)/i.test(
+        /tempestade (chegou|passou|atingiu)|as equipes (foram|saíram|estão a caminho|chegaram)|operação (começou|terminou)/i.test(
           saida,
         );
-      if (!confirmou && narrouDesfecho) {
+      if (narrouDesfecho) {
         problemas.push(
-          'você narrou a tempestade sem chamar confirmar_alocacao. Chame a ferramenta e narre o resultado dela, ou apenas pergunte se ele confirma',
+          'você narrou a saída das equipes ou a tempestade. As equipes só saem quando ele aperta "Enviar equipes": diga que a tela de envio está aberta, ou pergunte se ele confirma',
         );
       }
 
@@ -436,7 +460,9 @@ export async function responder(
             ? (argumentos.dados as string[]).filter((d) => CONJUNTO_POR_SLUG.has(d))
             : [];
           const antes = new Set(emUso);
-          emUso = await aoUsarDados(pedidos);
+          const carga = await aoUsarDados(pedidos);
+          emUso = carga.conjuntos;
+          rodadaAtual = carga.rodadas;
           usados = emUso;
           ultimaFonte = emUso.find((c) => !antes.has(c)) ?? ultimaFonte;
           // Carregar uma fonte e reler a cidade são UM ato — é o que a fala do
@@ -446,7 +472,7 @@ export async function responder(
           // ninguém tinha produzido; quando a guarda barrava isso, ele gastava
           // duas tentativas e vinte segundos para chegar ao mesmo lugar.
           if (emUso.length > 0) {
-            executada = rodarModelo(sessaoId, rodada, emUso, ultimaFonte);
+            executada = rodarModelo(sessaoId, rodadaAtual, emUso, ultimaFonte);
           }
           return {
             usandoAgora: emUso.map((s) => CONJUNTO_POR_SLUG.get(s)?.comoFalar ?? s),
@@ -514,7 +540,7 @@ export async function responder(
           // turno, chamar rodar_modelo em seguida e então emudecer — o estudante
           // esperava meio minuto e recebia "não consegui responder agora".
           if (!executada && emUso.length > 0) {
-            executada = rodarModelo(sessaoId, rodada, emUso, ultimaFonte);
+            executada = rodarModelo(sessaoId, rodadaAtual, emUso, ultimaFonte);
           }
           const r = validarOpcoes(argumentos, { jaCruzou: executada !== null });
           if (!r.aceito) return { aceito: false, motivo: r.motivo };
@@ -524,12 +550,20 @@ export async function responder(
 
         if (nome === 'confirmar_alocacao') {
           if (argumentos.confirmado !== true) return { disparado: false };
-          confirmou = await aoConfirmar();
-          return confirmou ?? { disparado: false, motivo: 'as duas equipes precisam de destino' };
+          // A conversa NÃO manda as equipes (ADR-172): ela abre a decisão, onde
+          // o botão "Enviar equipes" passa pelo portão do porquê e leva ao
+          // registro da operação. Mandar pela conversa pularia os dois.
+          pediuEnvio = true;
+          return {
+            disparado: false,
+            telaDeEnvio: 'aberta',
+            motivo:
+              'a tela de envio abriu para ele. Diga em uma frase que é lá que ele confere o porquê de cada equipe e toca em "Enviar equipes". Não narre a tempestade.',
+          };
         }
 
         // A última fonte somada nesta conversa explica o que mudou na leitura.
-        executada = rodarModelo(sessaoId, rodada, emUso, ultimaFonte);
+        executada = rodarModelo(sessaoId, rodadaAtual, emUso, ultimaFonte);
         return executada;
       },
     },
@@ -544,21 +578,18 @@ export async function responder(
     rodada: executada,
     dadosUsados: usados,
     alocou,
-    confirmou,
+    pediuEnvio,
     opcoes,
-    // O cartão que acompanha a fala. Ordem importa: o desfecho encerra a
-    // Missão e ganha a tela; a alocação só aparece quando nada foi disparado.
-    // Ordem importa: o desfecho encerra a Missão e ganha a tela; a alocação só
-    // aparece quando nada foi disparado; as opções vêm com a leitura junto,
-    // porque é dela que sai o número mostrado em cada botão.
-    anexo: confirmou
-      ? { tipo: 'desfecho' as const, ...(confirmou as object) }
-      : alocou
-        ? { tipo: 'alocacao' as const, ...(alocou as object) }
-        : opcoes && executada
-          ? { tipo: 'opcoes' as const, opcoes: [...opcoes], rodada: executada }
-          : executada
-            ? { tipo: 'tendencia' as const, rodada: executada }
-            : null,
+    // O cartão que acompanha a fala. Ordem importa: a alocação primeiro; as
+    // opções vêm com a leitura junto, porque é dela que sai o número mostrado
+    // em cada botão. O desfecho não vem mais pela conversa: as equipes saem no
+    // botão "Enviar equipes" (ADR-172).
+    anexo: alocou
+      ? { tipo: 'alocacao' as const, ...(alocou as object) }
+      : opcoes && executada
+        ? { tipo: 'opcoes' as const, opcoes: [...opcoes], rodada: executada }
+        : executada
+          ? { tipo: 'tendencia' as const, rodada: executada }
+          : null,
   };
 }

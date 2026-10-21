@@ -1,5 +1,5 @@
 /**
- * Regras puras da exp-70: correção dos cartões e escolha da bolha.
+ * Regras puras da app-70: correção dos cartões e escolha da bolha.
  *
  * PURO — sem Prisma, sem `Date`, sem `Math.random`. Quem faz I/O é o service; o
  * que decide vive aqui, e é isso que permite testar o balanceamento da bolha sem

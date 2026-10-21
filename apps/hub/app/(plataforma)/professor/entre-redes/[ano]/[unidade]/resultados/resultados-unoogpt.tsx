@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { Card, EmptyState, MetricCard, ScrollBar } from "@edu/ui/ds";
+import { PainelDeHabilidades } from "@/components/evidencias/painel-de-habilidades";
 import { LinkButton } from "@/components/link-button";
 import { RotuloDaTrilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
+import { auth } from "@/lib/auth";
+import { painelDeHabilidades } from "@/lib/evidencias-servidor";
+import { podcastDaAtividade } from "@/lib/podcast-servidor";
+import { AVISO_POR_COMPUTADOR, chaveDaLinha } from "@/lib/equipe-no-painel";
+import { ATIVIDADE_DA_TURMA } from "@/lib/equipes";
 import {
   rotaDaMissao,
   type Missao,
@@ -11,7 +17,9 @@ import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { normalizarSerie } from "@/lib/series";
 import type { FolhaDaTurma, TurmaResumo } from "@/lib/unoogpt-tipos";
 
+import { EquipeNaLinha } from "./equipe-na-linha";
 import { PainelDoRelogio } from "./painel-do-relogio";
+import { CartaoDoPodcast } from "./podcast-da-aula";
 import { SeletorDeTurma } from "./seletor-de-turma";
 import { ZerarTurma } from "./zerar-turma";
 
@@ -20,7 +28,7 @@ import { ZerarTurma } from "./zerar-turma";
  *
  * A REGRA QUE ESTA TELA APLICA: nenhuma coluna de resgatados. Listagem é
  * ordenável, e ordenar crianças por acerto viraria ranking — o número fica na
- * tela individual, uma por vez. É a mesma regra da exp-70, e ela é o motivo de
+ * tela individual, uma por vez. É a mesma regra da app-70, e ela é o motivo de
  * a folha falar de CONDUTA (leu antes de decidir? viu fontes discordando?
  * justificou por intuição?) em vez de desempenho.
  */
@@ -47,9 +55,17 @@ export async function ResultadosUnooGPT({
       ? "Você não tem turma de 2ª série do EM, e esta missão é dessa série. Para conduzir uma missão, entre pela turma em Minhas turmas."
       : undefined;
 
-  const folha = turma
-    ? await apiDoServidor<FolhaDaTurma>(`/unoogpt/professor/turmas/${encodeURIComponent(turma)}`)
-    : null;
+  /* A evidência (E14; o Canal A, ADR-172): a missão não tem atividade, e a da
+     evidência é a sintética "turma" — a mesma das equipes. */
+  const [folha, habilidades, session, podcast] = await Promise.all([
+    turma ? apiDoServidor<FolhaDaTurma>(`/unoogpt/professor/turmas/${encodeURIComponent(turma)}`) : null,
+    turma && missao.expId ? painelDeHabilidades(turma, missao.expId, ATIVIDADE_DA_TURMA) : null,
+    auth(),
+    turma && missao.expId ? podcastDaAtividade(missao.expId, turma, ATIVIDADE_DA_TURMA) : null,
+  ]);
+  /* Com equipes nesta missão (E13), cada linha é um computador e o retrato
+     conta computadores. */
+  const porComputador = folha?.retrato.porComputador === true;
 
   return (
     <div className="flex flex-col gap-6">
@@ -102,7 +118,7 @@ export async function ResultadosUnooGPT({
         />
       ) : (
         <>
-          <PainelDoRelogio turmaId={turma} inicial={folha.relogio} />
+          <PainelDoRelogio turmaId={turma} inicial={folha.relogio} fechamento={folha.fechamento} />
 
           <div className="grid gap-3 sm:grid-cols-3">
             <MetricCard
@@ -121,6 +137,7 @@ export async function ResultadosUnooGPT({
           <p className="-mt-2 text-[12px] leading-snug text-unooria-neutral-600">
             {folha.retrato.decidiramNoEscuro} decidiram sem cruzar dado nenhum ·{" "}
             {folha.retrato.justificaramPorIntuicao} justificaram por intuição
+            {porComputador ? ` · ${AVISO_POR_COMPUTADOR}` : null}
           </p>
 
           <Card variant="outlined" title="Como usar isto no debate">
@@ -138,8 +155,45 @@ export async function ResultadosUnooGPT({
                 essa saída a pergunta viraria pegadinha e o estudante aprenderia a mentir para o
                 formulário.
               </li>
+              <li data-alcance-do-alerta>
+                <strong>O alcance do alerta</strong>, no bloco das fontes que discordam:{" "}
+                {folha.alcanceDoAlerta}
+              </li>
             </ul>
           </Card>
+
+          {/* O que cada grupo perguntou sobre cada fonte, no registro da
+              operação (ADR-172): contagens, para o bloco das fontes que
+              discordam. Nenhum nome, nenhum nível. */}
+          {folha.perguntasPorFonte.length > 0 ? (
+            <Card variant="outlined" title="O que cada grupo perguntou sobre cada fonte">
+              <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+                <table className="w-full min-w-[520px] border-collapse text-[13px]" data-perguntas-por-fonte>
+                  <thead>
+                    <tr className="border-b border-unooria-neutral-200 text-left text-unooria-neutral-500">
+                      <th className="py-2 pr-3 font-semibold">Fonte</th>
+                      <th className="py-2 pr-3 font-semibold">Bairro</th>
+                      <th className="py-2 pr-3 font-semibold">O que perguntou</th>
+                      <th className="py-2 font-semibold">Grupos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {folha.perguntasPorFonte.map((p) => (
+                      <tr
+                        key={`${p.fonte}-${p.bairro}-${p.pergunta}`}
+                        className="border-b border-unooria-neutral-100 text-unooria-neutral-800"
+                      >
+                        <td className="py-2 pr-3">{p.fonte}</td>
+                        <td className="py-2 pr-3">{p.bairro}</td>
+                        <td className="py-2 pr-3">{p.pergunta}</td>
+                        <td className="py-2 tabular-nums">{p.grupos}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </ScrollBar>
+            </Card>
+          ) : null}
 
           {/* O caminho de exclusão desta missão, no lugar de um prazo de
               retenção que nenhuma rotina cumpriria. Fica ACIMA da tabela: a
@@ -151,8 +205,8 @@ export async function ResultadosUnooGPT({
           <div className="flex flex-wrap items-center gap-3">
             <ZerarTurma turmaId={turma} nomeDaTurma={folha.turma.nome} />
             <p className="text-[12px] leading-snug text-unooria-neutral-500">
-              Apaga as partidas desta turma e devolve o relógio ao início. Use para rodar a missão
-              de novo com a mesma turma.
+              Apaga as partidas e as habilidades desta turma e devolve o relógio ao início. Use para
+              rodar a missão de novo com a mesma turma.
             </p>
           </div>
 
@@ -161,7 +215,9 @@ export async function ResultadosUnooGPT({
               <table className="w-full min-w-[720px] border-collapse text-[13px]">
                 <thead>
                   <tr className="border-b border-unooria-neutral-200 text-left text-unooria-neutral-500">
-                    <th className="py-2 pr-3 font-semibold">Estudante</th>
+                    <th className="py-2 pr-3 font-semibold">
+                      {porComputador ? "Estudante ou equipe" : "Estudante"}
+                    </th>
                     <th className="py-2 pr-3 font-semibold">Fontes</th>
                     <th className="py-2 pr-3 font-semibold">Leituras</th>
                     <th className="py-2 pr-3 font-semibold">Viu conflito</th>
@@ -174,14 +230,28 @@ export async function ResultadosUnooGPT({
                 <tbody>
                   {folha.linhas.map((l) => (
                     <tr
-                      key={l.estudanteId}
+                      key={chaveDaLinha(l)}
                       className="border-b border-unooria-neutral-100 text-unooria-neutral-800"
                       data-estudante={l.usuario}
                     >
                       <td className="py-2 pr-3">
-                        <span className="font-medium text-unooria-neutral-950">{l.nome}</span>
-                        {!l.comecou && (
-                          <span className="ml-2 text-unooria-neutral-500">não começou</span>
+                        {/* Com equipe, a linha é o computador: a equipe, quem
+                            senta nela e quem entrou — e "Abrir" leva à tela
+                            de quem entrou. */}
+                        {l.equipe ? (
+                          <>
+                            <EquipeNaLinha equipe={l.equipe} representante={l.nome} entrou={l.comecou} />
+                            {!l.comecou && (
+                              <span className="text-[11px] text-unooria-neutral-500">não começou</span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-medium text-unooria-neutral-950">{l.nome}</span>
+                            {!l.comecou && (
+                              <span className="ml-2 text-unooria-neutral-500">não começou</span>
+                            )}
+                          </>
                         )}
                       </td>
                       <td className="py-2 pr-3 tabular-nums">{l.fontesDistintas}</td>
@@ -209,6 +279,36 @@ export async function ResultadosUnooGPT({
               crianças por acerto viraria ranking. O número está na tela de cada estudante.
             </p>
           </Card>
+
+          {/* Depois do debate: o podcast da plataforma (ADR-150, ADR-156). Aqui
+              ele é FIXO — a missão não tem customização, e o roteiro é o
+              mesmo em toda turma, sem falas para revisar. Ele cita vieses das
+              fontes, então o aviso pede a hora certa: depois da conversa. */}
+          {missao.expId ? (
+            <CartaoDoPodcast
+              expId={missao.expId}
+              turmaId={turma}
+              atividadeId={ATIVIDADE_DA_TURMA}
+              podcast={podcast}
+              aviso="Toque o episódio só depois do debate: ele conta à turma o que três das fontes não enxergavam."
+            />
+          ) : null}
+
+          {/* O painel de habilidades (E14, ADR-172). Só conta quando a missão é
+              encerrada na Sala de Aula: até lá ele diz isso, sem nível. Só o
+              `professor` confirma e ajusta; a coordenação lê. */}
+          {habilidades?.temFicha && missao.expId ? (
+            <div className="flex flex-col gap-3" data-habilidades-da-tempestade>
+              <PainelDeHabilidades
+                key={turma}
+                turmaId={turma}
+                expId={missao.expId}
+                atividadeId={ATIVIDADE_DA_TURMA}
+                inicial={habilidades}
+                podeEditar={session?.usuario.papel === "professor"}
+              />
+            </div>
+          ) : null}
         </>
       )}
     </div>

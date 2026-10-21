@@ -26,7 +26,7 @@ if ! printf '%s' "$assunto" | grep -Eq "^($TIPOS)(\([a-z0-9._/-]+\))?!?: .+"; th
     Tipos:    ${TIPOS//|/, }
     Escopo:   o slug da experiência ou o app/pacote — opcional, mas quase sempre existe
 
-      feat(exp-12): o feed guarda a ordem entre sessões
+      feat(exp06ef3b): o feed guarda a ordem entre sessões
       fix(api): quota por perfil somava estudante e professor no mesmo balde
       chore(sdk): sobe o design system para 0.1.18
 

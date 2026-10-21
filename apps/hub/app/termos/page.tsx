@@ -39,9 +39,11 @@
  * 4. O PRODUTO É DESCRITO COMO ELE É. As experiências SIMULAM Instagram,
  *    YouTube, ChatGPT e WhatsApp; o conteúdo do feed é gerado por IA, com
  *    personas fictícias; não existe interação entre estudantes reais nem
- *    publicação para colegas. Sem isso escrito com destaque, a família acredita
- *    que o filho está numa rede social — e o produto passa a prometer, por
- *    silêncio, o oposto do que é.
+ *    publicação para colegas — com UMA exceção, escrita no card "O que você
+ *    escreve…": no Mural da A Seleção (exp07ef1b), o colega pareado lê a
+ *    legenda. Sem isso escrito com destaque, a família acredita que o filho
+ *    está numa rede social — e o produto passa a prometer, por silêncio, o
+ *    oposto do que é.
  *
  * 5. A IA TEM SEÇÃO PRÓPRIA porque é obrigação vigente: Decreto 12.880/2026,
  *    art. 11, I — transparência quanto ao caráter sintético e automatizado da
@@ -185,9 +187,8 @@ const SECOES: SecaoLegal[] = [
           </div>
         </div>
         <p>
-          O Instanooria imita um aplicativo de fotos; o UnooTube, um site de vídeos; o UnooGPT, um
-          assistente de conversa; O Eco no Grupo, um aplicativo de mensagens. A semelhança é
-          proposital: a missão só funciona se o ambiente parecer o de verdade. Mas o ambiente é
+          O Unoovista e o Instanooria imitam aplicativos de fotos (é no Unoovista que acontece A Seleção); o UnooTube, um
+          site de vídeos; o UnooriaAI, um assistente de conversa. A semelhança é proposital: a missão só funciona se o ambiente parecer o de verdade. Mas o ambiente é
           fechado, e a diferença importa.
         </p>
         <div className="legal-cards">
@@ -199,10 +200,12 @@ const SECOES: SecaoLegal[] = [
             </p>
           </div>
           <div className="legal-card">
-            <p className="legal-card__titulo">Você não publica para colegas</p>
+            <p className="legal-card__titulo">O que você escreve não vai para colegas — com uma exceção</p>
             <p className="legal-card__texto">
-              O que você escreve na missão não aparece para outros estudantes. Não há feed
-              compartilhado, não há mural da turma, não há mensagem de um estudante para outro.
+              Não há feed compartilhado nem mensagem de um estudante para outro. A exceção é A
+              Seleção: no Mural da turma, o colega com quem a sua publicação foi pareada vê os três
+              posts que você escolheu, a sua legenda e o seu primeiro nome (ou o nome da sua
+              equipe). Por isso a legenda não aceita link, telefone, e-mail nem marcação de @.
             </p>
           </div>
           <div className="legal-card">
@@ -464,10 +467,11 @@ const SECOES: SecaoLegal[] = [
         </div>
         <p>Hoje a IA aparece nestes lugares:</p>
         <ul>
-          <li>no feed do Instanooria, criando os perfis, as publicações e as reações dos personagens;</li>
-          <li>no UnooGPT, na conversa com o personagem que responde às suas perguntas;</li>
-          <li>em O Eco no Grupo, na conversa com a personagem e na devolutiva sobre suas escolhas;</li>
-          <li>nas ferramentas do professor: no rascunho do plano de aula e no texto do acompanhamento de bem-estar.</li>
+          <li>no feed do Unoovista, criando os perfis, as publicações e as reações dos personagens;</li>
+          <li>no UnooriaAI, na conversa com o personagem que responde às suas perguntas;</li>
+          <li>na A Seleção, lendo a legenda que você publica nos Stories para sugerir ao professor um nível de habilidade;</li>
+          <li>no Unoovista, lendo uma vez só o primeiro texto que você salva na reflexão, para sugerir ao professor um nível de habilidade;</li>
+          <li>nas ferramentas do professor: no rascunho do plano de aula, no preparo das publicações e das imagens da A Seleção e no texto do acompanhamento de bem-estar.</li>
         </ul>
         <h3>O que você precisa saber sobre ela</h3>
         <p>
@@ -476,12 +480,13 @@ const SECOES: SecaoLegal[] = [
           como material para discutir na aula, não como resposta certa. Confira antes de usar.
         </p>
         <p>
-          <strong>Ela não substitui o professor.</strong> A IA não avalia, não dá nota e não decide
-          nada sobre a sua vida escolar. Quem lê, interpreta e avalia é o professor.
+          <strong>Ela não substitui o professor.</strong> A IA não dá nota e não decide nada sobre a
+          sua vida escolar. Na A Seleção e no Unoovista, o nível que ela sugere a partir da sua legenda
+          ou da sua reflexão não aparece para você, e é o professor quem confere e decide. Quem lê, interpreta e avalia é o professor.
         </p>
         <p>
-          <strong>O que você escreve é enviado para processamento.</strong> Para gerar a resposta, o
-          texto que você digitou sai da plataforma e vai para o serviço de inteligência artificial que
+          <strong>O que você escreve é enviado para processamento.</strong> Para gerar a resposta (ou,
+          na A Seleção e no Unoovista, para ler a legenda ou a reflexão), o texto que você digitou sai da plataforma e vai para o serviço de inteligência artificial que
           a plataforma utiliza. Ele fica registrado na plataforma e fica visível para o professor da sua turma.
           Por isso: não escreva ali informação pessoal sua ou de outra pessoa.
         </p>
@@ -824,7 +829,7 @@ export default function Termos() {
       }
       meta={[
         { rotulo: "Versão", valor: "1.0 — rascunho para revisão jurídica" },
-        { rotulo: "Última atualização", valor: "5 de setembro de 2026" },
+        { rotulo: "Última atualização", valor: "25 de setembro de 2026" },
         { rotulo: "Aplica-se a", valor: "Hub e experiências da plataforma" },
         { rotulo: "Público", valor: "Estudantes, professores e gestão escolar" },
       ]}

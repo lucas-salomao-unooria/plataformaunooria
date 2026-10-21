@@ -2,7 +2,7 @@ import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
 
 /**
- * O Rastro do Boato (exp-06), nas duas pontas da sala.
+ * O Rastro do Boato (exp06ef2b), nas duas pontas da sala.
  *
  * A missão é de DUAS AULAS, e quem separa uma da outra é a professora. O
  * roteiro prova as duas metades: primeiro que o estudante trava no fim da Aula
@@ -143,8 +143,8 @@ await suite(
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
     await r.entrar(p, estudante.login);
 
-    await p.goto(`${HUB}/exp/exp-06-rastro-boato`, { waitUntil: "domcontentloaded" });
-    let q = p.frameLocator('iframe[title="experiencia"]');
+    await p.goto(`${HUB}/exp/exp06ef2b`, { waitUntil: "domcontentloaded" });
+    let q = p.frameLocator('iframe[data-experiencia]');
     await q.locator("text=/480 encaminhamentos/i").waitFor({ timeout: 40_000 });
     await r.registrar(p, "contexto", {
       titulo: "480 contra 12",
@@ -232,7 +232,7 @@ await suite(
 
     // ═══ O PICO: a crise chega, e a tela não dá dica nenhuma ══════════════
     await p.reload({ waitUntil: "domcontentloaded" });
-    q = p.frameLocator('iframe[title="experiencia"]');
+    q = p.frameLocator('iframe[data-experiencia]');
     await q.locator("text=/Boato em circulação rápida/i").waitFor({ timeout: 30_000 });
     await r.registrar(p, "a-decisao", {
       titulo: "O pico, em silêncio",
@@ -264,7 +264,7 @@ await suite(
 
     // ═══ O BREAKPOINT: o estudante trava ══════════════════════════════════
     await p.reload({ waitUntil: "domcontentloaded" });
-    q = p.frameLocator('iframe[title="experiencia"]');
+    q = p.frameLocator('iframe[data-experiencia]');
     await q.locator("text=/Debate em andamento/i").waitFor({ timeout: 30_000 });
     await r.registrar(p, "fim-da-aula-1", {
       titulo: "Fim da Aula 1",
@@ -287,7 +287,7 @@ await suite(
 
     // ═══ O AHA: as curvas e o mapa ═══════════════════════════════════════
     await p.reload({ waitUntil: "domcontentloaded" });
-    q = p.frameLocator('iframe[title="experiencia"]');
+    q = p.frameLocator('iframe[data-experiencia]');
     await q.locator("text=/Velocidade nas primeiras horas/i").waitFor({ timeout: 30_000 });
     await r.registrar(p, "as-curvas", {
       titulo: "26 vezes mais rápido",
@@ -348,7 +348,7 @@ await suite(
     );
 
     await p.reload({ waitUntil: "domcontentloaded" });
-    q = p.frameLocator('iframe[title="experiencia"]');
+    q = p.frameLocator('iframe[data-experiencia]');
     /* Pelo HEADING, não por texto: "Meu percurso" também está no rótulo do
        botão de salvar, e o modo estrito do Playwright recusa dois casamentos. */
     await q.getByRole("heading", { name: /Meu percurso/i }).waitFor({ timeout: 30_000 });

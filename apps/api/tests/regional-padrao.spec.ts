@@ -378,7 +378,7 @@ describe("relatório da diretoria", () => {
           data: {
             escolaId: ESCOLAS[0]!,
             turmaId: turma.id,
-            expId: "exp-70-vila-do-lume",
+            expId: "app-70-vila-do-lume",
             estado: "encerrada",
             /* O banco exige a data junto do estado (CHECK
                `liberacoes_encerrada_em_check`): "encerrada" sem quando é um
@@ -392,7 +392,7 @@ describe("relatório da diretoria", () => {
     await prisma.comTenancy(
       (tx) =>
         tx.progresso.create({
-          data: { escolaId: ESCOLAS[1]!, estudanteId: estudante.id, expId: "exp-70-vila-do-lume" },
+          data: { escolaId: ESCOLAS[1]!, estudanteId: estudante.id, expId: "app-70-vila-do-lume" },
         }),
       ESCOLAS[1]!,
     );
@@ -407,8 +407,20 @@ describe("relatório da diretoria", () => {
     expect(relatorio?.escolas.map((e) => e.nome)).toEqual(
       [...(relatorio?.escolas ?? [])].map((e) => e.nome).sort((a, b) => a.localeCompare(b, "pt-BR")),
     );
-    const vila = relatorio?.experiencias.find((e) => e.expId === "exp-70-vila-do-lume");
+    const vila = relatorio?.experiencias.find((e) => e.expId === "app-70-vila-do-lume");
     expect(vila).toMatchObject({ turmasEncerradas: 1, turmasLiberadas: 0, estudantes: 1 });
+    // O nome do catálogo, que a diretoria reconhece; o código só fora dele (H07.2.1).
+    const doCatalogo = await prisma.experiencia.findUnique({ where: { expId: "app-70-vila-do-lume" } });
+    expect(vila?.nome).toBe(doCatalogo?.nome ?? "app-70-vila-do-lume");
+    if (!doCatalogo) {
+      // Banco de teste sem o catálogo publicado: prova o caminho do nome também.
+      await prisma.experiencia.create({
+        data: { expId: "app-70-vila-do-lume", nome: "Vila do Lume", versaoAtiva: "0.0.0" },
+      });
+      const comNome = await escolas.relatorioDaRegional(DESTINO);
+      expect(comNome?.experiencias.find((e) => e.expId === "app-70-vila-do-lume")?.nome).toBe("Vila do Lume");
+      await prisma.experiencia.delete({ where: { expId: "app-70-vila-do-lume" } });
+    }
     // E cada medida aparece na ESCOLA onde aconteceu, não somada na primeira.
     const daTurma = relatorio?.escolas.find((e) => e.id === ESCOLAS[0]);
     const daCrianca = relatorio?.escolas.find((e) => e.id === ESCOLAS[1]);

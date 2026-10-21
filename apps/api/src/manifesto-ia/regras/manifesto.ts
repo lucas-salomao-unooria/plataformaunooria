@@ -11,7 +11,7 @@ import type { ClausulaDeGovernanca, ContextoDaTurma } from "../catalogo";
  * 1. **O texto do manifesto é conteúdo autoral revisado** pelo Comitê de Ética
  *    e IA Educacional, e o diagnóstico de auditoria é a síntese pedagógica da
  *    aula. Ele muda por revisão de copy, e mudar copy não pode exigir
- *    republicar um caminho imutável no bucket (a mesma razão do feed da exp-06).
+ *    republicar um caminho imutável no bucket (a mesma razão do feed da exp06ef2b).
  * 2. **O documento é a EVIDÊNCIA do percurso.** O que a professora lê no painel
  *    e o que o estudante copiou para a área de transferência têm de ser o mesmo
  *    texto. Compilado no cliente, seriam duas montagens que divergem na

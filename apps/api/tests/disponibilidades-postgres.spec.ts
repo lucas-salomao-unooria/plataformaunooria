@@ -87,7 +87,7 @@ describe("o vocabulário vive em dois lugares e eles têm de concordar", () => {
     await expect(
       prisma.$executeRaw`
         INSERT INTO experiencias (exp_id, nome, versao_ativa, produto)
-        VALUES ('exp-99-produto-invalido', 'teste', '1.0.0', 'gamificacao')`,
+        VALUES ('app-99-produto-invalido', 'teste', '1.0.0', 'gamificacao')`,
     ).rejects.toThrow();
   });
 

@@ -67,7 +67,7 @@ await suite(
     }
     r.exigir(/Não conte nada antes/.test(ficha), "a ficha avisa para não contar nada antes da partida");
     r.exigir(/Vale para qualquer ano/.test(ficha), "a ficha diz que a missão vale para qualquer ano");
-    r.exigir(/Instanooria/.test(ficha), "a ficha diz qual missão consome o perfil medido aqui");
+    r.exigir(/Unoovista/.test(ficha), "a ficha diz qual missão consome o perfil medido aqui");
     await r.registrar(p, "ficha-da-missao", {
       titulo: "A ficha da missão",
       mostra: "As três bolhas explicadas, o aviso de sigilo e o passo a passo da condução.",

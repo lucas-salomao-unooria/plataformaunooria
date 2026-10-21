@@ -79,8 +79,8 @@ forçar a remontagem de estado em trocas de escola ativa.
 
 \begin{especificacao}{Contexto e Débito Atual}
 O consumo de tokens de inteligência artificial é rigidamente controlado via
-\cd{QuotaService} (\adrr{ADR-24} e \adrr{ADR-74}). Um plano de ensino na exp-92 ou
-uma sessão iterativa na exp-03 consomem centenas de milhares de tokens por execução.
+\cd{QuotaService} (\adrr{ADR-24} e \adrr{ADR-74}). Um plano de ensino na app-92 ou
+uma sessão iterativa na exp02em1b consomem centenas de milhares de tokens por execução.
 \end{especificacao}
 
 \textbf{Ações necessárias}:
@@ -134,34 +134,65 @@ trimestre do ciclo de engenharia:
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[x=1cm, y=1cm, >=stealth]
-  % Eixo temporal
-  \draw[->, unooNavy, line width=1pt] (0,0) -- (14.5,0) node[right, font=\footnotesize\bfseries\color{unooNavy}] {2026};
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm,
+    pend/.style={font=\scriptsize, anchor=west, inner sep=0pt},
+    barra/.style={rounded corners=2pt, line width=0.8pt},
+    alta/.style={barra, fill=unooOrangeWash, draw=unooOrange},
+    media/.style={barra, fill=unooBlueWash, draw=unooBlue},
+    baixa/.style={barra, fill=unooPaper, draw=unooAxis}]
 
-  % Marcos
-  \foreach \x/\mes in {1/Setembro, 5/Outubro, 9/Novembro, 13/Dezembro} {
-    \draw[unooGrid, line width=0.8pt] (\x, -0.2) -- (\x, 4.0);
-    \node[below, font=\scriptsize\color{unooMuted}] at (\x, -0.2) {\mes};
+  % Eixo: o mes começa no tique (setembro em x=5.2) e ocupa 2,6 cm.
+  % Linhas de 0,7 cm, PEND-01 no topo. Barra = o mes da janela.
+  \foreach \x/\mes in {5.2/setembro, 7.8/outubro, 10.4/novembro, 13.0/dezembro} {
+    \draw[unooGrid, line width=0.6pt] (\x,0.1) -- (\x,-5.75);
+    \node[font=\scriptsize\color{unooMuted}, anchor=north west, inner sep=1pt]
+      at (\x,-5.85) {\mes};
   }
+  \draw[->, unooNavy, line width=0.9pt] (5.0,-5.75) -- (15.85,-5.75);
+  \node[font=\scriptsize\bfseries\color{unooNavy}, anchor=north east, inner sep=1pt]
+    at (15.85,-5.85) {2026};
 
-  % Blocos de pendências
-  \draw[fill=unooLavenderWash, draw=unooLavender, rounded corners=3pt] (0.5, 2.8) rectangle (4.5, 3.6)
-    node[midway, align=center, font=\scriptsize\bfseries\color{unooNavy}] {PEND-04 \& PEND-05\\Portões de CI e Testes RLS};
+  % rotulos
+  \foreach \i/\txt in {
+      1/{\textbf{PEND-01} emissor para o WSO2 IS},
+      2/{\textbf{PEND-02} e2e do gestor regional},
+      3/{\textbf{PEND-03} alarmes de quota de IA},
+      4/{\textbf{PEND-04} OpenAPI no CI},
+      5/{\textbf{PEND-05} RLS nas migrações},
+      6/{\textbf{PEND-06} componentes \emph{vs.} DS},
+      7/{\textbf{PEND-07} DLQ da telemetria},
+      8/{\textbf{PEND-08} \emph{bundles} 08 a 69}}
+    \node[pend] at (0,{-0.7*\i+0.35}) {\txt};
 
-  \draw[fill=unooBlueWash, draw=unooBlue, rounded corners=3pt] (4.8, 2.8) rectangle (8.8, 3.6)
-    node[midway, align=center, font=\scriptsize\bfseries\color{unooNavy}] {PEND-02 \& PEND-07\\E2E Regional e Testes Pub/Sub};
+  % barras (cor = prioridade do quadro resumo)
+  \def\mes#1#2#3{\draw[#1] ({#2+0.08},{-0.7*#3+0.1}) rectangle ({#2+2.52},{-0.7*#3+0.6});}
+  \mes{alta}{7.8}{1}
+  \mes{alta}{7.8}{2}
+  \mes{media}{10.4}{3}
+  \mes{media}{5.2}{4}
+  \mes{alta}{5.2}{5}
+  \draw[baixa, dash pattern=on 3pt off 2pt] (5.28,-4.1) rectangle (15.52,-3.6);
+  \node[font=\scriptsize\itshape\color{unooInkSoft}, fill=unooPaper, inner sep=1pt]
+    at (14.3,-3.85) {contínua};
+  \mes{media}{7.8}{7}
+  \mes{baixa}{10.4}{8}
 
-  \draw[fill=unooLavenderWash, draw=unooLavender, rounded corners=3pt] (4.8, 1.4) rectangle (8.8, 2.2)
-    node[midway, align=center, font=\scriptsize\bfseries\color{unooNavy}] {PEND-01\\Transição OIDC / WSO2 IS};
+  % entrada em producao: por cima, mas so nos vaos entre as barras
+  \node[font=\scriptsize\bfseries\color{unooRed}, anchor=south] at (10.4,0.45)
+    {entrada em produção};
+  \draw[dashed, unooRed, line width=1.1pt] (10.4,0.45) -- (10.4,-5.75);
 
-  \draw[fill=unooBlueWash, draw=unooBlue, rounded corners=3pt] (9.0, 1.4) rectangle (13.5, 2.2)
-    node[midway, align=center, font=\scriptsize\bfseries\color{unooNavy}] {PEND-03 \& PEND-08\\Operação, Quotas e Escala};
-
-  % Ponto de Lançamento
-  \draw[dashed, unooRed, line width=1.2pt] (9.0, -0.5) -- (9.0, 4.2)
-    node[above, font=\footnotesize\bfseries\color{unooRed}] {Go-Live Produção};
-\end{tikzpicture}
-\caption{Cronograma de resolução das pendências identificadas até a entrada em produção.}
+\end{tikzpicture}}
+\begin{legendadiag}
+\amostra{fill=unooOrangeWash, draw=unooOrange} prioridade alta \quad
+\amostra{fill=unooBlueWash, draw=unooBlue} média \quad
+\amostra{fill=unooPaper, draw=unooAxis} baixa \quad
+\textcolor{unooRed}{\textbf{- - -}} entrada em produção (novembro de 2026)
+\end{legendadiag}
+\caption{Cronograma de resolução das pendências identificadas até a entrada em
+  produção. Uma linha por pendência; a cor é a prioridade do quadro resumo, e a
+  \textbf{PEND-06}, auditoria contínua, não tem janela.}
 \label{fig:cronograma-pendencias}
 \end{figure}
 

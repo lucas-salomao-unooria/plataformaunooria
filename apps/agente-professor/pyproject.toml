@@ -1,0 +1,76 @@
+[project]
+name = "agente-professor"
+version = "0.1.0"
+description = "O agente de IA do professor da Unooria (Google ADK no Vertex AI Agent Engine) e a ingestão dos data stores."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "google-adk~=2.10.0",
+  "google-cloud-aiplatform[agent_engines,adk]~=2.3.0",
+  "google-auth~=2.59",
+  "google-cloud-storage~=3.15",
+  "httpx~=0.28.1",
+  "fastapi~=0.141",
+  "uvicorn~=0.54.0",
+  "pydantic-settings~=2.15.0",
+  "pypdf~=6.19.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest~=9.1.1",
+  "pytest-asyncio~=1.4.0",
+  "ruff~=0.16.9",
+  "pyright~=1.1.414",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["agente_professor", "ingestao"]
+
+[tool.uv]
+package = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+  "ignore::DeprecationWarning",
+  "ignore::UserWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["ingestao/relatorios"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "ASYNC", "S"]
+ignore = [
+  "RUF001", "RUF002", "RUF003",  # texto em pt-BR: travessão, aspas curvas e º são de propósito
+  "S101",                         # assert nos testes
+  "S603", "S607",                 # subprocess do node é chamada fixa, sem entrada externa
+  "E501",                         # o `ruff format` cuida do código; texto longo em pt-BR fica
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["agente_professor", "ingestao", "fakes"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S108"]
+
+[tool.pyright]
+include = ["agente_professor", "ingestao", "tests"]
+pythonVersion = "3.12"
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
+reportMissingTypeStubs = false
+reportUnnecessaryTypeIgnoreComment = "warning"
+reportUnknownParameterType = "none"
+strictListInference = true
+strictDictionaryInference = true
+strictParameterNoneValue = true

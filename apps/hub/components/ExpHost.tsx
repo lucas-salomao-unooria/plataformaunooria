@@ -35,11 +35,13 @@ export function ExpHost(props: {
   /**
    * Presente ⇒ a experiência foi desenhada para um APARELHO: roda num iframe de
    * exatamente `largura`×`altura` px, centralizado. Ausente ⇒ foi desenhada
-   * para desktop (exp-02) e ocupa a área inteira.
+   * para desktop (o UnooTube arquivado, `backup-exp04ef1b`) e ocupa a área inteira.
    */
   viewport?: { largura: number; altura: number } | null;
   /** Do manifesto da experiência; segue no spread para o `ExpFrame`. */
   permissoes?: readonly string[];
+  /** O nome da experiência, para o `title` do iframe; segue no spread. */
+  titulo?: string | null;
   /** Observabilidade do navegador (ratio de spans); entra em `config.obs` do hub:init. */
   obs?: { traceRatio: number };
 }) {
@@ -74,7 +76,6 @@ export function ExpHost(props: {
     }
     setEstadoBruto(novo);
   }, []);
-  const mostrarMolduraPerdidos = estado.fase === "perdidos";
 
   /**
    * O relatório do estudante sai do aparelho (ADR-41). É a única tela que expande, e
@@ -87,8 +88,15 @@ export function ExpHost(props: {
    * A volta é o mesmo caminho da moldura: o professor avança, o polling da
    * experiência vê a fase nova e publica `{ fase: "perdidos" }` — sem `passo`,
    * porque o estado é substituído inteiro — e o aparelho volta ao lugar.
+   *
+   * Desde a ADR-167 o relatório também abre A PEDIDO ("Rever meu relatório",
+   * no feed em cinza e na reflexão), em qualquer fase do fim: a condição é o
+   * `passo`, que só o relatório publica. Fechá-lo publica o estado sem `passo`.
    */
-  const expandido = estado.fase === "explicabilidade" && estado.passo === "relatorio";
+  const expandido = estado.passo === "relatorio";
+  /* A moldura fala do feed em cinza: nas tarefas do cinza (`passo: "tarefas"`,
+     ADR-167) ela sai, senão o hub diria "estes posts existiam" sobre outra tela. */
+  const mostrarMolduraPerdidos = estado.fase === "perdidos" && !expandido && estado.passo !== "tarefas";
 
   const onConcluir = useCallback(
     (payload: { score?: number; dados?: Record<string, unknown> }) => {

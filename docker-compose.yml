@@ -18,8 +18,8 @@
 #
 # As EXPERIÊNCIAS não entram aqui: em produção são bundles estáticos num
 # bucket, não serviços. Em dev, rode à parte (portas em apps/hub/lib/experiencias-dev.ts):
-#   pnpm --filter @edu/exp-01-instanooria dev     # :5173
-#   pnpm --filter @edu/exp-02-unootube dev        # :5174
+#   pnpm --filter @edu/exp08ef1b dev     # :5173
+#   pnpm --filter @edu/<exp> dev           # a porta de cada uma em apps/hub/lib/experiencias-dev.ts
 name: unooria-plataforma
 
 services:
@@ -86,6 +86,16 @@ services:
       VERTEX_LOCATION: ${VERTEX_LOCATION:-global}
       VERTEX_MODEL: ${VERTEX_MODEL:-gemini-3.6-flash}
       VERTEX_MODEL_LONGO: ${VERTEX_MODEL_LONGO:-gemini-3.6-flash}
+      # Agente de IA do professor: `mock` é o turno enlatado (docs/regras/agente-professor.md).
+      AGENTE_PROFESSOR_MODO: ${AGENTE_PROFESSOR_MODO:-mock}
+      # Ajuda com avatar (ADR-132). Vazias = a Ajuda responde 503 e nada mais muda.
+      # O vendor precisa ALCANÇAR a api (/ajuda/llm): em dev local, só com túnel.
+      LIVEAVATAR_API_KEY: ${LIVEAVATAR_API_KEY:-}
+      LIVEAVATAR_CONTEXT_ID: ${LIVEAVATAR_CONTEXT_ID:-}
+      LIVEAVATAR_LLM_CONFIG_ID: ${LIVEAVATAR_LLM_CONFIG_ID:-}
+      LIVEAVATAR_SANDBOX: ${LIVEAVATAR_SANDBOX:-1}
+      AJUDA_LLM_SEGREDO: ${AJUDA_LLM_SEGREDO:-}
+      AJUDA_SESSAO_CHAVE: ${AJUDA_SESSAO_CHAVE:-}
       VERTEX_IMAGE_MODEL: ${VERTEX_IMAGE_MODEL:-gemini-3.1-flash-image}
       VERTEX_THINKING_BUDGET: ${VERTEX_THINKING_BUDGET:-0}
       GOOGLE_APPLICATION_CREDENTIALS: /adc/application_default_credentials.json
@@ -96,7 +106,7 @@ services:
       ASSETS_LOCAL_DIR: /app/storage
       ASSETS_PUBLIC_URL: http://localhost:3001/assets
       TELEMETRIA_TOPIC: ""
-      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5182
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5182,http://localhost:5185
       # O FUSO da plataforma inteira (ADR-99). Ausente = America/Sao_Paulo.
       # O MESMO valor vai para o hub abaixo: 1 contrato = 1 stack, e api e hub
       # que discordem do fuso devolvem o defeito da ADR-98 — entre as 21h e a

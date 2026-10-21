@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * CSS base da experiência. Os tokens são os do Unoovista (`--unv-*`, de
+ * `@unooria/design-system/unoovista.css`), lidos pelo `tailwind.config.ts`;
+ * NADA da marca institucional da plataforma entra neste bundle, e nenhum
+ * hexadecimal do clone antigo sobrou.
+ *
+ * Fonte: Open Sans e Material Symbols da folha `fonts/unoovista.css` do DS,
+ * auto-hospedadas (nenhuma URL externa no bundle).
+ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-canvas font-sans text-ink antialiased;
+    margin: 0;
+  }
+
+  /* Foco visível em tudo que é interativo (acessibilidade AA), na cor de ação
+     do Unoovista — a mesma dos anéis de foco dos componentes do DS. */
+  :focus-visible {
+    outline: 2px solid var(--unv-color-action-primary);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /*
+   * Faixas horizontais sem barra: o Unoovista não mostra barra de rolagem nas
+   * faixas que deslizam com o dedo (a `StoriesTray` do DS esconde a dela do
+   * mesmo jeito). Fidelidade ao app imitado, não esquecimento.
+   */
+  .sem-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .sem-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  /* Acessibilidade: quem pede menos movimento não recebe animação. */
+  @media (prefers-reduced-motion: reduce) {
+    .animar-coracao,
+    .animar-skeleton {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+    }
+
+    * {
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Performance no celular: o navegador pula a pintura dos cards fora da tela
+     sem tirá-los do DOM (o dwell continua medindo corretamente). */
+  .card-otimizado {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 620px;
+  }
+
+  /* Duplo-toque: coração branco de 96px com spring + fade (350ms). */
+  @keyframes coracao-duplo-toque {
+    0% {
+      opacity: 0;
+      transform: scale(0.2);
+    }
+    35% {
+      opacity: 1;
+      transform: scale(1.15);
+    }
+    55% {
+      transform: scale(0.95);
+    }
+    70% {
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.05);
+    }
+  }
+
+  .animar-coracao {
+    animation: coracao-duplo-toque 700ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  }
+
+  @keyframes pulsar-skeleton {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+  }
+
+  .animar-skeleton {
+    animation: pulsar-skeleton 1.4s ease-in-out infinite;
+  }
+}

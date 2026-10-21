@@ -45,7 +45,7 @@ import {
 } from "./regras";
 
 /**
- * Check-in de bem-estar do professor (exp-91): o DASS-21 em microdoses.
+ * Check-in de bem-estar do professor (app-91): o DASS-21 em microdoses.
  *
  *   GET /bemestar/hoje ─▶ ciclo aberto (ou novo) ─▶ check-in do dia `pendente`
  *                         com 3 itens + abertura/pergunta (IA ou fixo)

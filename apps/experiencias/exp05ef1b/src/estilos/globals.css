@@ -1,0 +1,733 @@
+/**
+ * Estilos locais da exp05ef1b. Só o que o design system não dá: o layout do
+ * aparelho e a mídia DESENHADA (que é conteúdo, não controle). As duas
+ * compensações da 0.2.4 — a seta esgotada e o toque na mídia — saíram quando a
+ * 0.2.6 publicou `exhausted` e o `.Media` acionável; uma nova vai marcada
+ * `(b) COMPENSAÇÃO`, com a lacuna e o pedido.
+ *
+ * Cor NUNCA se escreve à mão aqui — sai dos tokens `--unc-*` (clone, seção
+ * `unoochat`, tema claro) e `--unooria-*` (casca). E a fronteira entre os dois
+ * está MARCADA abaixo: os dois são roxos e claros, então token do clone numa
+ * tela da escola nem destoa — passa, e é por isso que é o defeito mais difícil
+ * de ver (ADR-134).
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  /* O aparelho é desenhado pelo HUB (`DispositivoFrame`, a partir do
+     `viewport` do manifesto). Aqui dentro só se preenche os 375×812 que ele
+     reserva — o `PhoneFrame` do pacote daria um celular dentro de outro. */
+  background: var(--unc-color-surface-base);
+  color: var(--unc-color-text-primary);
+  font-family: var(--unc-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A raiz é o contexto de posição do aviso rápido (`Toast`), da folha, do
+   visualizador e da janela: os quatro são `position: absolute` no pacote. */
+.raiz {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Posição, não aparência: o `Toast` do pacote fica a 40px da base, e aqui a
+   base é o rodapé do chat (a tarja só-admin e, em 3/3, "Ir para o Mural da
+   Turma") — o aviso cobriria justamente o botão da etapa. Sobe acima dele. */
+.raiz > .unc-toast-region {
+  bottom: 148px;
+}
+
+/* `100%` e não `100dvh`: dentro do iframe do aparelho, `dvh` se refere à
+   janela do navegador, não ao aparelho — e o rodapé sairia do recorte. */
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--unc-color-surface-canvas);
+}
+
+.app--centrado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+/* A área que rola dentro do CLONE: barra do sistema operacional, como em toda
+   experiência — o `ScrollBar` do DS é da seção `unooria` e não entra no
+   disfarce (`apps/experiencias/AGENTS.md`). */
+.app__corpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.aviso-de-rede {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--unc-color-text-secondary);
+}
+
+/* O contador por extenso ("Mensagens selecionadas para o Mural: N/3") vai só
+   ao leitor de tela; na faixa aparece "N/3". */
+.so-leitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ----------------------------------------------------------- a lista */
+
+.lista__vazia {
+  margin: 0;
+  padding: 32px 24px;
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: center;
+  color: var(--unc-color-text-secondary);
+}
+
+/* ------------------------------------------------------- as conversas */
+
+/* A folga lateral de 12px cabe a cauda do balão (`-6px` no pacote). */
+.conversa {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 12px 20px;
+}
+
+.historico {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* E3-ALU-02: na enquete o histórico recua a 30% — é o desenho do PICO (um
+   elemento só salta), não estado de componente. */
+.historico--esmaecido {
+  opacity: 0.3;
+}
+
+.balao__texto {
+  margin: 0;
+  word-break: break-word;
+}
+
+/* No grupo, a seta de encaminhar fica AO LADO do balão, centrada nele. */
+.linha-do-grupo {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.linha-do-grupo .unc-forwardbutton {
+  align-self: center;
+}
+
+/* No Mural, o balão enviado com os crachás embaixo, alinhados à direita. */
+.linha-do-mural {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.crachas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* O alerta do grupo (EF05CO03), dentro do balão. Os controles são do
+   Unoochat (`FilterChip`, `MessageTag`, `Button`); aqui só a pilha, o quadro
+   e o destaque do resultado. O destaque NÃO é cor de acerto: quem passou no
+   filtro ganha contorno e a etiqueta "Destacada" (a forma diz), e quem não
+   passou recua — nunca abaixo de 0,6, para o texto seguir legível. */
+.alerta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.alerta__contador,
+.alerta__rotulo {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--unc-color-text-secondary);
+}
+
+.alerta__pedido {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.alerta__instrucao,
+.alerta__dica,
+.alerta__resultado {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.alerta__dica {
+  color: var(--unc-color-text-secondary);
+}
+
+.alerta__resultado {
+  font-weight: 600;
+}
+
+.alerta__quadro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alerta__linha {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: var(--unc-color-surface-canvas);
+}
+
+.alerta__linha--passa {
+  border-color: var(--unc-color-accent);
+}
+
+.alerta__linha--fora {
+  opacity: 0.6;
+}
+
+.alerta__nome {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.alerta__etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.alerta__condicao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.alerta__acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* A faixa fixa é tocável (como a mensagem fixada do app real). Só o cursor e o
+   anel de foco — a aparência é a do `ChatBanner`. */
+.faixa-tocavel {
+  cursor: pointer;
+}
+
+.faixa-tocavel:focus-visible {
+  outline: 2px solid var(--unc-color-accent);
+  outline-offset: -2px;
+}
+
+/* O rodapé do clone: a ação da etapa (quando há) acima da tarja só-admin. */
+.rodape {
+  flex: none;
+}
+
+.rodape__acao {
+  padding: 10px 12px;
+  background: var(--unc-color-surface-appbar);
+}
+
+.rodape__acao--dupla {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* O campo do chat privado é INERTE (`inert` no contêiner): desenha o app real
+   e não aceita foco nem digitação — o único texto livre é o `Então`. */
+.campo-inerte {
+  flex: none;
+}
+
+/* A folha "Encaminhar para...": um destino só, com a linha de apoio. */
+.folha__destino {
+  padding: 4px var(--unc-gutter);
+}
+
+.folha__rotulo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.folha__subrotulo {
+  font-size: var(--unc-font-caption-size);
+  color: var(--unc-color-text-secondary);
+}
+
+.janela__texto {
+  margin: 0;
+  font-size: var(--unc-font-body-md-size);
+  line-height: 1.4;
+  color: var(--unc-color-text-primary);
+}
+
+/* ------------------------------------------------ a mídia desenhada
+ *
+ * CONTEÚDO, não controle: o que vai dentro da moldura do `MessageBubble.Media`
+ * sem `src`. Tokens `--unc-*` só — o papel do comunicado é a tela do app
+ * (`surface-canvas`) com o filete divisor, para parecer folha solta sobre o
+ * balão sem inventar cor.
+ */
+
+.desenho-comunicado {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--unc-color-border-divider);
+  background: var(--unc-color-surface-canvas);
+  color: var(--unc-color-text-primary);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.desenho-comunicado__timbre {
+  width: 40%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--unc-color-accent);
+}
+
+.desenho-comunicado__titulo {
+  margin: 0;
+  font-weight: var(--unc-font-weight-bold);
+  font-size: 13px;
+}
+
+.desenho-comunicado__corpo {
+  margin: 0;
+}
+
+.desenho-comunicado__rodape {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.desenho-comunicado__assinatura {
+  width: 45%;
+  height: 14px;
+  border-bottom: 1px solid currentColor;
+}
+
+.desenho-comunicado__carimbo {
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--unc-color-accent);
+  border-radius: 50%;
+}
+
+/* Os outros três desenhos de imagem (`ImagemDesenhada`): cada imagem do grupo
+   tem cara própria, e as duas de um pacote nunca saem iguais. As cores são
+   tokens do clone que já existem (os ícones do anexo), não paleta nova. */
+
+.desenho-cartaz {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  padding: 14px 12px;
+  background: var(--unc-color-surface-notice);
+  color: var(--unc-color-text-notice);
+  text-align: center;
+}
+
+.desenho-cartaz__faixa {
+  width: 100%;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--unc-color-attach-gallery);
+}
+
+.desenho-cartaz__titulo {
+  margin: 0;
+  font-size: 17px;
+  font-weight: var(--unc-font-weight-bold);
+  line-height: 1.2;
+  text-transform: uppercase;
+  /* Texto, e não ícone: o acento da galeria dava 3,1:1 no papel (ADR-162). */
+  color: var(--unc-color-accent-strong);
+}
+
+.desenho-cartaz__corpo {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.desenho-cartaz__estrelas {
+  font-size: 12px;
+  letter-spacing: 4px;
+  color: var(--unc-color-attach-camera);
+}
+
+.desenho-print {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  padding: 10px 12px;
+  background: var(--unc-color-surface-elevated);
+  color: var(--unc-color-text-primary);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.desenho-print__topo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--unc-color-border-divider);
+}
+
+.desenho-print__avatar {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--unc-color-attach-document);
+}
+
+.desenho-print__nome {
+  width: 45%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--unc-color-border-divider);
+}
+
+.desenho-print__titulo {
+  margin: 0;
+  font-size: 13px;
+  font-weight: var(--unc-font-weight-bold);
+}
+
+.desenho-print__corpo {
+  margin: 0;
+}
+
+.desenho-print__reacoes {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px solid var(--unc-color-border-divider);
+}
+
+.desenho-print__reacoes span {
+  width: 26px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--unc-color-icon-muted);
+  opacity: 0.5;
+}
+
+.desenho-bilhete {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 100%;
+  padding: 12px 12px 12px 26px;
+  border-left: 2px solid var(--unc-color-attach-audio);
+  background-color: var(--unc-color-surface-canvas);
+  /* As pautas: uma linha a cada 18px, no tom do divisor. */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 17px,
+    var(--unc-color-border-divider) 17px 18px
+  );
+  color: var(--unc-color-text-primary);
+  font-style: italic;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: left;
+}
+
+.desenho-bilhete__titulo {
+  margin: 0;
+  font-weight: var(--unc-font-weight-bold);
+}
+
+.desenho-bilhete__corpo {
+  margin: 0;
+}
+
+.desenho-lamina,
+.desenho-termometro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--unc-color-surface-notice);
+  color: var(--unc-color-text-primary);
+  text-align: left;
+}
+
+.desenho-lamina {
+  align-items: center;
+}
+
+.desenho-lamina__titulo,
+.desenho-termometro__titulo {
+  margin: 0;
+  font-size: 14px;
+  font-weight: var(--unc-font-weight-bold);
+  line-height: 1.25;
+}
+
+.desenho-lamina__titulo {
+  text-align: center;
+}
+
+.desenho-lamina__embalagens {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  width: 100%;
+}
+
+.desenho-lamina__embalagem {
+  padding: 4px 8px;
+  border: 1px solid var(--unc-color-border-control);
+  border-radius: var(--unc-radius-pill);
+  font-size: 12px;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.desenho-lamina__seta {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--unc-color-text-secondary);
+}
+
+/* O filtro "desarmado": borda tracejada, a forma (não a cor) é que diz. */
+.desenho-lamina__filtro {
+  padding: 6px 12px;
+  border: 2px dashed var(--unc-color-text-notice);
+  border-radius: var(--unc-radius-m);
+  font-size: 12px;
+  font-weight: var(--unc-font-weight-bold);
+}
+
+.desenho-termometro__linha {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.desenho-termometro__rotulo {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.desenho-termometro__trilho {
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--unc-radius-pill);
+  background: var(--unc-color-surface-elevated);
+}
+
+.desenho-termometro__barra {
+  display: block;
+  height: 100%;
+  background: var(--unc-color-accent);
+}
+
+.desenho-termometro__valor {
+  margin: 0;
+  font-size: 12px;
+  font-weight: var(--unc-font-weight-bold);
+  /* O accent (brandpurple-600) dava 4,2:1 no papel (ADR-162). */
+  color: var(--unc-color-accent-strong);
+}
+
+/* ============================================================================
+ * FRONTEIRA DO DISFARCE — daqui para baixo quem fala é a ESCOLA.
+ *
+ * Os tokens são `--unooria-*`, nunca `--unc-*`: o Unoochat COPIA os literais da
+ * paleta da Unooria, e um token dele aqui passaria sem destoar — até alguém
+ * ligar o tema escuro do clone e a casca escurecer junto.
+ * ========================================================================== */
+
+/* O `ScrollBar` do DS é o contêiner que rola (aqui a seção É a `unooria`);
+   esta classe dá o fundo e o respiro. */
+.escola {
+  background: var(--unooria-color-neutral-50);
+  color: var(--unooria-color-neutral-900);
+  font-family: var(--unooria-font-sans);
+}
+
+.escola__pilha {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 16px 28px;
+}
+
+.escola__marca {
+  align-self: flex-start;
+}
+
+.escola__titulo {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.3;
+}
+
+.escola__fala,
+.escola__regra-texto {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.escola__regra-texto {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.escola__comando {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* A linha de apoio sob o botão de testar (o que falta escolher). */
+.escola__apoio {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--unooria-color-neutral-600);
+}
+
+.escola__rodape {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--unooria-color-neutral-600);
+}
+
+/* O robô do grupo (EF05CO04): a calha e a bandeja são do DS (`PuzzleTrack`,
+   `PuzzleBlock`); aqui só a legenda de cada vaga e o empilhamento da bandeja
+   (o padrão do Montador da Chave da exp04ef1b). */
+.robo__vaga {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.robo__legenda,
+.robo__grupo-titulo {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--unooria-color-neutral-600);
+}
+
+.robo__bandeja-titulo {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.robo__grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.robo__bandeja,
+.robo__card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.robo__card {
+  margin-bottom: 12px;
+}
+
+/* A mensagem que ainda não chegou: o mesmo card, recuado. */
+.robo__mensagem--chegando {
+  opacity: 0.6;
+}
+
+.robo__sinais {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+/* O que o robô fez: texto e ícone neutros, sem cor de certo ou errado. */
+.robo__acao {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+}

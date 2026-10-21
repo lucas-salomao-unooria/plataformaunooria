@@ -1,5 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import type { AssetsService } from "../assets/assets.service";
+import { EXP_ID } from "../comum/insta/defaults";
+import { apagarEvidenciaDaAtividade } from "../evidencias/apagar-da-atividade";
 import { PrismaService } from "../prisma/prisma.service";
 
 /**
@@ -14,16 +16,29 @@ import { PrismaService } from "../prisma/prisma.service";
 /**
  * Apaga os dados que a turma produziu, preservando a atividade.
  *
- * Apagar as `runs` cascateia `events` (o dwell), `exp_01_student_posts`, `exp_01_conclusoes`
- * e `exp_01_dossiers`. Sobrevivem de propósito o conteúdo gerado, os
- * `exp_01_exp_70_perfis_importados` (insumo do Ato 1, valem para a próxima turma) e o
+ * Apagar as `runs` cascateia `events` (o dwell), `exp08ef1b_student_posts`, `exp08ef1b_conclusoes`
+ * e `exp08ef1b_dossiers`. Sobrevivem de propósito o conteúdo gerado, os
+ * `exp08ef1b_app_70_perfis_importados` (insumo do Ato 1, valem para a próxima turma) e o
  * `status` da atividade.
+ *
+ * E a EVIDÊNCIA PEDAGÓGICA da atividade sai junto (ADR-155): no Unoovista a
+ * rodada é sempre 1 e vale a PRIMEIRA resposta, então a marca que ficasse
+ * travaria a turma — quem passasse de novo pela missão nunca seria medido.
+ * Atividade sem turma não tem evidência (o resolvedor devolve `null`).
  */
 export async function limparDadosDosEstudantes(
   tx: Prisma.TransactionClient,
-  activityId: string,
+  atividade: { id: string; escolaId: string; turmaId: string | null },
 ): Promise<{ sessoes: number }> {
-  const { count } = await tx.run.deleteMany({ where: { activityId } });
+  const { count } = await tx.run.deleteMany({ where: { activityId: atividade.id } });
+  if (atividade.turmaId) {
+    await apagarEvidenciaDaAtividade(tx, {
+      escolaId: atividade.escolaId,
+      turmaId: atividade.turmaId,
+      expId: EXP_ID,
+      atividadeId: atividade.id,
+    });
+  }
   return { sessoes: count };
 }
 
@@ -33,8 +48,8 @@ export async function limparDadosDosEstudantes(
  *
  * As `runs` saem **explicitamente** porque `runs.activity_id` é
  * `ON DELETE RESTRICT` (de propósito — sessão de estudante não evapora por clique
- * errado). O resto — `posts`, `exp_01_authors`, `exp_01_post_comments`, `exp_01_generation_jobs`,
- * `exp_01_exp_70_perfis_importados` — cai por CASCADE.
+ * errado). O resto — `posts`, `exp08ef1b_authors`, `exp08ef1b_post_comments`, `exp08ef1b_generation_jobs`,
+ * `exp08ef1b_app_70_perfis_importados` — cai por CASCADE.
  *
  * As imagens saem **depois** do commit: se o banco recusar a exclusão, os
  * arquivos ainda pertencem a uma atividade viva. O caminho inverso (commit ok,

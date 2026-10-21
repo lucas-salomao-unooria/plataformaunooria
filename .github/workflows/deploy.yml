@@ -51,6 +51,7 @@ jobs:
       api: ${{ steps.mudou.outputs.api }}
       hub: ${{ steps.mudou.outputs.hub }}
       exps: ${{ steps.mudou.outputs.exps }}
+      agente: ${{ steps.mudou.outputs.agente }}
     steps:
       # Guarda do workflow_dispatch: disparado de uma branch que nao e de
       # ambiente, nada pode subir — e referenciar um environment inexistente
@@ -83,6 +84,8 @@ jobs:
             echo "api=$(mudou apps/api packages pnpm-lock.yaml)"
             echo "hub=$(mudou apps/hub packages pnpm-lock.yaml)"
             echo "exps=$(mudou apps/experiencias packages pnpm-lock.yaml)"
+            # O agente é Python e não lê nada de packages/ nem do lockfile do pnpm.
+            echo "agente=$(mudou apps/agente-professor)"
           } >> "$GITHUB_OUTPUT"
 
   # --- api: imagem -> migrations -> serviço ---------------------------------
@@ -184,6 +187,81 @@ jobs:
             sleep 10
           done
           echo "::error::a api não respondeu {\"ok\":true} em $API_URL/readyz em 2 minutos"
+          exit 1
+
+  # --- agente de IA do professor: imagem -> patch do Agent Engine ------------
+  # docs/regras/agente-professor.md e o RUNBOOK-AGENTE-PROFESSOR.md do repo de
+  # fundação. O engine NASCE no Terraform só depois que existe uma imagem
+  # (`count` sobre `agente_professor_imagem`): no primeiro deploy este job só
+  # publica a imagem, e o apply 2 cria o engine apontando para ela. Daí em
+  # diante o job faz o PATCH da `imageUri` — e o Terraform ignora esse campo
+  # (`ignore_changes`), senão cada apply desfaria o deploy.
+  # `vars.AGENTE_PROFESSOR_ENGINE` vazio = engine ainda não existe = sem patch.
+  deploy-agente-professor:
+    needs: [verificar, mudancas]
+    if: needs.mudancas.outputs.agente == 'true'
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'prd' || github.ref_name }}
+    permissions: { contents: read, id-token: write }
+    env:
+      ENGINE: ${{ vars.AGENTE_PROFESSOR_ENGINE }}
+      IMG: ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/${{ vars.AR_REPO }}/agente-professor:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        id: auth
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SA }}
+          token_format: access_token
+      - uses: google-github-actions/setup-gcloud@v2
+      - uses: docker/setup-buildx-action@v3
+      # Token direto no Docker, como nos jobs da api e do hub (o credential
+      # helper do gcloud já falhou no meio de um push — apêndice F).
+      - name: Autenticar o Docker no Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+      - name: Imagem do agente
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/agente-professor
+          file: apps/agente-professor/Dockerfile
+          push: true
+          tags: ${{ env.IMG }}
+          cache-from: type=gha,scope=agente-professor-${{ github.ref_name }}
+          cache-to: type=gha,scope=agente-professor-${{ github.ref_name }},mode=max
+      - name: Imagem publicada (para o apply 2, se o engine ainda não existe)
+        if: env.ENGINE == ''
+        run: |
+          echo "::notice::engine ainda não existe — preencha agente_professor_imagem = \"$IMG\" no tfvars e rode o apply 2"
+      # PATCH só da imageUri; o resto da spec (envs, métodos, SA) é do Terraform.
+      # A resposta é uma operação longa: o passo espera ela terminar e falha se
+      # ela terminar com erro (engine que não sobe com a imagem nova).
+      - name: Atualizar o Agent Engine
+        if: env.ENGINE != ''
+        run: |
+          set -euo pipefail
+          REGIAO=$(echo "$ENGINE" | cut -d/ -f4)
+          BASE="https://${REGIAO}-aiplatform.googleapis.com/v1"
+          TOKEN=$(gcloud auth print-access-token)
+          OP=$(curl -fsS -X PATCH "$BASE/$ENGINE?updateMask=spec.containerSpec.imageUri" \
+            -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+            -d "{\"spec\":{\"containerSpec\":{\"imageUri\":\"$IMG\"}}}" | python3 -c 'import json,sys; print(json.load(sys.stdin)["name"])')
+          for i in $(seq 1 60); do
+            R=$(curl -fsS "$BASE/$OP" -H "Authorization: Bearer $TOKEN")
+            if echo "$R" | python3 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if d.get("done") else 1)'; then
+              if echo "$R" | python3 -c 'import json,sys; sys.exit(1 if "error" in json.load(sys.stdin) else 0)'; then
+                echo "engine atualizado para $IMG"; exit 0
+              fi
+              echo "::error::o Agent Engine recusou a imagem nova: $(echo "$R" | python3 -c 'import json,sys; print(json.load(sys.stdin)["error"].get("message",""))')"
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "::error::o PATCH do Agent Engine não terminou em 15 minutos ($OP)"
           exit 1
 
   # --- hub ------------------------------------------------------------------
@@ -323,9 +401,10 @@ jobs:
 
       - name: Build
         env:
-          # Mídia pesada (52 MB de mp4 da exp-02) não entra no bundle: o build
-          # aponta para o bucket de assets. Vazio = ./videos (dev).
-          VITE_VIDEOS_BASE_URL: ${{ vars.ASSETS_BASE_URL }}/exp-02-unootube/videos
+          # Mídia pesada (52 MB de mp4 do UnooTube, hoje ARQUIVADO como
+          # backup-exp04ef1b) não entra no bundle: o build aponta para o bucket de
+          # assets, onde a mídia continua em `exp04ef1b/videos`. Vazio = ./videos (dev).
+          VITE_VIDEOS_BASE_URL: ${{ vars.ASSETS_BASE_URL }}/exp04ef1b/videos
           FORCAR: ${{ inputs.forcar }}
         # Com `forcar`, o laço de publicação percorre TODAS as experiências —
         # então o build também precisa ser de todas, senão falta o `dist/`.
@@ -344,6 +423,9 @@ jobs:
           for dir in apps/experiencias/*/; do
             exp=$(basename "$dir")
             if [ "$exp" = "_template" ]; then continue; fi
+            # Arquivada (ADR-116) compila e testa, mas não publica nem ativa:
+            # ninguém joga uma experiência arquivada.
+            case "$exp" in backup-*) echo "· $exp arquivada — não publica"; continue ;; esac
             # Pasta de experiencia ainda incompleta (sem package.json, sem
             # manifesto, ou nao buildada) nao e erro de deploy — e trabalho em
             # andamento. Publicar exige as tres coisas.
@@ -357,7 +439,7 @@ jobs:
             # A versão sai do MANIFESTO, não do package.json: é o
             # `experiencia.json` que o `publicar-manifesto.mjs` lê para gravar
             # `versaoAtiva`. Lendo de fontes diferentes elas divergem — a
-            # exp-02 subiu para `.../1.0.0/` (package.json) enquanto o manifesto
+            # exp04ef1b subiu para `.../1.0.0/` (package.json) enquanto o manifesto
             # registrava `1.1.0`, e o hub montaria a URL de uma versão que não
             # existe no bucket.
             ver=$(node -p "require('./$dir/public/experiencia.json').versao")
@@ -367,7 +449,7 @@ jobs:
             # o runner nao tem os arquivos para sincronizar. O que o CI pode
             # fazer, e passou a fazer, e SE RECUSAR a publicar sem eles.
             #
-            # O custo de nao ter isso ja foi pago: a exp-02 subiu num contrato
+            # O custo de nao ter isso ja foi pago: a exp04ef1b subiu num contrato
             # novo com o bucket de assets vazio, os 21 mp4 responderam 404, e o
             # feed ficou em "Carregando o video..." para sempre — com Salvar e
             # Curtir desabilitados junto, o que tornava a missao impossivel de
@@ -394,7 +476,7 @@ jobs:
             # `--exclude` vale para ORIGEM e DESTINO: nenhum `.map` sobe para o
             # bucket público, e nenhum que exista lá é apagado. O bucket dos
             # bundles tem acesso uniforme — qualquer objeto nele é público, e o
-            # sourcemap é o fonte (na exp-01, a revelação legível antes da hora).
+            # sourcemap é o fonte (na exp08ef1b, a revelação legível antes da hora).
             gcloud storage rsync -r "$dir/dist" "gs://$EXP_BUCKET/$exp/$ver/" \
               --delete-unmatched-destination-objects --exclude='.*\.map$' --project "$GCP_PROJECT"
 
@@ -469,6 +551,9 @@ jobs:
           for dir in apps/experiencias/*/; do
             exp=$(basename "$dir")
             if [ "$exp" = "_template" ]; then continue; fi
+            # Arquivada (ADR-116) compila e testa, mas não publica nem ativa:
+            # ninguém joga uma experiência arquivada.
+            case "$exp" in backup-*) echo "· $exp arquivada — não publica"; continue ;; esac
             if [ ! -f "$dir/package.json" ] || [ ! -f "$dir/public/experiencia.json" ]; then
               echo "· $exp sem package.json/manifesto — pulando"; continue
             fi

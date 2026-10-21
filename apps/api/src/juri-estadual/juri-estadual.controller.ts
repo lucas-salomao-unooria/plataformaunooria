@@ -1,0 +1,270 @@
+import { Body, Controller, Get, HttpCode, Post, Req, UseGuards } from "@nestjs/common";
+import { z } from "zod";
+import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
+import { Roles, RolesGuard } from "../auth/roles";
+import { rateLimit } from "../comum/rate-limit";
+import { Contrato } from "../openapi/contrato";
+import {
+  AcaoDaGaleriaSchema,
+  BatimentoDaCedulaSchema,
+  EstadoSchema,
+  EventosDoFeedSchema,
+  FeedSchema,
+  GaleriaSchema,
+  GatePublicoSchema,
+  PedirPassoSchema,
+  RegraSchema,
+  RespostaDaRegraSchema,
+  RevisaoDoVotoSchema,
+  SessaoSchema,
+  VotoSchema,
+} from "./contrato-de-rotas";
+import { erroDeJogo } from "./erros";
+import { JuriEstadualService } from "./juri-estadual.service";
+
+/**
+ * Rotas do ESTUDANTE da exp06ef1b — O Júri Estadual de Projetos.
+ *
+ * O motor e o gabarito ficam no servidor: o cliente diz o que MEDIU (curtiu,
+ * ficou mais de 5 s) e o que ESCOLHEU (o voto, a separação, a regra), e o
+ * próximo post, a taxa de invisibilidade e a correção das tarefas saem daqui
+ * (regra inviolável nº 3). Identidade, inclusive a TURMA, sai do token, nunca
+ * do corpo.
+ *
+ * A guarda de liberação (ADR-69) está no FUNIL do service (`garantirSessao`),
+ * não aqui: rota nova nasce protegida sem ninguém lembrar de protegê-la.
+ */
+
+type Autenticado = { auth: AuthClaims };
+
+/** `POST galeria/acoes` e `POST cedula/batimento` respondem 204, sem corpo. */
+const SemCorpoSchema = z.void();
+
+/** `POST passo`: o feed (para `feed`) ou o estado curto (para `cadeia`). */
+const RespostaDoPassoSchema = z.union([FeedSchema, EstadoSchema]);
+
+/**
+ * Por usuário, nunca por IP: a turma inteira sai pelo mesmo NAT da escola. E o
+ * 429 FREIA — lança, com o código, como todo erro desta missão.
+ */
+function limitar(usuarioId: string, teto = 120) {
+  const r = rateLimit(`juri-estadual:${usuarioId}`, teto, 60_000);
+  if (!r.ok) throw erroDeJogo("muitas-requisicoes");
+}
+
+function valida<S extends z.ZodTypeAny>(schema: S, corpo: unknown): z.output<S> {
+  const parsed = schema.safeParse(corpo);
+  if (!parsed.success) throw erroDeJogo("payload-invalido");
+  return parsed.data;
+}
+
+function turmaDo(auth: AuthClaims): string | null {
+  return auth.turmaId ?? null;
+}
+
+const PORTA =
+  "Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.";
+
+@Controller("juri-estadual")
+@UseGuards(OidcGuard, RolesGuard)
+@Roles("estudante")
+export class JuriEstadualController {
+  constructor(private readonly missao: JuriEstadualService) {}
+
+  @Get("sessao")
+  @Contrato({
+    resumo: "O estado da missão: o passo, o feed servido até aqui, o voto e os blocos do fim.",
+    descricao:
+      "Boot da experiência e o F5. O feed traz **só os posts que o motor serviu** — o acervo da mostra existe só no servidor até a Galeria Oculta. Nenhum peso, nenhuma área líder: a regra do feed é o que a Etapa 5 ensina, e a criança a descobre depois.\n\n`feed.pastas` traz a pasta (a área) em que a criança guardou cada post salvo, e `feed.semPasta` quantos estandes vistos ainda não estão em pasta nenhuma (ADR-176). `cadeia` (as peças da regra; a revelação depois do envio) só vem do passo dela, com ids OPACOS e estáveis num F5. Nenhuma peça diz se é a certa.",
+    resposta: SessaoSchema,
+    notas: [
+      "`passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o gravado. A etapa só conduz quem votou: quem ainda está no feed continua no feed com a galeria liberada.",
+      "`pacoteId` é a ATIVIDADE e `rodada` é a rodada dela: mudam quando o professor põe outra atividade no ar ou zera a turma, e a sessão é outra.",
+      "`imagem.url` é `null` enquanto o professor não gerou as imagens — a tela desenha a arte procedural do estande.",
+      PORTA,
+    ],
+  })
+  sessao(@Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    return this.missao.sessao(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth));
+  }
+
+  @Get("gate")
+  @Contrato({
+    resumo: "Em que etapa a turma está (polling de ~3 s, na espera da plenária).",
+    descricao:
+      "Magra de propósito: sem acervo, sem contagem da sala, sem JOIN. **Polling HTTP, nunca WebSocket.** Quando `pacoteId` ou `rodada` mudam, a tela recarrega a sessão.",
+    resposta: GatePublicoSchema,
+    notas: [
+      "Passa pelo MESMO funil de liberação das outras rotas (ADR-69 e ADR-87): turma sem a missão liberada recebe 403 em vez de descobrir a etapa.",
+      "Não escreve nada. Sem atividade em andamento, **403** `atividade-nao-preparada`.",
+    ],
+  })
+  gate(@Req() req: Autenticado) {
+    // 240/min cobre os 20 pedidos por minuto do intervalo de 3 s com folga
+    // para uma reconexão e para as outras rotas da mesma tela.
+    limitar(req.auth.usuarioId, 240);
+    return this.missao.gate(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth));
+  }
+
+  @Post("passo")
+  @HttpCode(200)
+  @Contrato({
+    resumo: '"Acessar Feed da Mostra" (da credencial para o feed), o "avançar" da revisão para a cadeia e a saída da separação antiga.',
+    descricao:
+      "`para: \"feed\"` grava o passo `feed` e, com o feed vazio, serve a ABERTURA: quatro posts, a apresentação de um projeto de cada área, em ordem sorteada pela sessão. Responde o feed.\n\n`para: \"cadeia\"` leva a sessão de `revisada` (a revisão do voto gravada) para a `cadeia` (Etapa 5). `para: \"lacrada\"` só serve à sessão ANTIGA parada na tela da separação da 0.6.0 (o passo `classificacao`, que saiu na ADR-176): ela segue para a espera, sem marca da EF06CO01. Os dois respondem o estado curto. Pedir de novo devolve o estado como está (a escada é de sentido único).",
+    corpo: PedirPassoSchema,
+    resposta: RespostaDoPassoSchema,
+    notas: ["`cadeia` antes da revisão, ou `lacrada` antes do voto, responde **409** `passo-invalido`.", PORTA],
+  })
+  passo(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    const { para } = valida(PedirPassoSchema, corpo);
+    return this.missao.pedirPasso(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), para);
+  }
+
+  @Post("feed/eventos")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "O que a tela mediu (curtidas e permanências) e, se pedido, o próximo post.",
+    descricao:
+      "A curtida e o salvo são ESTADO (`curtiu`/`salvou: true/false`), a permanência é FATO (mais de 5 s num post, uma vez por post). O salvo leva a `pasta` — a área em que a criança guardou o post (a separação da EF06CO01, ADR-176); salvar de novo com outra pasta MOVE o post, e tirar dos salvos apaga a pasta. Curtir (3) e permanecer (1) pesam e entram antes de o motor escolher o próximo; **salvar é gravado e não pesa**. Com a área em foco, os posts seguintes são só dela — projetos NOVOS dela (são dez por área). Nenhum post se repete, e todo post servido é a `apresentacao` de um projeto; os formatos `bastidor`, `prototipo` e `depoimento` só aparecem no feed gravado de uma sessão antiga (instrumento 2.0.0). `proximo: true` quando a tela chegou ao último post servido: o servidor serve UM a mais, até dez.\n\nO primeiro `proximo: true` é a 1ª rolagem e liga o relógio de **8 minutos do servidor** (`encerraEm`); recarregar não zera. Com o tempo esgotado (`tempoEsgotado`), o feed não serve mais post e `cedulaLiberada` fica `true`.",
+    corpo: EventosDoFeedSchema,
+    resposta: FeedSchema,
+    notas: [
+      "Post que o feed não serviu responde **400** `post-desconhecido` — o cliente não inventa post.",
+      "Depois do voto responde **409** `voto-ja-lacrado`; antes do feed, **409** `passo-invalido`.",
+      PORTA,
+    ],
+  })
+  eventos(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId, 240);
+    const eventos = valida(EventosDoFeedSchema, corpo);
+    return this.missao.eventosDoFeed(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), eventos);
+  }
+
+  @Post("cedula/batimento")
+  @HttpCode(204)
+  @Contrato({
+    resumo: "O batimento da cédula aberta (a cada 15 s): o sinalizador de ociosos do professor.",
+    descricao:
+      "Com a cédula aberta, a tela manda a cada 15 s há quantos segundos não há toque nela (`segundosSemToque`). O servidor grava o instante do batimento e o do último toque; o painel do professor acende o ícone de ocioso ao lado do nome com mais de 60 s. Sem batimento por 40 s (a cédula fechou, o voto foi), a marca some sozinha; `aberta: false` a apaga na hora. Viaja junto com o polling que a tela já faz — não há rota de polling nova.",
+    corpo: BatimentoDaCedulaSchema,
+    resposta: SemCorpoSchema,
+    notas: ["Fora do feed (depois do voto) responde 204 sem gravar: o batimento atrasado não acende ninguém.", PORTA],
+  })
+  async batimento(@Body() corpo: unknown, @Req() req: Autenticado): Promise<void> {
+    limitar(req.auth.usuarioId, 240);
+    const batimento = valida(BatimentoDaCedulaSchema, corpo);
+    await this.missao.batimentoDaCedula(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), batimento);
+  }
+
+  @Post("voto")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "A cédula lacrada — o projeto e a certeza (latch).",
+    descricao:
+      "O gesto que a missão confronta, e ele é IRREVERSÍVEL: grava o projeto, a certeza (`examinei_bem` = \"Sim\", `vi_tudo` = \"Com certeza\"), o carimbo e o passo `lacrada` juntos. A cédula tem quatro elementos e nenhuma justificativa.\n\n**No mesmo update, a SEPARAÇÃO (EF06CO01, ADR-176)**: o servidor lê as pastas em que a criança guardou cada estande visto, corrige e marca (`classificacao`: 90% ou mais certos = atingiu; 50% ou mais = em processo; menos = não atingiu; com menos de quatro estandes vistos, sem marca). **A resposta não diz quantos acertou.** Depois dele, a criança espera a turma (o pico): o professor projeta a dispersão de votos e libera a auditoria.",
+    corpo: VotoSchema,
+    resposta: EstadoSchema,
+    notas: [
+      "Antes da cédula liberada (menos de dez posts E menos de 8 minutos desde a 1ª rolagem) responde **409** `feed-incompleto`; projeto que não apareceu no feed DESTA criança, **409** `projeto-fora-do-feed`; algum estande visto fora de pasta (`feed.semPasta > 0`), **409** `estandes-sem-pasta`.",
+      "O segundo voto — inclusive dois simultâneos — responde **409** `voto-ja-lacrado`.",
+      PORTA,
+    ],
+  })
+  voto(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    const voto = valida(VotoSchema, corpo);
+    return this.missao.votar(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), voto);
+  }
+
+  @Get("galeria")
+  @Contrato({
+    resumo: "A Galeria Oculta: os 40 estandes, os que não chegaram ao feed primeiro, por área e o contrafactual sem curtidas.",
+    descricao:
+      "Tudo calculado no servidor (o motor não desce):\n\n- `invisibilidade` — `{ocultos, total}`: os projetos que o feed nunca mostrou sobre o total do pacote (\"30 de 40\"). Com dez posts sem repetição, é o mesmo número para quem curtiu e para quem não interagiu; quem parou antes pelos 8 minutos vê mais ocultos.\n- `porArea` — projetos DISTINTOS vistos por área (`vistos` de `total`): quem curtiu cedo uma área fica perto de 7/1/1/1; quem não interagiu, 3/3/2/2.\n- `semCurtidas` — o CONTRAFACTUAL: o feed que esta sessão teria tido sem nenhuma curtida e nenhuma permanência (a mesma semente, o mesmo motor), com o mesmo número de posts que a criança viu. Os ids de projeto por área, na ordem do pacote. Sem curtida nem permanência, é igual ao feed real.\n\n`projetos` traz os 40 (16 num pacote antigo, da 0.4.x) com os ocultos primeiro; `exibidoNoSeuFeed` diz quais chegaram; `podeManter`, se o \"Manter meu voto inicial\" já vale (abriu um oculto).",
+    resposta: GaleriaSchema,
+    notas: [
+      "Antes de a galeria abrir para esta criança (sem voto, ou com a etapa da turma ainda na exploração) responde **403** `galeria-nao-liberada`.",
+      PORTA,
+    ],
+  })
+  galeria(@Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    return this.missao.galeria(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth));
+  }
+
+  @Post("galeria/acoes")
+  @HttpCode(204)
+  @Contrato({
+    resumo: "Registra o que a criança fez na galeria: abriu um estande ou buscou.",
+    descricao:
+      "É o registro da exploração da galeria (o painel mostra quem abriu e quem buscou). Desde a ficha 5 (ADR-174) não marca habilidade. Abrir de novo o mesmo estande não conta. Da busca, só o TIPO (`hashtag` ou `texto`) e a área que casou, ou `null` — **o texto digitado nunca sai do aparelho** (texto livre de menor). Até 30 buscas são gravadas.",
+    corpo: AcaoDaGaleriaSchema,
+    resposta: SemCorpoSchema,
+    notas: [
+      "Só na galeria: antes, **403** `galeria-nao-liberada`; depois da revisão do voto, **409** `passo-invalido`.",
+      PORTA,
+    ],
+  })
+  async acaoDaGaleria(@Body() corpo: unknown, @Req() req: Autenticado): Promise<void> {
+    limitar(req.auth.usuarioId, 240);
+    const acao = valida(AcaoDaGaleriaSchema, corpo);
+    await this.missao.acaoDaGaleria(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), acao);
+  }
+
+  @Post("revisao")
+  @HttpCode(200)
+  @Contrato({
+    resumo: '"Manter meu voto inicial" ou "Confirmar Voto Revisado", depois da galeria (latch).',
+    descricao:
+      "`manter` só vale depois de abrir ao menos UM estande oculto; `trocar` aceita qualquer estande do pacote (os 40; 16 num pacote antigo), menos o do voto lacrado. Sem justificativa. Grava a ação, o voto final, o carimbo e o passo `revisada` juntos. **Não marca habilidade** desde a ficha 5 (ADR-174): a galeria é experiência. Depois, `POST passo` com `para: \"cadeia\"`.",
+    corpo: RevisaoDoVotoSchema,
+    resposta: EstadoSchema,
+    notas: [
+      "`manter` sem nenhum oculto aberto responde **409** `galeria-sem-inspecao`; `trocar` com o mesmo projeto do voto, ou com um id que o pacote não tem, **400** `payload-invalido`.",
+      "A segunda revisão — inclusive duas simultâneas — responde **409** `voto-ja-revisado`. Antes da galeria, **403** `galeria-nao-liberada`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.",
+      PORTA,
+    ],
+  })
+  revisao(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    const revisao = valida(RevisaoDoVotoSchema, corpo);
+    return this.missao.revisar(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), revisao);
+  }
+
+  @Post("regra")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "A regra SE … ENTÃO: a condição e a ação que o programa do feed executou (EF06CO03).",
+    descricao:
+      "Do passo `cadeia` (o nome ficou; desde a 0.6.0 a tela é a da regra). `se` e `entao`: uma peça de cada lado, ids OPACOS `rg-` desta sessão. Uma vez só: o servidor corrige, grava, marca a EF06CO03 (`regra`: as duas certas = atingiu; uma = em processo; nenhuma = não atingiu) e CONCLUI a missão (passo `fim` e o carimbo, no mesmo update — o caso Mariana saiu na ADR-176). Responde a REVELAÇÃO — as peças escolhidas e as certas, e o que a regra fez no feed desta criança. Enviar de novo devolve a mesma revelação, sem trocar a escolha.",
+    corpo: RegraSchema,
+    resposta: RespostaDaRegraSchema,
+    notas: [
+      "Peça de outra sessão, ou do lado errado, responde **400** `payload-invalido`.",
+      "Fora do passo `cadeia` responde **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.",
+      PORTA,
+    ],
+  })
+  regra(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    const escolha = valida(RegraSchema, corpo);
+    return this.missao.montarRegra(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), escolha);
+  }
+
+  @Post("concluir")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "Conclui uma sessão ANTIGA que parou no caso Mariana ou nas enquetes — idempotente.",
+    descricao:
+      "Leva a sessão de `mariana` (0.6.0) ou de `enquetes` (até a 0.5.0) a `fim` e carimba a conclusão, no mesmo update, sem marcar nada. Desde a 0.7.0 a regra SE … ENTÃO já conclui (ADR-176).",
+    resposta: EstadoSchema,
+    notas: ["Fora de `mariana`, `enquetes` (e de `fim`) responde **409** `passo-invalido`. Concluir de novo devolve o mesmo estado.", PORTA],
+  })
+  concluir(@Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    return this.missao.concluir(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth));
+  }
+}

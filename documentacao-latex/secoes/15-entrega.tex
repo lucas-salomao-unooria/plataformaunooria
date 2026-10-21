@@ -35,7 +35,7 @@ arrasta as dependências corretas.
 \toprule
 \headrow \thd{Comando} & \thd{Uso}\\
 \midrule
-\cd{pnpm turbo build --filter=@edu/exp-01} & Builda uma experiência mais as
+\cd{pnpm turbo build --filter=@edu/exp08ef1b} & Builda uma experiência mais as
   dependências dela.\\
 \zebra \cd{pnpm turbo build --filter='...[HEAD\^{}]'} & Só o que mudou. É o que o
   CI usa.\\
@@ -49,9 +49,10 @@ arrasta as dependências corretas.
 \begin{lstlisting}[language=yamlunoo, caption={\arq{.github/workflows/ci.yml} (abreviado)}, label={lst:ci}]
 name: ci
 on:
-  # Todo PR: de branch de trabalho para dev-local, dai para dev, para hml
-  # e, quando producao existir, para main — o mesmo portao nas quatro pontes.
+  # So os PRs para dev, hml e main. PR para dev-local nao roda: ali o
+  # portao e a verificacao local da Definition of Done (ADR-121).
   pull_request:
+    branches: [dev, hml, main]
   # Chamado pelo deploy.yml no push para dev/hml. NAO tem `push` proprio:
   # rodaria duas vezes no mesmo commit, e o deploy precisa ESPERAR por ele —
   # dois workflows em paralelo deixariam um teste vermelho subir para escola.
@@ -73,6 +74,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      - uses: astral-sh/setup-uv@v6   # apps/agente-professor e Python (ADR-126)
+        with: { version: "0.12.7", enable-cache: true }
       - run: pnpm --filter @edu/api migrate:deploy
       - run: |
           if [ "$COMPLETO" = "true" ]; then
@@ -94,10 +97,11 @@ O CI é chamado pelo \emph{deploy} por \cd{workflow\_call}, e \textbf{não} tem
 gatilho próprio em \cd{push}. Com gatilho próprio, ele rodaria duas vezes
 no mesmo \emph{commit} --- e, pior, em \emph{paralelo} com o \emph{deploy}, o que
 deixaria um teste vermelho subir para uma escola. Assim o \emph{deploy}
-\textbf{espera} pelo portão. O gatilho de \cd{pull\_request} não filtra a
-\emph{branch} de destino de propósito: o portão é o mesmo nas três pontes do
-fluxo (\emph{branch} de trabalho \(\to\) \cd{dev-local}, \cd{dev-local}
-\(\to\) \cd{dev}, \cd{dev} \(\to\) \cd{hml}, \cd{hml} \(\to\) \cd{main}).
+\textbf{espera} pelo portão. O gatilho de \cd{pull\_request} filtra a \emph{branch} de destino
+(\adrr{ADR-121}): roda nos PRs para \cd{dev}, \cd{hml} e \cd{main}, e não no de
+\emph{branch} de trabalho para \cd{dev-local}, onde o portão é o
+\cd{pnpm turbo typecheck lint test} da \emph{Definition of Done}. A promoção
+\cd{dev-local} \(\to\) \cd{dev} verifica tudo o que acumulou.
 \end{decisao}
 
 \subsection{A trava de vulnerabilidade (Snyk)}
@@ -153,78 +157,224 @@ Pub/Sub: env ausente é porta fechada, não porta aberta.
 \begin{figure}[H]
 \centering
 \fitpage{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    e/.style={etapa, text width=30mm, minimum height=14mm},
+    eo/.style={etapaout, text width=30mm, minimum height=14mm},
+    trilha/.style={camadalbl, anchor=south west, inner sep=0pt}]
 
-  \node[etapaio, text width=26mm] (push) at (1.4,0)
+  % Grade: colunas em x = 1.9 / 5.7 / 9.5 / 13.3; trilhas a cada 2,4 cm.
+  % ---- gatilho, portao e diff (paralelos) -> needs: [verificar, mudancas]
+  \node[etapaio, text width=26mm, minimum height=14mm] (push) at (1.9,0)
     {\emph{push} para \texttt{dev} ou \texttt{hml}\desc{merge de um PR}};
-  \node[etapa, text width=26mm, fill=unooGreenWash, draw=unooGreen] (ver) at (5.0,0)
-    {\textbf{portão}: \texttt{ci.yml}\desc{typecheck, lint, test, build}};
-  \node[etapa, text width=30mm] (diff) at (9.0,0)
-    {\emph{job} \texttt{mudancas}\desc{\texttt{git diff HEAD\^{} HEAD}\\api $|$ hub $|$ exps}};
+  \node[barv, minimum height=34mm] (fork) at (4.0,0) {};
+  \node[e] (ver) at (6.3,0.85)
+    {\textbf{portão} \texttt{verificar}\desc{\texttt{ci.yml}: typecheck,\\lint, test, build}};
+  \node[e] (diff) at (6.3,-0.85)
+    {\emph{job} \texttt{mudancas}\desc{\texttt{git diff HEAD\^{} HEAD}}};
+  \node[barv, minimum height=34mm] (join) at (8.6,0) {};
+  \node[actnote, text width=42mm, align=flush left, anchor=west] at (10.6,0)
+    {Os \emph{jobs} de \emph{deploy} declaram \texttt{needs: [verificar,}
+     \texttt{mudancas]}: nada sobe sem o portão, e o \emph{diff} liga só a
+     trilha do que mudou (api, hub, agente, experiências).};
 
-  % --- trilha da api (job proprio)
-  \node[camadalbl, anchor=west] at (0.4,-3.6)
-    {\emph{job} \texttt{deploy-api} --- a ORDEM importa};
-  \node[etapa, text width=28mm] (img) at (2.4,-4.8)
-    {imagem da api\desc{camada de deps do \texttt{pnpm fetch}, \emph{cache} GHA}};
-  \node[etapa, text width=30mm, fill=unooYellowWash, draw=unooYellow] (mig) at (6.4,-4.8)
-    {\textbf{Cloud Run Job} \texttt{-migrate}\desc{na VPC, \texttt{--wait}}};
-  \node[etapaout, text width=28mm] (dep) at (10.4,-4.8)
-    {\texttt{gcloud run deploy}\desc{revisão nova}};
+  \draw[pipe] (push) -- (fork);
+  \draw[pipe] (fork.east |- ver) -- (ver);
+  \draw[pipe] (fork.east |- diff) -- (diff);
+  \draw[pipe] (ver) -- (join.west |- ver);
+  \draw[pipe] (diff) -- (join.west |- diff);
 
-  % --- trilha do hub (job proprio, em paralelo com a api)
-  \node[camadalbl, anchor=west] at (0.4,-6.4)
-    {\emph{job} \texttt{deploy-hub} --- em PARALELO com a api};
-  \node[etapa, text width=28mm] (imgh) at (2.4,-7.4)
-    {imagem do hub\desc{camada de deps do \texttt{pnpm fetch}, \emph{cache} GHA}};
-  \node[etapaout, text width=28mm] (deph) at (6.4,-7.4)
-    {\texttt{gcloud run deploy}};
+  % ---- trilha 1: api
+  \node[trilha] at (0.4,-2.85) {\emph{job} \texttt{deploy-api} --- a ORDEM importa};
+  \node[e]  (img)  at (1.9,-3.85)  {imagem da api\desc{camada de deps\\com \emph{cache}}};
+  \node[e]  (mig)  at (5.7,-3.85)
+    {Cloud Run Job \texttt{-migrate}\desc{na VPC, \texttt{--wait}}};
+  \node[eo] (dep)  at (9.5,-3.85)  {\texttt{gcloud run deploy}\desc{revisão nova da api}};
+  \node[e]  (sapi) at (13.3,-3.85) {sonda pós-\emph{deploy}\desc{\texttt{/readyz}, até 2 min}};
 
-  % --- trilha das experiencias (dois jobs: subir e ativar)
-  \node[camadalbl, anchor=west] at (0.4,-10.6)
-    {\emph{jobs} \texttt{publicar-exps} (em paralelo) \seta{} \texttt{ativar-exps} (depois dos dois)};
-  \node[etapa, text width=24mm] (build) at (1.8,-11.8)
-    {\texttt{turbo build}\desc{filtrado, ou tudo se \texttt{forcar}}};
-  \node[etapa, text width=30mm] (rsync) at (5.4,-11.8)
-    {\texttt{gcloud storage rsync}\desc{\texttt{gs://\{bucket\}/}\\\texttt{\{exp\}/\{ver\}/}}};
-  \node[etapa, text width=28mm] (cc) at (9.2,-11.8)
-    {\texttt{Cache-Control}\desc{\texttt{max-age=60} só no \texttt{index.html}}};
-  \node[etapaout, text width=30mm] (man) at (13.0,-11.8)
-    {\texttt{publicar-manifesto.mjs}\desc{\emph{job} \texttt{ativar-exps}:
-     \texttt{PUT /experiencias/:expId}, token de 5 min}};
+  % ---- trilha 2: hub
+  \node[trilha] at (0.4,-5.25) {\emph{job} \texttt{deploy-hub} --- em PARALELO};
+  \node[e]  (imgh) at (1.9,-6.25) {imagem do hub\desc{camada de deps\\com \emph{cache}}};
+  \node[eo] (deph) at (5.7,-6.25) {\texttt{gcloud run deploy}\desc{revisão nova do hub}};
+  \node[e]  (shub) at (9.5,-6.25)
+    {sonda pós-\emph{deploy}\desc{\texttt{/api/healthz} e JWKS}};
 
-  \draw[pipe] (push) -- (ver);
-  \draw[pipe] (ver) -- (diff);
-  \draw[pipe] (diff.south) -- (9.0,-1.6) -- (-0.4,-1.6) -- (-0.4,-4.8) -- (img.west);
-  \draw[pipe] (-0.4,-4.8) -- (-0.4,-7.4) -- (imgh.west);
+  % ---- trilha 3: agente de IA do professor
+  \node[trilha] at (0.4,-7.65)
+    {\emph{job} \texttt{deploy-agente-professor} --- em PARALELO};
+  \node[e]  (imga) at (1.9,-8.65)
+    {imagem do agente\desc{\texttt{uv sync --locked}}};
+  \node[eo] (pat)  at (5.7,-8.65)
+    {\texttt{PATCH} do Agent Engine\desc{só a \texttt{imageUri};\\espera a operação}};
+  \node[actnote, text width=26mm, align=flush left, anchor=west] at (7.75,-8.65)
+    {Engine ainda não existe? Só publica a imagem e avisa (\emph{apply}~2).};
+
+  % ---- trilha 4: experiencias (subir; a ativacao espera api e hub)
+  \node[trilha] at (0.4,-10.05)
+    {\emph{job} \texttt{publicar-exps} (sobe, inerte) \seta{} \emph{job} \texttt{ativar-exps}};
+  \node[e]  (build) at (1.9,-11.05) {\texttt{turbo build}\desc{filtrado, ou tudo\\se \texttt{forcar}}};
+  \node[e]  (rsync) at (5.7,-11.05)
+    {\texttt{gcloud storage rsync}\desc{caminho com a versão,\\sem \texttt{.map}}};
+  \node[e]  (cc)    at (9.5,-11.05)
+    {\texttt{Cache-Control}\desc{\texttt{max-age=60} só\\no \texttt{index.html}}};
+  \node[eo] (man)   at (13.3,-11.05)
+    {\texttt{ativar-exps}\desc{\texttt{PUT} do manifesto\\(\texttt{versaoAtiva})}};
+
+  % ---- fim: smoke
+  \node[e] (smoke) at (13.3,-13.45)
+    {\emph{job} \texttt{smoke}\desc{e2e \texttt{publico/01}\\contra o ambiente}};
+
+  % ---- espinha: do join para as quatro trilhas
+  \draw[pipe] (join.south) -- (8.6,-2.1) -- (-0.3,-2.1) -- (-0.3,-3.85) -- (img.west);
+  \draw[pipe] (-0.3,-3.85) -- (-0.3,-6.25) -- (imgh.west);
+  \draw[pipe] (-0.3,-6.25) -- (-0.3,-8.65) -- (imga.west);
+  \draw[pipe] (-0.3,-8.65) -- (-0.3,-11.05) -- (build.west);
+
   \draw[pipe] (img) -- (mig);
   \draw[pipe] (mig) -- (dep);
+  \draw[pipe] (dep) -- (sapi);
   \draw[pipe] (imgh) -- (deph);
-  \draw[pipe] (dep.south) -- (10.4,-9.4) -- (6.4,-9.4);
-  \draw[pipe] (deph.south) -- (6.4,-9.4) -- (-0.4,-9.4) -- (-0.4,-11.8) -- (build.west);
+  \draw[pipe] (deph) -- (shub);
+  \draw[pipe] (imga) -- (pat);
   \draw[pipe] (build) -- (rsync);
   \draw[pipe] (rsync) -- (cc);
   \draw[pipe] (cc) -- (man);
 
-  \node[actnote, text width=44mm, anchor=north west] at (12.2,-3.4)
-    {\textbf{Por que a migração antes do \emph{deploy}:} o \emph{schema} novo tem
-     de estar no banco \emph{antes} de a revisão nova receber tráfego, senão a
-     API roda contra um banco velho. O \texttt{--wait} faz o passo falhar se a
-     migração falhar --- e o \emph{deploy} não acontece.};
-
-  \node[actnote, text width=44mm, anchor=north west] at (12.2,-6.9)
-    {\textbf{Por que as experiências depois do hub:} o \texttt{PUT} do manifesto é
-     validado pela API contra o JWKS que o \emph{hub} serve. Hub fora do ar =
-     manifesto rejeitado --- e um manifesto rejeitado é melhor que um manifesto
-     aceito apontando para um hub que não subiu.};
+  % ---- ativar espera as duas sondas; smoke espera a ativacao
+  \draw[pipe] (14.2,0 |- sapi.south) -- (14.2,0 |- man.north);
+  \draw[pipe] (shub.east) -- (12.4,-6.25) -- (12.4,0 |- man.north);
+  \draw[pipe] (man) -- (smoke);
 
 \end{tikzpicture}}
-\caption[Pipeline de entrega]{O \emph{pipeline} de entrega. O portão e o
-  \emph{job} \cd{mudancas} decidem o que roda; api e hub sobem em \emph{jobs}
-  paralelos (cada um autentica por WIF, sem chave JSON); as experiências
-  publicam por último, depois dos dois.}
+\begin{legendadiag}
+\amostra{etapaio} gatilho \quad
+\amostra{etapa} passo \quad
+\amostra{etapaout} troca o que está no ar \quad
+\amostra{actnote} nota \quad
+barra preta: \emph{fork} e \emph{join} (o \texttt{needs} do \emph{workflow})
+\end{legendadiag}
+\caption[Pipeline de entrega]{O \emph{pipeline} de entrega
+  (\arq{.github/workflows/deploy.yml}). O portão e o \emph{job} \cd{mudancas}
+  correm em paralelo e, juntos, liberam as trilhas; api, hub e o agente de IA do
+  professor sobem em \emph{jobs} paralelos (cada um autentica por WIF, sem chave
+  JSON). As experiências SOBEM cedo, inertes, e só são ATIVADAS depois que as
+  sondas da api e do hub passam; o \cd{smoke} fecha a corrida e não espera o
+  agente.}
 \label{fig:pipeline-deploy}
 \end{figure}
+
+\subsection{O agente de IA do professor: imagem, \cd{PATCH} e a ordem dos \emph{applies}}
+
+O agente (\adrr{ADR-126}) não é um Cloud Run: é a terceira trilha da figura
+acima, um \emph{job} \cd{deploy-agente-professor} em paralelo com os da api e
+do hub, disparado quando o \emph{job} \cd{mudancas} vê \arq{apps/agente-professor}
+no \emph{diff} (o pacote é Python e não lê nada de \arq{packages/} nem do
+\emph{lockfile} do pnpm). Ele constrói a imagem pelo \arq{Dockerfile} do pacote
+(\cd{uv sync --locked}), publica
+\cd{\{região\}-docker.pkg.dev/\ldots/agente-professor:\{sha\}} no mesmo Artifact
+Registry e, se o engine já existe, faz \cd{PATCH} do engine com
+\cd{updateMask=spec.containerSpec.imageUri} e espera a operação longa terminar
+--- falha se o engine recusar a imagem, ou se a operação passar de 15 minutos.
+O resto da \cd{spec} (variáveis, métodos, SA) é do Terraform, que ignora a
+\cd{imageUri} (\cd{ignore\_changes}); sem isso, cada \emph{apply} desfaria o
+\emph{deploy}.
+
+\textbf{O engine só nasce depois da primeira imagem}, e isso dá uma ordem que o
+CI não resolve sozinho:
+
+\begin{enumerate}
+  \item \textbf{Uma vez por projeto}, os \emph{service agents} do Discovery Engine
+    e do Agent Engine (\cd{gcloud beta services identity create}); e o
+    \cd{terraform init -upgrade} do \emph{provider} \cd{google} 7.46.
+  \item \textbf{\emph{Apply} 1}, com \cd{agente\_professor\_imagem = ""}:
+    \emph{bucket}, \emph{data stores}, esquema das habilidades, SA, papéis e a
+    exclusão do Cloud Armor. A api ganha \env{AGENTE\_PROFESSOR\_MODO=desligado}.
+  \item \textbf{Ingestão}, fora do Terraform: \cd{importar esquema},
+    \cd{exportar\_\B habilidades}, \cd{importar habilidades}, os PDFs no
+    \emph{bucket}, \cd{dividir\_\B pdfs}, \cd{gerar\_\B metadados\_\B acervo},
+    \cd{importar acervo} e o relatório \cd{avaliar\_\B habilidades}.
+  \item \textbf{O CI publica a primeira imagem.} Com
+    \cd{vars.AGENTE\_PROFESSOR\_ENGINE} vazia, o \emph{job} só publica e deixa um
+    aviso com a referência a pôr no \cd{tfvars}.
+  \item \textbf{\emph{Apply} 2}, com \cd{agente\_professor\_imagem} preenchida:
+    o engine (minutos; o \emph{timeout} do \emph{provider} é 20), o IAM nele e a
+    api com \env{AGENTE\_PROFESSOR\_MODO=agent-engine} e o \emph{resource name}.
+    A \cd{var} \cd{AGENTE\_PROFESSOR\_ENGINE} do ambiente no GitHub recebe o
+    mesmo \emph{resource name}.
+  \item \textbf{Daí em diante, quem troca a imagem é o CI.}
+\end{enumerate}
+
+\begin{atencao}
+\textbf{Até o \emph{apply} 2, o chat responde \enquote{agente indisponível}} ---
+é o \cd{desligado} fazendo o que deve, não uma falha. E o \emph{runner} do CI
+precisa do \cd{uv}: sem ele, o \cd{pnpm turbo} da raiz \textbf{falha} com a
+instrução de instalação, para que um pacote que some da verificação não vire um
+verde falso (\env{AGENTE\_PROFESSOR\_PULAR\_SEM\_UV=1} pula com aviso).
+\end{atencao}
+
+\subsection{A Ajuda com avatar: o que cada ambiente precisa, fora do \emph{pipeline}}
+
+A Ajuda com avatar (\adrr{ADR-132}) não acrescenta \emph{job} nenhum: o código vai
+na imagem da api, e o \emph{vendor} (LiveAvatar) não recebe artefato. O que ela
+exige é configuração por contrato e ambiente, e a ordem importa, porque a
+configuração do \emph{vendor} aponta para a URL pública da api:
+
+\begin{enumerate}
+  \item \textbf{Os três segredos no Secret Manager}, pelo Terraform:
+    \cd{\{contrato\}-liveavatar-api-key}, \cd{\{contrato\}-ajuda-llm-segredo} e
+    \cd{\{contrato\}-ajuda-sessao-chave}, com 32 ou mais caracteres, viram
+    \env{LIVEAVATAR\_API\_KEY}, \env{AJUDA\_LLM\_SEGREDO} e
+    \env{AJUDA\_SESSAO\_CHAVE} da api. Sem eles a api sobe normal e a Ajuda
+    responde 503 --- dá para aplicar o Terraform antes do passo seguinte.
+  \item \textbf{A api no ar com URL pública} (o domínio da api no LB), sem IAP
+    nem \emph{allowlist} por IP em \rota{/ajuda/llm/}: o \emph{vendor} chama de fora.
+  \item \textbf{\arq{scripts/liveavatar-configurar.mjs} \cd{<ambiente>}
+    \cd{<url-publica-da-api>}}, com \env{LIVEAVATAR\_API\_KEY} e o MESMO
+    \env{AJUDA\_LLM\_SEGREDO} exportados. Ele escreve na conta real do
+    \emph{vendor} --- o segredo (tipo \cd{OPENAI\_API\_KEY}), a configuração de LLM
+    apontando para \cd{<url>/ajuda/llm} e o contexto com o marcador da sessão
+    ---, é idempotente pelo nome \cd{unooria-ajuda-<ambiente>} e imprime
+    \env{LIVEAVATAR\_CONTEXT\_ID} e \env{LIVEAVATAR\_LLM\_CONFIG\_ID}, que entram
+    como \emph{env} comum da api. Um conjunto por contrato e ambiente; não cria
+    nada no GCP.
+  \item \textbf{\env{LIVEAVATAR\_SANDBOX=0}} fora de desenvolvimento. O
+    \emph{sandbox} (o avatar de testes do \emph{vendor}, sessões de cerca de 1
+    minuto, sem crédito) é \textbf{recusado pelo Zod em produção}: a api não sobe
+    com ele, porque seria uma Ajuda que cai sozinha no meio da explicação.
+  \item \textbf{Ligar o produto.} A \cd{ajuda} nasce desligada
+    (\cd{PRODUTOS\_\B DESLIGADOS\_\B POR\_\B PADRAO}); o \cd{admin} a liga no
+    painel da Unooria para a escola ou a rede onde quer testar, e ajusta os
+    minutos em \rota{/unooria/uso-de-ia} (semente: 30 por dia e 10 por sessão).
+\end{enumerate}
+
+Em desenvolvimento local, os \emph{compose} levam as mesmas variáveis vazias (a
+Ajuda responde 503 e nada mais muda) e \env{LIVEAVATAR\_SANDBOX=1} por padrão; o
+\emph{vendor} só alcança a api por túnel (\cd{cloudflared}), e é a URL do túnel que
+se passa ao \emph{script}. Trocar a URL ou o segredo depois é apagar a
+configuração (e então o segredo) no painel do \emph{vendor} e rodar o \emph{script}
+de novo --- apagar o segredo primeiro quebra a configuração sem aviso.
+
+\textbf{A base de conhecimento é gerada, e viaja na imagem.}
+\arq{apps/api/src/ajuda/base/base-da-ajuda.gerada.ts} sai de
+\cd{node scripts/gerar-base-da-ajuda.mjs}, a partir do mapa de produto (só o que
+está pronto ou parcial), dos guias da aula e dos manifestos das experiências, e
+é versionado. Quem muda um desses e não regera deixa o atendente explicando a
+tela de ontem; \arq{apps/api/tests/ajuda-base.spec.ts} roda o gerador com
+\cd{--verificar} e fica vermelho. O gerador também falha se a base vazar
+vocabulário técnico (\cd{TERMOS\_SENSIVEIS}), e a correção é no mapa, não na
+lista.
+
+\begin{limitacao}
+\textbf{O teste da base é da api, e as fontes dela não são.} O mapa de produto
+mora em \arq{documentacao-latex/produto/}, os guias em \arq{apps/hub/} e os
+manifestos em \arq{apps/experiencias/}. O CI roda \cd{pnpm turbo \ldots{}
+--filter='...[HEAD\^{}]'}, que só testa os pacotes tocados e os que dependem
+deles, e o \emph{hash} da tarefa \cd{test} do turbo só olha os arquivos do próprio
+pacote: um \emph{commit} que muda só um guia ou só o mapa não roda
+\cd{ajuda-base.spec.ts}, e um cache local pode repetir o verde antigo. Até que a
+tarefa declare essas entradas, regerar é parte do \emph{commit} que muda o mapa,
+um guia ou um manifesto; só uma execução completa do portão (\cd{completo}, o
+\cd{forcar} do \emph{deploy}) roda o teste de qualquer jeito.
+\end{limitacao}
 
 \subsection{Sonda, \emph{smoke} e aviso (2026-09-02)}
 
@@ -389,6 +539,43 @@ O laço de publicação é tolerante por desenho: pasta de experiência sem
 andamento, e trabalho em andamento não deve quebrar o \emph{deploy} do resto.
 \end{nota}
 
+\subsection{A base do gerador de missões (\emph{workflow} \cd{base-do-gerador})}
+\label{sec:base-do-gerador}
+
+Um terceiro \emph{workflow}, \arq{.github/\B{}workflows/\B{}base-do-gerador.yml},
+não publica nada da plataforma: publica a \textbf{base} que o gerador de
+missões (outro repositório, um agente ADK no Cloud Run) lê para escrever uma
+missão nova (\adrr{ADR-149}). Ele roda no \emph{push} em \cd{dev-local} que
+toca uma das fontes --- os \cd{paths:} são a mesma lista do extrator --- e por
+\cd{workflow\_dispatch}, num \emph{environment} próprio
+(\cd{base-do-gerador}, com \cd{WIF\_PROVIDER} e \cd{DEPLOY\_SA}), porque o de
+\cd{dev} só aceita a \emph{branch} \cd{dev}. Não instala dependência: o
+extrator, \arq{scripts/\B{}base-do-gerador/\B{}extrair.mjs}, só usa módulos
+\cd{node:}, e o \emph{job} tem teto de 5 minutos.
+
+\begin{enumerate}
+  \item \cd{node --test} roda o extrator inteiro contra o repositório num
+    diretório temporário e confere o contrato (próxima ADR, porta livre,
+    seções do DS, nenhuma cópia faltando, o ponteiro apontando para a pasta).
+  \item O extrator copia a doutrina e os contratos, gera o índice das ADRs e o
+    do OpenAPI, recorta o \arq{schema.prisma} das missões-molde e extrai por
+    \emph{parse} o \arq{contrato-\B{}plataforma.json}. \textbf{Fonte ausente ou
+    expressão que não casou derruba o \emph{job}} antes de qualquer escrita.
+  \item \cd{gcloud storage cp -r} sobe
+    \cd{base-plataforma/\B{}plataforma/\B{}<commit>/} e, SÓ DEPOIS, o
+    \arq{atual.json} com \cd{Cache-Control: no-store}. A concorrência é um
+    grupo único, sem cancelamento, para que dois \emph{pushes} seguidos não
+    gravem o ponteiro fora de ordem.
+\end{enumerate}
+
+\begin{nota}
+Localmente, \cd{node scripts/\B{}base-do-gerador/\B{}extrair.mjs --saida <dir>}
+grava a mesma base num diretório, sem subir nada. Mudou a forma de uma fonte (o
+cabeçalho da tabela de seções do DS, um \cd{export const} lido por
+\emph{parse}) ou moveu um arquivo da lista? O extrator e os \cd{paths:} do
+\emph{workflow} mudam no mesmo \emph{commit}.
+\end{nota}
+
 \section{Ambientes locais}
 
 \begin{tabularx}{\linewidth}{@{}L{30mm}L{34mm}X@{}}
@@ -473,12 +660,12 @@ Fluxo & \textbf{Quatro ambientes} (\adrr{ADR-101}): \emph{branch} de trabalho
   \cd{HEAD\^{}} (o primeiro pai), que num \emph{merge commit} é a ponta antiga
   da \emph{branch} de ambiente --- um \emph{rebase-merge} faria o \emph{diff}
   enxergar só o último \emph{commit} do PR.\\
-\zebra \emph{Branches} & \textbf{Uma por experiência}, com o nome do slug
-  (\arq{exp-12-fracoes}). Trabalho que não é experiência usa o prefixo do tipo do
+\zebra \emph{Branches} & \textbf{Uma por experiência}, com o código dela
+  (\arq{exp06ef3b} --- \adrr{ADR-110}). Trabalho que não é experiência usa o prefixo do tipo do
   \emph{commit}: \arq{fix/quota-por-perfil}, \arq{chore/deps},
   \arq{ci/deploy}.\\
-\emph{Commits} & \cd{feat(exp-12): ...}, \cd{fix(api): ...},
-  \cd{chore(sdk): ...} --- o escopo é o slug da experiência ou o aplicativo
+\emph{Commits} & \cd{feat(exp06ef3b): ...}, \cd{fix(api): ...},
+  \cd{chore(sdk): ...} --- o escopo é o código da experiência ou o aplicativo
   tocado. Validado pelo \emph{hook} \arq{.githooks/commit-msg}.\\
 \zebra Promoção & O PR de \cd{hml} para \cd{main} leva \textbf{tag semver}
   (\cd{v1.4.0}) e \emph{release}, criadas depois do \emph{merge}. MAJOR só em

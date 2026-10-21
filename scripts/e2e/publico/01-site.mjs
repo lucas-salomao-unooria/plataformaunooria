@@ -44,6 +44,7 @@ await suite(
       "A revelação ao rolar termina: nenhum bloco fica invisível para sempre",
       "Nada transborda na largura em 390px, e o diálogo de navegação abre",
       "Os três convites dizem \"Quero conhecer a solução\" e abrem a MESMA janela, que o Esc fecha",
+      "O cabeçalho leva ao login e o rodapé à Política de Privacidade e aos Termos de Uso",
       "A landing anterior continua de pé em /landing-anterior — /privacidade e /termos dependem dela",
     ],
     comando: "node scripts/e2e/publico/01-site.mjs",
@@ -222,6 +223,8 @@ await suite(
         ),
         travou: document.body.classList.contains("locked"),
         cabe: caixa.width <= innerWidth && caixa.height <= innerHeight,
+        privacidade: dialogo.querySelector(".form-privacidade a")?.getAttribute("href") ?? null,
+        linkNoRotulo: Boolean(dialogo.querySelector("label a")),
       };
     });
     for (const campo of ["nome", "email", "telefone", "organizacao", "cargo", "consentimento"]) {
@@ -234,9 +237,13 @@ await suite(
     r.exigir(janela.fechadores.length === 2, `a janela oferece DUAS saídas além do Esc (${janela.fechadores.join(" · ")})`);
     r.exigir(janela.travou, "a página atrás da janela para de rolar enquanto ela está aberta");
     r.exigir(janela.cabe, "a janela cabe na tela — nenhuma ação fica fora do alcance");
+    /* H11.2.1: quem autoriza o contato alcança a política antes de enviar — e
+       o link fica FORA do rótulo, senão clicá-lo marcaria a caixa do aceite. */
+    r.exigir(janela.privacidade === "/privacidade", `a janela leva à Política de Privacidade (${janela.privacidade})`);
+    r.exigir(!janela.linkNoRotulo, "o link não está dentro do rótulo do aceite");
     await r.registrar(p, "cadastro", {
       titulo: "O cadastro de interesse, numa janela",
-      mostra: "Nome, e-mail profissional, telefone, organização, cargo e o aceite, sobre a página escurecida.",
+      mostra: "Nome, e-mail profissional, telefone, organização, cargo, o aceite e o link da Política de Privacidade, sobre a página escurecida.",
       prova:
         "É a única parte do site que não é porte: o destino mudou de um SQLite fora da plataforma para a api (ADR-107). O envio de verdade é provado em admin/03-prospeccao.",
       detalhe: `${janela.campos.length} campos · saídas: ${janela.fechadores.join(", ")}`,
@@ -261,11 +268,21 @@ await suite(
       imagens: document.querySelectorAll("img").length,
       revelacoes: document.querySelectorAll(".reveal").length,
     }));
+    /* O caminho de quem já tem conta, e os documentos legais (H11.1.2). */
+    const saidas = await p.evaluate(() => ({
+      entrar: document.querySelector(".header .header-entrar")?.getAttribute("href") ?? null,
+      legais: [...document.querySelectorAll(".footer-legal a")].map((a) => `${a.textContent?.trim()}→${a.getAttribute("href")}`),
+    }));
+    r.exigir(saidas.entrar === "/login", `o cabeçalho tem "Entrar", que leva ao login (${saidas.entrar})`);
+    r.exigir(
+      saidas.legais.includes("Política de Privacidade→/privacidade") && saidas.legais.includes("Termos de Uso→/termos"),
+      `o rodapé leva aos dois documentos legais (${saidas.legais.join(" · ")})`,
+    );
     await p.locator(".footer").scrollIntoViewIfNeeded();
     await p.waitForTimeout(500);
     await r.registrar(p, "rodape", {
       titulo: "O fim do percurso",
-      mostra: "A marca, a assinatura do programa e o botão de voltar ao início.",
+      mostra: "A marca, os links da Política de Privacidade e dos Termos de Uso, a assinatura do programa e o botão de voltar ao início.",
       prova:
         "A conferência do porte é por MEDIDA, não por impressão: altura do documento e topo de cada seção, comparados com o material de origem (components/site/AGENTS.md).",
       detalhe: `altura ${medidas.altura}px · ${medidas.imagens} imagens · ${medidas.revelacoes} revelações`,
@@ -284,6 +301,11 @@ await suite(
       larguras.scroll <= larguras.viewport,
       `nada transborda na largura em celular (${larguras.scroll} ≤ ${larguras.viewport})`,
     );
+    /* Quatro itens no cabeçalho do celular: o "Explorar" não pode sair da tela. */
+    const menuCabe = await m.evaluate(
+      () => document.querySelector(".menu-button").getBoundingClientRect().right <= window.innerWidth,
+    );
+    r.exigir(menuCabe, "no celular, o cabeçalho cabe inteiro: Conhecer, Entrar e o menu");
     await r.registrar(m, "celular-hero", {
       titulo: "O mesmo site no celular",
       mostra: "Viewport de 390×844: o trilho de capítulos sai, o CTA encurta para 'Cadastro'.",

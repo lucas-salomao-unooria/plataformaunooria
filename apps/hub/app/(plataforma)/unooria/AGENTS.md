@@ -8,12 +8,24 @@ capacidade que `admin` tem e `gestor_contrato` não.
 Área própria, papel `admin`, layout próprio (e portanto trilha própria).
 `NavUnooria` + `lib/recursos.ts` + `app/(plataforma)/unooria/recursos/` +
 `app/(plataforma)/unooria/uso-de-ia/` (ADR-105) +
-`app/(plataforma)/unooria/prospeccao/` (ADR-107).
+`app/(plataforma)/unooria/custos-de-ia/` (ADR-161, com `AGENTS.md` próprio) +
+`app/(plataforma)/unooria/prospeccao/` (ADR-107) +
+`app/(plataforma)/unooria/arquivados/` (ADR-116).
+
+### Imagens do banco padrão do Júri (`recursos/imagens-do-juri`)
+
+Debaixo de Recursos, com link no fim de `/unooria/recursos`: `GET`/`POST
+/juri-estadual/banco-padrao/imagens`, só `admin` (prefixo `juri-estadual` do
+BFF). O laço é o `continuarGerando` (oito por chamada); a api
+manda só chaves de lâmina e URLs (quatro por projeto, ADR-178), e a grade (aba
+por área) nomeia pelo número. Api fora do ar é erro, nunca "0 de 160".
 
 ### O segundo item: Uso de IA (ADR-105, 2026-09-15)
 
-`/unooria/uso-de-ia` — o teto diário de tokens por perfil, um cartão por perfil
-(`estudante`, `professor`), lido de `GET /recursos/quotas-de-ia` e alterado por
+`/unooria/uso-de-ia` — o teto diário de tokens por perfil, um cartão por linha
+(`estudante`, `professor` e, desde a ADR-169, `avaliacao` — a leitura da
+plataforma para a evidência, com teto POR ESCOLA: a régua diz "por escola", não
+"por pessoa"), lido de `GET /recursos/quotas-de-ia` e alterado por
 `PUT /recursos/quotas-de-ia/:perfil` pelo BFF (prefixo `recursos`, já na
 allowlist). O histórico é o MESMO `HistoricoDeRecursos`, com `prefixo="quota:"`
 e `key={mudancas}` para remontar depois de cada gravação — a doutrina do painel.
@@ -44,6 +56,10 @@ que todo papel entra na própria casa e que ninguém além do `admin` entra em
 **`homeDoPapel("admin")` é `/unooria/recursos`**: a casa da conta da Unooria é o
 painel dela, não a área da escola.
 
+**Embaixo, a Ajuda** (ADR-132/158/165): quem atende, as instruções
+(`painel-das-instrucoes.tsx`) e os minutos, com UM histórico. O cartão avisa quando o
+padrão escolhido não está montado na stack (a Ajuda abriria o outro calada).
+
 ### O terceiro item: Prospecção (ADR-107, 2026-09-16)
 
 `/unooria/prospeccao` — quem pediu contato pelo formulário do site público. Lido
@@ -61,10 +77,10 @@ entregar o funil comercial da Unooria ao cliente.
 - **Erro ao atualizar NÃO esvazia a tabela.** "Nenhum cadastro" e "a api não
   respondeu" são a mesma tela para quem olha, e a primeira leitura manda
   procurar defeito no formulário do site. A lista anterior fica, com o aviso.
-- **A tela diz que não apaga cadastro.** O direito de eliminação (LGPD art. 18,
-  VI) é real e hoje o caminho é humano — o `GRANT` da tabela tem `DELETE` e não
-  há rota. Escrever isso na tela é melhor que um botão que não existe, e melhor
-  que o silêncio que faz procurá-lo.
+- **"Eliminar a pedido do titular" apaga de verdade** (H10.5.2, LGPD art. 18,
+  VI), depois de uma confirmação que diz QUEM sai. Falha ao eliminar deixa a
+  janela aberta com o erro: fechar diria ao titular que o pedido foi atendido.
+  Não há editar — cadastro não se edita, só se elimina.
 - **Sem escopo de escola**, ao contrário de Recursos: cadastro de interesse é
   anterior a qualquer contrato. Não há seletor para trocar nem estado a
   remontar — o que a seção abaixo descreve não se aplica a esta tela.
@@ -76,12 +92,9 @@ sozinho depois de cada mudança. `useState` só usa o valor inicial na MONTAGEM:
 trocar de escopo faz `router.push`, o servidor devolve o painel da escola nova,
 e o componente não remontado continua exibindo o do escopo anterior.
 
-**O custo não é cosmético.** O `escolaId` que as escritas usam sai do painel em
-estado. Com o estado velho, escolher uma ESCOLA e desligar um produto gravava a
-linha no **CONTRATO** — a rede inteira — com a tela afirmando que era a escola.
-Foi medido: a suíte e2e do `admin` derrubou o produto para todas as escolas
-enquanto o roteiro dizia operar numa só, e o print mostrou o painel inteiro com
-os rótulos do escopo-contrato.
+**O custo não é cosmético** (medido na e2e do `admin`; o relato está em
+`recursos/page.tsx`): o `escolaId` das escritas sai do painel em estado, e com
+o estado velho desligar numa ESCOLA gravava no **CONTRATO** — a rede inteira.
 
 O conserto é o `key={escopo}` na página, e é a mesma doutrina do
 `<EscopoDaEscola>` (ADR-85): **quando o escopo é insumo de tudo o que a tela
@@ -111,12 +124,9 @@ razão está na ADR-87: fixar no contrato trocaria a versão do bundle SEM
 restaurar o manifesto, reabrindo o defeito do `allow-pointer-lock` que o
 histórico existe para consertar.
 
-**A janela FICA ABERTA depois de gravar**, e relê o próprio histórico. Os dois
-por medida: quem ativa uma versão precisa ver o aviso de que a conferência no
-CDN não foi possível (é ele que decide se o trabalho acabou), e sem reler o
-histórico a faixa "está em rollback" continuava na tela DEPOIS de a ativação
-resolver o rollback — a tela mentindo sobre o que ela mesma acabou de fazer.
-Visto no navegador.
+**A janela FICA ABERTA depois de gravar**, e relê o próprio histórico (visto no
+navegador): quem ativa precisa ver o aviso de que a conferência no CDN falhou,
+e sem reler a faixa "está em rollback" ficava na tela DEPOIS de resolvê-lo.
 
 **A etiqueta da versão É o botão** da janela: um botão "Versão" separado
 repetiria a informação que a etiqueta já dá.
@@ -144,13 +154,14 @@ quebrada.
   inclui as decisões de escopo-contrato junto (senão o histórico de uma escola
   ficaria vazio no dia em que a rede inteira mudou).
 
-### O `SideBar` do DS traz um item que não é seu
+### O `SideBar` vem com `showApps={false}`
 
-Ele renderiza sempre um primeiro item **"Iniciativas"**, fixo no componente, que
-abre um painel de `appsItems`. Sem `appsItems` o clique não faz nada — e nenhuma
-área deste hub passa `appsItems`. Vale para `/admin` desde sempre e agora para
-`/unooria`. É lacuna do pacote (pedido no `storybook-unooria`), não coisa a
-contornar aqui: item de menu que não leva a nada é pior que item nenhum.
+O componente desenha, por padrão, um primeiro item **"Iniciativas"** que abre um
+painel de `appsItems` — e nenhuma área deste hub tem painel de aplicativos: o
+clique não fazia nada. Desde a 0.2.15 do DS (H01.2.2) o `SideBar` aceita
+`showApps={false}`, e `nav-admin.tsx` e `nav-unooria.tsx` o passam. Barra lateral
+nova sem painel de aplicativos passa o mesmo: item de menu que não leva a nada é
+pior que item nenhum.
 
 ## O interruptor da rede na porta do produto (ADR-87, 2026-09-10)
 
@@ -183,3 +194,19 @@ na página** — foi o layout.
   linha nova nessa rota.
 - **Não conte produtos na copy.** O texto da home dizia "Quatro produtos"; com um
   deles desligado a frase mente sobre a própria tela.
+
+### O quarto item: Arquivados (ADR-116, 2026-09-25)
+
+`/unooria/arquivados` — as experiências tiradas do produto SEM serem apagadas,
+lidas de `GET /recursos/arquivadas` (prefixo `recursos`, já na allowlist). Uma
+experiência é arquivada quando uma missão nova toma o código dela: tudo o que era
+dela ganha o prefixo `backup-` e some da grade, do catálogo e de Recursos.
+
+- **Só LISTA.** Ninguém joga uma arquivada, e desarquivar é migração — a tela
+  diz isso no rodapé, para ninguém procurar o botão que não existe.
+- **Os números são a FOTOGRAFIA do arquivamento** (`turmasGuardadas`,
+  `estudantesGuardados`), gravada pela migração que arquivou. A tela não reconta:
+  contar `liberacoes` e `progresso` de todas as escolas atravessaria a RLS, e
+  nenhuma rota do `admin` faz isso.
+- **Erro da api não vira lista vazia**: "nada arquivado" e "a api não respondeu"
+  seriam a mesma tela (o mesmo cuidado da Prospecção).

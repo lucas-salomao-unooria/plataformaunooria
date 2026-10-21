@@ -1,0 +1,231 @@
+import { juntarSeries, somarPorSerie, type TurmaMedida } from "../src/evidencias/evidencias-consolidado.service";
+import {
+  DISTRIBUICAO_VAZIA,
+  distribuir,
+  habilidadesDaMissao,
+  limitadosDaMissao,
+  missaoDaTurma,
+  niveisDaMissao,
+  ordemDaSerie,
+  somar,
+  type LinhaDoConsolidado,
+} from "../src/evidencias/regras-do-consolidado";
+
+/**
+ * As regras PURAS do painel de habilidades (F14.7) — sem banco.
+ *
+ * O que se prova: o nível da criança na MISSÃO é o melhor entre as atividades
+ * (decisão de 2026-10-03), quem não tem evidência que conte é "não avaliado"
+ * e nunca "não atingiu", e a soma da escola e da rede não perde nem duplica
+ * criança.
+ */
+
+const linha = (
+  estudanteId: string,
+  habilidade: string,
+  status: LinhaDoConsolidado["status"],
+  situacao: LinhaDoConsolidado["situacao"] = "valida",
+  expId = "exp05ef1b",
+): LinhaDoConsolidado => ({ estudanteId, expId, habilidade, status, situacao });
+
+describe("o nível da criança na missão", () => {
+  test("é o MELHOR entre todas as atividades e rodadas", () => {
+    // As linhas de duas atividades diferentes chegam juntas: a missão é a composição.
+    const niveis = niveisDaMissao(
+      [linha("ana", "EF05CO08", "nao_atingiu"), linha("ana", "EF05CO08", "atingiu"), linha("ana", "EF05CO03", "em_processo")],
+      "exp05ef1b",
+    );
+    expect(niveis.get("ana")?.get("EF05CO08")).toBe("atingiu");
+    expect(niveis.get("ana")?.get("EF05CO03")).toBe("em_processo");
+  });
+
+  test("a projeção a confirmar e o 'Não participou' não contam", () => {
+    const niveis = niveisDaMissao(
+      [linha("bia", "EF05CO08", "atingiu", "a_revisar"), linha("caio", "EF05CO08", "nao_participou")],
+      "exp05ef1b",
+    );
+    expect(niveis.get("bia")?.get("EF05CO08")).toBeUndefined();
+    expect(niveis.get("caio")?.get("EF05CO08")).toBeUndefined();
+  });
+
+  test("cada missão é lida separada", () => {
+    const niveis = niveisDaMissao(
+      [linha("ana", "EF15CO02", "atingiu", "valida", "exp04ef1b"), linha("ana", "EF15CO02", "nao_atingiu")],
+      "exp05ef1b",
+    );
+    expect(niveis.get("ana")?.get("EF15CO02")).toBe("nao_atingiu");
+  });
+});
+
+describe("a distribuição da turma", () => {
+  const niveis = niveisDaMissao(
+    [
+      linha("ana", "EF05CO08", "atingiu"),
+      linha("bia", "EF05CO08", "em_processo"),
+      linha("caio", "EF05CO08", "nao_atingiu"),
+      linha("duda", "EF05CO08", "atingiu", "a_revisar"),
+      // Saiu da turma: a linha fica no banco, mas não conta aqui.
+      linha("ex-aluno", "EF05CO08", "atingiu"),
+    ],
+    "exp05ef1b",
+  );
+
+  test("cada criança DA TURMA cai em uma caixa, e quem não tem nível é 'não avaliado'", () => {
+    expect(distribuir(["ana", "bia", "caio", "duda", "eli"], niveis, "EF05CO08")).toEqual({
+      atingiu: 1,
+      emProcesso: 1,
+      emProcessoLimitado: 0,
+      naoAtingiu: 1,
+      naoAvaliado: 2,
+      total: 5,
+    });
+  });
+
+  test("habilidade sem nenhuma evidência: a turma inteira é 'não avaliado', nunca 'não atingiu'", () => {
+    const d = distribuir(["ana", "bia"], niveis, "EF05CO04");
+    expect(d.naoAtingiu).toBe(0);
+    expect(d.naoAvaliado).toBe(2);
+  });
+
+  test("somar não perde criança", () => {
+    const a = distribuir(["ana", "bia"], niveis, "EF05CO08");
+    const b = distribuir(["caio", "eli"], niveis, "EF05CO08");
+    expect(somar(somar(DISTRIBUICAO_VAZIA, a), b)).toEqual({
+      atingiu: 1,
+      emProcesso: 1,
+      emProcessoLimitado: 0,
+      naoAtingiu: 1,
+      naoAvaliado: 1,
+      total: 4,
+    });
+  });
+});
+
+describe("o que entra no painel", () => {
+  test("as habilidades da ficha primeiro, depois as que saíram da ficha mas têm evidência", () => {
+    const codigos = habilidadesDaMissao(
+      ["EF05CO08", "EF05CO03"],
+      [linha("ana", "EF05CO99", "atingiu"), linha("ana", "EF05CO08", "atingiu")],
+      "exp05ef1b",
+    );
+    expect(codigos).toEqual(["EF05CO08", "EF05CO03", "EF05CO99"]);
+  });
+
+  test("a missão vale para a série do manifesto, ou para a turma que já a fez", () => {
+    const missao = { expId: "exp05ef1b", series: ["5EF"] };
+    expect(missaoDaTurma(missao, "5EF", new Set())).toBe(true);
+    expect(missaoDaTurma(missao, "6EF", new Set())).toBe(false);
+    expect(missaoDaTurma(missao, "6EF", new Set(["exp05ef1b"]))).toBe(true);
+  });
+
+  test("as séries na ordem da trilha", () => {
+    expect(["1EM", "9EF", "5EF", "XX"].sort((a, b) => ordemDaSerie(a) - ordemDaSerie(b))).toEqual([
+      "5EF",
+      "9EF",
+      "1EM",
+      "XX",
+    ]);
+  });
+});
+
+describe("a soma por série (o painel da rede)", () => {
+  const d = (atingiu: number, naoAvaliado: number) => ({
+    atingiu,
+    emProcesso: 0,
+    emProcessoLimitado: 0,
+    naoAtingiu: 0,
+    naoAvaliado,
+    total: atingiu + naoAvaliado,
+  });
+  const turmas: TurmaMedida[] = [
+    {
+      id: "t1",
+      nome: "5A",
+      serie: "5EF",
+      estudantes: 3,
+      missoes: [{ expId: "exp05ef1b", aplicada: true, habilidades: [{ codigo: "EF05CO08", distribuicao: d(2, 1) }] }],
+    },
+    {
+      id: "t2",
+      nome: "5B",
+      serie: "5EF",
+      estudantes: 2,
+      // Não aplicou: as crianças entram como "não avaliado".
+      missoes: [{ expId: "exp05ef1b", aplicada: false, habilidades: [{ codigo: "EF05CO08", distribuicao: d(0, 2) }] }],
+    },
+    {
+      id: "t3",
+      nome: "4A",
+      serie: "4EF",
+      estudantes: 4,
+      missoes: [{ expId: "exp04ef1b", aplicada: true, habilidades: [{ codigo: "EF15CO02", distribuicao: d(4, 0) }] }],
+    },
+  ];
+
+  test("soma as turmas da série, conta quantas aplicaram, e ordena as séries pela trilha", () => {
+    const series = somarPorSerie(turmas);
+    expect(series.map((s) => s.serie)).toEqual(["4EF", "5EF"]);
+    const quinto = series[1]!;
+    expect(quinto).toMatchObject({ turmas: 2, estudantes: 5 });
+    expect(quinto.missoes).toEqual([
+      { expId: "exp05ef1b", turmasAplicadas: 1, habilidades: [{ codigo: "EF05CO08", distribuicao: d(2, 3) }] },
+    ]);
+  });
+
+  test("o TOPO (regional, rede) junta as escolas sem perder nem duplicar criança", () => {
+    const escolaA = somarPorSerie(turmas);
+    const escolaB = somarPorSerie([turmas[0]!]);
+    const juntas = juntarSeries([escolaA, escolaB, []]);
+    expect(juntas.map((s) => s.serie)).toEqual(["4EF", "5EF"]);
+    const quinto = juntas[1]!;
+    // 5 crianças e 2 turmas da A, mais 3 crianças e 1 turma da B.
+    expect(quinto).toMatchObject({ turmas: 3, estudantes: 8 });
+    expect(quinto.missoes).toEqual([
+      { expId: "exp05ef1b", turmasAplicadas: 2, habilidades: [{ codigo: "EF05CO08", distribuicao: d(4, 4) }] },
+    ]);
+    // A série que só uma escola tem passa inteira.
+    expect(juntas[0]).toEqual(escolaA[0]);
+    // E juntar uma lista só devolve ela mesma.
+    expect(juntarSeries([escolaA])).toEqual(escolaA);
+  });
+});
+
+describe('o "em processo" limitado pela atividade (ADR-166)', () => {
+  const lim = (estudanteId: string, status: LinhaDoConsolidado["status"], limitado: boolean): LinhaDoConsolidado => ({
+    ...linha(estudanteId, "EF08CO07", status, "valida", "exp08ef1b"),
+    limitado,
+  });
+
+  test("conta à parte, fora do 'em processo', e o total continua sendo a soma das caixas", () => {
+    const linhas = [lim("ana", "em_processo", true), lim("bia", "em_processo", false), lim("caio", "atingiu", false)];
+    const niveis = niveisDaMissao(linhas, "exp08ef1b");
+    const d = distribuir(["ana", "bia", "caio", "duda"], niveis, "EF08CO07", limitadosDaMissao(linhas, "exp08ef1b"));
+    expect(d).toEqual({ atingiu: 1, emProcesso: 1, emProcessoLimitado: 1, naoAtingiu: 0, naoAvaliado: 1, total: 4 });
+    expect(d.atingiu + d.emProcesso + d.emProcessoLimitado + d.naoAtingiu + d.naoAvaliado).toBe(d.total);
+  });
+
+  test("empate entre o limitado e o comum, em duas atividades: fica o COMUM", () => {
+    const linhas = [lim("ana", "em_processo", true), lim("ana", "em_processo", false)];
+    expect(limitadosDaMissao(linhas, "exp08ef1b").size).toBe(0);
+    const d = distribuir(["ana"], niveisDaMissao(linhas, "exp08ef1b"), "EF08CO07", limitadosDaMissao(linhas, "exp08ef1b"));
+    expect(d).toMatchObject({ emProcesso: 1, emProcessoLimitado: 0 });
+  });
+
+  test("o limitado nunca segura um nível melhor de outra atividade", () => {
+    const linhas = [lim("ana", "em_processo", true), lim("ana", "atingiu", false)];
+    expect(limitadosDaMissao(linhas, "exp08ef1b").size).toBe(0);
+  });
+
+  test("a projeção a confirmar não conta, nem como limitada", () => {
+    const linhas = [{ ...lim("ana", "em_processo", true), situacao: "a_revisar" as const }];
+    expect(limitadosDaMissao(linhas, "exp08ef1b").size).toBe(0);
+  });
+
+  test("sem o conjunto de limitados (as outras missões), a distribuição é a de sempre", () => {
+    const linhas = [lim("ana", "em_processo", true)];
+    expect(distribuir(["ana"], niveisDaMissao(linhas, "exp08ef1b"), "EF08CO07")).toMatchObject({
+      emProcesso: 1,
+      emProcessoLimitado: 0,
+    });
+  });
+});

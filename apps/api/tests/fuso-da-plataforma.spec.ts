@@ -17,7 +17,7 @@ import { validarEnv } from "../src/config/env";
  *
  * `apps/api/src/comum/fuso.ts` e `packages/sdk/src/fuso.ts` declaram o mesmo
  * padrão e leem a mesma variável de ambiente, porque a api não consome pacote
- * de workspace (`packages/AGENTS.md`). A cópia da copy da exp-01 é guardada por
+ * de workspace (`packages/AGENTS.md`). A cópia da copy da exp08ef1b é guardada por
  * um comentário e nada mais; esta é guardada por este teste — a diferença
  * importa, porque divergir aqui devolve exatamente o defeito que a ADR-98
  * fechou, só que entre api e hub.

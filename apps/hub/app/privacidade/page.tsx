@@ -75,8 +75,8 @@ const IDENTIFICACAO = {
   encarregado: "Encarregado de Proteção de Dados da Unooria",
   emailEncarregado: "privacidade@unooria.com",
   emailDenuncia: "denuncia@unooria.com",
-  versao: "1.0",
-  vigenciaDesde: "5 de setembro de 2026",
+  versao: "1.1",
+  vigenciaDesde: "25 de setembro de 2026",
 };
 
 /**
@@ -430,6 +430,14 @@ const SECOES: SecaoLegal[] = [
           <strong>personagens fictícios</strong>, escritos por computador, não
           de colegas.
         </p>
+        <p>
+          <strong>Uma exceção, e ela faz parte da aula:</strong> na missão A
+          Seleção, os três posts que você escolheu e a legenda que você escreveu
+          para os Stories aparecem, com o seu primeiro nome, para{" "}
+          <strong>um colega da sua turma</strong> — é assim que a turma compara
+          as escolhas. A reflexão que você escreve no fim continua só com o seu
+          professor.
+        </p>
         <div className="legal-nota legal-nota--atencao">
           <div className="legal-nota__corpo">
             <p>
@@ -439,7 +447,10 @@ const SECOES: SecaoLegal[] = [
               um telefone, o nome de um colega ou um assunto muito pessoal. A
               plataforma não tem um filtro que detecte isso e apague sozinho. Se
               você escreveu algo que não queria, avise o seu professor: ele
-              consegue apagar os registros da atividade.
+              consegue apagar os registros da atividade. Na missão do Unoovista,
+              a primeira versão da sua reflexão fica guardada para o professor
+              conferir a leitura da IA, até ele apagar os registros da
+              atividade.
             </p>
           </div>
         </div>
@@ -565,7 +576,9 @@ const SECOES: SecaoLegal[] = [
         <p>
           Para gerar as respostas dos personagens, as reações às suas
           publicações, a devolutiva formativa e os planos de aula do professor,
-          enviamos ao provedor de IA <strong>o texto escrito</strong> na missão:
+          para ler a legenda dos Stories na missão A Seleção e para ler a
+          primeira reflexão escrita na missão do Unoovista, enviamos ao
+          provedor de IA <strong>o texto escrito</strong> na missão:
           a sua conversa, a sua publicação, o seu comentário, a sua
           justificativa. Enviamos também o material curricular da rede, quando o
           professor pede um plano de aula.
@@ -580,9 +593,12 @@ const SECOES: SecaoLegal[] = [
         <p>
           A IA <strong>não dá nota</strong>. A correção do que vale nota é feita
           por regra fixa no servidor, e a devolutiva escrita pela IA é
-          declaradamente formativa, não pontuação. O professor aprova o material
-          antes da aula, pode desligar a IA no meio da aula e é sempre ele quem
-          avalia. A IA erra, e você deve tratá-la como um texto de computador,
+          declaradamente formativa, não pontuação. Na missão A Seleção, a IA lê a
+          legenda dos seus Stories e sugere ao professor um nível da habilidade
+          que a missão trabalha; na missão do Unoovista, ela lê uma vez só o
+          primeiro texto que você salva na reflexão e faz o mesmo. Você não vê
+          essas sugestões, e é o professor quem confere e decide. O professor aprova o material antes da aula, pode
+          desligar a IA no meio da aula e é sempre ele quem avalia. A IA erra, e você deve tratá-la como um texto de computador,
           não como uma verdade.
         </p>
         <p>

@@ -1,8 +1,13 @@
 name: ci
 on:
-  # Todo PR: de branch de trabalho para dev, de dev para hml e, quando
-  # producao existir, de hml para main — o mesmo portao nas tres pontes.
+  # So os PRs para as branches de ambiente em nuvem: dev, hml e, quando
+  # producao existir, main. PR para dev-local (ou para outra branch de
+  # trabalho) NAO roda: ali o portao e o `pnpm turbo typecheck lint test` da
+  # Definition of Done, e a promocao dev-local -> dev verifica tudo o que
+  # acumulou (ADR-121). A cota do plano Free acabou em 2026-09 e levou o
+  # deploy junto.
   pull_request:
+    branches: [dev, hml, main]
   # Chamado pelo deploy.yml no push para dev/hml. NAO tem `push` proprio:
   # rodaria duas vezes no mesmo commit, e o deploy precisa ESPERAR por ele —
   # dois workflows em paralelo deixariam um teste vermelho subir para escola.
@@ -45,6 +50,15 @@ jobs:
       # `@prisma/client` nao exporta nada e a api nao compila — foi o que
       # derrubou o primeiro deploy, com 365 erros de tipo.
       - run: pnpm install --frozen-lockfile
+
+      # `apps/agente-professor` é Python: lint, typecheck e test passam pelo
+      # `uv`. Sem ele no runner o pacote FALHA de propósito (scripts/uv.mjs) —
+      # um pacote que some da verificação sem avisar seria um verde falso.
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.7"
+          enable-cache: true
+          cache-dependency-glob: apps/agente-professor/uv.lock
 
       - name: Schema no banco de teste
         run: pnpm --filter @edu/api migrate:deploy

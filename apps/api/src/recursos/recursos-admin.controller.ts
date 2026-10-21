@@ -19,7 +19,7 @@ import { cadeiaDaEscola } from "../comum/disponibilidade";
 import { logger } from "../observabilidade/logger";
 import { Contrato } from "../openapi/contrato";
 import { PrismaService } from "../prisma/prisma.service";
-import { PRODUTOS, ProdutoSchema, RecursoIdSchema, partesDoRecurso } from "./catalogo";
+import { PRODUTOS, ProdutoSchema, RecursoIdSchema, ligadoPorPadrao, partesDoRecurso } from "./catalogo";
 import {
   AtivarVersaoSchema,
   DefinirDisponibilidadeSchema,
@@ -30,16 +30,21 @@ import {
   VersaoAtivadaSchema,
   VersaoFixadaSchema,
   VersoesDaExperienciaSchema,
+  ExperienciasArquivadasSchema,
 } from "./contrato-de-rotas";
 import { ManifestoGuardadoSchema } from "./manifesto-guardado";
 import { registrarAuditoria, type AcaoDeAuditoria } from "./auditoria";
 import {
+  DIAS_PARA_LEMBRAR_FIXACAO,
+  diasDesde,
+  fixacaoEsquecida,
   linhasLegiveis,
   resolverExperiencia,
   resolverProduto,
   type Efetivo,
   type LinhaDeDisponibilidade,
 } from "./regras";
+import { EXP_ID_RE } from "../comum/codigo-da-experiencia";
 
 /**
  * O PAINEL DA UNOORIA (ADR-87 + ADR-88) — ligar, desligar e ver o que vale.
@@ -53,8 +58,6 @@ import {
  * método: é a mesma razão do unooGPT e da Vila — `@Roles` misto é como uma rota
  * acaba aberta para quem não devia sem ninguém notar.
  */
-/** O mesmo formato que o controller de experiências valida. */
-const EXP_ID_RE = /^exp-[a-z0-9-]+$/;
 
 @Controller("recursos")
 @UseGuards(OidcGuard, RolesGuard)
@@ -135,6 +138,51 @@ export class RecursosAdminController {
     return aqui.ligado ? "ligado" : "desligado";
   }
 
+  /**
+   * Desde quando vale cada versão fixada da REDE INTEIRA (H10.3.3).
+   *
+   * A data sai do HISTÓRICO (`recursos_auditoria`, ação `versao-fixada` com a
+   * mesma versão), e não de `disponibilidades.definido_em`: esse muda a cada
+   * mexida na linha (ligar, desligar, mudar o motivo), e uma escola presa há
+   * meses pareceria fixada ontem. Só quando o histórico falta (ele é gravado
+   * depois da mudança, e pode falhar sem desfazê-la) cai no `definido_em` —
+   * que nunca é anterior à fixação, então erra para MENOS dias, nunca para mais.
+   */
+  private async fixacoesDaRede(agora: Date) {
+    const fixadas = await this.prisma.disponibilidade.findMany({
+      where: { versaoFixa: { not: null } },
+      select: { recursoId: true, escolaId: true, versaoFixa: true, definidoEm: true },
+    });
+    if (fixadas.length === 0) return [];
+    const [historico, escolas] = await Promise.all([
+      this.prisma.recursoAuditoria.findMany({
+        where: { acao: "versao-fixada", recursoId: { in: [...new Set(fixadas.map((f) => f.recursoId))] } },
+        select: { recursoId: true, escolaId: true, versao: true, quando: true },
+        orderBy: { quando: "desc" },
+      }),
+      this.prisma.escola.findMany({
+        where: { id: { in: fixadas.flatMap((f) => (f.escolaId ? [f.escolaId] : [])) } },
+        select: { id: true, nome: true },
+      }),
+    ]);
+    const nomeDaEscola = new Map(escolas.map((e) => [e.id, e.nome]));
+    return fixadas.map((f) => {
+      const registro = historico.find(
+        (h) => h.recursoId === f.recursoId && h.escolaId === f.escolaId && h.versao === f.versaoFixa,
+      );
+      const fixadaEm = registro?.quando ?? f.definidoEm;
+      return {
+        recursoId: f.recursoId,
+        escolaId: f.escolaId,
+        escopo: f.escolaId ? (nomeDaEscola.get(f.escolaId) ?? f.escolaId) : "Rede (contrato inteiro)",
+        versao: f.versaoFixa as string,
+        fixadaEm,
+        dias: diasDesde(fixadaEm, agora),
+        esquecida: fixacaoEsquecida(fixadaEm, agora),
+      };
+    });
+  }
+
   @Get("painel")
   @Contrato({
     resumo: "O painel: produtos, experiências e o que vale em cada escopo.",
@@ -146,6 +194,7 @@ export class RecursosAdminController {
       "`estadoAqui: herda` é a AUSÊNCIA de linha neste escopo — é o terceiro estado, e sem ele desfazer uma exceção seria impossível.",
       "`tetoDoProduto` marca a experiência que está desligada pelo PRODUTO, não por linha própria: a tela desabilita o interruptor dela e escreve o motivo ao lado, em vez de mostrá-lo ligado.",
       "`versaoAtiva` é a que o hub monta hoje; `versaoFixa` é a fixada NESTE escopo (`null` = segue a ativa).",
+      `\`fixacoesEsquecidas\` olha a REDE INTEIRA, não só o escopo aberto: são as versões fixadas há mais de ${DIAS_PARA_LEMBRAR_FIXACAO} dias. A data vem do histórico (\`versao-fixada\`), não de \`definido_em\`, que muda a cada mexida na linha.`,
     ],
   })
   async painel(@Query("escolaId") escolaIdPedida?: string) {
@@ -166,12 +215,14 @@ export class RecursosAdminController {
     }
 
     const cadeia = escolaId ? await cadeiaDaEscola(this.prisma, escolaId) : [];
-    const [linhas, experiencias] = await Promise.all([
+    const agora = new Date();
+    const [linhas, experiencias, fixacoes] = await Promise.all([
       this.linhas(cadeia),
       this.prisma.experiencia.findMany({
         select: { expId: true, nome: true, produto: true, versaoAtiva: true },
         orderBy: { expId: "asc" },
       }),
+      this.fixacoesDaRede(agora),
     ]);
 
     const produtos = PRODUTOS.map((slug) => {
@@ -189,6 +240,7 @@ export class RecursosAdminController {
           const linhaPropria = linhas.find(
             (l) => l.recursoId === recursoDaExpId && l.escolaId === escolaId,
           );
+          const fixacao = fixacoes.find((f) => f.recursoId === recursoDaExpId && f.escolaId === escolaId);
           return {
             expId: e.expId,
             nome: e.nome,
@@ -197,18 +249,70 @@ export class RecursosAdminController {
             tetoDoProduto: efetivo.tetoDoProduto === true,
             versaoAtiva: e.versaoAtiva,
             versaoFixa: linhaPropria?.versaoFixa ?? null,
+            fixadaEm: linhaPropria?.versaoFixa && fixacao ? fixacao.fixadaEm.toISOString() : null,
+            fixacaoEsquecida: Boolean(linhaPropria?.versaoFixa && fixacao?.esquecida),
           };
         });
 
       return {
         slug,
+        ligadoPorPadrao: ligadoPorPadrao(slug),
         estadoAqui: this.estadoAqui(linhas, recursoDoProdutoId, escolaId),
         efetivo: this.paraATela(efetivoDoProduto, escolaId),
         experiencias: dentro,
       };
     });
 
-    return { escopo: { escolaId, nome, tipo }, produtos };
+    const nomeDaExperiencia = new Map(experiencias.map((e) => [e.expId, e.nome]));
+    const fixacoesEsquecidas = fixacoes
+      .filter((f) => f.esquecida)
+      .sort((a, b) => b.dias - a.dias)
+      .map((f) => {
+        const expId = f.recursoId.slice("experiencia:".length);
+        return {
+          expId,
+          nome: nomeDaExperiencia.get(expId) ?? expId,
+          escolaId: f.escolaId,
+          escopo: f.escopo,
+          versao: f.versao,
+          fixadaEm: f.fixadaEm.toISOString(),
+          dias: f.dias,
+        };
+      });
+
+    return { escopo: { escolaId, nome, tipo }, produtos, fixacoesEsquecidas };
+  }
+
+  @Get("arquivadas")
+  @Contrato({
+    resumo: "As experiências arquivadas: tiradas do produto sem serem apagadas (ADR-116).",
+    descricao:
+      "Sai de `experiencias_arquivadas`. Uma experiência é arquivada quando uma missão nova toma o código dela (o código é derivado da série e da unidade, ADR-110): tudo o que era dela ganha o prefixo `backup-` e some da grade, do catálogo e deste painel, com os dados guardados. **Só lista** — ninguém joga uma arquivada, e desarquivar é uma migração.",
+    resposta: ExperienciasArquivadasSchema,
+    notas: [
+      "`turmasGuardadas` e `estudantesGuardados` são a FOTOGRAFIA tirada pela migração que arquivou, não uma recontagem: contar `liberacoes` e `progresso` de todas as escolas atravessaria a RLS.",
+      "A ordem é a do arquivamento, da mais recente para a mais antiga.",
+    ],
+  })
+  async arquivadas() {
+    const linhas = await this.prisma.experienciaArquivada.findMany({
+      orderBy: [{ arquivadaEm: "desc" }, { expId: "asc" }],
+    });
+    return {
+      arquivadas: linhas.map((l) => ({
+        expId: l.expId,
+        codigoDeOrigem: l.codigoDeOrigem,
+        nome: l.nome,
+        versao: l.versao,
+        series: l.series,
+        unidade: l.unidade,
+        produto: l.produto,
+        motivo: l.motivo,
+        turmasGuardadas: l.turmasGuardadas,
+        estudantesGuardados: l.estudantesGuardados,
+        arquivadaEm: l.arquivadaEm.toISOString(),
+      })),
+    };
   }
 
   @Put(":recursoId")
@@ -370,7 +474,7 @@ export class RecursosAdminController {
   @Contrato({
     resumo: "Ativa uma versão para o CONTRATO (o rollback).",
     descricao:
-      "Troca `experiencias.versao_ativa` e **restaura o manifesto daquela versão** — `viewport`, `permissoes`, `series`, `unidade`, `produto`. Antes disto, rollback era `publicar-manifesto.mjs --versao x.y.z`, que mandava o número antigo com o manifesto ATUAL do repositório: voltar a versão não voltava as permissões de iframe, e a exp-70 reabria sem `allow-pointer-lock` — a criança entrava na Vila e a câmera não girava, sem erro em lugar nenhum.",
+      "Troca `experiencias.versao_ativa` e **restaura o manifesto daquela versão** — `viewport`, `permissoes`, `series`, `unidade`, `produto`. Antes disto, rollback era `publicar-manifesto.mjs --versao x.y.z`, que mandava o número antigo com o manifesto ATUAL do repositório: voltar a versão não voltava as permissões de iframe, e a app-70 reabria sem `allow-pointer-lock` — a criança entrava na Vila e a câmera não girava, sem erro em lugar nenhum.",
     params: z.object({ expId: z.string() }),
     corpo: AtivarVersaoSchema,
     resposta: VersaoAtivadaSchema,

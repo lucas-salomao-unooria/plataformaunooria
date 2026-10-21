@@ -29,6 +29,8 @@ interface Interacao {
   handle: string;
   caption: string;
   imageUrl: string | null;
+  /** O texto alternativo da imagem gerada, ou `null` (ADR-163). */
+  imageAlt?: string | null;
   fallbackArt: { corFundo: string; emojis: string } | null;
   ladoRotulo: string;
   perfil: string;
@@ -79,6 +81,24 @@ interface Dados {
     respondeuRotulo: string | null;
     reflexao: string | null;
     postouNoApp: string | null;
+    /** O Canal A (ADR-167). Opcional para a resposta de uma api anterior. */
+    canalA?: {
+      revelacaoConcluida: boolean;
+      raioX: boolean;
+      termos: boolean;
+      envio: boolean;
+      refeita: boolean;
+      fraseDoEnvio: string | null;
+      leitura: {
+        resultado: "nivel" | "sem_marca" | "falha" | null;
+        nivel: "atingiu" | "em_processo" | "nao_atingiu" | null;
+        motivo: string | null;
+        tentativas?: number;
+        lidaEm: string | null;
+      } | null;
+      textoLido: string | null;
+      textoLidoApagado: boolean;
+    };
   };
   resumo: {
     salvos: number;
@@ -255,7 +275,7 @@ export function ModalEstudante({
                       <span className="h-14 w-14 shrink-0 overflow-hidden rounded-md">
                         {post.imageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={post.imageUrl} alt="" className="h-full w-full object-cover" />
+                          <img src={post.imageUrl} alt={post.imageAlt || `Foto do post de ${post.handle}`} className="h-full w-full object-cover" />
                         ) : (
                           <span
                             className="flex h-full w-full items-center justify-center text-[20px]"
@@ -338,6 +358,8 @@ export function ModalEstudante({
                 </p>
               ) : null}
             </section>
+
+            {dados.sessao.canalA ? <SecaoDasTarefas canalA={dados.sessao.canalA} reflexaoAtual={dados.sessao.reflexao} /> : null}
           </div>
         )}
       </ModalBody>
@@ -535,3 +557,61 @@ function PainelDoRelatorio({ relatorio }: { relatorio: Relatorio }) {
   );
 }
 
+/** O que a leitura da IA disse da reflexão, em texto para o professor. */
+const RESULTADO_DA_LEITURA: Record<string, string> = {
+  atingiu: "Atingiu",
+  em_processo: "Em processo",
+  nao_atingiu: "Não atingiu",
+  sem_marca: "sem marca (o texto não fala do mecanismo do feed)",
+  falha: "sem leitura (a IA não respondeu depois de três tentativas, ou ficou sem saldo)",
+};
+
+/**
+ * AS TAREFAS DO CANAL A (ADR-167), no popup de um estudante: o que ele fez,
+ * a frase própria do envio e a leitura que a IA fez da reflexão.
+ *
+ * O "texto lido" é o PRIMEIRO texto que ele salvou; quando difere do texto de
+ * agora, os dois aparecem — é assim que o professor confere a sugestão da IA.
+ * Depois de um reinício o texto lido saiu com a reflexão antiga, e só o nível
+ * e o motivo ficam. Só o professor lê esta janela.
+ */
+function SecaoDasTarefas({
+  canalA,
+  reflexaoAtual,
+}: {
+  canalA: NonNullable<Dados["sessao"]["canalA"]>;
+  reflexaoAtual: string | null;
+}) {
+  const leitura = canalA.leitura;
+  const resultado = leitura?.resultado === "nivel" ? leitura.nivel : leitura?.resultado;
+  const feitas = [canalA.raioX ? "Raio-x" : null, canalA.termos ? "termos" : null, canalA.envio ? "envio" : null].filter(Boolean);
+  return (
+    <section className="flex flex-col gap-1.5 rounded-lg bg-unooria-neutral-50 p-3">
+      <h3 className="text-[13px] font-semibold text-unooria-neutral-950">As tarefas</h3>
+      <p className="text-[12px] leading-relaxed text-unooria-neutral-700">
+        {canalA.revelacaoConcluida ? "Terminou a revelação" : "Ainda não terminou a revelação"} ·{" "}
+        {feitas.length > 0 ? `fez ${feitas.join(", ")}` : "nenhuma tarefa enviada"}
+        {canalA.refeita ? " · refeito após reinício (vale o primeiro envio)" : ""}
+      </p>
+      {canalA.fraseDoEnvio ? (
+        <p className="text-[12px] leading-relaxed text-unooria-neutral-700">
+          frase do estudante no envio: “{canalA.fraseDoEnvio}”
+        </p>
+      ) : null}
+      {leitura ? (
+        <p className="text-[12px] leading-relaxed text-unooria-neutral-700">
+          leitura da reflexão pela IA (sugestão):{" "}
+          <strong>{resultado ? RESULTADO_DA_LEITURA[resultado] ?? resultado : "aguardando"}</strong>
+        </p>
+      ) : null}
+      {canalA.textoLido && canalA.textoLido !== reflexaoAtual ? (
+        <p className="text-[12px] leading-relaxed text-unooria-neutral-700">texto lido pela IA: “{canalA.textoLido}”</p>
+      ) : null}
+      {canalA.textoLidoApagado ? (
+        <p className="text-[12px] leading-relaxed text-unooria-neutral-500">
+          O texto lido foi apagado no reinício; ficaram o nível e o motivo.
+        </p>
+      ) : null}
+    </section>
+  );
+}

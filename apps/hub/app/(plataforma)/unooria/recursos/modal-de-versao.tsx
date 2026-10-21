@@ -30,7 +30,7 @@ import type { ExperienciaNoPainel } from "./tipos";
  * Fixar no escopo-contrato seria uma segunda maneira, mais fraca, de fazer o
  * que "ativar" faz: ela mudaria a versão do bundle sem restaurar o manifesto —
  * e reabriria exatamente o defeito que o histórico existe para consertar (a
- * exp-70 sem `allow-pointer-lock`). Por isso a alavanca não é oferecida ali.
+ * app-70 sem `allow-pointer-lock`). Por isso a alavanca não é oferecida ali.
  */
 
 interface VersaoPublicada {

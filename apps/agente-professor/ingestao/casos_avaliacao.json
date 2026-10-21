@@ -1,0 +1,512 @@
+{
+  "descricao": "Casos da avaliação de habilidades. 'auto' = conjunto exato calculado do JSON pelo mesmo filtro; listas = anotadas à mão a partir do JSON (o MÍNIMO que tem de aparecer).",
+  "casos": [
+    {
+      "id": "navegacao-mat-6",
+      "pergunta": "Quais são todas as habilidades de Matemática do 6º ano?",
+      "args": {
+        "componente": "Matemática",
+        "anos": [
+          "6º ano"
+        ]
+      },
+      "esperado": "auto",
+      "nota": "navegação: o conjunto inteiro, calculado do JSON"
+    },
+    {
+      "id": "navegacao-lp-8",
+      "pergunta": "Liste todas as habilidades de Língua Portuguesa do 8º ano.",
+      "args": {
+        "componente": "Língua Portuguesa",
+        "anos": [
+          "8"
+        ]
+      },
+      "esperado": "auto",
+      "nota": "o maior recorte (109): exige paginação"
+    },
+    {
+      "id": "navegacao-biologia-em",
+      "pergunta": "Quais habilidades eu trabalho em Biologia na 2ª série?",
+      "args": {
+        "componente": "Biologia",
+        "anos": [
+          "2ª série"
+        ]
+      },
+      "esperado": "auto",
+      "nota": "armadilha do EM: Biologia → Ciências da Natureza (EM13CNT)"
+    },
+    {
+      "id": "navegacao-ingles-em",
+      "pergunta": "Habilidades de Inglês no Ensino Médio",
+      "args": {
+        "componente": "inglês",
+        "anos": [
+          "EM"
+        ]
+      },
+      "esperado": "auto",
+      "nota": "Inglês no EM → Linguagens (EM13LGG)"
+    },
+    {
+      "id": "navegacao-computacao-em",
+      "pergunta": "Computação no Ensino Médio",
+      "args": {
+        "componente": "computação",
+        "etapa": "EM"
+      },
+      "esperado": "auto",
+      "nota": ""
+    },
+    {
+      "id": "navegacao-religioso-7",
+      "pergunta": "O que a BNCC traz de Ensino Religioso no 7º ano?",
+      "args": {
+        "componente": "ensino religioso",
+        "anos": [
+          "7"
+        ]
+      },
+      "esperado": "auto",
+      "nota": ""
+    },
+    {
+      "id": "navegacao-computacao-anos-iniciais",
+      "pergunta": "Computação nos anos iniciais",
+      "args": {
+        "componente": "computação",
+        "anos": [
+          "anos iniciais"
+        ]
+      },
+      "esperado": "auto",
+      "nota": "faixa 1º–5º"
+    },
+    {
+      "id": "codigo-ef67lp08",
+      "pergunta": "Me explica a EF67LP08",
+      "args": {
+        "codigos": [
+          "EF67LP08"
+        ]
+      },
+      "esperado": [
+        "EF67LP08"
+      ],
+      "nota": "código exato"
+    },
+    {
+      "id": "codigo-tres-digitos",
+      "pergunta": "Quero a EF05CO011 e a EF05CO01",
+      "args": {
+        "codigos": [
+          "EF05CO011",
+          "EF05CO01"
+        ]
+      },
+      "esperado": [
+        "EF05CO011",
+        "EF05CO01"
+      ],
+      "nota": "EF05CO011 tem TRÊS dígitos no documento oficial"
+    },
+    {
+      "id": "codigo-inexistente",
+      "pergunta": "Existe a habilidade EF06MA99?",
+      "args": {
+        "codigos": [
+          "EF06MA99"
+        ]
+      },
+      "esperado": [],
+      "nota": "tem de voltar vazio"
+    },
+    {
+      "id": "codigo-minusculo",
+      "pergunta": "ef09ma06 e em13mat101",
+      "args": {
+        "codigos": [
+          "ef09ma06",
+          "em13mat101"
+        ]
+      },
+      "esperado": [
+        "EF09MA06",
+        "EM13MAT101"
+      ],
+      "nota": "normalização de caixa"
+    },
+    {
+      "id": "fracoes-5",
+      "pergunta": "Habilidades de frações no 5º ano",
+      "args": {
+        "componente": "matemática",
+        "anos": [
+          "5"
+        ],
+        "texto": "frações"
+      },
+      "esperado": [
+        "EF05MA03",
+        "EF05MA04",
+        "EF05MA05",
+        "EF05MA06"
+      ],
+      "nota": "descrição cita fração/fracionária"
+    },
+    {
+      "id": "pensamento-computacional-3",
+      "pergunta": "O que a BNCC diz sobre pensamento computacional no 3º ano?",
+      "args": {
+        "componente": "computação",
+        "anos": [
+          "3"
+        ],
+        "texto": "pensamento computacional"
+      },
+      "esperado": [
+        "EF03CO01",
+        "EF03CO02",
+        "EF03CO03"
+      ],
+      "nota": "eixo Pensamento Computacional do 3º ano (códigos EF03)"
+    },
+    {
+      "id": "algoritmos-1",
+      "pergunta": "Algoritmos no 1º ano",
+      "args": {
+        "componente": "computação",
+        "anos": [
+          "1"
+        ],
+        "texto": "algoritmos"
+      },
+      "esperado": [
+        "EF01CO02",
+        "EF01CO03"
+      ],
+      "nota": "objeto 'Conceituação de Algoritmos'"
+    },
+    {
+      "id": "cyberbullying",
+      "pergunta": "O que a BNCC fala de cyberbullying?",
+      "args": {
+        "componente": "computação",
+        "texto": "cyberbullying"
+      },
+      "esperado": [
+        "EF07CO09"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "equacoes-7",
+      "pergunta": "Equações no 7º ano",
+      "args": {
+        "componente": "matemática",
+        "anos": [
+          "7"
+        ],
+        "texto": "equações"
+      },
+      "esperado": [
+        "EF07MA18"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "area-6",
+      "pergunta": "Área de figuras planas no 6º ano",
+      "args": {
+        "componente": "matemática",
+        "anos": [
+          "6"
+        ],
+        "texto": "área de figuras"
+      },
+      "esperado": [
+        "EF06MA24",
+        "EF06MA29"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "probabilidade-8",
+      "pergunta": "Probabilidade no 8º ano",
+      "args": {
+        "componente": "matemática",
+        "anos": [
+          "8"
+        ],
+        "texto": "probabilidade"
+      },
+      "esperado": [
+        "EF08MA22"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "escravidao-8",
+      "pergunta": "Escravidão no Brasil, História do 8º ano",
+      "args": {
+        "componente": "história",
+        "anos": [
+          "8"
+        ],
+        "texto": "escravidão"
+      },
+      "esperado": [
+        "EF08HI14",
+        "EF08HI19",
+        "EF08HI20"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "escala-mapas-6",
+      "pergunta": "Escala de mapas em Geografia do 6º ano",
+      "args": {
+        "componente": "geografia",
+        "anos": [
+          "6"
+        ],
+        "texto": "escala dos mapas"
+      },
+      "esperado": [
+        "EF06GE08"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "porcentagem-7",
+      "pergunta": "Porcentagem no 7º ano",
+      "args": {
+        "componente": "matemática",
+        "anos": [
+          "7"
+        ],
+        "texto": "porcentagens"
+      },
+      "esperado": [
+        "EF07MA02"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "graficos-4",
+      "pergunta": "Leitura de gráficos e tabelas no 4º ano",
+      "args": {
+        "componente": "matemática",
+        "anos": [
+          "4"
+        ],
+        "texto": "tabelas e gráficos"
+      },
+      "esperado": [
+        "EF04MA27",
+        "EF04MA28"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "dancas-3",
+      "pergunta": "Danças em Educação Física no 3º ano",
+      "args": {
+        "componente": "educação física",
+        "anos": [
+          "3"
+        ],
+        "texto": "danças"
+      },
+      "esperado": [
+        "EF35EF09",
+        "EF35EF10",
+        "EF35EF11",
+        "EF35EF12"
+      ],
+      "nota": "faixa EF35"
+    },
+    {
+      "id": "musica-2",
+      "pergunta": "Música em Arte no 2º ano",
+      "args": {
+        "componente": "arte",
+        "anos": [
+          "2"
+        ],
+        "texto": "música"
+      },
+      "esperado": [
+        "EF15AR13",
+        "EF15AR14",
+        "EF15AR15",
+        "EF15AR16",
+        "EF15AR17"
+      ],
+      "nota": "unidade temática Música"
+    },
+    {
+      "id": "funcoes-em",
+      "pergunta": "Funções polinomiais no Ensino Médio",
+      "args": {
+        "componente": "matemática",
+        "anos": [
+          "EM"
+        ],
+        "texto": "funções polinomiais"
+      },
+      "esperado": [
+        "EM13MAT302",
+        "EM13MAT401",
+        "EM13MAT402"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "trabalho-sociologia-em",
+      "pergunta": "Mundo do trabalho em Sociologia no EM",
+      "args": {
+        "componente": "sociologia",
+        "anos": [
+          "EM"
+        ],
+        "texto": "trabalho"
+      },
+      "esperado": [
+        "EM13CHS401",
+        "EM13CHS402",
+        "EM13CHS403",
+        "EM13CHS404"
+      ],
+      "nota": "Sociologia → Ciências Humanas (EM13CHS)"
+    },
+    {
+      "id": "privacidade-8",
+      "pergunta": "Segurança e privacidade na internet no 8º ano",
+      "args": {
+        "componente": "computação",
+        "anos": [
+          "8"
+        ],
+        "texto": "segurança e privacidade"
+      },
+      "esperado": [
+        "EF08CO08",
+        "EF08CO10"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "programacao-8",
+      "pergunta": "Programação no 8º ano",
+      "args": {
+        "componente": "computação",
+        "anos": [
+          "8"
+        ],
+        "texto": "linguagem de programação"
+      },
+      "esperado": [
+        "EF08CO01",
+        "EF08CO02",
+        "EF08CO04"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "medidas-3",
+      "pergunta": "Unidades de medida no 3º ano",
+      "args": {
+        "componente": "matemática",
+        "anos": [
+          "3"
+        ],
+        "texto": "unidades de medida"
+      },
+      "esperado": [
+        "EF03MA17",
+        "EF03MA18",
+        "EF03MA19",
+        "EF03MA20"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "sistema-solar-9",
+      "pergunta": "Sistema Solar em Ciências do 9º ano",
+      "args": {
+        "componente": "ciências",
+        "anos": [
+          "9"
+        ],
+        "texto": "Sistema Solar"
+      },
+      "esperado": [
+        "EF09CI14"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "leitura-ingles-6",
+      "pergunta": "Leitura em Inglês no 6º ano",
+      "args": {
+        "componente": "inglês",
+        "anos": [
+          "6"
+        ],
+        "texto": "leitura de texto"
+      },
+      "esperado": [
+        "EF06LI08",
+        "EF06LI09"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "constituicao-9",
+      "pergunta": "Cidadania e a Constituição de 1988 no 9º ano",
+      "args": {
+        "componente": "história",
+        "anos": [
+          "9"
+        ],
+        "texto": "Constituição de 1988 cidadania"
+      },
+      "esperado": [
+        "EF09HI23"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "dna-em",
+      "pergunta": "Tecnologias do DNA em Biologia no EM",
+      "args": {
+        "componente": "biologia",
+        "anos": [
+          "EM"
+        ],
+        "texto": "tecnologias do DNA"
+      },
+      "esperado": [
+        "EM13CNT304"
+      ],
+      "nota": ""
+    },
+    {
+      "id": "argumentacao-em",
+      "pergunta": "Textos argumentativos em Língua Portuguesa no EM",
+      "args": {
+        "componente": "língua portuguesa",
+        "anos": [
+          "EM"
+        ],
+        "texto": "textos argumentativos"
+      },
+      "esperado": [
+        "EM13LP05"
+      ],
+      "nota": ""
+    }
+  ]
+}

@@ -18,14 +18,26 @@ requisitos está na Seção~\ref{sec:uc-rastreio}.
 Estudante & Primário & Estudante da rede. Escolhe a missão no hub próprio e entra na
   experiência. É titular de dado de menor.\\
 \zebra Professor & Primário & Prepara e conduz a aula, lê a turma, gera plano de
-  aula e faz o próprio \emph{check-in} de bem-estar.\\
-Gestor escolar & Primário & Administra usuários da escola.\\
-\zebra Admin do contrato & Primário & Único papel autorizado a atravessar
-  escolas. Publica manifestos e lê o agregado da rede.\\
+  aula, conversa com o agente de IA do professor e faz o próprio
+  \emph{check-in} de bem-estar.\\
+Gestor de escola & Primário & \cd{gestor\_escola}. Importa e mantém as pessoas,
+  as turmas e o ano letivo da escola.\\
+\zebra Gestor regional & Primário & \cd{gestor\_regional}. Tudo o que o gestor de
+  escola faz, em uma escola da regional por vez; lê o panorama e o relatório da
+  diretoria.\\
+Gestor do contrato & Primário & \cd{gestor\_contrato}. Tudo o que o regional
+  faz, com a rede inteira como escopo; mantém escolas e regionais, lê o agregado
+  da rede e o histórico de recursos.\\
+\zebra Admin (Unooria) & Primário & \cd{admin}. Tudo o que o gestor do contrato
+  faz, e mais o painel da Unooria: disponibilidade, quota de IA e cadastros de
+  interesse (\adrr{ADR-88}).\\
+Visitante do site & Primário & Quem preenche o cadastro de interesse do site
+  público, sem conta (\adrr{ADR-107}).\\
 Provedor de identidade & Secundário & WSO2 Identity Server (futuro). Hoje o
   papel de emissor é exercido pelo próprio hub.\\
 \zebra Vertex AI (Gemini) & Secundário & Geração de texto e de imagem, sempre
-  intermediada pela API.\\
+  intermediada pela API; e o Agent Engine, onde roda o agente de IA do
+  professor, também chamado só pela API (\adrr{ADR-126}).\\
 Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
 \zebra CI/CD (GitHub Actions) & Secundário & Publica \emph{bundles} e faz
   \emph{upsert} do manifesto. É um ator: age no sistema por API autenticada.\\
@@ -37,99 +49,109 @@ Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
 \begin{figure}[H]
 \centering
 \fitpage{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    uc/.style={ellipse, draw=unooBlue, line width=0.85pt, fill=unooBlueWash,
+               text=unooInk, font=\scriptsize, align=center, inner sep=0pt,
+               minimum width=40mm, minimum height=10.6mm},
+    ucs/.style={uc, fill=unooSurface, draw=unooAxis},
+    sec/.style={draw=unooInkSoft, line width=0.85pt, fill=unooPaper,
+                rounded corners=2pt, font=\scriptsize, text width=22mm,
+                minimum height=10mm},
+    inc/.style={ucnote, fill=unooBlue!3, inner sep=1pt}]
 
-  % ---- fronteira do sistema
-  \draw[ucsystem] (3.5,0.9) rectangle (13.2,-16.6);
-  \node[font=\small\bfseries\color{unooNavy}, anchor=north] at (8.35,0.65)
+  % Grade: coluna A em x=4.75, coluna B em x=10.65; linhas de 1,3 cm, com
+  % 0,2 cm a mais entre os grupos de papel.
+  % ---- estudante
+  \node[uc]  (uc01) at (4.75,-0.85)  {\ucr{UC-01}\\Autenticar-se};
+  \node[uc]  (uc02) at (4.75,-2.15)  {\ucr{UC-02} Escolher\\missão no hub};
+  \node[uc]  (uc03) at (4.75,-3.45)  {\ucr{UC-03} Realizar\\experiência};
+  \node[uc]  (uc06) at (4.75,-4.75)  {\ucr{UC-06} Ver o\\próprio resultado};
+  \node[ucs] (uc05) at (10.65,-2.15) {\ucr{UC-05} Renovar\\\emph{token} da sessão};
+  \node[ucs] (uc04) at (10.65,-3.45) {\ucr{UC-04} Registrar\\telemetria};
+
+  % ---- professor
+  \node[uc]  (uc10) at (4.75,-6.25)  {\ucr{UC-10} Preparar\\atividade};
+  \node[uc]  (uc14) at (4.75,-7.55)  {\ucr{UC-14} Gerar\\plano de aula};
+  \node[uc]  (uc15) at (4.75,-8.85)  {\ucr{UC-15} Fazer \emph{check-in}\\de bem-estar};
+  \node[uc]  (uc45) at (4.75,-10.15) {\ucr{UC-45} Conversar com\\o agente de IA};
+  \node[uc]  (uc12) at (4.75,-11.45) {\ucr{UC-12} Conduzir o\\momento coletivo};
+  \node[uc]  (uc13) at (4.75,-12.75) {\ucr{UC-13} Ler resultados\\da turma};
+  \node[uc]  (uc16) at (4.75,-14.05) {\ucr{UC-16} Zerar dados\\da turma};
+  \node[ucs] (uc11) at (10.65,-6.25) {\ucr{UC-11} Gerar\\conteúdo com IA};
+
+  % ---- gestao
+  \node[uc]  (uc20) at (10.65,-11.45) {\ucr{UC-20} Importar\\pessoas e enturmar};
+  \node[uc]  (uc21) at (10.65,-12.75) {\ucr{UC-21} Editar pessoa\\e redefinir senha};
+  \node[uc]  (uc22) at (10.65,-14.05) {\ucr{UC-22} Ler agregado\\da rede};
+  \node[uc]  (uc23) at (10.65,-15.55) {\ucr{UC-23} Publicar\\manifesto};
+  \node[ucs] (uc24) at (4.75,-15.55)  {\ucr{UC-24} Ativar ou\\reverter versão};
+
+  % ---- fronteira do sistema (por fit, com folga)
+  \begin{scope}[on background layer]
+    \node[ucsystem, inner sep=0pt, fit={(2.30,0.75) (13.00,-16.45)}] (sis) {};
+  \end{scope}
+  \node[font=\small\bfseries\color{unooNavy}, anchor=north] at (7.65,0.62)
     {Plataforma Unooria};
 
-  % ---- atores primarios (esquerda)
-  \ator{estudante}{(1.4,-2.4)}{Estudante}
-  \ator{prof}{(1.4,-7.4)}{Professor}
-  \ator{gestor}{(1.4,-12.4)}{Gestor escolar}
-  \ator{admin}{(1.4,-15.6)}{Admin do contrato}
-
-  % ---- atores secundarios (direita)
-  \atorsys{idp}{(15.3,-2.2)}{WSO2 IS}
-  \atorsys{vertex}{(15.3,-7.4)}{Vertex AI}
-  \atorsys{pubsub}{(15.3,-11.0)}{Pub/Sub}
-  \atorsys{ci}{(15.3,-15.6)}{CI/CD}
-
-  % ---- casos de uso: estudante
-  \node[ucase] (uc01) at (6.2,-1.1)  {\ucr{UC-01} Autenticar-se};
-  \node[ucase] (uc02) at (6.2,-2.6)  {\ucr{UC-02} Escolher missão no hub};
-  \node[ucase] (uc03) at (6.2,-4.1)  {\ucr{UC-03} Realizar experiência};
-  \node[ucasesec] (uc04) at (10.6,-4.1) {\ucr{UC-04} Registrar telemetria};
-  \node[ucasesec] (uc05) at (10.6,-2.6) {\ucr{UC-05} Renovar token da sessão};
-  \node[ucase] (uc06) at (6.2,-5.6)  {\ucr{UC-06} Ver o próprio resultado};
-
-  % ---- casos de uso: professor
-  \node[ucase] (uc10) at (6.2,-7.1)  {\ucr{UC-10} Preparar atividade};
-  \node[ucasesec] (uc11) at (10.6,-7.1) {\ucr{UC-11} Gerar conteúdo com IA};
-  \node[ucase] (uc12) at (6.2,-8.6)  {\ucr{UC-12} Conduzir o momento coletivo};
-  \node[ucase] (uc13) at (6.2,-10.1) {\ucr{UC-13} Ler resultados da turma};
-  \node[ucase] (uc14) at (6.2,-11.6) {\ucr{UC-14} Gerar plano de aula};
-  \node[ucase] (uc15) at (10.6,-9.3) {\ucr{UC-15} Fazer \emph{check-in} de bem-estar};
-  \node[ucase] (uc16) at (10.6,-10.8) {\ucr{UC-16} Zerar dados da turma};
-
-  % ---- casos de uso: gestor / admin
-  \node[ucase] (uc20) at (6.2,-13.1) {\ucr{UC-20} Importar pessoas e enturmar};
-  \node[ucase] (uc21) at (6.2,-14.6) {\ucr{UC-21} Redefinir senha};
-  \node[ucase] (uc22) at (10.6,-14.2) {\ucr{UC-22} Ler agregado da rede};
-  \node[ucase] (uc23) at (10.6,-15.7) {\ucr{UC-23} Publicar manifesto};
-  \node[ucasesec] (uc24) at (6.2,-16.0) {\ucr{UC-24} Reverter versão};
-
-  % ---- relacoes: estudante
-  \draw[ucrel] (estudante) -- (uc01);
-  \draw[ucrel] (estudante) -- (uc02);
-  \draw[ucrel] (estudante) -- (uc03);
-  \draw[ucrel] (estudante) -- (uc06);
-
-  % ---- relacoes: professor
-  \draw[ucrel] (prof) -- (uc10);
-  \draw[ucrel] (prof) -- (uc12);
-  \draw[ucrel] (prof) -- (uc13);
-  \draw[ucrel] (prof) -- (uc14);
-  \draw[ucrel] (prof) -- (uc01);
-  \draw[ucrel] (prof.east) -- (uc15.west);
-  \draw[ucrel] (prof.east) -- (uc16.west);
-
-  % ---- relacoes: gestor / admin
-  \draw[ucrel] (gestor) -- (uc20);
-  \draw[ucrel] (gestor) -- (uc21);
-  \draw[ucrel] (admin) -- (uc22);
-  \draw[ucrel] (admin) -- (uc23);
-
-  % ---- include / extend
-  \draw[ucinclude] (uc03) -- (uc04) node[ucnote, midway, above]{$\ll$include$\gg$};
-  \draw[ucinclude] (uc03) -- (uc05) node[ucnote, pos=0.55, above]{$\ll$include$\gg$};
-  \draw[ucinclude] (uc10) -- (uc11) node[ucnote, midway, above]{$\ll$include$\gg$};
-  \draw[ucextend] (uc23) -- (uc24) node[ucnote, midway, above]{$\ll$extend$\gg$};
+  % ---- atores primarios
+  \ator{estudante}{(0.55,-2.65)}{Estudante}
+  \ator{prof}{(0.55,-10.15)}{Professor}
+  \ator{gestor}{(15.35,-12.10)}{Gestor de escola}
+  \ator{admin}{(15.35,-14.80)}{Gestor do contrato}
 
   % ---- atores secundarios
+  \node[sec] (idp) at (15.35,-0.85)
+    {{\scriptsize$\ll$ator$\gg$}\\\textbf{Provedor de}\\\textbf{identidade}};
+  \node[sec] (pubsub) at (15.35,-3.45) {{\scriptsize$\ll$ator$\gg$}\\\textbf{Pub/Sub}};
+  \node[sec] (vertex) at (15.35,-8.85)
+    {{\scriptsize$\ll$ator$\gg$}\\\textbf{Vertex AI}\\Gemini e\\Agent Engine};
+  \node[sec] (ci) at (10.65,-17.55) {{\scriptsize$\ll$ator$\gg$}\\\textbf{CI/CD}};
+
+  % ---- relacoes dos atores primarios
+  \foreach \u in {uc01, uc02, uc03, uc06} \draw[ucrel] (estudante.east) -- (\u.west);
+  \foreach \u in {uc10, uc14, uc15, uc45, uc12, uc13, uc16}
+    \draw[ucrel] (prof.east) -- (\u.west);
+  \draw[ucrel] (gestor.west) -- (uc20.east);
+  \draw[ucrel] (gestor.west) -- (uc21.east);
+  \draw[ucrel] (admin.west) -- (uc22.east);
+  \draw[ucrel] (admin.west) -- (uc23.east);
+
+  % ---- include / extend (a seta parte de quem inclui, ou de quem estende)
+  \draw[ucinclude] (uc03.east) -- (uc04.west)
+    node[inc, midway, below=1pt]{$\ll$include$\gg$};
+  \draw[ucinclude] (uc03.18) -- (uc05.198)
+    node[inc, midway, sloped, above=1pt]{$\ll$include$\gg$};
+  \draw[ucinclude] (uc10.east) -- (uc11.west)
+    node[inc, midway, above=1pt]{$\ll$include$\gg$};
+  \draw[ucextend] (uc24.east) -- (uc23.west)
+    node[inc, midway, above=1pt]{$\ll$extend$\gg$};
+
+  % ---- relacoes dos atores secundarios
   \draw[ucrel] (uc01.east) -- (idp.west);
-  \draw[ucrel] (uc11.east) -- (vertex.west);
-  \draw[ucrel] (uc14.east) -- (13.2,-11.6) -- (14.4,-8.4) -- (vertex.south west);
-  \draw[ucrel] (uc15.east) -- (vertex.south west);
   \draw[ucrel] (uc04.east) -- (pubsub.west);
-  \draw[ucrel] (uc23.east) -- (ci.west);
+  \draw[ucrel] (uc11.east) -| (vertex.north);
+  \draw[ucrel] (uc14.east) -- (13.65,-7.55) |- ($(vertex.west)+(0,0.32)$);
+  \draw[ucrel] (uc15.east) -- (vertex.west);
+  \draw[ucrel] (uc45.east) -- (13.65,-10.15) |- ($(vertex.west)+(0,-0.32)$);
+  \draw[ucrel] (uc23.south) -- (ci.north);
 
 \end{tikzpicture}}
-\caption[Casos de uso da plataforma]{Casos de uso da plataforma. As elipses em
-  tom claro são casos de uso de \emph{suporte}, incluídos por outros e nunca
-  iniciados diretamente por um ator humano. Os quatro papéis são mutuamente
-  exclusivos: o \emph{middleware} do hub redireciona quem entra na área de outro
-  papel.}
-\label{fig:casos-de-uso}
-\end{figure}
-
 \begin{legendadiag}
 \amostra{ucase} caso de uso primário \quad
 \amostra{ucasesec} caso de uso de suporte \quad
 \textcolor{unooGreen}{\textbf{- - -}} $\ll$include$\gg$ \quad
 \textcolor{unooOrange}{\textbf{- - -}} $\ll$extend$\gg$
 \end{legendadiag}
+\caption[Casos de uso da plataforma]{Casos de uso da plataforma. As elipses em
+  tom claro são casos de uso de \emph{suporte}, incluídos por outros e nunca
+  iniciados diretamente por um ator humano. \ucr{UC-01} vale para todo papel; o
+  desenho o liga só ao estudante para não cruzar as outras associações. O
+  provedor de identidade é o WSO2 IS de destino --- hoje o próprio hub emite.
+  Cada papel tem a sua área, e o \emph{middleware} do hub redireciona quem entra
+  na de outro. Os seis papéis, e a generalização entre os quatro de gestão,
+  estão na Figura~\ref{fig:uml-casos-gestao}.}
+\label{fig:casos-de-uso}
+\end{figure}
 
 \section{Especificação dos casos de uso}
 
@@ -160,6 +182,14 @@ saída: a mesma marca faz o BFF recusar dados e o \rota{/api/exp-token} recusar
 \emph{token} de experiência --- só com o \emph{middleware}, bastaria digitar
 \rota{/exp/...} para pular. Trocada a senha, a sessão é \textbf{refeita} com a
 nova, porque o \emph{cookie} antigo ainda diz que falta trocar (\adrr{ADR-29}).
+
+\textbf{Fluxo da troca VOLUNTÁRIA} (H01.4.1). Quem já passou do primeiro acesso
+abre \enquote{Trocar senha} no menu do avatar e chega à MESMA tela, com texto e
+saída próprios: \enquote{Cancelar} volta à \emph{home} do papel, e não há
+\enquote{Sair}, porque ninguém está preso ali. As regras são as mesmas (a senha
+atual, pelo menos 8 caracteres, diferente da atual) e a rota da api é uma só.
+Sem sessão a refazer --- o \emph{cookie} já diz que não falta trocar ---, a tela
+confirma \enquote{Senha trocada} e leva de volta à área da pessoa.
 
 \textbf{Fluxos alternativos}
 \begin{itemize}
@@ -236,7 +266,7 @@ de o hub hidratar o \emph{listener}, e o único \cd{exp:ready} se perdia --- o
 
 \subsection{UC-10 --- Preparar atividade}
 
-\begin{especificacao}{\ucr{UC-10} Preparar atividade (exp-01)}
+\begin{especificacao}{\ucr{UC-10} Preparar atividade (exp08ef1b)}
 \begin{tabularx}{\linewidth}{@{}L{28mm}X@{}}
 \textbf{Ator primário} & Professor\\
 \textbf{Pré-condição} & Sessão de professor válida\\
@@ -306,7 +336,7 @@ mais importante dele:
 
 \subsection{UC-14 --- Gerar plano de aula}
 
-\begin{especificacao}{\ucr{UC-14} Gerar plano de aula (exp-90)}
+\begin{especificacao}{\ucr{UC-14} Gerar plano de aula (app-90)}
 \begin{tabularx}{\linewidth}{@{}L{28mm}X@{}}
 \textbf{Ator primário} & Professor\\
 \textbf{Pré-condição} & Referências curriculares do contrato importadas\\
@@ -345,7 +375,7 @@ mais importante dele:
 
 \subsection{UC-15 --- Fazer \emph{check-in} de bem-estar}
 
-\begin{especificacao}{\ucr{UC-15} \emph{Check-in} de bem-estar (exp-91)}
+\begin{especificacao}{\ucr{UC-15} \emph{Check-in} de bem-estar (app-91)}
 \begin{tabularx}{\linewidth}{@{}L{28mm}X@{}}
 \textbf{Ator primário} & Professor (e somente ele)\\
 \textbf{Pré-condição} & Sessão de professor válida\\
@@ -455,7 +485,7 @@ mais rápida da plataforma, e existe por desenho (\adrr{ADR-01}).
 \ucr{UC-16} & \rf{RF-50} & botão de zerar turma & \arq{vila}\\
 \zebra \ucr{UC-20} & \rf{RF-06} & \rota{/admin/importar}, \rota{/admin/turmas}
   & \arq{rostering}\\
-\ucr{UC-21} & \rf{RF-07} & \rota{/admin/usuarios} & \arq{usuarios}\\
+\ucr{UC-21} & \rf{RF-07} & \rota{/admin/usuarios} (editar e redefinir senha) & \arq{usuarios}\\
 \zebra \ucr{UC-25} & \rf{RF-01} & \rota{/trocar-senha} & \arq{auth}\\
 \ucr{UC-26} & \rf{RF-06} & \rota{/professor/turmas} & \arq{rostering}\\
 \zebra \ucr{UC-27} & \rf{RF-06} & \rota{/admin/escolas} (lotação em lote),
@@ -464,6 +494,35 @@ mais rápida da plataforma, e existe por desenho (\adrr{ADR-01}).
   \arq{portabilidade}\\
 \zebra \ucr{UC-22} & \rf{RF-52} & \rota{/analise} & \arq{analise}\\
 \ucr{UC-23} & \rf{RF-10} & CI/CD & \arq{experiencias}\\
-\zebra \ucr{UC-24} & \rf{RF-11} & \emph{script} & \arq{experiencias}\\
+\zebra \ucr{UC-24} & \rf{RF-11} & \emph{script} e \rota{/unooria/recursos} & \arq{experiencias}, \arq{recursos}\\
+\ucr{UC-29} & --- & \rota{/admin/usuarios} (balcão) & \arq{usuarios}, \arq{rostering}\\
+\zebra \ucr{UC-30} & --- & incluído por \ucr{UC-29} e \ucr{UC-31} & \arq{usuarios} (\arq{regras.ts})\\
+\ucr{UC-31} & --- & \rota{/admin/usuarios} (papel sem escola) & \arq{usuarios}\\
+\zebra \ucr{UC-32} & --- & seletor do cabeçalho (\rota{/api/\B{}escola-ativa}) & \arq{rostering}\\
+\ucr{UC-33} & --- & \rota{/admin/\B{}minhas-escolas} & \arq{rostering}\\
+\zebra \ucr{UC-34} & --- & \rota{/admin/relatorios} & \arq{rostering}\\
+\ucr{UC-35} & --- & \rota{/admin/escolas}, \rota{/admin/regionais} & \arq{rostering}\\
+\zebra \ucr{UC-36} & --- & \rota{/admin/recursos} & \arq{recursos}\\
+\ucr{UC-37} & --- & \rota{/unooria/recursos} & \arq{recursos}\\
+\zebra \ucr{UC-38} & --- & \rota{/unooria/recursos} & \arq{recursos}\\
+\ucr{UC-39} & \rf{RF-31} & \rota{/unooria/\B{}uso-de-ia} & \arq{recursos}, \arq{ai}\\
+\zebra \ucr{UC-40} & --- & \rota{/unooria/\B{}prospeccao} & \arq{prospeccao}\\
+\ucr{UC-41} & --- & site público (\rota{/}) & \arq{prospeccao}\\
+\zebra \ucr{UC-42} & --- & \rota{/professor/\B{}turmas/\B{}[id]} & \arq{salas}\\
+\ucr{UC-43} & --- & incluído por \ucr{UC-42} & \arq{comum}, \arq{recursos}\\
+\zebra \ucr{UC-44} & --- & \rota{/professor/\B{}entre-redes/\B{}[ano]/\B{}[unidade]} & \arq{equipes}\\
+\ucr{UC-45} & --- & chat flutuante da área \rota{/professor} & \arq{agente-professor}\\
 \bottomrule
 \end{tabularx}
+
+\begin{nota}
+\textbf{Os casos \ucr{UC-29} a \ucr{UC-44} nasceram da modelagem UML}
+(Figura~\ref{fig:uml-casos-gestao}, Seção~\ref{sec:uml-cenarios}) e, com
+exceção do \ucr{UC-39}, ainda não têm requisito funcional no
+Capítulo~\ref{cap:requisitos}: disponibilidade, liberação por turma, equipes,
+panorama e prospecção entraram no produto por ADR, sem RF. Escrever esses RFs é
+pendência, e o travessão na coluna diz exatamente isso. O \ucr{UC-45}
+(conversar com o agente de IA do professor, \adrr{ADR-126}; só o papel
+\cd{professor}, só as próprias conversas na escola ativa) também entrou por ADR
+e também não tem RF.
+\end{nota}

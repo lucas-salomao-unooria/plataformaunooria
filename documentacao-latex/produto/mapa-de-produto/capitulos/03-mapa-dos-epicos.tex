@@ -1,0 +1,141 @@
+% ===========================================================================
+%  3 — Mapa dos épicos
+% ===========================================================================
+\chapter{Mapa dos épicos}
+\label{cap:mapa}
+
+São \textbf{14 épicos, 75 features e 241 histórias} (12 delas arquivadas). Os épicos seguem o
+caminho de uso da plataforma (Figura~\ref{fig:caminho}): da entrada à
+organização da rede, da sala de aula à missão, dos resultados às ferramentas,
+as garantias que valem para tudo, a sala em que os estudantes dividem o
+computador e, por fim, o que cada estudante demonstrou de cada habilidade da
+BNCC.
+
+\begin{destaque}
+\textbf{Em 20 de outubro de 2026:} \textbf{155} histórias prontas
+(\textasciitilde68\%), \textbf{60} parciais, \textbf{12} a fazer e \textbf{10}
+arquivadas (as três do UnooTube, que saiu da trilha sem ser apagado, as perguntas do fim do Unoovista, as do resultado da Missão Tempestade, as da Nina em Quem mandou isso?, e a rodada
+de desvio, a engrenagem, a tela de separar e o caso Mariana do Júri Estadual). Nove das
+parciais são do agente de IA do professor (\id{F08.4} e \id{H10.1.4}),
+construído e ainda não no ar, e seis são do Júri Estadual de Projetos
+(\id{F06.14}, com o podcast dele e as imagens da mostra pronta), construído com
+os quarenta estandes e com o teste de ponta a ponta à espera de ser atualizado
+e corrido. Quatro são da Ajuda com atendente (\id{F01.6} e
+\id{H10.1.5}), construída e em teste interno, desligada nas redes. Mais da
+metade do que é parcial é a evidência pedagógica (\id{E14}) e as três missões
+com régua, a versão nova de Quem mandou isso? (\id{F06.11}), A Seleção
+(\id{F06.12}, com o podcast dela) e o Jornal da Escola (\id{H06.10.4}) ---
+construídas e percorridas pelo teste de ponta a ponta; a primeira à espera de o
+PO revisar os textos, a segunda à espera da revisão da voz e das imagens
+geradas, da conferência dos níveis que a IA dá à legenda, da revisão dos
+textos e da foto da Amara pelo PO, e a terceira à espera das imagens do banco padrão, da revisão
+do critério do livro do 4º ano, da menção à IA dela nos Termos de Uso e da
+primeira corrida verde do teste da aprovação das imagens (\id{H06.10.6}). O resto
+é, em quase todos os casos, material que falta (áudio, foto, revisão
+pedagógica) ou ajuste de tela. O que é a fazer concentra-se em recuperação de
+senha, prazos de guarda de dados, acessibilidade, nas equipes do Unoovista e
+nas missões que faltam. Oito itens --- de teste de carga a contrato --- bloqueiam a
+entrada em produção (Capítulo~\ref{cap:backlog}).
+\end{destaque}
+
+\section{Os catorze épicos}
+
+\begin{tabularx}{\linewidth}{@{}L{10mm}X L{12mm}L{9mm}L{9mm}L{9mm}L{17mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Épico} & \thd{Feat.} & \thd{Pr.} & \thd{Parc.} & \thd{A f.} & \thd{Estado}\\
+\midrule
+\endhead
+\id{E01} & Entrar e circular na plataforma (p.~\pageref{ep:e01}) & 6 & 10 & 3 & 2 & \parcial\\
+\zebra \id{E02} & Organizar a rede (p.~\pageref{ep:e02}) & 4 & 7 & 0 & 1 & \parcial\\
+\id{E03} & Cadastrar pessoas e turmas (p.~\pageref{ep:e03}) & 8 & 16 & 1 & 0 & \pronto\\
+\zebra \id{E04} & Sala de aula: o professor abre a missão (p.~\pageref{ep:e04}) & 4 & 8 & 0 & 1 & \pronto\\
+\id{E05} & A experiência do estudante na plataforma (p.~\pageref{ep:e05}) & 2 & 6 & 0 & 0 & \pronto\\
+\zebra \id{E06} & As missões do Entre Redes (p.~\pageref{ep:e06}) & 12 & 43 & 31 & 1 & \pronto\\
+\id{E07} & Acompanhar a aprendizagem e a rede (p.~\pageref{ep:e07}) & 3 & 6 & 1 & 1 & \parcial\\
+\zebra \id{E08} & Ferramentas do professor (p.~\pageref{ep:e08}) & 4 & 10 & 8 & 0 & \pronto\\
+\id{E09} & Inteligência artificial com limites (p.~\pageref{ep:e09}) & 4 & 5 & 0 & 2 & \parcial\\
+\zebra \id{E10} & Painel da Unooria (p.~\pageref{ep:e10}) & 7 & 15 & 2 & 1 & \pronto\\
+\id{E11} & Site público e captação (p.~\pageref{ep:e11}) & 3 & 3 & 1 & 0 & \parcial\\
+\zebra \id{E12} & Confiança: privacidade, segurança e operação (p.~\pageref{ep:e12}) & 7 & 3 & 3 & 1 & \parcial\\
+\id{E13} & Equipes na missão (p.~\pageref{ep:e13}) & 4 & 13 & 0 & 2 & \parcial\\
+\zebra \id{E14} & Evidência pedagógica (p.~\pageref{ep:e14}) & 7 & 11 & 11 & 0 & \parcial\\
+\midrule
+ & \textbf{Total} & \textbf{75} & \textbf{156} & \textbf{61} & \textbf{12} & \\
+\bottomrule
+\end{tabularx}
+
+\medskip
+{\small\color{unooMuted}Pr. = prontas; Parc. = parciais; A f. = a fazer. As 12
+histórias \arquivada{} (o UnooTube, \id{F06.2}, as perguntas do fim do Unoovista, \id{H06.6.8}, as do resultado da Missão Tempestade, \id{H06.8.5}, as perguntas da Nina, \id{H06.11.4}, o cartão de frases e a regra do tio, \id{H06.11.7} e \id{H06.11.8}, a rodada de desvio do Júri,
+\id{H06.14.8}, a engrenagem dele, \id{H06.14.4}, a tela de separar,
+\id{H06.14.10}, e o caso Mariana, \id{H06.14.5}) não entram nas colunas. O
+estado do épico é \pronto{} quando o que falta é ajuste ou evolução e não
+impede o uso; é \parcial{} quando falta uma capacidade que alguém vai sentir
+falta.}
+
+\section{Quem aparece em cada épico}
+
+\begin{tabularx}{\linewidth}{@{}L{10mm}X *{7}{>{\centering\arraybackslash}p{9mm}}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Épico} & \thd{Est.} & \thd{Prof.} & \thd{C.\,esc.} & \thd{C.\,reg.} & \thd{Adm.\,c.} & \thd{Uno.} & \thd{Vis.}\\
+\midrule
+\id{E01} & Entrar e circular & \yes & \yes & \yes & \yes & \yes & \yes & \no\\
+\zebra \id{E02} & Organizar a rede & \no & \no & \yes & \yes & \yes & \yes & \no\\
+\id{E03} & Pessoas e turmas & \no & \no & \yes & \yes & \yes & \yes & \no\\
+\zebra \id{E04} & Sala de aula & \no & \yes & \yes & \no & \no & \no & \no\\
+\id{E05} & Experiência do estudante & \yes & \no & \no & \no & \no & \no & \no\\
+\zebra \id{E06} & Missões & \yes & \yes & \no & \no & \no & \no & \no\\
+\id{E07} & Acompanhamento & \no & \yes & \no & \yes & \yes & \yes & \no\\
+\zebra \id{E08} & Ferramentas do professor & \no & \yes & \no & \no & \no & \no & \no\\
+\id{E09} & IA com limites & \yes & \yes & \no & \no & \no & \yes & \no\\
+\zebra \id{E10} & Painel da Unooria & \no & \no & \no & \no & \yes & \yes & \no\\
+\id{E11} & Site público & \no & \no & \no & \no & \no & \yes & \yes\\
+\zebra \id{E12} & Confiança & \yes & \yes & \yes & \yes & \yes & \yes & \no\\
+\id{E13} & Equipes na missão & \yes & \yes & \yes & \yes & \yes & \yes & \no\\
+\zebra \id{E14} & Evidência pedagógica & \yes & \yes & \yes & \yes & \yes & \yes & \no\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+{\small\color{unooMuted}Est. = Estudante; Prof. = Professor; C.\,esc. =
+Coordenação da escola; C.\,reg. = Coordenação regional; Adm.\,c. =
+Administrador do contrato; Uno. = Administrador Unooria; Vis. = Visitante. Em
+\id{E10}, o Administrador do contrato só lê o histórico; em \id{E13}, as
+coordenações e as administrações só consultam as equipes; em \id{E14}, elas só
+leem, e o estudante responde sem ver o próprio resultado.}
+
+\section{O que cada papel pode, em resumo}
+
+\begin{tabularx}{\linewidth}{@{}X *{6}{>{\centering\arraybackslash}p{10.5mm}}@{}}
+\toprule
+\headrow \thd{Capacidade} & \thd{Est.} & \thd{Prof.} & \thd{C.\,esc.} & \thd{C.\,reg.} & \thd{Adm.\,c.} & \thd{Uno.}\\
+\midrule
+\endhead
+Jogar as missões liberadas & \yes & \no & \no & \no & \no & \no\\
+\zebra Liberar e encerrar missão na turma & \no & \yes & vê & vê & vê & vê\\
+Montar as equipes de uma missão na turma & \no & \yes & vê & vê & vê & vê\\
+\zebra Confirmar e ajustar a evidência por habilidade da BNCC & \no & \yes & vê & vê & vê & vê\\
+Ler os resultados da turma e de cada estudante & o seu & \yes & \no & \no & \no & \no\\
+\zebra Ler o agregado (sem identificar criança) & \no & \no & \no & \yes & \yes & \yes\\
+Plano de aula, planejamento, bem-estar, agente de IA & \no & \yes & \no & \no & \no & \no\\
+\zebra Cadastrar pessoas, importar, resetar senha & \no & \no & \yes & \yes & \yes & \yes\\
+Turmas, enturmamento, ano letivo & \no & lê & \yes & \yes & \yes & \yes\\
+\zebra Perfil portátil & \no & \no & \yes & \yes & \yes & \yes\\
+Transferir estudante de escola & \no & \no & \no & \no & \yes & \yes\\
+\zebra Regionais, escolas, vínculos em lote & \no & \no & \no & \no & \yes & \yes\\
+Criar Coordenação regional & \no & \no & \no & \no & \yes & \yes\\
+\zebra Criar Administrador do contrato & \no & \no & \no & \no & \no & \yes\\
+Ligar e desligar recursos, versões, limites de IA & \no & \no & \no & \no & lê & \yes\\
+\zebra Prospecção & \no & \no & \no & \no & \no & \yes\\
+Tirar dúvidas com o atendente da Ajuda & \no & \yes & \yes & \yes & \yes & \yes\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+{\small\color{unooMuted}Ausências deliberadas: o bem-estar do professor não
+tem nenhuma visão de gestão; a gestão não tem acesso à linha de uma criança
+nas missões --- a exceção declarada é a evidência pedagógica, em que ela lê o
+nível de cada habilidade, nunca texto (\id{H14.4.4}, \id{F14.7}); o Administrador do
+contrato lê a rede em agregado, nunca a sala de aula --- e, no painel de
+habilidades, desce da rede ao estudante como as coordenações (\id{H14.7.5}); e o
+estudante não vê a própria evidência pedagógica.}

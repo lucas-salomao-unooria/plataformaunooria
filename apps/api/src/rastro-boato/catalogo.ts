@@ -1,5 +1,5 @@
 /**
- * O conteúdo da exp-06-rastro-boato — e o GABARITO dela.
+ * O conteúdo da exp06ef2b — e o GABARITO dela.
  *
  * Este arquivo nunca cruza a fronteira do cliente inteiro. O que sai são
  * projeções sem `correta`, sem `desfecho` e sem `alcance`: as três coisas que a
@@ -7,7 +7,7 @@
  * público é construído por `Omit`, não por "lembrar de apagar o campo" — a
  * diferença é que o compilador reprova o vazamento.
  *
- * O feed vem da api e não do bundle pelo mesmo motivo da exp-07: corrigir uma
+ * O feed vem da api e não do bundle pelo mesmo motivo da exp07ef1b: corrigir uma
  * palavra da copy não pode exigir republicar um caminho imutável no bucket.
  *
  * A copy é a da passada 2 do sheet, congelada. Alterar texto aqui sem alterar
@@ -19,7 +19,7 @@
 export const IDS_DE_CHAT = ["gremio", "turma", "bairro", "tomas"] as const;
 export type IdDeChat = (typeof IDS_DE_CHAT)[number];
 
-/** Tipo de balão. `print` não existe aqui — o recorte de matéria é da exp-07. */
+/** Tipo de balão. `print` não existe aqui — o recorte de matéria é da exp07ef1b. */
 export type TipoDeMensagem = "texto" | "audio" | "documento";
 
 /**
@@ -104,7 +104,7 @@ export const CONVERSAS: readonly Conversa[] = [
 /**
  * O feed. Seis mensagens auditáveis, e a cota é 3 — mais opções do que a
  * exigência de propósito: quem inspeciona só o mínimo escolhe QUAIS três, e a
- * escolha é dado (é o `mensagemId` que vai para `exp_06_auditorias`).
+ * escolha é dado (é o `mensagemId` que vai para `exp06ef2b_auditorias`).
  *
  * As três que sustentam a descoberta estão em conversas DIFERENTES: o boato no
  * grêmio, a amplificação anônima na turma e o laudo no bairro. Empilhá-las num
@@ -347,7 +347,7 @@ export const TETO_DA_REFLEXAO = 280;
  *
  * **Sem arquivo de áudio, e isso não é pendência.** O `pod-06-rastro-boato-01`
  * do brief de assets ainda não foi gravado, e a missão roda igual — pelo mesmo
- * princípio da exp-07: a transcrição está sempre na tela por acessibilidade, e
+ * princípio da exp07ef1b: a transcrição está sempre na tela por acessibilidade, e
  * quando a locução chegar ela entra ao lado do texto, não no lugar dele.
  */
 export const PODCAST = {

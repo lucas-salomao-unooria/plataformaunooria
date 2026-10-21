@@ -6,6 +6,8 @@ import type {
   AiRequest,
   AiResult,
   AiSpeechRequest,
+  AiFluxoEvento,
+  AiFluxoRequest,
 } from "./provider";
 import { ErroDeGeracao } from "./provider";
 
@@ -14,34 +16,78 @@ import { ErroDeGeracao } from "./provider";
  * tabela): é o que o smoke visual do gerador de plano de aula precisa para
  * exercitar `marked` + `RichTextEditor` sem gastar Vertex em dev.
  */
-const PLANO_MOCK = `# Plano Anual — [mock]
+export const PLANO_MOCK = `# Plano Anual de Componente [mock] — Ano [mock]
 
-## Objetivos gerais
+**Componente curricular:** [mock]
+**Ano escolar:** [mock]
+**Carga horária:** A definir pela rede de ensino.
+**Organização:** dois bimestres de exemplo
+**Material didático:** [mock]
+**Referências curriculares:** [mock]
+
+# Fundamentação
+
+Texto gerado pelo **provider mock** — troque \`AI_PROVIDER\` para \`vertex\` para um plano real.
+
+# Objetivos gerais
 
 - Compreender o tema como resultado de escolhas humanas no tempo.
 - Desenvolver leitura crítica de fontes, inclusive digitais.
 
-## 1º bimestre — Ponto de partida
+# Percurso do ano
 
-### Conteúdos
+| Período | Questão norteadora | Aprendizagem central | Produto de síntese |
+|---|---|---|---|
+| 1º bimestre | Como começamos a investigar? | Reconhecer fontes | Mural coletivo com fontes comparadas |
+| 2º bimestre | Como aprofundamos a investigação? | Comparar versões | — |
+
+observar → comparar → produzir
+
+# 1º bimestre — Ponto de partida
+
+## Questão norteadora
+
+Como começamos a investigar?
+
+## Conteúdos
 
 - Noções iniciais e vocabulário do componente.
 - Fontes: o que são e como se leem.
 
-### Habilidades
+## Habilidades mobilizadas
 
-| Código | Habilidade |
-|---|---|
-| EF0XCO01 | Reconhecer o papel das tecnologias digitais no cotidiano. |
-| EF0XCO02 | Identificar critérios para avaliar informações. |
+- EF0XCO01 — Reconhecer o papel das tecnologias digitais no cotidiano.
+- EF0XCO02 — Identificar critérios para avaliar informações.
 
-### Avaliação
+## Estratégias metodológicas
 
-Produto de síntese: mural coletivo com fontes comparadas.
+- Leitura orientada de fontes.
 
-## 2º bimestre — Aprofundamento
+## Formas de avaliação
 
-Conteúdo gerado pelo **provider mock** — troque \`AI_PROVIDER\` para \`vertex\` para um plano real.
+- Identifica critérios para avaliar uma informação (EF0XCO02).
+
+## Produto de síntese
+
+Mural coletivo com fontes comparadas.
+
+# 2º bimestre — Aprofundamento
+
+## Questão norteadora
+
+Como aprofundamos a investigação?
+
+# Metodologia geral
+
+Aulas dialogadas e atividades práticas (texto do mock).
+
+# Avaliação geral
+
+Diagnóstica, processual e formativa (texto do mock).
+
+# Referências de elaboração
+
+- Documentos do professor (mock).
 `;
 
 export class MockProvider implements AiProvider {
@@ -91,6 +137,18 @@ export class MockProvider implements AiProvider {
    * As falas não têm DÍGITO nenhum: é comum a regra de domínio recusar número
    * que não tenha vindo de ferramenta, e o mock não deve tropeçar nela.
    */
+  /**
+   * Fluxo determinístico, em DOIS pedaços — para o teste exercitar a costura
+   * de pedaços, que é a parte nova do contrato. Não falha fechado: a Ajuda em
+   * dev precisa responder alguma coisa, e o texto diz que é do mock.
+   */
+  async *conversarEmFluxo(req: AiFluxoRequest): AsyncGenerator<AiFluxoEvento> {
+    const ultima = [...req.historico].reverse().find((m) => m.papel === "pessoa")?.texto ?? "";
+    const partes = ["[mock] Entendi a sua dúvida. ", `Você perguntou: ${ultima.slice(0, 80)}`];
+    for (const texto of partes) yield { tipo: "texto", texto };
+    yield { tipo: "fim", resultado: { texto: partes.join(""), tokensUsados: 64, finishReason: "STOP" } };
+  }
+
   async conversar(req: AiConversaRequest): Promise<AiResult> {
     const tentativas = req.tentativas ?? 3;
     const maxVoltas = req.maxVoltas ?? 6;

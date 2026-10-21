@@ -1,12 +1,13 @@
 /**
- * Formas de LEITURA da exp-03-unoogpt, do jeito que as telas do professor as
+ * Formas de LEITURA da exp02em1b, do jeito que as telas do professor as
  * recebem (`apps/api/src/unoogpt/*.controller.ts`).
  *
  * Só tipos. A regra que eles carregam, e que a tela precisa respeitar: a
  * LISTAGEM da turma não tem número de resgatados. Listagem é ordenável, e uma
  * coluna de resgate viraria ranking de crianças — o número vive na tela
- * individual, uma por vez. É a mesma regra da exp-70.
+ * individual, uma por vez. É a mesma regra da app-70.
  */
+import type { EquipeNoPainel } from "./equipe-no-painel";
 
 export interface RetratoDoRelogio {
   modo: "cronometrado" | "livre";
@@ -16,6 +17,8 @@ export interface RetratoDoRelogio {
   pivoSeg: number;
   pivoMin: number;
   agora: string;
+  /** O professor abriu o fechamento (o WhatsApp e a moradora, ADR-172). */
+  fechamentoAberto: boolean;
   fase: "aguardando" | "correndo" | "encerrado";
   minutosGastos: number;
   segundosAteFechar: number | null;
@@ -23,7 +26,10 @@ export interface RetratoDoRelogio {
   incrementoSeg: number;
 }
 
-/** Uma criança na folha da turma. Conduta, nunca placar. */
+/**
+ * Uma linha da folha da turma. Conduta, nunca placar. É UM COMPUTADOR (E13):
+ * sem equipes, a criança; com equipes, a linha de quem entrou, com `equipe`.
+ */
 export interface LinhaDaTurma {
   estudanteId: string;
   nome: string;
@@ -38,11 +44,23 @@ export interface LinhaDaTurma {
   decidiuNoEscuro: boolean;
   justificouPorIntuicao: boolean;
   tentativas: number;
+  /**
+   * `null` = sem equipe nesta missão. Com equipe, os campos acima são de quem
+   * entrou, e "Abrir" leva à tela dele. Não são as equipes Alfa e Bravo da
+   * cidade: é quem divide o computador.
+   */
+  equipe: EquipeNoPainel | null;
 }
 
 export interface FolhaDaTurma {
   turma: { id: string; nome: string; serie: string };
   relogio: RetratoDoRelogio;
+  /** O fechamento (ADR-172): aberto, e quantas linhas que chegaram ao resultado já o enviaram. */
+  fechamento: { aberto: boolean; enviaram: number; de: number };
+  /** O que cada grupo perguntou sobre cada fonte, no registro da operação: contagens para o debate. */
+  perguntasPorFonte: { fonte: string; bairro: string; pergunta: string; grupos: number }[];
+  /** A frase fixa do alcance do alerta: é do debate, nunca vai ao grupo. */
+  alcanceDoAlerta: string;
   retrato: {
     estudantes: number;
     comecaram: number;
@@ -50,6 +68,8 @@ export interface FolhaDaTurma {
     viramConflito: number;
     decidiramNoEscuro: number;
     justificaramPorIntuicao: number;
+    /** A turma tem equipes nesta missão: `estudantes` e os demais contam computadores. */
+    porComputador: boolean;
   };
   linhas: LinhaDaTurma[];
 }
@@ -150,6 +170,8 @@ export interface RelatorioDoEstudante {
   justificativas: { alfa: string; bravo: string } | null;
   tentativas: TentativaDoEstudante[];
   rodadas: RodadaDoEstudante[];
+  /** As escolhas do Canal A, por tentativa (ADR-172): escolha fechada em texto, nunca o nível. */
+  canalA: { tentativa: number; tarefa: string; escolhas: string[] }[];
   trilha: MarcoDaTrilha[];
   /**
    * A TRANSCRIÇÃO. Caixa livre escrita por menor de idade: só o professor da
@@ -169,14 +191,5 @@ export interface RelatorioDoEstudante {
 }
 
 
-/**
- * Uma turma no seletor. A forma tem de casar com a que `SeletorDeTurma` espera
- * (hoje declarada em `unootube-tipos.ts`) — o componente é compartilhado entre
- * as missões, e é ele que define o contrato.
- */
-export interface TurmaResumo {
-  id: string;
-  nome: string;
-  serie: string;
-  estudantes: number;
-}
+/** Uma turma no seletor: o tipo é do `SeletorDeTurma`, compartilhado entre as missões. */
+export type { TurmaResumo } from "./turmas-tipos";

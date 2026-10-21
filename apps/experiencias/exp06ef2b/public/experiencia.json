@@ -1,0 +1,18 @@
+{
+  "id": "exp06ef2b",
+  "nome": "O Rastro do Boato: Por que a Mentira Voa?",
+  "versao": "0.1.7",
+  "produto": "entre-redes",
+  "series": ["6EF"],
+  "unidade": 2,
+  "capabilities": ["telemetria", "progresso", "avaliacao"],
+  "viewport": { "largura": 375, "altura": 812 },
+  "permissoes": [],
+  "publico": "estudante",
+  "verbos": {
+    "interacted": "abriu conversa e inspecionou os dados de uma mensagem",
+    "attempted": "escolheu uma das três intervenções sob contágio ativo",
+    "progressed": "alternou para o mapa da rede e montou o ciclo do boato",
+    "completed": "entregou o Meu percurso"
+  }
+}

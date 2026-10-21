@@ -718,13 +718,25 @@ export class EscolasService {
       }
     }
 
+    /* O NOME da missão, e não o código: a diretoria não sabe o que é
+       `exp08ef1b` (H07.2.1). O catálogo de `experiencias` é do contrato, sem
+       `escola_id` — lido fora do `comTenancy`. A missão que saiu do catálogo
+       continua aparecendo, pelo código, porque os registros dela existem. */
+    const catalogo = await this.prisma.experiencia.findMany({
+      where: { expId: { in: [...consolidado.keys()] } },
+      select: { expId: true, nome: true },
+    });
+    const nomeDe = new Map(catalogo.map((c) => [c.expId, c.nome]));
+
     return {
       regional: { id: regional.id, nome: regional.nome },
       /* Reordenado por nome: `Promise.all` em lotes devolve na ordem do lote,
          mas os lotes chegam intercalados e a tabela da tela precisa ser
          estável entre recargas. */
       escolas: porEscola.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
-      experiencias: [...consolidado.values()].sort((a, b) => a.expId.localeCompare(b.expId)),
+      experiencias: [...consolidado.values()]
+        .map((e) => ({ ...e, nome: nomeDe.get(e.expId) ?? e.expId }))
+        .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
     };
   }
 

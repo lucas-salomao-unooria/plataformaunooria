@@ -9,7 +9,7 @@
  * nela, e a frente volta por PR `--base dev-local`.
  *
  * Uso:
- *   pnpm worktree criar <tipo/slug | exp-NN-slug> --fatia api/<mod>,hub/<rota>,exp/<id>
+ *   pnpm worktree criar <tipo/slug | código da experiência> --fatia api/<mod>,hub/<rota>,exp/<id>
  *   pnpm worktree listar
  *   pnpm worktree remover <slug>
  *
@@ -20,7 +20,7 @@
  * um diff cheio de commit que já estava lá (ADR-61, ADR-71, ADR-101).
  */
 import { execFileSync, execSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -53,7 +53,9 @@ const WORKTREES = join(PRINCIPAL, ".claude", "worktrees");
 
 /** Espelha `.githooks/pre-push`: um nome que o hook recusaria não vira worktree. */
 const TIPOS = "feat|fix|chore|docs|ci|refactor|test|perf|build|style|hotfix";
-const NOME_DE_BRANCH = new RegExp(`^(exp-\\d{2}-[a-z0-9-]+|(${TIPOS})/[a-z0-9][a-z0-9._-]*)$`);
+const NOME_DE_BRANCH = new RegExp(
+  `^(exp0[1-9]e[fm][1-4]b|app-\\d{2}-[a-z0-9-]+|(${TIPOS})/[a-z0-9][a-z0-9._-]*)$`,
+);
 
 /**
  * Faixa das frentes. 5173–5179 são da cópia principal (`experiencias-dev.ts`),
@@ -72,6 +74,16 @@ const ENVS = [
   "apps/hub/.env.local",
   "apps/hub/.env.development.local",
 ];
+
+/**
+ * O grafo do graphify (ADR-125). `graphify-out/` é ignorado pelo git, então o
+ * worktree nasceria sem ele e o `graphify query` falharia ("graph file not
+ * found") — justamente onde o agente mais consulta. Só o `graph.json` basta.
+ * Sai da cópia PRINCIPAL, que o `.githooks/post-merge` mantém fresca.
+ */
+const GRAFO = "graphify-out/graph.json";
+/** Acima disto o aviso manda atualizar: o grafo é um retrato do código de um dia. */
+const GRAFO_VELHO_EM_DIAS = 2;
 
 const ESC = "\u001b";
 const cor = (c, s) => (process.stdout.isTTY ? `${ESC}[${c}m${s}${ESC}[0m` : s);
@@ -124,7 +136,7 @@ function portasDasFrentes(extra) {
 }
 
 /**
- * `api/unootube` vira `apps/api/src/unootube`, e assim por diante. O caminho
+ * `api/unoogpt` vira `apps/api/src/unoogpt`, e assim por diante. O caminho
  * que não existe não reprova — a frente pode estar criando o módulo — mas é
  * DITO, porque o erro de digitação silencioso vira uma fatia que não protege
  * nada: o hook compara com o que está escrito aqui.
@@ -178,7 +190,7 @@ function criar(branch, fatia) {
   if (!NOME_DE_BRANCH.test(branch)) {
     morre(
       `nome de branch fora do padrão: '${branch}'\n` +
-        `    Experiência nova:  exp-NN-slug     (ex.: exp-12-fracoes)\n` +
+        `    Experiência nova:  o código dela   (ex.: exp06ef3b, app-93-diario-de-bordo — ADR-110)\n` +
         `    Qualquer outra:    tipo/slug       (ex.: fix/quota-por-perfil)\n` +
         `    Tipos: ${TIPOS.replaceAll("|", ", ")}\n` +
         `  É o padrão do .githooks/pre-push: criar aqui o que ele recusaria só` +
@@ -200,7 +212,7 @@ function criar(branch, fatia) {
   if (alvos.length === 0) {
     morre(
       "falta --fatia. TODA frente declara o que vai tocar (ADR-71, ADR-101).\n" +
-        "    Vertical:    --fatia api/unootube,hub/professor,exp/exp-02-unootube\n" +
+        "    Vertical:    --fatia api/unoogpt,hub/professor,exp/exp02em1b\n" +
         "    Ferramenta:  --fatia scripts,.githooks\n" +
         "  A fatia vira `<git-dir>/fatia`, e o .githooks/pre-commit recusa commit\n" +
         "  fora dela. Declarar é barato; descobrir no merge que duas frentes\n" +
@@ -258,6 +270,20 @@ function criar(branch, fatia) {
     copiados++;
   }
   ok(`${copiados} arquivo(s) de ambiente copiado(s)`);
+
+  passo("copiando o grafo do graphify (ignorado pelo git, não viaja com o worktree)");
+  const grafoDeOrigem = [PRINCIPAL, RAIZ].map((r) => join(r, GRAFO)).find((c) => existsSync(c));
+  if (grafoDeOrigem) {
+    mkdirSync(dirname(join(destino, GRAFO)), { recursive: true });
+    copyFileSync(grafoDeOrigem, join(destino, GRAFO));
+    const dias = Math.floor((Date.now() - statSync(grafoDeOrigem).mtimeMs) / 86_400_000);
+    ok(`grafo copiado (de ${dias === 0 ? "hoje" : `${dias} dia(s) atrás`}): consulte com \`graphify query "…"\` antes de buscar arquivo`);
+    if (dias >= GRAFO_VELHO_EM_DIAS) {
+      console.log(`${cor(33, "!")} grafo com ${dias} dias: rode \`graphify update .\` (só código, sem custo de IA) para ele enxergar o que mudou`);
+    }
+  } else {
+    console.log(`${cor(33, "!")} a cópia principal não tem grafo: rode \`graphify update .\` nela para o próximo worktree já nascer com ele`);
+  }
 
   if (process.argv.includes("--sem-instalar")) {
     passo("--sem-instalar: pulando pnpm install e prisma generate");
@@ -588,7 +614,7 @@ switch (comando) {
     break;
   default:
     console.log(`Uso:
-  pnpm worktree criar <tipo/slug | exp-NN-slug> --fatia api/<mod>,hub/<rota>,exp/<id> [--sem-instalar]
+  pnpm worktree criar <tipo/slug | código da experiência> --fatia api/<mod>,hub/<rota>,exp/<id> [--sem-instalar]
   pnpm worktree listar
   pnpm worktree remover <slug>
   pnpm worktree limpar [--seco]     poda as frentes já mergeadas em ${BASE}`);

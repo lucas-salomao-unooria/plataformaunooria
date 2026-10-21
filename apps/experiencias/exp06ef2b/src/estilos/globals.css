@@ -1,0 +1,509 @@
+/**
+ * Estilos locais da exp06ef2b. Só o que o design system não dá: layout do
+ * aparelho, as compensações marcadas e o desenho da malha de rede.
+ *
+ * Cor NUNCA se escreve à mão aqui — sai dos tokens `--wa-*` (clone) e
+ * `--unooria-*` (plataforma). Um hex literal neste arquivo é uma cor que não
+ * acompanha o pacote quando ele mudar.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  /* O aparelho é desenhado pelo HUB (`DispositivoFrame`, a partir do
+     `viewport` do manifesto). Aqui dentro só se preenche os 375×812 que ele
+     reserva — desenhar uma segunda casca daria um celular dentro de outro. */
+  background: var(--wa-color-surface-base);
+  color: var(--wa-color-text-primary);
+  font-family: var(--wa-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* `100%` e não `100dvh`: dentro do iframe do aparelho, `dvh` se refere à
+   janela do navegador, não ao aparelho — e o rodapé sairia do recorte. */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.app--centrado {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.app__corpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.app__rodape {
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--wa-color-border-subtle, rgb(255 255 255 / 8%));
+  background: var(--wa-color-surface-raised, var(--wa-color-surface-base));
+}
+
+.aviso-de-rede {
+  font-size: 13px;
+  color: var(--wa-color-text-meta);
+  margin: 0;
+}
+
+.esqueleto__topo {
+  height: 88px;
+  background: var(--wa-color-surface-raised, var(--wa-color-surface-base));
+  border-bottom: 1px solid var(--wa-color-border-subtle, rgb(255 255 255 / 8%));
+}
+
+/* ------------------------------------------------------------------ feed */
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 10px 20px;
+}
+
+.feed__linha {
+  display: flex;
+}
+
+.feed__autor {
+  font-size: 12px;
+  font-weight: var(--wa-font-weight-semibold, 600);
+  color: var(--wa-color-accent-primary, #53bdeb);
+  margin-bottom: 2px;
+}
+
+/* `div[role=button]`, não `<button>`: o player de voz tem um botão dentro, e
+   `<button>` aninhado é HTML inválido — o React derruba a hidratação e o feed
+   para de responder ao toque. */
+.feed__balao {
+  max-width: 85%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.feed__balao:focus-visible {
+  outline: 2px solid var(--wa-color-text-primary);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/*
+ * (b) COMPENSAÇÃO — selo "Encaminhada com frequência".
+ *
+ * A seção `whatsappmobile` da 0.1.17 tem o ícone `forward` e o `Badge`, mas não
+ * publica o selo composto que o app real desenha acima do balão encaminhado.
+ * Aqui ele é feito com os tokens do pacote, sem cor inventada.
+ * PEDIDO ao `storybook-unooria`: `ForwardedBadge` na seção `whatsappmobile`.
+ */
+.selo-encaminhada {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--wa-color-text-meta);
+  margin-bottom: 2px;
+}
+
+/*
+ * (b) COMPENSAÇÃO — balão de voz com transcrição.
+ *
+ * `MessageBubble` aceita texto, `.Media` (imagem) e `.Document`; não há player
+ * de áudio na seção. A transcrição fica SEMPRE visível: é acessibilidade
+ * (RNF-A11Y-002), não fallback de mídia ausente.
+ * PEDIDO: `ChatAudioBubbleWithTranscript`.
+ */
+.voz {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.voz__controles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Sem isto o botão sai com o estilo NATIVO do sistema (retângulo cinza claro),
+   e um controle que não existe no app real denuncia o clone na primeira olhada.
+   O `TextButton` do pacote não serve: ele é texto, e aqui o alvo é o glifo. */
+.voz__play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  background: var(--wa-color-surface-base);
+  color: var(--wa-color-text-primary);
+}
+
+.voz__tempo {
+  font-size: 11px;
+  color: var(--wa-color-text-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.voz__onda {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--wa-color-text-meta);
+  opacity: 0.5;
+}
+
+.voz__transcricao {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--wa-color-text-meta);
+  border-left: 2px solid var(--wa-color-text-meta);
+  padding-left: 8px;
+  margin: 0;
+}
+
+/*
+ * (b) COMPENSAÇÃO — banner de contágio ativo.
+ *
+ * O pacote não tem uma faixa de status persistente no topo do chat. Composta
+ * com os tokens de superfície e o ícone de alerta.
+ * PEDIDO: `ContagionTicker` na seção `whatsappmobile`.
+ */
+.contagio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: var(--wa-font-weight-semibold, 600);
+  background: var(--wa-color-surface-raised, var(--wa-color-surface-base));
+  border-bottom: 2px solid var(--wa-color-text-primary);
+}
+
+/* ------------------------------------------------ modal "Dados da mensagem" */
+
+.metadados {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.metadados__bloco {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--wa-color-border-subtle, rgb(255 255 255 / 12%));
+  border-radius: 8px;
+}
+
+.metadados__valor {
+  font-size: 14px;
+  font-weight: var(--wa-font-weight-semibold, 600);
+  margin: 0;
+}
+
+.metadados__detalhe {
+  font-size: 12px;
+  /* O text-meta dava 4,1:1 no painel; o secundário (DS 0.2.20) dá 4,8 (ADR-162). */
+  color: var(--wa-color-text-secondary);
+  margin: 2px 0 0;
+}
+
+.metadados__progresso {
+  font-size: 12px;
+  /* O text-meta dava 4,1:1 no painel; o secundário (DS 0.2.20) dá 4,8 (ADR-162). */
+  color: var(--wa-color-text-secondary);
+  margin: 0;
+}
+
+.metadados__barra {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--wa-color-border-subtle, rgb(255 255 255 / 12%));
+  overflow: hidden;
+}
+
+.metadados__barra > span {
+  display: block;
+  height: 100%;
+  background: var(--wa-color-text-primary);
+  transition: width 240ms ease-out;
+}
+
+/* ------------------------------------------------------ decisão (o PICO) */
+
+/*
+ * Teto estrito de 5 elementos, e o layout existe para sustentá-lo: banner,
+ * balão do áudio e três cards. Nada de scaffolding, nada de Tomás — o silêncio
+ * pedagógico é o não-negociável desta tela.
+ */
+.decisao {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.decisao__opcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* O alerta de inação, e SÓ ele, quebra o silêncio — depois de 90s. */
+.decisao__alerta {
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--wa-color-surface-raised, var(--wa-color-surface-base));
+  border: 1px solid var(--wa-color-border-subtle, rgb(255 255 255 / 12%));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .decisao--hesitando .decisao__opcoes {
+    animation: pulso 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes pulso {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+/* ------------------------------------------------- Etapa 4: curvas e mapa
+ *
+ * DAQUI PARA BAIXO os tokens são `--unooria-*`, não `--wa-*`, e a diferença
+ * não é estética: estas telas são da ESCOLA. Os tokens do clone são calibrados
+ * para o fundo escuro do mensageiro, e sobre o branco da plataforma os nós do
+ * mapa saíam quase invisíveis — a malha ficava lá, e o beat memorável não
+ * chegava. Misturar as seções é a violação que a regra de ouro proíbe, e este
+ * foi o jeito que ela apareceu na prática.
+ */
+
+.telemetria {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+
+.telemetria__grafico {
+  width: 100%;
+  height: 220px;
+}
+
+/* A curva do boato salta; a do laudo recua para tracejado fino. É a leitura
+   inteira da tela — a assimetria tem de ser geométrica, não legendada. */
+.curva--boato {
+  fill: none;
+  stroke: var(--unooria-color-text-primary, #22272a);
+  stroke-width: 3;
+}
+
+.curva--laudo {
+  fill: none;
+  stroke: var(--unooria-color-text-secondary, #536167);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.eixo {
+  stroke: var(--unooria-color-text-secondary, #536167);
+  stroke-width: 1;
+  opacity: 0.4;
+}
+
+.legenda {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--unooria-color-text-secondary, #536167);
+}
+
+/*
+ * A malha de nós — o beat MEMORÁVEL.
+ *
+ * Domina o viewport de propósito; os rótulos recuam. Os anéis vêm AGRUPADOS do
+ * servidor (`nos` real, `desenhar` quantos círculos): 1.200 elementos SVG
+ * travariam o Chromebook da escola.
+ */
+.mapa {
+  width: 100%;
+  height: 380px;
+  display: block;
+}
+
+.mapa__no {
+  fill: var(--unooria-color-text-primary, #22272a);
+}
+
+.mapa__no--apagado {
+  fill: var(--unooria-color-text-secondary, #536167);
+  opacity: 0.28;
+}
+
+/* O nó do estudante: anel duplo espesso. O contraste geométrico contra a
+   dispersão é o que entrega a descoberta central sem uma linha de texto. */
+.mapa__eu {
+  fill: var(--unooria-color-surface-base, #fff);
+  stroke: var(--unooria-color-text-primary, #22272a);
+  stroke-width: 3;
+}
+
+.mapa__ligacao {
+  stroke: var(--unooria-color-text-primary, #22272a);
+  stroke-width: 1;
+  opacity: 0.45;
+}
+
+.mapa__ligacao--cortada {
+  stroke: var(--unooria-color-text-secondary, #536167);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  opacity: 0.3;
+}
+
+/* ------------------------------------------------- Etapa 5: o construtor */
+
+.construtor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+
+.construtor__slots {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.construtor__slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 8px 10px;
+  border: 2px dashed var(--unooria-color-border-default, #cbd4d6);
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.construtor__slot--cheio {
+  border-style: solid;
+}
+
+.construtor__numero {
+  flex: 0 0 24px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--unooria-color-text-secondary, #536167);
+}
+
+.construtor__banco {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Toque sequencial, não só arraste: `bloco → slot` funciona com teclado e com
+   leitor de tela, e arrastar num Chromebook de escola é hostil (RNF-A11Y-001). */
+.construtor__bloco {
+  padding: 10px 12px;
+  border: 1.5px solid var(--unooria-color-text-primary, #22272a);
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.construtor__bloco[aria-pressed="true"] {
+  background: var(--unooria-color-surface-elevated, #f5f5f5);
+}
+
+/* ----------------------------------------------- telas da ESCOLA (unooria)
+ *
+ * Da revelação em diante quem fala é a plataforma: o breakpoint, o podcast e o
+ * "Meu percurso". A linha é a REVELAÇÃO, não o arquivo — enquanto o estudante
+ * está dentro do mensageiro, o disfarce vale.
+ */
+
+.escola {
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px 16px;
+  background: var(--unooria-color-surface-base, #fff);
+  color: var(--unooria-color-text-primary, #22272a);
+  font-family: var(--unooria-font-sans, system-ui, sans-serif);
+}
+
+.escola__pilha {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.escola__contador {
+  font-size: 12px;
+  color: var(--unooria-color-text-secondary, #536167);
+  text-align: right;
+  margin: 0;
+}
+
+.escola__podcast {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.escola__falas {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* A lista de conversas é `<ul>` (o `ChatListItem` desenha `<li>`): zera o
+   recuo e o marcador que o navegador põe, para o layout seguir o do app. */
+.lista-de-conversas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}

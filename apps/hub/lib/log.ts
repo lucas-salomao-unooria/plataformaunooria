@@ -68,14 +68,29 @@ export function redigirObjeto<T>(valor: T, profundidade = 0): T {
   return saida as T;
 }
 
-/** Cópia do erro com `message`/`stack` redigidos, preservando o protótipo (o `type` do pino continua a classe real). */
+/**
+ * Cópia do erro com `message`/`stack` redigidos, preservando o protótipo (o
+ * `type` do pino continua a classe real).
+ *
+ * Todo campo vira propriedade PRÓPRIA, lida do original: os próprios E os
+ * herdados enumeráveis — que são os que o serializador do pino percorre. No
+ * `DOMException` (o erro de timeout do `fetch`) `name`, `message` e `code` são
+ * getters do protótipo que exigem o objeto NATIVO: atribuir estoura "only a
+ * getter", e ler na cópia estoura "Value of this must be of DOMException". Os
+ * dois TypeErrors saíam no lugar do erro real, e o proxy de `/api/plataforma`
+ * respondia 500 opaco a cada timeout da api.
+ */
 function redigirErro(err: Error): Error {
-  const copia = Object.create(Object.getPrototypeOf(err) as object) as Error & Record<string, unknown>;
-  for (const chave of Object.getOwnPropertyNames(err)) {
-    copia[chave] = (err as unknown as Record<string, unknown>)[chave];
-  }
-  copia.message = redigirTexto(err.message);
-  if (typeof err.stack === "string") copia.stack = redigirTexto(err.stack);
+  const copia = Object.create(Object.getPrototypeOf(err) as object) as Error;
+  const original = err as unknown as Record<string, unknown>;
+  const chaves = new Set<string>(Object.getOwnPropertyNames(err));
+  for (const chave in err) chaves.add(chave);
+  chaves.add("name");
+  const propria = (chave: string, valor: unknown) =>
+    Object.defineProperty(copia, chave, { value: valor, writable: true, enumerable: true, configurable: true });
+  for (const chave of chaves) propria(chave, original[chave]);
+  propria("message", redigirTexto(err.message));
+  if (typeof err.stack === "string") propria("stack", redigirTexto(err.stack));
   return copia;
 }
 

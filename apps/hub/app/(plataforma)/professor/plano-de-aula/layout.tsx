@@ -3,7 +3,7 @@ import { exigirProdutoLigado } from "@/lib/recursos";
 /**
  * O INTERRUPTOR DA REDE na porta do Gerador de Plano de Aula (ADR-87).
  *
- * Layout e não página: ele cobre a exp-90 embedada — rota nova
+ * Layout e não página: ele cobre a app-90 embedada — rota nova
  * desta área nasce coberta, sem ninguém lembrar dela. É a mesma razão pela qual
  * a trilha é do layout (ADR-77), e o custo de esquecer aqui é pior: a rota fica
  * aberta e nada acusa.

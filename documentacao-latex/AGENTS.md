@@ -1,28 +1,30 @@
 # documentacao-latex — a documentação técnica é entregável, não subproduto
 
-Complementa o `AGENTS.md` da raiz (a tabela "o que mudei → o que atualizo" está
-lá, e a Definition of Done exige esta pasta atualizada e o `main.pdf` regerado
+Complementa o `AGENTS.md` da raiz (a tabela "Se você mudou… → Atualize" está em
+`docs/regras/documentacao-latex.md`; a Definition of Done exige esta pasta e o
+`main.pdf` regerados
 **no mesmo commit**).
 
 **As convenções completas de edição estão no `README.md` ao lado, e ele não
 entra sozinho no seu contexto: abra-o antes de escrever `.tex`.** Aqui ficam as
 armadilhas que já custaram tempo e não avisam quando você cai nelas:
 
-- **A PRÓXIMA ADR é a 91.** A numeração vai até ADR-90, sem lacuna: a 86 é o
-  guia da aula, 87 o eixo da disponibilidade, 88 o painel da Unooria só do
-  `admin`, 89 o histórico append-only que a rede também lê e 90 a suíte da API
-  em um worker. Antes dela: a 65 (que
-  ficou vaga numa colisão entre frentes paralelas) já foi ocupada pelo guia da
-  aula; a 80 é o modelo de seis papéis, 81 o panorama da diretoria, 82 o
-  relatório dela, 83 o header full-bleed, 84 a observabilidade sem sessão e
-  85 a remontagem do miolo ao trocar de escola. **Confira na HORA de escrever o número, e confira `origin/dev-local`**,
-  que é a base de toda frente (ADR-101) — mais as branches de trabalho abertas.
-  `origin/dev` não basta: ele fica ATRÁS. Em 2026-09-07 duas frentes
-  simultâneas reservaram a 76 e uma teve de ceder, e a 79 nasceu sobre
-  `dev-local`, que já tinha 78 enquanto `dev` tinha 71. **Número de ADR nunca é
-  reaproveitado nem renumerado**: ele já viaja em mensagem de commit, PR e PDF
-  distribuído, e renumerar não quebra a referência — faz ela apontar para outra
-  decisão, em silêncio.
+- **`produto/` é OUTRA documentação, não um capítulo desta.** O mapa de produto
+  (PU-PRD-001, `produto/mapa-de-produto/`) é premissa do trabalho, tanto quanto
+  a PU-DOC-001, e é escrito em linguagem de produto: pessoas, telas e regras,
+  sem rota, tabela nem módulo. O rastreio técnico fica no Apêndice B dele.
+  Frente que muda tela ou regra troca o selo da história no mesmo PR
+  (`docs/regras/definition-of-done.md`). Ele compila sozinho, na própria pasta,
+  com `tectonic -k mapa-de-produto.tex`, e não pelo `compilar.sh` daqui.
+
+- **O número da próxima ADR se lê em `secoes/18-adr.tex`, não aqui**: é o seguinte ao
+  maior que o arquivo tem. **Confira na HORA de escrever o número, e confira
+  `origin/dev-local`**, que é a base de toda frente (ADR-101), mais as branches de
+  trabalho abertas — `origin/dev` não basta, porque fica ATRÁS, e frentes
+  paralelas já reservaram o mesmo número (a 76 em 2026-09-07; a 65 ficou vaga
+  numa colisão). **Número de ADR nunca é reaproveitado nem renumerado**: ele já
+  viaja em mensagem de commit, PR e PDF distribuído, e renumerar não quebra a
+  referência — faz ela apontar para outra decisão, em silêncio.
 - **Dentro de `tikzpicture`, `\texttt{}` cru** — as macros `\cd`/`\arq`/`\rota`
   têm cor pensada para fundo claro e ficam invisíveis em nó escuro.
 - **Setas são `\seta` e `\implica`**, nunca `→`/`⇒` literais: a Roboto não tem o
@@ -31,6 +33,12 @@ armadilhas que já custaram tempo e não avisam quando você cai nelas:
   ficaram ilegíveis em paisagem antes de serem divididos.
 - **Diagrama TikZ novo exige o par Mermaid** em `apendices/a-mermaid.tex`:
   diagrama sem par é diagrama que só uma pessoa consegue alterar.
+- **A modelagem UML mora em `secoes/05b-modelagem-uml.tex`, e ele NÃO tem
+  `\chapter`**: continua o Capítulo 5 (ADR-122). Um capítulo novo no meio
+  renumera os seguintes, e "cap. 17" é citado em comentário de código. Mexeu na
+  ponte, na quota, na disponibilidade, na sessão, nos papéis ou na implantação?
+  A figura UML daquilo muda no mesmo commit — cada uma cita os arquivos de onde
+  saiu.
 - **`apendices/c-endpoints.tex` é GERADO** (`node scripts/gerar-endpoints-tex.mjs`,
   a partir de `docs/openapi.json`). Editar à mão é perder o texto na próxima
   execução.

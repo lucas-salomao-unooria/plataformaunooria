@@ -53,6 +53,8 @@ export interface RelogioPublico {
   pivoSeg: number;
   pivoMin: number;
   agora: string;
+  /** O professor abriu o fechamento (ADR-172): o WhatsApp e a moradora aparecem. */
+  fechamentoAberto: boolean;
 }
 
 export function sanitizarRelogio(
@@ -63,6 +65,7 @@ export function sanitizarRelogio(
     encerradoEm: Date | null;
     pivoSeg: number;
     pivoMin: number;
+    fechamentoAbertoEm?: Date | null;
   },
   agora: Date,
 ): RelogioPublico {
@@ -74,6 +77,7 @@ export function sanitizarRelogio(
     pivoSeg: bruto.pivoSeg,
     pivoMin: bruto.pivoMin,
     agora: agora.toISOString(),
+    fechamentoAberto: Boolean(bruto.fechamentoAbertoEm),
   };
 }
 
@@ -95,8 +99,19 @@ export interface SessaoPublica {
   perguntasGastas: number;
   /** Qual partida do estudante. Recomeçar abre a seguinte. */
   tentativa: number;
+  /**
+   * A rodada da TURMA em que a sessão nasceu (ADR-154): só o "Zerar a turma" a
+   * sobe. A tela a usa na chave da memória das perguntas de evidência — sem
+   * ela, depois de zerar (tentativa de volta a 1), as respostas de antes
+   * reapareciam marcadas.
+   */
+  rodadaDaTurma: number;
   alocacao: { alfa: string | null; bravo: string | null };
   justificativas: { alfa: string | null; bravo: string | null };
+  /** A ligação da Saúde já apareceu nesta tentativa (ADR-172). */
+  ofertaSaude: boolean;
+  /** O registro da operação está feito: só então o resultado aparece (ADR-172). */
+  registroConcluido: boolean;
 }
 
 interface SessaoBruta {
@@ -106,10 +121,13 @@ interface SessaoBruta {
   rodadas: number;
   perguntasGastas: number;
   tentativa: number;
+  rodada: number;
   alocacaoAlfa: string | null;
   alocacaoBravo: string | null;
   justificativaAlfa: string | null;
   justificativaBravo: string | null;
+  ofertaSaudeEm?: Date | null;
+  registroConcluidoEm?: Date | null;
   [extra: string]: unknown;
 }
 
@@ -121,8 +139,11 @@ export function sanitizarSessao(bruta: SessaoBruta): SessaoPublica {
     rodadas: bruta.rodadas,
     perguntasGastas: bruta.perguntasGastas,
     tentativa: bruta.tentativa,
+    rodadaDaTurma: bruta.rodada,
     alocacao: { alfa: bruta.alocacaoAlfa, bravo: bruta.alocacaoBravo },
     justificativas: { alfa: bruta.justificativaAlfa, bravo: bruta.justificativaBravo },
+    ofertaSaude: Boolean(bruta.ofertaSaudeEm),
+    registroConcluido: Boolean(bruta.registroConcluidoEm),
   };
 }
 

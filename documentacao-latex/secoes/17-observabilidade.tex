@@ -88,11 +88,11 @@ Hub & \cd{console.*} esparso (\cd{[hub]}, \cd{[chave-token]},
   \cd{TelemetryClient} faz lote de 50 a cada 10\,s e \cd{sendBeacon} no
   \cd{pagehide}. &
   \textbf{Não existe \cd{exp:erro}}, nem \cd{window.onerror}, nem
-  \cd{unhandledrejection} em lugar nenhum: um \emph{crash} na exp-70 durante
+  \cd{unhandledrejection} em lugar nenhum: um \emph{crash} na app-70 durante
   a aula não deixa rastro fora do console do estudante. Falha ao renovar
   \emph{token} ou ao registrar conclusão é \cd{console.error} no navegador.
   Sem \emph{sourcemap} nos \emph{bundles}. Fila de telemetria só em memória,
-  sem \emph{backoff}, sem teto, sem \cd{visibilitychange} (a exp-01 registra
+  sem \emph{backoff}, sem teto, sem \cd{visibilitychange} (a exp08ef1b registra
   os três eventos e comenta por quê; a SDK não aplicou a lição).\\
 Pipeline de telemetria & Guarda do \emph{push} falha fechada; \cd{INSERT}
   multi-linha; \emph{dedupe} por \cd{(event\_id, ts)}. &
@@ -197,62 +197,69 @@ métricas da aplicação, e tudo do hub e da SDK.
 \end{nota}
 
 A Figura~\ref{fig:cadeia-visibilidade} percorre a cadeia de uma requisição e
-marca, elo por elo, o que se enxerga hoje e o que está cego.
+marca, elo por elo, o que se enxergava no levantamento e o que estava cego.
 
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    ve/.style={camada, text width=24mm, align=flush left, fill=unooGreenWash,
+               draw=unooGreen, anchor=north, minimum height=18mm},
+    cego/.style={camada, text width=24mm, align=flush left, fill=unooOrangeWash,
+                 draw=unooOrange, anchor=north, minimum height=28.5mm}]
 
+  % Grade: elos em x = 0 / 3.3 / 6.6 / 10.0 / 13.4; quadros a partir de y=-2.2.
   \node[internet, minimum width=24mm] (nav) at (0,0) {Navegador\\\texttt{iframe} da exp};
-  \node[servicoger, text width=22mm] (lb) at (3.1,0) {\textbf{LB + CDN}};
-  \node[servico, text width=22mm] (hub) at (6.2,0) {\textbf{Cloud Run}\\\texttt{-frontend}};
-  \node[servico, text width=22mm] (api) at (9.3,0) {\textbf{Cloud Run}\\\texttt{-api}};
-  \node[volume, text width=18mm, minimum height=12mm] (sql) at (12.6,0.9) {\textbf{Cloud SQL}};
-  \node[servicobroker, text width=18mm, minimum height=10mm] (ps) at (12.6,-0.5) {\textbf{Pub/Sub}};
-  \node[externo, text width=18mm, minimum height=10mm] (vx) at (12.6,-1.9) {\textbf{Vertex AI}};
+  \node[servicoger, text width=22mm] (lb) at (3.3,0) {\textbf{LB + CDN}};
+  \node[servico, text width=22mm] (hub) at (6.6,0) {\textbf{Cloud Run}\\\texttt{-frontend}};
+  \node[servico, text width=22mm] (api) at (10.0,0) {\textbf{Cloud Run}\\\texttt{-api}};
+  \node[volume, text width=18mm, minimum height=10mm] (sql) at (13.4,1.3) {\textbf{Cloud SQL}};
+  \node[servicobroker, text width=18mm, minimum height=9mm] (ps) at (13.4,0) {\textbf{Pub/Sub}};
+  \node[externo, text width=18mm, minimum height=9mm] (vx) at (13.4,-1.25) {\textbf{Vertex AI}};
 
   \draw[netpub] (nav) -- (lb);
   \draw[netpub] (lb) -- (hub);
   \draw[netpub] (hub) -- (api) node[portlbl, midway, above]{BFF};
-  \draw[netpriv] (api.east) -- (11.3,0) -- (11.3,0.9) -- (sql.west);
-  \draw[netbi] (api.east) -- (11.3,0) -- (11.3,-0.5) -- (ps.west);
-  \draw[netpub] (api.east) -- (11.3,0) -- (11.3,-1.9) -- (vx.west);
+  \draw[netpriv] (api.north) |- (sql.west);
+  \draw[netbi] (api.east) -- (ps.west);
+  \draw[netpub] (api.south) |- (vx.west);
 
-  % --- o que se ve (verde)
-  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (0,-1.6)
-    {\textbf{vê-se:} nada};
-  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (3.1,-1.6)
-    {\textbf{vê-se:} contagem e latência por \emph{host}; log amostrável};
-  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (6.2,-1.6)
-    {\textbf{vê-se:} log de requisição, instâncias, CPU/mem};
-  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (9.3,-1.6)
-    {\textbf{vê-se:} idem + \texttt{/readyz} (se alguém abrir)};
-  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (12.6,-3.0)
-    {\textbf{vê-se:} conexões, CPU, disco; \emph{backlog} da \emph{subscription}};
+  % --- o que se ve (verde) e o que esta cego (laranja), elo por elo
+  \node[ve] (v0) at (0,-2.2)   {\textbf{vê-se:} nada};
+  \node[ve] (v1) at (3.3,-2.2) {\textbf{vê-se:} contagem e latência por \emph{host}; log amostrável};
+  \node[ve] (v2) at (6.6,-2.2) {\textbf{vê-se:} log de requisição, instâncias, CPU/mem};
+  \node[ve] (v3) at (10.0,-2.2) {\textbf{vê-se:} idem + \texttt{/readyz} (se alguém abrir)};
+  \node[ve] (v4) at (13.4,-2.2) {\textbf{SQL e Pub/Sub ---} \textbf{vê-se:} conexões, CPU, disco; \emph{backlog}};
 
-  % --- o que esta cego (laranja)
-  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (0,-3.35)
+  \node[cego] at ($(v0.south)+(0,-0.15)$)
     {\textbf{cego:} \emph{crash} do \emph{bundle}, ponte sem \texttt{hub:init}, \emph{token} não renovado, lote de telemetria perdido};
-  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (3.1,-3.35)
+  \node[cego] at ($(v1.south)+(0,-0.15)$)
     {\textbf{cego:} quem foi afetado --- sem correlação com o resto};
-  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (6.2,-3.35)
+  \node[cego] at ($(v2.south)+(0,-0.15)$)
     {\textbf{cego:} \texttt{null} do \texttt{apiDoServidor}, \emph{redirect} em laço, erro de \emph{render}};
-  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (9.3,-3.35)
+  \node[cego] at ($(v3.south)+(0,-0.15)$)
     {\textbf{cego:} causa do 500, latência da IA, descarte de telemetria, fila em erro};
-  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (12.6,-4.75)
+  \node[cego] (c4) at ($(v4.south)+(0,-0.15)$)
     {\textbf{cego:} \emph{query} lenta por rota; \emph{dead letter} (não existe)};
 
-  \node[legenda, anchor=north west, text width=60mm] at (-1.2,-6.6)
+  \node[legenda, anchor=north west, text width=100mm, align=flush left] at (-1.3,-7.45)
     {Nenhum elo propaga identificador de correlação: o mesmo pedido do
      estudante aparece como quatro registros que não se reconhecem.};
 
 \end{tikzpicture}}
-\caption[Cadeia de uma requisição e o que cada elo revela hoje]{A cadeia de
-  uma requisição e o que cada elo revela hoje. O verde é o que a
-  infraestrutura entrega sem configuração; o laranja é onde a plataforma
-  está cega. O primeiro elo --- o navegador, onde a experiência roda --- é
-  o mais cego e o que mais importa: é lá que a criança está.}
+\begin{legendadiag}
+\tikz[baseline=-0.55ex]\draw[netpub] (0,0) -- (0.6,0); tráfego público \quad
+\tikz[baseline=-0.55ex]\draw[netpriv] (0,0) -- (0.6,0); rede privada (VPC) \quad
+\tikz[baseline=-0.55ex]\draw[netbi] (0,0) -- (0.6,0); ida e volta (publica e recebe o \emph{push})
+\end{legendadiag}
+\caption[Cadeia de uma requisição e o que cada elo revelava em 1º de setembro
+  de 2026]{A cadeia de uma requisição e o que cada elo revelava no
+  levantamento de 1º de setembro de 2026 --- o ponto de partida, não o estado
+  corrente (Seção~\ref{sec:obs-implantado}); por isso o agente de IA do
+  professor, posterior, não aparece. O verde é o que a infraestrutura
+  entregava sem configuração; o laranja é onde a plataforma estava cega. O
+  primeiro elo --- o navegador, onde a experiência roda --- é o mais cego e o
+  que mais importa: é lá que a criança está.}
 \label{fig:cadeia-visibilidade}
 \end{figure}
 
@@ -413,6 +420,18 @@ Nativas do Google Cloud & Cloud Run: \cd{request\_count} por
   --- o teto diário de IA de um perfil mudou (\adrr{ADR-105}), com \cd{de},
   \cd{para} e motivo, e \cd{ia-quota-sem-linha} quando a api está aplicando a
   constante do código porque a linha de \cd{ia\_quotas} não existe;
+  \enquote{linhas com \cd{codigo=ia-quota-avaliacao-80}} e
+  \cd{ia-quota-avaliacao-esgotada} --- a quota de avaliação de uma escola
+  passou de 80\% ou acabou (\adrr{ADR-169}), e as leituras de legenda caem na
+  reserva; o alerta é métrica de log no Terraform;
+  \enquote{linhas com \cd{codigo=ia-consumo-nao-gravado}} --- a chamada de IA
+  foi feita e paga, mas a linha do painel de custos não foi gravada
+  (\adrr{ADR-161}: o registro nunca derruba a chamada), com operação, modelo e
+  recurso; \cd{cotacao-dolar-indisponivel} --- a PTAX não foi atualizada (o Banco
+  Central não respondeu em 5\,s, respondeu com erro ou fora do formato), e o
+  painel converteu com o \emph{cache};
+  \cd{ia-preco-definido} --- o \cd{admin} gravou um preço de IA, com modelo,
+  componente, valor, vigência e motivo;
   \enquote{linhas com \cd{codigo=telemetria-descartada}},
   \enquote{\cd{severity=ERROR} da revisão X}, \enquote{execução do
   \emph{job} \cd{-migrate} com falha}. &
@@ -543,21 +562,43 @@ escola e a regra 6 (Figura~\ref{fig:seq-erro-cliente}).
 \centering
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
-  \raia{0}{-6.2}{Experiência}{\texttt{@edu/sdk}}
-  \raia{3.4}{-6.2}{Hub}{\texttt{ExpFrame}}
-  \raia{6.8}{-6.2}{API}{\texttt{/observabilidade}}
-  \raiaext{10.2}{-6.2}{Cloud Logging}{Error Reporting}
+  % Raias em x = 0 / 3.8 / 7.8 / 11.6; todo rótulo cabe entre duas raias.
+  \raia{0}{-10.65}{Experiência}{\texttt{@edu/sdk}}
+  \raia{3.8}{-10.65}{Hub}{\texttt{ExpFrame}}
+  \raia{7.8}{-10.65}{API}{\texttt{/observabilidade}}
+  \raiaext{11.6}{-10.65}{Cloud Logging}{Error Reporting}
 
-  \msgself{0}{-0.9}{\texttt{window.onerror} / \texttt{unhandledrejection}}
-  \node[seqcond] at (0.7,-1.75) {dedupe por \emph{hash}, máx. 5 por sessão, 8\,KB};
-  \msgs{0}{6.8}{-2.3}{\texttt{POST /observabilidade/erros-cliente} (Bearer)}
-  \node[seqcond] at (7.1,-2.75) {Zod: \texttt{expId}, \texttt{versao}, \texttt{mensagem}, \texttt{stack}, \texttt{url}};
-  \msgself{6.8}{-3.3}{\emph{redaction} + \texttt{escola\_id} do \emph{token}}
-  \msgs{6.8}{10.2}{-4.1}{\emph{stdout} JSON, \texttt{severity: ERROR}, \texttt{@type: ReportedErrorEvent}}
-  \msgself{10.2}{-4.6}{agrupa por assinatura; \enquote{novo na versão X}}
-  \msgr{6.8}{0}{-5.1}{\texttt{204} (ou \texttt{429}: cota da sessão)}
-  \draw[seqret] (0,-5.7) -- (3.4,-5.7) node[seqlbl, midway, above=0.4pt]{\texttt{exp:erro} (opcional, \texttt{targetOrigin} explícito)};
-  \node[seqcond] at (3.7,-6.05) {hub mostra \enquote{algo deu errado} e oferece recarregar};
+  \draw[seqself] (0,-1.0) -- ++(0.62,0) -- ++(0,-0.42) -- ++(-0.62,0);
+  \node[seqlbl, anchor=west, align=left] at (0.72,-1.21)
+    {\texttt{window.onerror} /\\\texttt{unhandledrejection}};
+  \node[seqcond, align=left] at (0.2,-2.05) {\emph{dedupe} por \emph{hash};\\máx. 5 por sessão, 8\,KB};
+
+  \draw[seqmsg] (0,-3.2) -- (7.8,-3.2)
+    node[seqlbl, pos=0.74, above=1pt, align=center, fill=white, inner sep=1.5pt]
+    {\texttt{POST /observabilidade/}\\\texttt{erros-cliente} (Bearer)};
+  \node[seqcond, align=left] at (8.1,-3.95)
+    {Zod: \texttt{expId}, \texttt{versao},\\\texttt{mensagem}, \texttt{stack},\\\texttt{url}};
+
+  \draw[seqself] (7.8,-4.9) -- ++(0.62,0) -- ++(0,-0.42) -- ++(-0.62,0);
+  \node[seqlbl, anchor=west, align=left] at (8.52,-5.11)
+    {\emph{redaction} +\\\texttt{escola\_id} do \emph{token}};
+
+  \draw[seqmsg] (7.8,-6.95) -- (11.6,-6.95)
+    node[seqlbl, midway, above=0.4pt, align=center]
+    {\emph{stdout} JSON,\\\texttt{severity: ERROR},\\\texttt{ReportedErrorEvent}};
+
+  \draw[seqself] (11.6,-7.3) -- ++(0.62,0) -- ++(0,-0.42) -- ++(-0.62,0);
+  \node[seqlbl, anchor=west, align=left] at (12.32,-7.51)
+    {agrupa por\\assinatura;\\\enquote{novo na versão X}};
+
+  \draw[seqret] (7.8,-8.4) -- (0,-8.4)
+    node[seqlbl, pos=0.25, above=1pt, fill=white, inner sep=1.5pt]{\texttt{204} (ou \texttt{429}: cota da sessão)};
+
+  \draw[seqmsg] (0,-9.4) -- (3.8,-9.4)
+    node[seqlbl, midway, above=0.4pt, align=center]
+    {\texttt{exp:erro} (opcional,\\\texttt{targetOrigin} explícito)};
+  \node[seqcond, align=left] at (4.0,-10.0)
+    {hub mostra\\\enquote{algo deu errado} e\\oferece recarregar};
 \end{tikzpicture}}
 \caption[Erro de cliente entra pela API]{Um erro não capturado dentro do
   \cd{iframe} chega ao Error Reporting pela API, nunca por um serviço de
@@ -617,7 +658,7 @@ de \emph{status}:
   passa a ser chamada 4.320 vezes por dia.\\
 \rota{GET \{hub\}/api/healthz} & Rota nova do hub, sem dependência: processo
   vivo. Separa \enquote{hub caiu} de \enquote{API caiu} no alerta.\\
-\zebra \rota{GET \{exp\}/\B exp-01-instanooria/\B\{versao\}/\B index.html} & CDN
+\zebra \rota{GET \{exp\}/\B exp08ef1b/\B\{versao\}/\B index.html} & CDN
   e \emph{bucket} servindo a versão ativa. A versão vem do manifesto, então
   o \emph{check} é regerado no passo \emph{ativar} do \emph{deploy}.\\
 \rota{GET \{hub\}/} contém o texto da \emph{landing} & O \emph{render} do
@@ -682,17 +723,102 @@ lugar onde uma chamada de IA acontece, envolvendo o \emph{provider} real na
 --- que emite, por chamada: latência (histograma por modelo e rota), \emph{tokens}
 de entrada e saída, \cd{finishReason}, \cd{voltas}, \cd{tentativas} e o
 resultado (\cd{ok}, \cd{erro-provider}, \cd{quota}). O \cd{QuotaService}
-emite as recusas por perfil. Custo é métrica \emph{derivada}: uma tabela de
-preço por modelo em \arq{catalogo-modelos.ts}, multiplicada no painel, não
-no processo --- preço muda sem \emph{deploy}, e a métrica de \emph{tokens} é
-a que vale.
+emite as recusas por perfil. Custo é \emph{derivado}, não medido no processo
+--- preço muda sem \emph{deploy}. O desenho previa uma tabela de preço em
+\arq{catalogo-modelos.ts} multiplicada num painel de métricas; o que entrou
+(\adrr{ADR-161}) é outro: a métrica tem só o modelo como rótulo, e a pergunta
+do FinOps é por produto e escola. O mesmo medidor grava o consumo em
+\cd{ia\_consumo\_diario}, o preço é dado editável (\cd{ia\_precos}, com
+vigência), e o custo em reais se lê em \rota{/unooria/custos-de-ia}
+(Seção~\ref{sec:ia-custos}). A métrica de \emph{tokens} continua sendo a de
+alerta.
 
 Três alertas saem daqui: erro do \emph{provider} acima de 10\% em 5 minutos
-(\emph{acorda}, se em horário escolar: é a exp-03 inteira), latência p95
+(\emph{acorda}, se em horário escolar: é a exp02em1b inteira), latência p95
 acima de 30\,s (\emph{amanhã}: é o \cd{R-13} materializado), e consumo do
 dia acima de duas vezes a média móvel de 7 dias (\emph{amanhã}: é custo ou
 laço). O \cd{R-14} mediu uma partida em 71.397 \emph{tokens} à mão; com isto,
 a medida é contínua.
+
+\textbf{O agente de IA do professor não passa pelo medidor} (\adrr{ADR-126}): o
+modelo é chamado de dentro do Agent Engine. Para o custo, o turno grava a sua
+linha em \cd{ia\_consumo\_diario} (\adrr{ADR-161}), como o mascote da Ajuda
+grava a da sessão; para a operação, o sinal dele é \textbf{uma linha de
+log por turno}, emitida no \cd{finally} do \emph{service}, inclusive no abandono:
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Campo de \cd{agente-professor.turno}} & \thd{Conteúdo}\\
+\midrule
+\cd{resultado} & \cd{fim} $|$ \cd{erro} $|$ \cd{abortado} (o professor apertou
+  \enquote{Parar}, trocou de conversa ou fechou a aba) $|$ \cd{tempo} (o teto de
+  240\,s).\\
+\zebra \cd{falha} & No \cd{erro}, só o \emph{status} HTTP do engine
+  (\cd{http-503}), o código do evento de erro do ADK, \cd{sessao-inexistente} ou
+  o NOME do tipo de erro --- nunca o corpo da resposta, que pode ecoar a
+  pergunta.\\
+\cd{conversaId}, \cd{modo} & O id da linha da posse e o modo do cliente
+  (\cd{agent-engine}, \cd{local}, \cd{mock}).\\
+\zebra \cd{duracaoMs}, \cd{tokens}, \cd{eventos} & Duração do turno, soma dos
+  \emph{tokens} dos eventos não parciais (o que a quota consumiu) e quantos
+  eventos o engine mandou.\\
+\bottomrule
+\end{tabularx}
+
+Ao lado dela, os códigos de exceção: \cd{agente-professor.\B indisponivel} (o
+engine não respondeu), \cd{.sessao-sumiu}, \cd{.renovacao-falhou} (a SA sem
+\cd{sessions.\B update}, ou o engine fora), \cd{.linhas-\B descartadas} (linha do
+\emph{stream} que não era JSON, só a contagem), \cd{.quota-\B nao-\B consumida},
+\cd{.conversa-\B nao-\B atualizada} e \cd{.turno-com-erro}. \textbf{O que NUNCA vai a
+log}, na api e no agente: a pergunta, a resposta, o título, o \cd{texto} da
+busca e o corpo de erro do engine --- só ids, contagens, códigos, duração e
+\emph{tokens}. O professor pode escrever o nome de um estudante; o
+\arq{test\_plugins.py} do agente confere o lado Python.
+
+\textbf{A Ajuda com avatar passa pelo medidor} (\adrr{ADR-132}): o turno do
+atendente é \cd{conversarEmFluxo}, e o \cd{MedidorDeProvider} o envolve como as
+outras operações, com \cd{operacao=conversarEmFluxo} --- latência, \emph{tokens}
+de entrada e saída, e o resultado. Ela está fora da quota de \emph{tokens}, não da
+medida: é por esse rótulo que se vê quanto a base de cerca de 65 mil
+\emph{tokens} custa por turno. A latência é registrada no evento \cd{fim}, ou
+seja, é a do turno INTEIRO; o primeiro byte, que é o que o \emph{vendor} cobra em
+10\,s, não tem métrica. Ao lado do medidor, \textbf{uma linha de log por turno},
+emitida também na fala pronta e no abandono:
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Campo de \cd{ajuda.turno}} & \thd{Conteúdo}\\
+\midrule
+\cd{resultado} & \cd{ok} $|$ \cd{pronta} (fala fixa, sem modelo: produto
+  desligado, excesso de turnos, histórico vazio) $|$ \cd{falha} (o modelo falhou;
+  foi falada a \cd{FALA\_DE\_FALHA} ou o que já tinha saído) $|$ \cd{abortado} (o
+  \emph{vendor} fechou a conexão no meio).\\
+\zebra \cd{sid}, \cd{perfil} & O id da linha de \cd{ajuda\_sessoes} e o papel de
+  quem fala --- nunca nome nem e-mail.\\
+\cd{duracaoMs}, \cd{tokens}, \cd{caracteres} & Duração do turno, \emph{tokens}
+  do último pedaço (o total acumulado) e o TAMANHO da fala, nunca o texto.\\
+\bottomrule
+\end{tabularx}
+
+Os outros códigos do módulo: \cd{ajuda.sessao-aberta} (\cd{sid}, \cd{perfil},
+\cd{duracaoMaxS}), \cd{ajuda.avatar-falhou} (o \emph{vendor} não abriu a sala; o
+502), \cd{ajuda.encerrar-falhou} (o \emph{vendor} não confirmou o fim --- o teto
+fecha a sala de qualquer jeito), \cd{ajuda.modelo-falhou},
+\cd{ajuda.llm-sem-sessao} (401 por \emph{token} de sessão ausente ou inválido, com
+\cd{comToken} para separar os dois casos), \cd{ajuda-limite-sem-linha} (a api
+aplicando a constante do código porque a linha de \cd{ajuda\_limites} não existe,
+uma vez por processo) e \cd{ajuda-limite-alterado} (o \cd{admin} mudou um limite,
+com \cd{de}, \cd{para} e motivo). \textbf{O que NUNCA vai a log}: a pergunta e a
+resposta --- a pessoa pode dizer em voz alta o nome de um estudante (regra 6).
+
+\begin{atencao}
+\textbf{O 503 por \emph{envs} incompletas não deixa linha própria.} O comentário
+de \arq{config/env.ts} promete um log \cd{ajuda-desligada} dizendo o que falta,
+mas em 2026-10-02 nenhum código o emite: \cd{criarAvatarAoVivo} devolve
+\cd{AvatarDesligado} em silêncio e \rota{POST /ajuda/sessoes} responde 503
+\cd{AJUDA\_INDISPONIVEL}. O diagnóstico é conferir o conjunto de \emph{envs}
+(Apêndice~\ref{ap:operacao}); a linha prometida fica como dívida.
+\end{atencao}
 
 \subsection{Entrega}
 
@@ -850,7 +976,7 @@ aponta para o Apêndice~\ref{ap:operacao}.
   mesma taxa às 8h e às 23h significa coisas diferentes. & Error Reporting:
   o erro novo da revisão\\
 \textbf{A} & Erro do \emph{provider} de IA \(>\) 10\% em 5 min, entre 7h e
-  19h & A exp-03 inteira depende disso, e a sala espera. & Quota do Vertex;
+  19h & A exp02em1b inteira depende disso, e a sala espera. & Quota do Vertex;
   catálogo do modelo (\cd{R-12}); \cd{error.cause}\\
 \zebra \textbf{A} & \cd{instance\_count} da API \(=\) \cd{max-instances} por
   5 min & Saturação: a próxima requisição espera na fila do Cloud Run. &
@@ -1070,7 +1196,7 @@ prova de pronto que a suíte ou o painel exibe.
   ignorada por hub antigo); \emph{sourcemaps} ocultos publicados com ACL
   privada no passo \emph{subir}. Políticas de alerta que faltavam. &
   \arq{apps/api/src/\B observabilidade/}, \arq{apps/api/src/ai},
-  \arq{packages/sdk}, \arq{deploy.yml} & Um \cd{throw} provocado na exp-02
+  \arq{packages/sdk}, \arq{deploy.yml} & Um \cd{throw} provocado na exp04ef1b
   em \cd{hml} vira erro agrupado por \cd{(expId, versao)} com \emph{stack}
   mapeada. Um \emph{trace} de abertura de missão mostra hub \seta{} API
   \seta{} Postgres \seta{} Vertex numa só linha do tempo.\\
@@ -1250,7 +1376,16 @@ Alerta por \emph{burn rate} do SLO & Ficou de fora. \emph{Burn rate} precisa de
 p95 por rota, isentando \rota{/ai/*} e \rota{/unoogpt/*} & Impossível sem tocar
   a aplicação: \cd{run.googleapis.com/request\_latencies} não tem rótulo de
   rota. O limite da API ficou folgado (10\,s) justamente porque as rotas de IA
-  moram nesse serviço; o corte fino exige métrica própria da aplicação\\
+  moram nesse serviço; o corte fino exige métrica própria da aplicação.
+  \textbf{Desde o agente de IA do professor, nem o folgado basta}: um
+  \emph{stream} de 1 a 3 minutos por mensagem (\adrr{ADR-128}) empurra o p95 da
+  API acima de 10\,s assim que o chat tiver uso. A proposta --- métrica de log de
+  distribuição sobre o \emph{request log} do Cloud Run da API, com
+  \cd{NOT httpRequest.requestUrl:"/agente-professor/"} no filtro e
+  \cd{httpRequest.latency} como valor, e o alerta passando a ler essa métrica ---
+  está no RUNBOOK do repositório de fundação e \textbf{não foi aplicada}; antes,
+  conferir em \cd{dev} que a métrica recebe ponto (extrator que não casa deixa o
+  alerta mudo, pior que barulhento)\\
 \zebra \emph{Push} para severidade A & Só e-mail. O canal ainda não foi
   verificado --- vale disparar um alerta de teste antes de confiar nele, porque
   alerta que não chega é pior que alerta que não existe\\

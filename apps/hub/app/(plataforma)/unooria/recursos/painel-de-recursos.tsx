@@ -18,7 +18,7 @@ import {
   Tag,
   TextArea,
 } from "@edu/ui/ds";
-import { buscarProduto, type Produto } from "@/lib/produtos";
+import { buscarProduto, type CopyDoProduto, type SlugDeProduto } from "@/lib/produtos";
 import { HistoricoDeRecursos } from "@/components/historico-de-recursos";
 import { ModalDeVersao } from "./modal-de-versao";
 import type {
@@ -35,18 +35,20 @@ const ESCOPO_CONTRATO = "__contrato__";
 /**
  * O rótulo de `herda` DEPENDE do escopo, e isso não é cosmético.
  *
- * No contrato não existe "de cima": ali `herda` é o padrão do código, que é
- * LIGADO. Numa escola, `herda` é seguir a regional ou o contrato. Chamar as duas
- * coisas de "Herda" faria o operador do escopo-contrato procurar um nível que
- * não existe.
+ * No contrato não existe "de cima": ali `herda` é o padrão do código — LIGADO
+ * para quase tudo, DESLIGADO para o produto em teste interno (a Ajuda com
+ * avatar, `ligadoPorPadrao: false` vindo da api). Numa escola, `herda` é seguir
+ * a regional ou o contrato. Chamar as duas coisas de "Herda" faria o operador
+ * do escopo-contrato procurar um nível que não existe.
  */
-function rotuloDeHerda(noContrato: boolean): string {
-  return noContrato ? "Padrão (ligado)" : "Herda de cima";
+function rotuloDeHerda(noContrato: boolean, ligadoPorPadrao: boolean): string {
+  if (!noContrato) return "Herda de cima";
+  return ligadoPorPadrao ? "Padrão (ligado)" : "Padrão (desligado)";
 }
 
-function opcoesDoInterruptor(noContrato: boolean) {
+function opcoesDoInterruptor(noContrato: boolean, ligadoPorPadrao = true) {
   return [
-    { value: "herda", label: rotuloDeHerda(noContrato) },
+    { value: "herda", label: rotuloDeHerda(noContrato, ligadoPorPadrao) },
     { value: "ligado", label: "Ligado" },
     { value: "desligado", label: "Desligado" },
   ];
@@ -58,7 +60,11 @@ function explicacaoDoEfetivo(item: ProdutoNoPainel | ExperienciaNoPainel): strin
   if ("tetoDoProduto" in item && item.tetoDoProduto) {
     return "O produto está desligado neste escopo — nada dentro dele abre.";
   }
-  if (efetivo.origem === "padrao") return "Ninguém decidiu: vale o padrão, que é ligado.";
+  if (efetivo.origem === "padrao") {
+    return efetivo.ligado
+      ? "Ninguém decidiu: vale o padrão, que é ligado."
+      : "Ninguém decidiu: vale o padrão, que é desligado — produto em teste interno. Ligue aqui para testar.";
+  }
   if (efetivo.origem === "aqui") {
     return efetivo.motivo
       ? `Decidido neste escopo: ${efetivo.motivo}`
@@ -241,6 +247,50 @@ export function PainelDeRecursos({
 
       {erro ? <FeedbackAlert type="error" title="Não deu" description={erro} /> : null}
 
+      {/* H10.3.3: a fixação de versão é remédio de incidente, e remédio que
+          ninguém retira prende a escola numa versão antiga sem ninguém lembrar
+          por quê. O aviso olha a REDE INTEIRA, não o escopo aberto — a escola
+          esquecida é justamente a que ninguém abre —, e cada linha leva ao
+          escopo dela, onde a etiqueta da versão abre a janela para soltar. */}
+      {painel.fixacoesEsquecidas.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          <FeedbackAlert
+            type="warning"
+            title={
+              painel.fixacoesEsquecidas.length === 1
+                ? "Uma versão está fixada há mais de 30 dias"
+                : `${painel.fixacoesEsquecidas.length} versões estão fixadas há mais de 30 dias`
+            }
+            description="Fixar segura uma escola numa versão enquanto um problema é resolvido. Confira se ainda é preciso, ou solte para ela voltar a seguir a versão da rede."
+          />
+          <ul className="flex flex-col divide-y divide-unooria-neutral-200 rounded-[8px] border border-unooria-neutral-200 bg-white px-4">
+            {painel.fixacoesEsquecidas.map((f) => (
+              <li
+                key={`${f.expId}-${f.escolaId ?? ESCOPO_CONTRATO}`}
+                className="flex flex-wrap items-center justify-between gap-3 py-2"
+              >
+                <span className="text-[13px] text-unooria-neutral-800">
+                  <strong className="font-semibold">{f.nome}</strong> em {f.escopo}: v{f.versao}, fixada há{" "}
+                  {f.dias} dias
+                </span>
+                {f.escolaId === escolaId ? (
+                  <span className="text-[12px] text-unooria-neutral-500">neste escopo</span>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={ocupado}
+                    onClick={() => trocarEscopo(f.escolaId ?? ESCOPO_CONTRATO)}
+                  >
+                    Abrir o escopo
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       {painel.produtos.map((produto) => {
         const copy = copyDoProduto(produto.slug);
         const recursoId = `produto:${produto.slug}`;
@@ -261,12 +311,12 @@ export function PainelDeRecursos({
                     {explicacaoDoEfetivo(produto)}
                   </p>
                 </div>
-                <div className="w-[200px]">
+                <div className="w-[200px] max-w-full">
                   <Selection
                     id={`interruptor-${produto.slug}`}
                     label="Neste escopo"
                     value={produto.estadoAqui}
-                    options={opcoesDoInterruptor(noContrato)}
+                    options={opcoesDoInterruptor(noContrato, produto.ligadoPorPadrao)}
                     disabled={ocupado}
                     onChange={(v) =>
                       pedirMudanca(recursoId, copy?.nome ?? produto.slug, String(v) as EstadoAqui)
@@ -300,9 +350,13 @@ export function PainelDeRecursos({
                             onClick={() => setVersaoDe(exp)}
                             aria-label={`Versão de ${exp.nome}`}
                           >
-                            <Tag variant={exp.versaoFixa ? "info" : "neutral"} size="sm" clickable>
+                            <Tag
+                              variant={exp.fixacaoEsquecida ? "warning" : exp.versaoFixa ? "info" : "neutral"}
+                              size="sm"
+                            >
                               v{exp.versaoFixa ?? exp.versaoAtiva}
                               {exp.versaoFixa ? " · fixada" : ""}
+                              {exp.fixacaoEsquecida ? " há mais de 30 dias" : ""}
                             </Tag>
                           </button>
                         </div>
@@ -310,7 +364,7 @@ export function PainelDeRecursos({
                           {exp.expId} · {explicacaoDoEfetivo(exp)}
                         </span>
                       </div>
-                      <div className="w-[200px]">
+                      <div className="w-[200px] max-w-full">
                         <Selection
                           id={`interruptor-${exp.expId}`}
                           label="Neste escopo"
@@ -430,9 +484,9 @@ export function PainelDeRecursos({
 
 /** A copy do produto vive em `lib/produtos.ts`; slug desconhecido não quebra a
  *  tela — ele aparece pelo próprio slug, que é o que o operador precisa ver. */
-function copyDoProduto(slug: string): Produto | null {
+function copyDoProduto(slug: string): CopyDoProduto | null {
   try {
-    return buscarProduto(slug as Produto["slug"]);
+    return buscarProduto(slug as SlugDeProduto);
   } catch {
     return null;
   }

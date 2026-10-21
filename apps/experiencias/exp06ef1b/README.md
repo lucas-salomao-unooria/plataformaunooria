@@ -1,0 +1,132 @@
+# exp06ef1b — O Júri Estadual de Projetos
+
+Missão do **6º ano do Fundamental**, unidade 1, no Unoovista (a rede social de
+fotos que a missão imita). A criança recebe o crachá de jurada de uma mostra
+científica estadual e avalia, num feed, os estandes das escolas concorrentes. As
+curtidas dela afunilam o feed em silêncio. Enquanto rola, ela guarda cada
+estande na PASTA da área dele, no "Salvar" do post (EF06CO01, desde a 0.7.0);
+depois de dez posts, vota numa cédula lacrada (que só fecha com todo estande
+numa pasta) e espera a plenária (o professor projeta a dispersão de votos da
+turma). Liberada a **Galeria Oculta**, ela vê os estandes que nunca chegaram ao
+feed dela ("X de Y estandes", os números REAIS da sessão), busca por hashtag e
+mantém ou revisa o voto. Desde a 0.5.0 a mostra tem quarenta estandes (dez por área) e o feed,
+dez posts sem repetição.
+Depois monta a regra SE … ENTÃO que o aplicativo seguiu (EF06CO03), numa tela
+que abre com a frase do Léo e, depois do envio, mostra a regra certa ligada ao
+feed dela; a regra conclui a missão. A 0.7.0 (ADR-176, os ajustes do time que
+rodou a missão) tirou o caso Mariana, a tela "Organize o que você viu" (a
+separação foi para as pastas do feed) e, da galeria, a contagem por área e o
+contraste "sem as suas curtidas". A 0.6.0 (ADR-174, o Canal A puro) tirou a
+cadeia de quatro blocos, as três enquetes e a EF06CO10; a tela dos pacotes da
+curtida (EF06CO07) saiu na 0.2.0, a pedido do PO.
+
+A descoberta: *o feed que parecia a mostra inteira era a mostra que as minhas
+curtidas escolheram.*
+
+Uma aula conduzida pelo relógio da turma, com UM botão do professor: "Liberar a
+Galeria Oculta".
+
+## Rodar
+
+```bash
+pnpm --filter @edu/exp06ef1b dev     # :5185 (strictPort)
+```
+
+O hub embeda em `/exp/exp06ef1b`; sem passar pela trilha, `/dev-embed?src=http://localhost:5185`.
+
+A porta entra em `apps/hub/lib/experiencias-dev.ts` e no `CORS_ORIGINS` da api
+(`.env.example`, `docker-compose.yml`, `docker-compose.dev.yml`). Sem ela o boot
+morre com "Failed to fetch", e o erro não diz por quê.
+
+Precisa de: a api no ar (`/juri-estadual/*` e `/evidencias/*`), a missão
+**liberada** na turma do estudante (ADR-69), uma atividade EM ANDAMENTO na turma
+(sem ela, 403 `atividade-nao-preparada` — a missão não tem acervo padrão) e o
+produto `entre-redes` ligado no painel da Unooria (ADR-87). Sem imagens geradas,
+os estandes saem com a arte procedural (`src/lib/arte.ts`).
+
+## Verificar
+
+```bash
+pnpm --filter @edu/exp06ef1b typecheck
+pnpm --filter @edu/exp06ef1b lint
+pnpm --filter @edu/exp06ef1b test
+pnpm --filter @edu/exp06ef1b build
+```
+
+## Onde as coisas estão
+
+| O quê | Onde |
+|---|---|
+| Handshake e primeira leitura | `src/bootstrap.tsx` |
+| A máquina de telas, o polling do gate, as ações, a fila do feed | `src/app/juri-app.tsx` |
+| Rede, sessão e a repetição das chamadas | `src/app/conexao.ts`, `src/lib/api.ts` |
+| Os avisos globais (sem conexão, credencial) | `src/app/avisos.tsx` |
+| As telas do clone | `src/app/clone/` (`credencial`, `feed` — com a folha das pastas —, `post-do-feed`, `cedula`, `espera`, `galeria`, `escolha`, `fim`) |
+| As telas da escola | `src/app/escola/telas-da-escola.tsx` (a regra, missão fechada) |
+| A imagem dos estandes (foto ou arte) | `src/app/componentes/midia.tsx`, `src/lib/arte.ts` |
+| A permanência de 5 s num post | `src/lib/permanencia.ts` |
+| O aviso de inatividade da cédula (60 s) | `src/app/inatividade.ts` |
+| Regras do cliente (tela do passo, cédula, busca, calha) | `src/lib/regras.ts` |
+| A memória de F5 (`sessionStorage`, só ids) | `src/lib/memoria.ts` |
+| O contrato que a tela vê, `EXP_ID`, `EXP_VERSION` | `src/lib/tipos.ts` (espelho cobrado por `src/lib/espelho.test.ts`) |
+| Vocabulário de telemetria | `src/lib/telemetria.ts` |
+| Copy que a TELA escreve | `src/lib/textos.ts` |
+| Regras, motor do feed e rotas do servidor | `apps/api/src/juri-estadual/` |
+
+## Telemetria
+
+`verbo:objeto` via `@edu/sdk`, com `resultado` e `contexto` como objetos —
+nunca texto de estudante (nem o texto buscado na galeria), nome, e-mail, o
+projeto votado ou a peça escolhida na regra. A pasta do salvar viaja (é a área
+que a criança escolheu, não texto dela); quantas pastas estão certas, nunca.
+
+| Verbo | Objeto | Quando | `resultado` / `contexto` |
+|---|---|---|---|
+| `progressed` | `missao:entrada` | depois da primeira leitura | `contexto: { passo }` |
+| `progressed` | `credencial:acessar-feed` | "Acessar Feed da Mostra" | — |
+| `interacted` | `feed:curtir` | curtiu/descurtiu | `resultado: { curtiu }`, `contexto: { postId, gesto }` |
+| `interacted` | `feed:salvar` | guardou numa pasta, moveu ou tirou dos salvos (grava, não pesa; 0.7.0) | `resultado: { salvou }`, `contexto: { postId, pasta }` (`pasta` = `area_x` ou `"nenhuma"`) |
+| `interacted` | `feed:fechado` | tocou comentar, compartilhar ou a aba Busca (não pesa) | `contexto: { acao }` |
+| `interacted` | `feed:aba` | trocou de aba (Início, Notificações, Jurado) | `contexto: { aba }` |
+| `interacted` | `feed:carrossel` | deslizou o carrossel (fotos 1 a 3; 4 = a lâmina do bastidor, 0.5.0) | `contexto: { postId, lamina }` |
+| `interacted` | `feed:legenda` | "...mais" | `contexto: { postId }` |
+| `interacted` | `feed:post` | um post novo chegou | `contexto: { posicao }` |
+| `progressed` | `feed:completo` | a cédula foi liberada (o décimo chegou ou os 8 min do servidor acabaram) | `contexto: { porTempo }` |
+| `interacted` | `cedula:abrir` | abriu a cédula | — |
+| `interacted` | `cedula:inatividade` | 60 s sem toque com a cédula ABERTA | — |
+| `attempted` | `cedula:votar` | o LATCH 1, confirmado | `resultado: { estandes }`, `contexto: { conviccao }` |
+| `progressed` | `plenaria:espera` | entrou na espera do voto lacrado | — |
+| `progressed` | `galeria:abrir` | a galeria abriu ("X de Y", sem percentual desde a 0.5.0) | `resultado: { ocultos, total }` |
+| `interacted` | `galeria:inspecionar` | abriu a ficha de um estande | `contexto: { projetoId, oculto }` |
+| `interacted` | `galeria:buscar` | buscou (o TIPO, nunca o texto) | `contexto: { busca, area }` |
+| `progressed` | `galeria:revisar` | o LATCH 2, confirmado (`manter` ou `trocar`) | `contexto: { acao }` |
+| `attempted` | `regra:enviar` | enviou a regra SE … ENTÃO (EF06CO03) — sem a peça nem o acerto | — |
+| `completed` | `missao:concluida` | a regra concluiu (0.7.0), ou o `POST concluir` de uma sessão antiga | — |
+| `interacted` | `conexao:aviso` | aviso de rede ou de credencial | `contexto: { motivo }` |
+
+Saíram na 0.7.0 (ADR-176): `separacao:enviar` e `mariana:cartoes`.
+
+Onde cada medida é LIDA: `exp06ef1b_sessoes` (curtidas, pastas, permanências,
+voto, separação corrigida no voto, auditoria, revisão, regra) e a ficha de evidência
+(`apps/api/src/evidencias/fichas/exp06ef1b.ts`), no painel do professor.
+
+## A copy escrita aqui
+
+O que o sheet da missão (`design/06-copy-strings-revisada.md`) não tinha e a tela
+precisou está marcado `ESCRITA AQUI` em `src/lib/textos.ts` (0.4.0, PRD v2):
+as setas do carrossel, a aba Busca fechada no julgamento, a notificação do
+crachá na aba Notificações, a explicação de "Manter" travado, a contagem de
+resultados da busca, os rótulos do par simulado ("Você" / "Outro jurado"), os
+nomes dos grupos de cartões, o título da consulta nos Stories, os rótulos de
+leitor de tela e os avisos da escola. Na 0.5.0: a lâmina "Bastidores do estande",
+o badge "X de Y estandes nunca chegaram ao seu feed", a contagem por área
+("Tecnologia: você viu 7 de 10"), o contraste "Sem as suas curtidas, o seu feed
+teria trazido:" e o subtítulo da área sem ocultos. Na 0.6.0 (ADR-174): a tela
+da separação ("Organize o que você viu") e a da regra (as instruções, os nomes
+dos grupos SE e ENTÃO e as três frases da revelação); as seis peças da regra
+moram na api (`conteudo.ts`). Na 0.7.0 (ADR-176): as PASTAS do salvar (o
+pedido da comissão no topo do feed, "Salvar em", a linha da folha, "Remover
+dos salvos", "Salvo em …", "Suas pastas" e o "faltam N" da cédula) e o botão
+"Concluir o Julgamento" (era "Continuar para a Reflexão"); saíram a tela da
+separação, a contagem por área, o contraste e os nomes dos grupos de cartões.
+Para o PO revisar.

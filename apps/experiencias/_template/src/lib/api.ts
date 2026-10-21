@@ -4,7 +4,7 @@ import type { ExperienciaHandle } from "@edu/sdk";
  * O handle da experiência, guardado num singleton depois do handshake com o
  * hub. Toda chamada à api passa por aqui — nunca `fetch` solto: é o SDK que
  * põe o token, renova, aplica timeout e reenvia GET. Molde:
- * `apps/experiencias/exp-08-manifesto-ia/src/lib/api.ts`.
+ * `apps/experiencias/exp08ef4b/src/lib/api.ts`.
  */
 let handle: ExperienciaHandle | null = null;
 

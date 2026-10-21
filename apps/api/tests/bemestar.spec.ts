@@ -7,7 +7,7 @@ import { CHECKINS_POR_CICLO, ITENS, MENSAGEM_DE_APOIO } from "../src/bemestar/ca
 import { PrismaService } from "../src/prisma/prisma.service";
 
 /**
- * Integração da exp-91-bem-estar no Postgres: ciclo em 7 check-ins de 3 itens
+ * Integração da app-91-bem-estar no Postgres: ciclo em 7 check-ins de 3 itens
  * (relógio injetado anda os dias), um check-in por dia, correção server-side
  * ao fechar, sinal de apoio, fallback dos textos quando a IA falha ou fura o
  * guardrail, posse entre professores, apagar tudo. UMA ESCOLA POR SUÍTE.
@@ -39,6 +39,9 @@ class ProviderFake implements AiProvider {
   }
   generateSpeech(): Promise<Buffer> {
     throw new Error("não usado");
+  }
+  conversarEmFluxo(): never {
+    throw new Error("conversarEmFluxo não é usado nesta suíte");
   }
   conversar(): Promise<AiResult> {
     throw new Error("não usado");

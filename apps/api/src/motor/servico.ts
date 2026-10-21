@@ -229,6 +229,7 @@ async function curarDentroDaTransacao(prisma: Transacao, runId: string): Promise
       timestampLabel: true,
       imageUrl: true,
       imageStatus: true,
+      imageBrief: true,
       categoria: true,
       author: { select: { handle: true, displayName: true, verificado: true } },
       comments: { orderBy: { ordem: 'asc' }, take: 2, select: { handle: true, texto: true } },

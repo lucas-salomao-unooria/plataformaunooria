@@ -20,13 +20,13 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   em dez minutos --- \textbf{obrigatório antes de novembro de 2026}.
   \textbf{Não executado.} É o maior risco técnico aberto.\\
 \zebra \cd{R-02} & \textbf{Retenção indefinida de dado de menor.} Não há prazo
-  declarado para \cd{exp\_70\_sessoes} nem para \cd{telemetria\_eventos}. &
+  declarado para \cd{app\_70\_sessoes} nem para \cd{telemetria\_eventos}. &
   Alta & \textbf{Alto} &
   Decisão consciente (\adrr{ADR-13}) em troca de reprocessamento. Com a tabela
   particionada, a rotina de expurgo passou a ser trivial --- o que remove o último
   argumento técnico. \textbf{Pendente de decisão de produto e contrato}, e é da
   plataforma inteira.\\
-\cd{R-17} & \textbf{Latência de IA numa sala inteira.} O turno da exp-03 é
+\cd{R-17} & \textbf{Latência de IA numa sala inteira.} O turno da exp02em1b é
   síncrono e leva de 10 a 30 segundos, e a largada é simultânea: 30 estudantes
   perguntam ao mesmo tempo. & Média & \textbf{Alto} &
   O desenho aceita a latência (a tela cobre com indicador de \enquote{consultando},
@@ -35,14 +35,14 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   teste de carga de \cd{R-01}. Saída conhecida se reprovar:
   \cd{streamGenerateContent} no provider --- mudança dentro de \arq{src/ai}, sem
   tocar o módulo da experiência.\\
-\zebra \cd{R-18} & \textbf{Custo de IA da exp-03.} Uma partida custa duas ordens
+\zebra \cd{R-18} & \textbf{Custo de IA da exp02em1b.} Uma partida custa duas ordens
   de grandeza mais que um turno de tutor. & Certa & Médio &
   \textbf{MEDIDO} em 2026-08-27: \num{71397} tokens numa partida completa de 8
   turnos (\adrr{ADR-24}). Os tetos foram fixados sobre esse número, e a medição
   achou de passagem que a quota diária de \num{20000} recusava o quarto turno ---
   corrigida para \num{300000}. \textbf{Fechado}, com um resíduo: a medição é de
   UMA partida, e o custo varia com o número de voltas que o modelo escolhe dar.\\
-\cd{R-19} & \textbf{Guia de condução do debate da exp-03 não existe.} A missão
+\cd{R-19} & \textbf{Guia de condução do debate da exp02em1b não existe.} A missão
   deliberadamente não revela a Lacuna de nenhuma fonte por software: a lição
   acontece no debate. & Certa & \textbf{Alto} &
   O guia do projeto de origem está vazio. A ficha publicada (competência, quatro
@@ -102,18 +102,21 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   intrusão. & Alta & \textbf{Alto} &
   Item de contratação, não de engenharia. Para plataforma que trata dado de menor
   em rede pública, é exigência prática de edital.\\
-\cd{R-07} & \textbf{Acessibilidade não verificada.} Nenhuma checagem de
-  contraste, foco ou leitor de tela. & Alta & Médio &
-  Rede pública tem exigência legal e prática. O \emph{design system} é o lugar
-  certo para resolver de uma vez --- o que torna isto um pedido ao
-  \arq{storybook-unooria}, não 48 correções.\\
+\cd{R-07} & \textbf{Acessibilidade verificada só por máquina.} O axe
+  (\adrr{ADR-162}) cobre contraste, nomes, papéis e alvo de toque, e está verde
+  no hub e nas missões, e as imagens de conteúdo têm descrição
+  (\adrr{ADR-163}); falta a passada manual de teclado e leitor de tela, e a
+  Vila do Lume (jogo 3D) segue fora. & Média & Médio &
+  Rede pública tem exigência legal e prática. A correção foi feita no
+  \emph{design system} (0.2.20), uma vez para todas as telas; o que resta é
+  decisão de produto e a passada manual.\\
 \zebra \cd{R-08} & \textbf{Partição de telemetria sem \emph{job}.} As faixas vão
   até 2028-12 e não há rotina que crie novas. & Baixa & Médio &
   A partição \cd{DEFAULT} é rede de segurança (evento não é recusado). Verificar a
   contagem dela é item do \emph{checklist} de operação. Encher = faltou criar
   partição.\\
 \cd{R-09} & \textbf{Mídia pesada publicada à mão.} O CI publica \arq{dist/}; os
-  \SI{52}{\mega\byte} de MP4 da exp-02 vão por \cd{gsutil} manual. & Alta & Baixo &
+  \SI{52}{\mega\byte} de MP4 da exp04ef1b vão por \cd{gsutil} manual. & Alta & Baixo &
   Aceitável para uma experiência; \textbf{não escala para 48}. O passo
   \cd{gsutil rsync} de mídia precisa entrar no CI.\\
 \zebra \cd{R-10} & \textbf{Geração órfã sem retomada no \emph{boot}.} Se todas as
@@ -167,30 +170,16 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   rede \textbf{antes} do primeiro contrato em produção. Desligar é apagar
   \cd{CLARITY\_PROJECT\_ID} do \emph{environment} --- sem \emph{deploy} de
   código, mas com \emph{rebuild} da imagem.\\
-\cd{R-20} & \textbf{Mídia da exp-07 não preparada antes da aula.} A voz de
-  Amara, o podcast e as fotos do boato são geradas pelo professor, no painel, e
-  nada falha se ele não clicar. & Média & Médio &
-  Mitigado por desenho: sem mídia, a experiência \textbf{continua jogável} pela
-  transcrição (que está sempre na tela, por acessibilidade) e pela ilustração
-  procedural --- mas a missão perde o pico. A ficha da aula pede o preparo no
-  passo de preparo, e o painel mostra o que já existe. O precedente é caro: a
-  exp-02 subiu com o \emph{bucket} vazio e a missão ficou impossível de
-  concluir, sem nada falhar no \emph{deploy} nem no log. \textbf{Conferir
-  \env{ASSETS\_BUCKET} antes da primeira aula de cada contrato.}\\
-\zebra \cd{R-21} & \textbf{Texto livre de menor persistido.} A conversa com
-  Amara reabriu um canal que o produto tinha fechado por desenho. & Certa &
-  Médio &
-  Aceito com contenção (\adrr{ADR-66}): só depois da decisão, teto de 3 turnos e
-  600 caracteres, sanitizador nos dois sentidos, RLS, e nenhum caminho para
-  \emph{log}, telemetria, Clarity ou painel --- o professor vê \emph{quantos}
-  turnos, nunca o quê. Entra no mesmo regime de retenção de \cd{R-02}, e é mais
-  um argumento para fechá-lo.\\
-\cd{R-22} & \textbf{Guia de condução da exp-07 não existe.} Como na exp-03, a
-  lição fecha no debate da turma, e o roteiro do debate ainda é da professora. &
-  Certa & Médio &
-  A ficha do catálogo traz competência, os três momentos e o preparo; o guia
-  passo a passo, não. \textbf{Pendente} --- e o arquivo dos guias está sendo
-  mexido numa frente paralela, então ele entra por lá, não por aqui.\\
+\cd{R-21} & \textbf{Texto livre de menor persistido.} O Eco no Grupo
+  (retirado, \adrr{ADR-113}) reabriu um canal que o produto tinha fechado por
+  desenho, e as missões seguintes o mantêm aberto (exp06ef2b, exp08ef4b).
+  A exp05ef1b o fechou na \adrr{ADR-145}; a regra do tio voltou montada com
+  peças (\adrr{ADR-171}) e virou o robô montado com blocos (\adrr{ADR-177}),
+  sem texto livre. & Certa & Médio &
+  Aceito com contenção: teto de caracteres, RLS, nenhum caminho
+  para \emph{log} ou telemetria, e o texto alcançável só pelo professor da turma
+  --- a exp08ef4b ainda recusa dado pessoal antes de gravar. Entra no mesmo
+  regime de retenção de \cd{R-02}, e é mais um argumento para fechá-lo.\\
 \zebra \cd{R-23} & \textbf{Turma sem missão liberada no dia da aula.} Desde a sala
   de aula (\adrr{ADR-69}) a missão só abre onde o professor liberou --- e um passo
   novo antes da aula é um passo que se esquece com a sala cheia. & Alta & Médio &
@@ -201,56 +190,152 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   aponta para a causa em vez de virar chamado. O que \textbf{falta} é janela de
   datas (\enquote{abre segunda, fecha sexta}), e ela não nasce sem rotina que a
   cumpra: é a armadilha do \cd{expires\_at}.\\
+\cd{R-27} & \textbf{Quota do Agent Engine.} O padrão é 90 \cd{streamQuery} e 300
+  eventos de sessão por minuto, por projeto e região, e uma mensagem gasta um
+  \cd{streamQuery} e vários eventos (\adrr{ADR-126}). & Alta & \textbf{Alto} &
+  O \emph{rate limit} da api (10 mensagens por minuto por professor) protege o
+  professor, não o projeto: a rede inteira às 8h passa de 90 por minuto. O
+  aumento se pede no console e leva dias. \textbf{Pendente: pedir antes do
+  \emph{go-live}}, e medir no mesmo teste de carga de \cd{R-01}.\\
+\zebra \cd{R-28} & \textbf{O ADK muda a cada duas semanas.} O contrato que a api
+  lê do \emph{stream} (parciais, final agregado repetido, título no
+  \cd{state\_delta}, \emph{tokens} no \cd{usage\_metadata}) é comportamento medido,
+  não documentado. & Alta & Médio &
+  Versão fixada (\cd{google-adk\textasciitilde=2.10.0} no \arq{uv.lock}) e as
+  medições em \arq{tests/test\_e2e.py} do agente. Subir de versão é refazê-las;
+  o \cd{DeduplicadorDeTexto} e a soma de \emph{tokens} são os dois pontos que
+  quebram em silêncio (resposta duplicada; quota errada).\\
+\cd{R-29} & \textbf{\emph{Stream} truncado depois de ferramenta.} Se a conexão
+  com o engine terminar limpa logo depois do retorno de uma ferramenta, sem o
+  texto final e sem evento de erro, a api toma o fim do corpo como fim do turno.
+  & Média & Médio &
+  As duas formas de falha medidas (evento com \cd{error\_code}; conexão cortada)
+  viram \cd{AGENTE\_INDISPONIVEL}. O corte limpo, não: o professor vê uma
+  resposta vazia ou pela metade terminando em \cd{fim}. \textbf{Aberto}; a saída
+  é exigir texto do agente depois da última resposta de ferramenta antes de
+  emitir \cd{fim}.\\
+\zebra \cd{R-30} & \textbf{Residência do agente.} A sessão (o histórico, que
+  pode trazer nome de estudante) fica no Agent Engine em \cd{us-east1}; o modelo
+  e os \emph{data stores}, em \cd{global}. & Certa & Médio &
+  Mesma consequência de \cd{R-03}, agora com dado guardado, não só processado.
+  A região de produção está \textbf{a decidir}, e precisa constar do DPA. Apagar
+  exige o engine no ar (o \rota{DELETE} responde 503 e a linha fica).\\
+\cd{R-31} & \textbf{O máximo do \cd{expire\_time} não é documentado.} A api pede
+  dez anos e renova a cada mensagem; a documentação só diz o mínimo (24\,h) e o
+  padrão (365 dias). & Média & Médio &
+  Se o engine recusar o pedido, a criação repete sem ele e a sessão nasce com
+  365 dias; a renovação a cada mensagem a mantém viva, mas a conversa sem
+  mensagem por mais que o TTL some da lista. \textbf{Confirmar em \cd{dev}} antes
+  de prometer \enquote{histórico sem limite}.\\
+\zebra \cd{R-32} & \textbf{\emph{Data store} de habilidades não avaliado.} A
+  resposta exata depende de o filtro casar com o dado (\adrr{ADR-127}). &
+  Média & \textbf{Alto} &
+  O relatório de recall por componente $\times$ ano
+  (\arq{ingestao/avaliar\_habilidades}) \textbf{não rodou contra o data store
+  real}. A conferência de códigos da api pega código INVENTADO, não habilidade
+  OMITIDA --- e a omissão é o plano que descumpre o currículo. Recall abaixo de
+  100\% devolve o produto à ferramenta exata sobre \arq{src/curriculo}.\\
+\cd{R-33} & \textbf{A Ajuda depende de um vendor externo.} O vídeo, a voz e a
+  escuta são do LiveAvatar (HeyGen), com conta própria e créditos, uma chave por
+  contrato (\adrr{ADR-132}). & Média & Médio &
+  Sem crédito ou com o vendor fora, a abertura responde 502
+  \cd{AVATAR\_FALHOU} em todas as escolas do contrato; a linha reservada fecha
+  com duração zero e não conta minuto, e o resto da plataforma não sente. Sem as
+  envs, a Ajuda responde 503 e a api sobe normal. \textbf{Pendente}: o plano
+  pago (a conta de testes tem 10 créditos, 5 minutos de FULL) e o vendor no DPA
+  e na página de privacidade.\\
+\zebra \cd{R-34} & \textbf{Um \emph{endpoint} público chamado por terceiro.} O
+  \rota{/ajuda/llm} não recebe \emph{token} de usuário e não pode ficar atrás de
+  IAP nem de lista de IP. & Baixa & Médio &
+  \textbf{Mitigado} pelas duas trancas: o \emph{Bearer}
+  \env{AJUDA\_LLM\_SEGREDO} (é o vendor) e o \emph{token} HS256 curto da
+  sessão dentro da mensagem \cd{system} (quem fala, numa sessão aberta pela api
+  e ainda não fechada). Sem as chaves, a rota responde 503, nunca aberta. O
+  prompt e a base não vão ao vendor, e o \cd{system} dele é descartado.\\
+\cd{R-35} & \textbf{Custo por minuto de vídeo.} O FULL cobra 2 créditos por
+  minuto de sala aberta, falando ou não, e a Ajuda está fora da quota de
+  \emph{tokens}. & Média & Médio &
+  \textbf{Mitigado} por \cd{ajuda\_limites} (30 minutos por dia e 10 por
+  sessão, editáveis só pelo \cd{admin}, com teto de sanidade de 600 e 60), pelo
+  medidor que conta o teto inteiro de sessão sem fim, e pelo produto
+  \textbf{desligado por padrão}: nenhuma rede gasta minuto até o \cd{admin}
+  ligar.\\
+\zebra \cd{R-36} & \textbf{O avatar fica mudo diante de erro.} O vendor não
+  tenta de novo nem avisa o navegador, e desiste se o primeiro byte passar de
+  10\,s. & Média & Médio &
+  Recusa de negócio e falha do modelo viram fala, em 200; a fala de espera sai
+  aos 7\,s (a chamada fria mediu 10,9\,s). O que escapa (vendor que não alcança
+  a api, \emph{buffering} no \emph{load balancer}) só aparece no hub, que avisa
+  depois de 20\,s. \textbf{Sem suíte de ponta a ponta}: o modal com o vendor de
+  verdade só foi visto à mão.\\
+\cd{R-37} & \textbf{A base da Ajuda vai inteira no prompt, e cresce com o
+  mapa.} São \textasciitilde65 mil \emph{tokens} a cada turno, sem RAG. & Alta &
+  Médio &
+  O cache implícito do Gemini reaproveita o prefixo fixo, mas a chamada fria
+  paga a base inteira e é a que encosta nos 10\,s do vendor. Cada feature que
+  vira PRONTO no mapa de produto engorda a base; a métrica é a linha
+  \cd{ajuda.turno} (\cd{duracaoMs}, \cd{tokens}). O gatilho de rever é a
+  chamada fria passar do teto mesmo com a fala de espera.\\
+\zebra \cd{R-38} & \textbf{O painel de custos de IA não é a fatura.} A voz é
+  estimada (a Cloud TTS não devolve contagem), o custo fixo do Agent Engine (a
+  vCPU-hora do engine implantado) e o da infraestrutura ficam fora, e o preço
+  semeado é o de lista. & Alta & Médio &
+  \textbf{Aceito e declarado} (\adrr{ADR-161}): a voz sai marcada
+  \enquote{$\approx$} na tela, o preço é editável pelo \cd{admin} com data no
+  passado (o painel recalcula para trás), e o painel mede só o custo
+  variável por chamada. O gatilho é a diferença entre o painel e a fatura do mês
+  passar de 10\%; aí o que falta (o custo fixo do engine, um desconto de
+  contrato) entra como preço ou como linha própria.\\
 \bottomrule
 \end{tabularx}
 
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1.9cm, y=1.5cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    cel/.style={font=\scriptsize, text width=29mm, align=center,
+                inner sep=0pt},
+    crit/.style={cel, font=\scriptsize\bfseries, text=unooRed},
+    alto/.style={cel, font=\scriptsize\bfseries, text=unooOrange!80!black},
+    resto/.style={cel, text=unooInkSoft}]
 
-  \draw[draw=unooAxis, line width=0.7pt] (0.4,0.4) rectangle (3.6,3.6);
-  \foreach \x in {1.4,2.4} \draw[draw=unooGrid] (\x,0.4) -- (\x,3.6);
-  \foreach \y in {1.4,2.4} \draw[draw=unooGrid] (0.4,\y) -- (3.6,\y);
+  % Celulas de 3,2 x 2,2 cm. Colunas: probabilidade baixa / media / alta;
+  % linhas: impacto baixo / medio / alto. Fonte: a tabela acima (certa conta
+  % como alta; possivel, como media).
+  \fill[unooRedWash] (6.4,4.4) rectangle (9.6,6.6);
+  \fill[unooOrangeWash] (3.2,4.4) rectangle (6.4,6.6);
+  \fill[unooOrangeWash] (6.4,2.2) rectangle (9.6,4.4);
+  \draw[draw=unooAxis, line width=0.7pt] (0,0) rectangle (9.6,6.6);
+  \foreach \x in {3.2,6.4} \draw[draw=unooGrid] (\x,0) -- (\x,6.6);
+  \foreach \y in {2.2,4.4} \draw[draw=unooGrid] (0,\y) -- (9.6,\y);
 
-  \node[legenda, rotate=90] at (-0.28,2.0) {Impacto};
-  \node[legenda] at (2.0,0.05) {Probabilidade};
-  \node[legenda] at (0.9,0.22) {baixa}; \node[legenda] at (1.9,0.22) {média};
-  \node[legenda] at (2.9,0.22) {alta};
-  \node[legenda, anchor=east] at (0.35,0.9) {baixo};
-  \node[legenda, anchor=east] at (0.35,1.9) {médio};
-  \node[legenda, anchor=east] at (0.35,2.9) {alto};
+  \node[legenda, rotate=90] at (-1.75,3.3) {Impacto};
+  \node[legenda] at (4.8,-0.75) {Probabilidade};
+  \node[legenda] at (1.6,-0.3) {baixa};
+  \node[legenda] at (4.8,-0.3) {média};
+  \node[legenda] at (8.0,-0.3) {alta};
+  \node[legenda, anchor=east] at (-0.15,1.1) {baixo};
+  \node[legenda, anchor=east] at (-0.15,3.3) {médio};
+  \node[legenda, anchor=east] at (-0.15,5.5) {alto};
 
-  % zona critica
-  \fill[unooRedWash, opacity=0.6] (2.4,2.4) rectangle (3.6,3.6);
-  \fill[unooOrangeWash, opacity=0.5] (1.4,2.4) rectangle (2.4,3.6);
-  \fill[unooOrangeWash, opacity=0.5] (2.4,1.4) rectangle (3.6,2.4);
+  % impacto alto
+  \node[alto] at (4.8,5.5) {R-01 \quad R-17\\R-24 \quad R-32};
+  \node[crit] at (8.0,5.5) {R-02 \quad R-04 \quad R-06\\R-14 \quad R-16 \quad R-19\\R-27};
+  % impacto medio
+  \node[resto] at (1.6,3.3) {R-08 \quad R-34};
+  \node[resto] at (4.8,3.3) {R-07 \quad R-15 \quad R-25\\R-29 \quad R-31 \quad R-33\\R-35 \quad R-36};
+  \node[alto] at (8.0,3.3) {R-03 \quad R-05 \quad R-12\\R-18 \quad R-21 \quad R-23\\R-28 \quad R-30 \quad R-37\\R-38};
+  % impacto baixo
+  \node[resto] at (4.8,1.1) {R-10 \quad R-11 \quad R-13};
+  \node[resto] at (8.0,1.1) {R-09 \quad R-26};
 
-  % zona vermelha (probabilidade alta/certa x impacto alto)
-  \node[font=\scriptsize\bfseries\color{unooRed}] at (3.0,3.30) {R-02  R-04};
-  \node[font=\scriptsize\bfseries\color{unooRed}] at (3.0,3.00) {R-06  R-14};
-  \node[font=\scriptsize\bfseries\color{unooRed}] at (3.0,2.70) {R-16  R-19};
-  % impacto alto, probabilidade media
-  \node[font=\scriptsize\bfseries\color{unooRed}] at (1.9,3.00) {R-01};
-  \node[font=\scriptsize\bfseries\color{unooRed}] at (1.9,2.70) {R-17};
-  % faixa laranja: impacto medio, probabilidade alta/certa
-  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,2.10) {R-05  R-07};
-  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,1.85) {R-12  R-18};
-  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,1.60) {R-21  R-22};
-  % restante
-  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,2.05) {R-03$^{*}$};
-  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,1.75) {R-15  R-20  R-23};
-  \node[font=\scriptsize\color{unooInkSoft}] at (2.9,0.9) {R-09};
-  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,0.9) {R-10  R-11  R-13};
-  \node[font=\scriptsize\color{unooInkSoft}] at (0.9,1.9) {R-08};
-
-  \node[legenda, anchor=north west, text width=44mm] at (3.75,3.5)
-    {$^{*}$ R-03 tem probabilidade \emph{certa} --- é consequência aceita, não
-     eventualidade. Está posicionado em \enquote{média} apenas para caber na
-     matriz.\\[4pt]
-     A zona vermelha concentra o que \textbf{tem de ser resolvido antes de
-     novembro de 2026}: carga verificada, retenção decidida e revisão de
-     segurança contratada.};
+  \node[legenda, anchor=north west, text width=50mm, align=flush left] at (10.1,6.6)
+    {Probabilidade como na tabela: \emph{certa} conta como alta, e
+     \emph{possível}, como média.\\[4pt]
+     O vermelho e o laranja do alto impacto concentram o que \textbf{tem de
+     ser resolvido antes de novembro de 2026}: carga verificada (R-01),
+     retenção decidida (R-02), revisão de segurança contratada (R-06) e o
+     aumento da quota do Agent Engine pedido (R-27).};
 
 \end{tikzpicture}}
 \caption[Matriz de riscos]{Matriz de riscos. A maioria dos riscos da zona
@@ -271,23 +356,30 @@ M0 & Contratos congelados (\emph{claims}, ponte, telemetria) & \yes{} Concluído
   \arq{packages/sdk}, \arq{src/auth/claims.ts}\\
 \zebra M1 & \emph{Tenancy}, RLS, papéis, importação de usuários &
   \yes{} Concluído & Teste com \emph{role} sem \emph{ownership}\\
-M2 & exp-01 completa: motor, geração, dossiê & \yes{} Concluído &
+M2 & exp08ef1b completa: motor, geração, dossiê & \yes{} Concluído &
   Migração do aplicativo de origem\\
-\zebra M3 & exp-02, domínio por experiência & \yes{} Concluído & \adrr{ADR-09}\\
-M4 & Ferramentas de professor: exp-90, exp-91 & \yes{} Concluído &
+\zebra M3 & exp04ef1b, domínio por experiência & \yes{} Concluído & \adrr{ADR-09}\\
+M4 & Ferramentas de professor: app-90, app-91 & \yes{} Concluído &
   Armazenamento privado, \emph{guardrails}\\
-\zebra M5 & exp-70 e o Ato 1 integrado & \yes{} Concluído &
-  \cd{exp\_01\_exp\_70\_perfis\_importados}\\
+\zebra M5 & app-70 e o Ato 1 integrado & \yes{} Concluído &
+  \cd{exp08ef1b\_app\_70\_perfis\_importados}\\
 M6 & Hub do estudante, \emph{header} único, casca compartilhada &
   \yes{} Concluído & \rota{/estudante}, \cd{CascaPlataforma}\\
-\zebra M7 & exp-03 e exp-07: IA em \emph{runtime} dentro da missão &
-  \yes{} Concluído & \adrr{ADR-23}, \adrr{ADR-66}, \adrr{ADR-67}\\
+\zebra M7 & exp02em1b e exp07ef1b: IA em \emph{runtime} dentro da missão &
+  \yes{} Concluído & \adrr{ADR-23}, \adrr{ADR-66}, \adrr{ADR-67}; a exp07ef1b
+  (O Eco no Grupo) foi retirada depois (\adrr{ADR-113})\\
 --- & \emph{Stack} \cd{dev} em GCP operacional & \yes{} Concluído &
   CI/CD completo com WIF\\
 \zebra --- & \textbf{Teste de carga} & \no{} Pendente & \cd{R-01}\\
 --- & \textbf{Observabilidade (fases 0--2)} & \no{} Pendente &
   \cd{R-05}; estudo e roteiro no Capítulo~\ref{cap:observabilidade}\\
 \zebra --- & \textbf{WSO2 como emissor} & \no{} Pendente & \adrr{ADR-15}\\
+--- & Agente de IA do professor & \yes{} Código; \no{} engine &
+  \adrr{ADR-126}: api, agente e ingestão prontos; o engine nasce no segundo
+  \emph{apply}; \cd{R-27}, \cd{R-32}\\
+\zebra --- & Ajuda com avatar & \yes{} Código; \no{} lançada &
+  \adrr{ADR-132}: api e hub prontos, desligada por padrão; falta a suíte de
+  ponta a ponta e o plano pago; \cd{R-33} a \cd{R-37}\\
 --- & 41 experiências restantes & \no{} Em aberto & Gabarito estabelecido\\
 \bottomrule
 \end{tabularx}
@@ -315,6 +407,10 @@ M6 & Hub do estudante, \emph{header} único, casca compartilhada &
   \item \textbf{DPA por rede} contemplando a localidade de processamento de IA.
   \item \textbf{WSO2 como emissor}, com o \cd{iss} \emph{tenant-qualified} copiado
     literalmente do \emph{discovery}.
+  \item \textbf{Agente de IA do professor}: pedir o aumento de quota do Agent
+    Engine (\cd{R-27}), rodar o relatório de recall das habilidades (\cd{R-32}),
+    decidir a região de produção (\cd{R-30}) e confirmar o máximo do
+    \cd{expire\_time} (\cd{R-31}).
 \end{enumerate}
 
 \subsection{Depois, por ordem de retorno}
@@ -345,6 +441,12 @@ Visão agregada de bem-estar & Só com DPA e \emph{k}-anonimato explícitos
   consumo (\adrr{ADR-21}).\\
 BigQuery & Só se um relatório efetivamente precisar de análise em escala sobre
   \cd{telemetria\_eventos} (\adrr{ADR-14}).\\
+\zebra Lançar a Ajuda com avatar & Hoje ela nasce desligada e só a equipe a usa
+  (\adrr{ADR-132}). Lançar é tirar \cd{ajuda} de
+  \cd{PRODUTOS\_DESLIGADOS\_POR\_PADRAO}, o que liga para todas as redes de
+  uma vez. Exige antes o plano pago do vendor (\cd{R-33}), o vendor no DPA e na
+  página de privacidade, a suíte de ponta a ponta (\cd{R-36}), a URL pública
+  da api do contrato e o \emph{firewall} das escolas liberando o WebRTC.\\
 \bottomrule
 \end{tabularx}
 

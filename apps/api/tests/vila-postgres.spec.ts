@@ -7,7 +7,7 @@ import { liberarParaTeste } from "./liberar-de-teste";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * Integração da exp-70 no Postgres: abrir, concluir, idempotência, bolha
+ * Integração da app-70 no Postgres: abrir, concluir, idempotência, bolha
  * estável e tenancy. UMA ESCOLA POR SUÍTE (o Jest paraleliza suítes; limpeza
  * compartilhada corromperia a outra).
  */
@@ -120,7 +120,7 @@ beforeAll(async () => {
      CABE em qualquer ano — não que ela abre sozinha. Sem estas linhas, `abrir`
      recusa com 403 `missao-nao-liberada`. */
   for (const turmaId of [turma8, turma3]) {
-    await liberarParaTeste(prisma, ESCOLA, turmaId, "exp-70-vila-do-lume", estudantes8[0]!);
+    await liberarParaTeste(prisma, ESCOLA, turmaId, "app-70-vila-do-lume", estudantes8[0]!);
   }
 });
 
@@ -251,7 +251,7 @@ describe("concluir a partida", () => {
     const s = await service.abrir(ESCOLA, estudante, "1.0.0");
     await service.concluir(ESCOLA, estudante, s.sessaoId, partidaCompleta()); // seguranca.cartoes vazio
     const [linha] = await prisma.$queryRaw<Array<{ nulo: boolean }>>`
-      SELECT leitura_mensagens IS NULL AS nulo FROM exp_70_sessoes WHERE id = ${s.sessaoId}::uuid`;
+      SELECT leitura_mensagens IS NULL AS nulo FROM app_70_sessoes WHERE id = ${s.sessaoId}::uuid`;
     expect(linha!.nulo).toBe(true);
     const relatorio = await service.doEstudante(ESCOLA, estudante);
     expect(relatorio!.mensagens).toBeNull();

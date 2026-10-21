@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Importa as REFERÊNCIAS CURRICULARES do gerador de plano de aula (exp-90):
+ * Importa as REFERÊNCIAS CURRICULARES do gerador de plano de aula (app-90):
  * currículo da rede e material didático, por disciplina e série.
  *
  * Lê uma pasta no formato do app origem (`docs-referencia/`):

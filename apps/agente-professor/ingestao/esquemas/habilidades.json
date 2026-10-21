@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "codigo": {
+      "type": "string",
+      "retrievable": true,
+      "indexable": true,
+      "searchable": true
+    },
+    "titulo": {
+      "type": "string",
+      "retrievable": true,
+      "keyPropertyMapping": "title"
+    },
+    "etapa": {
+      "type": "string",
+      "retrievable": true,
+      "indexable": true
+    },
+    "anos": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "retrievable": true,
+        "indexable": true
+      }
+    },
+    "componente": {
+      "type": "string",
+      "retrievable": true,
+      "searchable": true
+    },
+    "componente_slug": {
+      "type": "string",
+      "retrievable": true,
+      "indexable": true
+    },
+    "area": {
+      "type": "string",
+      "retrievable": true,
+      "indexable": true
+    },
+    "organizador": {
+      "type": "string",
+      "retrievable": true,
+      "searchable": true
+    },
+    "organizador_tipo": {
+      "type": "string",
+      "retrievable": true
+    },
+    "objeto_conhecimento": {
+      "type": "string",
+      "retrievable": true,
+      "searchable": true
+    },
+    "descricao": {
+      "type": "string",
+      "retrievable": true,
+      "keyPropertyMapping": "description"
+    },
+    "explicacao": {
+      "type": "string",
+      "retrievable": true,
+      "searchable": true
+    },
+    "exemplos": {
+      "type": "string",
+      "retrievable": true,
+      "searchable": true
+    },
+    "fonte_pagina": {
+      "type": "integer",
+      "retrievable": true
+    }
+  }
+}

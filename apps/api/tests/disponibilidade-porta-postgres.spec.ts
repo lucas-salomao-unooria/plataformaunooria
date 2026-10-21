@@ -1,9 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 import { MISSAO_NAO_LIBERADA, exigirMissaoLiberada } from "../src/comum/liberacao";
-import { RECURSO_INDISPONIVEL, exigirRecursoDisponivel } from "../src/comum/disponibilidade";
+import {
+  RECURSO_INDISPONIVEL,
+  exigirProdutoDisponivel,
+  exigirRecursoDisponivel,
+} from "../src/comum/disponibilidade";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { RecursosController } from "../src/recursos/recursos.controller";
-import { PRODUTOS } from "../src/recursos/catalogo";
+import { PRODUTOS, ligadoPorPadrao } from "../src/recursos/catalogo";
 import { SalasService } from "../src/salas/salas.service";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
@@ -34,8 +38,8 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
 const URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
 const REGIONAL = "teste-porta-regional";
 const ESCOLA = "teste-porta";
-const VILA = "exp-70-vila-do-lume";
-const INSTA = "exp-01-instanooria";
+const VILA = "app-70-vila-do-lume";
+const INSTA = "exp08ef1b";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
 const salas = new SalasService(prisma);
@@ -45,7 +49,7 @@ const ids = { turma: "", estudante: "", professor: "", admin: "" };
 
 /** O recurso de escopo-contrato desta suíte: `expId` que não existe no catálogo
  *  e que nenhuma outra suíte conhece. É o único que pode ir a `escola_id NULL`. */
-const SO_MEU = "exp-99-porta-de-teste";
+const SO_MEU = "app-99-porta-de-teste";
 
 async function limparDisponibilidades() {
   /* A AUDITORIA TAMBÉM É LIXO DE TESTE (ADR-89). Ela é append-only e ninguém
@@ -261,7 +265,7 @@ describe("a ferramenta de professor", () => {
     await definir("produto:bem-estar", ESCOLA, false);
     try {
       await prisma.comTenancy(
-        (tx) => exigirRecursoDisponivel(tx, ESCOLA, "exp-91-bem-estar"),
+        (tx) => exigirRecursoDisponivel(tx, ESCOLA, "app-91-bem-estar"),
         ESCOLA,
       );
       throw new Error("devia ter recusado");
@@ -285,7 +289,7 @@ test("experiência FORA do catálogo não é trancada por isto", async () => {
      num ambiente novo, com um 403 que não explica nada. */
   expect(
     await codigoDoErro(() =>
-      prisma.comTenancy((tx) => exigirRecursoDisponivel(tx, ESCOLA, "exp-99-inexistente"), ESCOLA),
+      prisma.comTenancy((tx) => exigirRecursoDisponivel(tx, ESCOLA, "app-99-inexistente"), ESCOLA),
     ),
   ).toBeNull();
 });
@@ -294,12 +298,15 @@ describe("GET /recursos/efetivos — o que o hub lê para montar os cards", () =
   /** O `req` que o OidcGuard injeta, com a escola do claim. */
   const comoEstudante = { auth: { usuarioId: ids.estudante, escolaId: ESCOLA, perfil: "estudante" as const } };
 
-  test("traz SEMPRE os quatro produtos, ligados ou não", async () => {
+  test("traz SEMPRE todos os produtos (hoje cinco, com o agente-professor), ligados ou não", async () => {
     const r = await recursos.efetivos(comoEstudante);
     // Um mapa que só lista o ligado obriga quem lê a saber a lista completa de
     // cor — e o hub passaria a ter a segunda fonte do vocabulário.
     expect(Object.keys(r.produtos).sort()).toEqual([...PRODUTOS].sort());
-    expect(Object.values(r.produtos).every((p) => p.ligado)).toBe(true);
+    // Sem linha, cada produto vale o SEU padrão: ligado, salvo o que está em
+    // teste interno (a Ajuda com avatar, `PRODUTOS_DESLIGADOS_POR_PADRAO`).
+    for (const slug of PRODUTOS) expect(r.produtos[slug]?.ligado).toBe(ligadoPorPadrao(slug));
+    expect(r.produtos.ajuda?.ligado).toBe(false);
   });
 
   test("reflete o desligamento e aplica o teto nas experiências do produto", async () => {
@@ -310,6 +317,19 @@ describe("GET /recursos/efetivos — o que o hub lê para montar os cards", () =
     expect(r.experiencias[VILA]?.ligado).toBe(false);
     // E não vaza para outro produto.
     expect(r.produtos["bem-estar"]?.ligado).toBe(true);
+  });
+
+  test("o produto SEM experiência (agente-professor) desliga na leitura e na porta", async () => {
+    await expect(exigirProdutoDisponivel(prisma, ESCOLA, "agente-professor")).resolves.toBeUndefined();
+    await definir("produto:agente-professor", REGIONAL, false);
+    const r = await recursos.efetivos(comoEstudante);
+    expect(r.produtos["agente-professor"]?.ligado).toBe(false);
+    await expect(exigirProdutoDisponivel(prisma, ESCOLA, "agente-professor")).rejects.toMatchObject({
+      response: { codigo: RECURSO_INDISPONIVEL },
+    });
+    /* A escola religa: o escopo mais específico ganha. */
+    await definir("produto:agente-professor", ESCOLA, true);
+    await expect(exigirProdutoDisponivel(prisma, ESCOLA, "agente-professor")).resolves.toBeUndefined();
   });
 
   test("a versão fixada de uma experiência chega na resposta", async () => {

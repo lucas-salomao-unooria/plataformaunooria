@@ -62,6 +62,22 @@ function escoresDeDominante(dominante: (typeof PERFIS)[number]) {
 
 type Autenticado = { auth: AuthClaims };
 
+/**
+ * A atividade do Unoovista tem equipes montadas? (H13.4.3)
+ *
+ * Com equipe, cada computador fica de um lado só (o sorteio agrupa pelo lado,
+ * H13.4.1) — e redistribuir moveria crianças de lado UMA a UMA, separando quem
+ * divide a mesma tela. Conta a equipe em qualquer turma: a atividade antiga sem
+ * turma vale para a escola inteira.
+ */
+async function atividadeTemEquipes(
+  tx: Prisma.TransactionClient,
+  escolaId: string,
+  activityId: string,
+): Promise<boolean> {
+  return (await tx.equipe.count({ where: { escolaId, expId: "exp08ef1b", atividadeId: activityId } })) > 0;
+}
+
 /** Filtro opcional da importação da Vila. Sem ele, vale a escola inteira — que é
  *  como `GET :id/perfis` já lista. Com turma, o relatório da importação fica
  *  legível: o professor roda a atividade com UMA turma. */
@@ -140,7 +156,7 @@ export class PerfisController {
   }
 
   /**
-   * IMPORTA OS PERFIS DA VILA DO LUME (exp-70) para esta atividade.
+   * IMPORTA OS PERFIS DA VILA DO LUME (app-70) para esta atividade.
    *
    * Fecha o "Ato 1" que a ficha do Instanooria sempre descreveu: *"fora da
    * plataforma, um jogo mede o perfil de valores do estudante"*. O jogo deixou de
@@ -168,7 +184,7 @@ export class PerfisController {
   @Contrato({
     resumo: "Traz os perfis da Vila do Lume para a largada do Instanooria.",
     descricao:
-      "Colapsa o perfil Schwartz da exp-70 nos quatro quadrantes e grava com `origem: \"jogo\"` — é o que decide de que lado o feed nasce. O disparo é do PROFESSOR: importar sozinho desfaria em silêncio uma redistribuição feita antes da aula.",
+      "Colapsa o perfil Schwartz da app-70 nos quatro quadrantes e grava com `origem: \"jogo\"` — é o que decide de que lado o feed nasce. O disparo é do PROFESSOR: importar sozinho desfaria em silêncio uma redistribuição feita antes da aula.",
     params: z.object({ id: z.string().uuid() }),
     query: DaVilaSchema,
     resposta: ImportadosDaVilaSchema,
@@ -332,6 +348,7 @@ export class PerfisController {
         ...distribuicao,
         tolerancia: TOLERANCIA,
         precisaRedistribuir: distribuicao.desequilibrio > TOLERANCIA,
+        comEquipes: await atividadeTemEquipes(tx, escolaId, id),
       };
     }, escolaId);
   }
@@ -355,6 +372,7 @@ export class PerfisController {
     notas: [
       "`bloqueados` conta quem já começou e por isso ficou — o rebalanceamento pode não ter chegado ao alvo, e o professor precisa saber.",
       "Pergunta e lados não aprovados ⇒ **409**.",
+      "Atividade com equipes montadas ⇒ **409** `turma-com-equipes` (H13.4.3): com equipe, o lado é de quem divide a tela, e mover criança a criança separaria a equipe.",
     ],
   })
   @HttpCode(200)
@@ -365,6 +383,17 @@ export class PerfisController {
     return this.prisma.comTenancy(async (tx) => {
       const atividade = await atividadeDoProfessor(tx, id, usuarioId, escolaId);
       if (!atividade) naoEncontrado();
+
+      if (await atividadeTemEquipes(tx, escolaId, id)) {
+        throw new HttpException(
+          {
+            codigo: "turma-com-equipes",
+            mensagem:
+              "Com equipes montadas, o lado é de quem divide a mesma tela. Redistribuir separaria as equipes — desfaça a montagem antes, se precisar.",
+          },
+          409,
+        );
+      }
 
       const distribuicao = await distribuicaoDaTurma(tx, id, atividade.antagonismo, escolaId, atividade.turmaId);
 
@@ -476,7 +505,7 @@ export class PerfisController {
         })),
         bloqueados,
       };
-    });
+    }, escolaId);
   }
 }
 

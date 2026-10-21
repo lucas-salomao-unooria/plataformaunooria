@@ -77,6 +77,13 @@ await suite(
       /Turmas encerradas/.test(cabecalhos) && /Estudantes com registro/.test(cabecalhos),
       `as DUAS medidas aparecem lado a lado: ${cabecalhos}`,
     );
+    /* A coluna Missão diz o NOME que a diretoria reconhece, não o código
+       interno (H07.2.1). Tabela vazia (regional sem uso) passa sem afirmar. */
+    const missoes = await p.locator("table").first().locator("tbody tr td:first-child").allInnerTexts();
+    r.exigir(
+      missoes.every((m) => !/^(exp\d{2}(ef|em)\d[ab]|app-\d{2})/.test(m.trim())),
+      `a coluna Missão mostra o nome, não o código: ${missoes.join(" | ") || "(sem missões)"}`,
+    );
     /* Nome de criança não entra: o relatório é contagem. */
     const corpo = await p.locator("main, body").first().innerText();
     r.exigir(

@@ -394,7 +394,8 @@
 %  Legenda padronizada de diagrama
 % ---------------------------------------------------------------------------
 \newcommand{\amostra}[1]{%
-  \tikz[baseline=-0.55ex]{\node[#1, text width=0pt, minimum width=3.6mm,
+  \tikz[baseline=-0.55ex]{\node[#1, rectangle, rounded corners=1.2pt,
+    path picture={}, text width=0pt, minimum width=3.6mm,
     minimum height=3.0mm, inner sep=0pt, font=\tiny]{};}%
 }
 \newenvironment{legendadiag}
@@ -455,3 +456,164 @@
 
 % Rotulo de prefixo de tabela por experiencia
 \newcommand{\pref}[1]{{\scriptsize\ttfamily #1}}
+
+% ---------------------------------------------------------------------------
+%  UML 2.5.1 --- os tipos que a biblioteca de origem nao tinha (Secao
+%  "Modelagem UML", secoes/05b-modelagem-uml.tex; ADR-122)
+%
+%  Pacote, componente com interfaces fornecidas e requeridas, no de
+%  implantacao, artefato, objeto, estrutura composta (parte e porta), perfil,
+%  fragmento de interacao, comunicacao e tempo. A notacao segue a
+%  especificacao da OMG (UML 2.5.1, formal/17-12-05); a cor segue os tokens
+%  unoo* como o resto do documento.
+% ---------------------------------------------------------------------------
+\newcommand{\estereo}[1]{{\guillemotleft}#1{\guillemotright}}
+
+\tikzset{
+  % --- relacoes de classe que faltavam ------------------------------------
+  associa/.style={line width=0.85pt, draw=unooInkSoft},
+  navega/.style={associa, -{Stealth[length=5pt,width=4pt]}},
+  agrega/.style={associa, {Diamond[open, length=7.5pt, width=5pt]}-},
+  compoe/.style={associa, {Diamond[length=7.5pt, width=5pt, fill=unooInkSoft]}-},
+  realiza/.style={-{Triangle[open, length=6.5pt, width=6.5pt]}, dashed,
+                  dash pattern=on 3pt off 2pt, line width=0.8pt, draw=unooInkSoft},
+  % extensao de perfil: seta cheia, que nao se confunde com a heranca (aberta)
+  estende/.style={-{Triangle[length=6.5pt, width=6.5pt, fill=unooInkSoft]},
+                  line width=0.85pt, draw=unooInkSoft},
+  multip/.style={font=\scriptsize\color{unooNavy}, inner sep=1.2pt},
+  papelassoc/.style={font=\scriptsize\itshape\color{unooInkSoft}, inner sep=1.2pt},
+  % --- classificadores ----------------------------------------------------
+  interface/.style={classe, draw=unooLavenderSoft,
+    rectangle split part fill={unooLavenderSoft, unooSurface, unooPaper}},
+  enumeracao/.style={entidade, draw=unooInkSoft, text width=30mm,
+    rectangle split part fill={unooMuted, unooSurface}},
+  metaclasse/.style={rectangle, draw=unooInkSoft, line width=0.8pt,
+    fill=unooPaper, font=\scriptsize, text width=28mm, minimum height=11mm,
+    inner sep=3pt},
+  % --- objeto: nome sublinhado, instancia e nao tipo -----------------------
+  objeto/.style={rectangle split, rectangle split parts=2, draw=unooBlue,
+    line width=0.85pt, rectangle split part fill={unooBlueLight!55, unooSurface},
+    font=\scriptsize, text width=40mm, inner sep=3.5pt,
+    every text node part/.style={align=center},
+    every two node part/.style={align=left}},
+  objetoum/.style={rectangle, draw=unooBlue, line width=0.85pt,
+    fill=unooBlueLight!45, font=\scriptsize, text width=30mm,
+    minimum height=10mm, inner sep=3pt},
+  objetolink/.style={line width=0.8pt, draw=unooInkSoft},
+  % --- pacote --------------------------------------------------------------
+  pacotecorpo/.style={draw=unooNavy, line width=0.85pt, fill=unooBlueWash,
+    inner sep=0pt},
+  pacoteaba/.style={draw=unooNavy, line width=0.85pt, fill=unooNavy,
+    text=white, font=\scriptsize\bfseries, inner sep=2.4pt,
+    minimum height=4.6mm},
+  pacotedep/.style={-{Stealth[length=5pt,width=4pt]}, dashed,
+    dash pattern=on 3pt off 2pt, line width=0.8pt, draw=unooInkSoft},
+  % --- componente: retangulo com o icone de componente no canto -------------
+  componente/.style={rectangle, draw=unooNavy, line width=0.85pt,
+    fill=unooBlueWash, font=\scriptsize, text width=30mm, minimum height=15mm,
+    inner sep=4pt,
+    path picture={
+      \coordinate (icc) at ([xshift=-3.0mm, yshift=-3.1mm]path picture bounding box.north east);
+      \draw[draw=unooNavy, line width=0.45pt, fill=unooSurface]
+        ([xshift=-1.3mm, yshift=-1.8mm]icc) rectangle ([xshift=1.6mm, yshift=1.8mm]icc);
+      \draw[draw=unooNavy, line width=0.45pt, fill=unooSurface]
+        ([xshift=-2.1mm, yshift=0.5mm]icc) rectangle ([xshift=-0.5mm, yshift=1.2mm]icc);
+      \draw[draw=unooNavy, line width=0.45pt, fill=unooSurface]
+        ([xshift=-2.1mm, yshift=-1.2mm]icc) rectangle ([xshift=-0.5mm, yshift=-0.5mm]icc);
+    }},
+  componenteext/.style={componente, fill=unooPaper, draw=unooInkSoft},
+  ifacelbl/.style={font=\scriptsize\color{unooInkSoft}, inner sep=1.4pt},
+  % --- implantacao ---------------------------------------------------------
+  nodocorpo/.style={draw=unooNavy, line width=0.85pt, fill=unooSurface,
+    inner sep=0pt},
+  nodolbl/.style={font=\scriptsize\color{unooNavy}, align=left, inner sep=3pt},
+  artefato/.style={rectangle, draw=unooGreen!60!black, line width=0.8pt,
+    fill=unooGreenWash, font=\scriptsize, text width=30mm, minimum height=11mm,
+    inner sep=3.5pt,
+    path picture={
+      \coordinate (ica) at ([xshift=-2.9mm, yshift=-2.9mm]path picture bounding box.north east);
+      \draw[draw=unooGreen!60!black, line width=0.45pt, fill=unooSurface]
+        ([xshift=-1.3mm, yshift=1.7mm]ica) -- ([xshift=-1.3mm, yshift=-1.7mm]ica)
+        -- ([xshift=1.3mm, yshift=-1.7mm]ica) -- ([xshift=1.3mm, yshift=0.8mm]ica)
+        -- ([xshift=0.4mm, yshift=1.7mm]ica) -- cycle;
+      \draw[draw=unooGreen!60!black, line width=0.45pt]
+        ([xshift=0.4mm, yshift=1.7mm]ica) -- ([xshift=0.4mm, yshift=0.8mm]ica)
+        -- ([xshift=1.3mm, yshift=0.8mm]ica);
+    }},
+  implanta/.style={-{Stealth[length=5pt,width=4pt]}, dashed,
+    dash pattern=on 3pt off 2pt, line width=0.75pt, draw=unooGreen!60!black},
+  caminhocom/.style={line width=0.9pt, draw=unooInkSoft},
+  % --- estrutura composta: parte, porta e conector -------------------------
+  parte/.style={rectangle, draw=unooNavy, line width=0.85pt, fill=unooSurface,
+    font=\scriptsize, text width=28mm, minimum height=11mm, inner sep=3pt},
+  partemult/.style={parte, fill=unooBlueWash},
+  porta/.style={rectangle, draw=unooNavy, line width=0.8pt, fill=unooSurface,
+    minimum size=2.6mm, inner sep=0pt},
+  portaborda/.style={porta, fill=unooOrange!85, draw=unooOrange!70!black},
+  conector/.style={line width=0.85pt, draw=unooInkSoft},
+  % --- interacao: operador de fragmento e uso de interacao (ref) -----------
+  frameop/.style={chamfered rectangle, chamfered rectangle corners=south east,
+    chamfered rectangle xsep=1.4mm, chamfered rectangle ysep=1.2mm,
+    fill=unooNavy, draw=unooNavy, text=white, font=\scriptsize\bfseries,
+    inner sep=1.8pt, anchor=north west},
+  guarda/.style={font=\scriptsize\itshape\color{unooInkSoft}, anchor=west,
+    inner sep=1.4pt},
+  refint/.style={rectangle, draw=unooNavy, line width=0.85pt, fill=unooSurface,
+    font=\scriptsize, text width=40mm, minimum height=11mm, inner sep=3pt},
+  % --- comunicacao ---------------------------------------------------------
+  msgcomlbl/.style={font=\scriptsize\color{unooInk}, fill=unooSurface,
+    inner sep=1.4pt},
+  % --- maquina de estados: pseudoestados e estado composto -----------------
+  escolha/.style={diamond, draw=unooNavy, line width=0.85pt, fill=unooSurface,
+    minimum size=6mm, inner sep=0pt},
+  estadocomposto/.style={draw=unooBlue, line width=0.9pt, rounded corners=8pt,
+    fill=unooBlue!4},
+  % --- tempo ---------------------------------------------------------------
+  tempofaixa/.style={draw=unooAxis, line width=0.7pt, fill=unooSurface},
+  tempolinha/.style={line width=1.2pt, draw=unooBlue!70!unooNavy},
+  tempoestado/.style={font=\scriptsize\color{unooInkSoft}, anchor=east,
+    inner sep=1.5pt},
+  tempotick/.style={font=\scriptsize\color{unooMuted}, inner sep=1.5pt},
+  tempomarca/.style={dashed, dash pattern=on 2pt off 1.6pt, draw=unooAxis,
+    line width=0.6pt},
+  restricao/.style={font=\scriptsize\color{unooNavy}, fill=unooSurface,
+    inner sep=1.4pt},
+}
+
+% Titulo de classificador com estereotipo: #1 estereotipo, #2 nome (branco,
+% para a primeira particao escura de classe/entidade/interface)
+\newcommand{\ctitulo}[2]{\textcolor{white}{{\scriptsize\estereo{#1}}\\[-0.5pt]\textbf{#2}}}
+
+% Pacote: #1 opcoes do corpo, #2 nome do no, #3 e #4 cantos opostos (fit),
+% #5 rotulo da aba
+\newcommand{\pacote}[5][]{%
+  \node[pacotecorpo, fit={#3 #4}, #1] (#2) {};
+  \node[pacoteaba, anchor=south west] at (#2.north west) {#5};
+}
+
+% No de implantacao (caixa em perspectiva): #1 opcoes do corpo, #2 nome do
+% no, #3 e #4 cantos opostos (fit), #5 rotulo (estereotipo + nome)
+\newcommand{\nodo}[5][]{%
+  \node[nodocorpo, fit={#3 #4}, #1] (#2) {};
+  \filldraw[draw=unooNavy, line width=0.85pt, fill=unooNavy!22]
+    (#2.north west) -- ++(2.4mm,2.4mm) -- ([shift={(2.4mm,2.4mm)}]#2.north east)
+    -- (#2.north east) -- cycle;
+  \filldraw[draw=unooNavy, line width=0.85pt, fill=unooNavy!40]
+    (#2.north east) -- ++(2.4mm,2.4mm) -- ([shift={(2.4mm,2.4mm)}]#2.south east)
+    -- (#2.south east) -- cycle;
+  \node[nodolbl, anchor=north west] at (#2.north west) {#5};
+}
+
+% Interface fornecida (pirulito): #1 centro da bola
+\newcommand{\bola}[1]{%
+  \draw[line width=0.85pt, draw=unooInkSoft, fill=unooSurface] #1 circle (1.3mm);}
+% Interface requerida (soquete): #1 centro, #2 angulo para onde o soquete ABRE
+\newcommand{\soquete}[2]{%
+  \draw[line width=0.85pt, draw=unooInkSoft]
+    #1 ++(#2+90:2.2mm) arc[start angle=#2+90, end angle=#2+270, radius=2.2mm];}
+
+% Mensagem de diagrama de comunicacao: seta curta ao lado do link.
+% #1 posicao do rotulo, #2 ponto medio, #3 angulo da seta, #4 rotulo
+\newcommand{\msgcom}[4][above]{%
+  \draw[seqmsg] #2 ++(#3+180:4.5mm) -- ++(#3:9mm)
+    node[msgcomlbl, midway, #1=1.5pt]{#4};}

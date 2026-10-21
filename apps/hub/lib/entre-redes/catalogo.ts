@@ -3,20 +3,18 @@
  *
  * O Entre Redes é uma trilha, não uma atividade solta: cada ano da Educação
  * Básica — 1º ao 9º do Fundamental e as 3 séries do Médio — tem **4 unidades**,
- * e cada unidade é uma **missão**. Hoje três missões existem de fato (8º ano
- * · Unidade 1, a bolha de filtro do Instanooria; 4º ano · Unidade 1, o
- * UnooTube; 2ª série do EM · Unidade 1, a Missão Tempestade do unooGPT). As
- * demais aparecem na trilha como "Em breve" porque a grade é a informação: o
- * professor precisa enxergar onde a missão dele mora.
+ * e cada unidade é uma **missão**. As publicadas estão em `MISSOES_PUBLICADAS`,
+ * mais abaixo; as demais aparecem na trilha como "Em breve" porque a grade é a
+ * informação: o professor precisa enxergar onde a missão dele mora.
  *
  * Este arquivo é a fonte da verdade da trilha. Ele descreve o CATÁLOGO
  * (o que a Unooria oferece); as **atividades** que o professor cria a partir de
- * uma missão são instâncias no banco (`exp_01_activities`), com rota própria em
+ * uma missão são instâncias no banco (`exp08ef1b_activities`), com rota própria em
  * `/professor/atividades/**`.
  *
  * NOTA DE MODELAGEM: enquanto existir uma única missão COM ATIVIDADES, toda
- * atividade pertence a `MISSAO_ATUAL` por construção — por isso `exp_01_activities`
- * ainda não tem coluna `missao`. Missões sem `exp_01_activities` (o UnooTube do 4º
+ * atividade pertence a `MISSAO_ATUAL` por construção — por isso `exp08ef1b_activities`
+ * ainda não tem coluna `missao`. Missões sem `exp08ef1b_activities` (o UnooTube do 4º
  * ano: conteúdo fixo, resultados em tabela própria da api) não mudam isso.
  * Quando a segunda missão configurável entrar, o caminho é adicionar essa
  * coluna (default = slug da missão atual) e filtrar as listagens por ela; os
@@ -122,21 +120,21 @@ function unidadesEmBreve(anoSlug: string, exceto: number[] = []): Missao[] {
 }
 
 /**
- * A missão que existe hoje: o Instanooria, a bolha de filtro do 8º ano.
+ * A missão que existe hoje: o Unoovista, a bolha de filtro do 8º ano.
  * É a única com ficha, guia e atividades configuráveis.
  */
 export const MISSAO_ATUAL: Missao = {
   anoSlug: "8-ano",
   unidadeSlug: "unidade-1",
   unidade: 1,
-  expId: "exp-01-instanooria",
+  expId: "exp08ef1b",
   titulo: "O Conteúdo que não chegou",
   resumo:
     "O estudante investiga uma pergunta do seu conteúdo dentro de uma rede social — e só na revelação final descobre que o feed dele foi montado para puxá-lo para um dos lados.",
   status: "disponivel",
   // Sem spoiler: a missão só funciona se a revelação chegar de surpresa.
   estudante: {
-    titulo: "Instanooria",
+    titulo: "Unoovista",
     chamada:
       "Entre na rede social da turma, investigue a pergunta da missão pelo feed e escreva a sua conclusão.",
   },
@@ -176,15 +174,17 @@ export const MISSAO_ATUAL: Missao = {
 };
 
 /**
- * 4º ano · Unidade 1 — o UnooTube: fontes confiáveis vs. sensacionalismo num
- * clone do YouTube Shorts. Sem atividades configuráveis: o conteúdo é fixo (21
- * vídeos de História), o professor só entra com a turma e lê os resultados.
+ * O UnooTube, ARQUIVADO (ADR-116) — fontes confiáveis vs. sensacionalismo num
+ * clone do YouTube Shorts. Foi a missão do 4º ano, unidade 1, até o Jornal da
+ * Escola tomar o código `exp04ef1b` (`MISSAO_JORNAL_DA_ESCOLA`, logo abaixo).
+ * Fica aqui, renomeado, como registro da ficha: NÃO está em
+ * `MISSOES_PUBLICADAS`, e é isso que o tira da grade.
  */
-export const MISSAO_UNOOTUBE: Missao = {
+export const MISSAO_BACKUP_UNOOTUBE: Missao = {
   anoSlug: "4-ano",
   unidadeSlug: "unidade-1",
   unidade: 1,
-  expId: "exp-02-unootube",
+  expId: "backup-exp04ef1b",
   titulo: "UnooTube — Em quais fontes você confiaria?",
   resumo:
     "Num feed de vídeos curtos sobre História, o estudante salva as 3 fontes em que confiaria. Quem escolhe sensacionalismo ganha mais inscritos — até a turma descobrir que popularidade não é credibilidade.",
@@ -225,7 +225,132 @@ export const MISSAO_UNOOTUBE: Missao = {
 };
 
 /**
- * 2ª série do EM · Unidade 1 — a Missão Tempestade (`exp-03-unoogpt`).
+ * 4º ano · Unidade 1 — Jornal da Escola: A Edição de Bento (`exp04ef1b`).
+ *
+ * Toma o código e o lugar do UnooTube arquivado (ADR-116). A criança é editora
+ * do jornal da escola: oito notícias de oito meios, três vagas na capa. A
+ * redação é da UNOORIA, e não um clone — o PDF "proposta revisada" pede um
+ * ambiente próprio, sem Instagram nem WhatsApp de verdade; o post e a mensagem
+ * aparecem como conteúdo simulado dentro dela.
+ *
+ * O professor tem DOIS portões, num botão só que avança: Liberar resultado
+ * (as reações dos leitores e o "X de 3 notícias verificadas") e, depois da
+ * conversa com a turma, Liberar revisão (a Chave do Editor, a 2ª edição, o
+ * teste da Chave e a mensagem nova). Nenhum volta, e entre os dois cabe a
+ * pausa de quem faz a missão em duas aulas (3.0.0, ADR-168). E a missão NÃO nasce vazia, como a exp07ef1b: sem preparo, a
+ * turma roda o banco padrão "Feira de Ciências e Notícias da Cidade".
+ *
+ * Tem ficha pedagógica (E14): a atividade é o PACOTE homologado e a rodada é o
+ * "Zerar"; o painel de habilidades mora nos resultados, com `?pacote=`. Nasce
+ * com equipe (E13): o painel conta por computador.
+ */
+export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
+  anoSlug: "4-ano",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp04ef1b",
+  titulo: "Jornal da Escola: A Edição de Bento",
+  resumo:
+    "O Bento, que cuida do jornal da escola, recebe oito notícias de meios diferentes para uma " +
+    "capa de três vagas. Cada computador escolhe as suas e publica a 1ª edição; quando você libera " +
+    "o resultado, os leitores reagem ao que foi publicado. Depois da conversa com a turma, você " +
+    "libera a revisão: cada dupla monta a sua Chave do Editor, revisa a capa, publica a 2ª edição, " +
+    "testa a Chave em duas matérias novas e decide o que fazer com uma mensagem urgente.",
+  status: "disponivel",
+  // Sem spoiler: é o desafio do PDF (§4), palavra por palavra. A missão mede o
+  // que a criança escolhe quando ninguém avisou para checar.
+  estudante: {
+    titulo: "Jornal da Escola",
+    chamada:
+      "Você é o editor do jornal da escola. Escolha três notícias para informar seus leitores e " +
+      "monte a edição de hoje.",
+  },
+  ficha: {
+    competencia:
+      "Letramento midiático — conferir de onde veio, quando aconteceu e quem assina uma notícia " +
+      "antes de publicá-la. BNCC Computação: EF04CO08 (verificar a confiabilidade das fontes), " +
+      "EF15CO04 (decomposição) e EF15CO02 (algoritmos simples).",
+    duracao: "1 aula de 50 min, ou 2 aulas com a pausa depois do resultado",
+    formato:
+      "Uma redação digital da Unooria, sem imitar rede social: a mesa com 8 notícias de 8 meios, a " +
+      "primeira página com 3 vagas, o mural dos leitores e a Chave do Editor. A mensagem nova do fim " +
+      "chega numa tela limpa da Unooria, fora da redação.",
+    atos: [
+      {
+        rotulo: "1 — O Bento e as três vagas",
+        texto:
+          "O Bento abre a redação: chegaram 8 notícias e a capa só tem 3 vagas. Ele pede ajuda para " +
+          "informar os colegas sem espalhar confusão — e depois fica calado até a revisão.",
+      },
+      {
+        rotulo: "2 — A mesa: investigar as notícias",
+        texto:
+          "Oito cartões de meios diferentes — jornal impresso, rádio, telejornal, blog, portal, rede " +
+          "social, mensagem encaminhada e mural da escola. Cada notícia abre no formato original, com " +
+          "três botões: de onde veio, quando aconteceu e quem assina. Nada obriga a abrir: quem já sabe " +
+          "checar checa sozinho. Cada pista aberta pede um Confio ou Não confio — é isso que o painel " +
+          "de habilidades registra.",
+      },
+      {
+        rotulo: "3 — A 1ª edição",
+        texto:
+          "Três notícias vão para a capa e podem ser trocadas até a publicação. A inteligência " +
+          "artificial só escolhe o modelo da página (não escolhe notícia, não escreve nada), e um " +
+          "modelo automático assume se ela não responder. Publicar é definitivo; só depois a tela " +
+          "pergunta por que escolheram — antes, a pergunta anteciparia a descoberta. Aí a tela espera " +
+          "por você.",
+      },
+      {
+        rotulo: "4 — O resultado (o seu primeiro botão)",
+        texto:
+          "Liberar resultado mostra, em cada computador, as reações dos leitores às notícias " +
+          "escolhidas e “X de 3 notícias verificadas nesta edição”. Você projeta o gráfico anônimo da " +
+          "turma e conduz a conversa com as três perguntas do painel. Não há ranking nem exposição de " +
+          "quem errou. Se a missão for em duas aulas, a primeira acaba aqui: o progresso fica salvo.",
+      },
+      {
+        rotulo: "5 — A Chave e a revisão (o seu segundo botão)",
+        texto:
+          "Liberar revisão — na mesma aula ou no começo da segunda — traz o Bento de volta com seis " +
+          "blocos: fonte, data, autoria e três armadilhas. Cada dupla monta a sua Chave do Editor, uma " +
+          "vez só e sem correção: três blocos, quando cada pista passa ou falha, Não publico ou Olho a " +
+          "próxima pista, e se vale para todas as notícias ou só para a primeira. Depois, cada vaga da " +
+          "1ª edição ganha um marcador, a turma troca o que não tinha evidência, publica a 2ª edição e " +
+          "compara as duas.",
+      },
+      {
+        rotulo: "6 — O teste da Chave e a mensagem nova",
+        texto:
+          "A dupla aplica a própria Chave a duas matérias novas, sem imagem, e depois todos recebem a " +
+          "mesma regra de referência. Por fim, numa tela limpa, chega uma mensagem urgente sobre um " +
+          "corte de água, com Repassar à mão desde o começo. A tela não diz a ninguém se acertou: o " +
+          "nível de cada um fica no painel de habilidades, só para você.",
+      },
+    ],
+    preparo: [
+      "Libere a missão para a turma na sala de aula — sem a liberação, o cartão fica com cadeado para as crianças.",
+      "Nada é obrigatório antes da aula: sem preparo, a turma roda o banco padrão da Unooria, " +
+        "“Feira de Ciências e Notícias da Cidade”. Em A aula e os resultados, Usar Banco Padrão o " +
+        "confirma em um toque.",
+      "Para um tema da sua aula: escolha o componente curricular, escreva o tema e os tópicos, " +
+        "gere o pacote com IA e revise cada notícia — inclusive se ela pode ir para a capa e a " +
+        "reação do leitor — e as duas matérias do teste da Chave. Nada gerado por inteligência " +
+        "artificial chega à turma sem o seu clique em Aprovar Pacote.",
+      "Depois de aprovar, gere as imagens no mesmo lugar: elas saem duas por vez. Notícia sem " +
+        "imagem aparece desenhada pelo meio, e a missão roda igual.",
+      "Se a turma divide computadores, monte as equipes aqui na ficha, em Equipes desta turma — " +
+        "duplas é o arranjo recomendado. O painel conta por computador.",
+      "Durante a aula são dois botões, na ordem — Liberar resultado e Liberar revisão —, e " +
+        "nenhum volta. Em duas aulas, a pausa é entre os dois. Deixe o projetor pronto para o " +
+        "gráfico da turma.",
+      "Não diga que a aula é sobre notícia falsa, nem peça que abram as pistas: a missão mede o " +
+        "que a turma escolhe quando ninguém avisou para checar.",
+    ],
+  },
+};
+
+/**
+ * 2ª série do EM · Unidade 1 — a Missão Tempestade (`exp02em1b`).
  *
  * ATENÇÃO À COPY: os textos abaixo foram redigidos a partir das ADRs e dos dois
  * playtests documentados do projeto de origem, porque o guia do professor de lá
@@ -239,13 +364,13 @@ export const MISSAO_UNOOGPT: Missao = {
   anoSlug: "2-serie",
   unidadeSlug: "unidade-1",
   unidade: 1,
-  expId: "exp-03-unoogpt",
-  titulo: "unooGPT — Decidir com o que os dados mostram",
+  expId: "exp02em1b",
+  titulo: "UnooriaAI — Decidir com o que os dados mostram",
   resumo:
     "Uma tempestade chega em uma hora e há 2 equipes para 4 bairros. O estudante conversa com um assistente de IA, pede os dados que quiser e decide — com 3 perguntas e o relógio correndo. Cada fonte mostra um pedaço distorcido da cidade, e é essa distorção que a turma discute depois.",
   status: "disponivel",
   estudante: {
-    titulo: "unooGPT",
+    titulo: "UnooriaAI",
     chamada:
       "Uma tempestade chega a Serra do Sauá em uma hora. Você tem duas equipes, quatro bairros e um assistente que consulta os dados da cidade. Decida para onde mandar cada equipe.",
   },
@@ -269,7 +394,7 @@ export const MISSAO_UNOOGPT: Missao = {
       {
         rotulo: "3 — Decidir e dizer por quê",
         texto:
-          "Ele manda cada equipe e responde 'por que aqui?', escolhendo entre as fontes que ABRIU — ou 'foi intuição, não olhei dado', que está sempre disponível. O software não julga a resposta: quem lê é você. A lista nunca oferece a fonte que ele não consultou.",
+          "Ele manda cada equipe e responde 'por que aqui?', escolhendo entre as fontes que ABRIU — ou 'foi intuição, não olhei dado', que está sempre disponível. A plataforma não julga a resposta: quem lê é você. A lista nunca oferece a fonte que ele não consultou.",
       },
       {
         rotulo: "4 — Resultado: a faixa, não a nota",
@@ -281,7 +406,7 @@ export const MISSAO_UNOOGPT: Missao = {
       "Abra /professor/entre-redes/2-serie/unidade-1/resultados ANTES da aula: é de lá que sai a largada, e nenhum estudante fala com o assistente antes dela.",
       "Combine a largada em voz alta. O relógio é da turma: quem chega antes espera, e a espera é a aula — não a tela travada.",
       "Você pode somar +2 minutos ou encerrar a qualquer momento. Somar não faz a chuva andar para trás.",
-      "Guarde metade da aula para o debate: o software NÃO conta a ninguém qual fonte engana em quê. Esse é o seu material, e está no guia.",
+      "Guarde metade da aula para o debate: a missão NÃO conta a ninguém qual fonte engana em quê. Esse é o seu material, e está no guia.",
       "Turma sem partida nenhuma? Confira se a largada foi dada — é o motivo nº 1 de 'não abre'.",
     ],
   },
@@ -292,72 +417,7 @@ export const MISSAO_UNOOGPT: Missao = {
  * está aqui entra na grade como "Em breve".
  */
 /**
- * 7º ano · Unidade 1 — O Eco no Grupo (`exp-07-o-eco-no-grupo`).
- *
- * Clone de WhatsApp móvel, em DUAS aulas com breakpoint entre elas — a
- * primeira missão da trilha em que a professora conduz a turma por etapas
- * (abrir a Aula 2, congelar o debate, liberar a reflexão). É isso que muda o
- * preparo dela em relação às outras: aqui ela tem botões para apertar durante
- * a aula, e a tela dos 30 estudantes anda junto.
- *
- * A copy abaixo sai do sheet congelado da missão (passada 2), com uma exceção
- * declarada: o podcast de recapitulação sai em ~2 min, não nos 3m30 que o
- * brief previu — o roteiro aprovado não dá essa duração, e o cronograma ganha
- * folga em vez de mentir sobre ela.
- */
-export const MISSAO_ECO_NO_GRUPO: Missao = {
-  anoSlug: "7-ano",
-  unidadeSlug: "unidade-1",
-  unidade: 1,
-  expId: "exp-07-o-eco-no-grupo",
-  titulo: "O Eco no Grupo — Quem decide o que roda?",
-  resumo:
-    "Um boato sobre o festival do bairro corre num grupo de WhatsApp, com print recortado e áudio alarmado. O estudante audita as mensagens, descobre o parágrafo que o print cortou e responde citando a matéria completa — e o grupo se acalma na frente dele.",
-  status: "disponivel",
-  estudante: {
-    titulo: "O Eco no Grupo",
-    chamada:
-      "Amara te chama no privado: o grupo do bairro está em pânico por causa de um print. Descubra de onde saiu essa história.",
-  },
-  ficha: {
-    competencia:
-      "Letramento midiático — reconhecer que print e manchete isolados são recorte intencional, e intervir com a fonte completa em vez de opinião.",
-    duracao: "2 aulas de 30–35 min, com pausa entre elas",
-    formato:
-      "Clone de WhatsApp móvel: um chat privado, um grupo de bairro com 8 mensagens, e a reportagem íntegra em tela cheia",
-    atos: [
-      {
-        rotulo: "1 — Investigar o grupo (Aula 1)",
-        texto:
-          "O estudante entra no grupo 'Comunidade Alerta', ouve o áudio da moradora, lê os textos indignados e toca no print encaminhado. A reportagem completa abre e mostra o parágrafo que foi cortado: o evento tinha alvará e a polícia só organizava o trânsito. Amara fica em silêncio nesta etapa, de propósito — é o estudante que precisa achar o corte.",
-      },
-      {
-        rotulo: "2 — Pausa entre as aulas",
-        texto:
-          "No fim da Aula 1 a missão para numa tela de pausa, com o progresso salvo. Ninguém avança até você abrir a Aula 2 no painel de resultados — é isso que faz a turma chegar junta à decisão.",
-      },
-      {
-        rotulo: "3 — Responder no grupo (Aula 2)",
-        texto:
-          "Depois do episódio de recapitulação, abre o menu com 3 respostas: repassar o áudio alarmado, responder citando a matéria com o link, ou brigar e sair do grupo. Quem responde citando vê o administrador fixar a mensagem no topo do chat. Quem responde no impulso vê o bairro entrar em pânico — e pode apagar para todos e tentar de novo.",
-      },
-      {
-        rotulo: "4 — Sistematizar e registrar",
-        texto:
-          "Três quadros explicam o enquadramento parcial, o contexto omitido e o rótulo de encaminhamento. Você congela as telas para o debate e depois libera o 'Meu percurso', em que cada estudante marca 2 critérios de checagem e uma justificativa.",
-      },
-    ],
-    preparo: [
-      "Conferir fones de ouvido: há dois áudios no chat e um episódio de recapitulação. Sem fone, a transcrição na tela cobre tudo — ela está sempre visível.",
-      "Preparar a mídia da missão no painel de resultados, uma vez por escola. Leva cerca de dois minutos e vale para todas as turmas.",
-      "Você conduz a aula por três botões no painel: abrir a Aula 2, congelar o debate e liberar a reflexão. Sem o primeiro, ninguém passa da investigação.",
-      "Reservar as duas aulas seguidas na agenda: o progresso fica salvo, mas a pausa foi desenhada para uma aula e a seguinte.",
-    ],
-  },
-};
-
-/**
- * 6º ano · Unidade 2 — O Rastro do Boato (`exp-06-rastro-boato`).
+ * 6º ano · Unidade 2 — O Rastro do Boato (`exp06ef2b`).
  *
  * Clone de mensageiro móvel, em DUAS aulas com breakpoint entre elas, como a do
  * 7º ano — mas o objeto de análise é outro, e é isso que separa as duas na
@@ -367,7 +427,7 @@ export const MISSAO_ECO_NO_GRUPO: Missao = {
  * citar a matéria completa.
  *
  * A professora tem UM botão durante a aula (abrir a Aula 2) e o inverso dele.
- * É menos do que os três da exp-07 porque esta missão pede menos: o debate
+ * É menos do que os três da exp07ef1b porque esta missão pede menos: o debate
  * acontece depois do mapa, não no meio dele.
  *
  * A copy sai do sheet congelado da missão (passada 2), com uma exceção
@@ -379,7 +439,7 @@ export const MISSAO_RASTRO_BOATO: Missao = {
   anoSlug: "6-ano",
   unidadeSlug: "unidade-2",
   unidade: 2,
-  expId: "exp-06-rastro-boato",
+  expId: "exp06ef2b",
   titulo: "O Rastro do Boato — Por que a mentira voa?",
   resumo:
     "Um aviso de que a água da escola está contaminada corre quatro grupos em dez minutos, e a nota da direção com o laudo quase não sai do lugar. O estudante abre os dados de envio de cada mensagem, descobre que o alerta veio de seis encaminhamentos anônimos sem autor — e decide o que fazer quando chega o áudio convocando um protesto.",
@@ -427,10 +487,10 @@ export const MISSAO_RASTRO_BOATO: Missao = {
 };
 
 /**
- * 8º ano · Unidade 4 — O Manifesto da IA (`exp-08-manifesto-ia`).
+ * 8º ano · Unidade 4 — O Manifesto da IA (`exp08ef4b`).
  *
  * A SEGUNDA missão do 8º ano, e a que fecha o ano letivo dele. Clone do
- * ChatGPT, como a exp-03 — mas o que se audita aqui é outra coisa, e é isso que
+ * ChatGPT, como a exp02em1b — mas o que se audita aqui é outra coisa, e é isso que
  * separa as duas na trilha: na Missão Tempestade o estudante confere as FONTES
  * que o agente cita; aqui ele confronta a PREMISSA do sistema (a de que
  * algoritmo é neutro) e fixa uma regra que o código passa a obedecer.
@@ -453,7 +513,7 @@ export const MISSAO_MANIFESTO_IA: Missao = {
   anoSlug: "8-ano",
   unidadeSlug: "unidade-4",
   unidade: 4,
-  expId: "exp-08-manifesto-ia",
+  expId: "exp08ef4b",
   titulo: "O Manifesto da IA — Nossos direitos em código",
   resumo:
     "A direção quer instalar uma inteligência artificial para prever notas e monitorar presença, " +
@@ -531,7 +591,7 @@ export const MISSAO_MANIFESTO_IA: Missao = {
 };
 
 /**
- * 1º ano · Unidade 1 — O Que a Foto Conta (`exp-04-o-que-a-foto-conta`).
+ * 1º ano · Unidade 1 — O Que a Foto Conta (`exp01ef1b`).
  *
  * A porta de entrada do Entre Redes: leitura de imagem no mural da turma
  * (clone do Instagram), para crianças em alfabetização inicial. A missão é
@@ -548,7 +608,7 @@ export const MISSAO_FOTO_CONTA: Missao = {
   anoSlug: "1-ano",
   unidadeSlug: "unidade-1",
   unidade: 1,
-  expId: "exp-04-o-que-a-foto-conta",
+  expId: "exp01ef1b",
   titulo: "O Que a Foto Conta — toda foto mostra uma escolha",
   resumo:
     "No mural da turma, duas fotos do mesmo pátio contam histórias opostas: uma celebra o brinquedo que a turma montou, a outra mostra o chão cheio de peças. O estudante escolhe UMA foto e UMA legenda, publica — e descobre, pelos comentários dos colegas simulados, que o pedaço que ele escolheu mostrar mudou o que os outros viram.",
@@ -597,7 +657,7 @@ export const MISSAO_FOTO_CONTA: Missao = {
       },
     ],
     preparo: [
-      "Libere a missão para a turma na sala de aula — sem a liberação, o card fica com cadeado para as crianças.",
+      "Libere a missão para a turma na sala de aula — sem a liberação, o cartão fica com cadeado para as crianças.",
       "Opcional: no painel da missão, gere com IA o pacote de legendas para o tema da semana (Pátio do Recreio, Horta, Sala de Aula ou Parquinho), confira o preview e aprove. Sem aprovação, o banco curado padrão assume sozinho até 10 minutos antes da aula.",
       "Fones de ouvido fazem diferença: toda instrução tem locução, e trinta tablets em autoplay ao mesmo tempo viram cacofonia sem eles.",
       "Rode a missão você mesmo uma vez, com calma — são ~12 minutos de tela. O que a criança NÃO pode saber de antemão: que os comentários de Leo e Sofia mudam conforme a foto escolhida.",
@@ -606,11 +666,379 @@ export const MISSAO_FOTO_CONTA: Missao = {
   },
 };
 
+/**
+ * 5º ano · Unidade 1 — Quem Mandou Isso? v2.2 (`exp05ef1b`).
+ *
+ * A v1 saiu na ADR-114 e esta volta com o MESMO código e outra mecânica: oito
+ * mensagens num grupo do WhatsApp simulado, na matriz verdadeira/falsa ×
+ * emocional/neutra; exatamente três vão para o Mural da Turma, e só a
+ * revelação do professor mostra os dois selos de cada uma. A descoberta
+ * (EF05CO03) é que os dois eixos são INDEPENDENTES: a mensagem séria pode ser
+ * falsa e a alarmada, verdadeira.
+ *
+ * Duas coisas que mudam a condução e não cabem no resumo:
+ *
+ * 1. **A missão NASCE VAZIA.** O tema do pacote entra na fala da Nina ("Rolou
+ *    uma confusão sobre {tema}."), então sem um pacote aprovado pelo professor
+ *    a criança vê espera, não um grupo — nem o banco curado assumindo sozinho.
+ * 2. **São TRÊS botões durante a aula**, só para a frente: a revelação, a
+ *    síntese (que pode ser pulada) e a reflexão.
+ *
+ * As habilidades avaliadas são SÓ as de Computação — EF05CO08 pela seleção do
+ * Mural, EF05CO03 pelo alerta do grupo e EF05CO04 pelo robô do grupo (a ficha
+ * E14 da api, v5: só ações). Os códigos de Língua Portuguesa do one-pager ("a confirmar") não
+ * entram como habilidade avaliada.
+ */
+export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
+  anoSlug: "5-ano",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp05ef1b",
+  titulo: "Quem Mandou Isso?",
+  resumo:
+    "A Nina pede ajuda: rolou uma confusão na escola. No grupo da turma chegam 8 mensagens — " +
+    "verdadeiras e falsas, calmas e alarmadas —, e cada estudante encaminha exatamente 3 para o " +
+    "Mural da Turma e diz, numa enquete, o que pesou na escolha. Quando você libera a revelação, o " +
+    "telão mostra o Termômetro da Turma e cada um descobre que a mensagem séria podia ser falsa, e a " +
+    "alarmada, verdadeira.",
+  status: "disponivel",
+  // Sem spoiler: a missão mede o que a criança encaminha quando ninguém avisou
+  // para desconfiar, e a copy dela é só a tarefa.
+  estudante: {
+    titulo: "Quem Mandou Isso?",
+    chamada:
+      "A Nina precisa da sua ajuda: rolou uma confusão na escola. Entre no grupo da turma e veja o que estão falando.",
+  },
+  ficha: {
+    competencia:
+      "Letramento digital, dinâmica de repasse e checagem crítica em mensagens instantâneas " +
+      "(EF05CO08, EF05CO03, EF05CO04).",
+    duracao: "1 aula de 50 min (ou 2 sessões de 25 min)",
+    formato:
+      "Unoochat, o aplicativo de mensagens da Unooria, em tema claro: a conversa com a Nina, o grupo da " +
+      "turma com 8 mensagens, o Mural da Turma, a enquete e o alerta do grupo; o desafio final, o robô do grupo, é na tela da escola.",
+    atos: [
+      {
+        rotulo: "1 — Desafiar: o pedido da Nina",
+        texto:
+          "A missão abre na lista de conversas. A Nina conta que rolou uma confusão sobre o tema que " +
+          "você escreveu no preparo e manda o convite do grupo Turma 5ºB. É por isso que a missão só " +
+          "abre depois que você aprova o pacote: a fala da Nina é sobre ele.",
+      },
+      {
+        rotulo: "2 — Navegar: o grupo da turma",
+        texto:
+          "Oito mensagens de colegas: 4 textos, 2 imagens de comunicado e 2 links com prévia, duas de " +
+          "cada quadrante (verdadeira ou falsa × emocional ou neutra). Ninguém digita — só " +
+          "administradores falam no grupo —, e a única ação é a seta de encaminhar. Nenhuma mensagem " +
+          "chega marcada.",
+      },
+      {
+        rotulo: "3 — Decidir: o Mural e a enquete",
+        texto:
+          "Exatamente 3 mensagens vão para o Mural da Turma. Confirmado o envio, não dá para desfazer, " +
+          "e surge a enquete “O que mais te fez escolher essas mensagens?”, com quatro opções. Depois " +
+          "do voto a tela espera por você.",
+      },
+      {
+        rotulo: "4 — Resultado: a revelação (o seu primeiro botão)",
+        texto:
+          "Você aperta Liberar Revelação: o painel mostra o Termômetro da Turma para projetar, e cada " +
+          "aparelho ganha os dois selos sobre as 3 mensagens encaminhadas, com o motivo votado e o " +
+          "lembrete do bimestre — e, logo abaixo, o alerta do grupo: as 8 mensagens com os dois selos e " +
+          "4 pedidos em que a criança monta um filtro com E, OU e NÃO, vê quem passa e envia o alerta ao " +
+          "grupo. É o alerta que registra a EF05CO03, e ele fecha quando você apresenta a síntese. Quem " +
+          "ainda não tinha confirmado continua, confirma e vê a própria revelação depois.",
+      },
+      {
+        rotulo: "5 — Explicar: a síntese e a roda de conversa",
+        texto:
+          "Apresentar Síntese leva aos aparelhos a ideia central — a embalagem da mensagem desarma a " +
+          "checagem —, e você conduz a roda de conversa com as 3 perguntas do painel, de 5 a 7 " +
+          "minutos. A síntese pode ser pulada.",
+      },
+      {
+        rotulo: "6 — Refletir: o robô do grupo",
+        texto:
+          "Liberar Reflexão leva cada aparelho ao desafio do tio: a criança monta com blocos o robô do " +
+          "grupo (“para cada mensagem nova”, “SE a mensagem for…”, “ENTÃO o robô…”), liga e vê o que ele " +
+          "faz com 4 mensagens, a primeira delas o áudio assustado do tio, e envia. O robô registra a " +
+          "EF05CO04 no painel de habilidades.",
+      },
+    ],
+    preparo: [
+      "Libere a missão para a turma na sala de aula — sem a liberação, o cartão fica com cadeado para as crianças.",
+      "Crie a atividade em Nova atividade, aqui na ficha: escolha o componente curricular, escreva o " +
+        "tema (ele completa a fala da Nina, “Rolou uma confusão sobre…”), liste de 3 a 6 fatos da " +
+        "aula, um por linha, e gere com IA — ou use o pacote curado padrão, “O Mistério do Passeio ao " +
+        "Museu”. Sem atividade em andamento, a criança entra e vê uma tela de espera.",
+      "Leia as 8 mensagens antes de aprovar: os selos de verdadeira ou falsa e de emocional ou " +
+        "neutra são só seus, e dá para editar qualquer texto. Nada gerado por inteligência artificial " +
+        "chega à turma sem o seu clique em Aprovar Pacote.",
+      "Se a turma divide computadores, monte as equipes ao criar a atividade: quem entra na missão " +
+        "representa a equipe, e o painel conta por computador.",
+      "Deixe o painel aberto no seu computador: são três botões durante a aula — Liberar Revelação, " +
+        "Apresentar Síntese e Liberar Reflexão —, na ordem, e nenhum deles volta atrás.",
+      "Não diga que a aula é sobre notícia falsa: a missão mede o que a criança encaminha quando " +
+        "ninguém avisou para desconfiar.",
+    ],
+  },
+};
+
+/**
+ * 7º ano · Unidade 1 — A Seleção (`exp07ef1b`).
+ *
+ * Clone do Instagram (a seção `instanooria` do DS), como a exp08ef1b — mas o
+ * que se mede aqui é outra coisa, e é isso que separa as duas na trilha: no 8º
+ * ano o feed se adapta ao estudante e a bolha é do algoritmo; no 7º o feed é o
+ * MESMO para todos, e a bolha é a própria criança quem monta, escolhendo três
+ * posts de doze. Nenhum veículo mente: a descoberta é que fatos verdadeiros,
+ * selecionados, já contam a história por um lado.
+ *
+ * Substitui O Eco no Grupo, que ocupava esta unidade (decisão de 2026-09-23).
+ *
+ * Tem ficha pedagógica (E14), a segunda depois de Quem Mandou Isso? v2.2: a
+ * atividade é a COBERTURA homologada, a rodada é o "Zerar", e o painel de habilidades mora nos
+ * resultados dela. E nasce com equipe (E13): o Mural pareia COMPUTADORES.
+ *
+ * A professora tem UM botão durante a aula, que sempre mostra a próxima
+ * etapa — Liberar Mural da Turma, Revelar Fichas Técnicas, Liberar Conclusão
+ * Individual — e nunca volta. A missão NÃO nasce vazia, ao contrário da
+ * exp05ef1b: sem preparo, a turma roda a cobertura curada da praça central.
+ */
+export const MISSAO_A_SELECAO: Missao = {
+  anoSlug: "7-ano",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp07ef1b",
+  titulo: "A Seleção",
+  resumo:
+    "A Amara, do grêmio, pede ajuda para cobrir um evento do bairro nos Stories. O estudante " +
+    "rola um feed com 12 publicações de três veículos locais sobre o mesmo acontecimento, salva " +
+    "as que acha mais completas, fica com exatamente três e publica com uma legenda — sem volta. " +
+    "Quando você abre o Mural, cada publicação aparece ao lado da de um colega que contou outra " +
+    "história com os mesmos fatos verdadeiros; as fichas técnicas mostram quem cada um decidiu " +
+    "ouvir.",
+  status: "disponivel",
+  estudante: {
+    titulo: "A Seleção",
+    chamada:
+      "A Amara, do grêmio, precisa de uma força: escolha 3 posts da cobertura do bairro e " +
+      "publique nos Stories do grêmio.",
+  },
+  ficha: {
+    competencia:
+      "Letramento midiático — perceber que escolher o que publicar já é contar a história por " +
+      "um lado, e reconhecer que o colega que contou outra versão partiu dos mesmos fatos " +
+      "verdadeiros. BNCC Computação: EF07CO11 (criar, documentar e publicar produtos digitais) " +
+      "e EF07CO08 (empatia sobre opiniões divergentes na web).",
+    duracao: "1 aula de 50 min, com o Mural da Turma no meio",
+    formato:
+      "Clone de rede social de fotos (o Instanooria): um feed com 12 publicações de três " +
+      "veículos locais, a aba Salvos, os Stories do grêmio e o Mural da Turma. A conclusão e a " +
+      "reflexão são na Unooria.",
+    atos: [
+      {
+        rotulo: "1 — O pedido da Amara",
+        texto:
+          "A missão abre com uma mensagem direta da Amara, do grêmio: ela precisa fechar a " +
+          "cobertura do evento de ontem no bairro e pede que o estudante escolha exatamente 3 " +
+          "posts salvos e publique nos Stories do grêmio, com uma legenda explicando a escolha. " +
+          "Nenhuma palavra sobre fontes, lados ou veículos — a Amara só volta no fechamento.",
+      },
+      {
+        rotulo: "2 — O feed da cobertura",
+        texto:
+          "São 12 publicações intercaladas de três veículos locais — @folhaoficial_, " +
+          "@voz_coletiva e @metrica_urbana —, quatro de cada, todas sobre o mesmo acontecimento " +
+          "e todas verdadeiras. O estudante rola, curte e salva o que acha mais completo. Não há " +
+          "busca nem comentário livre.",
+      },
+      {
+        rotulo: "3 — A poda e a publicação",
+        texto:
+          "Na aba Salvos ele corta até ficar com exatamente três, escreve uma legenda de 10 a " +
+          "140 caracteres e confirma: a publicação é definitiva. Depois disso a tela espera por " +
+          "você, mostrando quantos colegas já publicaram. Quem publica atrasado, depois do Mural " +
+          "aberto, ainda entra.",
+      },
+      {
+        rotulo: "4 — O Mural da Turma (o seu primeiro e segundo botões)",
+        texto:
+          "Com cerca de 80% publicado, você aperta Liberar Mural da Turma: cada publicação " +
+          "aparece ao lado da de um colega que escolheu diferente (outro computador, ou um " +
+          "colega virtual quando não há par). A tela fica nua de propósito — é o choque de ver " +
+          "outra história com o mesmo feed. Depois dos primeiros comentários, Revelar Fichas " +
+          "Técnicas acende quem cada post ouviu, o ângulo da imagem e o equilíbrio editorial de " +
+          "cada seleção.",
+      },
+      {
+        rotulo: "5 — A conclusão (o seu terceiro botão)",
+        texto:
+          "Liberar Conclusão Individual abre três cards curtos — a ilusão da neutralidade, as " +
+          "três lentes, e quem fala define a história —, cada um com leitura mínima de 8 " +
+          "segundos, e a mensagem de fechamento da Amara, que liga a aula a A Reportagem Que Não " +
+          "Saiu.",
+      },
+      {
+        rotulo: "6 — A reflexão e as enquetes",
+        texto:
+          "Cada um escreve de 100 a 500 caracteres sobre um repórter que cobre a reforma de uma " +
+          "escola ouvindo só a diretoria. Só você lê. Por fim, duas enquetes de um toque na " +
+          "mensagem da Amara, que alimentam o painel de habilidades da turma.",
+      },
+    ],
+    preparo: [
+      "Nada é obrigatório antes da aula: sem preparo, a turma roda a cobertura curada da " +
+        "Unooria sobre a reforma da praça central, com as 12 publicações e os gráficos prontos.",
+      "Para um tema da sua cidade: em A aula e os resultados, escreva o evento, clique em Gerar " +
+        "Lote com IA, leia e edite as legendas e clique em Aprovar Cobertura e Abrir Turma. " +
+        "Nenhum texto gerado por inteligência artificial chega à turma sem esse clique.",
+      "Depois de aprovar, gere as imagens dos posts no mesmo lugar — elas saem duas por vez e " +
+        "podem levar alguns minutos. Post sem imagem aparece com a descrição da cena, e a missão " +
+        "roda igual.",
+      "Se a turma divide computadores, monte as equipes aqui na ficha, em Equipes desta turma: " +
+        "o Mural pareia computadores, nunca dois estudantes do mesmo aparelho.",
+      "Durante a aula é um botão só, e ele não volta. Espere cerca de 80% dos computadores " +
+        "publicarem antes de liberar o Mural — o número anda sozinho no painel.",
+      "Não leia as perguntas do debate antes do Mural: elas diriam à turma o que procurar no " +
+        "feed, e a seleção deixaria de ser espontânea.",
+    ],
+  },
+};
+
+/**
+ * 6º ano · Unidade 1 — O Júri Estadual de Projetos (`exp06ef1b`).
+ *
+ * O estudante é jurado de uma mostra científica estadual num feed de rede
+ * social (o Unoovista). As curtidas dele afunilam o feed em silêncio; depois de
+ * dez posts ele lacra o voto e espera — é o PICO: o professor projeta como os
+ * votos da turma se dividiram e libera a Galeria Oculta, onde cada um vê o que
+ * nunca chegou à tela dele. Com QUARENTA estandes (PO, 2026-10-14) e dez posts,
+ * o total escondido é o mesmo para todos; a galeria prova O QUE sumiu — a
+ * contagem por área e o feed "sem as suas curtidas" (calculados na api para
+ * cada sessão: quem curte duas vezes a mesma área recebe quase só ela; quem não
+ * curte nada vê as quatro misturadas). Nenhum número cravado na copy, de
+ * propósito.
+ *
+ * As habilidades são as da ficha 6 (ADR-176, sobre o Canal A puro da ADR-174):
+ * EF06CO01 (o foco primário), pelas PASTAS em que a criança guarda cada
+ * estande no próprio feed, e EF06CO03, pela regra SE … ENTÃO, que encerra a
+ * missão (o caso Mariana saiu na ADR-176), com o TEXTO OFICIAL de `apps/api/src/curriculo/dados/
+ * habilidades-computacao.ts`. O PO, revisando com a equipe pedagógica contra o
+ * texto oficial, tirou a EF06CO10 (consumo, obsolescência e sustentabilidade
+ * não são o que a missão trabalha) e as enquetes; a EF06CO07 saiu antes.
+ *
+ * Tem ficha pedagógica (E14): a atividade é o PACOTE homologado e a rodada é o
+ * "Zerar". Desde a 0.4.0 (PRD v2) tem BANCO PADRÃO: o professor usa a Feira
+ * de Ciências e Sustentabilidade em um toque, ou gera os quarenta estandes
+ * com IA sobre o tema dele; sem saldo de IA, o banco padrão entra no lugar. A
+ * rodada de desvio saiu: o único botão da aula é Liberar Auditoria.
+ */
+export const MISSAO_JURI_ESTADUAL: Missao = {
+  anoSlug: "6-ano",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp06ef1b",
+  titulo: "O Júri Estadual de Projetos",
+  resumo:
+    "Simulação de rede social onde as curtidas do estudante revelam como funcionam as bolhas " +
+    "algorítmicas e os sistemas de recomendação. Ele é jurado de uma mostra estadual com quarenta " +
+    "estandes de quatro áreas — do banco padrão ou escritos sobre o tema da sua aula —, lacra o " +
+    "voto e, quando você libera a auditoria, descobre na Galeria Oculta os estandes que as " +
+    "próprias curtidas esconderam dele.",
+  status: "disponivel",
+  // Sem spoiler: é o mandato da credencial (`e1.instrucao.missao_jurado`), e
+  // nada nele diz que o feed se adapta.
+  estudante: {
+    titulo: "O Júri Estadual de Projetos",
+    chamada:
+      "Você foi nomeado jurado oficial. Explore as publicações das escolas concorrentes e eleja o " +
+      "Grande Campeão Estadual.",
+  },
+  ficha: {
+    competencia:
+      "Letramento digital — perceber que um feed que se adapta às curtidas esconde parte do que " +
+      "existe, e que essa engrenagem é uma regra que se pode descrever. BNCC Computação, com o foco " +
+      "na EF06CO01 (classificar informações, agrupando-as em coleções (conjuntos) e associando " +
+      "cada coleção a um ‘tipo de dados’) e na EF06CO03 (descrever com precisão a solução de um " +
+      "problema, construindo o programa que implementa a solução descrita).",
+    duracao: "1 aula de 50 min, cerca de 24 em tela (ou 2 sessões de 25 min)",
+    formato:
+      "Clone de rede social de fotos (o Unoovista): a credencial de jurado, o feed da mostra com as " +
+      "pastas dos posts salvos, a cédula lacrada e a Galeria Oculta com a busca por hashtag. A " +
+      "regra do feed é numa tela da Unooria.",
+    atos: [
+      {
+        rotulo: "1 — A credencial de jurado",
+        texto:
+          "A Comissão Estadual da Mostra nomeia o estudante jurado oficial: ele vai explorar as " +
+          "publicações das escolas concorrentes e eleger o grande campeão. Nenhuma palavra sobre " +
+          "algoritmo, bolha ou filtro.",
+      },
+      {
+        rotulo: "2 — O feed da mostra",
+        texto:
+          "As quatro primeiras publicações são uma de cada área. Daí em diante, cada curtida e cada " +
+          "parada longa num post mudam o que vem a seguir, sem nenhum aviso na tela: quem curte " +
+          "duas vezes a mesma área passa a receber só ela — outros projetos da mesma área, nenhum " +
+          "repetido. A comissão pede que ele salve cada estande na pasta da área dele, como as " +
+          "coleções de posts salvos de uma rede social. Depois de dez publicações, ou de 8 minutos, " +
+          "a cédula abre.",
+      },
+      {
+        rotulo: "3 — A cédula lacrada",
+        texto:
+          "Quatro elementos: o título, um dos estandes que ele viu, a certeza (as duas opções " +
+          "afirmam certeza, de propósito) e o botão de confirmar. O voto é lacrado e não volta. Se a " +
+          "cédula ficar parada mais de um minuto, a tela lembra que a comissão aguarda, e o seu " +
+          "painel mostra um alerta ao lado do nome. O voto só fecha com todo estande visto numa " +
+          "pasta: é nesse momento que a separação conta para a habilidade, uma vez só.",
+      },
+      {
+        rotulo: "4 — A lousa e a Galeria Oculta (o seu botão)",
+        texto:
+          "Com a maioria votada, você projeta o Painel Coletivo de Votos da Turma e conduz as " +
+          "perguntas da plenária. Aí você aperta Liberar Auditoria. Cada computador vê os estandes " +
+          "que não chegaram ao feed dele — o total é igual para todos, as áreas não — e abre os de " +
+          "cada área pelas hashtags. Busca e decide entre manter o voto inicial ou confirmar um voto " +
+          "revisado. Na lousa, " +
+          "você mostra quanto do feed caiu numa área só para quem curtiu e para quem não curtiu.",
+      },
+      {
+        rotulo: "5 — A regra do feed",
+        texto:
+          "Numa tela da Unooria, o estudante monta a regra que o aplicativo seguiu: a condição (SE) " +
+          "e a ação (ENTÃO), entre três peças cada, uma vez só. Depois, a tela mostra a regra certa " +
+          "e o que ela fez no feed dele, e a missão termina com o crachá homologado. O podcast de " +
+          "recapitulação fecha a aula, depois da Etapa 4.",
+      },
+    ],
+    preparo: [
+      "Libere a missão para a turma na sala de aula — sem a liberação, o cartão fica com cadeado para as crianças.",
+      "Crie a atividade aqui na ficha, em Nova atividade. O caminho curto é Usar Banco Padrão Oficial: " +
+        "um toque, sem IA. Para personalizar, escolha o componente curricular, o título da mostra e os " +
+        "assuntos da semana e gere com IA; sem saldo de IA, o Acervo Padrão da Mostra entra no lugar.",
+      "Na mostra personalizada, revise os quarenta estandes, uma aba por área (título, legenda e bastidor; " +
+        "regenere o que não servir), e aprove em duas fases: os textos, depois as imagens — que saem quatro " +
+        "por vez e levam vários minutos; sem elas aprovadas, a mostra não vai ao ar. Faça antes do dia da aula. " +
+        "Nada gerado por inteligência artificial chega à turma sem a sua revisão.",
+      "Se a turma divide computadores, escolha as equipes na criação. Não há rodízio obrigatório de quem " +
+        "toca a tela: a organização do grupo fica com você. O painel conta por computador.",
+      "Durante a aula é um botão só — Liberar Auditoria —, e ele não volta. Deixe o projetor pronto: o " +
+        "painel de votos é para a lousa.",
+      "Não diga que a aula é sobre algoritmo, bolha ou filtro: a missão mede o que a turma vota quando " +
+        "ninguém avisou que o feed se adapta.",
+    ],
+  },
+};
+
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "1-ano": [MISSAO_FOTO_CONTA],
-  "4-ano": [MISSAO_UNOOTUBE],
-  "6-ano": [MISSAO_RASTRO_BOATO],
-  "7-ano": [MISSAO_ECO_NO_GRUPO],
+  "4-ano": [MISSAO_JORNAL_DA_ESCOLA],
+  "5-ano": [MISSAO_QUEM_MANDOU_ISSO],
+  "6-ano": [MISSAO_JURI_ESTADUAL, MISSAO_RASTRO_BOATO],
+  "7-ano": [MISSAO_A_SELECAO],
   "8-ano": [MISSAO_ATUAL, MISSAO_MANIFESTO_IA],
   "2-serie": [MISSAO_UNOOGPT],
 };
@@ -692,7 +1120,7 @@ export type MissaoTransversal = {
  */
 export const MISSAO_VILA: MissaoTransversal = {
   slug: "vila-do-lume",
-  expId: "exp-70-vila-do-lume",
+  expId: "app-70-vila-do-lume",
   titulo: "Vila do Lume — A Noite Longa",
   resumo:
     "A turma reacende as oito fogueiras de uma vila no escuro. Pelo caminho chegam mensagens: duas são verdadeiras, e cada estudante recebe um golpe de um nível diferente — é isso que faz o debate funcionar.",

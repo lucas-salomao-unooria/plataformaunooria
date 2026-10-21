@@ -4,7 +4,7 @@ import { montarEmbed } from "@/lib/embed-experiencia";
 import { EXP_PLANO_DE_AULA } from "@/lib/plano-de-aula";
 
 /**
- * **Gerador de Plano de Aula** dentro do hub: a exp-90 (Vite, estática)
+ * **Gerador de Plano de Aula** dentro do hub: a app-90 (Vite, estática)
  * embedada na casca do professor. Antes era um serviço Cloud Run separado
  * aberto em nova guia; agora é a mesma sessão, o mesmo token e a mesma api.
  *
@@ -52,6 +52,7 @@ export default async function PlanoDeAulaPage({
          * `/dev-embed` sempre repassaram; as três rotas de professor, não.
          */
         permissoes={embed.permissoes}
+        titulo={embed.manifesto?.nome}
       />
     </div>
   );

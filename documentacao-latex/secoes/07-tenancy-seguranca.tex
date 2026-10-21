@@ -13,32 +13,31 @@ sob erro de programação --- devolver o dado de uma escola a outra.
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    nivel/.style={camadalbl, anchor=south west, inner sep=0pt},
+    papel/.style={c4component, text width=27mm, minimum height=14mm,
+                  fill=unooSurface, draw=unooBlue}]
 
-  \draw[nuvem] (0.2,0.6) rectangle (7.4,-6.4);
-  \node[nuvemlbl] at (0.5,0.5) {Contrato A --- \emph{stack} GCP};
-  \draw[nuvem, draw=unooMuted, fill=unooPaper] (8.2,0.6) rectangle (15.4,-6.4);
-  \node[nuvemlbl, text=unooInkSoft] at (8.5,0.5) {Contrato B --- outra \emph{stack}};
+  % --- Nível 1: físico (uma stack por contrato)
+  \node[nivel] at (0,0.75)
+    {Nível 1 --- físico: uma \emph{stack} GCP por contrato};
 
-  \node[servico, text width=26mm] (apiA) at (2.0,-0.6) {API do contrato A};
-  \node[volume, text width=24mm, minimum height=13mm] (pgA) at (5.6,-1.0)
+  \node[servico, text width=26mm] (apiA) at (2.3,-1.0) {API do contrato A};
+  \node[volume, text width=24mm, minimum height=13mm] (pgA) at (7.0,-1.0)
     {PostgreSQL do contrato A};
-  \node[servico, text width=26mm, fill=unooMuted, draw=unooInkSoft] (apiB) at (10.0,-0.6)
-    {API do contrato B};
-  \node[volume, text width=24mm, minimum height=13mm, fill=unooMuted, draw=unooInkSoft] (pgB) at (13.6,-1.0)
-    {PostgreSQL do contrato B};
-
   \draw[netpriv] (apiA) -- (pgA);
-  \draw[netpriv] (apiB) -- (pgB);
 
-  % --- escolas dentro do contrato A
-  \node[camadalbl, anchor=west] at (0.6,-2.3) {Dentro de UMA \emph{stack}: isolamento lógico};
-  \node[c4component, text width=20mm] (e1) at (1.8,-3.3) {escola \texttt{sp-001}};
-  \node[c4component, text width=20mm] (e2) at (4.2,-3.3) {escola \texttt{sp-002}};
-  \node[c4component, text width=20mm, fill=unooPaper, draw=unooAxis] (e3) at (6.6,-3.3)
-    {\ldots{} 100+};
+  % --- Nível 2: lógico, dentro de UMA stack
+  \node[nivel] at (0.45,-2.35)
+    {Nível 2 --- lógico: as escolas dividem a \emph{stack}};
+  \node[c4component, text width=27mm, minimum height=11mm] (e1) at (1.85,-3.15)
+    {escola \texttt{sp-001}};
+  \node[c4component, text width=27mm, minimum height=11mm] (e2) at (5.15,-3.15)
+    {escola \texttt{sp-002}};
+  \node[c4component, text width=27mm, minimum height=11mm,
+        fill=unooPaper, draw=unooAxis] (e3) at (8.45,-3.15) {\ldots{} 100+};
 
-  \node[tabelaplat, text width=52mm] (tab) at (3.8,-5.2)
+  \node[tabelaplat, text width=86mm, anchor=north] (tab) at (5.15,-4.25)
     {\etitulo{Toda tabela de dado de estudante}
      \nodepart{two}
      \pk{escola\_id} \texttt{TEXT NOT NULL}\\
@@ -47,16 +46,46 @@ sob erro de programação --- devolver o dado de uma escola a outra.
      \texttt{POLICY USING (escola\_id =}\\
      \quad\texttt{current\_setting('app.escola\_id', true))}};
 
-  \draw[c4reldash] (e1.south) -- (2.4,-4.2);
-  \draw[c4reldash] (e2.south) -- (3.8,-4.2);
-  \draw[c4reldash] (e3.south) -- (5.4,-4.2);
+  \foreach \e in {e1, e2, e3}
+    \draw[c4reldash] (\e.south) -- (\e.south |- tab.north);
 
-  \node[actnote, text width=48mm, anchor=north west] at (8.6,-2.3)
+  % --- Nível 3: autorização, dentro da escola
+  \node[nivel] (n3) at ($(tab.south west)+(-0.2,-0.6)$)
+    {Nível 3 --- autorização: dentro da escola, por papel};
+  \node[papel, anchor=north] (p1) at ($(e1 |- n3.south)+(0,-0.2)$)
+    {\texttt{estudante}\desc{a própria matrícula e o progresso}};
+  \node[papel, anchor=north] (p2) at ($(e2 |- n3.south)+(0,-0.2)$)
+    {\texttt{professor}\desc{só as turmas em que leciona}};
+  \node[papel, anchor=north] (p3) at ($(e3 |- n3.south)+(0,-0.2)$)
+    {\texttt{gestor\_escola}\desc{a escola inteira}};
+
+  % fronteiras dos contratos
+  \begin{scope}[on background layer]
+    \node[nuvem, fit={(apiA) (pgA) (e1) (e3) (tab) (p1) (p3) (0.45,-2.35)},
+          inner sep=9pt] (cA) {};
+  \end{scope}
+  \node[nuvemlbl] at ($(cA.north west)+(0.15,-0.1)$) {Contrato A};
+
+  \node[servico, text width=26mm, fill=unooMuted, draw=unooInkSoft] (apiB)
+    at (13.5,-1.0) {API do contrato B};
+  \node[volume, text width=24mm, minimum height=13mm, fill=unooMuted,
+        draw=unooInkSoft] (pgB) at (13.5,-3.4) {PostgreSQL do contrato B};
+  \draw[netpriv] (apiB) -- (pgB);
+  \begin{scope}[on background layer]
+    \node[nuvem, draw=unooMuted, fill=unooPaper, inner sep=0pt,
+          fit={(11.25,0 |- cA.north) (15.75,0 |- cA.south)}] (cB) {};
+  \end{scope}
+  \node[nuvemlbl, text=unooInkSoft] at ($(cB.north west)+(0.15,-0.1)$)
+    {Contrato B --- outra \emph{stack}};
+
+  % --- por que este desenho
+  \node[actnote, text width=74mm, anchor=north west] at ($(cA.south west)+(0,-0.4)$)
     {\textbf{Por que não uma \emph{stack} por escola:} seriam cem
      infraestruturas por contrato --- cem bancos, cem \emph{deploys}, cem
      conjuntos de segredos --- operados por uma pessoa. E o custo fixo de uma
-     escola pequena passaria a ser o de uma rede.\\[4pt]
-     \textbf{Por que não uma \emph{stack} para todos os contratos:} um incidente
+     escola pequena passaria a ser o de uma rede.};
+  \node[actnote, text width=74mm, anchor=north east] at ($(cB.south east)+(0,-0.4)$)
+    {\textbf{Por que não uma \emph{stack} para todos os contratos:} um incidente
      num município seria um incidente em todos, e o desenho não sobreviveria à
      primeira análise jurídica de um edital.};
 
@@ -160,40 +189,87 @@ contrato, e os contadores que decidem quantos estudantes o botão
 justamente para que a RLS não mascare a ausência do \cd{where}.
 \end{regra}
 
+\begin{atencao}
+\textbf{A armadilha inversa: tabela COM RLS lida fora do \cd{comTenancy} não
+falha --- devolve vazio.} As três tabelas das equipes na missão
+(\cd{equipes\_montagens}, \cd{equipes} e \cd{equipes\_membros},
+\adrr{ADR-111}) entram na política como toda tabela de escola:
+\cd{escola\_id NOT NULL}, \cd{ENABLE} e \cd{FORCE ROW LEVEL SECURITY} e uma
+política por escola em cada uma --- \cd{equipes\_membros} com mais razão, por ser
+a única das três com id de criança. O risco delas é outro: quem as lê são OUTROS
+módulos (o painel do unooGPT, a grade da sala), por funções
+livres que recebem o \cd{tx} (\arq{equipes/consulta.ts}), no molde de
+\arq{comum/liberacao.ts}. Chamadas fora da transação de tenancy, elas devolvem um
+mapa vazio, e o painel volta a contar por criança sem que ninguém saiba por quê.
+E como \cd{users} está fora da RLS, a lista de estudantes que a montagem aceita
+sai de \cd{users.turma\_id} com o \cd{escolaId} no \cd{where} --- a regra acima,
+de novo.
+\end{atencao}
+
+\begin{atencao}
+\textbf{Na evidência pedagógica, a mesma política falha ALTO na escrita.} As
+três tabelas do módulo \arq{evidencias/} (\adrr{ADR-112}) ---
+\cd{evidencias\_marcas}, \cd{evidencias} e \cd{evidencias\_eventos}, todas com
+id de criança --- têm \cd{escola\_id NOT NULL}, \cd{ENABLE} e \cd{FORCE ROW LEVEL
+SECURITY} e uma política por escola. Quem ESCREVE a marca é outro módulo: a
+missão chama \cd{EvidenciasService.marcar} com o \cd{tx} DELA, e o serviço não
+abre \cd{comTenancy} de propósito, para a marca cair junto se a jogada cair. Com
+um cliente sem a escola armada, a leitura devolve vazio, como nas equipes, mas o
+\cd{INSERT} é recusado: a política sem \cd{WITH CHECK} vale também para a linha
+nova, e \cd{current\_setting('app.escola\_id', true)} nulo não casa com escola
+nenhuma. O erro de política no log é o sintoma de uma missão marcando fora da
+transação de \emph{tenancy}. O histórico tem uma tranca a mais, no molde de
+\cd{recursos\_auditoria}: a \emph{role} de \emph{runtime} recebe só
+\cd{SELECT, INSERT} em \cd{evidencias\_eventos}, e um \emph{trigger} recusa
+\cd{UPDATE} para qualquer \emph{role}, inclusive a dona da tabela. E, de novo, a
+lista de estudantes da turma sai de \cd{users.turma\_id} com o \cd{escolaId} no
+\cd{where}.
+\end{atencao}
+
 \subsection{Como a escola chega ao contexto}
 
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    e/.style={text width=30mm, minimum height=15mm}]
 
-  \node[etapaio, text width=25mm] (req) at (0,0)
-    {Requisição HTTP\desc{\texttt{Authorization: Bearer}}};
-  \node[etapa, text width=25mm] (guard) at (3.5,0)
-    {\texttt{OidcGuard}\desc{JWKS; injeta \texttt{req.auth}}};
-  \node[etapa, text width=25mm] (roles) at (7.0,0)
+  % --- linha 1: o que acontece ANTES do controller
+  \node[etapaio, e] (req) at (1.75,0)
+    {Requisição HTTP\desc{\texttt{Authorization:}\\\texttt{Bearer <token>}}};
+  \node[etapa, e] (guard) at (5.85,0)
+    {\texttt{OidcGuard}\desc{valida pelo JWKS;\\injeta \texttt{req.auth}}};
+  \node[etapa, e] (roles) at (9.95,0)
     {\texttt{RolesGuard}\desc{lê \texttt{req.auth.perfil}}};
-  \node[etapa, text width=27mm] (int) at (10.6,0)
-    {\texttt{TenancyInterceptor}\desc{\texttt{definirTenancyNoContexto}}};
-  \node[etapa, text width=25mm] (ctrl) at (14.2,0)
-    {\emph{controller}};
+  \node[etapa, e] (int) at (14.05,0)
+    {\texttt{TenancyInterceptor}\desc{\texttt{definirTenancy}\\\texttt{NoContexto}}};
 
-  \node[etapa, text width=27mm] (svc) at (10.6,-2.4)
+  % --- linha 2: o controller e a porta única do banco
+  \node[etapa, e] (ctrl) at (1.75,-2.9) {\emph{controller}};
+  \node[etapa, e] (svc) at (5.85,-2.9)
     {\emph{service}\desc{\texttt{comTenancy(fn)}}};
-  \node[etapaout, text width=27mm] (tx) at (14.2,-2.4)
-    {Transação\desc{\texttt{set\_config} + \emph{query}}};
-  \node[etapaerr, text width=27mm] (fail) at (6.6,-2.4)
-    {Sem escola no contexto\desc{\textbf{lança}}};
+  \node[etapaout, e] (tx) at (9.95,-2.9)
+    {Transação\desc{\texttt{set\_config} da escola\\+ \emph{query}}};
+  \node[etapaerr, e] (fail) at (5.85,-5.5)
+    {\textbf{lança}\desc{erro alto, sem \emph{query}}};
 
   \draw[pipe] (req) -- (guard);
   \draw[pipe] (guard) -- (roles);
   \draw[pipe] (roles) -- (int);
-  \draw[pipe] (int) -- (ctrl);
-  \draw[pipe] (ctrl.south) -- (14.2,-1.2) -- (11.9,-1.2) -- (svc.north east);
+  \draw[pipe] (int.south) -- ++(0,-0.7) -| (ctrl.north);
+  \draw[pipe] (ctrl) -- (svc);
   \draw[pipe] (svc) -- (tx);
-  \draw[pipe, draw=unooRed] (svc) -- (fail);
+  \draw[pipe, draw=unooRed] (svc) -- (fail)
+    node[pipelbl, midway, left=3pt, align=right]{sem escola\\no contexto};
 
-  \node[actnote, text width=54mm, anchor=north west] at (0,-3.6)
+  % --- as duas notas
+  \node[actnote, text width=62mm, anchor=north west] (rls) at (8.2,-4.3)
+    {\textbf{A RLS é rede de segurança, não a única tranca.} Os
+     \emph{services} continuam filtrando \texttt{escola\_id} explicitamente em toda
+     \emph{query}. Duas trancas independentes: se a política falhar por erro de
+     migração, o filtro da aplicação segura; se o filtro faltar por esquecimento,
+     a política segura.};
+  \node[actnote, text width=153mm, anchor=north west] at ($(0,0 |- rls.south)+(0,-0.4)$)
     {\textbf{A ordem não é acidental.} O \texttt{AsyncLocalStorage} da
      requisição é aberto por um \emph{middleware} do Express em
      \texttt{main.ts}, antes de tudo (é o que dá \texttt{requestId} a um 401).
@@ -203,12 +279,6 @@ justamente para que a RLS não mascare a ausência do \cd{where}.
      \texttt{OidcGuard} --- \texttt{/healthz}, \texttt{/telemetry/beacon},
      \texttt{/telemetry/ingest} --- fica sem escola; e \texttt{comTenancy} sem
      escola explícita falha alto, o que fecha o círculo.};
-  \node[actnote, text width=54mm, anchor=north west] at (8.6,-3.6)
-    {\textbf{A RLS é rede de segurança, não a única tranca.} Os
-     \emph{services} continuam filtrando \texttt{escola\_id} explicitamente em toda
-     \emph{query}. Duas trancas independentes: se a política falhar por erro de
-     migração, o filtro da aplicação segura; se o filtro faltar por esquecimento,
-     a política segura.};
 
 \end{tikzpicture}}
 \caption[Propagação da escola pela requisição]{Como a escola do \emph{token}
@@ -241,7 +311,10 @@ silenciosamente a permissão do vizinho.
 \textbf{\cd{prospeccao\_leads} não tem \cd{escola\_id} e não tem RLS}, e é a
 ÚNICA tabela de dados pessoais do banco nessa situação. A exceção está escrita
 aqui porque a regra inviolável nº 1 não admite esquecimento: toda outra tabela
-de dados de pessoa carrega \cd{escola\_id NOT NULL} mais política de RLS.
+de dados de pessoa carrega \cd{escola\_id NOT NULL} mais política de RLS ---
+com uma segunda exceção, de outra natureza, o medidor da Ajuda com avatar
+(\cd{ajuda\_sessoes}, Seção~\ref{sec:ajuda-seguranca}), que tem a coluna mas a
+deixa nula para os papéis de contrato.
 \end{regra}
 
 Quem escreve nessa tabela é um \textbf{visitante do site público}, meses antes
@@ -280,6 +353,234 @@ que \cd{ia\_quotas} não tem: o titular pode revogar e pedir a eliminação
 \textbf{Não há rota de exclusão}; o pedido é atendido por acesso direto ao
 banco, e a tela de Prospecção diz isso em vez de prometer um botão inexistente.
 
+\section{A conversa do agente: a posse no Postgres, o conteúdo fora dele}
+\label{sec:agente-professor-posse}
+
+O agente de IA do professor (\adrr{ADR-126}) é o primeiro produto em que o dado
+de uma pessoa \textbf{não mora no Postgres}: o conteúdo da conversa é a sessão do
+Vertex AI Agent Engine. O que o Postgres guarda é \textbf{de quem ela é}, e é essa
+linha que faz o isolamento valer.
+
+\begin{itemize}
+  \item \textbf{Por que a posse não pode ficar no engine.} Os \emph{endpoints} de
+    sessão pedidos por nome de recurso não conferem o usuário, e a SA da api
+    enxerga \emph{todas} as sessões do engine. Sem a linha, quem soubesse um
+    \cd{sessao\_id} leria a conversa de outro professor --- de outra escola,
+    inclusive. A checagem do ADK (\enquote{does not belong to user}) é defesa em
+    profundidade.
+  \item \textbf{\cd{agente\_professor\_conversas} tem \cd{escola\_id NOT NULL},
+    \cd{ENABLE} e \cd{FORCE ROW LEVEL SECURITY}}, com a mesma política das outras
+    tabelas, porque o título que o agente gera sai da pergunta --- e a pergunta
+    pode trazer o nome de um estudante. A RLS tranca a escola; o \cd{daPosse}
+    acrescenta o \cd{usuario\_id}, e \textbf{toda rota passa por ele antes de
+    tocar a sessão}. Conversa de outro professor, ou de outra escola, é
+    \textbf{404, nunca 403} (403 confirmaria que o id existe); id que não é UUID
+    também é 404. A conversa pertence a (professor, escola ativa): trocar de
+    escola troca a lista.
+  \item \textbf{Identidade só do \emph{token}.} O \cd{user\_id} no engine é o
+    \cd{usuarioId} do \emph{token}, e o \cd{nome\_professor} vem de
+    \cd{users.display\_name}; nada vem do corpo.
+  \item \textbf{Só \cd{professor}.} A classe tem \cd{@Roles("professor")}, e o chat
+    só é montado no \emph{layout} de \rota{/professor}. A coordenação ficou fora por
+    decisão do dono do produto, e a ausência é estrutural: não há rota.
+  \item \textbf{Nenhuma transação \cd{comTenancy} fica aberta durante o
+    \emph{stream}}: posse antes, atualização depois, cada uma curta. Um turno dura
+    dezenas de segundos, e uma transação pendurada nesse tempo seria uma conexão
+    do \emph{pool} presa por professor.
+\end{itemize}
+
+\begin{atencao}
+\textbf{Dado de professor --- e de estudante citado por engano --- fora do
+Postgres.} O texto da conversa fica na sessão do engine (\cd{us-east1} em
+\cd{dev} e \cd{hml}), fora do PITR, das exportações e do Capítulo~\ref{cap:dados};
+o modelo processa em \cd{global}. Três consequências. \textbf{Apagar exige o
+engine no ar}: com ele fora, o \rota{DELETE} responde 503 e a linha fica, porque
+apagar só a linha deixaria a conversa guardada sem dono alcançável. \textbf{O
+histórico não tem prazo}: a sessão nasce com expiração distante e é renovada a
+cada mensagem, e quem apaga é o professor. E \textbf{nenhum registro leva texto}
+--- nem a pergunta, nem a resposta, nem o título, nem o corpo de erro do engine,
+na api e no agente: só ids, contagens, códigos, duração e \emph{tokens}.
+\end{atencao}
+
+\begin{itemize}
+  \item \textbf{O painel INTEIRO leva \cd{data-clarity-mask="true"}}: o Microsoft
+    Clarity grava a tela do hub (\adrr{ADR-60}), e o professor pode escrever o
+    nome de um estudante na pergunta. Junto do campo fica o aviso fixo
+    \enquote{Não escreva nomes de estudantes.} --- aviso, não trava. E o
+    \cd{localStorage} guarda só o tamanho do painel; conversa, título e texto
+    nunca vão para lá.
+  \item \textbf{O \emph{markdown} da resposta vira HTML no navegador sem HTML
+    cru} e com links só \cd{http}, \cd{https} e \cd{mailto} absolutos
+    (\adrr{ADR-129}): é o que impede o
+    modelo, ou um trecho de PDF, de injetar elemento na página.
+  \item \textbf{Cloud Armor: a 921150 sai, as outras ficam.} A assinatura de
+    injeção de cabeçalho (CR/LF) casa qualquer corpo com quebra de linha, que o
+    professor produz ao colar texto ou usar Shift+Enter. A regra 1106 a exclui em
+    \rota{/agente-professor/} (\emph{host} da api) e
+    \rota{/api/\B plataforma/\B agente-professor/} (\emph{host} do hub) --- os dois saltos
+    passam pelo LB. Os conjuntos de SQLi, XSS, LFI, RFI, RCE e \emph{scan}
+    \textbf{continuam valendo}: o professor que colar um trecho de SQL ou de HTML
+    na pergunta é barrado no LB, e o sintoma é uma falha de rede sem linha no log
+    da api (Apêndice~\ref{ap:operacao}).
+\end{itemize}
+
+\section{A Ajuda com avatar: o medidor sem RLS e as duas trancas do vendor}
+\label{sec:ajuda-seguranca}
+
+A Ajuda com avatar (\adrr{ADR-132}) é o atendente em vídeo do item
+\enquote{Ajuda} do menu da conta, para todo papel MENOS o estudante. O vendor
+(LiveAvatar, da HeyGen, em FULL Mode) faz a escuta, a voz e o vídeo; o LLM é o
+NOSSO: o servidor do vendor chama \rota{POST /ajuda/llm/chat/completions} da api
+a cada fala da pessoa, e a api responde pelo \cd{AiProvider}. Daí as duas
+novidades de segurança desta seção: uma tabela de dado de pessoa sem RLS, e uma
+rota de IA chamada por um terceiro, sem \emph{token} de usuário.
+
+\begin{regra}
+\textbf{\cd{ajuda\_sessoes} não tem RLS, e \cd{escola\_id} é NULÁVEL} --- a
+segunda exceção escrita à regra inviolável nº 1, depois de
+\cd{prospeccao\_leads}. Ela é o medidor de minutos da Ajuda (quem abriu, com que
+papel, quando começou, qual o teto, quando acabou), e as três razões estão na
+própria migração (\arq{20261002120000\_\B ajuda\_\B com\_\B avatar}):
+\begin{enumerate}
+  \item \textbf{A Ajuda vale para \cd{gestor\_contrato} e \cd{admin}}, que não têm
+    escola no \emph{token}. A política por \cd{escola\_id} esconderia a linha
+    deles de todo mundo --- deles mesmos, inclusive ---, e o medidor contaria
+    zero minuto para quem mais pode abrir.
+  \item \textbf{Não é dado de estudante.} O \cd{@Roles} da rota já barra o
+    estudante; o \emph{CHECK} \cd{ck\_ajuda\_sessoes\_perfil} é a segunda tranca,
+    para que uma rota nova esquecida não grave a linha de uma criança.
+  \item \textbf{Não guarda conteúdo}: só início, teto e fim de uma sessão de
+    vídeo. A conversa não é gravada em lugar nenhum.
+\end{enumerate}
+\textbf{Toda \emph{query} é escopada pelo \cd{usuario\_id} do TOKEN}: abrir,
+fechar a sessão que ficou aberta e encerrar. Encerrar a sessão de outra pessoa
+(ou um id que não existe) é ignorado em silêncio --- não há nada a confirmar.
+A exceção \textbf{não se estende}: tabela nova de dado de pessoa não a herda
+(\arq{docs/regras/o-que-nao-fazer.md}).
+\end{regra}
+
+\subsection{\rota{/ajuda/llm}: duas trancas, e as duas são necessárias}
+
+A rota de LLM fica FORA do \cd{OidcGuard} e do \cd{RolesGuard}, de propósito:
+quem chama é o servidor do vendor, não uma pessoa logada. No lugar do papel, ela
+exige DUAS provas.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{36mm}X@{}}
+\toprule
+\headrow \thd{Tranca} & \thd{O que prova} & \thd{Como}\\
+\midrule
+\cd{Authorization: Bearer} \env{AJUDA\_\B LLM\_\B SEGREDO} & Que é o VENDOR &
+  O mesmo valor fica guardado na conta do vendor (como \cd{OPENAI\_API\_KEY} da
+  nossa configuração de LLM). Comparado em tempo constante (\emph{hash} +
+  \cd{timingSafeEqual}): \cd{!==} vazaria o segredo pelo tempo de resposta.\\
+\zebra O \textbf{\emph{token} da sessão} dentro da mensagem \cd{system} & QUEM
+  fala, numa sessão que esta api abriu e não fechou &
+  HS256 assinado com \env{AJUDA\_\B SESSAO\_\B CHAVE} ao abrir a sessão, com
+  \cd{\{sub, escola, perfil, sid\}} --- nunca nome nem e-mail, porque o vendor vê
+  o \emph{prompt} (regra 6) ---, emissor \cd{plataforma-api}, audiência
+  \cd{ajuda-llm}, validade do teto da sessão mais 1 minuto. Viaja em
+  \cd{dynamic\_variables.sessao}; o contexto do vendor tem uma frase e o
+  marcador \cd{[sessao:\$\{sessao\}]}, e o \emph{token} volta no \cd{system} de toda
+  chamada. A api ainda confere que \cd{ajuda\_sessoes.fim} é nulo.\\
+\bottomrule
+\end{tabularx}
+
+Só o segredo deixaria quem o tivesse conversar em nome de ninguém; só o
+\emph{token} deixaria quem tivesse um \emph{token} vazado usar o modelo direto.
+\textbf{Token na fala da pessoa não vale}: só o \cd{system} é lido, e depois
+\textbf{descartado} --- o \emph{prompt} de verdade e a base de conhecimento
+moram na api e nunca vão ao vendor (regra 2). HS256, e não o RS256 do hub,
+porque quem assina e quem confere é a MESMA api, e o \emph{token} nunca precisa
+ser conferido por um terceiro sem a chave.
+
+\begin{atencao}
+\textbf{Só a autenticação responde erro.} Medido no \emph{spike}: diante de
+qualquer status de erro o vendor fica MUDO --- sem nova tentativa, sem evento
+para o navegador. Por isso, passadas as duas trancas, \textbf{toda recusa de
+negócio vira FALA, em 200}: produto \cd{ajuda} desligado na escola, mais de 20
+turnos por minuto da mesma pessoa, falha do modelo (\cd{FALA\_DE\_FALHA}). O 401
+fica para segredo errado ou \emph{token} inválido (vencido, adulterado, de sessão
+encerrada); sem as duas envs, a rota responde 503 --- desligada, nunca aberta.
+\end{atencao}
+
+\subsection{O que fica na api, o que vai ao navegador, o que não se grava}
+
+\begin{itemize}
+  \item \textbf{A chave da conta do vendor (\env{LIVEAVATAR\_API\_KEY}) nunca
+    sai da api.} O navegador recebe, por sessão, só o \emph{token} da SALA de
+    vídeo que o vendor devolve ao abrir --- vale para aquela sessão e mais
+    nada. No hub ele vive \textbf{só em memória}, na \emph{closure} do
+    \emph{hook} da sessão (regra 4: nunca em \cd{localStorage}). Fechar o modal
+    desmonta o conteúdo, e a desmontagem encerra a sala --- o minuto para de
+    contar.
+  \item \textbf{O modal INTEIRO leva \cd{data-clarity-mask="true"}}, como o
+    painel do agente: o Clarity grava a tela do hub (\adrr{ADR-60}), e a pessoa
+    pode dizer ou escrever o nome de um estudante. O aviso pede que não; a
+    máscara não depende de o aviso ser lido.
+  \item \textbf{Pergunta e resposta nunca vão a \emph{log}} --- a pessoa pode
+    dizer o nome de uma criança em voz alta. A linha por turno é
+    \cd{ajuda.turno}, só com \cd{sid}, \cd{perfil}, \cd{resultado},
+    \cd{duracaoMs}, \cd{tokens} e \cd{caracteres}. Nada da conversa é guardado:
+    nem no hub, nem na api.
+  \item \textbf{O microfone começa desligado}: a permissão só é pedida quando a
+    pessoa aperta \enquote{Falar}. Na sala de professores, um microfone aberto
+    ouviria a conversa do lado.
+  \item \textbf{Produto que nasce DESLIGADO.} O \cd{ajuda} entra no painel da
+    Unooria (\adrr{ADR-87}) pela lista \cd{PRODUTOS\_\B DESLIGADOS\_\B POR\_\B PADRAO}:
+    sem linha em \cd{disponibilidades}, fica fora do ar e o item some do menu.
+    A classe de \rota{/ajuda} declara \cd{@Produto("ajuda")}; só
+    \rota{POST /ajuda/sessoes/:id/encerrar} tem \cd{@Sem\B Disponibilidade},
+    porque desligar o produto não pode deixar uma sala aberta cobrando.
+\end{itemize}
+
+\subsection{O mascote: a conexão de voz e as suas trancas}
+
+O segundo atendente da Ajuda (\adrr{ADR-158}) é o mascote 3D da Unooria, que fala
+pelo Gemini Live da Vertex. Ele reaproveita a tabela de minutos e o recorte de
+papéis acima, e acrescenta uma porta: a conexão de voz
+\rota{WS /ajuda/mascote/ao-vivo}, aberta pelo navegador direto na api (o BFF não
+repassa WebSocket, então o \emph{cookie} do hub não chega lá). As trancas:
+
+\begin{itemize}
+  \item \textbf{Bilhete na primeira mensagem, não na URL.} \rota{POST
+    /ajuda/sessoes} --- que passa por \cd{OidcGuard}, \cd{RolesGuard} e o
+    interruptor --- devolve um HS256 assinado com \env{AJUDA\_SESSAO\_CHAVE},
+    audiência \cd{ajuda-mascote} (um \emph{token} da rota de LLM não entra
+    aqui, nem o contrário), válido por 2 minutos e com \cd{\{sub, escola,
+    perfil, sid\}}. A URL iria parar em \emph{log} de balanceador. Sem bilhete
+    em 10\,s, a conexão fecha (4401).
+  \item \textbf{Uma entrada por bilhete}: a api marca a linha de
+    \cd{ajuda\_sessoes} num \cd{UPDATE} condicionado (\cd{atendente =
+    'mascote'}, \cd{fim} nulo e a marca vazia). Bilhete copiado, ou duas abas,
+    não abrem duas conversas pagas na mesma linha.
+  \item \textbf{\cd{Origin} conferido contra \env{CORS\_ORIGINS}} antes do
+    \emph{upgrade} (403 fora da lista): o CORS do navegador não alcança
+    WebSocket. É a segunda tranca, não a primeira.
+  \item \textbf{Protocolo fechado}: depois do bilhete, só \cd{texto} (até 500
+    caracteres), \cd{audio} e \cd{fim-do-audio}, em Zod \cd{.strict()}, até 30
+    mensagens por segundo; o resto fecha (4429). \textbf{A instrução do sistema
+    e a base são montadas na api} e nunca chegam ao navegador (regra 2); nada do
+    formato do Gemini atravessa a api.
+  \item \textbf{O teto vale também com a conexão no ar}: ela cai no prazo da
+    sessão (4408), e a cada 30\,s a api confere a linha e o produto ---
+    encerrar em outra aba ou desligar a Ajuda derruba a conversa (4408, 4403).
+  \item \textbf{Nada da conversa é gravado nem vai a \emph{log}}, como no avatar:
+    a linha é \cd{ajuda.mascote}, com \cd{sid}, \cd{perfil}, \cd{duracaoMs},
+    \cd{turnos} e \cd{motivo}. O microfone começa desligado, e o modal continua
+    inteiro sob \cd{data-clarity-mask}.
+\end{itemize}
+
+\begin{regra}
+\textbf{\cd{ajuda\_configuracao} também fica sem RLS e sem \cd{escola\_id}},
+como \cd{ia\_quotas} e \cd{ajuda\_limites}: é UMA linha de configuração comercial
+da rede (quem atende por padrão, se a pessoa pode trocar, a voz e o modelo do
+mascote, e as instruções de cada atendente, \adrr{ADR-165}), não dado de pessoa. A escrita é só do \cd{admin}
+(\rota{/recursos/configuracao-da-ajuda}), com motivo obrigatório e histórico em
+\cd{recursos\_auditoria}. A voz e o modelo vão ao pedido de abertura do Gemini, e
+por isso são lista fechada (voz) e formato de nome (modelo) no Zod e no
+\emph{CHECK}: nada de texto livre do painel dentro do pedido ao \emph{vendor}.
+\end{regra}
+
 \section{O interruptor da rede: um nível que não é de tenancy}
 
 A \adrr{ADR-87} acrescentou um eixo que decide se algo abre e que \textbf{não é
@@ -315,9 +616,9 @@ migração não a \enquote{conserte}: ligar RLS ali faz TODO produto parecer lig
     experiências já passam por aquele funil, e um ponto único torna impossível
     existir liberação valendo num recurso que a rede não tem. A ordem importa
     para o diagnóstico: o \cd{codigo} do 403 diz em qual dos dois eixos procurar.
-  \item \emph{Ferramentas de professor} (exp-90, exp-91, exp-92) --- não têm
+  \item \emph{Ferramentas de professor} (app-90, app-91, app-92) --- não têm
     liberação por turma e somam \textbf{28 rotas}. A guarda é um
-    \cd{DisponibilidadeGuard} de CLASSE, com \cd{@Recurso("exp-NN-slug")} no
+    \cd{DisponibilidadeGuard} de CLASSE, com \cd{@Recurso("app-90-plano-de-aula")} no
     \cd{@Controller}: rota nova nasce coberta. Anotar rota por rota é o desenho
     em que a 29ª nasce sem guarda, sem erro e sem sintoma --- o produto
     simplesmente deixa de poder ser desligado.
@@ -326,8 +627,20 @@ migração não a \enquote{conserte}: ligar RLS ali faz TODO produto parecer lig
     exceção existe porque \enquote{não consigo apagar meus dados porque o produto
     foi desligado} é indefensável, e mais ainda no \emph{check-in} de bem-estar,
     que é DASS-21.
-  \item \emph{Guard montado sem \cd{@Recurso} LANÇA}, em vez de liberar ---
-    liberar em silêncio é exatamente a falha que ele existe para impedir.
+  \item \emph{Produto sem experiência} --- o agente de IA do professor ---
+    declara \cd{@Produto(\B"agente-\B professor")} no lugar de \cd{@Recurso}: não há
+    linha em \cd{experiencias} a resolver, e a pergunta é a do TETO, pelo mesmo
+    resolvedor (\cd{exigir\B Produto\B Disponivel}). O escape é o mesmo: só o
+    \rota{DELETE} da conversa tem \cd{@Sem\B Disponibilidade}. A Ajuda com avatar
+    (\adrr{ADR-132}) segue o mesmo desenho com \cd{@Produto("ajuda")}, e o escape
+    dela é ENCERRAR a sessão, não apagar dado: desligar o produto não pode deixar
+    uma sala de vídeo aberta cobrando minuto. É também o primeiro produto que
+    \textbf{nasce desligado} (\cd{PRODUTOS\_\B DESLIGADOS\_\B POR\_\B PADRAO}): sem
+    linha, fora do ar, até o \cd{admin} ligar por escola ou rede.
+  \item \emph{Guard montado sem \cd{@Recurso} nem \cd{@Produto} LANÇA}, em vez de
+    liberar --- liberar em silêncio é exatamente a falha que ele existe para
+    impedir. Os dois juntos também lançam: o teto do produto já está dentro da
+    resolução da experiência.
 \end{itemize}
 
 \textbf{A mensagem que chega ao estudante é a MESMA} de \cd{missao-nao-liberada}:
@@ -359,6 +672,33 @@ estado não é. \rota{GET /recursos/painel} e as escritas seguem em 403 para o
 IA uma rede pode gastar por dia é o custo variável da fornecedora. Aqui nem a
 leitura volta atrás da linha --- o \cd{gestor\_contrato} recebe 403 no GET e no
 PUT, e a tela \rota{/unooria/uso-de-ia} o manda embora pelo \emph{middleware}.
+Na mesma tela, e pelo mesmo motivo, ficam \textbf{os minutos da Ajuda}
+(\rota{/recursos/limites-da-ajuda/*}, \adrr{ADR-132}): o vendor cobra
+por minuto de vídeo, e quanto uma rede pode gastar por dia é decisão comercial
+da fornecedora. Também só \cd{admin}, na leitura e na escrita. E, desde a
+\adrr{ADR-158}, \textbf{quem atende na Ajuda}
+(\rota{/recursos/configuracao-da-ajuda}): o mascote e o avatar custam diferente
+(\emph{token} de áudio do Gemini e minuto de vídeo), e a escolha também é da
+fornecedora; na mesma rota, desde a \adrr{ADR-165}, as instruções de
+\enquote{como responder} de cada atendente.
+
+\textbf{E os custos de IA} (\rota{/recursos/custos-de-ia/*}, \adrr{ADR-161}),
+na tela \rota{/unooria/custos-de-ia}: quanto a IA da rede custa à Unooria, em
+reais, por produto, modelo e escola. O \cd{gestor\_contrato} é o cliente, e
+ver o custo seria ver a margem do contrato; ele recebe 403 na leitura e na
+escrita, e o \emph{middleware} o tira da tela. As três tabelas do painel são de
+contrato e ficam \textbf{sem RLS} --- \cd{ia\_consumo\_diario} tem
+\cd{escola\_id} na chave, mas \textbf{não tem \cd{usuario\_id}}: é contagem
+por escola, perfil e produto, sem pessoa, e quem a tranca é o papel. Não é uma
+terceira exceção à regra 1 para dado de pessoa; tabela nova com pessoa não a
+herda.
+
+\textbf{E a lista das experiências arquivadas} (\rota{GET /recursos/arquivadas},
+\adrr{ADR-116}) também é só dele: a rota não conta nada em tempo de uso --- os
+números de turmas e estudantes guardados são a fotografia que a migração tirou ao
+arquivar ---, e por isso não atravessa a RLS. O que a fecha no \cd{admin} é o
+mesmo motivo das outras: o catálogo do que a Unooria já tirou do produto é da
+fornecedora.
 \end{regra}
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{38mm}X@{}}
@@ -375,9 +715,9 @@ PUT, e a tela \rota{/unooria/uso-de-ia} o manda embora pelo \emph{middleware}.
   Matricular estudantes, enturmar, gerir professores da unidade e consultar relatórios locais.
   \textbf{Não} vê a linha de uma criança nos instrumentos de valores, nem bem-estar docente.\\
 \zebra \cd{gestor\_regional} & As escolas da regional vinculada &
-  Alternar entre escolas da regional, visualizar panorama unificado (\adrr{ADR-81}) e relatório pedagógico por laço de oito escolas (\adrr{ADR-82}).\\
+  Alternar entre escolas da regional, visualizar panorama unificado (\adrr{ADR-81}), relatório pedagógico por laço de oito escolas (\adrr{ADR-82}) e o painel de habilidades da regional, descendo até a escola, a turma e o estudante sem lotação --- uma escola por vez, com a RLS intacta (\adrr{ADR-144}).\\
 \cd{gestor\_contrato} & Toda a rede (cross-escola) &
-  Criar escolas, importar CSVs de enturmamento, provisionar supervisores regionais e emitir consolidados.\\
+  Criar escolas, importar CSVs de enturmamento, provisionar supervisores regionais e emitir consolidados. No painel de habilidades, desce da rede inteira à regional, à escola, à turma e ao estudante --- cada degrau lê uma escola por vez, com \cd{?escolaId=} obrigatório (\adrr{ADR-160}).\\
 \zebra \cd{admin} & Toda a rede (conta Unooria) &
   Mesmas capacidades operacionais de \cd{gestor\_contrato}, preservando a autoria na cadeia de atribuição transitiva descendente (\adrr{ADR-80}).\\
 \bottomrule
@@ -399,7 +739,7 @@ redirecionado para a própria casa, porque estudante que tropeça em
   O \emph{hub} de missões e o aparelho da experiência (\rota{/exp/:expId}).
   São a MESMA área: o hub escolhe, o \cd{iframe} joga.\\
 \zebra \cd{professor} & \rota{/professor} &
-  Atividades (exp-01), turmas, guia, plano de aula (exp-90), bem-estar (exp-91)
+  Atividades (exp08ef1b), turmas, guia, plano de aula (app-90), bem-estar (app-91)
   e \enquote{entre redes} --- os resultados por unidade.\\
 \cd{gestor} & \rota{/admin/usuarios} &
   Usuários, turmas, importar, ano letivo. E \enquote{minhas escolas}, que só
@@ -542,7 +882,7 @@ atribui \cd{gestor\_regional}; \cd{gestor\_contrato} pedindo outro
 \endhead
 Realizar experiência e salvar progresso &
   \rota{/progresso/:expId}, \rota{/runs/*} & \yes & \no & \no & \no\\
-\zebra Preparar e conduzir atividade (exp-01) & \rota{/atividades/*} &
+\zebra Preparar e conduzir atividade (exp08ef1b) & \rota{/atividades/*} &
   \no & \yes & \no & \no\\
 Destilar, gerar e regenerar o \emph{feed} com IA &
   \rota{/atividades/:id/\B destilar}, \rota{/gerar}, \rota{/posts/:id/\B regenerar} &
@@ -559,26 +899,76 @@ Reiniciar o \emph{run} de um estudante & \rota{POST /runs/:id/reset} &
   \no & \yes\footnotesize{\ddag} & \no & \no\\
 As salas do estudante (a grade dele) & \rota{GET /salas/minhas} &
   \yes & \no & \no & \no\\
+\zebra Ler as equipes de uma missão na turma (\adrr{ADR-111}) &
+  \rota{GET /equipes/turma/\B :turmaId/\B missao/:expId} & \no & \yes\footnotesize{\ddag} & \yes & \yes\\
+Propor equipes (sorteio, N vazias, a atividade anterior) --- nunca grava &
+  \rota{POST .../\B sugestao}, \rota{GET .../\B ultima} & \no & \yes\footnotesize{\ddag} & \no & \no\\
+\zebra \textbf{Salvar ou desfazer as equipes} (sempre editáveis) &
+  \rota{PUT}, \rota{DELETE /equipes/\B turma/:turmaId/\B missao/:expId} & \no & \yes\footnotesize{\ddag} & \no & \no\\
+A própria equipe na missão (só primeiros nomes) & \rota{GET /equipes/minha} &
+  \yes & \no & \no & \no\\
+\zebra O painel da evidência de uma atividade (\adrr{ADR-112}) &
+  \rota{GET /evidencias/\B turma/:turmaId/\B missao/:expId/\B atividade/\B :atividadeId} &
+  \no & \yes\footnotesize{\ddag} & \yes & \yes\\
+\textbf{Confirmar para a turma} a cópia da projeção &
+  \rota{POST .../\B rodadas/:rodada/\B confirmar} & \no & \yes\footnotesize{\ddag} & \no & \no\\
+\zebra \textbf{Ajustar a evidência} (um ou vários, mesmo com a missão encerrada) &
+  \rota{PATCH .../\B rodadas/:rodada/\B ajustes} & \no & \yes\footnotesize{\ddag} & \no & \no\\
+O perfil de evidência de um estudante (sem origem) &
+  \rota{GET /evidencias/\B estudante/\B :estudanteId} & \no & \yes\footnotesize{\ddag} & \yes & \yes\\
+\zebra A pergunta de múltipla escolha, sem o gabarito &
+  \rota{GET /evidencias/\B :expId/\B perguntas/\B :perguntaId} & \yes & \no & \no & \no\\
+A resposta --- que devolve só \enquote{enviada}, nunca o resultado &
+  \rota{POST .../\B resposta} & \yes & \no & \no & \no\\
 \zebra Vila do Lume: agregado da turma & \rota{/vila/agregado/*} & \no & \yes & \yes & \no\\
 \textbf{Vila do Lume: a linha de uma criança} & \rota{/vila/professor/*} &
   \no & \yes\footnotesize{\ddag} & \no & \no\\
+\zebra Jornal da Escola: a própria missão (\adrr{ADR-117}) &
+  \rota{/jornal-escola/*} & \yes & \no & \no & \no\\
+\textbf{Jornal da Escola: preparar, conduzir e ler o painel} (pacote, imagens
+  e o OK de cada uma --- \adrr{ADR-147} ---, os dois portões, zerar), e o material do guia &
+  \rota{/jornal-escola/\B turmas/*}, \rota{/professor/\B material} & \no &
+  \yes\footnotesize{\ddag} & \yes & \yes\\
+\zebra O Júri Estadual de Projetos: a própria missão (\adrr{ADR-137}) &
+  \rota{/juri-estadual/*} & \yes & \no & \no & \no\\
+\textbf{O Júri Estadual: preparar a mostra, conduzir e ler a lousa} (atividades,
+  imagens e o OK delas --- \adrr{ADR-151} ---, o banco padrão e a Galeria Oculta --- \adrr{ADR-157}, \adrr{ADR-164} ---, zerar), e o material do guia &
+  \rota{/juri-estadual/\B turmas/*}, \rota{/professor/\B material} & \no &
+  \yes\footnotesize{\ddag} & \yes & \yes\\
 \zebra unooGPT: a própria partida & \rota{/unoogpt/*} & \yes & \no & \no & \no\\
 \textbf{unooGPT: turma e transcrição individual} &
   \rota{/unoogpt/professor/*} & \no & \yes\footnotesize{\ddag} & \no & \yes\\
 \zebra unooGPT: agregado da escola (sem \cd{estudanteId}) &
   \rota{/unoogpt/agregado/\B escola} & \no & \no & \yes & \yes\\
-unooTube: a própria sessão & \rota{/unootube/*} & \yes & \no & \no & \no\\
-\zebra unooTube: resultados por turma & \rota{/unootube/turmas/*} & \no & \yes & \yes & \yes\\
 \textbf{Bem-estar: o próprio \emph{check-in}, histórico, apagar} &
   \rota{/bemestar/*} & \no & \yes & \no & \no\\
 \zebra Plano de aula: criar, versionar, restaurar & \rota{/planos/*} & \no & \yes & \no & \no\\
-\textbf{Análise de produto, na rede} (+CSV) & \rota{/analise/*} &
+\textbf{Conversar com o agente de IA do professor} --- só as PRÓPRIAS conversas,
+  na escola ativa (\adrr{ADR-126}) & \rota{/agente-professor/*} & \no & \yes & \no & \no\\
+\zebra \textbf{Análise de produto, na rede} (+CSV) & \rota{/analise/*} &
   \no & \no & \no & \yes\\
-\zebra Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
+Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
   \yes & \yes & \yes & \yes\\
+\zebra \textbf{Abrir e encerrar a Ajuda} (o avatar ou o mascote) --- só a PRÓPRIA
+  sessão, limitada por MINUTOS, não pela quota (\adrr{ADR-132},
+  \adrr{ADR-158}) &
+  \rota{GET /ajuda/\B configuracao}, \rota{POST /ajuda/\B sessoes},
+  \rota{.../\B :id/\B encerrar}, \rota{WS /ajuda/\B mascote/\B ao-vivo} & \no & \yes & \yes & \yes\\
 \textbf{Alterar o teto diário de IA de um perfil} (só \cd{admin}, \adrr{ADR-105}) &
   \rota{/recursos/quotas-de-ia/*} & \no & \no & \no & \no\\
-\zebra Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
+\zebra \textbf{Ler e alterar os minutos e o atendente da Ajuda} (só \cd{admin},
+  \adrr{ADR-132}, \adrr{ADR-158}) &
+  \rota{/recursos/\B limites-da-ajuda/*}, \rota{/recursos/\B configuracao-da-ajuda} & \no & \no & \no & \no\\
+\textbf{Listar as experiências arquivadas} (só \cd{admin}, \adrr{ADR-116}) &
+  \rota{GET /recursos/arquivadas} & \no & \no & \no & \no\\
+\textbf{Ver o custo da IA e cadastrar preço} (só \cd{admin}, \adrr{ADR-161};
+  tela \rota{/unooria/\B custos-de-ia}) &
+  \rota{/recursos/\B custos-\B de-\B ia/*} & \no & \no & \no & \no\\
+\zebra \textbf{Gerar as imagens do banco padrão do Júri Estadual} (só \cd{admin},
+  sem quota de professor, medidas no painel de custos, \adrr{ADR-164}; tela
+  \rota{/unooria/\B recursos/\B imagens-\B do-\B juri}) &
+  \rota{/juri-estadual/\B banco-\B padrao/\B imagens} & \no & \no & \no & \no\\
+Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
 \bottomrule
 \end{tabularx}
 
@@ -593,12 +983,15 @@ turma}) e para o relógio da aula do unooGPT --- as três coisas que uma prova d
 \normalsize
 
 \begin{regra}
-\textbf{As três ausências mais importantes desta tabela.} \emph{Bem-estar} não
+\textbf{As quatro ausências mais importantes desta tabela.} \emph{Bem-estar} não
 tem uma única rota de gestor nem de agregado --- o instrumento é do professor,
 sobre o professor. No \emph{unooGPT}, o controller do gestor \textbf{não tem
 rota que aceite \cd{estudanteId}}: não é que ele não deva ver a linha de uma
 criança, é que não existe endereço onde ela caiba. E \cd{admin-contrato} não
-alcança a Vila nem o dossiê: ele lê a rede em agregado, nunca a sala.
+alcança a Vila nem o dossiê: ele lê a rede em agregado, nunca a sala. Na
+\emph{evidência pedagógica}, o estudante \textbf{não tem rota que leia o próprio
+resultado} (\adrr{ADR-112}): as duas dele são a pergunta, sem gabarito, e a
+resposta, que devolve \mbox{\cd{\{ enviada: true \}}} na primeira e na segunda vez.
 \end{regra}
 
 \begin{decisao}
@@ -628,7 +1021,7 @@ uma unidade isolada.
 
 \subsection{As portas que não são papel}
 
-Cinco grupos de rotas não passam pelo \cd{RolesGuard} porque não há papel
+Sete grupos de rotas não passam pelo \cd{RolesGuard} porque não há papel
 para checar ---
 e cada uma prova outra coisa no lugar. Elas são a superfície que um leitor da
 matriz acima poderia concluir, erradamente, que não existe.
@@ -660,6 +1053,18 @@ matriz acima poderia concluir, erradamente, que não existe.
   Chave de serviço (\cd{x-perfil-token}, \cd{x-import-token}) &
   Máquina falando com máquina no \emph{provisionamento}. Nenhuma delas é
   alcançável a partir do navegador de um usuário.\\
+\zebra \rota{POST /ajuda/llm/\B chat/completions},\newline
+  \rota{GET /ajuda/llm/models} & Segredo do vendor \textbf{e} \emph{token} da
+  sessão no \emph{prompt} & O LLM da Ajuda com avatar (\adrr{ADR-132}), chamado
+  pelo SERVIDOR do vendor, que não tem \emph{token} de usuário. A única rota de
+  IA fora do \cd{QuotaService} e sem \emph{token} da plataforma --- e as duas
+  exceções não se estendem (Seção~\ref{sec:ajuda-seguranca}). O
+  \rota{/models} exige só o segredo.\\
+\rota{WS /ajuda/mascote/\B ao-vivo} & Bilhete HS256 na PRIMEIRA mensagem, e
+  \cd{Origin} na lista do CORS & A conversa de voz do mascote da Ajuda
+  (\adrr{ADR-158}), aberta pelo navegador direto na api, sem o \emph{cookie}
+  do hub. O bilhete sai de \rota{POST /ajuda/sessoes}, que passa pelos
+  \emph{guards} de pessoa; vale 2 minutos e uma entrada.\\
 \bottomrule
 \end{tabularx}
 
@@ -691,7 +1096,10 @@ distinção que o OneRoster faz entre \cd{roles}, no nível da organização, e
 A camada de cima é a \textbf{sala de aula} (\adrr{ADR-69}): quem tem matrícula
 de professor na turma libera a missão nela, e é essa liberação que abre a porta
 para o estudante. Gestor lê a sala e não decide a aula --- a mesma linha que
-separa administrar a escola de dar a aula.
+separa administrar a escola de dar a aula. O professor libera em dois lugares, pela
+MESMA rota idempotente: o botão da sala e o \enquote{pôr no ar} de uma
+atividade, que libera também a missão encerrada (\adrr{ADR-146}); quando quem
+pôs no ar é um gestor, a liberação é recusada e a tela avisa.
 
 \textbf{Seis rotas ficaram de fora dessa porta}, e foram fechadas depois: o
 \enquote{zerar turma} da Vila e do unooGPT, os cartões da Vila, os dois
@@ -709,7 +1117,7 @@ aparecer na folha e a tela dele responder \enquote{não encontrado}.
 \begin{decisao}
 \textbf{Numa REDE, a pessoa atravessa escolas; o \emph{token} não.} O professor
 lotado em duas unidades escolhe em qual está trabalhando, e o \emph{token} leva
-\textbf{essa} --- então a política de RLS e as 37 tabelas com \cd{escola\_id}
+\textbf{essa} --- então a política de RLS e as tabelas com \cd{escola\_id}
 continuam exatamente como estavam (\adrr{ADR-30}). A troca de escola ativa é
 validada contra as lotações \emph{pela API}, nunca contra a lista que o
 \emph{cookie} carrega: \emph{cookie} é dado do cliente.
@@ -756,7 +1164,10 @@ RECUSA; emissor inalcançável é um rótulo visível na tela (\adrr{ADR-35}).
 \rota{/trocar-senha}, o BFF recusa dados e \rota{/api/exp-token} não emite
 \emph{token} de experiência. Só com o \emph{middleware}, bastaria digitar
 \rota{/exp/...} para pular a troca --- a experiência abriria por baixo, com o
-\emph{token} que o hub continuaria assinando (\adrr{ADR-29}).
+\emph{token} que o hub continuaria assinando (\adrr{ADR-29}). A mesma tela
+serve, desde a H01.4.1, à troca \textbf{voluntária}, pelo menu do avatar: o
+\emph{middleware} deixa de devolver para a \emph{home} quem já trocou, e a
+rota da api é a mesma --- exige a senha atual, como o login.
 \end{decisao}
 
 \section{Segurança do \emph{embed}}
@@ -808,7 +1219,7 @@ Cada token do \emph{sandbox} está lá por um motivo medido:
 \cd{allow-same-origin} porque, sem ele, a \emph{origin} do \cd{iframe}
 cross-origin vira \cd{"null"} e a validação de \emph{origin} quebra dos dois
 lados; \cd{allow-modals} porque, sem ele, o navegador \emph{ignora}
-\cd{confirm()} do \cd{iframe} silenciosamente (devolve \cd{false}), e a exp-90
+\cd{confirm()} do \cd{iframe} silenciosamente (devolve \cd{false}), e a app-90
 confirma exclusão assim; \cd{allow-pointer-lock} porque, num \cd{iframe} com
 \emph{sandbox}, \cd{requestPointerLock()} morre com \cd{SecurityError} sem ele
 --- verificado em \arq{scripts/probe-pointerlock.mjs}, que precisa do Chrome do
@@ -854,11 +1265,46 @@ acredita ter declarado algo.
   \item Chamada de IA só existe como \rota{POST /ai/gerar} na API. O
     \emph{prompt} de sistema mora em \arq{apps/api/src/ai/prompts.ts} e nunca é
     devolvido.
-  \item O gabarito da exp-02 (\cd{factual}) não é persistido no estado do estudante
-    nem devolvido em nenhuma rota de estudante.
-  \item Os textos dos cartões da exp-70 chegam ao jogo \textbf{sem gabarito}, e
+  \item Na Ajuda com avatar (\adrr{ADR-132}), nem o vendor recebe o
+    \emph{prompt}: o contexto do LiveAvatar tem uma frase e o marcador
+    \cd{[sessao:\$\{sessao\}]}, e o \cd{system} que ele devolve é descartado. A
+    chave da conta (\env{LIVEAVATAR\_API\_KEY}) e as duas chaves da rota de LLM
+    ficam na api; o navegador recebe só o \emph{token} da sala de vídeo daquela
+    sessão (Seção~\ref{sec:ajuda-seguranca}). No mascote (\adrr{ADR-158}), a
+    instrução do sistema vai da api ao Gemini Live na abertura da conversa, e o
+    navegador recebe só o bilhete de entrada e os ajustes da boca. As
+    instruções de cada atendente editadas no painel (\adrr{ADR-165}) ficam em
+    \cd{ajuda\_configuracao} e só a api as lê para montar o \emph{prompt}; a
+    única tela que as mostra é a do \cd{admin}, \rota{/unooria/uso-de-ia}, por
+    \rota{GET /recursos/configuracao-da-ajuda}, que responde 403 a qualquer
+    outro papel.
+  \item O gabarito do UnooTube arquivado (\cd{factual}, hoje em
+    \arq{backup-unootube}) não era persistido no estado do estudante nem
+    devolvido em nenhuma rota de estudante.
+  \item O gabarito do Jornal da Escola (se cada notícia é publicável e o pilar
+    que falta), a consequência e o conjunto certo da Chave moram no pacote, no
+    servidor. A notícia do estudante é uma \emph{allowlist}, e cada parte
+    desce num portão: a pista quando ela a abre, a reação com o resultado
+    liberado, o pilar da vaga depois da Chave --- e o conjunto da Chave, nunca
+    (\adrr{ADR-117}).
+  \item No Júri Estadual de Projetos (\adrr{ADR-137}), o \emph{bundle} não
+    recebe o acervo nem a regra: os pesos (curtir, ficar) e o limiar do
+    motor do feed, a área líder e os estandes que o feed não serviu ficam no
+    servidor até a Galeria Oculta abrir --- e, depois dela, o contrafactual
+    \enquote{sem as suas curtidas} desce já calculado, nunca o motor
+    (\adrr{ADR-164}). A separação é feita nas pastas do salvar, no feed, e o
+    servidor a corrige no voto sem dizer o acerto (\adrr{ADR-176}); na regra
+    SE \ldots{} ENTÃO, as peças descem sem a marca
+    de certa, com ids opacos \cd{rg-}, e a certa só desce DEPOIS do envio
+    (\adrr{ADR-174}; os pacotes da curtida saíram com a \adrr{ADR-151}, e a
+    cadeia, o par simulado e as enquetes com a \adrr{ADR-174}, e o caso Mariana
+    com a \adrr{ADR-176}). O que NÃO é segredo: o post mostra a área (o perfil
+    e a \emph{hashtag}) ao lado do Salvar, e a pasta certa está ao alcance de
+    quem lê o post --- o risco aceito na \adrr{ADR-176}; quem corrige é o
+    servidor.
+  \item Os textos dos cartões da app-70 chegam ao jogo \textbf{sem gabarito}, e
     apenas os da bolha daquela criança.
-  \item \cd{lado}, \cd{perfil} e \cd{intensidade} dos posts da exp-01 são
+  \item \cd{lado}, \cd{perfil} e \cd{intensidade} dos posts da exp08ef1b são
     removidos pelo sanitizador antes de o \emph{feed} sair da API --- são a
     variável independente do experimento.
 \end{itemize}
@@ -889,7 +1335,7 @@ Telemetria sem PII & O evento carrega \cd{estudante\_id} opaco (UUID), nunca nom
   \emph{e-mail}. A identidade é derivada do \emph{token} no servidor, não do
   corpo enviado pelo cliente --- o que é, ao mesmo tempo, anti-\emph{spoof} e
   garantia de que o cliente não \emph{pode} enviar PII no lugar do id.\\
-\zebra Sem canal de texto arbitrário & Em \cd{exp\_70\_sessoes.payload}, o campo
+\zebra Sem canal de texto arbitrário & Em \cd{app\_70\_sessoes.payload}, o campo
   \cd{eventos[].dados} aceita apenas número, booleano ou \emph{string} de um
   \textbf{vocabulário fechado}. O campo \cd{texto} livre que existia era o único
   canal de texto arbitrário do \emph{payload} --- e o caminho por onde o nome de
@@ -900,74 +1346,81 @@ Texto sensível fora de log & O texto livre do \emph{check-in} de bem-estar nunc
 \zebra IA sem contexto identificável & O \emph{prompt} de bem-estar recebe
   apenas dia da semana, mês, número do \emph{check-in} e o texto livre
   \emph{delimitado como conteúdo}. Nunca nome, escola, pontuação ou faixa.\\
-Ranking sem menor real & O ranking da exp-02 usa colegas
-  \textbf{fictícios}, com distribuição desenhada para a lição. Não há pontuação
-  de criança real exposta a outra criança.\\
-\zebra Dado de saúde com posse & \cd{exp\_91\_ciclos} e \cd{exp\_91\_checkins}
+Ranking sem menor real & O ranking do UnooTube (hoje \cd{backup-exp04ef1b})
+  usava colegas \textbf{fictícios}, com distribuição desenhada para a lição. Não
+  há pontuação de criança real exposta a outra criança --- nem no Jornal da
+  Escola, em que o painel só mostra as verificadas num histograma anônimo e a
+  criança não vê a edição de ninguém, nem no Júri Estadual de Projetos, cujo
+  painel é PROJETADO na lousa: a linha de cada computador diz só progresso
+  (\enquote{separou}, nunca quantos acertou, \adrr{ADR-174}), e o
+  voto aparece apenas no agregado por área e a concentração do feed só na média
+  de quem curtiu e de quem não curtiu, sem nome (\adrr{ADR-137},
+  \adrr{ADR-164}).\\
+\zebra Dado de saúde com posse & \cd{app\_91\_ciclos} e \cd{app\_91\_checkins}
   têm RLS \emph{e} filtro por \cd{professor\_id} em toda \emph{query}, e não
   existe rota de gestor nem agregado. O próprio titular apaga tudo.\\
-Texto de menor com contenção & \textbf{Três} campos livres de estudante, e a
-  diferença entre eles é de finalidade. \cd{exp\_07\_mensagens} guarda a
-  conversa da criança com Amara: 600 caracteres, 3 turnos, sanitizador nos dois
-  sentidos, e \textbf{nenhum caminho até o painel} --- a professora vê
-  \emph{quantos} turnos, nunca o quê. \cd{exp\_06\_reflexoes} guarda o
+Texto de menor com contenção & \cd{exp06ef2b\_reflexoes} guarda o
   \enquote{Meu percurso}: 280 caracteres que \textbf{a professora da turma lê},
   porque ali o texto \emph{é} o instrumento.
-  \cd{exp\_08\_respostas\_percurso} guarda a justificativa da cláusula: 800
-  caracteres, mesma finalidade e mesma fronteira --- e com uma trava que os
-  outros dois não têm, o \textbf{filtro de dado pessoal que recusa antes de
-  gravar}. As três ficam sob RLS, fora de log e fora da telemetria. Ver as
-  decisões logo abaixo.\\
+  \cd{exp08ef4b\_respostas\_percurso} guarda a justificativa da cláusula: 800
+  caracteres, mesma finalidade e mesma fronteira --- e com uma trava que o
+  outro não tem, o \textbf{filtro de dado pessoal que recusa antes de
+  gravar}. Os dois ficam sob RLS, fora de log e fora da telemetria, e o painel
+  que os devolve aceita gestores (a folha de progresso é deles também), mas
+  \textbf{só devolve o texto a quem tem matrícula de professor na turma}: sem
+  ela, o campo volta nulo e a gestão vê só \enquote{entregou} --- a mesma
+  fronteira do Quem mandou isso? e da A Seleção (H07.1.4). Ver as decisões
+  logo abaixo. Na A Seleção (\adrr{ADR-115}) a \textbf{legenda} dos
+  Stories vai, com o primeiro nome, ao colega pareado no Mural --- por isso passa
+  por um sanitizador (link, telefone, e-mail, menção, palavrão) antes de
+  gravar ---, e a \cd{exp07ef1b\_reflexoes} só ao professor da turma. O Jornal
+  da Escola (\adrr{ADR-117}) é o oposto, e de propósito: \textbf{não tem texto
+  livre de menor}. Toda resposta é vocabulário fechado (notícia, tipo de pista,
+  bloco da Chave, motivo, alternativa), e por isso não há recorte de gestor a
+  aplicar --- o gestor lê o mesmo painel que o professor. O Júri Estadual de
+  Projetos (\adrr{ADR-137}) também não tem: o que a criança digita na busca da
+  Galeria Oculta \textbf{nunca sai do aparelho} --- a api recebe só o tipo da
+  busca e a área que casou ---, e o resto é vocabulário fechado (curtida,
+  salvo, voto, convicção, cartão de motivo e o índice da frase grifada da
+  legenda --- \adrr{ADR-152} ---, ids opacos, a pasta (a área) de cada
+  estande salvo, \adrr{ADR-176}, e as peças da regra, \adrr{ADR-174}).\\
 \bottomrule
 \end{tabularx}
 
 \begin{decisao}
-\textbf{A exp-07 reabriu o texto livre de menor, e isso é mudança de postura}
-(\adrr{ADR-66}). Até ela, o produto tinha exatamente um campo aberto, e ele era
-de \emph{professor} (o \emph{check-in} de bem-estar); as experiências de
-estudante trabalhavam com vocabulário fechado, e a linha acima sobre
-\cd{exp\_70\_sessoes} descreve a trava estrutural que existe justamente por isso.
-
-O que fez valer a pena: a missão mede se a criança consegue \textbf{perguntar
-antes de repassar}, e um menu de perguntas prontas responderia a pergunta no
-lugar dela. O que cerca a abertura: a conversa só existe \emph{depois} da
-decisão (o silêncio de Amara na etapa da decisão é de ofício), o texto nunca sai
-da escola dele, e nenhum caminho o leva a \emph{log}, telemetria, Clarity ou
-painel do professor --- o painel mostra \textbf{quantos} turnos, nunca o quê.
-
-Consequência aceita: existe no banco uma coluna de longa duração com texto
-escrito por criança (\cd{exp\_07\_mensagens.texto}), e ela entra no mesmo regime
-de retenção da subseção seguinte. Gatilho de reavaliação: se a conversa deixar de ser opcional, ou se
-algum painel pedir o texto, a decisão volta à mesa.
+\textbf{O texto livre de menor foi reaberto pelo Eco no Grupo, e a mudança de
+postura sobreviveu à missão.} A \adrr{ADR-66}, que a registrou, ficou superada
+com a retirada (\adrr{ADR-113}). Até o Eco, o produto tinha exatamente um campo aberto, e ele era de \emph{professor} (o
+\emph{check-in} de bem-estar); as experiências de estudante trabalhavam com
+vocabulário fechado, e a linha acima sobre \cd{app\_70\_sessoes} descreve a
+trava estrutural que existe justamente por isso. A conversa que abriu o
+precedente saiu com a missão --- a tabela dela caiu na migração
+\cd{20260925180000\_remover\_eco\_no\_grupo} ---, e o que resta são os campos
+das missões seguintes, cada um com a contenção da tabela acima.
 \end{decisao}
 
 \begin{decisao}
-\textbf{A exp-06 leva o texto da criança ao painel do professor, e a exp-07
-não --- as duas estão certas.} O que separa os dois casos é a
-\textbf{finalidade}, não o grau de cuidado.
+\textbf{A exp06ef2b leva o texto da criança ao painel do professor, e isso está
+certo.} O que decide é a \textbf{finalidade}, não o grau de cuidado: o Eco no
+Grupo mantinha fora do painel uma \emph{conversa} com personagem, porque
+levá-la à tela do adulto mudaria o que a criança escreve.
 
-Na exp-07 o campo é uma \emph{conversa} com uma personagem: ele existe para a
-criança perguntar antes de repassar, e o que a professora precisa saber é se ela
-perguntou --- daí a contagem de turnos no painel e o texto fora dele. Levá-lo à
-tela do adulto mudaria o que a criança escreve, e a missão mede justamente a
-pergunta espontânea.
-
-Na exp-06 o campo é o \emph{registro do percurso}: 280 caracteres em que a
+Na exp06ef2b o campo é o \emph{registro do percurso}: 280 caracteres em que a
 criança nomeia o gatilho que reconheceu e o que fará antes de encaminhar da
 próxima vez. Ali o texto \textbf{é} o instrumento formativo --- um painel que
 mostrasse só \enquote{entregou / não entregou} guardaria a redação para ninguém.
 Quem lê é o professor \emph{da turma dela}: nenhuma rota de gestor o alcança, e
 o campo não existe em nenhum \emph{payload} de telemetria.
 
-Consequência aceita: há agora duas colunas de longa duração com texto de menor,
-e uma delas é visível a um adulto por desenho. Gatilho de reavaliação: se um
-painel de gestor, de rede ou de análise pedir \cd{exp\_06\_reflexoes.texto}, a
+Consequência aceita: a coluna é de longa duração e visível a um adulto por
+desenho. Gatilho de reavaliação: se um
+painel de gestor, de rede ou de análise pedir \cd{exp06ef2b\_reflexoes.texto}, a
 decisão volta à mesa --- a fronteira é o professor da turma, e ela não se move
 por conveniência de relatório.
 \end{decisao}
 
 \begin{decisao}
-\textbf{A exp-08 RECUSA o dado pessoal em vez de guardá-lo com \emph{flag}}, e
+\textbf{A exp08ef4b RECUSA o dado pessoal em vez de guardá-lo com \emph{flag}}, e
 essa é a primeira vez que o produto trata a caixa livre de menor de forma ativa,
 não só contida.
 
@@ -1012,7 +1465,7 @@ gravar.
 \subsection{Retenção: uma decisão explícita de não declarar prazo}
 
 \begin{decisao}
-\textbf{Não há prazo de retenção declarado} para \cd{exp\_70\_sessoes} nem para
+\textbf{Não há prazo de retenção declarado} para \cd{app\_70\_sessoes} nem para
 \cd{telemetria\_eventos} (decisão de 2026-08-26, \adrr{ADR-13}).
 
 Havia uma coluna \cd{expires\_at} de 90 dias no \emph{schema} e \emph{nenhuma
@@ -1051,6 +1504,17 @@ estudante}, e isso precisa constar do contrato e do DPA da rede. Voltar à regi�
 possível a qualquer momento, mas exige trocar \emph{também} o modelo pelo que a
 região publica (lá, a família 2.5) --- as duas variáveis mudam juntas ou a
 geração para de funcionar.
+
+O agente de IA do professor segue a mesma regra por outro caminho: o modelo dele
+está em \cd{global} (com reserva em \cd{us}), os dois \emph{data stores} em
+\cd{global} e a sessão --- o histórico das conversas --- no Agent Engine em
+\cd{us-east1}. Nenhum dos três fica no Brasil.
+
+A Ajuda com avatar (\adrr{ADR-132}) acrescenta um terceiro destino, e o
+primeiro fora do Google: a \textbf{voz e o texto de PROFISSIONAIS} (nunca de
+estudante, que não abre a Ajuda) passam pelo vendor do avatar, nos EUA --- é ele
+quem transcreve a fala e sintetiza a resposta. Precisa constar do contrato e do
+DPA da rede e da página de privacidade, como o resto desta seção.
 \end{atencao}
 
 \section{Verificação}
@@ -1079,6 +1543,12 @@ Segurança não documentada por teste é intenção. O que é efetivamente verif
   se confundem.\\
 \arq{scripts/probe-pointerlock.mjs} & Sem o token de \emph{sandbox},
   \cd{requestPointerLock()} falha; com ele, funciona.\\
+\zebra \arq{tests/ajuda-rotas.spec.ts},\newline \arq{tests/ajuda-postgres.spec.ts} &
+  O LLM da Ajuda responde 401 sem o segredo, sem \emph{token} de sessão, com o
+  \emph{token} fora do \cd{system} ou de sessão encerrada, e 503 sem as chaves;
+  o \emph{prompt} que vai ao modelo é o NOSSO, nunca o do vendor; encerrar
+  ignora a sessão de outra pessoa; o banco recusa linha de \cd{estudante} e
+  aceita papel de contrato sem escola (\adrr{ADR-132}).\\
 \bottomrule
 \end{tabularx}
 
@@ -1111,6 +1581,19 @@ Roubo de \emph{token} do \cd{iframe} & Exposição de credencial &
   Consumo de recurso & Quota diária persistida por (escola, usuário, dia), com
   incremento atômico, verificada \emph{antes} da chamada; \emph{rate limit} por
   usuário.\\
+Esgotamento dos minutos da Ajuda (avatar ou mascote) & Consumo de recurso &
+  \textbf{Exceção à regra 5} (\adrr{ADR-132}): a Ajuda não passa pela quota de
+  \emph{tokens}, porque o custo dela é o minuto de vídeo. O mascote
+  (\adrr{ADR-158}) cobra por \emph{token} de áudio, mas usa o MESMO limite em
+  minutos, aplicado pela própria api, que derruba a conexão no prazo. Limite em MINUTOS por
+  pessoa e dia e por sessão (\cd{ajuda\_limites}, só o \cd{admin} edita), com
+  \cd{ajuda\_sessoes} de medidor: sessão sem fim conta o teto inteiro, abrir
+  fecha a anterior que ficou aberta. 6 aberturas e 20 turnos por minuto por
+  pessoa. Os \emph{tokens} continuam medidos pelo \cd{MedidorDeProvider}.\\
+\zebra Uso do LLM da Ajuda por fora do avatar & Autenticação de
+  \emph{endpoint} de serviço & Duas trancas: segredo do vendor, comparado em
+  tempo constante, e \emph{token} HS256 da sessão, curto e preso a uma sessão
+  aberta; \emph{fail closed} (503) sem as chaves.\\
 Vazamento de PII por log & Privacidade &
   Proibição explícita; telemetria com id opaco; vocabulário fechado no
   \emph{payload}; texto sensível nunca logado.\\

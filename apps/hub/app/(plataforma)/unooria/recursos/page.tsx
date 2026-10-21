@@ -1,4 +1,5 @@
-import { FeedbackAlert } from "@edu/ui/ds";
+import { Card, FeedbackAlert } from "@edu/ui/ds";
+import { LinkButton } from "@/components/link-button";
 import { apiDoServidor } from "@/lib/api-servidor";
 import { PainelDeRecursos } from "./painel-de-recursos";
 import type { EscolaDoEscopo, Painel } from "./tipos";
@@ -63,10 +64,25 @@ export default async function RecursosPage({
    * de tentar sincronizar estado.
    */
   return (
-    <PainelDeRecursos
-      key={painel.escopo.escolaId ?? "contrato"}
-      inicial={painel}
-      escolas={escolas ?? []}
-    />
+    <div className="flex flex-col gap-6">
+      <PainelDeRecursos
+        key={painel.escopo.escolaId ?? "contrato"}
+        inicial={painel}
+        escolas={escolas ?? []}
+      />
+      {/* Conteúdo de produto que é o MESMO para toda rede: não depende do
+          escopo escolhido acima, por isso fica fora do painel (e do `key`). */}
+      <Card variant="outlined" title="Conteúdo padrão das missões">
+        <div className="flex flex-col items-start gap-3">
+          <p className="max-w-3xl text-[13px] leading-snug text-unooria-neutral-700">
+            O Júri Estadual de Projetos (6º ano) tem um banco padrão de projetos que o professor usa sem IA. As imagens
+            dele são geradas uma vez, aqui, e valem para toda atividade criada com o banco.
+          </p>
+          <LinkButton href="/unooria/recursos/imagens-do-juri" variant="secondary" size="sm">
+            Imagens do banco padrão do Júri Estadual
+          </LinkButton>
+        </div>
+      </Card>
+    </div>
   );
 }

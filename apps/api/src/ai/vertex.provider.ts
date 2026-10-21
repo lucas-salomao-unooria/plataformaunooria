@@ -2,10 +2,13 @@ import { GoogleAuth } from "google-auth-library";
 import { Agent, fetch as fetchDoUndici } from "undici";
 import type {
   AiConversaRequest,
+  AiFluxoEvento,
+  AiFluxoRequest,
   AiImagemOpcoes,
   AiJsonRequest,
   AiJsonSchema,
   AiProvider,
+  DivisaoDeTokens,
   AiRequest,
   AiResult,
   AiSpeechRequest,
@@ -122,13 +125,53 @@ export function endpointVertex(alvo: { project?: string; location: string; model
   return `https://${host}/v1/projects/${alvo.project}/locations/${alvo.location}/publishers/google/models/${alvo.model}:generateContent`;
 }
 
+/** O mesmo endereço, no método que devolve aos pedaços (`alt=sse`: uma linha
+ *  `data:` por pedaço, cada uma um `GenerateContentResponse` inteiro). */
+export function endpointVertexEmFluxo(alvo: { project?: string; location: string; model: string }): string {
+  return endpointVertex(alvo).replace(/:generateContent$/, ":streamGenerateContent?alt=sse");
+}
+
+/**
+ * Lê um corpo SSE do Vertex e devolve cada `data:` já como objeto. Puro sobre
+ * o iterável de bytes — exportado para o teste não precisar de rede.
+ *
+ * Decide por LINHA (como o cliente do Agent Engine): um pedaço de rede pode
+ * cortar uma linha no meio, então o resto fica no buffer até a próxima quebra.
+ * Linha que não é JSON é descartada — um pedaço ilegível não derruba a fala.
+ */
+export async function* lerSseDoVertex(corpo: AsyncIterable<Uint8Array>): AsyncGenerator<RespostaGenerate> {
+  const decodificador = new TextDecoder();
+  let resto = "";
+  const deLinha = (linha: string): RespostaGenerate | null => {
+    const limpa = linha.trim();
+    if (!limpa.startsWith("data:")) return null;
+    try {
+      return JSON.parse(limpa.slice(5).trim()) as RespostaGenerate;
+    } catch {
+      return null;
+    }
+  };
+  for await (const pedaco of corpo) {
+    resto += decodificador.decode(pedaco, { stream: true });
+    const linhas = resto.split("\n");
+    resto = linhas.pop() ?? "";
+    for (const linha of linhas) {
+      const dado = deLinha(linha);
+      if (dado) yield dado;
+    }
+  }
+  resto += decodificador.decode();
+  const ultima = deLinha(resto);
+  if (ultima) yield ultima;
+}
+
 /**
  * Os modelos 2.5 e 3.x "pensam" por padrão E os tokens de raciocínio saem do
  * `maxOutputTokens` — medido também no 3.6-flash, que gastou 521 tokens de
  * pensamento numa resposta de três frases. MEDIDO no gemini-2.5-flash: com
  * pensamento dinâmico o
  * modelo gastou o teto inteiro pensando e devolveu texto VAZIO com
- * `finishReason: MAX_TOKENS` — que na exp-90 vira "o plano ficou grande demais"
+ * `finishReason: MAX_TOKENS` — que na app-90 vira "o plano ficou grande demais"
  * sem nenhum plano. O app origem (Claude via OpenRouter) não tinha essa etapa,
  * então `0` (desligado) é o valor de PARIDADE e o default aqui.
  * `VERTEX_THINKING_BUDGET=-1` volta ao pensamento dinâmico; `>0` põe teto.
@@ -153,18 +196,31 @@ type ParteVertex = {
 
 type ConteudoVertex = { role?: string; parts?: ParteVertex[] };
 
-type RespostaGenerate = {
+export type RespostaGenerate = {
   candidates?: Array<{
     content?: ConteudoVertex;
     finishReason?: string;
   }>;
-  usageMetadata?: {
-    totalTokenCount?: number;
-    thoughtsTokenCount?: number;
-    promptTokenCount?: number;
-    candidatesTokenCount?: number;
-  };
+  usageMetadata?: UsoDoVertex;
 };
+
+type UsoDoVertex = {
+  totalTokenCount?: number;
+  thoughtsTokenCount?: number;
+  promptTokenCount?: number;
+  candidatesTokenCount?: number;
+};
+
+/**
+ * Entrada e saída COBRADAS. A saída é o total menos a entrada, e não o
+ * `candidatesTokenCount`: o raciocínio (`thoughtsTokenCount`) fica fora deste,
+ * e a Vertex o cobra na tarifa de saída. Sem `usageMetadata`, nada a dividir.
+ */
+export function divisaoDoUso(uso: UsoDoVertex | undefined): DivisaoDeTokens | undefined {
+  if (!uso || typeof uso.totalTokenCount !== "number") return undefined;
+  const entrada = uso.promptTokenCount ?? 0;
+  return { entrada, saida: Math.max(0, uso.totalTokenCount - entrada) };
+}
 
 /** Provider Vertex/Gemini. Único arquivo que conhece o vendor.
  *  Trocar de provedor = novo arquivo implementando AiProvider + env AI_PROVIDER. */
@@ -283,7 +339,7 @@ export class VertexProvider implements AiProvider {
         const data = (await res.json()) as RespostaGenerate;
         // ANTES de validar: uma tentativa rejeitada por `validar` foi cobrada
         // igual, e a quota conta o que foi pago, não o que serviu.
-        req.aoUsarTokens?.(data.usageMetadata?.totalTokenCount ?? 0);
+        req.aoUsarTokens?.(data.usageMetadata?.totalTokenCount ?? 0, divisaoDoUso(data.usageMetadata));
         const candidato = data.candidates?.[0];
         const texto = candidato?.content?.parts?.map((p) => p.text ?? "").join("").trim();
         // JSON truncado falha no `JSON.parse` com "Unexpected end of JSON
@@ -349,6 +405,49 @@ export class VertexProvider implements AiProvider {
     let tokensEntrada = 0;
     let tokensSaida = 0;
 
+    /**
+     * O TETO POR CHAMADA e o PRAZO DO TURNO (opcionais). Em horário de pico a
+     * capacidade compartilhada do Vertex enfileira: no dev, em 2026-10-19, o
+     * p99 do gemini-3.7-flash foi a 46–81 s numa janela e a 3–6 s na seguinte,
+     * e um turno da exp02em1b levou 194 s (três chamadas de 80, 56 e 52 s) —
+     * o navegador desiste em 45 s. Abortar e repetir pega a requisição que sai
+     * rápido. A chamada abortada pode ter sido cobrada sem devolver tokens: ela
+     * não entra na soma (consequência aceita, ADR-161 conta o que se mediu).
+     */
+    const inicioDoTurno = Date.now();
+    const restanteDoPrazo = () =>
+      req.prazoMs === undefined ? Number.POSITIVE_INFINITY : req.prazoMs - (Date.now() - inicioDoTurno);
+    const chamarComTeto = async (corpo: string) => {
+      for (let repeticao = 1; ; repeticao += 1) {
+        const restante = restanteDoPrazo();
+        if (restante <= 0) {
+          throw new ErroDeGeracao("O turno passou do prazo.", `prazo de ${req.prazoMs} ms; chamadas lentas na fila do Vertex`);
+        }
+        const teto = req.tetoPorChamadaMs === undefined ? restante : Math.min(req.tetoPorChamadaMs, restante);
+        try {
+          return await fetchDoUndici(this.endpoint(), {
+            method: "POST",
+            headers: {
+              authorization: `Bearer ${await this.accessToken()}`,
+              "content-type": "application/json",
+            },
+            body: corpo,
+            dispatcher,
+            ...(Number.isFinite(teto) ? { signal: AbortSignal.timeout(Math.max(1, Math.round(teto))) } : {}),
+          });
+        } catch (erro) {
+          // Pelo NOME, não por `instanceof Error`: o aborto chega como
+          // `DOMException`, que nem sempre é do mesmo realm do `Error` daqui.
+          const nome = (erro as { name?: unknown } | null)?.name;
+          const estourou = nome === "TimeoutError" || nome === "AbortError";
+          if (!estourou) throw erro;
+          if (repeticao >= 3 || restanteDoPrazo() <= 0) {
+            throw new ErroDeGeracao("O Vertex não respondeu a tempo.", `${repeticao} chamada(s) acima de ${Math.round(teto)} ms`);
+          }
+        }
+      }
+    };
+
     const umaTentativa = async (reforco: string): Promise<{ texto: string; voltas: number; finishReason?: string }> => {
       // O histórico é remontado a cada tentativa: a tentativa anterior foi
       // REJEITADA, e deixar a fala recusada no contexto ensinaria o erro.
@@ -358,24 +457,17 @@ export class VertexProvider implements AiProvider {
       }));
 
       for (let volta = 0; volta < maxVoltas; volta += 1) {
-        const res = await fetchDoUndici(this.endpoint(), {
-          method: "POST",
-          headers: {
-            authorization: `Bearer ${await this.accessToken()}`,
-            "content-type": "application/json",
+        const corpoDaVolta = JSON.stringify({
+          systemInstruction: { parts: [{ text: req.system + reforco }] },
+          contents,
+          ...(tools ? { tools } : {}),
+          generationConfig: {
+            maxOutputTokens: req.maxTokens ?? 3000,
+            ...(req.temperatura !== undefined ? { temperature: req.temperatura } : {}),
+            ...thinkingConfig(),
           },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: req.system + reforco }] },
-            contents,
-            ...(tools ? { tools } : {}),
-            generationConfig: {
-              maxOutputTokens: req.maxTokens ?? 3000,
-              ...(req.temperatura !== undefined ? { temperature: req.temperatura } : {}),
-              ...thinkingConfig(),
-            },
-          }),
-          dispatcher,
         });
+        const res = await chamarComTeto(corpoDaVolta);
         if (!res.ok) {
           const corpo = (await res.text()).slice(0, 300);
           throw new ErroDeGeracao(`Vertex respondeu ${res.status}`, corpo);
@@ -475,6 +567,69 @@ export class VertexProvider implements AiProvider {
     throw new ErroDeGeracao("O modelo não respondeu de forma aceitável.", ultimoErro);
   }
 
+  /**
+   * Conversa sem ferramentas, aos pedaços (`AiProvider.conversarEmFluxo`).
+   *
+   * `streamGenerateContent?alt=sse` e não `generateContent`: quem lê é o avatar
+   * da Ajuda, que começa a falar no primeiro pedaço e desiste se o primeiro
+   * byte passar de 10 s (MEDIDO no spike da ADR-132). Esperar a resposta
+   * inteira somaria o tempo de geração ao silêncio da pessoa.
+   *
+   * As partes de raciocínio (`thought: true`) ficam FORA da fala, como em
+   * `conversar`. O uso de tokens chega no último pedaço (`usageMetadata`
+   * acumulado) — por isso o total vem do maior valor visto, não da soma.
+   */
+  async *conversarEmFluxo(req: AiFluxoRequest): AsyncGenerator<AiFluxoEvento> {
+    const project = process.env.VERTEX_PROJECT_ID;
+    const location = process.env.VERTEX_LOCATION ?? LOCALIZACAO_PADRAO;
+    const model = process.env.VERTEX_MODEL ?? MODELO_PADRAO;
+    const res = await fetchDoUndici(endpointVertexEmFluxo({ project, location, model }), {
+      method: "POST",
+      headers: { authorization: `Bearer ${await this.accessToken()}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: req.system }] },
+        contents: req.historico.map((m) => ({
+          role: m.papel === "pessoa" ? "user" : "model",
+          parts: [{ text: m.texto }],
+        })),
+        generationConfig: {
+          maxOutputTokens: req.maxTokens ?? 1024,
+          ...(req.temperatura !== undefined ? { temperature: req.temperatura } : {}),
+          ...thinkingConfig(),
+        },
+      }),
+      dispatcher,
+      ...(req.sinal ? { signal: req.sinal } : {}),
+    });
+    if (!res.ok || !res.body) {
+      const corpo = (await res.text()).slice(0, 300);
+      throw new ErroDeGeracao(`Vertex respondeu ${res.status}`, corpo);
+    }
+
+    let tokens = 0;
+    let tokensEntrada: number | undefined;
+    let tokensSaida: number | undefined;
+    let finishReason: string | undefined;
+    let texto = "";
+    for await (const dado of lerSseDoVertex(res.body)) {
+      const candidato = dado.candidates?.[0];
+      const pedaco = (candidato?.content?.parts ?? [])
+        .filter((p) => p.thought !== true && typeof p.text === "string")
+        .map((p) => p.text)
+        .join("");
+      if (pedaco) {
+        texto += pedaco;
+        yield { tipo: "texto", texto: pedaco };
+      }
+      if (candidato?.finishReason) finishReason = candidato.finishReason;
+      const uso = dado.usageMetadata;
+      if (uso?.totalTokenCount !== undefined) tokens = Math.max(tokens, uso.totalTokenCount);
+      if (uso?.promptTokenCount !== undefined) tokensEntrada = uso.promptTokenCount;
+      if (uso?.candidatesTokenCount !== undefined) tokensSaida = uso.candidatesTokenCount;
+    }
+    yield { tipo: "fim", resultado: { texto, tokensUsados: tokens, tokensEntrada, tokensSaida, finishReason } };
+  }
+
   /** Imagem via modelo próprio (VERTEX_IMAGE_MODEL) com responseModalities —
    *  porte do `gerarImagemBytes` do origem para o endpoint Vertex/ADC. */
   async generateImage(prompt: string, opcoes?: AiImagemOpcoes): Promise<Buffer> {
@@ -497,7 +652,10 @@ export class VertexProvider implements AiProvider {
     });
     const data = (await res.json()) as {
       candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { data?: string } }> } }>;
+      usageMetadata?: UsoDoVertex;
     };
+    // Antes de conferir a imagem: resposta sem imagem foi cobrada igual.
+    opcoes?.aoUsarTokens?.(data.usageMetadata?.totalTokenCount ?? 0, divisaoDoUso(data.usageMetadata));
     const inline = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData)?.inlineData;
     if (!inline?.data) throw new ErroDeGeracao("O modelo não devolveu imagem.");
     return Buffer.from(inline.data, "base64");

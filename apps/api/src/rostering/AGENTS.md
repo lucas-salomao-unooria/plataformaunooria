@@ -10,7 +10,7 @@ delega para cá (ADR-54, ADR-59).
 experiências vieram de projetos onde cada atividade tinha cadastro próprio; a
 unificação técnica já existia (todas recebem `estudante.id` pelo `hub:init` e gravam
 `estudante_id` com FK para `users`), mas a conta era de ASSENTO — está escrito no
-schema: `exp_01_runs.nome_no_app` existe *"porque a conta é do APARELHO: outra
+schema: `exp08ef1b_runs.nome_no_app` existe *"porque a conta é do APARELHO: outra
 turma reusa o mesmo login"*. `nome_no_app` continua existindo como APELIDO dentro
 da ficção do Instanooria, nunca como identidade em tela de professor ou
 relatório. O teste `tests/identidade-unica.spec.ts` falha se alguém criar uma
@@ -34,22 +34,22 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   2026 em silêncio.
 - **`matriculas.papel` só admite `estudante` e `professor`.** Gestor é papel da
   ESCOLA (o `roles.csv` do padrão), não matrícula de turma — e é por isso que ele
-  continua vendo a escola inteira. "Coordenação" é `gestor`: `PAPEIS` é contrato
+  continua vendo a escola inteira. "Coordenação" é `gestor_escola`: `PAPEIS` é contrato
   congelado, e o CSV aceita sinônimos (`coordenacao`, `diretor`, `principal`).
 - **As turmas do professor são as em que ele tem matrícula.** `comum/turmas-do-professor.ts`
   (`ondeAsTurmasSaoVisiveis`, `professorLeciona`, `professorEnsinaOEstudante`) é a
-  porta única; os seletores do
-  UnooTube, da Vila e do unooGPT passam por ela. Antes, qualquer professor abria
-  bem-estar e Vila de qualquer turma da escola, porque a única prova exigida era
-  "mesma escola", que é a regra de tenancy e não a de quem dá aula ali.
+  porta única; os seletores da Vila e do unooGPT passam por ela. Sem ela, qualquer
+  professor abre bem-estar e Vila de qualquer turma da escola, porque a única
+  prova exigida seria "mesma escola", que é a regra de tenancy e não a de quem dá
+  aula ali.
   **Rota de professor que recebe `turmaId` ou `estudanteId` passa pela porta —
-  TODA, inclusive a que só lê e a que APAGA.** Seis ficaram de fora até
-  2026-09-05, e o `@Roles("professor")` não protegia nada nelas: o "zerar turma"
-  da Vila e do unooGPT, os cartões da Vila, os dois relatórios individuais e o
-  **relógio da aula** do unooGPT — este último deixava um professor da escola dar
-  a largada, ou encerrar, a aula de uma turma que não é dele, no meio dela. O
-  molde certo é o `o-eco-no-grupo`, que nasceu depois da porta e passa
-  `professorDoToken` em todas.
+  TODA, inclusive a que só lê e a que APAGA.** O `@Roles("professor")` não
+  protege nada disso: sem a porta, o "zerar turma" da Vila e do unooGPT, os
+  cartões da Vila, os relatórios individuais e o **relógio da aula** do unooGPT
+  ficam abertos a qualquer professor da escola — este último deixaria dar a
+  largada, ou encerrar, a aula de uma turma que não é dele, no meio dela. O molde
+  passa `professorDoToken` (`comum/turmas-do-professor.ts`) em todas as rotas de
+  turma, sem exceção.
   **Tela de UMA criança usa `professorEnsinaOEstudante`, não `professorLeciona`**:
   a pergunta ali não é "esta turma é minha?", é "esta criança é de alguma turma
   minha?". Ele aceita a matrícula ativa **ou** o cache `users.turma_id` — as duas
@@ -64,7 +64,7 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   responde `25P02 current transaction is aborted`, e o que aparece no log é a
   consulta de RECUPERAÇÃO, não a que quebrou. O padrão "tenta criar, se bater no
   UNIQUE relê o que a outra requisição criou" precisa da releitura numa
-  `comTenancy` NOVA. Custou um 500 no boot da exp-91: o `catch` estava escrito
+  `comTenancy` NOVA. Custou um 500 no boot da app-91: o `catch` estava escrito
   para salvar a corrida do check-in do dia e era justamente o que a virava erro,
   derrubando a suíte `professor/04-bem-estar` antes do formulário.
   Regressão em `tests/bemestar.spec.ts` ("duas chamadas concorrentes").
@@ -78,7 +78,7 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   `tests/perfis-distribuicao-tenancy.spec.ts` roda como superusuário de
   propósito, para a RLS não mascarar a falta do `where`.
 - **A atividade do Instanooria declara a turma, e desde 2026-09-05 é
-  OBRIGATÓRIO** (`exp_01_activities.turma_id`, ADR-49 revista pela ADR-69).
+  OBRIGATÓRIO** (`exp08ef1b_activities.turma_id`, ADR-49 revista pela ADR-69).
   `POST /atividades` exige `turmaId` e o "Todas as turmas da escola" saiu do
   formulário: era ele que fazia 2EM-A e 2EM-B virarem uma lista só no painel de
   perfis, no monitor e na análise. A **coluna** continua anulável e sem backfill

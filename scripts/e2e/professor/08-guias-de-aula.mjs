@@ -27,30 +27,15 @@ const TURMA = process.env.TURMA ?? "8A";
 const GUIAS = [
   {
     rota: "/professor/entre-redes/8-ano/unidade-1/guia",
-    missao: "Instanooria · 8º ano",
-    /* Vem de `CONTROLE_DO_PROFESSOR` e de `@edu/conteudo-exp-01`: se o bloco
+    missao: "Unoovista · 8º ano",
+    /* Vem de `CONTROLE_DO_PROFESSOR` e de `@edu/conteudo-exp08ef1b`: se o bloco
        vivo quebrar, o guia continua renderizando e some em silêncio. */
     vivo: [/Você conduz — os \d+ momentos/i, /O que a turma lê na revelação/i],
     bncc: "EF08CO11",
   },
   {
-    rota: "/professor/entre-redes/4-ano/unidade-1/guia",
-    missao: "UnooTube · 4º ano",
-    /* A tabela dos 21 vídeos vem de `GET /unootube/professor/videos`. Antes o
-       guia DESCREVIA o catálogo — "metade cita fonte verificável" — e a
-       descrição tinha derivado: são 11 e 10 (ADR-86). A contagem entra aqui
-       como número EXATO de propósito: é ela que denuncia a próxima deriva. */
-    vivo: [
-      /Os vídeos e o gabarito — só para você/i,
-      /11 citam fonte verificável/i,
-      /papagaio tradutor/i,
-      /sensacionalista/i,
-    ],
-    bncc: "EF04CO08",
-  },
-  {
     rota: "/professor/entre-redes/2-serie/unidade-1/guia",
-    missao: "unooGPT · 2ª série EM",
+    missao: "UnooriaAI · 2ª série EM",
     /* A tabela dos 8 vieses vem de `GET /unoogpt/professor/fontes`. É a única
        superfície em que o viés é dito, e o hub não guarda cópia dela. */
     vivo: [/As 8 fontes e o viés de cada uma/i, /Em que ela engana/i, /Histórico de ocorrências/i],
@@ -58,17 +43,16 @@ const GUIAS = [
   },
   {
     rota: "/professor/entre-redes/7-ano/unidade-1/guia",
-    missao: "O Eco no Grupo · 7º ano",
-    /* As três respostas e as falas do bairro vêm de
-       `GET /o-eco-no-grupo/professor/material`. O texto exato da opção certa
-       está aqui porque é ele que o professor lê antes da aula — paráfrase no
-       guia deixava a turma comentando uma frase que ninguém viu. */
+    missao: "A Seleção · 7º ano",
+    /* Os gatilhos dos três momentos, as três perguntas do debate e as seleções
+       dos colegas virtuais vêm de `GET /a-selecao/professor/material`. A
+       pergunta é conferida pelo texto exato: o professor a lê no debate, e
+       paráfrase no guia deixaria a turma comentando uma frase que ninguém viu. */
     vivo: [
-      /As três respostas e o que o bairro devolve — só para você/i,
-      /Responder citando o print/i,
-      /Dona Lúcia/i,
+      /Os colegas virtuais: Tomás e Malu/i,
+      /qual detalhe fundamental do evento ele mostrou/i,
     ],
-    bncc: "EF07CO08",
+    bncc: "EF07CO11",
   },
   {
     rota: "/professor/entre-redes/6-ano/unidade-2/guia",
@@ -84,6 +68,30 @@ const GUIAS = [
       /O ciclo, na ordem certa/i,
     ],
     bncc: "EF06CO08",
+  },
+  {
+    rota: "/professor/entre-redes/6-ano/unidade-1/guia",
+    missao: "O Júri Estadual de Projetos · 6º ano",
+    /* Os dois blocos vivos vêm de `GET /juri-estadual/professor/material`: a
+       regra do feed com o gabarito (as peças da regra SE … ENTÃO com a certa
+       marcada, ADR-174; o caso Mariana saiu na ADR-176) e as quatro perguntas da plenária. A
+       pergunta é conferida pelo texto exato: é a mesma que o painel da aula
+       projeta, e paráfrase no guia deixaria a turma comentando outra frase. */
+    vivo: [
+      /A regra do feed e o gabarito — só para você/i,
+      /A regra SE … ENTÃO, peça por peça/,
+      /o jurado curtir 2 ou mais posts do mesmo tema/,
+      /As quatro perguntas da plenária — entre o voto e a galeria/i,
+      /parte da turma tenha votado em robôs e outra parte em projetos de meio ambiente/,
+      /* 40 projetos (2026-10-14): a regra do feed não repete post — a área
+         líder traz OUTROS projetos dela, não os mesmos em outros formatos — e
+         o total escondido é igual para todos; o que muda é quais áreas. Os
+         números saem da api (`regra.postsNoFeed`) e do total da mostra. */
+      /outros projetos da mesma área,\s+nenhum repetido/,
+      /Com 40 estandes e 10 publicações, todo computador que chega ao fim do feed\s+fica com 30 estandes fora dele/,
+    ],
+    /* A principal desde a ficha 5 (ADR-174; ficha 6, ADR-176): a EF06CO10 saiu da missão. */
+    bncc: "EF06CO01",
   },
   {
     rota: "/professor/entre-redes/vila-do-lume/guia",
@@ -206,7 +214,7 @@ await suite(
         "conduzir com esta turma.",
       prova:
         "É aqui que o professor decide o que rodar hoje, com a turma na frente. Um link só, " +
-        "porque a sala não tem como saber o que cada missão oferece: o Instanooria não tem " +
+        "porque a sala não tem como saber o que cada missão oferece: o Unoovista não tem " +
         "tela de resultados e o Rastro do Boato não tem guia. Quem responde isso é a ficha.",
       inteira: true,
     });

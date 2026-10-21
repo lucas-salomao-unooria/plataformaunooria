@@ -22,6 +22,11 @@ function providerFalso(resultado: Partial<AiResult> | Error): AiProvider {
   return {
     generate: devolver,
     conversar: devolver,
+    conversarEmFluxo: async function* () {
+      if (resultado instanceof Error) throw resultado;
+      yield { tipo: "texto" as const, texto: "ok" };
+      yield { tipo: "fim" as const, resultado: { texto: "ok", tokensUsados: 100, ...resultado } as AiResult };
+    },
     generateJson: async <T>() => {
       if (resultado instanceof Error) throw resultado;
       return { a: 1 } as unknown as T;
@@ -79,6 +84,57 @@ describe("MedidorDeProvider", () => {
     const latencia = await pontos("unooria.ia.latencia");
     expect(latencia[0]?.attributes).toEqual({ modelo: "gemini-padrao", operacao: "generateJson", resultado: "erro-provider" });
     expect(await pontos("unooria.ia.tokens")).toHaveLength(0);
+    await encerrar();
+  });
+
+  it("generateJson com modelo `longo`: rotula pelo modelo pedido e registra os tokens de cada tentativa", async () => {
+    // `generateJson` devolve `T`, sem `tokensUsados`: o único caminho dos tokens é
+    // `aoUsarTokens`, uma vez por tentativa (a rejeitada por `validar` também foi
+    // paga). Antes da correção o rótulo era sempre `padrao` e nenhum token entrava.
+    const { metricas, pontos, encerrar } = metricasEmMemoria();
+    const recebidos: number[] = [];
+    const real: AiProvider = {
+      ...providerFalso({}),
+      generateJson: async <T>(req: { aoUsarTokens?: (n: number) => void }) => {
+        req.aoUsarTokens?.(300); // tentativa rejeitada por `validar`
+        req.aoUsarTokens?.(200);
+        return { a: 1 } as unknown as T;
+      },
+    };
+    const medidor = new MedidorDeProvider(real, metricas, MODELOS);
+    await medidor.generateJson({
+      prompt: "p",
+      responseSchema: { type: "object" },
+      validar: (x) => x,
+      modelo: "longo",
+      aoUsarTokens: (n) => recebidos.push(n),
+    });
+
+    // o callback de quem chamou (a quota) continua recebendo tudo, intacto
+    expect(recebidos).toEqual([300, 200]);
+
+    const latencia = await pontos("unooria.ia.latencia");
+    expect(latencia[0]?.attributes).toEqual({ modelo: "gemini-longo", operacao: "generateJson", resultado: "ok" });
+
+    const tokens = await pontos("unooria.ia.tokens");
+    expect(tokens.map((p) => p.attributes)).toEqual([{ modelo: "gemini-longo", direcao: "total" }]);
+    expect(tokens[0]?.value).toBe(500);
+    await encerrar();
+  });
+
+  it("generateJson sem `modelo` e sem aoUsarTokens: rótulo `padrao` e o medidor mede sem exigir callback", async () => {
+    const { metricas, pontos, encerrar } = metricasEmMemoria();
+    const real: AiProvider = {
+      ...providerFalso({}),
+      generateJson: async <T>(req: { aoUsarTokens?: (n: number) => void }) => {
+        req.aoUsarTokens?.(40);
+        return { a: 1 } as unknown as T;
+      },
+    };
+    const medidor = new MedidorDeProvider(real, metricas, MODELOS);
+    await medidor.generateJson({ prompt: "p", responseSchema: { type: "object" }, validar: (x) => x });
+    expect((await pontos("unooria.ia.latencia"))[0]?.attributes).toMatchObject({ modelo: "gemini-padrao" });
+    expect((await pontos("unooria.ia.tokens"))[0]).toMatchObject({ value: 40, attributes: { modelo: "gemini-padrao", direcao: "total" } });
     await encerrar();
   });
 

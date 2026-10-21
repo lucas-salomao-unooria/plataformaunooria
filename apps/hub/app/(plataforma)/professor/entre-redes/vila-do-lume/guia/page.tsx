@@ -35,7 +35,7 @@ export const metadata = { title: "Vila do Lume · guia da aula — Plataforma Un
  * ## O que é dado e o que é vivo
  *
  * O guia inteiro (objetivos, preparo, roteiro, mediação, avaliação) é dado, em
- * `lib/entre-redes/guias/exp-70-vila-do-lume.ts`, e é renderizado pelo mesmo
+ * `lib/entre-redes/guias/app-70-vila-do-lume.ts`, e é renderizado pelo mesmo
  * componente das outras missões. O que fica AQUI é o que muda por turma: a
  * previsão do que vai acontecer no debate (a bolha B não é servida aos anos
  * iniciais) e a revelação. As mensagens vêm da API (`/vila/professor/cartoes`),

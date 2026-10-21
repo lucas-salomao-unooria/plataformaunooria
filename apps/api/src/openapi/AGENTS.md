@@ -6,7 +6,7 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
 `/docs` (Swagger UI) e `/docs-json` na **api** — `localhost:3001/docs`, não 3000,
 que é o hub. **Derivado dos schemas Zod que as rotas já usam para validar**
-(ADR-36): a api não tem DTO de classe, e anotar `@ApiBody` à mão nas 146 rotas
+(ADR-36): a api não tem DTO de classe, e anotar `@ApiBody` à mão em cada rota
 criaria uma segunda descrição do contrato que nada obriga a concordar com a
 primeira — a armadilha do `expires_at`.
 
@@ -32,20 +32,13 @@ primeira — a armadilha do `expires_at`.
   descobrisse que precisa exportar env, ou seja, para ninguém. Em produção as
   duas vêm do Secret Manager (`{contrato}-swagger-senha`).
 - **A trava é `tests/openapi-cobertura.spec.ts`**: percorre o roteador e cobra
-  `@Contrato` de toda rota, salvo as da lista `SEM_CONTRATO_AINDA`, **que só
-  encolhe**. Cada commit cobre um módulo (`<modulo>/contrato-de-rotas.ts` — o
-  nome `contrato.ts` já é o payload do jogo na exp-70) e apaga as linhas dele,
-  copiando a prosa daquele módulo do `c-endpoints.tex` para a `descricao`. Feito:
-  `health`, `auth`, `experiencias`, `progresso`, `telemetry`, `ai`, `rostering`
-  (escolas, turmas, matrículas, períodos, lotações, estudantes), `usuarios`,
-  `planos` (+referências), `bemestar`, `vila`, `unootube`, `portabilidade`,
-  `perfis`, `analise`, `unoogpt`, `o-eco-no-grupo`, `atividades`, `geracao`,
-  `motor` (runs/posts).
-  **As 167 rotas estão cobertas, e a lista está VAZIA** — rota nova sem contrato
-  fica vermelha.
+  `@Contrato` de toda rota, salvo as da lista `SEM_CONTRATO_AINDA`, **que está
+  VAZIA** e só pode encolher — rota nova sem contrato fica vermelha. Cada módulo
+  declara o dele em `<modulo>/contrato-de-rotas.ts` (o nome `contrato.ts` já é o
+  payload do jogo na app-70), com a prosa na `descricao`.
 - **`docs/openapi.json` é versionado** e o **apêndice C do LaTeX é GERADO dele**
-  (`scripts/gerar-endpoints-tex.mjs`) — eram 547 linhas de prosa à mão que nada
-  obrigava a concordar com o código. A coluna de autorização do apêndice vem das
+  (`scripts/gerar-endpoints-tex.mjs`) — prosa escrita à mão nada obrigaria a
+  concordar com o código. A coluna de autorização do apêndice vem das
   extensões `x-papeis`/`x-acesso` do documento, nunca de parsing da descrição:
   gerador que lê a própria prosa quebra em silêncio na primeira reescrita da
   frase. Mudou rota? Regere os dois e recompile o PDF.

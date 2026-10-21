@@ -1,11 +1,12 @@
 /**
- * A COPY DA REVELAÇÃO — as sete telas que derrubam o disfarce do Instanooria.
+ * A COPY DA REVELAÇÃO — as telas que derrubam o disfarce do Unoovista (dez
+ * para quem fez o Raio-x, nove para quem não fez; ADR-167).
  *
  * ╔══════════════════════════════════════════════════════════════════════════╗
  * ║  ESTE ARQUIVO EXISTE DUAS VEZES, E AS DUAS CÓPIAS TÊM DE SER IDÊNTICAS.  ║
  * ║                                                                          ║
  * ║    apps/hub/lib/insta/copy-da-revelacao.ts  ← você está aqui                                                                             ║
- * ║    apps/experiencias/exp-01-instanooria/src/lib/copy-da-revelacao.ts                                                                       ║
+ * ║    apps/experiencias/exp08ef1b/src/lib/copy-da-revelacao.ts                                                                       ║
  * ║                                                                          ║
  * ║  Mexeu na copy? Mexa NAS DUAS, no mesmo commit. Nada no build cobra       ║
  * ║  isso — nem o typecheck, nem o lint, nem teste nenhum.                    ║
@@ -19,7 +20,7 @@
  * instável na escola é regra, não exceção: texto que depende de fetch é texto
  * que pode não aparecer. Ele viaja no bundle, como sempre viajou.
  *
- * Isto já foi um pacote de workspace (`@edu/conteudo-exp-01`), que garantia a
+ * Isto já foi um pacote de workspace (`@edu/conteudo-exp08ef1b`), que garantia a
  * igualdade por construção. Foi desfeito por decisão de 2026-09-09: a copy está
  * fechada e não haverá revisão dela. Se essa premissa mudar, a duplicação volta
  * a ser o risco que o pacote existia para eliminar.
@@ -29,6 +30,11 @@ export interface TelaDaRevelacao {
   texto: string;
   destaque?: string;
   complemento?: string;
+  /**
+   * A PONTE DO RAIO-X: a tela mostra, embaixo do texto, os 6 posts do Raio-x
+   * com de onde cada um veio — a devolutiva que o envio não deu (ADR-167).
+   */
+  ponte?: true;
 }
 
 /** De onde veio o lado em que o feed do estudante nasceu. */
@@ -41,8 +47,8 @@ export type OrigemDoLado = 'perfil' | 'redistribuido' | 'sorteio';
  */
 export const REVELACAO_FIXA: TelaDaRevelacao[] = [
   {
-    texto: 'O Instanooria não é uma rede social de verdade. É uma simulação.',
-    complemento: 'Nenhum dado seu saiu daqui.',
+    texto: 'O Unoovista não é uma rede social de verdade. É uma simulação.',
+    complemento: 'Nenhum dado seu foi para rede social nenhuma.',
   },
   { texto: 'Mas uma coisa aqui era 100% real:', destaque: 'o algoritmo.' },
   {
@@ -52,6 +58,41 @@ export const REVELACAO_FIXA: TelaDaRevelacao[] = [
   },
   { texto: 'E com isso, ele escolheu', destaque: 'o que você viu — e o que você nunca viu.' },
 ];
+
+/**
+ * A PONTE DO RAIO-X — só para quem enviou o 6a, logo depois das quatro fixas.
+ * Embaixo do texto, a lista dos 6 posts, cada um com "escrito para defender
+ * [lado]" ou "escrito para informar, sem defender lado". Nenhum certo ou
+ * errado, nenhuma contagem: a devolutiva fala do post, nunca do estudante.
+ */
+export const PONTE_DO_RAIO_X: TelaDaRevelacao = {
+  texto: 'Os 6 posts do Raio-x, antes do debate:',
+  destaque: 'de onde cada um veio.',
+  ponte: true,
+};
+
+/** Como a ponte nomeia a origem de cada post. */
+export function origemDoPostNaPonte(origem: 'A' | 'B' | 'neutro', rotulos: { A: string; B: string }): string {
+  return origem === 'neutro' ? 'escrito para informar, sem defender lado' : `escrito para defender ${rotulos[origem]}`;
+}
+
+/**
+ * As duas telas sobre os termos e o registro. A tela não diz em qual cláusula
+ * estava a regra: daria de graça parte do 6b, que vem logo depois.
+ */
+export const TELA_DOS_TERMOS: TelaDaRevelacao = {
+  texto: 'Essas regras de escolha costumam estar escritas.',
+  destaque: 'Nos termos de uso — que quase ninguém lê, nem adulto.',
+  complemento:
+    'Eles são escritos para ser aceitos, não para ser lidos. Daqui a pouco você vê como seriam os deste app.',
+};
+
+export const TELA_DO_REGISTRO: TelaDaRevelacao = {
+  texto: 'O Unoovista era uma simulação.',
+  destaque: 'O registro, não.',
+  complemento:
+    'As curtidas, os salvamentos e o tempo em cada post foram registrados de verdade e usados para escolher os próximos posts. Só você e o seu professor veem esses dados.',
+};
 
 /**
  * Tela 5 — o lado semeado. A frase MUDA com a origem do lado: dizer "foi
@@ -64,7 +105,7 @@ export function telaDoLadoSemeado(origem: string): TelaDaRevelacao {
       texto: 'Tem mais: seu feed',
       destaque: 'já começou puxado para um dos dois lados.',
       complemento:
-        'E não foi sorteio — foi escolhido a partir de como você jogou, antes de você abrir o Instanooria.',
+        'E não foi sorteio — foi escolhido a partir de como você jogou, antes de você abrir o Unoovista.',
     };
   }
 
@@ -102,7 +143,19 @@ export const TELA_FINAL: TelaDaRevelacao = {
   complemento: 'É assim que as redes que você usa funcionam.',
 };
 
-/** O roteiro completo para uma origem de lado. Sete telas, nesta ordem. */
-export function telasDaRevelacao(origem: string): TelaDaRevelacao[] {
-  return [...REVELACAO_FIXA, telaDoLadoSemeado(origem), TELA_DA_LINGUAGEM, TELA_FINAL];
+/**
+ * O roteiro completo para uma origem de lado, nesta ordem: as quatro fixas, a
+ * ponte do Raio-x (só para quem o enviou), os termos, o registro, o lado de
+ * partida, a linguagem e a final.
+ */
+export function telasDaRevelacao(origem: string, opcoes: { comPonte?: boolean } = {}): TelaDaRevelacao[] {
+  return [
+    ...REVELACAO_FIXA,
+    ...(opcoes.comPonte ? [PONTE_DO_RAIO_X] : []),
+    TELA_DOS_TERMOS,
+    TELA_DO_REGISTRO,
+    telaDoLadoSemeado(origem),
+    TELA_DA_LINGUAGEM,
+    TELA_FINAL,
+  ];
 }

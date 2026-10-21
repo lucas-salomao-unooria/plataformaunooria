@@ -11,11 +11,14 @@ por um Worker). O que ele pede daqui não é melhoria — é **continuar sendo o
 
 Por isso, nesta pasta e só nela:
 
-- **`site.css` é cópia integral.** Uma única regra foi acrescentada, marcada no
-  arquivo: `.site-entre-redes{font-family:…}`. O `<body>` do hub traz
-  `font-family` INLINE (layout raiz), e estilo inline vence folha — sem ela o
-  site sai inteiro em system-ui, com o desenho intacto. O sintoma é "a
-  tipografia está diferente", sem nada quebrado para procurar.
+- **`site.css` é cópia integral, mais quatro acréscimos, cada um marcado no
+  arquivo**: a linha da tipografia (`.site-entre-redes{font-family:…}`), o bloco
+  da janela do cadastro, o do "Entrar" e dos links legais (H11.1.2) e o bloco da
+  Revisão 19. Na marcação, os acréscimos também levam comentário
+  `ACRÉSCIMO ao porte` — é o que dizer a quem comparar com o próximo pacote. O da tipografia existe porque o
+  `<body>` do hub traz `font-family` INLINE (layout raiz), e estilo inline vence
+  folha — sem ela o site sai inteiro em system-ui, com o desenho intacto. O
+  sintoma é "a tipografia está diferente", sem nada quebrado para procurar.
 - **A marcação de `site-entre-redes.tsx` é 1:1** com o HTML de origem: mesma
   árvore, mesmas classes, mesmos ids, mesma ordem. O CSS casa por classe e por
   id; trocar um `div` por um `section`, agrupar irmãos ou "limpar" uma classe
@@ -53,7 +56,7 @@ O material volta de tempos em tempos revisado, e o segundo pacote
 | `assets/*.png` | a arte trocada, nas mesmas dimensões da anterior |
 | `LEIA-ME.txt` | o resumo em prosa |
 
-**O `alteracoes.json` não é a lista completa.** Ele cobriu os 19 ajustes de
+**O `alteracoes.json` não é a lista completa.** Ele cobriu os ajustes de
 TEXTO; o pacote trazia também um redesenho do hero e a troca do campo de
 estrelas, que só apareceram comparando o **CSS computado** da prévia com o
 nosso. O texto batia 100% e a tela estava diferente — foi o dono do produto que
@@ -62,8 +65,8 @@ viu ("o primeiro título está centralizado e o que você fez não está").
 **A receita, então, é comparar as duas coisas.** Abra a prévia (`file://`) e o
 site local lado a lado e compare:
 
-1. **o texto**: a lista de blocos visíveis dos dois `<main>` (179 blocos, na
-   revisão 19 — precisa dar diferença ZERO);
+1. **o texto**: a lista de blocos visíveis dos dois `<main>` — precisa dar
+   diferença ZERO;
 2. **o CSS**: percorra `document.styleSheets` nos dois, ignore `@font-face` (a
    prévia embute as fontes em base64 e o diff fica ilegível) e compare por
    seletor. As regras que a revisão acrescenta vêm **prefixadas com
@@ -79,18 +82,16 @@ o hub carrega (`.container{width:100%}`, `dialog{padding:0}`,
 
 A conferência não é impressão: o site de origem sobe com
 `node scripts/preview.mjs --port 4173` (na pasta do material) e as duas telas se
-comparam pelas MEDIDAS. Em 390px e em 1440px, no dia do porte:
+comparam pelas MEDIDAS, em 390px e em 1440px:
 
-| | origem | hub |
-|---|---|---|
-| altura do documento, no porte (390 / 1440) | 20286 / 21230 | 20286 / 21230 |
-| altura do documento, na revisão 19 (1440) | 20656 | 20656 |
-| topo de cada uma das 13 seções, e o rodapé | — | **idêntico ao pixel** |
-| `.reveal`, `<img>`, `main > section` | 31 / 8 / 13 | 31 / 8 / 13 |
+- a **altura do documento**, igual nas duas;
+- o **topo de cada seção** e o do rodapé, **idêntico ao pixel**;
+- as contagens de `.reveal`, `<img>` e `main > section`, iguais.
 
-O hero cresceu (ele passou a ocupar `100svh`), e é por isso que a altura mudou
-entre uma conferência e outra. O que não muda é o método: **a medida é a prova,
-e ela se refaz a cada pacote**.
+Os números não moram aqui: mudam a cada pacote (o hero passou a ocupar `100svh`,
+e a altura do documento mudou com ele), e numeral congelado vira afirmação
+falsa. O que não muda é o método: **a medida é a prova, e ela se refaz a cada
+pacote**, lida do site de origem naquele dia.
 
 Screenshot lado a lado não basta para o infinito de estrelas: ele é animação
 viva, e dois instantes diferentes parecem duas telas diferentes. O que compara é
@@ -134,8 +135,8 @@ O que saber antes de mexer:
   embora o que ela digitou.
 - **O CSS da janela reaproveita o do material** (as medidas do `.index-dialog`,
   a moldura da regra `dialog`, o `.button.outline` do Cancelar). Está num bloco
-  marcado no fim do `site.css` — é o segundo acréscimo à folha, e o primeiro
-  continua sendo a linha da tipografia.
+  marcado no `site.css` — o segundo dos três acréscimos à folha (o primeiro é a
+  linha da tipografia; o terceiro, a Revisão 19).
 - **Empilhado, "Enviar" fica EM CIMA** (`order:-1` abaixo de 600px). Com o
   Cancelar no topo, o polegar encontra primeiro o botão que descarta o que a
   pessoa acabou de digitar.

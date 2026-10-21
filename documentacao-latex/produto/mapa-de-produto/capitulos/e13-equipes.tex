@@ -1,0 +1,364 @@
+% ===========================================================================
+%  E13 — Equipes na missão
+% ===========================================================================
+\chapter{E13 \textperiodcentered{} Equipes na missão}
+\label{ep:e13}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] Quando os estudantes dividem um computador, o professor
+    organiza a turma em equipes, e a plataforma passa a saber quem fez a
+    missão junto.
+  \item[Para quem] Professor (monta as equipes e lê a turma) e Estudante (vê a
+    própria equipe). A Coordenação consulta, sem mexer.
+  \item[Valor] A maioria das escolas não tem um computador para cada
+    estudante. Na sala com computador dividido, quem entra na missão
+    representa a equipe --- e, sem saber disso, a plataforma conta a sala como
+    se cada criança tivesse a própria tela: \enquote{12 não começaram}, com os
+    12 sentados ao lado de quem começou.
+  \item[Estado] \parcial{} --- montar, mostrar e contar por computador estão
+    prontos e em revisão; falta o Unoovista formar equipes do mesmo lado do
+    feed.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F13.1} & Montar as equipes & \pronto\\
+\zebra \id{F13.2} & O aluno sabe a sua equipe & \pronto\\
+\id{F13.3} & Acompanhar por computador & \pronto\\
+\zebra \id{F13.4} & Unoovista: equipe de lado igual & \parcial\\
+\bottomrule
+\end{tabularx}
+
+\section{O que é uma equipe aqui}
+
+\textbf{Equipe é quem divide um computador numa missão}: dois ou três
+estudantes diante da mesma tela, com o login de um deles. Não é grupo
+pedagógico nem equipe fixa da turma --- vale para uma missão numa turma, e a
+aula seguinte pode ter outras equipes. Também não se confunde com as equipes de
+resgate da Missão Tempestade, que são parte do jogo.
+
+\begin{nota}
+\textbf{Pronto, em revisão.} As histórias marcadas \pronto{} neste épico
+funcionam de ponta a ponta e têm o teste que percorre a tela, mas em 25 de
+setembro de 2026 ainda estavam em revisão pelo time, antes de entrar na
+plataforma, e aguardam a homologação. Se a revisão pedir ajuste, a história
+volta a \parcial{}, com a pendência escrita.
+\end{nota}
+
+\section{O que fica fora desta onda}
+
+\begin{decisao}
+\textbf{Decidido em 25 de setembro de 2026.}
+\begin{itemize}
+  \item \textbf{Só duas missões aceitam equipe}: Unoovista e Missão
+    Tempestade --- e, desde que entraram, as que nasceram com ela: Quem mandou
+    isso? (\id{F06.11}), A Seleção (\id{F06.12}), em que o Mural pareia
+    computadores, o Jornal da Escola (\id{H06.10.4}), em que o painel conta
+    as edições por computador e o que a equipe demonstrou vale para todos
+    dela, e O Júri Estadual de Projetos (\id{F06.14}), em que o voto e a
+    lousa da plenária contam por computador. O UnooTube aceitava até ser arquivado, em 25 de setembro de 2026
+    (\id{F06.2}), e o Jornal, que ocupou o lugar dele, nasceu com equipes. Nas
+    outras, a ficha nem mostra a seção de equipes.
+  \item \textbf{A Vila do Lume fica fora}: o retrato de valores que ela
+    produz é uma medida de cada criança, e é ele que define o lado de largada
+    no Unoovista (\id{H06.6.3}). Duas crianças numa tela dariam um retrato
+    que não é de nenhuma das duas.
+  \item \textbf{O Eco no Grupo saiu da trilha}: A Seleção o substitui
+    (\id{F06.12}) e já nasce com equipes.
+  \item \textbf{O Que a Foto Conta, O Rastro do Boato e O Manifesto da IA ficam
+    fora}, porque serão retirados da trilha.
+  \item \textbf{Quem mandou isso? foi retirada} em 25 de setembro de 2026, e a
+    versão nova (\id{F06.11}) nasceu com equipes: é a quarta missão com a seção
+    na ficha, e o painel dela conta por computador (\id{H06.11.5}).
+  \item \textbf{O atrasado não entra numa equipe automaticamente}: numa sala
+    com computador dividido, quem chega atrasado senta num computador que já
+    entrou na missão. Se o professor quiser registrar, põe o estudante na
+    equipe à mão (\id{H13.1.3}).
+  \item \textbf{A evidência pedagógica por habilidade da BNCC, valendo para
+    todos da equipe}, é outro épico: \id{E14} Evidência pedagógica
+    (p.~\pageref{ep:e14}), com a base pronta e a primeira missão com régua já
+    entrando (Quem mandou isso?, \id{H14.1.2}).
+\end{itemize}
+\end{decisao}
+
+% ---------------------------------------------------------------------------
+\feature{F13.1}{Montar as equipes}{\pronto}
+
+A equipe é de cada \textbf{atividade} (\id{F06.13}): a mesma turma pode sentar
+diferente em cada aula. O professor escolhe o jeito ao criar a atividade
+(\id{H13.1.8}) e ajusta na página dela, na seção \enquote{Equipes desta
+atividade}: \enquote{Para quando alunos dividem um computador: quem entra na
+missão representa a equipe.} Só a Missão Tempestade, que ainda não tem
+atividades, monta as equipes na ficha, em \enquote{Equipes desta turma}.
+
+\begin{historia}{H13.1.1}{Dizer quantos computadores há e quem faltou}{\pronto}
+\hu{Professor}{dizer quantos computadores a turma vai usar e quem faltou
+hoje}{que as equipes sejam feitas só com quem está na sala}
+\aceite
+\begin{itemize}
+  \item \enquote{Quantos computadores vocês vão usar?} aceita de 1 até o
+    número de estudantes, e logo abaixo a tela diz o que isso dá (ex.:
+    \enquote{25 estudantes em 10 computadores: equipes de 2 ou 3.}).
+  \item Com um computador para cada um, a tela diz \enquote{cada um no seu}
+    --- e isso também vale.
+  \item \enquote{Quem faltou hoje?} abre a lista da turma: quem é marcado fica
+    fora do sorteio e aparece em \enquote{Sem equipe}.
+  \item Marcar a falta aqui \textbf{não é chamada}: não vale como registro de
+    frequência e serve só para montar as equipes desta missão.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H13.1.2}{Escolher entre sortear e separar eu mesmo}{\pronto}
+\hu{Professor}{escolher, a cada vez, se a plataforma sorteia as equipes ou se
+eu mesmo separo}{usar o que eu sei da minha turma quando for preciso}
+\aceite
+\begin{itemize}
+  \item A plataforma \textbf{sempre pergunta} \enquote{Como montar as
+    equipes?}, com \enquote{Sortear as equipes}, \enquote{Eu separo} e
+    \enquote{Um aluno por computador}, sem nenhuma opção já marcada.
+  \item \enquote{Um aluno por computador}: cada estudante entra no próprio
+    computador, e nenhuma equipe é montada.
+  \item \enquote{Sortear as equipes} divide quem está presente em equipes de
+    tamanho parecido, e dá para mudar quem fica onde antes de salvar;
+    \enquote{Sortear de novo} refaz o sorteio.
+  \item Os tamanhos diferem em no máximo um: 7 estudantes em 3 computadores
+    viram equipes de 3, 2 e 2 --- nunca 3, 3 e 1, com alguém sobrando
+    sozinho.
+  \item \enquote{Eu separo}: \enquote{A plataforma cria 10 equipes vazias e
+    você põe cada estudante numa delas} --- uma equipe vazia por computador.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H13.1.3}{Ajustar as equipes à mão}{\pronto}
+\hu{Professor}{mudar as equipes antes de salvar}{separar quem não trabalha bem
+junto, ou juntar quem precisa de ajuda}
+\aceite
+\begin{itemize}
+  \item Posso mudar cada estudante de equipe, renomear uma equipe, criar outra
+    (\enquote{Nova equipe}) e remover uma equipe.
+  \item Quem ainda não está em nenhuma equipe aparece em \enquote{Sem equipe};
+    com todos distribuídos, a tela diz \enquote{Todo mundo está numa equipe.}
+  \item Quem foi marcado como falta continua escolhível: o atrasado que chegar
+    pode ser posto numa equipe à mão.
+  \item A plataforma não deixa salvar equipe vazia (\enquote{Há uma equipe sem
+    ninguém. Ponha alguém nela ou remova a equipe.}), equipe sem nome
+    (\enquote{Toda equipe precisa de um nome.}) nem duas equipes com o mesmo
+    nome.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H13.1.4}{Salvar, ver na sala e desfazer}{\pronto}
+\hu{Professor}{salvar as equipes e saber, pela sala, que elas estão
+prontas}{chegar na aula com a turma já organizada}
+\aceite
+\begin{itemize}
+  \item Ao salvar, a tela confirma \enquote{Equipes salvas.} e mostra um
+    cartão por equipe.
+  \item Na sala da turma, a missão ganha a etiqueta \enquote{5 equipes
+    prontas} --- só informa, não é um atalho.
+  \item Cada estudante fica em uma equipe só por missão.
+  \item Se alguém salvou equipes para a turma enquanto eu editava, a tela
+    avisa \enquote{Estas equipes mudaram em outro lugar} e oferece
+    \enquote{Recarregar}: nada é sobrescrito sem que eu veja.
+  \item \enquote{Desfazer equipes} pede confirmação (\enquote{Desfazer as
+    equipes?}): as equipes desta missão nesta turma deixam de existir, e dá
+    para montar de novo quando quiser.
+  \item As equipes continuam editáveis mesmo depois de a missão ser
+    encerrada.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H13.1.5}{Repetir as equipes da atividade anterior}{\pronto}
+\hu{Professor}{reaproveitar as equipes que a turma já usou}{não montar tudo de
+novo a cada aula}
+\aceite
+\begin{itemize}
+  \item Quando a turma já tem equipes salvas em outra atividade, desta missão
+    ou de outra, aparece mais uma opção: \enquote{Usar as equipes da atividade
+    anterior}, que diz de qual missão elas vêm e quando foram salvas.
+  \item Quem faltou hoje sai da equipe e fica em \enquote{Sem equipe}; quem saiu
+    da turma desde então não volta, e a tela diz quantos são.
+  \item Nada fica valendo antes de eu salvar: posso ajustar como em
+    \id{H13.1.3}.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H13.1.8}{Montar as equipes ao criar a atividade}{\pronto}
+\hu{Professor}{dizer, já na criação da atividade, como a turma vai se sentar}{que
+a aula fique pronta de uma vez}
+\aceite
+\begin{itemize}
+  \item O passo \enquote{Equipes} da criação pergunta \enquote{Como montar as
+    equipes?} e, para sortear ou separar, \enquote{Quantos computadores vocês
+    vão usar?}.
+  \item \enquote{Sortear as equipes} já deixa as equipes salvas; \enquote{Eu
+    separo} leva para a página da atividade com as equipes vazias abertas para
+    eu pôr cada estudante; \enquote{Um aluno por computador} salva sem equipes.
+  \item Quem faltou eu marco no dia da aula, na página da atividade, e refaço o
+    sorteio se precisar.
+  \item Cada atividade tem as suas equipes: o aluno vê a da atividade que está
+    em andamento na turma.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H13.1.6}{Mostrar as equipes para a turma}{\pronto}
+\hu{Professor}{projetar as equipes para a sala}{que cada estudante ache o
+computador dele sem eu ler a lista em voz alta}
+\aceite
+\begin{itemize}
+  \item \enquote{Mostrar equipes} abre uma janela em tela cheia com o nome de
+    cada equipe e o \textbf{primeiro nome} de cada estudante.
+  \item Nada de faltas, de desempenho nem de quem ficou \enquote{Sem equipe}:
+    é uma tela que a turma inteira vê.
+  \item Quando dois estudantes da turma têm o mesmo primeiro nome, entra a
+    inicial do sobrenome (\enquote{Maria S.}). Se a inicial também empata,
+    entra o último sobrenome inteiro (\enquote{Gabriela Cardoso} e
+    \enquote{Gabriela Correia}): cada estudante acha o próprio nome, e o nome
+    completo só aparece quando nada mais curto separa os dois.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H13.1.7}{Consultar as equipes, sem mexer}{\pronto}
+\hu{Coordenação da escola}{ver as equipes que o professor montou}{acompanhar a
+aula sem interferir nela}
+\aceite
+\begin{itemize}
+  \item A Coordenação vê as equipes salvas, ou \enquote{Nenhuma equipe montada
+    para esta turma.}
+  \item Não há botão de montar, editar nem desfazer: só quem dá aula na turma
+    monta as equipes.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F13.2}{O aluno sabe a sua equipe}{\pronto}
+
+\begin{historia}{H13.2.1}{Ver com quem divido o computador}{\pronto}
+\hu{Estudante}{ver, ao abrir a missão, qual é a minha equipe e com quem eu
+sento}{achar o meu lugar sem depender do quadro}
+\aceite
+\begin{itemize}
+  \item Uma faixa de uma linha, acima da missão, diz \enquote{Sua equipe:
+    Equipe 3 \textperiodcentered{} com Ana e Bruno}.
+  \item Os colegas aparecem só pelo primeiro nome.
+  \item Quando o primeiro nome repete na equipe (o meu inclusive), entra a
+    inicial do sobrenome (\enquote{Gabriela C.}); se a inicial também empata,
+    o último sobrenome inteiro (\enquote{Gabriela Cardoso}). É a mesma regra
+    da tela projetada (\id{H13.1.6}): o nome completo só aparece quando nada
+    mais curto separa os dois.
+  \item A faixa é da plataforma, fora do aplicativo imitado: a missão em si não
+    muda.
+  \item Sem equipe nesta missão, a faixa não aparece e a missão abre como
+    sempre.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F13.3}{Acompanhar por computador}{\pronto}
+
+\begin{historia}{H13.3.1}{Ler a turma por computador}{\pronto}
+\hu{Professor}{que os resultados das missões com equipe contem computadores
+quando a turma está em equipes}{saber quem de fato não começou, em vez de ver a
+sala inteira como atrasada}
+\aceite
+\begin{itemize}
+  \item Vale para a Missão Tempestade, para Quem mandou isso? (\id{H06.11.5}) e
+    para A Seleção (\id{H06.12.5}), em que até o par do Mural é de computador.
+  \item Com equipes, cada computador é uma linha: a coluna passa a se chamar
+    \enquote{Estudante ou equipe} e mostra o nome da equipe, quem senta nela e
+    quem entrou.
+  \item Os totais contam computadores --- na A Seleção, \enquote{Computadores
+    que publicaram} no lugar de \enquote{Publicaram os Stories} ---, com o aviso
+    \enquote{Contado por computador: cada equipe desta turma é uma linha, com
+    os dados de quem entrou na missão.}
+  \item Se mais de um da equipe entrou, a linha mostra quem entrou por último
+    --- na A Seleção, quem publicou.
+  \item Sem equipes, os resultados continuam como antes: um estudante por
+    linha.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H13.3.2}{Guias que explicam a aula em equipe}{\pronto}
+\hu{Professor}{que o guia da aula me diga como conduzir a missão com
+computador dividido}{não descobrir as regras no meio da aula}
+\aceite
+\begin{itemize}
+  \item Os guias da Missão Tempestade, de Quem mandou isso? e da A Seleção
+    apontam para as equipes na ficha da missão (Minhas turmas \seta{} a turma
+    \seta{} Conduzir com esta turma).
+  \item O da Missão Tempestade avisa que as 3 perguntas e o limite diário de IA
+    são da conta de quem entrou: a equipe negocia em voz alta o que perguntar,
+    e o que for escrito fica no nome de quem entrou.
+  \item O de Quem mandou isso? diz que a equipe negocia cada encaminhamento e
+    vota a enquete em consenso, e que a habilidade de quem entrou vale para a
+    equipe.
+  \item O da A Seleção diz que a seleção e a legenda são negociadas em voz
+    alta, que o Mural pareia computadores, nunca dois estudantes do mesmo
+    aparelho, e como conduzir a aula projetada num computador só: o par é um
+    colega virtual, e o resultado chega \enquote{a revisar} até o professor
+    confirmar.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F13.4}{Unoovista: equipe de lado igual}{\parcial}
+
+No Unoovista, cada estudante começa num lado do feed (\id{H06.6.3}). Hoje o
+professor já consegue montar equipes para essa missão, mas o sorteio ainda não
+olha o lado: uma equipe pode juntar estudantes dos dois lados, e quem entra
+recebe o próprio lado. Esta é a próxima frente do épico.
+
+\begin{historia}{H13.4.1}{Sortear equipes do mesmo lado do feed}{\pronto}
+\hu{Professor}{que o sorteio junte na mesma equipe estudantes do mesmo lado do
+feed}{que cada computador viva uma bolha só}
+\aceite
+\begin{itemize}
+  \item Quem tem perfil da Vila do Lume vai para uma equipe do seu lado. Vale o
+    lado que o estudante vai ter de fato: o de quem já começou, o que o
+    professor redistribuiu, e só então o que o perfil indica.
+  \item Quem não tem perfil é \enquote{neutro} e é sorteado para completar as
+    equipes.
+  \item Quando a conta não fecha, a tela diz quantas equipes ficaram mistas.
+  \item Os tamanhos continuam diferindo em no máximo um (\id{H13.1.2}).
+  \item Sem a pergunta e os dois lados aprovados, a tela avisa que só quem já
+    tem lado definido entra agrupado.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H13.4.2}{Quem entra recebe o lado da equipe}{\afazer}
+\hu{Professor}{que qualquer um da equipe que entre na missão receba o mesmo
+lado do feed}{que a bolha da equipe não dependa de quem pegou o teclado}
+\aceiteproposta
+\begin{itemize}
+  \item O estudante que entra recebe o lado da equipe, e não o próprio.
+  \item Se outro da equipe entrar depois, recebe o mesmo lado.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H13.4.3}{Sem redistribuir o lado quando há equipe}{\pronto}
+\hu{Professor}{que a turma com equipes não tenha o lado redistribuído}{que a
+redistribuição não separe o lado de quem divide a mesma tela}
+\aceite
+\begin{itemize}
+  \item Com equipes montadas, \enquote{Redistribuir a turma} fica desligado, e
+    a tela diz por quê: cada computador fica de um lado só, e redistribuir
+    separaria quem divide a mesma tela. Para redistribuir, o professor desfaz as
+    equipes antes.
+  \item A plataforma também recusa a redistribuição pedida por outro caminho.
+  \item Sem equipes, a redistribuição funciona como hoje (\id{H06.6.3}).
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H13.4.4}{Ver as equipes no monitor da aula}{\afazer}
+\hu{Professor}{ver as equipes no monitor do Unoovista}{acompanhar cada
+computador ao vivo, como já faço na Missão Tempestade}
+\aceiteproposta
+\begin{itemize}
+  \item O monitor mostra o nome de cada equipe e quem senta nela.
+  \item Sem equipes, o monitor continua como hoje (\id{H06.6.6}).
+\end{itemize}
+\end{historia}

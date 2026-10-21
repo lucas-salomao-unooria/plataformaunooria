@@ -17,6 +17,7 @@ import {
   TextField,
   type TableColumn,
 } from "@edu/ui/ds";
+import { EscolhaDeEscola } from "@/components/escolha-de-escola";
 import { ehDoContrato } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 import { SERIES, rotuloDaSerie, type Serie } from "@/lib/series";
@@ -180,14 +181,7 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
       />
 
       {ehDoContrato(papel) ? (
-        <div className="max-w-[320px]">
-          <TextField
-            id="escola"
-            label="Escola (id)"
-            value={escolaId}
-            onChange={(e) => setEscolaId(e.target.value)}
-          />
-        </div>
+        <EscolhaDeEscola id="escola" valor={escolaId} aoEscolher={setEscolaId} />
       ) : null}
 
       {erro ? <AlertBox theme="light" variant="error" device="auto" description={erro} /> : null}
@@ -195,7 +189,7 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-wrap items-end gap-3">
           {periodos.length > 1 ? (
-            <div className="w-[260px]">
+            <div className="w-[260px] max-w-full">
               <Selection
                 label="Ano letivo"
                 value={periodoFiltro}

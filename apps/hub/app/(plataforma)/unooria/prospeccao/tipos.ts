@@ -8,6 +8,8 @@
  */
 
 export interface Cadastro {
+  /** Só para eliminar a pedido do titular (H10.5.2); cadastro não se edita. */
+  id: string;
   nome: string;
   email: string;
   telefone: string;

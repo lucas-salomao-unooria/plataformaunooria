@@ -3,7 +3,7 @@ import { VilaAgregadoController, VilaProfessorController } from "./vila-professo
 import { VilaController } from "./vila.controller";
 import { VilaService } from "./vila.service";
 
-/** Lado server da exp-70-vila-do-lume. Prisma, Config e Auth são globais. */
+/** Lado server da app-70-vila-do-lume. Prisma, Config e Auth são globais. */
 @Module({
   controllers: [VilaController, VilaAgregadoController, VilaProfessorController],
   providers: [VilaService],

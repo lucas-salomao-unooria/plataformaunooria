@@ -1,0 +1,156 @@
+% ===========================================================================
+%  PLATAFORMA UNOORIA — Comparativo de Infraestrutura em Nuvem (GCP x AWS x Azure)
+%  Documento autonomo. Compilar a partir desta pasta:
+%      tectonic -k comparativo-infraestrutura-nuvem.tex
+% ===========================================================================
+\documentclass[11pt, a4paper, oneside, openany]{report}
+
+\input{../../preambulo/estilo}
+\input{../../preambulo/diagramas}
+\graphicspath{{../../}}
+
+% --- Selos de aderencia arquitetural e operacional (somente tokens unoo*) ----
+\newcommand{\selo}[3]{%
+  \tikz[baseline=-0.55ex]\node[
+    fill=#1, draw=#2, text=#2, line width=0.5pt, rounded corners=2pt,
+    inner xsep=4.5pt, inner ysep=1.6pt,
+    font=\sffamily\bfseries\fontsize{6.8}{8}\selectfont
+  ]{#3};%
+}
+\newcommand{\nativo}{\selo{unooGreenWash}{unooGreen!75!black}{NATIVO / DIRETO}}
+\newcommand{\equivalente}{\selo{unooBlueWash}{unooBlue}{EQUIVALENTE}}
+\newcommand{\adaptacao}{\selo{unooOrangeWash}{unooOrange!85!black}{EXIGE ADAPTAÇÃO}}
+\newcommand{\incompativel}{\selo{unooRedWash}{unooRed}{INCOMPATÍVEL}}
+
+% Selos de nuvem para leitura rapida nas tabelas e fichas
+\newcommand{\sgcp}{\selo{unooBlueWash}{unooBlue}{GCP (ATUAL)}}
+\newcommand{\saws}{\selo{unooOrangeWash}{unooOrange!85!black}{AWS}}
+\newcommand{\sazure}{\selo{unooLavenderWash}{unooNavy}{AZURE}}
+
+% --- Ficha-resumo de eixo arquitetural (mesma linguagem visual do mapa) ------
+\newtcolorbox{fichaeixo}[1]{
+  enhanced, breakable,
+  colback=unooSurface, colframe=unooLavender,
+  boxrule=0.6pt, arc=2pt,
+  left=10pt, right=10pt, top=7pt, bottom=7pt,
+  before skip=8pt, after skip=12pt,
+  title={#1},
+  fonttitle=\sffamily\bfseries\small,
+  coltitle=white, colbacktitle=unooNavy,
+  toptitle=4pt, bottomtitle=4pt, lefttitle=10pt
+}
+
+% --- Caixa de componente / comparativo detalhado (estilo historia do mapa) ---
+\newtcolorbox{pecaarq}[3]{
+  enhanced, breakable,
+  colback=white, colframe=unooGrid,
+  borderline west={3pt}{0pt}{unooNavy},
+  boxrule=0.5pt, arc=2pt,
+  left=10pt, right=10pt, top=6pt, bottom=6pt,
+  before skip=10pt, after skip=10pt,
+  colbacktitle=unooLavenderWash, coltitle=unooNavy,
+  fonttitle=\sffamily\bfseries\small,
+  toptitle=4pt, bottomtitle=4pt, lefttitle=10pt,
+  title={\texttt{#1}\hspace{6pt}#2\hfill#3}
+}
+
+% Lista compacta para os campos de uma ficha ou peca arquitetural
+\newlist{campos}{description}{1}
+\setlist[campos]{
+  font=\sffamily\bfseries\footnotesize\color{unooNavy},
+  leftmargin=34mm, labelwidth=31mm, labelsep=3mm,
+  align=left, itemsep=2.5pt, topsep=3pt, parsep=0pt
+}
+
+\begin{document}
+
+% ===========================================================================
+%  CAPA
+% ===========================================================================
+\begin{titlepage}
+\begin{tikzpicture}[remember picture, overlay]
+  \fill[unooNavy] (current page.north west) rectangle ([yshift=-26mm]current page.north east);
+  \fill[unooBlue] ([yshift=-26mm]current page.north west) rectangle ([yshift=-28.5mm]current page.north east);
+  \fill[unooLavenderWash] (current page.south west) rectangle ([yshift=22mm]current page.south east);
+  \draw[unooLavender, line width=0.6pt]
+    ([yshift=22mm]current page.south west) -- ([yshift=22mm]current page.south east);
+  \node[anchor=west, text=white, font=\sffamily\bfseries\small]
+    at ([xshift=22mm, yshift=-13mm]current page.north west)
+    {UNOORIA \enspace\textperiodcentered\enspace ARQUITETURA E ENGENHARIA DE PLATAFORMA};
+  \node[anchor=east, text=unooLavenderSoft, font=\sffamily\footnotesize]
+    at ([xshift=-22mm, yshift=-13mm]current page.north east)
+    {CÓDIGO: PU-EST-002 \enspace|\enspace VERSÃO 1.0};
+\end{tikzpicture}
+
+\vspace*{28mm}
+\begin{flushleft}
+  \includegraphics[width=50mm]{figuras/marca/logo_azul_profundo.png}\\[14mm]
+  {\sffamily\bfseries\fontsize{10}{12}\selectfont\color{unooBlue}
+    ESTUDO COMPARATIVO DE INFRAESTRUTURA EM NUVEM}\\[4mm]
+  {\sffamily\bfseries\fontsize{25}{30}\selectfont\color{unooNavy}
+    Plataforma Unooria}\\[3mm]
+  {\sffamily\fontsize{14}{19}\selectfont\color{unooInkSoft}
+    Análise técnica, operacional e financeira entre \textbf{GCP}, \textbf{AWS} e
+    \textbf{Azure} para a Plataforma, as Experiências Imersivas, a API e o Uso de
+    Inteligência Artificial}\\[10mm]
+  {\color{unooBlue}\rule{36mm}{2pt}}\\[10mm]
+\end{flushleft}
+
+\begin{tcolorbox}[
+  enhanced, colback=unooSurface, colframe=unooGrid,
+  boxrule=0.5pt, arc=2pt, left=10pt, right=10pt, top=8pt, bottom=8pt
+]
+\footnotesize\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+  \textbf{\sffamily\color{unooNavy}Escopo do estudo} &
+    Comparação exaustiva da pilha de nuvem por contrato B2G (\num{10000}
+    estudantes, picos de \num{2000} a \num{4000} simultâneos às 8h da manhã,
+    100+ escolas) nos quatro eixos do produto: \textbf{Plataforma} (\arq{apps/hub},
+    borda, banco, mensageria, identidade e observabilidade),
+    \textbf{Experiências} (\arq{apps/experiencias/*}, bundles estáticos, CDN e
+    mídia), \textbf{API} (\arq{apps/api}, computação \emph{serverless}, jobs em
+    segundo plano, SSE e WebSockets) e \textbf{Uso de IA} (\arq{src/ai},
+    \arq{apps/agente-professor}, busca semântica/estruturada e voz ao vivo).\\
+  \textbf{\sffamily\color{unooNavy}Nuvem de referência} &
+    Google Cloud Platform (\textbf{GCP}), provisionada via Terraform no
+    repositório de fundação (\cd{1 contrato = 1 stack isolada}).\\
+  \textbf{\sffamily\color{unooNavy}Nuvens comparadas} &
+    Amazon Web Services (\textbf{AWS}) e Microsoft Azure (\textbf{Azure}).\\
+  \textbf{\sffamily\color{unooNavy}Restrição de operação} &
+    Plataforma desenvolvida e operada por \textbf{uma pessoa} (\emph{simplicidade
+    $>$ sofisticação}), com meta de produção em novembro de 2026.\\
+  \textbf{\sffamily\color{unooNavy}Data de referência} &
+    13 de outubro de 2026\\
+\end{tabularx}
+\end{tcolorbox}
+
+\vfill
+\begin{flushleft}
+  \footnotesize\sffamily\color{unooMuted}
+  Documento complementar à Documentação Técnica da Plataforma Unooria
+  (\arq{documentacao-latex/main.pdf}, Capítulos 6, 11 e 17) e ao Mapa de Produto
+  (\cd{PU-PRD-001}).
+\end{flushleft}
+\vspace*{10mm}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\cleardoublepage
+\pagenumbering{arabic}
+
+% ===========================================================================
+%  CAPITULO 1..7 + APENDICE
+% ===========================================================================
+\input{capitulos/01-como-ler-e-premissas}
+\input{capitulos/02-visao-geral-e-equivalencia}
+\input{capitulos/03-eixo-plataforma}
+\input{capitulos/04-eixo-experiencias}
+\input{capitulos/05-eixo-api}
+\input{capitulos/06-eixo-ia}
+\input{capitulos/07-custos-operacao-e-migracao}
+
+\appendix
+\input{capitulos/99-mermaid}
+
+\end{document}

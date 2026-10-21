@@ -1,10 +1,12 @@
+import { EXP_ID_RE } from "../comum/codigo-da-experiencia";
+
 /**
  * A `rota` de um Web Vital vira rótulo de métrica — então tem de ser um
  * conjunto FECHADO. O navegador manda o `pathname` (hub) ou o `expId`
  * (experiência); aqui isso é reduzido a uma dúzia de valores, e qualquer coisa
  * fora deles é `outra`. Sem isto, um id na URL cria uma série por criança.
  */
-export const EXP_ID = /^exp-\d{2}-[a-z0-9-]+$/;
+export const EXP_ID = EXP_ID_RE;
 
 const ROTAS_DO_HUB: Array<[RegExp, string]> = [
   [/^\/$/, "/"],

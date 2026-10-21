@@ -6,7 +6,7 @@ import { baseDevDaExperiencia } from "./experiencias-dev";
 /**
  * Montagem do embed de uma experiência — o que `/exp/[expId]` fazia inline,
  * extraído porque agora há DUAS superfícies que embedam: a do estudante
- * (`/exp/[expId]`) e a do professor (`/professor/plano-de-aula`, exp-90).
+ * (`/exp/[expId]`) e a do professor (`/professor/plano-de-aula`, app-90).
  *
  * Regras que valem para as duas:
  *  - token assinado pelo hub com os claims do usuário LOGADO (sem tela de
@@ -114,12 +114,12 @@ export async function buscarManifesto(expId: string, token: string): Promise<Man
  * Sem manifesto na tabela E sem conseguir ler o `experiencia.json` do bundle, o
  * embed segue com `viewport: null` e `permissoes: []`. Os dois degradam de um
  * jeito que NÃO aponta para aqui: a experiência de aparelho aparece esticada na
- * janela, e a exp-70 (jogo 3D em primeira pessoa) abre sem
+ * janela, e a app-70 (jogo 3D em primeira pessoa) abre sem
  * `allow-pointer-lock` — a criança entra na vila, a câmera não gira, o teclado
  * não anda, e não há erro em lugar nenhum. O `catch {}` que vivia aqui
  * transformava uma configuração errada num bug de jogo.
  *
- * MEDIDO em 2026-08-27, no compose local: dois dev servers da exp-70 disputando
+ * MEDIDO em 2026-08-27, no compose local: dois dev servers da app-70 disputando
  * a 5177 (um no host, um no container). O do host tinha subido antes de
  * `allowedHosts` existir no `vite.config.ts` e respondia
  * `403 Blocked request. This host ("host.docker.internal") is not allowed.`
@@ -130,7 +130,7 @@ function avisarManifestoIlegivel(expId: string, url: string, causa: string): voi
     `[hub] ${expId}: sem linha na tabela \`experiencias\` e o \`experiencia.json\` do ` +
       `bundle não pôde ser lido (${url} → ${causa}). O embed segue SEM viewport e SEM ` +
       `permissões de iframe: experiência de aparelho aparece esticada, e a que precisa de ` +
-      `\`pointer-lock\` (exp-70) abre com a câmera travada. Confira o dev server da ` +
+      `\`pointer-lock\` (app-70) abre com a câmera travada. Confira o dev server da ` +
       `experiência e o \`allowedHosts\` do vite.config.ts dela.`,
   );
 }
@@ -197,8 +197,8 @@ export async function montarEmbed(
    * fato, e ele quebrou no dia em que o seed passou a popular o catálogo
    * (ADR-69, que precisa dele para montar a grade da turma). Com manifesto e
    * sem CDN configurado, `cdn` cai no default `http://localhost:5173` — o dev
-   * server da exp-01 — e a URL versionada vira
-   * `localhost:5173/exp-02-unootube/1.2.3/index.html`. O Vite responde a
+   * server da exp08ef1b — e a URL versionada vira
+   * `localhost:5173/exp04ef1b/1.2.3/index.html`. O Vite responde a
    * QUALQUER caminho com o index da SPA dele, então TODA missão abria o
    * Instanooria, com o handshake completando e o boot dando 403 na experiência
    * errada. Nada no console dizia "endereço errado".
@@ -232,7 +232,7 @@ export async function montarEmbed(
         };
         viewportDoBundle = meta.viewport ?? null;
         // Pelo MESMO motivo do viewport: sem a tabela `experiencias` populada
-        // (compose local, ambiente novo antes do 1º publish do CI) a exp-70
+        // (compose local, ambiente novo antes do 1º publish do CI) a app-70
         // abriria sem `allow-pointer-lock` — o jogo monta, a câmera não anda, e
         // nada no console diz por quê.
         permissoesDoBundle = meta.permissoes ?? [];

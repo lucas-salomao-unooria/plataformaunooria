@@ -16,7 +16,7 @@ import type { TurmaDoProfessor } from "@/lib/turmas";
  * aula não começa — a largada do relógio. Por isso a ficha abre com o aviso,
  * em vez de deixar a informação no fim de uma lista de preparo.
  *
- * Molde: `missao-unootube.tsx`. `FeedbackAlert` e não `AlertBox`: o segundo é
+ * Molde: `backup-missao-unootube.tsx` (o UnooTube, hoje arquivado). `FeedbackAlert` e não `AlertBox`: o segundo é
  * diálogo de 436px, e aqui a faixa é de contexto (o prop é `type`, não
  * `variant`).
  */
@@ -51,10 +51,8 @@ export function MissaoUnooGPT({
           <Tag variant="neutral" size="sm" pill>
             {ficha.duracao}
           </Tag>
-          <Tag variant="neutral" size="sm" pill>
-            {ficha.formato}
-          </Tag>
         </div>
+        <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-500">Formato: {ficha.formato}</p>
         <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-500">
           {ficha.competencia}
         </p>
@@ -97,7 +95,7 @@ export function MissaoUnooGPT({
         </Card>
       </section>
 
-      <Card variant="outlined" title="O que o software NÃO conta ao estudante">
+      <Card variant="outlined" title="O que a missão NÃO conta ao estudante">
         <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-unooria-neutral-800">
           <p className="max-w-3xl">
             Cada uma das 8 fontes distorce a cidade de um jeito: o satélite vê telhado e não vê

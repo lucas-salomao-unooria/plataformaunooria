@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { falasDoTemaSchema } from "../podcast/roteiro";
+import { VAGAS_DO_PODCAST } from "./podcast";
 import { DIVISOR_TESE, ESTILOS_VISUAIS, MODOS_NEUTROS } from "../comum/insta/defaults";
 import { ETAPAS_DA_TURMA } from "../comum/insta/etapas";
 
@@ -51,7 +53,15 @@ export const AtividadesQuery = z.object({ turmaId: Uuid.optional() });
 export const EtapaSchema = z.object({ etapa: z.enum(ETAPAS_DA_TURMA) });
 export const IaSchema = z.object({ ativo: z.boolean() });
 export const AtivarSchema = z
-  .object({ forcar: z.boolean().default(false) })
+  .object({
+    forcar: z.boolean().default(false),
+    /**
+     * As três falas do podcast de recapitulação que o professor revisou na
+     * revisão dos posts (ADR-156). Opcional: o "pôr no ar" da sala de aula
+     * reativa sem passar pela revisão e mantém as falas já gravadas.
+     */
+    podcast: falasDoTemaSchema(VAGAS_DO_PODCAST).optional(),
+  })
   .default({ forcar: false });
 
 // -------------------------------------------------------------------- saída
@@ -80,7 +90,7 @@ export const ListaDeAtividadesSchema = z.object({
   atividades: z.array(AtividadeEmListaSchema),
 });
 
-/** A linha crua de `exp_01_activities` mais os agregados. `_count` espelha o
+/** A linha crua de `exp08ef1b_activities` mais os agregados. `_count` espelha o
  *  select do Prisma da página de origem — o porte dos painéis consome esse
  *  shape, e os agregados nomeados ficam junto. */
 export const DetalheDaAtividadeSchema = z.object({
@@ -224,6 +234,19 @@ export const LinhaDoMonitorSchema = z.object({
   /** Tamanho da reflexão escrita — nunca o texto, que é de criança. */
   caracteresDaReflexao: z.number().int().nonnegative(),
   publicou: z.boolean(),
+  /**
+   * O Canal A (ADR-167), em sim/não — nunca o que a criança respondeu ou
+   * escreveu: terminou a revelação, fez cada tarefa, mandou com frase, refez
+   * depois de um reinício.
+   */
+  canalA: z.object({
+    revelacaoConcluida: z.boolean(),
+    raioX: z.boolean(),
+    termos: z.boolean(),
+    envio: z.boolean(),
+    comFrase: z.boolean(),
+    refeita: z.boolean(),
+  }),
 });
 
 export const MonitorSchema = z.object({
@@ -242,6 +265,8 @@ export const MonitorSchema = z.object({
     ociosos: z.number().int().nonnegative(),
     salvosNaTurma: z.number().int().nonnegative(),
     salvosDoOutroLado: z.number().int().nonnegative(),
+    /** Já na revelação (explicabilidade em diante) e ainda sem chegar à última tela. */
+    naRevelacao: z.number().int().nonnegative(),
   }),
   limiteDeOciosidadeMs: z.number().int().positive(),
 });
@@ -267,6 +292,31 @@ export const EstudanteDaAtividadeSchema = z.object({
     respondeuRotulo: z.string().nullable(),
     reflexao: z.string().nullable(),
     postouNoApp: z.string().nullable(),
+    /** O Canal A (ADR-167): só o professor lê esta rota. */
+    canalA: z.object({
+      revelacaoConcluida: z.boolean(),
+      raioX: z.boolean(),
+      termos: z.boolean(),
+      envio: z.boolean(),
+      refeita: z.boolean(),
+      /** A frase opcional do envio — texto da criança, só aqui. */
+      fraseDoEnvio: z.string().nullable(),
+      /** A leitura da reflexão pela IA: resultado e motivo, nunca texto da IA. */
+      leitura: z
+        .object({
+          resultado: z.enum(["nivel", "sem_marca", "falha"]).nullable(),
+          nivel: z.enum(["atingiu", "em_processo", "nao_atingiu"]).nullable(),
+          motivo: z.string().nullable(),
+          /** Quantas chamadas à IA a leitura fez (até 3: só a falha técnica tenta de novo). */
+          tentativas: z.number().int().min(0).max(3),
+          lidaEm: z.string().nullable(),
+        })
+        .nullable(),
+      /** O texto que a IA leu — só quando a reflexão de agora é a que foi lida. */
+      textoLido: z.string().nullable(),
+      /** A reflexão lida saiu num reinício: o professor vê o nível, não o texto. */
+      textoLidoApagado: z.boolean(),
+    }),
   }),
   resumo: z.object({
     salvos: z.number().int().nonnegative(),
@@ -284,6 +334,8 @@ export const EstudanteDaAtividadeSchema = z.object({
       handle: z.string(),
       caption: z.string(),
       imageUrl: z.string().nullable(),
+      /** O texto alternativo da imagem gerada, ou `null` (ADR-163). */
+      imageAlt: z.string().nullable(),
       /** Arte procedural quando a imagem não ficou pronta — o feed nunca fica
        *  com buraco. */
       fallbackArt: z.unknown().nullable(),

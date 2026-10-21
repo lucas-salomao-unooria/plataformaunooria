@@ -25,7 +25,7 @@ const INIT = {
 
 /** Sobe a experiência entregando o hub:init assim que o exp:ready sair. */
 async function experiencia() {
-  const promessa = createExperiencia({ expId: "exp-03-unoogpt", expVersion: "1.0.0", hubOrigin: HUB_ORIGIN });
+  const promessa = createExperiencia({ expId: "exp02em1b", expVersion: "1.0.0", hubOrigin: HUB_ORIGIN });
   window.dispatchEvent(new MessageEvent("message", { data: INIT, origin: HUB_ORIGIN }));
   return promessa;
 }

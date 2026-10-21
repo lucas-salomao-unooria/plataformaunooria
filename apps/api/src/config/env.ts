@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ENV_DO_FUSO, FUSO_PADRAO, fusoEhValido } from "../comum/fuso";
+import { ENGINE_RE, MODOS_DO_AGENTE } from "../ai/agente-professor.port";
 
 /**
  * Validação de env com Zod no BOOT (regra do CLAUDE.md: Zod em todo input
@@ -8,6 +9,15 @@ import { ENV_DO_FUSO, FUSO_PADRAO, fusoEhValido } from "../comum/fuso";
  */
 /** A porta do `/docs` fica na internet, então a senha não pode ser de teclado. */
 export const TAMANHO_MINIMO_DA_SENHA_DO_DOCS = 16;
+
+/**
+ * Variável opcional em que `""` vale como AUSENTE. O compose repassa
+ * `${NOME:-}`, e sem isto a variável não definida chegaria vazia e reprovaria o
+ * `min(32)` — derrubando a subida de quem nem usa a Ajuda.
+ */
+function vazioEhAusente<T extends z.ZodTypeAny>(schema: T) {
+  return z.preprocess((v) => (v === "" ? undefined : v), schema.optional());
+}
 
 export const EnvSchema = z.object({
   // Lido pela verificação do perfil portátil, que só aceita JWKS por http fora
@@ -45,14 +55,15 @@ export const EnvSchema = z.object({
   // a segunda fonte de verdade, e a tela diria uma coisa enquanto o processo
   // aplica outra.
 
-  // Arte da exp-01. O `gemini-2.0-flash-exp` que era o default aqui não existe
+  // Arte da exp08ef1b. O `gemini-2.0-flash-exp` que era o default aqui não existe
   // mais no catálogo (404 na região E em global), então toda geração caía no
   // fallback procedural. Responde hoje: `gemini-3.1-flash-image` (default),
   // `gemini-2.5-flash-image` e `gemini-3-pro-image`. Quem trocar precisa
   // conferir a proporção devolvida — ver PROPORCAO_IMAGEM no vertex.provider.
   VERTEX_IMAGE_MODEL: z.string().default("gemini-3.1-flash-image"),
 
-  // Voz das falas da exp-07 (Amara, a moradora do grupo, o podcast). Não é o
+  // Voz (`generateSpeech`). Nenhuma missão sintetiza voz hoje: quem usava era o
+  // Eco no Grupo, retirado pela ADR-113 — a capacidade fica no provider. Não é o
   // aiplatform: a síntese vem da Cloud Text-to-Speech, com os mesmos modelos
   // Gemini por trás e o MESMO ADC — e a API precisa estar habilitada no
   // projeto (`gcloud services enable texttospeech.googleapis.com`), senão a
@@ -65,6 +76,77 @@ export const EnvSchema = z.object({
   // 0 = desligado (paridade com o app origem, que usava Claude sem thinking e
   // é o que garante que o plano anual caiba no teto de saída); -1 = dinâmico.
   VERTEX_THINKING_BUDGET: z.coerce.number().int().min(-1).default(0),
+
+  /**
+   * O agente de IA do professor (`docs/regras/agente-professor.md`).
+   *
+   * `AGENTE_PROFESSOR_MODO`: `agent-engine` (Vertex AI Agent Engine, ADC) |
+   * `local` (o shim de `apps/agente-professor`) | `mock` (enlatado, o da suíte
+   * e2e) | `desligado`. **Ausente = `desligado`, em qualquer NODE_ENV** — e é
+   * aqui que ele diverge do `AI_PROVIDER`, cujo padrão é `vertex` e derruba a
+   * subida sem projeto. O `AI_PROVIDER` serve a produtos que JÁ existem em toda
+   * stack; o agente depende de um engine que o Terraform de cada contrato
+   * provisiona em momentos diferentes. Derrubar a api inteira por falta dele
+   * tiraria do ar todos os produtos para proteger um; desligado, o produto
+   * responde `AGENTE_INDISPONIVEL` e o resto segue. O `mock` também NÃO é o
+   * padrão de teste: quem testa escolhe o modo explicitamente.
+   *
+   * `AGENTE_PROFESSOR_ENGINE`: o resource name COMPLETO
+   * (`projects/<p>/locations/<r>/reasoningEngines/<id>`) — a região sai dele.
+   * `AGENTE_PROFESSOR_URL_LOCAL`: a base do shim (ex.: `http://localhost:8080`).
+   */
+  AGENTE_PROFESSOR_MODO: z.enum(MODOS_DO_AGENTE).default("desligado"),
+  AGENTE_PROFESSOR_ENGINE: z
+    .string()
+    .regex(ENGINE_RE, "resource name completo: projects/<p>/locations/<r>/reasoningEngines/<id>")
+    .optional(),
+  AGENTE_PROFESSOR_URL_LOCAL: z.string().url().optional(),
+
+  /**
+   * A AJUDA com avatar (ADR-132): o atendente em vídeo do LiveAvatar, com o LLM
+   * NOSSO (o vendor chama `POST /ajuda/llm/chat/completions`).
+   *
+   * **Desligada é o padrão, e faltar peça NÃO derruba a subida** — ao contrário
+   * do `/docs`. A chave da conta e os ids nascem em momentos diferentes
+   * (`scripts/liveavatar-configurar.mjs` cria o contexto e a configuração de LLM
+   * DEPOIS de a api estar no ar com URL pública), e derrubar a api inteira por
+   * um produto em montagem tiraria todos os outros do ar. Sem o conjunto
+   * completo, `POST /ajuda/sessoes` responde 503 e o log `ajuda-desligada` diz
+   * o que falta.
+   *
+   * `LIVEAVATAR_API_KEY`: a chave da conta (Secret Manager). NUNCA vai ao hub.
+   * `LIVEAVATAR_CONTEXT_ID` / `LIVEAVATAR_LLM_CONFIG_ID`: os ids que o script
+   *   de configuração imprime — sem contexto o avatar fica mudo, sem LLM
+   *   configurado ele responderia com o LLM da HeyGen.
+   * `LIVEAVATAR_AVATAR_ID`: o "Silas Customer Support" do catálogo público.
+   * `LIVEAVATAR_SANDBOX=1`: o avatar de testes do vendor (~1 min, sem crédito).
+   *   Recusado em produção.
+   * `AJUDA_LLM_SEGREDO`: o que o vendor manda em `Authorization: Bearer` ao
+   *   nosso endpoint de LLM (guardado lá como segredo `OPENAI_API_KEY`).
+   * `AJUDA_SESSAO_CHAVE`: assina o token curto que identifica a pessoa dentro
+   *   do prompt do contexto (`dynamic_variables`).
+   */
+  LIVEAVATAR_API_KEY: vazioEhAusente(z.string().min(1)),
+  LIVEAVATAR_API_URL: z.string().url().default("https://api.liveavatar.com"),
+  LIVEAVATAR_AVATAR_ID: z.string().uuid().default("dc2935cf-5863-4f08-943b-c7478aea59fb"),
+  LIVEAVATAR_VOICE_ID: vazioEhAusente(z.string().uuid()),
+  LIVEAVATAR_CONTEXT_ID: vazioEhAusente(z.string().uuid()),
+  LIVEAVATAR_LLM_CONFIG_ID: vazioEhAusente(z.string().uuid()),
+  LIVEAVATAR_SANDBOX: z.enum(["0", "1"]).default("0"),
+  AJUDA_LLM_SEGREDO: vazioEhAusente(z.string().min(32)),
+  AJUDA_SESSAO_CHAVE: vazioEhAusente(z.string().min(32)),
+
+  /**
+   * O MASCOTE da Ajuda (ADR-158): o Gemini Live na Vertex, com o ADC e o
+   * `VERTEX_PROJECT_ID` de todo o resto. Não tem chave própria — basta a Vertex
+   * e a `AJUDA_SESSAO_CHAVE` (assina o bilhete da conexão de voz).
+   *
+   * `AJUDA_MASCOTE_REGIAO`: o Live NÃO está no `global` do texto; medido em
+   * 2026-10-12 no projeto de dev, `us-central1` serve o `gemini-3.8-live`
+   * (setup em 2,5 s com a base inteira, primeira fala em 1,2 s). O modelo e a
+   * voz são do painel (`ajuda_configuracao`), não daqui.
+   */
+  AJUDA_MASCOTE_REGIAO: z.string().regex(/^[a-z0-9-]+$/).default("us-central1"),
 
   // Imagens geradas: local (dev, servido pela api em /assets) | gcs (bucket
   // {contrato}-assets atrás da CDN — docs/INFRA.md).
@@ -92,7 +174,7 @@ export const EnvSchema = z.object({
   // jogo externo). Ausente = rota desligada (503), não aberta.
   PERFIL_IMPORT_TOKEN: z.string().optional(),
 
-  // Planos de aula (exp-90): conteúdo autoral do professor, em bucket PRIVADO
+  // Planos de aula (app-90): conteúdo autoral do professor, em bucket PRIVADO
   // `{contrato}-planos` (docs/INFRA.md) — nunca no de assets, que é público.
   // Em dev, `local` grava em `storage-privado/` (fora do static de /assets).
   PLANOS_DRIVER: z.enum(["local", "gcs"]).default("local"),
@@ -168,6 +250,42 @@ export const EnvSchema = z.object({
       path: ["VERTEX_PROJECT_ID"],
       message:
         "obrigatório com AI_PROVIDER=vertex (em dev, use AI_PROVIDER=mock para subir sem GCP)",
+    });
+  }
+
+  // Modo escolhido sem o endereço dele: falha na SUBIDA, não no primeiro
+  // "AGENTE_INDISPONIVEL" que um professor vê.
+  if (env.AGENTE_PROFESSOR_MODO === "agent-engine" && !env.AGENTE_PROFESSOR_ENGINE) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["AGENTE_PROFESSOR_ENGINE"],
+      message: "obrigatório com AGENTE_PROFESSOR_MODO=agent-engine",
+    });
+  }
+  if (env.AGENTE_PROFESSOR_MODO === "local" && !env.AGENTE_PROFESSOR_URL_LOCAL) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["AGENTE_PROFESSOR_URL_LOCAL"],
+      message: "obrigatório com AGENTE_PROFESSOR_MODO=local",
+    });
+  }
+  // Em produção, resposta enlatada ou um shim sem autenticação seriam um
+  // professor recebendo texto falso como se fosse o agente.
+  if (env.NODE_ENV === "production" && (env.AGENTE_PROFESSOR_MODO === "mock" || env.AGENTE_PROFESSOR_MODO === "local")) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["AGENTE_PROFESSOR_MODO"],
+      message: "mock e local não sobem em produção: use agent-engine ou desligado",
+    });
+  }
+
+  // O avatar de testes só dura um minuto e não é o atendente: em produção seria
+  // uma Ajuda que cai sozinha no meio da explicação.
+  if (env.NODE_ENV === "production" && env.LIVEAVATAR_SANDBOX === "1") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["LIVEAVATAR_SANDBOX"],
+      message: "o sandbox do LiveAvatar não sobe em produção",
     });
   }
 

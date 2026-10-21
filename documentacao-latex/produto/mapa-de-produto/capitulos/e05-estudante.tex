@@ -1,0 +1,121 @@
+% ===========================================================================
+%  E05 — A experiência do estudante na plataforma
+% ===========================================================================
+\chapter{E05 \textperiodcentered{} A experiência do estudante na plataforma}
+\label{ep:e05}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] O estudante acha a missão do dia, joga sem atrito e não perde
+    o que fez --- em qualquer missão, antes mesmo de ela começar.
+  \item[Para quem] Estudante, do 1º ano EF à 3ª série EM.
+  \item[Valor] O que acontece \emph{dentro} de cada missão está no épico
+    \id{E06}. Este épico é o que é igual em todas: a porta de entrada.
+  \item[Estado] \pronto.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F05.1} & Minhas missões & \pronto\\
+\zebra \id{F05.2} & Jogar a missão dentro da plataforma & \pronto\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\feature{F05.1}{Minhas missões}{\pronto}
+
+\begin{historia}{H05.1.1}{Ver as missões da minha turma}{\pronto}
+\hu{Estudante}{ver as missões do meu ano e saber qual está aberta}{começar a
+missão que o professor pediu}
+\aceite
+\begin{itemize}
+  \item \enquote{Minhas missões} (\enquote{Olá, \{nome\}}) mostra a turma
+    (ex.: \enquote{Turma 8A \textperiodcentered{} 8º ano \textperiodcentered{}
+    manhã}) e um cartão por missão da grade do ano.
+  \item Cartão aberto: \enquote{Começar}. Cartão fechado: cadeado e
+    \enquote{Ainda não abriu}. Missão encerrada: etiqueta \enquote{encerrada}
+    e \enquote{Esta você já fechou}.
+  \item Aparecem só as missões da série da turma, mais as \enquote{para
+    qualquer ano}.
+  \item A missão fechada \textbf{não some}: o estudante vê que ela existe.
+  \item Missão desligada pela Unooria para a rede some da grade.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H05.1.2}{Entender quando não há nada para fazer}{\pronto}
+\hu{Estudante}{uma mensagem clara quando não tenho missão}{não achar que a
+plataforma quebrou}
+\aceite
+\begin{itemize}
+  \item Mensagens diferentes para cada caso: \enquote{Você ainda não está em
+    uma turma}, \enquote{Nenhuma missão por aqui ainda} e \enquote{Não
+    conseguimos carregar suas missões}.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F05.2}{Jogar a missão dentro da plataforma}{\pronto}
+
+\begin{historia}{H05.2.1}{Abrir a missão}{\pronto}
+\hu{Estudante}{abrir a missão com um toque}{começar a aula junto com a turma}
+\aceite
+\begin{itemize}
+  \item A missão abre dentro de uma moldura da plataforma --- em formato de
+    celular ou de tela cheia, conforme a missão --- com \enquote{\ensuremath{\leftarrow}{}
+    Missões} no cabeçalho.
+  \item Missão não liberada, de outra série ou desligada não abre, nem pelo
+    endereço digitado.
+  \item Para a criança, a mensagem de missão desligada é a mesma de missão
+    ainda não aberta, para não quebrar a ficção.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H05.2.2}{Não perder o que fiz}{\pronto}
+\hu{Estudante}{que o que eu fiz na missão fique guardado}{não recomeçar se a
+página recarregar ou a internet oscilar}
+\aceite
+\begin{itemize}
+  \item O que a criança fez fica guardado na plataforma e volta depois de
+    recarregar a página.
+  \item Quando a janela da missão perde o foco, a missão pausa (os cronômetros
+    congelam) e retoma ao voltar.
+  \item A sessão não expira enquanto a criança está na missão (\id{H01.1.3}).
+\end{itemize}
+\pendencia{se a conexão cair de vez, os registros de uso ainda não enviados se
+perdem (o progresso da missão, não). Guardar esses registros sem conexão é
+evolução planejada.}
+\end{historia}
+
+\begin{historia}{H05.2.3}{Esperar o professor sem confusão}{\pronto}
+\hu{Estudante}{saber quando estou esperando o professor}{não achar que travou}
+\aceite
+\begin{itemize}
+  \item Várias missões param a turma até o professor soltar: a largada do
+    relógio (UnooriaAI), a Aula 2 (Rastro do Boato), o debate
+    (Manifesto da IA), a roda de conversa (O Que a Foto Conta), a revelação,
+    a síntese e a reflexão (Quem mandou isso?), o Mural, as fichas técnicas e
+    a explicação (A Seleção), o resultado e a revisão (Jornal da Escola) e a
+    plenária antes da Galeria Oculta (O Júri Estadual de Projetos).
+  \item Nesses momentos a tela mostra uma espera clara, nunca um erro.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H05.2.4}{Nunca ser comparado com os colegas}{\pronto}
+\hu{família do estudante}{que nenhuma tela mostre nota ou ranking da
+criança}{que a missão seja espaço de aprender, não de competir}
+\aceite
+\begin{itemize}
+  \item Nenhuma tela do estudante mostra nota ou posição em ranking de
+    colegas reais.
+  \item Nenhuma missão em uso tem ranking. Se a ficção de uma missão pedir um,
+    os colegas dele são fictícios, como eram no UnooTube, hoje arquivado.
+  \item Na A Seleção, o Mural põe a minha publicação ao lado da de um colega
+    que escolheu outra coisa, sem nota, acerto nem comparação de quem foi
+    melhor.
+  \item A correção acontece na plataforma; a resposta certa não chega ao
+    aparelho antes da hora.
+\end{itemize}
+\end{historia}

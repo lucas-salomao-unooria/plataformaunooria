@@ -22,7 +22,7 @@ import { RecursosAdminController } from "../src/recursos/recursos-admin.controll
 const URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
 const REGIONAL = "teste-painel-regional";
 const ESCOLA = "teste-painel";
-const VILA = "exp-70-vila-do-lume";
+const VILA = "app-70-vila-do-lume";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
 const painel = new RecursosAdminController(prisma);
@@ -110,8 +110,14 @@ describe("GET /recursos/painel", () => {
     expect(r.escopo).toEqual({ escolaId: null, nome: "Rede (contrato inteiro)", tipo: null });
     for (const produto of r.produtos) {
       expect(produto.estadoAqui).toBe("herda");
-      expect(produto.efetivo).toMatchObject({ ligado: true, origem: "padrao" });
+      /* "Nada decidido" vale o PADRÃO do produto: ligado, salvo o que está em
+         teste interno — e a tela recebe esse padrão para escrever "Padrão (…)". */
+      expect(produto.efetivo).toMatchObject({ ligado: produto.ligadoPorPadrao, origem: "padrao" });
     }
+    expect(r.produtos.find((p) => p.slug === "ajuda")).toMatchObject({
+      ligadoPorPadrao: false,
+      efetivo: { ligado: false, origem: "padrao" },
+    });
   });
 
   test("as experiências vêm DENTRO do produto que o manifesto declara", async () => {
@@ -125,8 +131,13 @@ describe("GET /recursos/painel", () => {
        suíte concorrente criasse uma linha com este produto. O que se prova é a
        DERIVAÇÃO — cada experiência aparece sob o produto que ela declara, e não
        sob outro. */
-    expect(bemEstar?.experiencias.map((e) => e.expId)).toContain("exp-91-bem-estar");
+    expect(bemEstar?.experiencias.map((e) => e.expId)).toContain("app-91-bem-estar");
     expect(bemEstar?.experiencias.map((e) => e.expId)).not.toContain(VILA);
+    /* O produto SEM experiência aparece com a lista VAZIA — e com interruptor
+       próprio: é o botão flutuante do professor que ele liga e desliga. */
+    const agente = r.produtos.find((p) => p.slug === "agente-professor");
+    expect(agente?.experiencias).toEqual([]);
+    expect(agente?.efetivo).toMatchObject({ ligado: true, origem: "padrao" });
     // E cada uma traz a versão que o hub monta hoje.
     expect(entreRedes?.experiencias[0]?.versaoAtiva).toMatch(/^\d+\.\d+\.\d+$/);
   });
@@ -138,6 +149,52 @@ describe("GET /recursos/painel", () => {
 
   test("escola inexistente é 404 — o admin atravessa escolas, então é endereço errado", async () => {
     await expect(painel.painel("nao-existe")).rejects.toThrow();
+  });
+});
+
+describe("a versão fixada esquecida (H10.3.3)", () => {
+  const haDias = (n: number) => new Date(Date.now() - n * 86_400_000);
+  const fixar = async (escolaId: string, versao: string, diasAtras: number | null) => {
+    await prisma.disponibilidade.create({
+      data: { recursoId: `experiencia:${VILA}`, escolaId, ligado: true, versaoFixa: versao, definidoPor: admin },
+    });
+    if (diasAtras !== null) {
+      await prisma.recursoAuditoria.create({
+        data: {
+          recursoId: `experiencia:${VILA}`,
+          escolaId,
+          acao: "versao-fixada",
+          versao,
+          autorId: admin,
+          autorNome: "Admin do painel",
+          quando: haDias(diasAtras),
+        },
+      });
+    }
+  };
+
+  test("a fixação que passou de 30 dias aparece, em qualquer escopo; a recente, não", async () => {
+    await fixar(ESCOLA, "1.0.0", 45);
+    await fixar(REGIONAL, "1.1.0", 10);
+
+    // Aberto no CONTRATO: a escola esquecida aparece mesmo sem abrir o escopo dela.
+    const { fixacoesEsquecidas } = await painel.painel();
+    const daSuite = fixacoesEsquecidas.filter((f) => f.escolaId === ESCOLA || f.escolaId === REGIONAL);
+    expect(daSuite).toHaveLength(1);
+    expect(daSuite[0]).toMatchObject({ expId: VILA, escolaId: ESCOLA, escopo: "Escola do painel", versao: "1.0.0", dias: 45 });
+  });
+
+  test("a data vem do HISTÓRICO, não de quando a linha foi mexida por último", async () => {
+    // A linha foi tocada hoje (`definido_em` de agora), mas a fixação é de 60 dias atrás.
+    await fixar(ESCOLA, "1.0.0", 60);
+    const { fixacoesEsquecidas } = await painel.painel();
+    expect(fixacoesEsquecidas.find((f) => f.escolaId === ESCOLA)?.dias).toBe(60);
+  });
+
+  test("sem histórico, cai em `definido_em` — erra para menos dias, nunca para mais", async () => {
+    await fixar(ESCOLA, "1.0.0", null);
+    const { fixacoesEsquecidas } = await painel.painel();
+    expect(fixacoesEsquecidas.some((f) => f.escolaId === ESCOLA)).toBe(false);
   });
 });
 
@@ -260,7 +317,7 @@ describe("PUT /recursos/:recursoId", () => {
     /* Sem esta recusa, um `expId` digitado errado criaria linha que não desliga
        nada e apareceria no painel como experiência que não existe. */
     await expect(
-      painel.definir("experiencia:exp-99-nao-existe", { escolaId: ESCOLA, ligado: true }, comoAdmin()),
+      painel.definir("experiencia:app-99-nao-existe", { escolaId: ESCOLA, ligado: true }, comoAdmin()),
     ).rejects.toThrow();
   });
 

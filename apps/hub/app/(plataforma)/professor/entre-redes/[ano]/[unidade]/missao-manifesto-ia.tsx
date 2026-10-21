@@ -10,7 +10,7 @@ import type { TurmaDoProfessor } from "@/lib/turmas";
  * **Existe porque a ausência dele é MUDA.** Sem entrada no despachante de
  * `page.tsx`, uma missão publicada cai no corpo do INSTANOORIA — que tem
  * "Nova atividade" e não tem "Abrir a aula e os resultados". A professora
- * criaria uma configuração em `exp_01_activities` que esta missão nunca lê, e
+ * criaria uma configuração em `exp08ef1b_activities` que esta missão nunca lê, e
  * não acharia o painel do debate. O aviso já estava escrito em
  * `missao-rastro-boato.tsx`, no arquivo ao lado, e mesmo assim aconteceu de
  * novo: quem publica missão nova mexe no despachante no mesmo trabalho.
@@ -53,10 +53,8 @@ export function MissaoManifestoIa({
           <Tag variant="neutral" size="sm" pill>
             {ficha.duracao}
           </Tag>
-          <Tag variant="neutral" size="sm" pill>
-            {ficha.formato}
-          </Tag>
         </div>
+        <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-500">Formato: {ficha.formato}</p>
         <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-500">
           {ficha.competencia}
         </p>
@@ -99,7 +97,7 @@ export function MissaoManifestoIa({
         </Card>
       </section>
 
-      <Card variant="outlined" title="O que o software NÃO conta ao estudante">
+      <Card variant="outlined" title="O que a missão NÃO conta ao estudante">
         <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-unooria-neutral-800">
           <p className="max-w-3xl">
             A máquina <strong className="text-unooria-neutral-950">não admite o viés de graça</strong>.

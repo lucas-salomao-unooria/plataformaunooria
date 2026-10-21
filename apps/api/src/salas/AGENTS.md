@@ -8,16 +8,16 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 `turmas` e `experiencias`. **Sem linha, a missão não abre para aquela sala.**
 
 - **A porta é `comum/liberacao.ts#exigirMissaoLiberada`**, e ela fica no FUNIL
-  das rotas de estudante de cada experiência — `estudanteDaEscola` no UnooTube e
-  no Eco, `garantirSessao` no unooGPT, `abrir` na Vila, e o controller em
-  `POST /runs` + `GET /runs/boot` (a exp-01 é a única cuja entrada está no
+  das rotas de estudante de cada experiência — o `garantirSessao` ou
+  `estudanteDaEscola` do service dela, `abrir` na Vila, e o controller em
+  `POST /runs` + `GET /runs/boot` (a exp08ef1b é a única cuja entrada está no
   controller). Pô-la só na rota de leitura deixa a de escrita aberta a quem
-  chamar direto: no UnooTube, `POST /salvos` cria a sessão sozinho.
+  chamar direto.
 - **Fica na CRIAÇÃO da sessão, não em toda rota.** Quem já entrou fica —
   encerrar fecha a entrada, não expulsa a criança no meio da aula.
-- **Experiência nova declara o próprio `EXP_ID`** (`comum/insta/defaults.ts`,
-  `unootube/catalogo.ts`, `unoogpt/regras/defaults.ts`, `vila/catalogo.ts`,
-  `o-eco-no-grupo/midia.ts`) e ele tem de bater com o `id` do
+- **Experiência nova declara o próprio `EXP_ID`** (no `catalogo.ts`,
+  `defaults.ts` ou `vocabulario.ts` do módulo dela, ou no service, como em
+  `a-selecao`) e ele tem de bater com o `id` do
   `public/experiencia.json`. Divergir faz a missão NUNCA abrir, com a liberação
   gravada e visível na tela do professor — não há erro que aponte para isso.
 - **`bloqueada` não é estado do banco**: é a ausência de linha. E ela aparece na
@@ -28,12 +28,27 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
   (`prisma/catalogo-e-liberacoes.ts`, lendo os mesmos manifestos que o CI envia)
   — **sem catálogo não há grade**, e o professor abre a sala sem nada para liberar.
 - **Estudante sem turma não vê missão nenhuma**, e isso mudou o comportamento da
-  exp-03 (que servia o relógio "aguardando" a quem estava solto). Sem sala não há
+  exp02em1b (que servia o relógio "aguardando" a quem estava solto). Sem sala não há
   missão; quem explica é a tela do hub, porque um erro dentro do aparelho não
   diria "peça para a coordenação te matricular" sem sair do disfarce.
+- **O `PUT turma/:t/missoes/:exp` tem DOIS chamadores no hub** (ADR-146): o
+  botão da sala e o "pôr no ar" da atividade (`liberarNaSala`, em
+  `hub/lib/entre-redes/criar-atividade.ts`), que libera sempre, inclusive
+  `encerrada`. Ele depende de a rota ser idempotente e de `encerrada →
+  liberada` valer; mudar qualquer um faz a atividade ir ao ar com a turma no
+  cadeado.
 - **Fixture de teste que abre experiência precisa de `tests/liberar-de-teste.ts`.**
   Quatro suítes quebraram quando a guarda entrou — quem quebrar com
   `missao-nao-liberada` não tem bug, tem fixture faltando.
+- **ENCERRAR roda o gancho `aoEncerrarMissao`** (ADR-154), na transação do
+  `PUT`: quem precisa saber que a missão fechou numa turma se registra no
+  `onModuleInit` (hoje só a evidência, para a régua que só conta ao encerrar).
+  A dependência é `evidencias → salas`, nunca o contrário; e um erro no gancho
+  desfaz o encerramento.
+- **A sala do professor diz quantas equipes cada missão tem** (`missoes[].equipes`,
+  E13/ADR-111, de `equipes/consulta.ts#contarEquipesDaTurma`) — só no schema do
+  PROFESSOR: `MissaoNaGradeSchema` também responde `/salas/minhas`, e a contagem da
+  sala inteira não é assunto do estudante.
 
 **Pessoa NASCE por importação — e o cadastro unitário DELEGA a ela.** As
 chamadas que ESCREVEM em `users` continuam sendo duas:
@@ -55,11 +70,11 @@ Duas diferenças em relação a importar um arquivo de uma linha:
 - **409 de CPF em outra escola não revela nada**: sem id, sem nome, sem o nome
   da unidade. A mensagem aponta a importação, que reconhece o CPF e transfere.
 
-**`admin-contrato` tem rota própria** (`POST /usuarios/admin-contrato`,
-`@Roles("admin-contrato")` no MÉTODO — sobrescreve o da classe e é o que sai em
-`x-papeis`): não passa pelo importador porque não cabe numa planilha da escola
-(`escola_id` nulo, sem lotação, sem turma; `PAPEIS_IMPORTAVEIS` sempre o
-excluiu). O login dele é checado na REDE inteira, não na escola: o índice
+**`gestor_regional` e `gestor_contrato` têm rota própria** (`POST
+/usuarios/sem-escola`, `@Roles(...GESTORES_DO_CONTRATO)` no MÉTODO — sobrescreve
+o da classe e é o que sai em `x-papeis`): não passa pelo importador porque não
+cabe numa planilha da escola (`escola_id` nulo, sem lotação, sem turma;
+`PAPEIS_IMPORTAVEIS` sempre os excluiu). O login deles é checado na REDE inteira, não na escola: o índice
 `(escola_id, username)` não cobre linha com `escola_id` nulo, e o login procura
 o username na rede toda — dois donos do mesmo login viram recusa nos dois.
 `podeCriarPapel` (`usuarios/regras.ts`) é a segunda tranca, porque o `@Roles`
@@ -105,8 +120,8 @@ escola. Duas coisas neles não são detalhe: as colunas do modelo são um
 SUBCONJUNTO conferido de `COLUNAS_POR_ARQUIVO` (o teste cobra as duas direções —
 obrigatória que falte e coluna que o parser não leia), e o exemplo é gerado com a
 escola de VERDADE no `sourcedId`, porque um `esc.exemplo` fixo voltaria como
-"escola não é a desta importação" para o gestor e, para `admin-contrato` (que
-PODE criar escola por CSV), abriria um tenant de mentira. Os sete exemplos são um
+"escola não é a desta importação" para o gestor e, para os perfis de contrato
+(que PODEM criar escola por CSV), abriria um tenant de mentira. Os sete exemplos são um
 lote coerente: enviados na ordem, entram inteiros —
 `tests/oneroster-modelos.spec.ts` aplica os sete contra o banco.
 
@@ -126,7 +141,7 @@ sem refazê-lo a pessoa volta à mesma tela com a senha anterior já inválida.
 Reimportar NÃO reseta a senha de quem já entrou. Os usuários do seed nascem com
 `senha_provisoria: false` — prendê-los na troca pararia as suítes de estudante.
 
-**Área administrativa** (gestor/admin-contrato): `/admin/usuarios` (busca,
+**Área administrativa** (gestor_escola/gestor_contrato): `/admin/usuarios` (busca,
 filtros, **cadastrar uma pessoa**, editar, ativar/desativar, reset — o modal fica
 em `usuarios/novo-usuario.tsx`, e a TURMA se escolhe numa lista, nunca se digita:
 o importador cria a turma que falta, e "8A " com espaço abriria uma segunda),

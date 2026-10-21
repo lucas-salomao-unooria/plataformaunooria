@@ -1,0 +1,205 @@
+# apps/experiencias/exp07ef1b — A Seleção
+
+Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
+
+| Manifesto | Dev | DS | api | e2e |
+|---|---|---|---|---|
+| `exp07ef1b` · 7EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **1.3.0** (acima da do Eco, dono anterior do caminho no bucket — ADR-113) | `:5179`, hub `/exp/exp07ef1b` | `@edu/ui/ds-unoovista` (clone, desde a 1.1.0 — ADR-135) + `@edu/ui/ds` (escola) | `apps/api/src/a-selecao` ↔ `/a-selecao/*` (a marcação em `/a-selecao/marcacao`, E14 só por ação — ADR-170) | `scripts/e2e/estudante/11-a-selecao.mjs` (dois estudantes + a professora) |
+
+## O passo manda na tela
+
+A api devolve o passo JÁ reconciliado com a etapa da turma (`regras/passos.ts#passoEfetivo`).
+A tela lê `sessao.passo` e nada mais — `passoDoEstudante` é o cru, e usá-lo faria a
+tela discordar do servidor no instante em que a professora abre o Mural. O espelho
+do cliente (`lib/regras.ts`) existe para o teste provar a igualdade; `regras.test.ts`
+LÊ o `passos.ts` da api e reprova divergência nas listas.
+
+| Passo | Tela | Quem fala | Componentes do DS |
+|---|---|---|---|
+| `desafio` | E1 — a DM da Amara | Amara (clone) | `DirectThread`, `MessageBubble` (`avatarSrc` = a foto dela), `ButtonUnv` |
+| `feed` | E2 — o feed da cobertura | app | `TopBar`, `BadgeUnv`, `InlineHint` (a dica), `GestureHint` (rolar), `PostCard` (`.Header/.Media/.Likes`, `.Actions actions={[]}` = só o salvar, `.Caption username` = o autor do comentário), `FloatingButton`, `TabBar` |
+| `salvos` | E3 — a poda + E3-ALU-02 | app | `TopBar`, `ButtonUnv`+`IconUnv`, `BadgeUnv`, `InlineHint` (o aviso da poda), `MediaGrid` (`selectable`), `StoryComposer`, `ConfirmDialog` (`tone="default"`), `TabBar` |
+| `publicado` | E3-SIS-01 — a espera | app | `StoryViewer` (a própria tríade, `footer` = a legenda) |
+| `mural` | E4-ALU-01 — o PICO, aberto no PAR | app | `SegmentedTabs`, `StoryViewer` (3 segmentos, `onNext`/`onPrev`, `footer`), `PostCard.Caption` (legenda sobre a imagem) |
+| `marcacao` | E4-ALU-01B — a marcação do post do colega (ADR-170) | app | `TopBar`, `MediaGrid` (`selectable`), `ButtonUnv`, `InlineHint`, `TextFieldUnv` |
+| `fichas` | E4-ALU-02 — a revelação | app | o mesmo + `BottomSheetUnv` não modal (`maxHeight 45%`) com `BadgeUnv` — por `React.lazy` |
+| `explicacao` | E5 — carrossel + DM de fechamento | app, depois Amara | `TopBar`, `PostCard` (`.Media` sem `src`, `currentIndex/totalCount`), `ButtonUnv`, `DirectThread` — por `React.lazy` |
+| `reflexao` | E6 | **escola** | `SectionHeader`, `Card`, `TextArea`, `Button` |
+| `enquetes` | só sessão de antes da ADR-170: a tela a conclui sozinha (`POST concluir`) e vai ao fim | escola | `AlertBox` |
+| `fim` | "Missão concluída!" | **escola** | `AlertBox` |
+| 403 | missão não aberta aqui (relê a cada 5 s) | **escola** | `AlertBox` |
+
+A tela só anda quando a api responde: nenhum toque troca a tela de forma
+otimista. É o que torna o latch da publicação à prova de rede ruim.
+
+## A fronteira do disfarce é QUEM FALA
+
+Do "Abrir Feed da Cobertura" até o fechamento da Amara, quem conduz é o clone —
+inclusive a revelação, que é a ficha técnica sobre o Story. A reflexão sai do
+clone porque a pergunta é sobre um jornal cobrindo OUTRA escola, e fazê-la dentro
+do clone a devolveria à ficção, e ela ENCERRA a missão (as enquetes saíram na
+ADR-170): a confirmação e o fim são da escola. A MARCAÇÃO (E4-ALU-01B) é do
+clone — é o app perguntando, entre o Mural e as fichas. Os avisos globais seguem a mesma
+regra (`app/avisos.tsx`): no clone, a tarja de rede é o `SnackbarUnv` e a
+sessão é a `BottomSheet` modal; na tela da escola os dois saem pelo `AlertBox`,
+com copy própria — a do sheet fala de "marcações de posts" e da "conta do
+grêmio".
+
+## O que o bundle NÃO sabe
+
+O gabarito de cada post (enquadramento, fonte ouvida, ângulo), a matriz, o nível
+das alternativas das enquetes e os prompts moram no servidor. `lib/tipos.ts` não
+tem campo para eles no feed; o gabarito cruza a fronteira UMA vez, em
+`FichaDoPost`, dentro do Mural, e só com `fichasReveladas`.
+
+**A copy que fala do MECANISMO também não viaja no chunk principal.** O card 2 da
+E5 é a lente de cada veículo por extenso ("a Folha Oficial focou nas autoridades,
+a Voz Coletiva nos moradores…"), e a ficha tem os nomes das três lentes. As duas
+moram em `lib/textos-da-explicacao.ts` e `lib/textos-da-ficha.ts`, importadas SÓ
+por `clone/explicar.tsx` e `clone/ficha-tecnica.tsx`, que entram por
+`React.lazy` (`app/preguica.ts`, com repetição do `import()`). O arquivo continua
+no bucket — o cuidado é não ENTREGÁ-LO durante o garimpo, legível no DevTools.
+Importar uma dessas duas constantes de qualquer outro arquivo desfaz isso sem
+erro nenhum. A verificação, depois do build:
+
+```bash
+cd apps/experiencias/exp07ef1b
+find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' \) | xargs grep -l -F -e tagFonte -e tagAngulo -e enquadramento -e matriz -e "redator jornalístico" -e "Você ajuda um professor"   # vazio
+find dist -type f -name '*.js' | xargs grep -l -F "Folha Oficial"          # só explicar-*.js
+find dist -type f -name '*.js' | xargs grep -l -F "Ficha Técnica"          # só ficha-tecnica-*.js
+```
+
+## Contagem em CODE POINTS, dos dois lados
+
+A api conta legenda e reflexão em code points (`[...s].length`), depois de
+normalizar (a legenda sem quebra de linha, a reflexão aparada). A tela conta
+igual (`lib/regras.ts`), e é essa régua que acende ou apaga os botões — com
+emoji, `.length` diria o dobro. **O contador VISÍVEL da legenda é o do
+`StoryComposer`, que desde o DS 0.2.7 também conta code points** (e corta o
+excesso na digitação, sem o `maxlength` nativo, que mede UTF-16). O da reflexão
+é nosso (`showCounter={false}` no `TextArea`): o do DS conta `.length` e não diz
+o MÍNIMO, que é o que destrava o botão.
+
+## Rede, sessão e o latch (`app/conexao.ts`)
+
+Toda chamada passa por `conexao.executar`, que repete a falha de REDE (sem
+status, 5xx, 429) e de SESSÃO (401) com o aviso diegético aceso, e só essas. É
+seguro repetir todas as mutações daqui: `POST passo` pede um destino, `concluir`
+é idempotente, a enquete guarda a primeira resposta, e `decisao`/`reflexao`
+respondem 409 na segunda vez — aí a casca relê a sessão. **O latch nunca se perde
+e nunca duplica, porque só existe quando a api confirma.**
+
+O SDK não expõe "renovar token": ele pede um novo ao hub a cada 10 min. No 401 a
+tela mostra "Sua conexão com a conta do grêmio expirou" e continua tentando;
+"Revalidar acesso" só encurta a espera.
+
+**O SDK joga o erro SEM o corpo** ("API POST /x → 422"). Os cinco 422 do
+sanitizador chegam como um só (a frase nomeia os cinco motivos), e os dois 403
+(`missao-nao-liberada`, `recurso-indisponivel`) também.
+
+## Polling SÓ enquanto espera a professora
+
+`GET /a-selecao/gate` a cada 5 s, só com `aguardandoOProfessor` (espera, Mural,
+fichas). Compara passo, etapa, rodada e cobertura (`regras.ts#gateMudou`); mudou,
+relê a sessão. Antes de publicar a etapa não toca a criança, e da explicação em
+diante o passo é dela. O Mural é relido quando a etapa da sessão passa À FRENTE
+da do Mural na tela — "diferente" releria em laço se o Mural voltasse adiantado.
+
+**E na porta fechada** (ADR-146): o 403 da abertura relê `GET /a-selecao/sessao`
+a cada 5 s, com a aba visível, e entra sozinho — antes, só com F5.
+
+## A marcação (1.3.0, ADR-170)
+
+`clone/marcacao.tsx`, no passo `marcacao` (etapa da turma entre o Mural e as
+fichas): a grade do colega (`MediaGrid` `selectable`, um id só), "Nada que mude
+a história" (`ButtonUnv`, `aria-pressed`), o "por quê?" opcional
+(`TextFieldUnv` + "Guardar") e a própria publicação embaixo, sem ação. Grava ao
+tocar, a última vale, e NENHUMA resposta tem aviso. Lê o MESMO `GET mural` (o
+par já congelado). Da marcação a telemetria leva só "post" ou "nenhum", nunca
+QUAL post (o id do colega, para quem conhece a cobertura, é o enquadramento), e
+do "por quê?" só o tamanho. A reflexão enviada encerra a missão e chama
+`concluir()` do hub ali.
+
+## `sessionStorage`: só ids e números, e a chave leva o `sessaoId`
+
+`lib/memoria.ts`: os salvos, os desmarcados, o tempo de feed e o card da E5.
+(A marcação não mora aqui: a api a guarda e o estado a devolve.) Nunca texto (a legenda em edição some num F5, de
+propósito), nunca `localStorage` (a máquina da escola é compartilhada). A chave
+leva o `sessaoId`: "Zerar a turma" cria outra sessão, e os salvos da rodada
+anterior não reaparecem.
+
+## Os posts sem fotografia (`lib/graficos.ts`)
+
+`imagem.url` nula → o card procedural com a descrição da imagem; `grafico` → o
+SVG desenhado dos NÚMEROS (barras, linhas, mapa de calor). **Todos os cards
+procedurais são iguais em forma** (critério 1 do brief: a categoria não pode ser
+adivinhável pela forma) — há teste. No feed o card é texto de verdade (o
+`children` do `PostCard.Media`); na grade e no Story, que só aceitam `src`, é o
+mesmo desenho em `data:` URI, com a cor lida dos tokens `--insta-*` em tempo de
+execução (`componentes/midia.tsx#lerPaleta`). O `alt` do gráfico é escrito do que
+o desenho mostra, não o `imagem.alt` da api (que descreve a imagem que o brief
+pediu, e não foi desenhada).
+
+## Props do DS que enganam (0.2.7)
+
+- `StoryViewer` e `MediaGrid` exigem `src` e sempre montam `<img>` — daí o
+  `data:` URI para o procedural e o gráfico.
+- `PostCard.Media` com `src` que falha tira o `<img>` da árvore; desde a 0.2.7 o
+  `errorDescription` (padrão: o `alt`) devolve a descrição sob o aviso — não
+  remonte a descrição dentro do `errorLabel`, que ela sairia duas vezes.
+- `Badge` tem `white-space: nowrap` por padrão: tag longa pede `wrap`.
+- `TopBar` e `DirectThread` reservam os 44 px da status bar por padrão, e o
+  aparelho do hub não desenha status bar: aqui vão com `withStatusBarInset={false}`.
+- `TabBar` sem `items` desenha as cinco abas do Figma — ver "Ausências".
+- `ConfirmDialog`, `BottomSheet` modal e `FloatingButton` se posicionam contra o
+  contêiner posicionado mais próximo: `.tela` é `position: relative`.
+
+## Ausências deliberadas
+
+- **Barra inferior com DUAS abas** (Feed e Salvos). A spec declara sem busca,
+  sem Explorar, sem criar publicação (§5); desenhar os ícones mudos seria pôr
+  alvos que não fazem nada.
+- **Sem contador da sala na espera** (`e3.feedback.contador_sala`): a rota de gate
+  é magra (ADR-93) e não traz contagem; inventar o número seria a tela mentindo.
+- **Sem "há 2 horas" no Mural** (`e4.feedback.tempo_post`): a publicação é de
+  minutos atrás, e o pico tem teto de 4 elementos.
+- **Sem avanço automático do Story**: a imagem sairia da tela no meio da conversa
+  da sala (e WCAG 2.2.2).
+- **Sem `PhoneFrame`**: o aparelho é do hub (`viewport`).
+
+## As compensações — nenhuma aberta
+
+A dica do feed e o aviso da poda são o `InlineHint` (com `announce`), o gesto o
+`GestureHint`, a tarja de rede o `SnackbarUnv` (sempre montado, para o leitor de
+tela anunciar), a etiqueta que quebra o `BadgeUnv wrap`. As barras do
+"Equilíbrio editorial" não são pedido: são a ficção que a missão acrescenta.
+
+## O Unoovista (1.1.0, ADR-135)
+
+Cópia ESTRUTURAL do `instanooria` (ponte, `data-unv-theme`, `--unv-*`); três
+medidas do `globals.css`/`feed.tsx` leem o pacote — comentadas lá.
+
+## Os ajustes do PO (1.2.0, ADR-146)
+
+- **No feed, só o salvar**: curtir, comentar e compartilhar (e a dica das cinco
+  curtidas) desviavam do único gesto que conta. A contagem fica: é prova social
+  que a criança LÊ. `actions={[]}` veio no DS 0.2.18 (PR #19 do `storybook-unooria`).
+- **Comentário tem autor**; "Ver todos os N comentários" saiu (nada a abrir).
+- **"Confirmar publicação" é roxo**: o vermelho dizia "erro" no gesto pedido.
+- **O Mural abre no par**, com a legenda do post sobre a imagem
+  (`.legenda-do-post`, `pointer-events: none`: os toques vão ao `StoryViewer`).
+- **A foto da Amara é SVG** (`src/assets/amara.svg`, sem binário), à espera do PO.
+
+## A copy ESCRITA AQUI
+
+O que o sheet não tinha e a tela precisou está marcado `ESCRITA AQUI` em
+`lib/textos.ts`. O inventário para o PO revisar mora no `README.md` desta pasta,
+não aqui.
+
+## Para quem escreve e2e desta missão
+
+- As armadilhas que a suíte e2e (`scripts/e2e/estudante/11-a-selecao.mjs`) já
+  contorna, e que valem para quem escrever outra: o `fill` do Chrome DevTools/
+  Playwright pode não mover o estado controlado do `TextArea` (o contador fica
+  parado) — digite, ou dispare `input`. A marcação casa o post do colega pela
+  grade (`aria-label` "Publicação de {nome}"), nunca pela posição.

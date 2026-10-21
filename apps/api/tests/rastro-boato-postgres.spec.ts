@@ -7,7 +7,7 @@ import { liberarParaTeste } from "./liberar-de-teste";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * Integração da exp-06 no Postgres: RLS, a porta da sala, a cota de auditoria,
+ * Integração da exp06ef2b no Postgres: RLS, a porta da sala, a cota de auditoria,
  * o latch da decisão, o gate da aula e a corrida em "enviar".
  *
  * UMA ESCOLA POR SUÍTE (o Jest paraleliza suítes; limpeza compartilhada
@@ -28,6 +28,7 @@ let turmaId = "";
 let estudanteA = "";
 let estudanteB = "";
 let estudanteSemTurma = "";
+let professora = "";
 
 const TRES_FONTES = ["msg-boato-01", "msg-audio-anonimo", "msg-laudo-pdf"] as const;
 
@@ -52,6 +53,18 @@ async function codigoDe(promessa: Promise<unknown>): Promise<string | null> {
     }
     throw e;
   }
+}
+
+/** A professora DA turma: só ela lê o texto livre da criança (H07.1.4). */
+async function professoraDaTurma(escolaId: string, turma: string, username: string) {
+  const prof = await prisma.user.create({
+    data: { role: "professor", escolaId, username, displayName: "Professora Teste", passwordHash: "x" },
+    select: { id: true },
+  });
+  await prisma.matricula.create({
+    data: { escolaId, turmaId: turma, usuarioId: prof.id, papel: "professor", principal: false, inicio: new Date(Date.UTC(2026, 0, 1)) },
+  });
+  return prof.id;
 }
 
 /** Audita as três fontes que sustentam a descoberta. */
@@ -83,10 +96,11 @@ beforeAll(async () => {
   estudanteA = (await criar("rastro.ana", "Ana Teste", true)).id;
   estudanteB = (await criar("rastro.bia", "Bia Teste", true)).id;
   estudanteSemTurma = (await criar("rastro.sem", "Sem Turma", false)).id;
+  professora = await professoraDaTurma(ESCOLA, turmaId, "rastro.prof");
 
   /* A PORTA DA SALA (ADR-69): sem esta linha `estudanteDaEscola` — o funil de
      todas as rotas de estudante — recusa com 403 `missao-nao-liberada`. */
-  await liberarParaTeste(prisma, ESCOLA, turmaId, "exp-06-rastro-boato", estudanteA);
+  await liberarParaTeste(prisma, ESCOLA, turmaId, "exp06ef2b", estudanteA);
 });
 
 afterAll(async () => {
@@ -97,10 +111,10 @@ afterAll(async () => {
 describe("tenancy no banco", () => {
   test("as quatro tabelas têm RLS habilitada E forçada, com uma política por escola", async () => {
     const tabelas = [
-      "exp_06_sessoes",
-      "exp_06_auditorias",
-      "exp_06_reflexoes",
-      "exp_06_gates_turma",
+      "exp06ef2b_sessoes",
+      "exp06ef2b_auditorias",
+      "exp06ef2b_reflexoes",
+      "exp06ef2b_gates_turma",
     ];
     for (const tabela of tabelas) {
       const [linha] = await prisma.$queryRawUnsafe<
@@ -125,7 +139,7 @@ describe("tenancy no banco", () => {
     await service.decisao(ESCOLA, estudanteA, turmaId, "B", 30, false);
     await expect(
       prisma.$executeRawUnsafe(
-        `UPDATE exp_06_sessoes SET score = 85 WHERE escola_id = '${ESCOLA}'`,
+        `UPDATE exp06ef2b_sessoes SET score = 85 WHERE escola_id = '${ESCOLA}'`,
       ),
     ).rejects.toThrow();
   });
@@ -135,7 +149,7 @@ describe("tenancy no banco", () => {
     // relatório que mente.
     await expect(
       prisma.$executeRawUnsafe(
-        `UPDATE exp_06_sessoes SET passo = 'fim' WHERE escola_id = '${ESCOLA}'`,
+        `UPDATE exp06ef2b_sessoes SET passo = 'fim' WHERE escola_id = '${ESCOLA}'`,
       ),
     ).rejects.toThrow();
   });
@@ -144,7 +158,7 @@ describe("tenancy no banco", () => {
     // Um campo com três espaços contaria como percurso entregue no painel.
     await expect(
       prisma.$executeRawUnsafe(
-        `INSERT INTO exp_06_reflexoes (escola_id, estudante_id, texto, chars_count)
+        `INSERT INTO exp06ef2b_reflexoes (escola_id, estudante_id, texto, chars_count)
          VALUES ('${ESCOLA}', '${estudanteA}'::uuid, '   ', 3)`,
       ),
     ).rejects.toThrow();
@@ -299,13 +313,22 @@ describe("o painel do professor", () => {
   });
 
   test("mostra progresso, a distribuição A/B/C e o texto do percurso", async () => {
-    const painel = await service.painel(ESCOLA, turmaId);
+    const painel = await service.painel(ESCOLA, turmaId, professora);
     expect(painel.resumo.total).toBeGreaterThanOrEqual(2);
     expect(painel.resumo.distribuicao.A).toBeGreaterThanOrEqual(1);
     const bia = painel.estudantes.find((e) => e.estudanteId === estudanteB);
     expect(bia?.entregouPercurso).toBe(true);
     expect(bia?.reflexaoTexto).toContain("medo");
     expect(bia?.auditouTudo).toBe(true);
+  });
+
+  test("a gestão vê que entregou, mas não lê o texto da criança (H07.1.4)", async () => {
+    // Gestor e admin chegam ao mesmo painel sem `professorId`.
+    const painel = await service.painel(ESCOLA, turmaId);
+    const bia = painel.estudantes.find((e) => e.estudanteId === estudanteB);
+    expect(bia?.entregouPercurso).toBe(true);
+    expect(bia?.reflexaoTexto).toBeNull();
+    expect(JSON.stringify(painel)).not.toContain("medo");
   });
 
   test("zerar a turma apaga o estado e o percurso, e a missão pode ser refeita", async () => {

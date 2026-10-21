@@ -2,6 +2,9 @@ import { z } from "zod";
 import { PERFIS_COM_QUOTA } from "../ai/quota.service";
 import { PRODUTOS } from "./catalogo";
 import { DetalheDeQuotaSchema } from "./auditoria";
+import { COMPONENTES_DE_PRECO, MODELO_DE_PRECO_RE, ehDiaValido } from "./custos-de-ia";
+import { MAXIMO_DAS_INSTRUCOES } from "../ajuda/prompt";
+import { ATENDENTES, CHAVES_DE_LIMITE, MAXIMO_POR_DIA, MODELO_DO_MASCOTE_RE, NOMES_DAS_VOZES } from "../ajuda/regras";
 
 /**
  * O que o hub precisa saber para montar os cards e trancar as rotas de produto.
@@ -19,7 +22,9 @@ const EfetivoSchema = z.object({
 });
 
 export const RecursosEfetivosSchema = z.object({
-  /** Um por produto do vocabulário, sempre os quatro — nunca só os ligados. */
+  /** Um por produto do vocabulário, SEMPRE todos (hoje cinco) — nunca só os
+   *  ligados. Inclui o produto sem experiência (`agente-professor`): é por aqui
+   *  que o hub decide montar o botão flutuante. */
   produtos: z.record(z.enum(PRODUTOS), EfetivoSchema),
   /** Uma por experiência do catálogo desta instalação. */
   experiencias: z.record(z.string(), EfetivoSchema),
@@ -64,10 +69,31 @@ const ExperienciaNoPainelSchema = z.object({
   versaoAtiva: z.string(),
   /** Versão fixada NESTE escopo; `null` = segue a ativa. */
   versaoFixa: z.string().nullable(),
+  /** Desde quando a `versaoFixa` vale (ISO 8601); `null` sem fixação. */
+  fixadaEm: z.string().nullable(),
+  /** Fixada há mais de `DIAS_PARA_LEMBRAR_FIXACAO` dias (H10.3.3). */
+  fixacaoEsquecida: z.boolean(),
+});
+
+/** Uma fixação da REDE INTEIRA que passou do prazo — em qualquer escopo, não só
+ *  no que está aberto: a escola esquecida é justamente a que ninguém abre. */
+const FixacaoEsquecidaSchema = z.object({
+  expId: z.string(),
+  nome: z.string(),
+  /** O escopo da fixação; `null` = o contrato inteiro. */
+  escolaId: z.string().nullable(),
+  escopo: z.string(),
+  versao: z.string(),
+  fixadaEm: z.string().describe("ISO 8601, em UTC — quem formata é a tela (ADR-98/99)."),
+  dias: z.number().int().nonnegative(),
 });
 
 const ProdutoNoPainelSchema = z.object({
   slug: z.enum(PRODUTOS),
+  /** O que vale sem linha em escopo nenhum — `false` para o produto em teste
+   *  interno (`PRODUTOS_DESLIGADOS_POR_PADRAO`). É o que a tela escreve em
+   *  "Padrão (…)": sem isto ela diria "ligado" de um produto que nasce desligado. */
+  ligadoPorPadrao: z.boolean(),
   estadoAqui: z.enum(ESTADOS_DO_INTERRUPTOR),
   efetivo: EfetivoNoPainelSchema,
   experiencias: z.array(ExperienciaNoPainelSchema),
@@ -82,6 +108,9 @@ export const PainelSchema = z.object({
     tipo: z.string().nullable(),
   }),
   produtos: z.array(ProdutoNoPainelSchema),
+  /** As versões fixadas há mais de 30 dias, na rede inteira, da mais antiga
+   *  para a mais nova (H10.3.3). */
+  fixacoesEsquecidas: z.array(FixacaoEsquecidaSchema),
 });
 
 /**
@@ -252,4 +281,225 @@ export const DefinirQuotaDeIaSchema = z.object({
 export const QuotaAlteradaSchema = QuotaDeIaSchema.extend({
   /** `false` quando o valor pedido já era o que valia: nada foi gravado nem historiado. */
   alterada: z.boolean(),
+});
+
+/* ==========================================================================
+   OS MINUTOS DA AJUDA (ADR-132) — só `admin`, como a quota de IA
+
+   A Ajuda com avatar fica FORA da quota de tokens; o que a limita é o tempo de
+   vídeo, que é o que o vendor cobra. Mesmo desenho de `ia_quotas`: uma linha
+   por chave, escopo do contrato, motivo obrigatório, histórico em
+   `recursos_auditoria` (`quota-alterada`, `recurso_id` = `ajuda:<chave>`).
+   ========================================================================== */
+
+export const ChaveDeLimiteSchema = z.enum(CHAVES_DE_LIMITE);
+
+export const LimiteDaAjudaSchema = z.object({
+  chave: ChaveDeLimiteSchema,
+  minutos: z.number().int().positive(),
+  motivo: z.string().nullable(),
+  /** `null` = veio da migration; ninguém decidiu ainda. */
+  definidoPorNome: z.string().nullable(),
+  definidoEm: z.string().datetime(),
+});
+
+export const LimitesDaAjudaSchema = z.object({
+  /** Sempre uma por chave de `CHAVES_DE_LIMITE`, na ordem da tupla. */
+  limites: z.array(LimiteDaAjudaSchema),
+});
+
+export const DefinirLimiteDaAjudaSchema = z.object({
+  minutos: z
+    .number()
+    .int("o limite é um número inteiro de minutos")
+    .positive("o limite tem de ser maior que zero — para fechar a Ajuda, desligue o produto")
+    .max(MAXIMO_POR_DIA, `acima do teto de sanidade (${MAXIMO_POR_DIA} minutos)`),
+  /** Obrigatório SEMPRE, como na quota de IA. */
+  motivo: z.string().trim().min(3, "diga por quê — o motivo fica no histórico").max(500),
+});
+
+export const LimiteAlteradoSchema = LimiteDaAjudaSchema.extend({
+  /** `false` quando o valor pedido já era o que valia: nada foi gravado nem historiado. */
+  alterado: z.boolean(),
+});
+
+/* ==========================================================================
+   A CONFIGURAÇÃO DA AJUDA (ADR-158) — só `admin`, ao lado dos minutos
+
+   Quem atende por padrão (o mascote ou o avatar em vídeo), se a pessoa pode
+   trocar, e os ajustes do mascote (voz, modelo do Live, boca). UMA linha
+   (`ajuda_configuracao`), motivo obrigatório, histórico em `recursos_auditoria`
+   (`configuracao-alterada`, `recurso_id` = `ajuda:configuracao`).
+   ========================================================================== */
+
+const InstrucoesSchema = z
+  .string()
+  .trim()
+  .min(20, "escreva as instruções — vazio, vale o texto padrão")
+  .max(MAXIMO_DAS_INSTRUCOES, `até ${MAXIMO_DAS_INSTRUCOES} caracteres`);
+
+export const ConfiguracaoDaAjudaSchema = z.object({
+  atendentePadrao: z.enum(ATENDENTES),
+  permitirTroca: z.boolean(),
+  mascoteVoz: z.enum(NOMES_DAS_VOZES),
+  mascoteModelo: z.string().regex(MODELO_DO_MASCOTE_RE, "use o nome do modelo do Live, por exemplo gemini-3.8-live"),
+  mascoteSensibilidade: z.number().min(0).max(1),
+  mascoteSuavizacao: z.number().min(0).max(1),
+  mascoteAntecipacaoMs: z.number().int().min(0).max(200),
+  mascoteBocaRepouso: z.number().min(0).max(1),
+  /**
+   * As instruções de "como responder" de cada atendente (ADR-165). `null` = o
+   * texto padrão do código. Só o comportamento é editável: a base de
+   * conhecimento e "quem está falando" a api monta sempre.
+   */
+  instrucoesMascote: InstrucoesSchema.nullable(),
+  instrucoesAvatar: InstrucoesSchema.nullable(),
+});
+
+export const ConfiguracaoDaAjudaLidaSchema = ConfiguracaoDaAjudaSchema.extend({
+  /** O texto padrão de cada atendente — o painel mostra e oferece "restaurar". */
+  instrucoesPadrao: z.object({ mascote: z.string(), avatar: z.string() }),
+  motivo: z.string().nullable(),
+  /** `null` = veio da migration; ninguém decidiu ainda. */
+  definidoPorNome: z.string().nullable(),
+  definidoEm: z.string().datetime(),
+  /** O que está montado nesta stack — o painel avisa quando o padrão não pode abrir. */
+  disponiveis: z.object({ mascote: z.boolean(), avatar: z.boolean() }),
+  /** As vozes que o painel oferece, com o jeito de cada uma. */
+  vozes: z.array(z.object({ nome: z.string(), jeito: z.string() })),
+});
+
+export const DefinirConfiguracaoDaAjudaSchema = ConfiguracaoDaAjudaSchema.extend({
+  /** Obrigatório SEMPRE, como nos minutos. */
+  motivo: z.string().trim().min(3, "diga por quê — o motivo fica no histórico").max(500),
+}).strict();
+
+export const ConfiguracaoAlteradaSchema = ConfiguracaoDaAjudaLidaSchema.extend({
+  /** `false` quando nada mudou: nada foi gravado nem historiado. */
+  alterada: z.boolean(),
+});
+
+/* ======================================================================
+   ARQUIVADAS (ADR-116) — o que saiu do produto sem ser apagado
+   ====================================================================== */
+
+export const ExperienciaArquivadaSchema = z.object({
+  /** `backup-` + o código que ela tinha. */
+  expId: z.string(),
+  codigoDeOrigem: z.string(),
+  nome: z.string(),
+  /** A versão que estava no ar quando foi arquivada. */
+  versao: z.string(),
+  series: z.array(z.string()),
+  unidade: z.number().int().nullable(),
+  produto: z.string().nullable(),
+  motivo: z.string(),
+  /**
+   * A FOTOGRAFIA do arquivamento, tirada pela migração: turmas que tinham
+   * liberado a experiência e estudantes com progresso nela. Não é recontada em
+   * tempo de uso — contar `liberacoes` e `progresso` de todas as escolas seria
+   * uma query que atravessa a RLS, e nenhuma rota do `admin` faz isso.
+   */
+  turmasGuardadas: z.number().int(),
+  estudantesGuardados: z.number().int(),
+  arquivadaEm: z.string(),
+});
+
+export const ExperienciasArquivadasSchema = z.object({
+  arquivadas: z.array(ExperienciaArquivadaSchema),
+});
+
+/* ==========================================================================
+   CUSTOS DE IA — só `admin` (ADR-161)
+
+   O FinOps da Unooria: o que cada produto gastou de IA, em tokens, em dólar e
+   em real (PTAX do Banco Central). Mesma razão da quota (ADR-105): é o custo
+   variável da fornecedora, não informação do cliente.
+   ========================================================================== */
+
+const diaIso = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine(ehDiaValido, "dia inexistente no calendário");
+
+/** `z.object` puro (o `@Contrato` exige): a ordem do período o controller confere, com a frase certa. */
+export const PeriodoDosCustosSchema = z.object({ de: diaIso.optional(), ate: diaIso.optional() });
+
+const NumerosDoGrupoSchema = z.object({
+  usd: z.number(),
+  /** `null` = nenhum dia do grupo tinha cotação (o BCB nunca respondeu nesta stack). */
+  brl: z.number().nullable(),
+  tokensEntrada: z.number(),
+  tokensSaida: z.number(),
+  chamadas: z.number(),
+  falhas: z.number(),
+  imagens: z.number(),
+  segundos: z.number(),
+  minutos: z.number(),
+  /** Alguma linha do grupo foi ESTIMADA (a voz): a tela mostra "≈". */
+  estimado: z.boolean(),
+  /** Algum modelo do grupo não tem preço vigente: o custo está INCOMPLETO. */
+  semPreco: z.boolean(),
+  semCotacao: z.boolean(),
+});
+
+const CotacaoSchema = z.object({ dia: z.string(), compra: z.number(), venda: z.number(), cotadoEm: z.string() });
+
+export const PainelDeCustosSchema = z.object({
+  periodo: z.object({ de: z.string(), ate: z.string() }),
+  cotacao: z.object({
+    ultima: CotacaoSchema.nullable(),
+    /** A tentativa de atualizar agora falhou: o painel converte com o que tem. */
+    falhou: z.boolean(),
+    fonte: z.literal("Banco Central do Brasil — PTAX de venda"),
+  }),
+  totais: z.object({
+    usd: z.number(),
+    brl: z.number().nullable(),
+    tokensEntrada: z.number(),
+    tokensSaida: z.number(),
+    chamadas: z.number(),
+    falhas: z.number(),
+    imagens: z.number(),
+    segundosDeAudio: z.number(),
+    minutosDeVideo: z.number(),
+  }),
+  porDia: z.array(NumerosDoGrupoSchema.extend({ dia: z.string() })),
+  porRecurso: z.array(NumerosDoGrupoSchema.extend({ recurso: z.string(), nome: z.string() })),
+  porModelo: z.array(NumerosDoGrupoSchema.extend({ modelo: z.string(), modalidade: z.enum(["texto", "imagem", "audio", "video"]) })),
+  porModalidade: z.array(NumerosDoGrupoSchema.extend({ modalidade: z.enum(["texto", "imagem", "audio", "video"]) })),
+  porEscola: z.array(NumerosDoGrupoSchema.extend({ escolaId: z.string(), nome: z.string() })),
+  /** Os modelos com consumo no período e SEM preço vigente — a conta deles é zero. */
+  modelosSemPreco: z.array(z.string()),
+});
+
+export const ComponenteDePrecoSchema = z.enum(COMPONENTES_DE_PRECO);
+
+export const PrecoDeIaSchema = z.object({
+  id: z.string(),
+  modelo: z.string(),
+  componente: ComponenteDePrecoSchema,
+  /** Por 1 milhão de tokens (`entrada`/`saida`) ou por minuto (`minuto`). */
+  usd: z.number(),
+  vigenteDesde: z.string(),
+  motivo: z.string().nullable(),
+  /** `null` = veio da migration (a semente com o preço de lista). */
+  definidoPorNome: z.string().nullable(),
+  definidoEm: z.string(),
+});
+
+export const PrecosDeIaSchema = z.object({
+  precos: z.array(PrecoDeIaSchema),
+  /** Os modelos que já apareceram no consumo — o formulário os sugere. */
+  modelosEmUso: z.array(z.string()),
+});
+
+export const DefinirPrecoDeIaSchema = z.object({
+  modelo: z.string().trim().toLowerCase().regex(MODELO_DE_PRECO_RE, "só letras minúsculas, dígitos, ponto, hífen e sublinhado"),
+  componente: ComponenteDePrecoSchema,
+  /** Teto de sanidade: nenhum modelo de hoje passa de US$ 200 por milhão; um zero a mais não vira a fatura. */
+  usd: z.number().min(0).max(10_000),
+  vigenteDesde: diaIso,
+  /** Obrigatório, como na quota: é ele que diz, meses depois, se foi desconto de contrato ou correção. */
+  motivo: z.string().trim().min(3).max(500),
 });

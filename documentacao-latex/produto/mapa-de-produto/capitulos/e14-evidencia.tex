@@ -1,0 +1,682 @@
+% ===========================================================================
+%  E14 — Evidência pedagógica
+% ===========================================================================
+\chapter{E14 \textperiodcentered{} Evidência pedagógica}
+\label{ep:e14}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] A plataforma registra, para cada estudante, quais habilidades
+    da BNCC ele demonstrou numa atividade de uma missão, rodada a rodada, e o
+    professor lê, corrige e leva esse retrato para a avaliação dele.
+  \item[Para quem] Professor (lê, confirma e ajusta) e Estudante (responde às
+    perguntas da missão, sem ver o próprio resultado). A Coordenação e a
+    Administração consultam, sem mexer.
+  \item[Valor] A missão já via o que a criança fazia --- tirou o post do ar,
+    respondeu a pergunta ---, e isso ficava dentro dela. No fim do bimestre, o
+    professor não tinha como dizer \enquote{a Ana atingiu a EF08CO05 e o Caio
+    ainda está em processo}, que é a frase que a rede pede e que a BNCC
+    organiza.
+  \item[Estado] \parcial{} --- a base está pronta na plataforma, e quatro
+    missões já têm a régua pedagógica: a versão nova de Quem mandou isso?, A
+    Seleção, o Jornal da Escola e O Júri Estadual de Projetos (\id{H14.1.2}).
+    As quatro o teste de ponta a ponta percorre como estudante e como
+    professor. O de Quem mandou isso? já passa pela rodada nova que o
+    \enquote{Zerar} abre e pelo ajuste do professor num estudante; falta um
+    teste que passe pelas equipes, pela aula projetada, pelo ajuste de vários
+    estudantes e pelo \enquote{Não participou}. O painel de habilidades
+    (\id{F14.7}) já junta tudo por turma, escola, regional e rede; falta a planilha
+    para a coordenação.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F14.1} & A régua pedagógica de cada missão & \parcial\\
+\zebra \id{F14.2} & O registro por atividade e rodada & \parcial\\
+\id{F14.3} & Equipes e aula projetada & \parcial\\
+\zebra \id{F14.4} & O painel e o ajuste do professor & \parcial\\
+\id{F14.5} & A pergunta de múltipla escolha & \pronto\\
+\zebra \id{F14.6} & O perfil do aluno & \parcial\\
+\id{F14.7} & O painel de habilidades & \parcial\\
+\bottomrule
+\end{tabularx}
+
+\section{O que é uma evidência aqui}
+
+\textbf{Evidência é o nível que um estudante demonstrou numa habilidade da
+BNCC}, dentro de uma atividade de uma missão, numa rodada. Três ideias a
+sustentam:
+
+\begin{itemize}
+  \item \textbf{A atividade é da missão.} Cada missão diz quais são as suas
+    atividades; a plataforma não tem, por ora, uma \enquote{atividade} dela
+    mesma. No Unoovista é a que o professor cria a partir da aula
+    (\id{H06.6.1}); em Quem mandou isso? é o pacote de mensagens que o
+    professor aprova para a turma (\id{H06.11.1}); na A Seleção é a cobertura,
+    o tema que o professor aprova com os seus 12 posts (\id{H06.12.1}); e no
+    Jornal da Escola, o pacote das oito notícias --- o banco padrão ou o que o
+    professor gerou e aprovou (\id{H06.10.4}); e no Júri Estadual, a mostra de
+    quarenta estandes, a pronta da Unooria ou a que o professor gerou e aprovou (\id{H06.14.1}). O UnooriaAI será refeito com
+    atividades numa próxima onda (o UnooTube foi arquivado).
+  \item \textbf{A rodada é cada vez que a atividade é feita.} Voltar a usar a
+    atividade abre uma rodada nova, e a anterior fica guardada. O
+    \enquote{Zerar a turma} é diferente: apaga as habilidades da atividade, e a
+    turma é avaliada do zero (\id{H14.2.4}).
+  \item \textbf{A régua pedagógica diz o que a missão mede}: quais habilidades,
+    em quais momentos, qual pergunta e quanto vale cada alternativa.
+\end{itemize}
+
+A escala tem três níveis --- \textbf{atingiu}, \textbf{em processo} e
+\textbf{não atingiu} ---, e a falta de registro é \enquote{Não avaliado}, que
+nunca conta como não atingiu.
+
+\begin{nota}
+\textbf{Duas missões entraram com a régua.} As histórias marcadas
+\parcial{} neste épico têm a regra construída e testada, e desde a versão nova
+de Quem mandou isso?, A Seleção, o Jornal da Escola e O Júri Estadual de
+Projetos (\id{H14.1.2}) o bloco \enquote{Habilidades da BNCC} aparece nos
+resultados delas. Os testes que percorrem as três primeiras já
+rodam e conferem o bloco, e as histórias por onde eles passam estão \pronto{} ---
+entre elas a rodada nova que o \enquote{Zerar} abre (\id{H14.2.2}). As outras
+passam a \pronto{} quando houver um teste que percorra as equipes, a aula
+projetada, o ajuste de vários estudantes, o \enquote{Não participou}, a ordem
+da lista e um perfil com conteúdo --- e a consulta da coordenação, quando
+houver a tela dela (\id{H14.4.4}). A pergunta de múltipla escolha
+(\id{H14.5.1}) já está pronta. O Unoovista ganhou a régua dele em 7 de
+outubro de 2026 (\id{H06.6.8}).
+\end{nota}
+
+\section{O que foi decidido}
+
+\begin{decisao}
+\textbf{Decidido em 25 de setembro de 2026.}
+\begin{itemize}
+  \item \textbf{Esta frente é só a plataforma.} Nenhuma missão foi adaptada; cada
+    uma entra depois, com a sua régua.
+  \item \textbf{Três níveis e um \enquote{Não avaliado}.} Sem registro, a
+    habilidade é \enquote{Não avaliado}, e nunca conta como não atingiu.
+    \enquote{Não participou} é o \enquote{Não avaliado} que o professor põe à
+    mão.
+  \item \textbf{Vale o melhor.} Dentro de uma rodada, dois momentos que medem a
+    mesma habilidade ficam com o melhor; o resultado da atividade é a melhor
+    rodada de cada habilidade.
+  \item \textbf{Quem vale mais}: o professor, depois o próprio estudante, depois
+    a equipe. A equipe recebe só o nível, nunca texto nenhum.
+  \item \textbf{Trocar a equipe muda só a rodada em andamento.} As rodadas
+    passadas ficam com a equipe que tinham, e o que estiver errado nelas o
+    professor corrige à mão.
+  \item \textbf{Diferente do documento do PO: a aula projetada não vale
+    sozinha.} O pedido era replicar automaticamente para todos, também quando a
+    turma inteira usa um computador só. Na projeção, o resultado chega \enquote{a
+    revisar} e só conta depois de \enquote{Confirmar para a turma}: a criança no
+    fundo da sala não demonstrou o que a turma respondeu no telão.
+  \item \textbf{Cada missão tem as suas atividades.} Uma atividade comum a todas
+    as missões fica para quando houver mais de uma missão com atividades.
+  \item \textbf{A resposta certa fica na plataforma.} Na pergunta de múltipla
+    escolha vale a primeira resposta, e o estudante só vê \enquote{resposta
+    enviada}.
+  \item \textbf{O estudante não vê o próprio resultado, e não há ranking.}
+  \item \textbf{O perfil é por missão e por atividade.} A mesma habilidade
+    medida em duas missões aparece nas duas; juntar as missões é de um painel
+    futuro, com regra pedagógica própria (\id{H14.6.2}).
+\end{itemize}
+\end{decisao}
+
+% ---------------------------------------------------------------------------
+\feature{F14.1}{A régua pedagógica de cada missão}{\parcial}
+
+\begin{historia}{H14.1.1}{Cada missão diz o que mede}{\parcial}
+\hu{Equipe pedagógica da Unooria}{definir, para cada missão, quais habilidades
+da BNCC ela mede e em quais momentos}{que o painel do professor afirme só o que
+a missão de fato observa}
+\aceite
+\begin{itemize}
+  \item A régua lista as habilidades pelo código exato da BNCC (ex.:
+    EF08CO05), os momentos que medem cada uma --- uma ação dentro da missão ou
+    uma pergunta de múltipla escolha --- e, em cada pergunta, quanto vale cada
+    alternativa: atingiu, em processo ou não atingiu.
+  \item A plataforma não aceita régua com habilidade que não existe na BNCC,
+    com alternativa fora da escala ou com pergunta que nenhum momento corrige.
+  \item Mudou a régua, muda a versão; cada registro guarda a versão que valia
+    quando foi feito.
+  \item Missão sem régua não mostra evidência nenhuma.
+\end{itemize}
+\pendencia{as réguas que existem são a de Quem mandou isso? (\id{H14.1.2}), a
+da A Seleção (\id{F06.12}), a do Jornal da Escola (\id{H06.10.4}), a do Júri
+Estadual (\id{F06.14}), a do Unoovista (\id{H06.6.9}) e a da Missão Tempestade
+(\id{H06.8.6}); as outras missões não têm régua.}
+\end{historia}
+
+\begin{historia}{H14.1.2}{A primeira missão entra com a régua}{\pronto}
+\hu{Professor}{que a primeira missão com atividades venha com a régua
+pedagógica}{ver, nos resultados da missão, as habilidades que cada estudante
+demonstrou}
+\aceite
+\begin{itemize}
+  \item A primeira é a versão nova de Quem mandou isso? (\id{F06.11}), e não o
+    Unoovista, que era a candidata: a missão do 5º ano chegou primeiro, já
+    desenhada com as perguntas do PO.
+  \item A régua mede três habilidades de Computação, cada uma pelo que o
+    estudante faz num momento que exige o que a habilidade pede. A EF05CO08,
+    pelas três mensagens que o estudante manda ao Mural: só três verdadeiras é
+    \enquote{atingiu}; duas e uma falsa, alarmada ou de formato sério,
+    \enquote{em processo}; uma verdadeira ou nenhuma, \enquote{não atingiu}.
+  \item A EF05CO03, pelo alerta do grupo no fim do Mural (\id{H06.11.9}):
+    cada um dos quatro pedidos vale 2 pontos se o primeiro resultado já era
+    o filtro certo, 1 se só o enviado era, e 0 se nenhum; com os quatro
+    enviados, 6 a 8 pontos é \enquote{atingiu}, 3 a 5 \enquote{em
+    processo} e 0 a 2 \enquote{não atingiu}.
+  \item A EF05CO04, pelo robô do grupo montado com blocos (\id{H06.11.10}):
+    montar de primeira um robô que olha toda mensagem nova, pega a urgente e
+    alarmante e confere antes de encaminhar é \enquote{atingiu}; enviar um
+    robô que encaminha antes de conferir, \enquote{não atingiu}; o resto,
+    \enquote{em processo}.
+  \item De 16 a 20 de outubro de 2026 a EF05CO03 e a EF05CO04 foram medidas
+    pelo cartão de frases (\id{H06.11.7}) e pela regra do tio
+    (\id{H06.11.8}); os níveis que eles deram continuam no histórico.
+  \item Até 16 de outubro de 2026 a EF05CO03 e a EF05CO04 eram medidas por duas
+    perguntas da Nina (\id{H06.11.4}); os níveis que elas deram continuam no
+    histórico. Quem não faz uma das ações fica \enquote{Não avaliado} nela.
+  \item Toda rodada mede as três habilidades de novo, também com o mesmo
+    pacote, e o resultado fica com a melhor rodada.
+  \item A atividade é o pacote de mensagens aprovado para a turma, e cada
+    \enquote{Zerar Turma para Nova Aplicação} abre a rodada seguinte.
+  \item O bloco \enquote{Habilidades da BNCC} aparece nos resultados da missão.
+  \item Os códigos de Língua Portuguesa do material pedagógico ficam fora da
+    régua.
+  \item A segunda é A Seleção (\id{F06.12}): cada tema que a professora
+    aprova é uma atividade, e o \enquote{Zerar a turma} abre uma rodada nova. A
+    régua mede as duas habilidades só pelo que o estudante faz: a EF07CO11 pela
+    legenda dos Stories, que a IA lê --- a exceção declarada de \id{H09.3.1}
+    ---, e a EF07CO08 pela marcação do post do colega (\id{H06.12.8}). As
+    enquetes da Amara saíram.
+  \item A terceira é o Jornal da Escola (\id{H06.10.4}): a atividade é o pacote
+    das oito notícias, e o \enquote{Zerar a turma} abre uma rodada nova. Desde
+    16 de outubro de 2026 a régua mede as três habilidades só pelo que o
+    estudante faz, sem pergunta de marcar (\id{H06.10.8}): a EF15CO04 pelo
+    \enquote{Confio / Não confio} de cada pista e pela capa publicada; a
+    EF15CO02 pela Chave do Editor montada e pelo teste dela em duas matérias
+    novas; e a EF04CO08 pela segunda edição e pela decisão diante da mensagem
+    urgente. Nas duas últimas, o \enquote{atingiu} pede as duas partes; quem
+    não chega à segunda fica, no máximo, em processo. As marcas antigas
+    continuam guardadas.
+  \item A quarta é O Júri Estadual de Projetos (\id{F06.14}): a atividade é a
+    mostra (a pronta ou a que o professor gerou e aprovou), e o \enquote{Zerar a turma} abre
+    uma rodada nova. Desde 18 de outubro de 2026 a régua mede duas
+    habilidades, cada uma por uma tarefa só, sem pergunta: a EF06CO01, a
+    principal, pela separação dos estandes que o estudante viu nas quatro
+    áreas --- desde 20 de outubro de 2026, nas pastas do salvar, no próprio
+    feed, e contada no voto (\id{H06.14.12}; até então, numa tela logo depois
+    do voto, \id{H06.14.10}): 9 ou 10 certos de cada 10
+    atingem, de 5 a 8 ficam em processo; quem viu menos de quatro estandes fica
+    sem nível); e a EF06CO03 pela regra SE \ldots{} ENTÃO montada com peças
+    (\id{H06.14.11}: as duas partes certas atingem, uma fica em processo). A
+    EF06CO10 saiu da missão, com as três enquetes; a Galeria Oculta não conta
+    mais para o nível. Até 18 de outubro, a régua media três habilidades, cada
+    uma por um gesto e por uma enquete, valendo a melhor (a EF06CO10 pelos
+    estandes escondidos abertos na galeria, a EF06CO01 pela busca por
+    \emph{hashtag} e a EF06CO03 pela engrenagem do feed), e até 6 de outubro,
+    a EF06CO07, pela curtida remontada em pacotes; as marcas antigas continuam
+    guardadas.
+  \item A quinta é o Unoovista (\id{H06.6.9}), a candidata que tinha ficado
+    para trás: a atividade é a que o professor criou para a turma, e cada uma
+    tem uma rodada só. Desde 16 de outubro de 2026 a régua mede as três
+    habilidades pelo que o estudante faz: a EF08CO11 pelo Raio-x e pela
+    reflexão lida pela IA, a EF08CO09 pelos termos e a EF08CO07 pelo envio
+    (\id{H06.6.11} a \id{H06.6.13}). Até ali, cada uma era medida por uma
+    pergunta depois da reflexão (\id{H06.6.8}).
+  \item A sexta é a Missão Tempestade (\id{H06.8.6}), a primeira do Ensino
+    Médio. Como a missão não tem atividades, a atividade é a turma, e a rodada
+    só muda quando o professor zera a turma; o nível só conta quando o
+    professor encerra a missão na Sala de Aula. Desde 16 de outubro de 2026 a
+    régua mede seis habilidades pelo que o grupo faz: a ligação da Saúde, o
+    registro da operação, as duas comparações do resultado e o fechamento
+    (\id{H06.8.8} a \id{H06.8.12}) --- a EM13CO12, a EM13CO14, a EM13CO11, a
+    EM13CO08, a EM13CO24 e a EM13CO26. Até ali, eram quatro perguntas no
+    resultado (\id{H06.8.5}).
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F14.2}{O registro por atividade e rodada}{\parcial}
+
+\begin{historia}{H14.2.1}{Um nível por habilidade, e \enquote{Não avaliado} quando não há}{\pronto}
+\hu{Professor}{ver, para cada estudante e cada habilidade, o nível que ele
+demonstrou}{saber quem atingiu e quem ainda está em processo}
+\aceite
+\begin{itemize}
+  \item A escala tem três níveis: atingiu, em processo e não atingiu.
+  \item Sem registro, a habilidade aparece como \enquote{Não avaliado} --- e
+    nunca conta como não atingiu.
+  \item Quando dois momentos da mesma rodada medem a mesma habilidade, vale o
+    melhor: demonstrar uma vez é demonstrar.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H14.2.2}{Refazer a atividade sem perder o que já foi demonstrado}{\pronto}
+\hu{Professor}{reiniciar uma atividade para a turma tentar de novo}{dar outra
+chance sem apagar o que cada estudante já tinha mostrado}
+\aceite
+\begin{itemize}
+  \item Cada vez que a atividade é feita é uma rodada: reiniciar abre a rodada
+    seguinte, e a anterior fica guardada.
+  \item O resultado da atividade é a melhor rodada de cada habilidade: quem
+    atingiu uma habilidade na primeira rodada e outra na segunda atingiu as
+    duas.
+  \item Uma rodada pior depois não apaga o que já tinha sido demonstrado.
+  \item Voltar a usar uma atividade que já rodou abre a rodada seguinte, e a
+    tela mostra em que rodada a turma está. O \enquote{Zerar} da turma também
+    abre a rodada seguinte, mas apaga o que já tinha sido demonstrado
+    (\id{H14.2.4}).
+  \item Toda rodada mede todas as habilidades de novo, também com a mesma
+    atividade.
+  \item A rodada nova aparece no bloco logo depois do \enquote{Zerar}, sem
+    recarregar a página, com o aviso de que os resultados chegam conforme a
+    turma joga.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H14.2.4}{Zerar a turma recomeça as habilidades do zero}{\pronto}
+\hu{Professor}{zerar a turma para aplicar a missão de novo}{avaliar a turma do
+zero, sem o resultado da aplicação anterior no painel}
+\aceite
+\begin{itemize}
+  \item Em toda missão com habilidades, o \enquote{Zerar a turma} apaga as
+    respostas e os níveis da atividade, de todas as rodadas, inclusive os
+    ajustes que eu fiz.
+  \item A janela de confirmação diz que as habilidades serão apagadas antes
+    do clique.
+  \item O painel fica em \enquote{Não avaliado} logo depois de zerar, sem
+    recarregar a página, e volta a mostrar níveis só com o que a turma fizer
+    daqui para a frente.
+  \item No UnooriaAI, encerrar a missão de novo depois de zerar não traz de
+    volta as respostas de antes.
+  \item No Unoovista, o \enquote{Apagar as sessões da turma} faz o mesmo: a
+    turma pode passar de novo pela missão e ser avaliada.
+  \item Nas missões em que o zerar guarda o que a turma produziu (as escolhas,
+    os textos), isso continua na folha da turma; só as habilidades recomeçam.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H14.2.3}{Sem ranking, e o nível é da habilidade}{\parcial}
+\hu{Professor}{ler a evidência da turma sem ranking nem nota somada}{avaliar
+cada habilidade sem transformar a criança num número}
+\aceite
+\begin{itemize}
+  \item Os estudantes aparecem em ordem alfabética, nunca por desempenho.
+  \item Nenhuma tela soma os níveis numa nota: o nível é de uma habilidade, não
+    da criança.
+\end{itemize}
+\pendencia{os testes de ponta a ponta das quatro missões com régua já
+conferem que a folha da turma não tem nota nem ranking; falta conferir a ordem da lista
+no bloco de habilidades.}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F14.3}{Equipes e aula projetada}{\parcial}
+
+Quando os estudantes dividem um computador (\id{E13}), só um deles entra na
+missão. O que a missão vê naquela tela foi feito pela equipe.
+
+\begin{historia}{H14.3.1}{Quem divide o computador recebe o mesmo nível}{\parcial}
+\hu{Professor}{que o que a equipe fez junto valha para todos da equipe}{não ver
+como \enquote{Não avaliado} quem estava sentado ao lado de quem entrou}
+\aceite
+\begin{itemize}
+  \item Quando o estudante que entrou demonstra uma habilidade, os colegas do
+    mesmo computador recebem o mesmo nível.
+  \item Vai só o nível: nada do que foi escrito passa de um para o outro.
+  \item Quem entrou com o próprio login e passou por aquele momento fica com o
+    que ele mesmo fez, ainda que o colega tenha ido melhor.
+  \item O que o professor ajustou nunca é trocado pelo que veio da equipe.
+  \item Se dois da mesma equipe demonstraram a habilidade, fica o melhor.
+\end{itemize}
+\pendencia{aparece para o professor nas quatro missões com régua, Quem mandou
+isso?, A Seleção, o Jornal da Escola e O Júri Estadual (\id{H14.1.2}); o teste
+de ponta a ponta
+delas ainda não passa por aqui.}
+\end{historia}
+
+\begin{historia}{H14.3.2}{Trocar as equipes no meio da atividade}{\parcial}
+\hu{Professor}{mudar as equipes depois que a atividade começou}{corrigir quem
+sentou onde sem mexer nas aulas anteriores}
+\aceite
+\begin{itemize}
+  \item Ao salvar ou desfazer as equipes, a plataforma refaz o que veio da
+    equipe só na rodada em andamento.
+  \item As rodadas passadas ficam com a equipe que tinham naquela aula; o que
+    estiver errado nelas eu corrijo à mão (\id{H14.4.2}).
+  \item Quem saiu da equipe perde o nível que tinha recebido dela; quem entrou
+    recebe.
+  \item Salvar as equipes de novo sem mudar ninguém de lugar não desfaz a
+    confirmação que eu já tinha dado (\id{H14.3.3}).
+\end{itemize}
+\pendencia{aparece para o professor nas quatro missões com régua, Quem mandou
+isso?, A Seleção, o Jornal da Escola e O Júri Estadual (\id{H14.1.2}); o teste
+de ponta a ponta
+delas ainda não passa por aqui.}
+\end{historia}
+
+\begin{historia}{H14.3.3}{A aula projetada chega \enquote{a revisar}}{\parcial}
+\hu{Professor}{que o resultado da turma inteira diante de um computador só não
+valha para todos sem eu conferir}{não afirmar que cada criança demonstrou o que
+a turma respondeu junto}
+\aceite
+\begin{itemize}
+  \item Quando a turma inteira usa um computador --- as equipes dizem que há um
+    computador, ou uma equipe tem todos os estudantes ---, o nível chega a cada
+    um como \enquote{a revisar}.
+  \item O que está \enquote{a revisar} não conta no resultado da atividade nem
+    no perfil do estudante.
+  \item \enquote{Confirmar para a turma} faz valer, de uma vez, tudo o que está
+    a revisar naquela rodada; confirmar de novo não muda nada.
+  \item Depois de confirmar, ainda posso ajustar cada estudante (\id{H14.4.2}).
+  \item É diferente do documento do PO, que pedia a replicação automática
+    também aqui.
+\end{itemize}
+\pendencia{aparece para o professor nas quatro missões com régua, Quem mandou
+isso?, A Seleção, o Jornal da Escola e O Júri Estadual (\id{H14.1.2}); o teste
+de ponta a ponta
+delas ainda não passa por aqui.}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F14.4}{O painel e o ajuste do professor}{\parcial}
+
+\begin{historia}{H14.4.1}{Ver as habilidades da turma na página da atividade}{\pronto}
+\hu{Professor}{ver, na página da atividade, as habilidades da BNCC de cada
+estudante}{saber o que a turma demonstrou e planejar a próxima aula}
+\aceite
+\begin{itemize}
+  \item A página da atividade ganha o bloco \enquote{Habilidades da BNCC} só
+    quando a missão tem régua.
+  \item Cada estudante da turma é uma linha, com a equipe dele na missão, o
+    nível de cada habilidade em cada rodada e o resultado da atividade.
+  \item Cada habilidade vem com o texto da BNCC, e cada nível diz de onde veio:
+    do próprio estudante, da equipe, da aula projetada ou do ajuste do
+    professor.
+  \item No fim do bloco, cada habilidade traz o critério de \enquote{Atingiu},
+    \enquote{Em processo} e \enquote{Não atingiu}, para eu consultar sem
+    abrir o guia.
+  \item No resultado da atividade (a melhor rodada), o bloco diz que avaliar ou
+    alterar se faz abrindo a rodada.
+  \item O bloco diz quantos níveis de cada rodada estão \enquote{a revisar}.
+  \item Durante a aula, o bloco acompanha a turma sozinho: o nível de quem
+    acabou de publicar, de responder ou de concluir aparece sem eu recarregar a
+    página.
+  \item O bloco aparece nos resultados de Quem mandou isso?, da A Seleção, do
+    Jornal da Escola e do Júri Estadual, e na página da atividade do
+    Unoovista.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H14.4.2}{Ajustar um estudante ou vários}{\parcial}
+\hu{Professor}{corrigir o nível de um estudante, ou de vários de uma vez}{fazer
+valer o que eu vi na sala, mesmo quando a missão não viu}
+\aceite
+\begin{itemize}
+  \item Posso ajustar a qualquer momento, mesmo com a missão encerrada.
+  \item Posso ajustar um estudante ou vários de uma vez, numa habilidade e numa
+    rodada.
+  \item O ajuste vale sobre tudo: nem o que o estudante fizer depois, nem a
+    equipe, o trocam.
+  \item Cada mudança fica no histórico --- de quê para quê, quem mudou e quando
+    ---, e o histórico não pode ser reescrito.
+  \item Posso dizer o motivo do ajuste --- revisei o trabalho do estudante, ele
+    estava presente e não quis participar, problema técnico, outro ---, que
+    fica no histórico e não muda o nível.
+  \item Só quem dá aula na turma ajusta.
+\end{itemize}
+\pendencia{o teste de ponta a ponta de Quem mandou isso? já ajusta um
+estudante e confere que o ajuste vale; falta passar pelo ajuste de vários estudantes de uma vez e pelo
+histórico das mudanças.}
+\end{historia}
+
+\begin{historia}{H14.4.3}{Marcar que o estudante não participou}{\parcial}
+\hu{Professor}{marcar que um estudante não participou de uma atividade}{que
+quem faltou não herde o que a equipe fez}
+\aceite
+\begin{itemize}
+  \item \enquote{Não participou} é um \enquote{Não avaliado} que eu mesmo
+    ponho.
+  \item Ele impede que o nível da equipe chegue a esse estudante, também quando
+    as equipes mudam.
+  \item No perfil, conta como não avaliado --- nunca como não atingiu.
+  \item Só o professor marca; a missão nunca marca \enquote{não participou}.
+\end{itemize}
+\pendencia{aparece para o professor nas quatro missões com régua, Quem mandou
+isso?, A Seleção, o Jornal da Escola e O Júri Estadual (\id{H14.1.2}); o teste
+de ponta a ponta
+delas ainda não passa por aqui.}
+\end{historia}
+
+\begin{historia}{H14.4.4}{A coordenação consulta, sem ajustar}{\pronto}
+\hu{Coordenação da escola}{consultar a evidência de uma turma e o perfil de um
+estudante}{acompanhar a aprendizagem sem interferir na avaliação do professor}
+\aceite
+\begin{itemize}
+  \item A Coordenação da escola, a Coordenação regional, o Administrador do
+    contrato e o Administrador Unooria podem ler a evidência de uma turma e o
+    perfil de um estudante.
+  \item Não há confirmar nem ajustar para eles: quem decide é quem dá aula na
+    turma.
+  \item O que se lê é o nível de cada habilidade, nunca o que a criança
+    escreveu.
+  \item É a exceção declarada à regra de que a gestão não lê a linha de uma
+    criança (\id{H07.1.3}): aqui ela lê o nível por habilidade, e nunca o
+    relatório da missão.
+\end{itemize}
+A tela é o painel de habilidades da escola e da regional (\id{H14.7.2},
+\id{H14.7.3}): dele, a coordenação abre a turma e o estudante, só para ler.
+\end{historia}
+
+\begin{historia}{H14.4.5}{Saber de onde veio cada nível}{\pronto}
+\hu{Professor}{ver qual atividade da missão deu o nível de cada estudante, e o
+que cada uma disse quando elas não concordam}{conferir a sugestão da IA e
+decidir o ajuste sabendo o que cada atividade mostrou}
+\aceite
+\begin{itemize}
+  \item Quando a missão diz o nome de cada atividade da régua, a célula mostra,
+    embaixo do nível, qual atividade o deu --- por exemplo, \enquote{Reflexão
+    --- sugestão da IA}.
+  \item Quando duas atividades da mesma habilidade dão níveis diferentes, a
+    célula mostra o nível de cada uma. Continua valendo o melhor.
+  \item Na janela de ajuste, o professor vê de onde veio o nível de hoje e o
+    que cada atividade disse; depois do ajuste, o nível passa a ser dele, e o
+    que as atividades disseram continua visível.
+  \item A missão que não dá nome às atividades mantém a célula de sempre.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F14.5}{A pergunta de múltipla escolha}{\pronto}
+
+\begin{historia}{H14.5.1}{Responder sem saber se acertei}{\pronto}
+\hu{Estudante}{responder à pergunta da missão}{mostrar o que eu sei sem que a
+missão vire uma prova com nota na hora}
+\aceite
+\begin{itemize}
+  \item A pergunta mostra o enunciado e as alternativas; quanto vale cada
+    alternativa fica na plataforma, e nunca chega ao meu aparelho.
+  \item As alternativas chegam em outra ordem a cada vez que a pergunta abre:
+    \enquote{a primeira é a certa} não vira pista.
+  \item Depois de responder, vejo só \enquote{resposta enviada} --- e vejo o
+    mesmo se responder de novo.
+  \item Vale a primeira resposta; a segunda não muda nada.
+  \item A resposta conta na atividade e na rodada em que eu estou na missão:
+    não sou eu quem escolhe.
+  \item Se a missão não está aberta na minha turma, a pergunta não abre.
+  \item Não vejo o meu resultado em lugar nenhum da plataforma.
+  \item As primeiras perguntas foram as duas da Nina, em Quem mandou isso?
+    (\id{H06.11.4}, que saíram em 16 de outubro de 2026), e as duas enquetes
+    da Amara, na A Seleção, que também saíram quando a missão passou a medir
+    só pelas ações (\id{H06.12.8}).
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F14.6}{O perfil do aluno}{\parcial}
+
+\begin{historia}{H14.6.1}{Abrir o perfil de um estudante}{\parcial}
+\hu{Professor}{abrir o perfil de um estudante da minha turma}{ver, missão a
+missão, as habilidades que ele já demonstrou}
+\aceite
+\begin{itemize}
+  \item O perfil abre pela aba Estudantes da turma.
+  \item Em cada missão, cada habilidade aparece com o melhor nível entre as
+    atividades; a que não tem nível aparece como \enquote{Não avaliado}, nunca
+    como \enquote{Não atingiu}. Embaixo, cada atividade com a melhor rodada.
+  \item As missões aparecem da mais recente para a mais antiga.
+  \item Entra só o que vale: nada \enquote{a revisar} e nada de \enquote{não
+    participou} como nível.
+  \item O perfil diz o que o estudante demonstrou, e não de onde veio (dele, da
+    equipe ou do professor).
+  \item A mesma habilidade medida em duas missões aparece nas duas, separada.
+  \item Só abro o perfil de quem eu ensino; outro estudante aparece como não
+    encontrado.
+\end{itemize}
+\pendencia{o perfil passa a ter conteúdo com as quatro missões com régua, Quem
+mandou isso?, A Seleção, o Jornal da Escola e O Júri Estadual. O teste que percorre a tela existe e roda, mas numa
+turma sem evidência: ele prova o perfil vazio. Falta ele percorrer um perfil
+com conteúdo.}
+\end{historia}
+
+\begin{historia}{H14.6.2}{Juntar as habilidades de todas as missões}{\pronto}
+\hu{Professor}{ver num painel só cada habilidade da BNCC de um estudante,
+somando todas as missões}{acompanhar a Base ao longo do ano, e não missão por
+missão}
+\aceite
+\begin{itemize}
+  \item A regra está decidida: dentro de uma missão vale o melhor nível entre
+    as atividades; entre missões NÃO se junta --- a mesma habilidade em duas
+    missões aparece duas vezes, cada uma com o nome da missão.
+  \item O painel mostra de quais missões veio cada nível.
+  \item Continua sem ranking e sem nota somada.
+\end{itemize}
+É o painel de habilidades (\id{F14.7}), na turma, e o perfil do estudante.
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F14.7}{O painel de habilidades}{\parcial}
+
+Um painel só, em quatro alturas: a turma, a escola, a regional e a rede
+inteira. Cada altura abre pelo TOTAL (a escola inteira, a regional inteira, a
+rede inteira) e desce até o estudante; o total é sempre a soma das linhas que
+aparecem embaixo dele. Cada pessoa só desce pelo que é dela: o professor, pelas
+turmas em que dá aula; a coordenação da escola, pela escola; a regional, pelas
+escolas da regional; o Administrador do contrato, pela rede. A coluna é a
+UNIDADE do ano em que a missão mora (não o bimestre do calendário), e em cada
+habilidade aparece quantos estudantes atingiram, estão em processo, não
+atingiram e não foram avaliados. Em cada missão vale o melhor resultado do
+estudante entre as atividades; quem não tem registro é \enquote{não
+avaliado}, e isso nunca conta como \enquote{não atingiu}. Sem ranking em
+nenhuma delas.
+
+\begin{historia}{H14.7.1}{Ver as habilidades da BNCC da minha turma}{\pronto}
+\hu{Professor}{ver num painel as habilidades da BNCC de Computação da minha
+turma, missão por missão}{saber onde a turma está forte e onde reforçar, sem
+abrir missão por missão}
+\aceite
+\begin{itemize}
+  \item Um cartão fixo no topo da lista de missões leva ao painel.
+  \item Quatro colunas, uma por unidade do ano; a unidade sem missão aparece
+    vazia.
+  \item Cada habilidade de cada missão aplicada mostra quantos atingiram, estão
+    em processo, não atingiram e não foram avaliados, em contagem.
+  \item O \enquote{em processo} que vem do limite da atividade escolhida (e
+    não do estudante) aparece numa faixa à parte, \enquote{Em processo
+    (limitado pela atividade)}, só quando há alguém nela; o total continua sendo
+    a turma inteira. Se o estudante tem esse nível numa atividade e o
+    \enquote{em processo} comum em outra, conta o comum.
+  \item A missão que a turma ainda não aplicou aparece como tal, sem números.
+  \item Posso ordenar as habilidades da mais atingida para a menos atingida
+    (é a ordem das habilidades, nunca dos estudantes).
+  \item A lista de estudantes é alfabética, e o nome leva ao desempenho dele
+    (\id{H14.7.4}).
+  \item Sem missão aplicada, o painel diz isso e leva à lista de missões.
+\end{itemize}
+\pendencia{o indicador de \enquote{dados novos} no cartão não existe; o cartão
+é fixo.}
+\end{historia}
+
+\begin{historia}{H14.7.2}{Ver as habilidades de todas as turmas da escola}{\parcial}
+\hu{Coordenação da escola}{ver as habilidades de todas as turmas da minha
+escola}{saber quais turmas avançam e quais precisam de atenção, sem pedir a
+cada professor}
+\aceite
+\begin{itemize}
+  \item O painel abre pelo item Habilidades do menu.
+  \item As turmas do ano letivo aparecem agrupadas por ano/série, por nome,
+    cada missão num cartão; o filtro de ano/série recorta a tela.
+  \item Cada cartão abre pela linha \enquote{Escola inteira}: a soma de todas
+    as turmas daquele ano/série, com quantas já aplicaram a missão. Embaixo,
+    as turmas que somam aquele número.
+  \item Cada habilidade mostra a contagem e a porcentagem de cada nível, para
+    comparar turmas de tamanhos diferentes.
+  \item A turma abre a mesma visão do professor, só para ler; dela, o
+    estudante.
+  \item Sem ranking entre turmas nem entre professores.
+\end{itemize}
+\pendencia{a exportação em planilha, com aviso de proteção de dados e
+registro de quem baixou, ainda não existe.}
+\end{historia}
+
+\begin{historia}{H14.7.3}{Ver as habilidades das escolas da regional}{\parcial}
+\hu{Coordenação regional}{ver as habilidades das escolas da minha
+regional}{saber onde a regional avança e onde apoiar}
+\aceite
+\begin{itemize}
+  \item O painel abre pelo item Habilidades do menu, com as escolas da minha
+    regional em ordem alfabética; não escolho outra regional.
+  \item Cada cartão abre pela linha \enquote{Regional inteira}: a soma das
+    escolas da regional. Embaixo, por ano/série, cada escola mostra a soma das
+    turmas em cada habilidade, e quantas turmas já aplicaram a missão.
+  \item A escola abre o painel daquela escola; dele, a turma --- mesmo eu não
+    estando lotada em escola nenhuma.
+  \item Nome de estudante não aparece no painel da regional.
+\end{itemize}
+\pendencia{a exportação em planilha, com aviso de proteção de dados e
+registro de quem baixou, ainda não existe.}
+\end{historia}
+
+\begin{historia}{H14.7.4}{Ver o desempenho de um estudante por missão}{\pronto}
+\hu{Professor, Coordenação da escola, Coordenação regional ou Administrador do
+contrato}{ver um estudante
+missão a missão}{entender onde ele está forte e onde precisa de reforço}
+\aceite
+\begin{itemize}
+  \item Abre a partir do painel da turma, com o nome do estudante no topo.
+  \item As missões aparecem da mais recente para a mais antiga, com a unidade.
+  \item Cada habilidade da missão mostra o melhor nível entre as atividades,
+    ou \enquote{Não avaliado}, que nunca conta como \enquote{Não atingiu}.
+  \item Nenhum dado de outro estudante aparece nesta tela.
+  \item O professor só abre estudante das turmas em que dá aula; a
+    coordenação, só os da escola (ou das escolas da regional). Fora disso, a
+    tela responde que o estudante não foi encontrado.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H14.7.5}{Ver as habilidades da rede inteira, por regional}{\parcial}
+\hu{Administrador do contrato ou Administrador Unooria}{ver as habilidades da
+rede inteira e descer até o estudante}{saber onde a rede avança e qual regional
+precisa de apoio, sem pedir relatório a cada uma}
+\aceite
+\begin{itemize}
+  \item O painel abre pelo item Habilidades do menu, com a rede inteira; o
+    seletor de regional recorta para uma regional só.
+  \item Na rede inteira, cada cartão abre pela linha \enquote{Rede inteira} e
+    desce uma linha por regional, em ordem alfabética --- não uma por escola.
+    A escola que não pertence a nenhuma regional aparece sozinha, para que a
+    soma feche.
+  \item O total da rede é exatamente a soma das linhas embaixo dele, e a linha
+    de uma regional é o mesmo número que a coordenação daquela regional vê.
+  \item A regional abre o painel dela (\id{H14.7.3}); dele, a escola, a turma e
+    o estudante (\id{H14.7.4}).
+  \item Nome de estudante não aparece no painel da rede nem no da regional.
+\end{itemize}
+\pendencia{a exportação em planilha, com aviso de proteção de dados e
+registro de quem baixou, ainda não existe.}
+\end{historia}

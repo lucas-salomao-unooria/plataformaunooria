@@ -31,6 +31,7 @@ await suite(
       "Trocar a escola ativa muda o que a pessoa vê, porque muda o token",
       "O panorama de quem administra várias escolas LISTA, nunca soma",
       "Abrir uma escola pelo panorama troca a escola ativa e leva às pessoas dela",
+      "No celular o seletor continua no cabeçalho: dá para trocar de escola pelo telefone",
     ],
     comando: "node scripts/e2e/gestor_escola/02-quem-trabalha-em-duas-escolas.mjs",
   },
@@ -106,7 +107,7 @@ await suite(
          novo = handshake refeito com o token da escola nova. Não depende da
          origem do bundle (dev server ou CDN), que muda por ambiente. */
       await p.goto(`${HUB}/professor/plano-de-aula`, { waitUntil: "domcontentloaded" });
-      const aparelho = p.locator('iframe[title="experiencia"]');
+      const aparelho = p.locator('iframe[data-experiencia]');
       await aparelho.waitFor({ state: "attached", timeout: 30_000 });
       await aparelho.evaluate((el) => {
         el.dataset.marcaDoTeste = "antes-da-troca";
@@ -122,7 +123,7 @@ await suite(
       await p.waitForTimeout(3000);
 
       const marcaSobreviveu = await p
-        .locator('iframe[title="experiencia"]')
+        .locator('iframe[data-experiencia]')
         .getAttribute("data-marca-do-teste");
       r.exigir(
         marcaSobreviveu === null,
@@ -142,6 +143,31 @@ await suite(
         inteira: true,
       });
     }
+
+    // ── o mesmo professor, no celular (H01.3.1) ─────────────────────────
+    const celular = await r.pagina("professor-no-celular", { viewport: { width: 390, height: 844 }, mobile: true });
+    await r.entrar(celular, professor.login);
+    const seletorNoCelular = celular.locator('select[aria-label="Escola ativa"]');
+    await seletorNoCelular.waitFor({ timeout: 20_000 }).catch(() => {});
+    const noCelular = await celular.evaluate(() => {
+      const s = document.querySelector('select[aria-label="Escola ativa"]');
+      if (!s) return { visivel: false, cabe: false };
+      const caixa = s.getBoundingClientRect();
+      return {
+        visivel: caixa.width > 0 && caixa.height > 0,
+        cabe: caixa.right <= innerWidth && document.documentElement.scrollWidth <= innerWidth,
+      };
+    });
+    r.exigir(noCelular.visivel, "no celular, o seletor de escola ativa aparece no cabeçalho");
+    r.exigir(noCelular.cabe, "e cabe na largura, sem empurrar o menu da conta para fora da tela");
+    await r.registrar(celular, "seletor-no-celular", {
+      titulo: "Trocar de escola pelo telefone",
+      mostra: "O cabeçalho em 390px com o seletor de escola ativa ao lado do avatar.",
+      prova:
+        "Ele ficava escondido abaixo da largura de tablet, e quem tinha duas cadeiras não trocava de " +
+        "escola no celular. Agora a caixa só encolhe: o seletor nativo do telefone abre com os nomes inteiros.",
+      detalhe: noCelular.cabe ? "cabe em 390px" : "NÃO cabe em 390px",
+    });
 
     // ── a supervisora de diretoria ──────────────────────────────────────
     const supervisora = conta("gestor_escola (supervisora");

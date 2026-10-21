@@ -39,12 +39,18 @@ const ACOES: Record<string, { rotulo: string; cor: "success" | "error" | "info" 
   "versao-fixada": { rotulo: "Versão fixada", cor: "info" },
   "versao-soltada": { rotulo: "Fixação removida", cor: "neutral" },
   "quota-alterada": { rotulo: "Quota de IA alterada", cor: "info" },
+  "configuracao-alterada": { rotulo: "Atendente da Ajuda alterado", cor: "info" },
 };
 
 /** `quota:estudante` vira "Quota de IA · estudantes"; o resto fica como está. */
 function rotuloDoRecurso(recursoId: string): string {
   if (recursoId === "quota:estudante") return "Quota de IA · estudantes";
   if (recursoId === "quota:professor") return "Quota de IA · professores";
+  // Os minutos da Ajuda com atendente (ADR-132) usam a mesma ação de quota.
+  if (recursoId === "ajuda:minutos-por-dia") return "Ajuda · minutos por dia";
+  if (recursoId === "ajuda:minutos-por-sessao") return "Ajuda · minutos por conversa";
+  // Quem atende — o mascote ou o avatar em vídeo (ADR-158).
+  if (recursoId === "ajuda:configuracao") return "Ajuda · quem atende";
   return recursoId;
 }
 
@@ -57,7 +63,7 @@ export function HistoricoDeRecursos({
   prefixo,
 }: {
   escolaId?: string | null;
-  /** Recorta por prefixo de `recursoId` — `quota:` é a tela de uso de IA (ADR-105). */
+  /** Recorta por prefixo de `recursoId` — `quota:` (ADR-105) e `ajuda:` (ADR-132) são a tela de uso de IA. */
   prefixo?: string;
 }) {
   const [linhas, setLinhas] = useState<LinhaDoHistorico[] | null>(null);
@@ -97,9 +103,13 @@ export function HistoricoDeRecursos({
       title: "O que",
       render: (_v, linha) => {
         const acao = ACOES[linha.acao];
+        // A mudança de minutos da Ajuda grava `quota-alterada`, mas não é de tokens de IA.
+        // Os minutos da Ajuda usam a ação de quota; o atendente (ADR-158) tem a dele.
+        const rotulo =
+          linha.acao === "quota-alterada" && linha.recursoId.startsWith("ajuda:") ? "Limite da Ajuda alterado" : acao?.rotulo;
         return (
           <Badge variant={acao?.cor ?? "neutral"}>
-            {acao?.rotulo ?? linha.acao}
+            {rotulo ?? linha.acao}
             {linha.versao ? ` · v${linha.versao}` : ""}
             {linha.detalhe ? ` · de ${numero(linha.detalhe.de)} para ${numero(linha.detalhe.para)}` : ""}
           </Badge>
@@ -141,7 +151,9 @@ export function HistoricoDeRecursos({
         description={
           prefixo === "quota:"
             ? "Quando o teto diário de IA de um perfil for alterado, a mudança aparece nesta lista com o valor anterior, o novo, o motivo e quem a fez."
-            : "Quando um produto ou uma versão for ligado, desligado ou trocado, a mudança aparece nesta lista com o motivo e quem a fez."
+            : prefixo === "ajuda:"
+              ? "Quando um limite de minutos da Ajuda for alterado, a mudança aparece nesta lista com o valor anterior, o novo, o motivo e quem a fez."
+              : "Quando um produto ou uma versão for ligado, desligado ou trocado, a mudança aparece nesta lista com o motivo e quem a fez."
         }
       />
     );

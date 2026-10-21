@@ -1,0 +1,172 @@
+% ===========================================================================
+%  E12 — Confiança: privacidade, segurança e operação
+% ===========================================================================
+\chapter{E12 \textperiodcentered{} Confiança: privacidade, segurança e operação}
+\label{ep:e12}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] A rede, a escola e a família podem confiar na plataforma:
+    ela protege o dado de criança, aguenta a manhã de aula, e a equipe sabe
+    quando algo quebra.
+  \item[Para quem] Secretaria, encarregado de dados da rede, família --- e,
+    indiretamente, todos os papéis.
+  \item[Valor] São as histórias que nenhuma tela mostra, mas que um edital, um
+    jurídico ou um incidente cobram. Várias delas bloqueiam a entrada em
+    produção.
+  \item[Estado] \parcial{} --- isolamento e proteção de menores prontos;
+    teste de carga, monitoramento em produção, retenção e acessibilidade
+    pendentes.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F12.1} & Uma escola nunca vê outra & \pronto\\
+\zebra \id{F12.2} & Dado de criança protegido & \pronto\\
+\id{F12.3} & Guarda e eliminação de dados & \afazer\\
+\zebra \id{F12.4} & Aguentar as 8h da manhã & \parcial\\
+\id{F12.5} & A equipe sabe quando algo quebra & \parcial\\
+\zebra \id{F12.6} & Acessibilidade & \parcial\\
+\id{F12.7} & Português do Brasil & \pronto\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\feature{F12.1}{Uma escola nunca vê outra}{\pronto}
+
+\begin{historia}{H12.1.1}{Isolamento garantido entre escolas}{\pronto}
+\hu{secretaria}{garantia de que uma escola nunca vê dado de criança de outra
+escola}{atender a LGPD e o edital}
+\aceite
+\begin{itemize}
+  \item A separação é garantida na própria base de dados, não só nas telas:
+    vale mesmo que haja um erro de programação.
+  \item As únicas exceções são as configurações da rede (disponibilidade,
+    limites de IA) e os cadastros do site, que não são dado de estudante.
+  \item Existe teste automatizado que tenta atravessar escolas e falha.
+  \item Cada rede tem instalação própria: um incidente numa rede não atinge
+    outra.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F12.2}{Dado de criança protegido}{\pronto}
+
+\begin{historia}{H12.2.1}{Nada que identifique a criança onde não precisa}{\pronto}
+\hu{encarregado de dados da rede}{que os registros de uso e os relatórios não
+identifiquem a criança sem necessidade}{reduzir o risco de vazamento}
+\aceite
+\begin{itemize}
+  \item Os registros de uso carregam um identificador opaco, nunca nome ou
+    e-mail; o CPF nunca aparece em registro técnico.
+  \item Os relatórios de gestão são agregados; a linha de uma criança é só do
+    professor dela.
+  \item Onde a missão pede texto, há limite de tamanho, e dado pessoal é
+    recusado (Manifesto da IA).
+  \item Na Vila do Lume o nome da criança nunca é gravado.
+  \item A exceção declarada é A Seleção, em que um colega lê o que a criança
+    publicou: no Mural, o colega com quem a publicação foi pareada vê os três
+    posts, a legenda e o primeiro nome dela (ou o nome da equipe). Por isso a
+    legenda recusa link, telefone, e-mail, marcação de pessoa e palavrão, e a
+    Política de Privacidade e os Termos de Uso dizem isso.
+\end{itemize}
+\pendencia{uma ferramenta de gravação de sessão de terceiros é usada nas telas
+e precisa constar no termo de tratamento de dados de cada rede --- ou ser
+retirada das telas de menores.}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F12.3}{Guarda e eliminação de dados}{\afazer}
+
+\begin{historia}{H12.3.1}{Prazos de guarda definidos e cumpridos}{\afazer}
+\hu{encarregado de dados da rede}{saber por quanto tempo cada dado de criança
+é guardado, e que ele seja apagado no prazo}{cumprir a LGPD e responder à
+família}
+\aceiteproposta
+\begin{itemize}
+  \item Um prazo definido para cada tipo de dado (resultado de missão, texto
+    livre, registros de uso).
+  \item Uma rotina automática apaga o que passou do prazo.
+  \item A Política de Privacidade passa a declarar esses prazos.
+\end{itemize}
+\pendencia{decisão de produto e jurídica anterior ao desenvolvimento (\id{D09}).}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F12.4}{Aguentar as 8h da manhã}{\parcial}
+
+\begin{historia}{H12.4.1}{A rede inteira entrando ao mesmo tempo}{\parcial}
+\hu{secretaria}{que a plataforma aguente a rede inteira começando a aula ao
+mesmo tempo}{que nenhuma turma perca a aula às 8h}
+\aceite
+\begin{itemize}
+  \item 2 a 4 mil pessoas entrando e abrindo missão em 10 minutos, sem erro e
+    sem lentidão perceptível.
+  \item Inclui turmas inteiras conversando com a IA ao mesmo tempo (UnooriaAI).
+\end{itemize}
+\pendencia{a plataforma está configurada para isso, mas o teste de carga
+nunca foi feito. É o maior risco aberto antes de novembro.}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F12.5}{A equipe sabe quando algo quebra}{\parcial}
+
+\begin{historia}{H12.5.1}{Saber do problema antes da escola ligar}{\parcial}
+\hu{equipe da Unooria}{ser avisada quando a plataforma falha}{resolver antes que
+a escola perceba}
+\aceite
+\begin{itemize}
+  \item Meta: 99,5\% das ações sem erro.
+  \item Verificações automáticas a cada minuto, de três regiões; alertas por
+    e-mail; registro dos erros que acontecem no navegador de quem usa,
+    inclusive na tela de entrada.
+  \item Nenhum dado pessoal nesses registros.
+\end{itemize}
+\pendencia{tudo isso está funcionando só no ambiente de desenvolvimento;
+falta levar para homologação e produção, testar o canal de e-mail e ter um
+alerta de custo.}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F12.6}{Acessibilidade}{\parcial}
+
+\begin{historia}{H12.6.1}{Usar a plataforma com deficiência}{\parcial}
+\hu{estudante com deficiência visual ou motora}{usar a plataforma com leitor
+de tela e teclado}{participar da aula como os colegas}
+\aceiteproposta
+\begin{itemize}
+  \item Contraste, foco visível, navegação por teclado e leitor de tela
+    verificados em todas as telas da plataforma e nas missões.
+  \item A transcrição de todo áudio continua sempre visível (isso já existe).
+\end{itemize}
+\textbf{O que já vale (13/10/2026):} todas as telas da plataforma, de todos
+os papéis, e a abertura de cada missão passam na verificação automática de
+contraste, nomes dos controles e tamanho de toque. A correção foi feita uma vez,
+nos componentes visuais compartilhados, e por isso vale para toda tela.
+As imagens dos posts e as fotos das missões têm descrição para quem usa leitor
+de tela: a mesma informação que a criança que enxerga vê, sem dizer qual
+escolha é a certa.
+\pendencia{falta a passada manual com teclado e leitor de tela nos caminhos de
+cada papel, que é o que permite prometer o nível AA a uma rede. O jogo da Vila
+do Lume fica fora por decisão: é um mundo 3D sem alternativa equivalente.}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F12.7}{Português do Brasil}{\pronto}
+
+\begin{historia}{H12.7.1}{Tudo na minha língua}{\pronto}
+\hu{qualquer pessoa}{que toda a plataforma fale português do
+Brasil}{não tropeçar em termo estrangeiro}
+\aceite
+\begin{itemize}
+  \item Toda a interface da plataforma está em português do Brasil.
+  \item Dentro do aplicativo imitado, ficam os termos do aplicativo real
+    (Feed, Stories, Salvos), e os nomes Unoovista, Instanooria e UnooriaAI não se traduzem.
+  \item \enquote{fake news}, \enquote{cyberbullying} e \enquote{print} ficam
+    como estão, por decisão.
+  \item Datas no formato brasileiro e no fuso da rede.
+\end{itemize}
+\end{historia}

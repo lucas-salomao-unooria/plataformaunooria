@@ -1,5 +1,5 @@
 /**
- * Regras PURAS da exp-04 — sem banco, sem IA, sem relógio próprio.
+ * Regras PURAS da exp01ef1b — sem banco, sem IA, sem relógio próprio.
  *
  * Tudo aqui é chamado pelo service e provado em `tests/foto-conta-regras.spec.ts`
  * sem Postgres. A máquina de etapas anda numa direção só: esta missão não tem

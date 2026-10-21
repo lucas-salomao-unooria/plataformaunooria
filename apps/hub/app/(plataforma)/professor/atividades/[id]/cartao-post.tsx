@@ -101,7 +101,9 @@ export function CartaoPost({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={post.imageUrl}
-            alt=""
+            /* A imagem foi GERADA a partir deste brief: é a descrição dela
+               (WCAG 1.1.1, ADR-163). */
+            alt={post.imageBrief || `Foto do post de ${post.author.handle}`}
             className="h-full w-full object-cover"
             loading="lazy"
           />
@@ -111,7 +113,7 @@ export function CartaoPost({
             style={{ background: arte.corFundo }}
           >
             <span className="text-[40px]">{arte.emojis}</span>
-            <span className="px-6 text-center text-[11px] text-black/50">
+            <span className="px-6 text-center text-[11px] text-black/70">
               {post.imageStatus === "pendente"
                 ? "imagem na fila"
                 : "arte procedural (fallback)"}

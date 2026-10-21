@@ -24,7 +24,7 @@
  * `id` do `public/experiencia.json`: divergir faz a missão nunca abrir, com a
  * liberação gravada e visível na tela do professor.
  */
-export const EXP_ID = 'exp-03-unoogpt';
+export const EXP_ID = 'exp02em1b';
 
 /**
  * Teto de tokens de SAÍDA do Cientista, por chamada.
@@ -42,6 +42,19 @@ export const EXP_ID = 'exp-03-unoogpt';
  * em 1.275). Apertar isto de novo sem olhar o log é repetir o erro.
  */
 export const TETO_TOKENS_RESPOSTA = 3000;
+
+/**
+ * O turno do Cientista tem de caber no teto do CLIENTE, `TIMEOUT_DO_TURNO_MS`
+ * (45 s, `exp02em1b/src/lib/api.ts`): acima dele o navegador desiste, a tela diz
+ * "A conexão falhou" e a resposta, gravada depois, chega a ninguém. Em 2026-10-19
+ * a fila do Vertex no dev levou turnos a 74–194 s com chamadas de 50–80 s, quando
+ * o normal é 3–8 s por chamada e 13–17 s por turno (medido com o prompt real).
+ * Uma chamada acima de 12 s é abortada e repetida; o turno inteiro para em 40 s e
+ * vira "o Cientista não conseguiu responder agora", sem debitar pergunta.
+ * Mexeu num, confira o outro.
+ */
+export const TETO_POR_CHAMADA_DO_CIENTISTA_MS = 12_000;
+export const PRAZO_DO_TURNO_DO_CIENTISTA_MS = 40_000;
 
 /**
  * TETO DE CUSTO POR SESSÃO — o controle real de gasto desta experiência.

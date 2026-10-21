@@ -12,7 +12,7 @@ import { sanitizarHtmlDoPlano } from "../src/planos/sanitizar";
 import { PrismaService } from "../src/prisma/prisma.service";
 
 /**
- * Integração da exp-90-plano-de-aula no Postgres: geração assíncrona (claim,
+ * Integração da app-90-plano-de-aula no Postgres: geração assíncrona (claim,
  * pronto/erro, órfã), Salvar/Restaurar/Excluir, posse entre professores e
  * quota por perfil. Provider FAKE (controlável) e storage local em pasta
  * temporária. UMA ESCOLA POR SUÍTE.
@@ -55,6 +55,9 @@ class ProviderFake implements AiProvider {
   }
   generateSpeech(): Promise<Buffer> {
     throw new Error("não usado");
+  }
+  conversarEmFluxo(): never {
+    throw new Error("conversarEmFluxo não é usado nesta suíte");
   }
   conversar(): Promise<AiResult> {
     throw new Error("não usado");
@@ -144,7 +147,7 @@ describe("referências e prompt", () => {
   test("prompt: template → gerais → específicas na ordem, com as molduras do origem", async () => {
     const prompt = await service.montarPrompt(DISCIPLINA, "8EF");
     const posicoes = [
-      prompt.indexOf("DOCUMENTO DE REFERÊNCIA OBRIGATÓRIA"),
+      prompt.indexOf("DOCUMENTO DE REFERÊNCIA DE FORMATO"),
       prompt.indexOf("DOCUMENTO DE REFERÊNCIA GERAL DA DISCIPLINA (vale para todos os anos): Currículo da rede"),
       prompt.indexOf("DOCUMENTO DE REFERÊNCIA DA REDE: Unidade 1"),
       prompt.indexOf("DOCUMENTO DE REFERÊNCIA DA REDE: Unidade 2"),

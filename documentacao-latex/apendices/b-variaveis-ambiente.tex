@@ -83,12 +83,14 @@ inválido} --- e a mensagem não diz qual dos dois lados está errado.
 \env{VERTEX\_MODEL\_LONGO} & \cd{gemini-3.6-flash} & Modelo de saída longa
   (planos anuais). A variável separada existe para trocar um sem tocar no
   outro.\\
-\zebra \env{VERTEX\_IMAGE\_MODEL} & \cd{gemini-3.1-flash-image} & Arte da exp-01.
+\zebra \env{VERTEX\_IMAGE\_MODEL} & \cd{gemini-3.1-flash-image} & Arte da exp08ef1b.
   O antigo \cd{gemini-2.0-flash-exp} \textbf{não existe mais} --- e por isso toda
   geração de imagem caía no \emph{fallback} procedural. Quem trocar precisa
   conferir a proporção devolvida.\\
-\env{VERTEX\_TTS\_MODEL} & \cd{gemini-2.5-flash-tts} & Voz das falas da exp-07
-  (Amara, a moradora, o podcast). \textbf{Não é o \emph{aiplatform}}: a síntese
+\env{VERTEX\_TTS\_MODEL} & \cd{gemini-2.5-flash-tts} & Voz
+  (\cd{generateSpeech}). \textbf{Nenhuma missão sintetiza voz hoje}: quem usava
+  era o Eco no Grupo (retirado, \adrr{ADR-113}), e a variável ficou com a
+  operação. \textbf{Não é o \emph{aiplatform}}: a síntese
   vem da Cloud Text-to-Speech, com os mesmos modelos por trás e o mesmo ADC, e a
   API precisa estar habilitada no projeto. Com ADC de \emph{usuário} ela exige
   \cd{x-goog-user-project} --- o \emph{provider} manda; sem isso, imagem
@@ -107,10 +109,135 @@ inválido} --- e a mensagem não diz qual dos dois lados está errado.
 \end{tabularx}
 
 \begin{nota}
-\textbf{Não existe variável para chave de API de IA} em lugar nenhum do projeto ---
-nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
-(\adrr{ADR-16}).
+\textbf{Não existe variável para chave de API do modelo de IA} em lugar nenhum
+do projeto --- nem aqui, nem em \arq{.env.example}. A credencial do Vertex é
+sempre ADC (\adrr{ADR-16}). A única chave de vendor é a da conta do avatar da
+Ajuda (\env{LIVEAVATAR\_API\_KEY}, abaixo), que não é do Google e não tem ADC
+--- e o LLM do avatar continua sendo o nosso, pelo mesmo ADC.
 \end{nota}
+
+\subsection{Agente de IA do professor (\adrr{ADR-126})}
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Default} & \thd{Papel}\\
+\midrule
+\env{AGENTE\_PROFESSOR\_MODO} & \cd{desligado} & \cd{agent-engine} (Vertex AI
+  Agent Engine, ADC) $|$ \cd{local} (o \emph{shim} de \arq{apps/agente-professor})
+  $|$ \cd{mock} (turno enlatado, o da suíte e2e) $|$ \cd{desligado}.
+  \textbf{Fecha}: ausente = \cd{desligado} em QUALQUER \cd{NODE\_ENV}, e o chat
+  responde \cd{AGENTE\_INDISPONIVEL} (503) --- ao contrário do
+  \env{AI\_PROVIDER}, porque o engine nasce por contrato em momentos diferentes
+  e derrubar a api por falta dele tiraria todos os produtos do ar.
+  \cd{mock} e \cd{local} são \textbf{recusados em produção} pelo Zod.\\
+\zebra \env{AGENTE\_PROFESSOR\_ENGINE} & --- & \textbf{Obrigatória com
+  \cd{agent-engine}}: o \emph{resource name} COMPLETO
+  (\cd{projects/<p>/locations/<r>/\B reasoningEngines/<id>}). A região sai dele
+  --- uma variável a menos para divergir. O Terraform a preenche no segundo
+  \emph{apply}.\\
+\env{AGENTE\_PROFESSOR\_URL\_LOCAL} & --- & \textbf{Obrigatória com \cd{local}}: a
+  base do \emph{shim} (\cd{http://localhost:8090}; no \cd{docker:dev},
+  \cd{http://host.docker.internal:8090}).\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Ajuda com avatar (\adrr{ADR-132})}
+
+O atendente em vídeo do LiveAvatar (HeyGen), com o LLM NOSSO: o vendor chama
+\rota{POST /ajuda/llm/chat/completions} da api. \textbf{Desligada é o padrão, e
+faltar peça NÃO derruba a subida} --- ao contrário do \rota{/docs}. A chave da
+conta e os ids nascem em momentos diferentes (os ids saem de
+\arq{scripts/liveavatar-configurar.mjs} \emph{depois} de a api estar no ar com URL
+pública), e derrubar a api por um produto em montagem tiraria todos os outros do
+ar. A Ajuda só abre com \env{LIVEAVATAR\_API\_KEY},
+\env{LIVEAVATAR\_CONTEXT\_ID}, \env{LIVEAVATAR\_LLM\_CONFIG\_ID},
+\env{AJUDA\_LLM\_SEGREDO} e \env{AJUDA\_SESSAO\_CHAVE} juntas; faltou qualquer
+uma, a Ajuda fica desligada (sem as três primeiras, a porta já nasce
+\cd{AvatarDesligado}) e \rota{POST /ajuda/sessoes} responde
+\cd{AJUDA\_INDISPONIVEL} (503). Valor vazio conta como ausente.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Default} & \thd{Papel}\\
+\midrule
+\env{LIVEAVATAR\_API\_KEY} & --- & \textbf{Segredo} (Secret Manager:
+  \cd{\{contrato\}-\B liveavatar-\B api-key}). A chave da CONTA no vendor, mandada
+  em \cd{x-api-key} ao abrir e encerrar a sala. \textbf{Nunca vai ao hub}: o
+  navegador recebe só o \emph{token} da sala daquela sessão. \textbf{Fecha.}\\
+\zebra \env{LIVEAVATAR\_API\_URL} & \cd{https://\B api.\B liveavatar.com} & Base da api
+  do vendor. Zod: URL.\\
+\env{LIVEAVATAR\_AVATAR\_ID} & \cd{dc2935cf-\B 5863-\B 4f08-\B 943b-\B c7478aea59fb} &
+  O avatar (\enquote{Silas Customer Support}, do catálogo público). Zod: UUID.
+  No \emph{sandbox} é trocado pelo avatar de testes do vendor, o único que ele
+  aceita.\\
+\zebra \env{LIVEAVATAR\_VOICE\_ID} & --- & Opcional (UUID). Ausente, vale a voz do
+  avatar. Não é mandada no \emph{sandbox}.\\
+\env{LIVEAVATAR\_CONTEXT\_ID} & --- & O CONTEXTO no vendor (UUID), cujo
+  \emph{prompt} é uma frase e o marcador \cd{[sessao:\$\{sessao\}]} --- nada da
+  base nem das instruções, que moram na api. Impresso por
+  \arq{scripts/\B liveavatar-\B configurar.mjs} --- um por contrato e ambiente, fora
+  do Terraform. Sem ele, o avatar fica mudo. \textbf{Fecha.}\\
+\zebra \env{LIVEAVATAR\_LLM\_CONFIG\_ID} & --- & A configuração de LLM no vendor
+  (UUID), que aponta para o NOSSO \rota{/ajuda/llm}. Impressa pelo mesmo
+  \emph{script}. Sem ela, o avatar responderia com o LLM da HeyGen ---
+  por isso a Ajuda não abre. \textbf{Fecha.}\\
+\env{LIVEAVATAR\_SANDBOX} & \cd{0} & \cd{1} = o avatar de testes do vendor
+  (sessões de \textasciitilde 1 minuto, sem crédito). \textbf{Recusado em
+  produção} pelo Zod: ali seria uma Ajuda que cai sozinha no meio da
+  explicação. O \arq{.env.example} traz \cd{1}.\\
+\zebra \env{AJUDA\_LLM\_SEGREDO} & --- & \textbf{Segredo} (Secret Manager:
+  \cd{\{contrato\}-\B ajuda-\B llm-\B segredo}), 32+ caracteres. O
+  \cd{Authorization: Bearer} que o vendor manda ao nosso \rota{/ajuda/llm}; o
+  MESMO valor fica guardado na conta do vendor, como \cd{OPENAI\_API\_KEY}.
+  Ausente, a rota de LLM responde 503 --- desligada, nunca aberta.
+  \textbf{Fecha.}\\
+\env{AJUDA\_SESSAO\_CHAVE} & --- & \textbf{Segredo} (Secret Manager:
+  \cd{\{contrato\}-\B ajuda-\B sessao-\B chave}), 32+ caracteres. Assina (HS256) o
+  \emph{token} curto que identifica a pessoa DENTRO do \emph{prompt} do contexto
+  (\cd{dynamic\_variables.sessao}). Só a api a conhece: quem assina é quem
+  confere. \textbf{Fecha.}\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{A api precisa de URL PÚBLICA} alcançável pelo vendor, sem IAP nem
+\emph{allowlist} por IP no LB: é o servidor dele que chama \rota{/ajuda/llm}. Em
+dev local, só com túnel (\cd{cloudflared}), e a URL do túnel é a que se passa ao
+\arq{scripts/liveavatar-configurar.mjs <ambiente> <url-publica>}. A configuração
+de LLM que ele cria aponta para AQUELA URL, e o vendor não tem edição
+documentada: trocar a URL (ou o segredo) é apagar a configuração no painel do
+vendor e rodar o \emph{script} de novo --- o segredo depois da configuração, nunca
+antes, ou a configuração quebra sem aviso. O \emph{script} escreve na conta real
+do vendor e não cria nada no GCP: os três segredos chegam ao Secret Manager pelo
+Terraform (\arq{docs/INFRA.md}), e os dois ids entram como \emph{env} comum.
+\end{atencao}
+
+\subsection{O mascote da Ajuda (\adrr{ADR-158})}
+
+O segundo atendente da Ajuda: o mascote 3D da Unooria, que fala pelo Gemini Live
+da Vertex por uma conexão de voz da própria api (\rota{WS /ajuda/mascote/ao-vivo}).
+\textbf{Não tem chave própria}: usa o ADC e o \env{VERTEX\_PROJECT\_ID} de todo o
+resto da IA (\adrr{ADR-16}) e a \env{AJUDA\_SESSAO\_CHAVE} acima, que assina o
+bilhete de entrada da conexão (audiência \cd{ajuda-mascote}). Sem projeto da
+Vertex (\env{AI\_PROVIDER=mock}) ou sem a chave da sessão, o mascote fica
+desligado; se o avatar estiver montado, a Ajuda abre o avatar, e sem nenhum dos
+dois \rota{POST /ajuda/sessoes} responde \cd{AJUDA\_INDISPONIVEL} (503). O modelo
+do Live e a voz \textbf{não são \emph{env}}: são da linha de
+\cd{ajuda\_configuracao}, editada pelo \cd{admin} em \rota{/unooria/uso-de-ia}. O
+modelo 3D (\cd{ajuda/mascote/mascote-v1.glb}, 3,4\,MB) sai do bucket de assets
+pela mesma \env{ASSETS\_PUBLIC\_URL} das imagens geradas.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Default} & \thd{Papel}\\
+\midrule
+\env{AJUDA\_MASCOTE\_REGIAO} & \cd{us-central1} & A região da Vertex onde abre a
+  sessão do Gemini Live. \textbf{O Live não está no \cd{global}} do texto
+  (\env{VERTEX\_LOCATION}): medido em 2026-10-12 no projeto de dev,
+  \cd{us-central1} serve o \cd{gemini-3.8-live} (abertura em 2,5\,s com a base
+  inteira, primeira fala em 1,2\,s). Zod: só letras minúsculas, dígitos e hífen.\\
+\bottomrule
+\end{tabularx}
 
 \subsection{Armazenamento}
 
@@ -345,20 +472,57 @@ aparece \textbf{dentro da casca de celular da Instanooria}.
 \toprule
 \headrow \thd{Variável} & \thd{Papel}\\
 \midrule
-\env{VITE\_VIDEOS\_BASE\_URL} & exp-02: base dos 21 arquivos MP4
+\env{VITE\_VIDEOS\_BASE\_URL} & exp04ef1b: base dos 21 arquivos MP4
   (\SI{52}{\mega\byte}), que ficam fora do \emph{git} e fora do \emph{bundle}.
   Vazio = \arq{./videos} (\arq{public/videos/}, \emph{gitignorado}, em
   \emph{dev}). Em produção:
-  \cd{https://<cdn-assets>/exp-02-unootube/videos}.\\
+  \cd{https://<cdn-assets>/exp04ef1b/videos}.\\
 \bottomrule
 \end{tabularx}
 
 \begin{nota}
-\textbf{A exp-70 não tem nenhuma variável de ambiente.} Ela não usa IA, não usa
+\textbf{A app-70 não tem nenhuma variável de ambiente.} Ela não usa IA, não usa
 \emph{bucket} e não tem prazo de retenção declarado --- o que é registrado
 explicitamente em \arq{.env.example}, para que a ausência seja lida como decisão e
 não como esquecimento.
 \end{nota}
+
+\section{Agente de IA do professor --- \arq{apps/agente-professor}}
+
+Lidas pelo pacote (\arq{agente\_professor/config.py}, \arq{servidor.py} e
+\arq{shim.py}), no Agent Engine --- pela \cd{spec} que o Terraform escreve --- e no
+\emph{shim} local.
+
+\begin{tabularx}{\linewidth}{@{}L{50mm}L{40mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Default} & \thd{Papel}\\
+\midrule
+\env{AGENTE\_PROJETO} & \env{GOOGLE\_\B CLOUD\_\B PROJECT} & Projeto dos \emph{data
+  stores} e do Gemini.\\
+\zebra \env{AGENTE\_MODELO} & \cd{gemini-3.7-flash} & Modelo da conversa.\\
+\env{AGENTE\_\B MODELO\_\B LOCATION} & \cd{global} & Location do modelo.\\
+\zebra \env{AGENTE\_\B MODELO\_\B LOCATION\_\B RESERVA} & \cd{us} & Para onde vai quando
+  \cd{global} responde 404, 429 ou 5xx --- só antes do primeiro pedaço.\\
+\env{AGENTE\_\B MODELO\_\B ESCOPO} & \cd{gemini-3.5-\B flash-lite} & Guarda de escopo e
+  título.\\
+\zebra \env{AGENTE\_\B BUSCA\_\B LOCATION} & \cd{global} & Location dos \emph{data stores}.\\
+\env{AGENTE\_\B DATASTORE\_\B HABILIDADES} & \cd{agente-professor-\B habilidades} & \\
+\zebra \env{AGENTE\_\B DATASTORE\_\B ACERVO} & \cd{agente-professor-\B acervo} & \\
+\env{AGENTE\_LOG} & \cd{INFO} & Nível de log do servidor.\\
+\zebra \env{AGENTE\_SHIM\_PORTA} & \cd{8090} & Porta do \emph{shim} local.\\
+\env{AGENTE\_\B PROFESSOR\_\B PULAR\_\B SEM\_UV} & --- & \cd{1} pula o pacote no
+  \cd{pnpm turbo} quando a máquina não tem \cd{uv}, com aviso em destaque. Sem
+  ela, a falta do \cd{uv} \textbf{falha} o \emph{build}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{Nunca defina \env{GOOGLE\_CLOUD\_LOCATION}, \env{GOOGLE\_CLOUD\_PROJECT}
+nem \env{PORT} no Agent Engine}: são reservadas, e o engine as preenche (a
+location vale a região do \emph{deploy}, \cd{us-east1}). O modelo em \cd{global} se
+configura por \env{AGENTE\_MODELO\_LOCATION}; trocar pela reservada manda o modelo
+para a região do engine.
+\end{atencao}
 
 \section{\cd{vars} do repositório (CI/CD)}
 
@@ -378,7 +542,7 @@ entra por \cd{vars} do repositório, cujos valores saem de
 \cd{MIGRATE\_JOB} & Nome do Cloud Run Job de migração.\\
 \zebra \cd{EXP\_BUCKET} & \emph{Bucket} dos \emph{bundles}.\\
 \cd{ASSETS\_BASE\_URL} & Base pública de \emph{assets} (entra no \emph{build} da
-  exp-02).\\
+  exp04ef1b).\\
 \zebra \cd{CLARITY\_PROJECT\_ID} & Id do projeto Microsoft Clarity, por
   \emph{environment} (\cd{dev}, \cd{hml}, \cd{prd}). O \arq{deploy.yml} o passa
   como \cd{-{}-build-arg} ao construir a imagem do hub. \textbf{Não} sai de
@@ -387,6 +551,11 @@ entra por \cd{vars} do repositório, cujos valores saem de
 \cd{API\_URL}, \cd{HUB\_ORIGIN} & Endereços públicos, usados pelo
   \emph{script} de manifesto.\\
 \zebra \cd{WIF\_PROVIDER}, \cd{DEPLOY\_SA} & Identidade federada do CI.\\
+\cd{AGENTE\_PROFESSOR\_ENGINE} & \emph{Resource name} do Agent Engine, por
+  \emph{environment}. \textbf{Vazia} = o engine ainda não existe: o \emph{job}
+  \cd{deploy-agente-professor} só publica a imagem e avisa; preenchida, ele faz
+  o \cd{PATCH} da \cd{imageUri}. Sai de \cd{terraform output
+  agente\_professor\_engine} depois do segundo \emph{apply}.\\
 \bottomrule
 \end{tabularx}
 
@@ -408,10 +577,13 @@ DATABASE_URL=postgresql://postgres:pass@localhost:5432/unooria
 OIDC_ISSUER=http://localhost:3000
 OIDC_JWKS_URI=http://localhost:3000/.well-known/jwks.json
 AI_PROVIDER=mock          # sem GCP nenhum; devolve texto de exemplo
+AGENTE_PROFESSOR_MODO=mock  # o chat do agente com turno enlatado (ausente: desligado)
 ASSETS_DRIVER=local       # a API serve /assets
 PLANOS_DRIVER=local       # grava em storage-privado/
 TELEMETRIA_TOPIC=         # vazio: eventos so no console
 # TELEMETRIA_PUSH_* vazias  => /telemetry/ingest responde 401 (correto em dev)
+# LIVEAVATAR_* / AJUDA_* vazias => POST /ajuda/sessoes responde 503 (a api sobe;
+#   com mock, o mascote tambem fica desligado: ele usa a Vertex, ADR-158)
 
 # HUB
 NEXT_PUBLIC_API_URL=http://localhost:3001

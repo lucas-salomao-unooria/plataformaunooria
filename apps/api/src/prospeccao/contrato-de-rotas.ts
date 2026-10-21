@@ -37,8 +37,10 @@ export const CadastroRecebidoSchema = z.object({
   recebido: z.literal(true),
 });
 
-/** Uma linha da tabela do painel. O `id` não sai: não há rota que o consuma. */
+/** Uma linha da tabela do painel. O `id` sai só para a eliminação a pedido do
+ *  titular (H10.5.2) — não há rota de edição, e não deve haver. */
 const CadastroSchema = z.object({
+  id: z.string().uuid(),
   nome: z.string(),
   email: z.string(),
   telefone: z.string(),
@@ -54,6 +56,10 @@ export const CadastrosSchema = z.object({
 });
 
 export type Cadastro = z.infer<typeof CadastroSchema>;
+
+/** O `:id` da eliminação. Fora do formato é 404, igual a um id que não existe. */
+export const CadastroIdSchema = z.string().uuid();
+export const EliminarCadastroParamsSchema = z.object({ id: CadastroIdSchema });
 
 /**
  * Teto da listagem. Cinco mil é o número do bundle original, mantido: é ordens

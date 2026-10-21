@@ -26,18 +26,19 @@ import type { PerfilDaQuota, QuotaDeIa } from "./tipos";
  * palavra inventaria uma medida que não existe na fatura. O que a tela faz é
  * dizer, ao lado, quanto isso É em uso real — e as duas medidas são as que
  * foram MEDIDAS no projeto, não estimativas: uma partida completa da Missão
- * Tempestade (exp-03) custa ~77 mil tokens (`unoogpt/regras/defaults.ts`), e um
- * plano anual da exp-90 passa de 220 mil só de prompt.
+ * Tempestade (exp02em1b) custa ~77 mil tokens (`unoogpt/regras/defaults.ts`), e um
+ * plano anual da app-90 passa de 220 mil só de prompt.
  */
 const PERFIS: Record<
   PerfilDaQuota,
-  { titulo: string; quemUsa: string; unidade: string; custoDaUnidade: number }
+  { titulo: string; quemUsa: string; unidade: string; custoDaUnidade: number; porQuem: string }
 > = {
   estudante: {
     titulo: "Estudantes",
-    quemUsa: "O tutor do Instanooria, a Missão Tempestade e a Amara do Eco no Grupo.",
+    quemUsa: "O tutor do Unoovista e a Missão Tempestade.",
     unidade: "partidas completas da Missão Tempestade",
     custoDaUnidade: 77_000,
+    porQuem: "por pessoa",
   },
   professor: {
     titulo: "Professores",
@@ -45,6 +46,19 @@ const PERFIS: Record<
       "Plano de aula, planejamento de ensino, o preparo das missões (fotos, casos, mídia) e o apoio do acompanhamento de bem-estar. Gestores que venham a usar IA entram nesta régua.",
     unidade: "planos anuais gerados",
     custoDaUnidade: 220_000,
+    porQuem: "por pessoa",
+  },
+  /* ADR-169: a leitura da PLATAFORMA para a evidência pedagógica, fora da quota
+     do estudante — e o teto é POR ESCOLA, não por pessoa. A leitura de uma
+     legenda custa na casa dos milhares de tokens (o modelo raciocina); 10 mil
+     é a régua conservadora até o painel de custos dar o número medido. */
+  avaliacao: {
+    titulo: "Avaliação das missões",
+    quemUsa:
+      "A leitura que a plataforma faz do trabalho do estudante para medir as habilidades (a legenda dos Stories na A Seleção). Não sai da quota do estudante: avaliar não compete com o uso dele. Esgotada, a leitura vai para a revisão do professor.",
+    unidade: "leituras de legenda",
+    custoDaUnidade: 10_000,
+    porQuem: "por escola",
   },
 };
 
@@ -120,12 +134,12 @@ export function PainelDeQuotas({ inicial }: { inicial: QuotaDeIa[] }) {
     <div className="flex flex-col gap-6">
       <SectionHeader
         title="Uso de IA"
-        description="Quanto cada pessoa pode gastar de IA por dia, por perfil. O teto vale para a rede inteira e na próxima chamada — não há deploy nem reinício. O contador de cada pessoa zera à meia-noite (UTC)."
+        description="Quanto de IA cada pessoa pode gastar por dia, por perfil, e quanto a avaliação das missões pode gastar por escola. O teto vale para a rede inteira e na próxima chamada — não há deploy nem reinício. O contador zera à meia-noite (UTC)."
       />
 
       {erro && !editando ? <FeedbackAlert type="error" title="Não deu" description={erro} /> : null}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {quotas.map((quota) => {
           const copy = PERFIS[quota.perfil];
           const equivale = Math.floor(quota.tokensPorDia / copy.custoDaUnidade);
@@ -143,7 +157,7 @@ export function PainelDeQuotas({ inicial }: { inicial: QuotaDeIa[] }) {
                     <span className="ml-2 text-[14px] font-normal text-unooria-neutral-600">tokens por dia</span>
                   </p>
                   <p className="text-[13px] text-unooria-neutral-600">
-                    Cabe cerca de <strong>{numero(equivale)}</strong> {copy.unidade} por pessoa.
+                    Cabe cerca de <strong>{numero(equivale)}</strong> {copy.unidade} {copy.porQuem}.
                   </p>
                 </div>
 
@@ -193,7 +207,7 @@ export function PainelDeQuotas({ inicial }: { inicial: QuotaDeIa[] }) {
               }
               helperText={
                 editando && valorValido
-                  ? `Cabe cerca de ${numero(Math.floor(novoValor / PERFIS[editando.perfil].custoDaUnidade))} ${PERFIS[editando.perfil].unidade} por pessoa.`
+                  ? `Cabe cerca de ${numero(Math.floor(novoValor / PERFIS[editando.perfil].custoDaUnidade))} ${PERFIS[editando.perfil].unidade} ${PERFIS[editando.perfil].porQuem}.`
                   : "Hoje: " + (editando ? numero(editando.tokensPorDia) : "")
               }
             />
@@ -201,7 +215,7 @@ export function PainelDeQuotas({ inicial }: { inicial: QuotaDeIa[] }) {
               id="quota-motivo"
               label="Motivo"
               rows={3}
-              placeholder="A rede contratou o pacote ampliado. / Incidente #123: consumo anormal na exp-03."
+              placeholder="A rede contratou o pacote ampliado. / Incidente #123: consumo anormal na exp02em1b."
               helperText="Obrigatório, e fica no histórico com o valor anterior e o novo. Meses depois é ele que diz se isto foi decisão comercial ou incidente."
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}

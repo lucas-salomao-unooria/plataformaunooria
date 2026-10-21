@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/commo
 import type { Prisma } from "@prisma/client";
 import { disponibilidadeDoCatalogo, exigirRecursoDisponivel } from "../comum/disponibilidade";
 import { turmasDoEstudante } from "../comum/liberacao";
+import { contarEquipesDaTurma } from "../equipes/consulta";
 import { professorLeciona } from "../comum/turmas-do-professor";
 import { PrismaService } from "../prisma/prisma.service";
 import {
@@ -16,13 +17,32 @@ import {
  * A SALA DE AULA (ADR-69): a turma como contexto do que existe para fazer.
  *
  * Este módulo é de PLATAFORMA, não de experiência — por isso não tem prefixo
- * `exp_NN_` e por isso ele não conhece nenhuma missão pelo nome. O que ele sabe
+ * `exp08ef1b_`/`app_70_` e por isso ele não conhece nenhuma missão pelo nome. O que ele sabe
  * é turma, série e catálogo; o que cada missão faz por dentro continua sendo
  * assunto do módulo dela.
  */
+/** Quem quer saber que a missão foi encerrada numa turma (ADR-154). */
+export type AoEncerrarMissao = (
+  tx: Prisma.TransactionClient,
+  alvo: { escolaId: string; turmaId: string; expId: string },
+) => Promise<void>;
+
 @Injectable()
 export class SalasService {
+  private readonly aoEncerrar: AoEncerrarMissao[] = [];
+
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * O gancho de "a missão foi ENCERRADA nesta turma", chamado por quem depende
+   * disso na subida (o `onModuleInit` do `EvidenciasService`, ADR-154). Cada
+   * registro acrescenta, e todos rodam na transação de quem encerrou: um erro
+   * ali desfaz o encerramento. A dependência é nesta direção — `evidencias`
+   * conhece `salas`, nunca o contrário —, o molde de `EquipesService.aoMudarEquipes`.
+   */
+  aoEncerrarMissao(callback: AoEncerrarMissao): void {
+    this.aoEncerrar.push(callback);
+  }
 
   /**
    * O catálogo de experiências.
@@ -163,7 +183,7 @@ export class SalasService {
         throw new NotFoundException({ mensagem: "Turma não encontrada." });
       }
 
-      const [catalogo, estados, liberacoes] = await Promise.all([
+      const [catalogo, estados, liberacoes, equipes] = await Promise.all([
         this.catalogo(tx, escolaId),
         this.estadosDaTurma(tx, escolaId, turmaId),
         tx.liberacao.findMany({
@@ -175,6 +195,8 @@ export class SalasService {
             professor: { select: { displayName: true } },
           },
         }),
+        /* Uma consulta para a grade inteira (`groupBy`), nunca uma por missão. */
+        contarEquipesDaTurma(tx, escolaId, turmaId),
       ]);
 
       const porExp = new Map(liberacoes.map((l) => [l.expId, l]));
@@ -189,6 +211,9 @@ export class SalasService {
             liberadaPor: linha?.professor.displayName ?? null,
             liberadaEm: linha?.liberadaEm.toISOString() ?? null,
             encerradaEm: linha?.encerradaEm?.toISOString() ?? null,
+            /* Quem divide computador nesta missão (E13, ADR-111): é o número que
+               diz ao professor, na grade, que a sala já tem equipes montadas. */
+            equipes: equipes.get(missao.expId) ?? 0,
           };
         },
       );
@@ -211,7 +236,7 @@ export class SalasService {
   /**
    * LIBERAR ou ENCERRAR uma missão nesta turma. Idempotente: apertar duas vezes
    * não muda nada além do carimbo, e é exatamente o clique que um professor
-   * nervoso dá duas vezes (a mesma razão da largada da exp-03).
+   * nervoso dá duas vezes (a mesma razão da largada da exp02em1b).
    *
    * Só QUEM LECIONA libera. Gestor não: ele vê a sala e não decide a aula — a
    * opção nem aparece na tela dele, e aqui a rota recusa. Se uma rede pedir
@@ -237,7 +262,7 @@ export class SalasService {
       }
 
       /* A experiência precisa existir no catálogo E ser de estudante. Sem esta
-         checagem dava para liberar `exp-90-plano-de-aula` numa turma: um botão
+         checagem dava para liberar `app-90-plano-de-aula` numa turma: um botão
          que não abre nada, porque `/exp/*` responde 404 para ferramenta de
          professor. Catálogo vazio (dev sem seed) cai aqui com a causa dita. */
       const experiencia = await tx.experiencia.findUnique({
@@ -278,6 +303,10 @@ export class SalasService {
         },
         select: { expId: true, estado: true, liberadaEm: true, encerradaEm: true },
       });
+
+      if (liberacao.estado === "encerrada") {
+        for (const callback of this.aoEncerrar) await callback(tx, { escolaId, turmaId, expId });
+      }
 
       return {
         expId: liberacao.expId,

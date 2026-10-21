@@ -24,7 +24,7 @@ despachada crua aos listeners.
 
 ```json
 { "eventId": "uuid", "ts": "ISO", "estudanteId": "...", "escolaId": "...",
-  "expId": "exp-01", "expVersion": "1.2.0", "sessaoId": "uuid",
+  "expId": "exp08ef1b", "expVersion": "1.2.0", "sessaoId": "uuid",
   "verbo": "completed|attempted|interacted|scored|...",
   "objeto": "fase-3", "resultado": { }, "contexto": { } }
 ```
@@ -35,13 +35,13 @@ com a aba, e é decisão consciente (IndexedDB é o próximo passo).
 
 **Nada de PII no evento** (regra 6): `estudanteId` é opaco, e nem nome, nem
 e-mail, nem o texto que o estudante escreveu entram em `resultado`/`contexto`.
-A exp-03 é o exemplo do corte certo: registra *quantas* fontes foram carregadas,
+A exp02em1b é o exemplo do corte certo: registra *quantas* fontes foram carregadas,
 nunca as palavras com que o estudante pediu.
 
 ## Timeout: 10s é o default, e ele está errado para IA
 
 `OpcoesDeChamada.timeoutMs` existe porque o default serve para ler catálogo e
-não para uma volta de IA com ferramentas (10 a 30s na exp-03). Chamada de IA
+não para uma volta de IA com ferramentas (10 a 30s na exp02em1b). Chamada de IA
 declara o próprio teto; sem isso o estudante vê "não deu certo" no meio de uma
 resposta que estava vindo.
 
@@ -65,7 +65,7 @@ ou num layout cria a segunda cópia que ninguém atualiza junto.
 motivos, os dois já custaram tempo em outros pontos deste repo: (1) o hub
 transpila este pacote (`transpilePackages`), e `import.meta.env` aqui quebra o
 build dele; (2) por `config`, uma env só do hub liga as duas superfícies e
-desligar não exige republicar as seis experiências. O `config` é
+desligar não exige republicar as experiências. O `config` é
 `Record<string, unknown>` e aditivo — campo novo ali **não** sobe
 `PROTOCOL_VERSION`.
 
@@ -78,7 +78,7 @@ acrescentar um destino, mantenha essa separação.
 Clarity (`friendlyName`) fica de fora de propósito: é dado de menor indo para
 processador de terceiro.
 
-### Mexeu aqui? Suba a versão das SEIS experiências
+### Mexeu aqui? Suba a versão de TODAS as experiências
 
 O filtro de mudanças do `deploy.yml` inclui `packages/sdk`, então **qualquer**
 alteração neste pacote republica todas as experiências. O `rsync` do deploy roda
@@ -101,7 +101,7 @@ Quatro coisas que a SDK faz depois do handshake, todas com o token do
   15 min). O ratio vem de **`config.obs.traceRatio` do `hub:init`** (env de
   runtime do hub), nunca de `import.meta.env`; com 0 (dev) os pacotes nem são
   baixados — entram por `import()` dinâmico, em chunks à parte (~17 KB gz
-  medidos na exp-02). `resourceFetch` (um span por asset) é descartado antes de
+  medidos na exp04ef1b). `resourceFetch` (um span por asset) é descartado antes de
   sair. Sem `context-zone` (zone.js), de propósito. **O `traceparent` só vai
   para a api** (`propagateTraceHeaderCorsUrls`); o export a cada **30 s**, não
   10 — uma escola sai por um NAT e o rate limit do WAF é por IP.
@@ -130,7 +130,7 @@ passou meses invisível.** Sem `timeZone`, `Intl` usa o fuso de quem executa —
 no hub a mesma linha roda no contêiner (UTC) e no navegador
 (`America/Sao_Paulo`). Entre 21h e a meia-noite os dois rendem DIAS diferentes,
 o React acusa "hydration failed", regenera a árvore e o clique da pessoa cai no
-vazio. Foi assim que a suíte e2e da exp-08 morreu com um timeout de clique.
+vazio. Foi assim que a suíte e2e da exp08ef4b morreu com um timeout de clique.
 
 - **Formato novo entra AQUI**, como função nomeada pela intenção. Um formatador
   escrito na tela é o começo do décimo segundo lugar que formata data sozinho.

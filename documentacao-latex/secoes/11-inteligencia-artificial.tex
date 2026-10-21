@@ -4,7 +4,7 @@
 \chapter{Camada de inteligência artificial}
 \label{cap:ia}
 
-A IA generativa é usada em quatro lugares da plataforma, com propósitos e riscos
+A IA generativa é usada em vários lugares da plataforma, com propósitos e riscos
 muito diferentes. Este capítulo descreve a camada única por onde todos passam, a
 economia de \emph{tokens} que a sustenta e os \emph{guardrails} que impedem cada
 uso de produzir dano.
@@ -15,29 +15,81 @@ uso de produzir dano.
 \toprule
 \headrow \thd{Uso} & \thd{Onde} & \thd{O que gera, e o que NÃO gera}\\
 \midrule
-Geração de \emph{feed} & exp-01, \arq{src/geracao/} &
+Geração de \emph{feed} & exp08ef1b, \arq{src/geracao/} &
   Personas fictícias, \emph{captions}, \emph{hashtags} e arte dos posts. O
   \emph{mix} (quantos posts de cada lado, perfil e intensidade) é decidido pelo
   \textbf{servidor}; a IA só preenche.\\
-\zebra Reação ao vivo & exp-01, \arq{src/motor/} &
+\zebra Reação ao vivo & exp08ef1b, \arq{src/motor/} &
   Comentários de persona reagindo ao que o estudante publicou. Desligável pelo
   professor no meio da aula, sem \emph{deploy} (\cd{ia\_ao\_vivo}).\\
-Plano de aula & exp-90, \arq{src/planos/} &
+Plano de aula & app-90, \arq{src/planos/} &
   Um plano anual completo em Markdown, a partir do currículo da rede e das
   unidades do ano. \textbf{Não} decide nota nem avalia estudante.\\
-\zebra Entorno do \emph{check-in} & exp-91, \arq{src/bemestar/} &
+\zebra Entorno do \emph{check-in} & app-91, \arq{src/bemestar/} &
   Abertura do dia, pergunta aberta e acolhimento. \textbf{Nunca} reescreve um
   item do DASS-21, nunca vê pontuação, nome ou escola.\\
-Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
-  Três superfícies: as reações do grupo à intervenção do estudante, a conversa
-  com Amara depois da decisão, e a devolutiva do \enquote{Meu percurso}. O
-  \textbf{desfecho} (\cd{checada}, \cd{ruido}, \cd{conflito}) e a pontuação saem
-  de \arq{regras/}, não do modelo --- a IA só \emph{redige} o que já foi
-  decidido (\adrr{ADR-66}).\\
-\zebra Mídia da missão & exp-07, \arq{midia.service.ts} &
-  As duas falas de áudio, o episódio de podcast a duas vozes e as fotos do
-  boato. Gerado \textbf{uma vez}, no preparo do professor, e cacheado no bucket;
-  o estudante nunca espera por geração (\adrr{ADR-67}).\\
+Preparo da cobertura & exp07ef1b, \arq{src/a-selecao/} &
+  Um lote de 12 posts (4:4:4 por perfil) sobre o tema da professora, e as
+  imagens a partir da descrição de cada um. \textbf{Nada} chega à turma sem a
+  homologação dela; sem IA, roda o banco curado.\\
+\zebra Leitura da legenda & exp07ef1b, \arq{src/a-selecao/} &
+  Um nível de EF07CO11 para a legenda dos Stories (o Canal A), que só o
+  professor vê e corrige. Falha, timeout ou saldo zerado não marcam nada
+  (\adrr{ADR-115}).\\
+\zebra Leitura da reflexão & exp08ef1b, \arq{src/motor/canal-a/} &
+  Um nível de EF08CO11 para o PRIMEIRO texto salvo da reflexão, uma vez só por
+  estudante na atividade, depois da resposta e sem a criança esperar. A IA
+  recebe só o texto e uma descrição neutra da missão. O painel mostra
+  \enquote{Reflexão --- sugestão da IA} e o professor confere contra o texto
+  lido. A falha técnica (tempo, \emph{provider}, saída incoerente) tenta de
+  novo, até 3 vezes, com o mesmo texto; sem saldo, ou depois da 3ª falha, a
+  leitura encerra sem marca (\adrr{ADR-167}).\\
+Preparo do pacote & exp04ef1b, \arq{src/jornal-escola/} &
+  O texto das oito notícias sobre o tema do professor, num \textbf{molde
+  sorteado no servidor} (que notícia é de que meio e que papel tem no
+  gabarito), e as imagens a partir da descrição de cada uma. \textbf{Nada}
+  chega à turma sem a homologação, e nenhuma imagem sem o OK do professor,
+  imagem por imagem (\adrr{ADR-147}); sem saldo (429) ou sem provedor (503)
+  para o texto, o hub oferece o banco padrão. A imagem não é opcional: sem a
+  IA de imagem, a atividade não vai ao ar (a de mesma descrição que já está no
+  \emph{bucket} entra sem custo).\\
+\zebra Diagramação da página & exp04ef1b, \arq{src/jornal-escola/} &
+  \textbf{Em sala}, com a quota do \emph{estudante}: UM valor de um
+  \emph{enum} de três layouts, e nenhum texto. Não escolhe notícia, não
+  reordena as vagas, não vê o gabarito. Qualquer falha cai no modelo
+  automático (\adrr{ADR-117}).\\
+Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
+  As quatro áreas e os quarenta estandes da mostra científica sobre o tema e
+  os assuntos do professor (cinco chamadas: as categorias e as quatro áreas em
+  paralelo, \adrr{ADR-164}), e as imagens a partir da descrição de cada um.
+  Sem saldo ou sem provedor, a geração cai no \textbf{banco padrão} (200,
+  \cd{usouIa: false}, \adrr{ADR-157}), que o professor também escolhe direto. Nada chega à turma sem as DUAS fases da aprovação --- os textos
+  na homologação, as imagens num OK próprio, depois do qual elas congelam ---,
+  e em sala a IA não roda (\adrr{ADR-137}, \adrr{ADR-151}).\\
+\zebra Falas do podcast do Júri & exp06ef1b, \arq{src/juri-estadual/\B{}podcast-fonte.ts}
+  + \arq{src/podcast/} &
+  As três vagas do roteiro (os dois estandes de áreas diferentes, o feed do
+  Rafa, o da mesa ao lado), escritas a partir dos quarenta estandes do
+  rascunho pela rota única \rota{falas-do-tema} (\adrr{ADR-150}), com a quota
+  do professor. O banco padrão intocado usa o roteiro literal, sem IA
+  (\adrr{ADR-157}); na mostra da IA, sem ela, voltam as falas do sheet e a
+  tela pede a reescrita. O professor as revisa antes de
+  homologar (\adrr{ADR-151}).\\
+\zebra Agente de IA do professor & produto \cd{agente-professor}, \arq{apps/agente-professor}
+  + \arq{src/agente-professor/} &
+  Respostas sobre a BNCC e o acervo de livros da Unooria, com as fontes (título
+  e página). \textbf{Fora} da api: o agente roda no Vertex AI Agent Engine
+  (\adrr{ADR-126}). Recusa o que está fora do escopo; não planeja aula nem
+  avalia estudante, e o código de habilidade que cita é conferido pela api
+  (\adrr{ADR-127}).\\
+Ajuda (avatar ou mascote) & produto \cd{ajuda}, \arq{src/ajuda/} &
+  A resposta do atendente a quem tem dúvida sobre o uso da plataforma
+  (todo papel menos o estudante), a partir de uma base \textbf{gerada} do mapa de
+  produto e dos guias da aula. No avatar, o \emph{vendor} só escuta, fala e mostra
+  o rosto, e o texto é do nosso Gemini; no mascote (\adrr{ADR-158}), o Gemini Live
+  da Vertex ouve e fala, e o rosto é nosso. \textbf{Fora da quota de
+  \emph{tokens}}: o limite é em minutos (\adrr{ADR-132},
+  Seção~\ref{sec:ia-ajuda}).\\
 \bottomrule
 \end{tabularx}
 
@@ -45,66 +97,222 @@ Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
 \textbf{Correção, pontuação e gabarito nunca são gerados por IA.} A IA produz
 \emph{conteúdo} e \emph{texto de entorno}. Tudo que vale nota, classifica ou mede
 é código determinístico e testável --- e roda no servidor
-(Capítulo~\ref{cap:experiencias}).
+(Capítulo~\ref{cap:experiencias}). \textbf{Uma exceção, declarada:} na A Seleção
+a IA \emph{sugere} o nível de EF07CO11 lendo a legenda, com temperatura 0, uma
+tentativa, \emph{schema} fechado e rubrica fixa no servidor. A sugestão não é
+nota, a criança não a vê, e o professor a confere e ajusta (\adrr{ADR-115}).
+A mesma exceção, com as mesmas travas, vale para a reflexão do Unoovista: a IA
+lê uma vez o primeiro texto salvo e sugere o nível de EF08CO11 (\adrr{ADR-167}).
 \end{regra}
+
+\subsection{A diagramação do Jornal da Escola: IA em sala, e só um \emph{enum}}
+
+É a segunda chamada de IA com a turma diante da tela, depois da leitura da
+legenda da A Seleção, e segue as mesmas travas (\adrr{ADR-117}). A criança monta
+as três vagas da primeira página, e a tela pede a diagramação uma vez por
+combinação. \arq{diagramacao.service.ts} roda, nesta ordem:
+
+\begin{enumerate}
+  \item o \textbf{\emph{cache}} (\cd{exp04ef1b\_diagramacoes}): a mesma página
+    --- o pacote e as três vagas na ordem --- montada por outra criança não paga
+    outra chamada, e o custo fica limitado às combinações usadas;
+  \item o \textbf{\emph{rate limit}} por estudante, em memória: doze
+    diagramações a cada dez minutos, contra o toque nervoso;
+  \item a \textbf{quota do perfil \cd{estudante}}, com \cd{temSaldo} antes
+    (regra inviolável nº 5);
+  \item o \cd{generateJson}, com temperatura 0, \textbf{uma} tentativa e
+    \textbf{sem teto de saída} (\adrr{ADR-148}): o modelo raciocina mesmo com
+    \cd{thinkingBudget: 0}, e o teto de 32 \emph{tokens} que havia cortava a
+    resposta antes do JSON (Seção~\ref{sec:ia-raciocinio}); o \emph{schema} de
+    resposta só tem o \emph{enum} dos três layouts --- não há campo de texto
+    onde a IA escreva ---, e um \cd{validar} Zod confere a saída;
+  \item o \textbf{teto de tempo} de cerca de 6\,s por \cd{Promise.race}, porque o
+    \emph{provider} não tem \emph{timeout};
+  \item o débito em \cd{aoUsarTokens}, que cobra também a chamada que perdeu a
+    corrida para o teto (\adrr{ADR-74}).
+\end{enumerate}
+
+A IA recebe das três notícias só a manchete, o número de palavras do resumo e
+se há imagem, como DADO delimitado --- nunca o gabarito, a pista nem a
+consequência. \textbf{Falhou qualquer passo, o modelo automático diagrama}
+(\arq{regras/layout.ts}): imagem na manchete principal dá \cd{hero-image}, três
+manchetes curtas dão \cd{columns}, e o resto \cd{classic}. É determinístico e
+decide pela FORMA, nunca pelo gabarito, e o resultado do modelo não vai ao
+\emph{cache}. A tela não fica sabendo de onde o layout veio, e o layout não vale
+nada na correção. A diagramação por IA só se prova com o Vertex: com o
+\emph{mock}, a página é sempre do modelo. Por isso a suíte de ponta a ponta
+roda com a IA real e exige \cd{origem: "ia"} em toda resposta do \rota{POST
+/jornal-escola/diagramar} (\adrr{ADR-148}) --- aceitar o modelo como verde foi o
+que escondeu, até 2026-10-05, que a IA nunca diagramava.
+
+\begin{nota}
+\textbf{O preparo é do professor, e a estrutura é do servidor.} Pedir a um
+modelo \enquote{oito notícias, de três a quatro publicáveis, duas ou três
+antigas, e nenhum meio carregando a resposta} devolve, com frequência, o conjunto
+que a régua recusa --- um modelo de linguagem conta mal. Por isso o molde é
+DADO: \cd{sortearMolde} sorteia a cada geração o meio e o papel de cada id, a IA
+escreve o conteúdo, e o \cd{validar} recusa a saída que mexeu no molde ou fere
+\arq{invariantes.ts}, o que faz a tentativa ser regerada. A quota é a do perfil
+de quem prepara, com o que o \emph{vendor} cobrou debitado por tentativa,
+inclusive as recusadas.
+\end{nota}
+
+\subsection{O preparo do Júri Estadual: IA ou banco padrão}
+
+Em toda missão com preparo por IA, a falta dela tinha um caminho: o banco curado
+da A Seleção, o banco padrão do Jornal da Escola, o pacote pronto de Quem mandou
+isso?. O Júri Estadual de Projetos (\adrr{ADR-137}) foi a exceção até a
+\adrr{ADR-157}, que trouxe o banco padrão do PRD v2 (\arq{banco-padrao.ts}):
+o professor escolhe \enquote{Usar Banco Padrão Oficial}, ou a geração, sem
+saldo ou com o provedor fora, cai nele (200 com \cd{usouIa: false},
+\cd{origem: "padrao"} e o \cd{motivo}). Na mostra da IA, os quarenta estandes
+(dez por área, \adrr{ADR-164}) são gerados no preparo e homologados pelo
+professor. \arq{preparo.service.ts} roda \cd{temSaldo} com o perfil de quem
+prepara e faz \textbf{cinco} chamadas ao \cd{generateJson}, cada uma com
+\textbf{duas} tentativas: as quatro categorias, depois as quatro áreas em
+paralelo (dez estandes cada), e o estande que repetir título ou perfil de outra
+área é regerado sozinho, com os outros 39 no \emph{prompt}. A conta foi medida
+com IA real: os quarenta numa chamada levaram 92,7\,s e cerca de 9.900
+\emph{tokens} de saída, e a segunda tentativa estouraria o teto de 180\,s do
+BFF; por área são cerca de 25\,s, e o preparo inteiro, cerca de 42\,s. Área que
+falha derruba o rascunho inteiro (meia mostra não serve) e a rota cai no banco
+padrão. Cada \cd{validar} normaliza o cosmético (\cd{semExclamacao},
+\emph{hashtag} e perfil em minúsculas, a \emph{hashtag} da área primeiro), e o
+pacote montado passa pelo MESMO \cd{ConteudoDoPacoteSchema} da homologação ---
+uma régua escrita duas vezes é a que diverge. O débito vem do
+\cd{aoUsarTokens}, por tentativa, inclusive as recusadas (\adrr{ADR-74}); as
+rotas que gastam IA têm também um teto de requisição por minuto.
+\enquote{Regenerar} um estande sem saldo é 429; com a IA fora, 200 com
+\cd{usouIa: false} e o estande como estava. As imagens são incrementais,
+oito por chamada, quatro em paralelo, e quatro por estande --- as lâminas do
+carrossel do post, cada uma com o seu pedido (a foto do estande, o projeto de
+perto sem pessoas, a equipe sem rosto identificável e a bancada dos
+bastidores, \adrr{ADR-178}): 160 por atividade, com custo estimado na quota do
+professor, e sem elas a tela desenha
+a arte procedural. Desde a \adrr{ADR-151} elas têm aprovação própria: o
+professor vê a grade, pede \enquote{gerar outra imagem} para uma lâmina de um estande (um
+arquivo NOVO, fora do \emph{hash} do pedido, sempre pago; com o provedor
+fora, 503 e o estande fica com a que tinha) e aprova. Aprovadas, nenhuma
+imagem se gera mais naquela atividade (409 \cd{imagens-ja-aprovadas}): a que
+faltasse chegaria à turma sem que ninguém a visse. O podcast de recapitulação
+(\adrr{ADR-150}) também passa pela IA na criação: as três falas do tema são
+escritas a partir do rascunho da mostra da IA (o banco padrão tem o roteiro
+literal), revisadas pelo professor e gravadas pela homologação. O \emph{prompt} pede personas de 11 e 12 anos, nomes
+brasileiros com gênero equilibrado e escolas fictícias, e o tema, os assuntos e
+o contexto do professor entram como DADO delimitado, com tetos de tamanho que
+são a primeira barreira contra injeção de instrução.
+
+\textbf{As imagens do banco padrão} (\adrr{ADR-164}) são a outra porta de IA
+do Júri, e não são do professor: o \cd{admin} as gera em
+\rota{/unooria/recursos/imagens-do-juri} (\rota{POST
+/juri-estadual/banco-padrao/imagens}), até oito por chamada, só as que faltam,
+quatro por projeto (as lâminas, \adrr{ADR-178}), com o mesmo nome determinístico
+da customização (o \emph{hash} do pedido de cada lâmina) --- o storage é o
+registro, sem tabela. É custo da
+plataforma: \textbf{sem quota de professor} (o \cd{QuotaService} não conhece o
+\cd{admin}), com \emph{rate limit} por usuário e medido no painel de custos
+(\adrr{ADR-161}) com atribuição explícita nas opções da imagem
+(\cd{AiImagemOpcoes.atribuicao}: recurso \cd{juri-estadual-banco-padrao},
+perfil \cd{admin}, sem escola), porque a rota não diz a verdade sobre quem
+paga. O pacote do banco padrão --- o atalho e o \emph{fallback} --- leva na
+\cd{midia} as imagens que existem; o estande sem imagem fica com a arte
+procedural.
+
+\begin{atencao}
+Com \env{AI\_PROVIDER}\cd{=mock}, o \cd{generateJson} sempre falha, e o
+preparo cai no banco padrão (\adrr{ADR-157}). A suíte de ponta a ponta
+(\arq{13-juri-estadual.mjs}) exerce a geração com IA real, nunca o mock.
+\end{atencao}
 
 \section{A camada única}
 
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+  every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+  mod/.style={c4component, font=\scriptsize, inner xsep=2pt, text width=30mm, minimum height=13mm},
+  porta/.style={c4component, font=\scriptsize, inner xsep=2pt, text width=30mm, minimum height=13mm, fill=unooGreenWash, draw=unooGreen},
+  impl/.style={c4component, font=\scriptsize, inner xsep=2pt, text width=30mm, minimum height=12mm, fill=unooSurface},
+  ext/.style={c4systemext, text width=28mm, minimum height=12mm}]
 
-  \draw[c4zone] (0.6,0.6) rectangle (15.4,-8.6);
-  \node[c4boundarylbl, fill=unooSurface] at (1.0,0.75) {API --- \arq{apps/api/src}};
+  % colunas c1 = 1.5, c2 = 4.8, c3 = 8.1, c4 = 11.4, c5 = 14.7
+  % linhas: módulos 0; quota -2.5; portas -4.8; implementações -7.2; externos -10.2
 
-  \node[c4component, text width=24mm] (g) at (2.4,-0.4) {\arq{geracao/}\desc{exp-01}};
-  \node[c4component, text width=24mm] (m) at (5.6,-0.4) {\arq{motor/}\desc{exp-01}};
-  \node[c4component, text width=24mm] (p) at (8.8,-0.4) {\arq{planos/}\desc{exp-90}};
-  \node[c4component, text width=24mm] (b) at (12.0,-0.4) {\arq{bemestar/}\desc{exp-91}};
-  \node[c4component, text width=20mm] (a) at (14.6,-2.0) {\rota{POST /ai/gerar}\desc{SDK}};
+  \node[mod] (ger) at (1.5,0) {\texttt{geracao/}, \texttt{motor/}\desc{exp08ef1b}};
+  \node[mod] (dom) at (4.8,0) {módulos de domínio\desc{\texttt{planos/}, \texttt{bemestar/} e os demais}};
+  \node[mod] (sdk) at (8.1,0) {\texttt{POST /ai/gerar}\desc{a rota da SDK}};
+  \node[mod] (age) at (11.4,0) {\texttt{agente-professor/}\desc{o chat do professor}};
+  \node[mod] (aju) at (14.7,0) {\texttt{ajuda/}\desc{mascote e avatar}};
 
-  \draw[c4boundary, draw=unooGreen!70] (1.4,-3.0) rectangle (14.6,-7.9);
-  \node[c4boundarylbl, fill=unooSurface, text=unooGreen!60!black] at (1.8,-2.85)
-    {\arq{src/ai/} --- a ÚNICA porta};
+  \node[porta, text width=91mm, minimum height=11mm] (quota) at (8.1,-2.5)
+    {\textbf{\texttt{QuotaService}} --- \texttt{temSaldo(escola, usuario, perfil)}
+     ANTES, \texttt{consumir(tokens)} DEPOIS\desc{teto em \texttt{ia\_quotas} (dado, não
+     \emph{env}); soma em \texttt{ia\_uso\_diario}}};
 
-  \node[c4component, text width=32mm, fill=unooGreenWash, draw=unooGreen] (q) at (4.0,-4.0)
-    {\textbf{\cd{QuotaService}}\desc{\cd{temSaldo(escola, usuario, perfil)}
-     ANTES; \cd{consumir(tokens)} DEPOIS}};
+  \node[porta, text width=91mm] (prov) at (4.8,-4.8)
+    {\textbf{\texttt{AiProvider}} --- \texttt{generate}, \texttt{generateJson},
+     \texttt{conversar}, \texttt{generateImage}, \texttt{generateSpeech}\desc{embrulhado
+     pelo \texttt{MedidorDeProvider}, que mede e registra o custo}};
+  \node[porta] (pag) at (11.4,-4.8) {\textbf{\texttt{AgenteProfessorPort}}};
+  \node[porta] (pao) at (14.7,-4.8) {\textbf{\texttt{VozAoVivoPort}}\\\textbf{\texttt{AvatarAoVivoPort}}};
 
-  \node[c4component, text width=32mm, fill=unooGreenWash, draw=unooGreen] (pr) at (8.4,-4.0)
-    {\textbf{\cd{AiProvider}}\desc{\cd{generate}, \cd{generateJson},
-     \cd{generateImage}, \cd{generateSpeech}}};
+  \node[impl] (vx) at (1.5,-7.2) {\texttt{vertex.provider.ts}\desc{\emph{default}; ADC + REST}};
+  \node[impl, fill=unooPaper, draw=unooAxis] (mk) at (4.8,-7.2) {\texttt{mock.provider.ts}\desc{só testes}};
+  \node[impl] (pp) at (8.1,-7.2) {\texttt{prompts.ts}\desc{\emph{prompt} de sistema; não sai daqui}};
+  \node[impl] (aec) at (11.4,-7.2) {\texttt{agent-engine.}\\\texttt{client.ts}\desc{SSE, ADC}};
+  \node[impl] (liv) at (14.7,-7.2) {\texttt{gemini-live.}\\\texttt{client.ts} e \texttt{liveavatar.}\\\texttt{client.ts}};
 
-  \node[c4component, text width=26mm] (pp) at (12.4,-4.0)
-    {\arq{prompts.ts}\desc{\emph{prompt} de sistema; nunca sai daqui}};
+  \node[ext, text width=59mm] (vertex) at (3.15,-10.8) {\textbf{Vertex AI --- Gemini}\desc{\texttt{global}, reserva em \texttt{us}}};
+  \node[ext] (eng) at (11.4,-10.8) {\textbf{Agent Engine}\desc{o agente do professor}};
+  \node[ext] (glive) at (14.7,-10.8) {\textbf{Gemini Live}\desc{\texttt{us-central1}}};
+  \node[ext] (lav) at (14.7,-12.8) {\textbf{LiveAvatar}\desc{HeyGen}};
 
-  \node[c4component, text width=30mm] (vx) at (5.0,-6.6)
-    {\arq{vertex.provider.ts}\desc{\emph{default}; ADC + REST}};
-  \node[c4component, text width=30mm, fill=unooPaper, draw=unooAxis] (mk) at (10.4,-6.6)
-    {\arq{mock.provider.ts}\desc{testes e \emph{dev} sem GCP}};
+  % --- fronteiras
+  \begin{scope}[on background layer]
+    % a zona de fora primeiro: o que vem depois fica por cima do fundo dela
+    \node[c4zone, fit={(ger) (aju) (vx) (liv)}, inner xsep=17pt, inner ysep=28pt, yshift=-6pt] (apiz) {};
+    \node[c4boundary, draw=unooGreen!70, fill=unooGreenWash!40, fit={(quota) (prov) (vx) (liv)}, inner sep=9pt, yshift=3pt] (srcai) {};
+  \end{scope}
+  \node[c4boundarylbl, fill=unooSurface, anchor=south west] at ([xshift=6pt, yshift=-1pt]apiz.north west)
+    {API --- \texttt{apps/api/src}};
+  \node[c4boundarylbl, fill=unooSurface, text=unooGreen!60!black, anchor=north west]
+    at ([xshift=28mm, yshift=-1pt]srcai.south west) {\texttt{src/ai/} --- a ÚNICA porta para a IA};
 
-  \node[c4db, text width=24mm] (ia) at (0.0,-4.4) {\texttt{ia\_uso\_diario}};
-  \node[c4systemext, text width=26mm, minimum height=13mm] (vertex) at (14.4,-9.8)
-    {\textbf{Vertex AI}\desc{endpoint \cd{global}}};
-
-  \draw[c4rel] (g.south) -- (2.4,-3.4);
-  \draw[c4rel] (m.south) -- (5.6,-3.4);
-  \draw[c4rel] (p.south) -- (8.8,-3.4);
-  \draw[c4rel] (b.south) -- (12.0,-3.4);
-  \draw[c4rel] (a.west) -- (13.4,-2.0) -- (13.4,-3.4);
-  \draw[c4relbi] (q.west) -- (ia.east);
-  \draw[c4rel] (q.east) -- (pr.west) node[cxlabel, midway, above]{só com saldo};
-  \draw[c4reldash] (pr.east) -- (pp.west);
-  \draw[c4rel] (pr.south) -- (vx.north east);
-  \draw[c4reldash] (pr.south) -- (mk.north west);
-  \draw[c4rel] (vx.south east) -- (10.0,-9.8) -- (vertex.west)
-    node[cxlabel, pos=0.55, above]{HTTPS + ADC};
+  % --- relações
+  \draw[c4reldash, draw=unooRed] (ger.south) -- (ger.south |- prov.north)
+    node[cxlabel, text=unooRed, pos=0.42, text width=17mm]{sem quota (\adrr{ADR-74})};
+  \foreach \m in {dom, sdk, age}
+    \draw[c4rel] (\m.south) -- (\m.south |- quota.north);
+  \draw[c4rel] (dom.south |- quota.south) -- (dom.south |- prov.north)
+    node[cxlabel, midway]{só com saldo};
+  \draw[c4rel] (sdk.south |- quota.south) -- (sdk.south |- prov.north);
+  \draw[c4rel] (age.south |- quota.south) -- (pag.north);
+  \draw[c4rel] (aju.south) -- (pao.north)
+    node[cxlabel, pos=0.42, text width=20mm]{minutos por dia (\adrr{ADR-132})};
+  \draw[c4rel] (vx.north |- prov.south) -- (vx.north);
+  \draw[c4reldash] (mk.north |- prov.south) -- (mk.north);
+  \draw[c4reldash] (pp.north |- prov.south) -- (pp.north);
+  \draw[c4rel] (pag.south) -- (aec.north);
+  \draw[c4rel] (pao.south) -- (liv.north);
+  \draw[c4rel] (vx.south) -- (vx.south |- vertex.north) node[cxlabel, pos=0.58]{HTTPS};
+  \draw[c4rel] (aec.south) -- (eng.north) node[cxlabel, pos=0.58]{\texttt{:streamQuery}};
+  \draw[c4rel] (liv.south) -- (glive.north) node[cxlabel, pos=0.58]{WSS};
+  \draw[c4relbi] (liv.east) -- ++(0.75,0) |- (lav.east);
 
 \end{tikzpicture}}
-\caption[Camada de IA]{A camada de IA. Quatro módulos de domínio e uma rota de
-  SDK entram; todos passam por \cd{QuotaService} antes do \emph{provider}.
-  Nenhum módulo fora da fronteira verde conhece o \emph{vendor} do modelo.}
+\caption[Camada de IA]{A camada de IA. Os módulos de domínio, a rota da SDK e
+  o agente de IA do professor passam pelo \cd{QuotaService} antes de chamar a
+  IA (Figura~\ref{fig:uml-classes-ia} lista os módulos um a um);
+  \arq{geracao/} e as reações de \arq{motor/} chamam o \emph{provider} direto,
+  sem quota --- a exceção registrada na \adrr{ADR-74} e em
+  \arq{ai/AGENTS.md}; a Ajuda é limitada por minutos, não por \emph{tokens}
+  (\adrr{ADR-132}). Além do \cd{AiProvider}, três portas ficam fora dele
+  porque não são \enquote{gerar texto}: o agente no Agent Engine
+  (\adrr{ADR-126}), a voz ao vivo do mascote (\adrr{ADR-158}) e a sala do
+  avatar. Todas registram o custo de cada chamada em \cd{ia\_consumo\_diario}
+  (\adrr{ADR-161}). Nenhum módulo fora da fronteira verde conhece o
+  \emph{vendor}.}
 \label{fig:camada-ia}
 \end{figure}
 
@@ -118,7 +326,7 @@ Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
 (\adrr{ADR-74}): ele devolve \cd{T}, não \cd{AiResult}, e sem o \emph{callback}
 não há número para debitar. Um \cd{temSaldo} sem \cd{aoUsarTokens} é meia
 regra --- barra quem já estourou o teto e faz o teto nunca ser alcançado. Foi
-o que aconteceu no plano de aulas da exp-92, a operação mais repetida da
+o que aconteceu no plano de aulas da app-92, a operação mais repetida da
 ferramenta.
 \end{regra}
 
@@ -146,8 +354,8 @@ Uma linha por (escola, usuário, dia), com incremento atômico, resolve os dois.
 \end{decisao}
 
 \begin{decisao}
-\textbf{O limite depende do PERFIL.} O estudante interage com o tutor da exp-01
-e com os turnos da exp-03 (Missão Tempestade), onde uma partida completa gasta
+\textbf{O limite depende do PERFIL.} O estudante interage com o tutor da exp08ef1b
+e com os turnos da exp02em1b (Missão Tempestade), onde uma partida completa gasta
 cerca de \num{77000} \emph{tokens} medidos: o teto de estudante é calibrado em
 \num{300000} \emph{tokens}/dia, o que cabe três partidas completas. O valor
 inicial de \num{20000} estourava no quarto turno com erro de sala fechada. O
@@ -161,7 +369,9 @@ não consegue gerar um plano}.
 \begin{decisao}
 \textbf{O limite é DADO, não variável de ambiente} (\adrr{ADR-105}). Uma linha
 por perfil em \cd{ia\_quotas} (\cd{estudante}, \cd{professor}; vocabulário
-fechado por CHECK), escopo do contrato inteiro, semeada pela \emph{migration}
+fechado por CHECK), mais a linha \cd{avaliacao} da \adrr{ADR-169} --- a
+leitura da plataforma para a evidência pedagógica, com teto POR ESCOLA, contada
+em \cd{ia\_uso\_diario} com o usuário \cd{avaliacao}, que não é perfil de token, escopo do contrato inteiro, semeada pela \emph{migration}
 com os valores acima. O \cd{QuotaService} a lê a cada \cd{temSaldo} --- sem
 \emph{cache}, para que a alteração valha na chamada seguinte em todas as
 instâncias --- e todo perfil que não é \cd{estudante} cai na linha
@@ -179,6 +389,21 @@ A verificação acontece \textbf{antes} de chamar o \emph{provider}. Gastar
 \emph{rate limit} por usuário (\arq{src/comum/rate-limit.ts}), que é uma proteção
 diferente: a quota limita custo diário, o \emph{rate limit} limita rajada.
 \end{nota}
+
+\begin{decisao}
+\textbf{Uma exceção à regra, e só ela: a Ajuda com avatar} (\adrr{ADR-132}). O
+turno do atendente chama \cd{conversarEmFluxo} sem \cd{temSaldo} e sem
+\cd{consumir}. O que custa na Ajuda é o \textbf{minuto de vídeo} que o
+\emph{vendor} cobra (\emph{FULL Mode}: 2 créditos por minuto), e não o
+\emph{token}: a torneira dela é \cd{ajuda\_limites} (\cd{minutos-por-dia} e
+\cd{minutos-por-sessao}, semente 30 e 10), editada só pelo \cd{admin} na mesma
+tela \rota{/unooria/uso-de-ia}, com o mesmo histórico. Os \emph{tokens}
+continuam medidos pelo \cd{MedidorDeProvider} (operação
+\cd{conversarEmFluxo}); só não debitam de ninguém. A exceção \textbf{não se
+estende}: produto novo que queira ficar fora da quota pede ADR própria
+(\arq{docs/regras/o-que-nao-fazer.md}). O desenho do limite está na
+Seção~\ref{sec:ia-ajuda}.
+\end{decisao}
 
 \section{Credencial: ADC, nunca chave de API}
 
@@ -198,7 +423,7 @@ nem em \arq{.env.example}.
 Antes dessa mudança havia \textbf{só} o \emph{metadata server}, e por isso
 \emph{nenhuma} chamada de IA funcionava fora do Cloud Run --- nem no \emph{host},
 nem no contêiner, onde \cd{metadata.google.internal} não resolve. Em
-desenvolvimento a API ficava presa em \env{AI\_PROVIDER=mock} e a exp-90 devolvia
+desenvolvimento a API ficava presa em \env{AI\_PROVIDER=mock} e a app-90 devolvia
 um plano \textbf{falso}, o que é pior que falhar: parecia funcionar. Os dois
 \emph{compose} montam o ADC do \emph{host} em \arq{/adc} somente leitura; em
 Cloud Run a conta de serviço do serviço já \emph{é} a credencial, e ela precisa de
@@ -247,8 +472,10 @@ A proporção \cd{4:5} é PEDIDA no \cd{imageConfig} & Sem isso, o 3.1 devolve
 
 \subsection{Voz: a única chamada que não é ao \emph{aiplatform}}
 
-\cd{generateSpeech} chegou ao \cd{AiProvider} com a exp-07 (\adrr{ADR-67}) e é a
-exceção do capítulo: as outras três operações batem em
+\cd{generateSpeech} chegou ao \cd{AiProvider} com o Eco no Grupo (\adrr{ADR-67}) e
+ficou no contrato depois que a missão saiu (\adrr{ADR-113}): hoje nenhuma
+experiência sintetiza voz. É a exceção do capítulo: as outras três operações
+batem em
 \cd{\{loc\}-aiplatform.googleapis.com}, e a síntese bate em
 \cd{texttospeech.googleapis.com/v1/text:synthesize} --- mesma credencial ADC,
 mesma família de modelos (\env{VERTEX\_TTS\_MODEL}, \cd{gemini-2.5-flash-tts}),
@@ -265,7 +492,7 @@ outro serviço, que precisa estar \textbf{habilitado} no projeto.
   voz trêmula} é instrução ao modelo, não texto falado. Os dois têm teto de
   \num{4000}~\emph{bytes}, conferido no domínio antes do pedido --- estourar
   devolve 400 sem dizer qual dos dois campos.\\
-\cd{multiSpeakerMarkup} para o podcast & Lucas e Bia numa chamada só, cada turno
+\cd{multiSpeakerMarkup} para diálogo & Duas vozes numa chamada só, cada turno
   com seu \cd{speakerId}. Monólogo usa \cd{voice.name}; diálogo usa
   \cd{multiSpeakerVoiceConfig}. \textbf{Mandar os dois} devolve 400.\\
 \bottomrule
@@ -281,6 +508,7 @@ definida. Em produção, com \emph{service account}, o cabeçalho é inócuo.
 \end{atencao}
 
 \section{Raciocínio conta como saída}
+\label{sec:ia-raciocinio}
 
 \begin{atencao}
 Nos modelos das famílias 2.5 e 3.x, os \emph{tokens de pensamento} saem do
@@ -291,6 +519,16 @@ orçamento pensando e não sobrava saída.
 \env{VERTEX\_THINKING\_BUDGET} (\emph{default} \cd{0}, desligado) mantém a
 paridade com o aplicativo de origem, que usava um modelo sem essa etapa;
 \cd{-1} volta ao dinâmico.
+
+\textbf{No \cd{gemini-3.7-flash}, \cd{0} não desliga o raciocínio.} Medido em
+2026-10-05: até numa resposta de um \emph{enum} ele pensa cerca de 28 a 29
+\emph{tokens}; \cd{thinkingLevel: "MINIMAL"} é recusado (400) e \cd{"LOW"}
+ainda pensa 28. Com os tetos de 32 e 64 \emph{tokens}, a diagramação do Jornal
+da Escola e a leitura da legenda da A Seleção voltavam \cd{MAX\_TOKENS} sem
+texto e caíam SEMPRE na reserva, em silêncio. As duas ficaram sem teto de saída
+(\adrr{ADR-148}); quem limita a espera é o teto de tempo, e o custo, a quota.
+\textbf{Não ponha teto de saída pequeno numa chamada com reserva}: o corte não
+aparece como erro, aparece como a reserva.
 \end{atencao}
 
 \begin{regra}
@@ -315,6 +553,99 @@ dizer que falhou.
 \bottomrule
 \end{tabularx}
 
+\section{Quanto a IA custa: o registro de consumo e o painel}
+\label{sec:ia-custos}
+
+\adrr{ADR-161}. A quota (\adrr{ADR-105}) limita
+quanto cada perfil PODE gastar por dia; o painel de custos da Unooria
+(\rota{/unooria/custos-de-ia}, só \cd{admin}) responde quanto a rede GASTOU, em
+quê e quanto isso custou em reais. São três peças, e só a primeira mora em
+\arq{src/ai}:
+
+\begin{enumerate}
+  \item \textbf{O que se mede} (\arq{ai/\B consumo-\B de-\B ia.ts}, o
+    \cd{Registro\B De\B Consumo}): uma linha de \cd{ia\_consumo\_\B diario} por (dia,
+    escola, perfil, recurso, operação, modelo), somada a cada chamada. Sem
+    \cd{usuario\_id}: o FinOps pergunta em quê, nunca quem.
+  \item \textbf{Quanto vale} (\cd{ia\_precos}): o preço de lista de cada modelo,
+    com a data a partir da qual vale, editável pelo \cd{admin} com motivo.
+  \item \textbf{Em reais} (\cd{cotacoes\_dolar}): a PTAX de venda do Banco
+    Central do dia da chamada.
+\end{enumerate}
+
+\begin{tabularx}{\linewidth}{@{}L{36mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Porta} & \thd{Modalidade} & \thd{O que entra na linha}\\
+\midrule
+\cd{generate}, \cd{conversar}, \cd{conversarEmFluxo} & texto & Entrada =
+  \cd{promptTokenCount}; saída = total $-$ entrada (o raciocínio vai junto, na
+  tarifa de saída). \emph{Stream} abortado antes do \cd{fim}: a chamada conta,
+  sem \emph{tokens}.\\
+\zebra \cd{generateJson} & texto & A soma de todas as tentativas, inclusive as
+  recusadas pelo \cd{validar}, por \cd{aoUsarTokens(tokens, divisao)}.\\
+\cd{generateImage} & imagem & O \cd{usageMetadata} da geração, pelo
+  \cd{AiImagemOpcoes.aoUsarTokens}, e uma imagem quando ela veio. A atribuição
+  é a da requisição, salvo \cd{AiImagemOpcoes.atribuicao} (as imagens do banco
+  padrão do Júri, \adrr{ADR-164}).\\
+\zebra \cd{generateSpeech} & áudio & \textbf{Estimado}: segundos pelo tamanho do
+  MP3 de 32\,kbps, saída de 25 \emph{tokens} por segundo, entrada de
+  $\approx$ \emph{bytes}/4 do roteiro. Marcado \cd{estimado}; a tela mostra
+  \enquote{$\approx$}.\\
+Agente do professor & texto & No fim do turno, pelos eventos não parciais
+  (\cd{consumoDoTurno}); o modelo do \cd{model\_version} ou
+  \cd{gemini-3.7-flash}.\\
+\zebra Mascote da Ajuda (Live) & áudio & Uma linha por sessão, somando o
+  \cd{usageMetadata} de cada turno; a atribuição vem em
+  \cd{PedidoDeVoz.atribuicao}.\\
+Avatar em vídeo & vídeo & \textbf{Nada novo}: o painel lê os minutos de
+  \cd{ajuda\_sessoes} (avatar com sala aberta; sessão sem fim conta o teto
+  inteiro) e os cobra como \cd{liveavatar-full}, por minuto.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{O custo é DERIVADO na leitura, nunca gravado.} A linha guarda o que o
+\emph{vendor} mediu; o painel multiplica pelo preço vigente NAQUELE dia (o de
+maior \cd{vigente\_desde} que não passa dele, casando o modelo exato ou a
+família \cd{modelo-*}, o mais específico ganha) e pela PTAX daquele dia (o
+último dia útil, se o dia não teve). Corrigir um preço com data no passado
+recalcula o painel para trás --- é assim que um desconto de contrato
+descoberto na fatura entra na conta. Modelo com consumo e sem preço entra com
+custo zero e sai listado em \cd{modelosSemPreco}, e a tela avisa.
+\end{regra}
+
+\textbf{A atribuição é pela rota.} O \cd{contextoMiddleware} grava em
+\cd{Contexto\B Da\B Requisicao.\B recurso} o primeiro segmento da URL
+(\rota{/podcast/\B exp04ef1b/\B episodios} \seta{} \cd{podcast}), e o registro lê
+escola, perfil e recurso do mesmo \cd{AsyncLocalStorage}. Um consumidor novo de
+IA aparece no painel sem nenhuma linha de código a mais; o nome bonito vem de
+\cd{RECURSOS\_\B DE\_\B IA} (\arq{recursos/\B custos-\B de-\B ia.ts}), e rota sem nome aparece
+como \enquote{Outro (slug)}. As rotas \cd{posts} e \cd{runs}, do mesmo motor,
+somam numa linha só (Unoovista).
+
+\textbf{A PTAX vem do Banco Central} pela API pública Olinda
+(\cd{Cotacao\B Dolar\B Periodo}, datas no formato \cd{'MM-DD-YYYY'}), em
+\arq{recursos/\B cotacao-\B do-\B dolar.ts}. A api vai ao BCB só quando o \emph{cache}
+não cobre o início do período ou a última busca tem mais de uma hora (a PTAX do
+dia sai por volta das 13h), com prazo de 5\,s. Falha nunca derruba o painel:
+sai o \emph{log} \cd{cotacao-\B dolar-\B indisponivel}, a tela converte com o que o
+\emph{cache} tem e avisa.
+
+\begin{limitacao}
+\textbf{O painel não é a fatura.} Entra só o custo VARIÁVEL por chamada: o
+custo fixo do Agent Engine (a vCPU-hora do engine implantado) e o da
+infraestrutura ficam fora. A voz é estimativa, o preço semeado é o de lista
+(sem desconto de contrato), e o consumo de antes do \emph{deploy} desta
+medição não existe. A escrita é \emph{fire-and-forget}: uma falha de banco
+perde a linha, com o \emph{log} \cd{ia-consumo-nao-gravado}. O gatilho de
+rever (\adrr{ADR-161}) é o painel divergir da fatura do mês em mais de 10\%.
+\end{limitacao}
+
+Medido em 2026-10-13: a suíte \cd{professor/03-plano-de-aula}, com a IA real,
+gerou a linha \cd{planos} $|$ \cd{generate} $|$ \cd{gemini-3.6-flash} com
+\num{8593} \emph{tokens} de entrada e \num{3572} de saída, que o painel mostrou
+como R\$\,0,10 (PTAX de 09/10/2026, R\$\,4,9892).
+
 \section{\emph{Guardrails} do \emph{check-in} de bem-estar}
 
 Este é o uso de IA com maior risco de dano na plataforma, e por isso o mais
@@ -324,50 +655,43 @@ validada~\cite{vignola2014dass21}, em domínio público.
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+  every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}}]
+
+  % espinha em x = 0 (o caminho da IA); apoio à esquerda (x = -5.6);
+  % texto fixo do catálogo à direita (x = 5.6); retornos por x = -5.6 e 8.0
 
   \node[actstart] (ini) at (0,0) {};
-  \node[action, text width=32mm, right=8mm of ini] (abre)
-    {\rota{GET /bemestar/hoje}\\3 itens da permutação do ciclo};
-
-  \node[decision, text width=28mm, right=10mm of abre] (sinal)
-    {sinal de apoio? item 17 ou 21 $\geq$ 2, ou termo de risco};
-
-  \node[actionerr, text width=34mm, below=9mm of sinal] (fixo)
+  \node[action, text width=40mm] (abre) at (0,-1.3)
+    {\texttt{GET /bemestar/hoje}\\3 itens da permutação do ciclo};
+  \node[decision, text width=30mm] (sinal) at (0,-3.6)
+    {sinal de apoio?\\item 17 ou 21 $\geq$ 2, ou termo de risco};
+  \node[actionerr, text width=40mm] (fixo) at (-6.3,-3.6)
     {texto FIXO de apoio\\CVV 188, SAMU 192, CAPS/UBS\\
      \textbf{a IA não é chamada}\\\texttt{origem\_texto = 'seguranca'}};
-
-  \node[decision, text width=26mm, right=12mm of sinal] (saldo)
-    {tem saldo e \emph{provider}?};
-
-  \node[action, text width=32mm, below=9mm of saldo] (ia)
-    {IA gera abertura, pergunta aberta e acolhimento\\
-     recebe só: dia da semana, mês, nº do \emph{check-in},\\
-     texto livre delimitado};
-
-  \node[decision, text width=26mm, below=9mm of ia] (val)
-    {\cd{validarTextoDaIa}?};
-
-  \node[actionsys, text width=32mm, left=12mm of val] (fall)
-    {texto FIXO do catálogo\\\cd{origem\_texto = 'fallback'}};
-
-  \node[actionok, text width=30mm, below=9mm of val] (ok)
-    {\texttt{origem\_texto = 'ia'}};
-
-  \node[actend, left=12mm of ok] (fim) {};
+  \node[decision, text width=24mm] (saldo) at (0,-6.3) {tem saldo e \emph{provider}?};
+  \node[action, text width=40mm] (ia) at (0,-8.8)
+    {a IA gera abertura, pergunta aberta e acolhimento; recebe só dia da
+     semana, mês, nº do \emph{check-in} e o texto livre delimitado};
+  \node[actionsys, text width=38mm] (fall) at (6.2,-8.8)
+    {texto FIXO do catálogo\\\texttt{origem\_texto = 'fallback'}};
+  \node[decision, text width=29mm] (val) at (0,-11.3) {\texttt{validarTextoDaIa}?};
+  \node[actionok, text width=34mm] (ok) at (0,-13.4) {\texttt{origem\_texto = 'ia'}};
+  \node[actend] (fim) at (0,-15.0) {};
 
   \draw[flow] (ini) -- (abre);
   \draw[flow] (abre) -- (sinal);
-  \draw[flow] (sinal) -- (fixo) node[flowlbl, pos=0.5]{sim};
-  \draw[flow] (sinal) -- (saldo) node[flowlbl, pos=0.5]{não};
-  \draw[flow] (saldo) -- (ia) node[flowlbl, pos=0.5]{sim};
-  \draw[flow] (saldo.north) to[out=60,in=20] (fall.north east);
+  \draw[flow] (sinal) -- (fixo) node[flowlbl, midway]{sim};
+  \draw[flow] (sinal) -- (saldo) node[flowlbl, midway]{não};
+  \draw[flow] (saldo) -- (ia) node[flowlbl, midway]{sim};
+  \draw[flow] (saldo.east) -| (fall.north) node[flowlbl, pos=0.3]{não};
+  \draw[flow] (ia) -- (fall) node[flowlbl, midway]{falha};
   \draw[flow] (ia) -- (val);
-  \draw[flow] (val) -- (fall) node[flowlbl, pos=0.5]{barrado};
-  \draw[flow] (val) -- (ok) node[flowlbl, pos=0.5]{passou};
-  \draw[flow] (fall.south) -- (fall |- ok.north) -- (ok.west);
-  \draw[flow] (fixo.south) -- (fixo |- fim.north) -- (fim.north);
+  \draw[flow] (val.east) -| (fall.south) node[flowlbl, pos=0.3]{barrado};
+  \draw[flow] (val) -- (ok) node[flowlbl, midway]{passou};
   \draw[flow] (ok) -- (fim);
+  \draw[flow] (fixo.south) |- (fim.west);
+  \draw[flow] (fall.east) -- (8.8,-8.8) |- (fim.east);
 
 \end{tikzpicture}}
 \caption[Guardrails do check-in de bem-estar]{Os \emph{guardrails} do
@@ -406,6 +730,351 @@ com o resto do uso de IA --- e é a razão de a Seção~\ref{cap:tenancy} tratar
 localidade de processamento como item de conformidade, não de arquitetura.
 \end{nota}
 
+\section{O segundo \emph{vendor}: o agente de IA do professor}
+\label{sec:ia-agente}
+
+O agente de IA do professor é a \textbf{única} IA da plataforma que não passa pelo
+\cd{AiProvider} (\adrr{ADR-126}). O modelo, a instrução e as ferramentas moram num
+agente Google ADK em Python (\arq{apps/agente-professor}), servido pelo Vertex AI
+Agent Engine; a api chama o engine por uma porta própria de \arq{src/ai},
+\cd{AgenteProfessorPort}, que só \arq{agent-engine.client.ts} implementa
+(Seção~\ref{sec:contrato-agente}). O que a regra da camada única protege
+continua na api: papel, disponibilidade, \emph{rate limit}, quota e a posse da
+conversa.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Peça do agente} & \thd{O que faz}\\
+\midrule
+\cd{LlmAgent} \cd{agente\_professor} & A conversa: \cd{AGENTE\_MODELO}
+  (\cd{gemini-3.7-flash}), temperatura 0,3, com as duas ferramentas.\\
+\zebra Guarda de escopo & \emph{Plugin} \cd{before\_agent}: o modelo leve
+  (\cd{AGENTE\_MODELO\_ESCOPO}, \cd{gemini-3.5-flash-lite}) decide se a pergunta é
+  de BNCC ou do acervo; fora disso, recusa pelo nome \textbf{sem chamar o modelo
+  principal}, num evento com \cd{custom\_metadata.fora\_do\_escopo}.\\
+Título & \emph{Plugin} \cd{after\_agent}: depois do primeiro turno, o mesmo modelo
+  leve escreve \cd{state.titulo\_conversa}. Turno recusado ou falha do modelo de
+  título: não há título, e o turno seguinte tenta de novo.\\
+\zebra Poda de contexto & Até \num{6000} caracteres por \emph{string} e
+  \num{24000} por resposta de ferramenta, \textbf{exceto}
+  \cd{buscar\_habilidades} (\num{120000}: a Língua Portuguesa do 8º ano inteira
+  tem cerca de \num{58000}); retorno de ferramenta de turno anterior vira resumo
+  com os códigos.\\
+Modelo com reserva & \cd{global}, e \cd{us} quando \cd{global} responde 404, 429
+  ou 5xx --- só ANTES do primeiro pedaço da resposta; depois, trocar duplicaria o
+  texto na tela.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{\env{GOOGLE\_CLOUD\_LOCATION} é reservada no Agent Engine} e vale a região
+do \emph{deploy} (\cd{us-east1}). Configurar o modelo por ela o mandaria para a
+região do engine, onde ele pode nem existir --- um 404 que só aparece em
+produção. A location do modelo se configura em \arq{modelos.py}, pelo
+\cd{client\_kwargs} do \cd{Gemini} (\cd{AGENTE\_MODELO\_LOCATION}).
+\end{atencao}
+
+\textbf{A quota é a mesma, contada de outro jeito.} O turno usa o perfil
+\cd{professor} de \cd{ia\_quotas}: \cd{temSaldo} antes de abrir o \emph{stream}, e
+\cd{consumir} num \cd{finally} com a \textbf{soma dos \cd{usage\_metadata} dos
+eventos NÃO parciais} --- os parciais repetem o uso, e um turno com ferramenta faz
+mais de uma chamada ao modelo. Os \emph{tokens} da guarda e do título chegam somados
+ao evento seguinte. O escape conhecido: quando o modelo de título responde mas o
+saneamento zera o texto, não há evento, e cerca de 40 \emph{tokens} ficam fora da
+quota. O \cd{MedidorDeProvider} não vê o agente; a métrica dele é a linha de log
+\cd{agente-professor.turno} (Capítulo~\ref{cap:observabilidade}). Para o
+painel de custos, o mesmo recorte (eventos não parciais) sai dividido em entrada
+e saída por \cd{consumoDoTurno}, com o modelo do \cd{model\_version} do evento
+ou, sem ele, \cd{MODELO\_\B PADRAO\_\B DO\_\B AGENTE} (\cd{gemini-3.7-flash})
+(Seção~\ref{sec:ia-custos}).
+
+\textbf{A avaliação mora no agente}: 16 casos em
+\arq{avaliacao/\B agente\_\B professor.\B evalset.json} (escopo, código exato, a lista
+inteira de um ano, tema, acervo com citação, nome de estudante), rodados por
+\cd{adk eval} contra o \cd{dev}; e o relatório de recall das habilidades
+(\arq{ingestao/\B avaliar\_\B habilidades}) é o gatilho da \adrr{ADR-127}.
+
+\section{O terceiro \emph{vendor}: o avatar da Ajuda}
+\label{sec:ia-ajuda}
+
+A Ajuda com avatar (\adrr{ADR-132}) é um atendente em vídeo, aberto pelo item
+\enquote{Ajuda} do menu da conta, para todo papel menos o estudante. O
+\emph{vendor} é o LiveAvatar, da HeyGen, em \emph{FULL Mode} com \emph{Custom
+LLM}: ele faz a escuta (ASR), a voz (TTS) e o vídeo, e \textbf{o LLM é o nosso}.
+A cada fala da pessoa --- falada ou escrita no chat do modal, que chega pelo
+mesmo caminho ---, o servidor do \emph{vendor} chama
+\rota{POST /ajuda/llm/chat/completions} da api
+(Seção~\ref{sec:contrato-ajuda}), que responde pelo \cd{AiProvider} com a base de
+conhecimento no \emph{prompt}. A regra da camada única fica de pé inteira: o
+modelo é o Gemini de sempre, chamado de dentro de \arq{src/ai}, e o \emph{prompt}
+nunca sai da api. Foi isso que descartou o \emph{LITE Mode} com o Gemini Live do
+próprio \emph{vendor}: a chave e o \emph{prompt} iriam para a HeyGen.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Peça} & \thd{O que faz}\\
+\midrule
+\cd{AiProvider.\B conversarEmFluxo} & O turno do atendente, devolvido aos pedaços.
+  A única geração em \emph{stream} do \emph{provider}.\\
+\zebra Porta \cd{AVATAR\_AO\_VIVO} & Abre e encerra a sala de vídeo no
+  \emph{vendor}. Não gera texto.\\
+\arq{ajuda/prompt.ts} & O \emph{prompt}: instruções e base num prefixo fixo, o
+  papel de quem pergunta no fim.\\
+\zebra \arq{ajuda/base/\B base-da-ajuda.\B gerada.ts} & A base de conhecimento,
+  \textbf{gerada} do mapa de produto, dos guias da aula e dos manifestos.\\
+\cd{ajuda\_limites}, \cd{ajuda\_sessoes} & O limite em minutos e o medidor que o
+  confere a cada abertura.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{conversarEmFluxo}: a única geração em \emph{stream}}
+
+O \emph{vendor} pede \cd{stream: true} e \textbf{desiste se o primeiro byte
+passar de 10\,s} (medido no \emph{spike} de 2026-10-02). E o avatar começa a
+falar no primeiro pedaço: esperar a resposta inteira somaria o tempo de geração
+ao silêncio da pessoa. Daí o sexto método do \cd{AiProvider}, que no Vertex é
+\cd{streamGenerateContent?alt=sse} e emite pedaços \cd{\{tipo: "texto"\}} e, por
+último, UM \cd{\{tipo: "fim", resultado\}} com o total --- inclusive quando o
+modelo parou pelo teto (\cd{finishReason}). Erro de transporte é exceção, não
+evento.
+
+\begin{regra}
+\textbf{Sem ferramentas e sem \cd{validar}, de propósito}: num \emph{stream} o
+texto já saiu quando a validação poderia recusá-lo. Quem precisa recusar a fala
+usa \cd{conversar}. As partes de raciocínio (\cd{thought: true}) ficam fora da
+fala, como em \cd{conversar}. \textbf{Os \emph{tokens} saem do ÚLTIMO pedaço}: o
+\cd{usageMetadata} do Vertex vem acumulado, então o total é o maior valor visto,
+não a soma --- somar contaria o mesmo uso uma vez por pedaço. Consumidor novo
+que queira \emph{stream} pede ADR: esta é a segunda rota com \emph{stream} da
+api, depois do agente (\adrr{ADR-128}).
+\end{regra}
+
+\subsection{A porta \cd{AVATAR\_AO\_VIVO}: reserva de sala, não chamada de modelo}
+
+\arq{src/ai/avatar-ao-vivo.port.ts} define a porta, e
+\arq{src/ai/liveavatar.client.ts} é a única peça da api que conhece o LiveAvatar.
+Mora em \arq{src/ai} pela regra do \cd{AiProvider} --- nenhum \emph{vendor} de IA
+fora dali ---, mas é \textbf{porta própria, e não método do \cd{AiProvider}},
+porque não é uma chamada de modelo: é a reserva de um recurso cobrado por
+\textbf{minuto}, com ciclo de vida. São só dois verbos:
+
+\begin{itemize}
+  \item \cd{criarSessao} --- \rota{POST /v1/sessions/token} do \emph{vendor},
+    com o teto da sala (\cd{max\_session\_duration}), o contexto
+    (\cd{context\_id}: sem ele o avatar fica MUDO, sem erro nenhum), a
+    configuração de LLM (\cd{llm\_configuration\_id}: sem ela o \emph{vendor}
+    responderia com o LLM dele) e as \cd{dynamic\_variables}. Devolve o id da
+    sala e o \emph{token} que o \textbf{navegador} usa para entrar nela; a chave
+    da conta (\env{LIVEAVATAR\_API\_KEY}) nunca sai da api.
+  \item \cd{encerrarSessao} --- \rota{POST /v1/sessions/stop}. Sala que o
+    \emph{vendor} já fechou (pelo teto, por ociosidade) responde 4xx, e isso é o
+    estado desejado, não falha.
+\end{itemize}
+
+\begin{decisao}
+\textbf{Faltar peça desliga a Ajuda, nunca derruba a subida} --- ao contrário do
+\env{VERTEX\_PROJECT\_ID}, e pelo argumento do \env{AGENTE\_PROFESSOR\_MODO}.
+Sem \env{LIVEAVATAR\_API\_KEY}, \env{LIVEAVATAR\_CONTEXT\_ID} e
+\env{LIVEAVATAR\_LLM\_CONFIG\_ID} a porta nasce \cd{AvatarDesligado}; sem
+\env{AJUDA\_LLM\_SEGREDO} ou \env{AJUDA\_SESSAO\_CHAVE}, também. Nos dois casos
+\rota{POST /ajuda/sessoes} responde 503 \cd{AJUDA\_INDISPONIVEL} e os outros
+produtos seguem no ar. As peças nascem em momentos diferentes: o contexto e a
+configuração de LLM do \emph{vendor} só podem ser criados
+(\arq{scripts/liveavatar-configurar.mjs}) \textbf{depois} de a api ter URL
+pública. \env{LIVEAVATAR\_SANDBOX=1} troca o avatar pelo de testes do
+\emph{vendor} (cerca de 1 minuto, sem crédito) e o Zod o recusa em produção: lá
+seria uma Ajuda que cai sozinha no meio da explicação.
+\end{decisao}
+
+\subsection{O \emph{prompt}: prefixo fixo, base gerada, papel no fim}
+
+O \emph{prompt} mora em \arq{src/ajuda/prompt.ts} e só lá. O contexto
+cadastrado no \emph{vendor} é uma linha e um marcador
+(\cd{Atendente da Ajuda da Unooria. [sessao:\$\{sessao\}]}); a mensagem
+\cd{system} que o \emph{vendor} manda é lida só para extrair o \emph{token} da
+sessão e depois \textbf{descartada}. O \emph{prompt} de verdade e a base nunca
+vão ao \emph{vendor} --- regra inviolável 2.
+
+\begin{decisao}
+\textbf{A ordem do \emph{prompt} é decisão de custo, não de estilo.} As
+instruções e a base (cerca de 65 mil \emph{tokens}) formam um PREFIXO idêntico
+em toda chamada, e só a última linha muda com quem pergunta (\enquote{um
+professor ou uma professora}, \enquote{alguém da coordenação ou da direção de
+uma escola}\ldots, em linguagem de escola, nunca o nome do papel). É esse
+prefixo igual que deixa o \emph{cache} implícito do Gemini reaproveitar a base
+de uma chamada para a outra; com o papel no começo, cada perfil pagaria a base
+inteira de novo. O teste confere que \cd{PREFIXO\_DO\_PROMPT} não depende do
+perfil.
+\end{decisao}
+
+As instruções descrevem uma resposta \textbf{falada}: português simples, no
+máximo quatro frases curtas (cerca de 70 palavras), sem lista, título, negrito,
+\emph{emoji} nem \emph{link}; nenhum vocabulário técnico (código, servidor, API,
+\emph{token}, rota, os códigos internos das missões) --- só os nomes que
+aparecem na tela; só o que está na base, e \enquote{não sei} ou \enquote{a
+plataforma ainda não faz isso} no lugar de inventar; o que AQUELA pessoa
+consegue fazer, e quem faz o resto; recusa gentil a assunto que não é a
+plataforma; e nunca pedir nem repetir nome, CPF, e-mail ou dado de estudante. A
+temperatura é 0,3 (o \emph{vendor} manda 0,5 e é ignorado): o atendente responde
+do que está na base, não cria.
+
+\begin{decisao}
+\textbf{As instruções são editáveis no painel; o resto do \emph{prompt}, não}
+(\adrr{ADR-165}). O texto acima é o PADRÃO de cada atendente
+(\cd{instrucoesPadrao(atendente)}, em \arq{src/ajuda/prompt.ts}); o \cd{admin}
+pode reescrevê-lo em \rota{/unooria/uso-de-ia}, num cartão por atendente, com motivo
+obrigatório e \enquote{Restaurar o texto padrão}. A versão do painel mora em
+\cd{ajuda\_configuracao} (\cd{instrucoes\_mascote}, \cd{instrucoes\_avatar};
+\cd{NULL} = o padrão, de 20 a \num{8000} caracteres) e \textbf{substitui só o
+\enquote{como responder}}: o cabeçalho \cd{CONHECIMENTO}, a base gerada e
+\enquote{quem está falando} \cd{prefixoDoPrompt} e \cd{promptDoAtendente}
+montam sempre depois, para uma edição não poder tirar a base do \emph{prompt}
+nem trocar o papel de quem pergunta. O texto fica no banco e só a api o lê ---
+não vai ao \emph{vendor} nem ao navegador de quem conversa (regra 2). O avatar
+lê a linha a cada turno do LLM, e a edição vale na pergunta seguinte; o mascote,
+na abertura da sessão de voz. O prefixo continua igual entre perfis: uma edição
+custa ao \emph{cache} implícito uma única leitura cheia da base.
+\end{decisao}
+
+O histórico chega no formato OpenAI e \cd{paraHistorico} o traduz: descarta o
+\cd{system}, junta falas seguidas do mesmo papel (o Gemini quer a conversa
+alternada, e duas falas seguidas da pessoa acontecem quando a resposta anterior
+falhou e o avatar ficou mudo), corta em 30 mensagens de até \num{2000}
+caracteres e faz a conversa começar na pessoa --- o cumprimento do avatar
+(\cd{opening\_text}) é falado pelo \emph{vendor} sem passar pelo nosso LLM e não
+ajuda a responder.
+
+\subsection{A base de conhecimento é gerada, não escrita}
+
+\arq{scripts/gerar-base-da-ajuda.mjs} escreve
+\arq{src/ajuda/base/\B base-da-ajuda.\B gerada.ts}, versionado e nunca editado à
+mão. Entra o mapa de produto (PU-PRD-001) \textbf{só com o que está PRONTO ou
+PARCIAL} --- feature A FAZER ou ARQUIVADA fica fora, senão o atendente promete o
+que não existe; fora também o \emph{backlog}, as decisões, os apêndices e toda
+\cd{\textbackslash pendencia\{\}} ---, os guias da aula das missões, na ordem do
+registro, e o catálogo das missões tirado dos manifestos. \textbf{Não entra
+documentação técnica} (este documento, \arq{docs/}, os \arq{AGENTS.md}): a lista
+\cd{TERMOS\_SENSIVEIS} do gerador (\cd{escola\_id}, RLS, JWT, \cd{Bearer},
+Prisma, Terraform, Cloud Run\ldots) faz a geração falhar se a base vazar esse
+vocabulário, e a correção é no mapa de produto, não na lista.
+
+\begin{regra}
+\textbf{Mudou o mapa de produto ou um guia? Regere a base.}
+\arq{apps/api/tests/ajuda-base.spec.ts} roda o gerador com \cd{--verificar} e fica
+vermelho com a base velha --- é o que impede o atendente de descrever a tela de
+ontem. \textbf{Sem RAG}: os cerca de 65 mil \emph{tokens} cabem inteiros no
+\emph{prompt}, e o \emph{cache} implícito paga a repetição. Os guias guardam o que
+não se diz à turma antes da hora; a Ajuda não abre para estudante, e
+coordenação e gestão lerem isso foi aceito pelo dono do produto.
+\end{regra}
+
+\subsection{Teto de saída, a fala de espera e a fala de falha}
+
+\begin{atencao}
+\textbf{O teto de saída do turno é \num{2048} \emph{tokens}, e não é o tamanho da
+resposta} --- quem pede quatro frases é o \emph{prompt}. É folga para o
+\textbf{raciocínio}, que sai do mesmo teto (Seção~\ref{sec:ia-raciocinio}).
+Medido em 2026-10-02: o \cd{gemini-3.7-flash} às vezes pensa 300 a 400
+\emph{tokens} \textbf{mesmo com \cd{thinkingBudget: 0}}, e com o teto de 400 a
+resposta saía cortada em meia frase (\enquote{Primeiro, no seu Início, entre em
+Minhas turmas e}). No avatar o corte é pior que na tela: a voz para no meio, e
+ninguém vê \cd{MAX\_TOKENS}.
+\end{atencao}
+
+Dois textos fixos mantêm o avatar falando quando o modelo não ajuda, porque o
+\emph{vendor} \textbf{fica mudo diante de qualquer erro do nosso endpoint} ---
+sem nova tentativa e sem evento para o navegador:
+
+\begin{itemize}
+  \item \cd{FALA\_DE\_ESPERA} (\enquote{Um momento, estou vendo isso para
+    você.}), escrita no \emph{stream} se nenhum pedaço chegou em
+    \textbf{7\,s}. A primeira chamada fria --- a base fora do \emph{cache}, mais o
+    raciocínio ocasional --- levou 10,9\,s até o primeiro byte, além dos 10\,s
+    do \emph{vendor}. A frase segura a fala viva e a resposta de verdade vem
+    logo depois, no mesmo turno.
+  \item \cd{FALA\_DE\_FALHA} (\enquote{Desculpe, tive um problema para
+    responder agora. Pode repetir a sua pergunta, por favor?}), quando o modelo
+    falha ou devolve texto vazio. Com parte da resposta já falada, o turno para
+    ali, sem desculpa no fim.
+\end{itemize}
+
+A mesma lógica vale para as recusas de negócio que acontecem DEPOIS de a
+chamada ser aceita --- produto desligado para a escola, mais de 20 turnos por
+minuto: viram uma fala pronta, em 200, sem chamar o modelo. Só a autenticação
+responde 401.
+
+\subsection{Minutos, não \emph{tokens}}
+
+O limite da Ajuda é de \textbf{tempo de vídeo}, conferido a cada abertura de
+sessão e nunca a cada turno:
+
+\begin{itemize}
+  \item \cd{ajuda\_limites} --- \cd{minutos-por-dia} (30) e
+    \cd{minutos-por-sessao} (10), escopo do contrato inteiro, lidas sem
+    \emph{cache}. Tetos de sanidade de 600 e 60; \textbf{zero é recusado}:
+    fechar a Ajuda é desligar o produto \cd{ajuda} (\adrr{ADR-87}), não zerar o
+    limite. Sem a linha, vale a constante do código e o registro acusa
+    \cd{ajuda-limite-sem-linha}.
+  \item \cd{ajuda\_sessoes} --- o medidor. O teto da próxima sessão é o menor
+    entre o limite por sessão e o que sobra do dia da pessoa; com menos de um
+    minuto, 429 \cd{SEM\_MINUTOS}. \textbf{Sessão sem \cd{fim} conta o teto
+    inteiro} (o \emph{vendor} cobra até a sala fechar, e a api só sabe que
+    fechou quando o hub avisa), abrir fecha a anterior que tenha ficado aberta,
+    e \emph{vendor} fora do ar fecha a linha com duração zero. O dia é o do fuso
+    da plataforma (\adrr{ADR-99}).
+\end{itemize}
+
+\textbf{Os \emph{tokens} continuam medidos} --- só não debitam: o
+\cd{MedidorDeProvider} envolve \cd{conversarEmFluxo} como as outras operações e
+registra latência e \emph{tokens} com \cd{operacao=conversarEmFluxo}
+(Capítulo~\ref{cap:observabilidade}). É por ali que se vê quanto a base de 65 mil
+\emph{tokens} custa por turno, e se o \emph{cache} implícito está pagando a
+repetição.
+
+\subsection{O segundo atendente: o mascote no Gemini Live}
+\label{sec:ia-ajuda-mascote}
+
+Desde 2026-10-12 a Ajuda tem dois atendentes (\adrr{ADR-158}). O segundo é o
+mascote 3D da Unooria, e o \emph{vendor} dele é o \textbf{Gemini Live da
+Vertex}: uma conversa de voz bidirecional em que o próprio modelo ouve o
+microfone e devolve áudio (PCM a 24\,kHz) com a transcrição. A voz é uma das 30
+pré-definidas do Gemini, e a boca do mascote é tirada do próprio áudio, no
+navegador (15 visemas, a partir de nível, formantes e chiado). Quem atende por
+padrão é decisão do \cd{admin} no painel da Unooria (\cd{ajuda\_configuracao},
+semeada com o mascote); se o padrão não está montado na stack, abre o outro.
+
+\begin{itemize}
+  \item \textbf{A camada única continua de pé.} A conversa com o Gemini é aberta
+    pela api, com o ADC, por uma porta nova de \arq{src/ai}
+    (\cd{VOZ\_AO\_VIVO}, só \arq{gemini-live.client.ts} a implementa); o
+    navegador fala com a api por um WebSocket com protocolo neutro
+    (Seção~\ref{sec:contrato-ajuda-mascote}). É isso que distingue o mascote do
+    \emph{LITE Mode} descartado na \adrr{ADR-132}: lá a chave e o \emph{prompt}
+    iriam para a HeyGen; aqui, nem para o navegador.
+  \item \textbf{O \emph{prompt} é o mesmo}, com a apresentação trocada
+    (\cd{promptDoAtendente(perfil, "mascote", instrucoes)}): \enquote{você é o
+    mascote da Unooria}, fala em voz alta e acolhedora, as mesmas quatro frases
+    curtas e a mesma base gerada. As instruções do mascote têm versão própria
+    no painel (\cd{instrucoes\_mascote}, \adrr{ADR-165}), lida na abertura. Vai
+    na \cd{systemInstruction} da abertura, uma vez por sessão.
+  \item \textbf{A região é outra}: o Live não está no \cd{global} do texto, e
+    a sessão abre em \env{AJUDA\_MASCOTE\_REGIAO} (padrão \cd{us-central1}). O
+    modelo (\cd{gemini-3.8-live}) e a voz vêm do painel, não de \emph{env}.
+  \item \textbf{Os minutos são os mesmos}: a sessão do mascote é uma linha de
+    \cd{ajuda\_sessoes} como a do avatar, e o limite do dia vale para os dois
+    juntos. Quem derruba a conversa no prazo é a própria api.
+\end{itemize}
+
+\begin{limitacao}
+\textbf{Os \emph{tokens} do mascote não passam pelo \cd{MedidorDeProvider}}: a
+porta de voz não é o \cd{AiProvider}, e eles não entram na métrica OTel da api.
+O que a api registra por sessão é a linha \cd{ajuda.mascote} (\cd{duracaoMs},
+\cd{turnos}, \cd{motivo}) e, desde a \adrr{ADR-161}, uma linha de consumo no
+painel de custos: o cliente do Live soma o \cd{usageMetadata} de cada turno ---
+o Live cobra a janela inteira a cada turno, então cada mensagem foi paga --- e
+registra no fecho da conexão (Seção~\ref{sec:ia-custos}).
+\end{limitacao}
+
 \section{Variáveis de configuração da IA}
 
 \begin{tabularx}{\linewidth}{@{}L{46mm}L{22mm}X@{}}
@@ -424,13 +1093,25 @@ localidade de processamento como item de conformidade, não de arquitetura.
 \zebra \env{VERTEX\_IMAGE\_MODEL} & \cd{gemini-3.1-flash-image} &
   Quem trocar precisa conferir a proporção devolvida.\\
 \env{VERTEX\_TTS\_MODEL} & \cd{gemini-2.5-flash-tts} & Voz. Serviço à parte
-  (Text-to-Speech), habilitado no projeto.\\
+  (Text-to-Speech), habilitado no projeto. Nenhuma missão sintetiza voz hoje.\\
 \zebra \env{VERTEX\_THINKING\_BUDGET} & \cd{0} & \cd{0} desligado, \cd{-1} dinâmico,
   $>0$ teto.\\
-\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} & \num{300000} & Quota diária do
-  estudante.\\
-\zebra \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR} & \num{2000000} & Quota diária de
-  professor, gestor e admin.\\
+\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_*} & \textbf{removidas} & A quota diária por
+  perfil é a tabela \cd{ia\_quotas} desde a \adrr{ADR-105}, editada pelo
+  \cd{admin}; não há \emph{env} de \emph{fallback}.\\
+\zebra \env{AGENTE\_PROFESSOR\_MODO} & \cd{desligado} & \cd{agent-engine} $|$ \cd{local}
+  $|$ \cd{mock} $|$ \cd{desligado}. Ausente = \cd{desligado} em qualquer
+  \cd{NODE\_ENV} --- ao contrário do \env{AI\_PROVIDER}; \cd{mock} e \cd{local}
+  são recusados em produção. Ver Apêndice~\ref{ap:envs}.\\
+\env{LIVEAVATAR\_*}, \env{AJUDA\_LLM\_SEGREDO}, \env{AJUDA\_SESSAO\_CHAVE} & --- &
+  A Ajuda com avatar (Seção~\ref{sec:ia-ajuda}); só \env{LIVEAVATAR\_API\_URL},
+  \env{LIVEAVATAR\_AVATAR\_ID} e \env{LIVEAVATAR\_SANDBOX} têm valor padrão.
+  Conjunto incompleto = Ajuda
+  desligada (503), sem derrubar a subida; \env{LIVEAVATAR\_SANDBOX=1} é recusado
+  em produção. Ver Apêndice~\ref{ap:envs}.\\
+\zebra \env{AJUDA\_MASCOTE\_REGIAO} & \cd{us-central1} & A região do Gemini Live
+  do mascote da Ajuda (Seção~\ref{sec:ia-ajuda-mascote}). Sem projeto da Vertex
+  (\cd{mock}), o mascote fica desligado.\\
 \bottomrule
 \end{tabularx}
 

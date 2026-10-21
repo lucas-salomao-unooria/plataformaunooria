@@ -24,9 +24,10 @@ que a checagem de pointer lock não valeu.
 |---|---|---|
 | `publico/` | ninguém logado | landing, login, roteamento por papel |
 | `estudante/` | a criança | hub de missões e as quatro missões, ponta a ponta |
-| `professor/` | o docente | turmas, trilha, criar atividade, conduzir, plano de aula, bem-estar, resultados, guias de aula, planejamento de ensino |
-| `gestor/` | a secretaria da escola | importar, enturmar, senhas, quem trabalha em duas escolas |
-| `admin-contrato/` | a rede | escolas, regionais, OneRoster, períodos, transferência, análise de produto |
+| `professor/` | o docente | turmas, trilha, criar atividade, conduzir, plano de aula, bem-estar, resultados, guias de aula, planejamento de ensino, o agente de IA do professor (api em `AGENTE_PROFESSOR_MODO=mock`) |
+| `gestor_escola/` | a secretaria da escola | importar, enturmar, senhas, quem trabalha em duas escolas |
+| `gestor_contrato/` | a rede | escolas, regionais, OneRoster, períodos, transferência, análise de produto |
+| `arquivados/` | NINGUÉM — não é papel | as suítes das experiências arquivadas (ADR-116), guardadas como estavam e FORA do runner: uma arquivada não abre para ninguém, e a suíte só reprovaria (ver `arquivados/AGENTS.md`) |
 
 Por papel, e não por experiência, porque é o crachá que decide o que a pessoa
 alcança — e porque a organização antiga, pelo nome da experiência, escondia as
@@ -35,7 +36,7 @@ descartadas, está na **ADR-51**.
 
 **A ordem importa** e está fixada no runner: `publico` não depende de nada;
 `estudante` PRODUZ o estado (runs, partidas, sessões) que `professor` lê; e
-`gestor`/`admin-contrato` vêm por último porque importam gente e trocam senha.
+`gestor_escola`/`gestor_contrato` vêm por último porque importam gente e trocam senha.
 
 ## O manifesto é a fonte do deck e dos vídeos
 
@@ -88,7 +89,7 @@ Uma geração de IA que falha em 306 ms deixava o roteiro esperando 180 s por um
   espera cega paga o timeout inteiro para reportar o seletor.
 
 **Vigiar alerta só depois de o estado novo COMEÇAR.** Quando o botão que dispara
-a ação está DENTRO do alerta de erro anterior (o "Tentar de novo" da exp-92 é o
+a ação está DENTRO do alerta de erro anterior (o "Tentar de novo" da app-92 é o
 caso), o `esperarOuFalharCedo` seguinte vê o alerta ANTIGO e aborta antes de a
 ação começar. Espere primeiro o estado `gerando` com `waitFor` puro — vigiar o
 alerta ali é vigiar o passado. Em 2026-09-10 isso fez a `professor/09` reportar
@@ -119,9 +120,58 @@ ainda assim estourar, repete a captura com `emulateMedia({reducedMotion:
 "reduce"})` — o desligamento que os próprios efeitos respeitam, então o quadro
 é o mesmo, parado.
 
+## O 404 do BFF que não é do produto
+
+`GET /api/plataforma/<prefixo>/…` respondendo **404 `{"mensagem":"rota não
+permitida"}`** com o prefixo JÁ escrito na allowlist de
+`apps/hub/app/api/plataforma/[...path]/route.ts` é o `next dev` servindo o
+route handler VELHO. Em 2026-09-25 o `git pull` que trouxe `equipes` e
+`evidencias` para a allowlist recompilou o chunk no disco, mas o processo do hub
+(no ar havia dois dias) seguiu recusando os dois prefixos: a `professor/11`
+reprovou dizendo que "a api devolve 404" para um perfil que a api devolvia com
+200. As páginas se atualizaram — só o route handler não.
+
+Três sinais separam isso de um bug: o log do hub tem `codigo:
+"bff-prefixo-recusado"` com o prefixo novo; a api não tem query nenhuma
+naquele segundo; e a mesma rota, chamada direto na api com um token de
+`/api/exp-token`, responde. O remédio é reiniciar o hub
+(`docker restart unooria-plataforma-hub-1`) e repetir as suítes daquela janela.
+
 ## Evidências
 
 `testes/<papel>/<suíte>/` — os prints, o `passos.json` e um `relatorio.md`
 legível. **A pasta é apagada no começo de cada execução**: print de duas
 corridas na mesma pasta conta uma história que nunca aconteceu. `testes/` inteira
 está no `.gitignore` — tudo ali é reproduzível rodando a suíte de novo.
+
+## Acessibilidade (WCAG 2.2 A/AA, ADR-162)
+
+Duas portas para o mesmo axe-core (`lib/acessibilidade.mjs`):
+
+- **`node scripts/e2e/ferramentas/medir-acessibilidade.mjs [papel…]`** percorre
+  as telas de cada papel e o iframe de cada missão liberada, e sai 1 com
+  violação. É a medida de LARGURA — toda tela, mas a missão só na abertura.
+  Papéis: `publico`, `professor`, `gestor_escola`, `gestor_contrato`, `admin` e
+  `estudante@<turma>` (um por turma com missão liberada: o estudante só vê o que
+  foi liberado na sala dele). Meça por lote, com só as experiências do lote de
+  pé: a stack inteira mais o Chromium esgotou a VM do Docker no meio da corrida
+  e TODA tela virou timeout — vermelho que não diz nada do produto.
+- **`E2E_ACESSIBILIDADE=1 node scripts/e2e/rodar.mjs <papel>`** mede CADA passo
+  das suítes, página e iframe. É a medida de PROFUNDIDADE: alcança as telas de
+  dentro das missões, que só uma suíte sabe percorrer. Agrupa por regra e por
+  elemento (a mesma peça em 40 passos é UM defeito), grava
+  `testes/<papel>/<suíte>/acessibilidade.json` e reprova uma verificação por regra.
+  Desligado por padrão: custa ~1 s por passo. **Ele ADIANTA as animações**
+  (`getAnimations().finish()`) antes de medir, para medir o estado final e não o
+  meio de um fade — o que dispara `animationend`/`transitionend` mais cedo. Tela
+  que avança estado nesses eventos pode se comportar diferente só neste modo.
+
+**Verde no axe é condição NECESSÁRIA do AA, não suficiente.** Ele não julga
+ordem de foco, foco preso em janela, se o texto alternativo descreve a imagem,
+nem se o leitor de tela anuncia o que muda. Isso é a passada manual de teclado e
+VoiceOver do cap. 16.
+
+**A violação quase sempre é UMA peça do DS**, não a tela: a medição de
+2026-10-13 achou 106 nós de contraste em 23 telas e eles eram quatro
+componentes. Corrija no `storybook-unooria` e suba a versão; compensar na tela é
+corrigir 48 vezes.

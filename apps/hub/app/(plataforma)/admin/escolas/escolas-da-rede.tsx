@@ -441,7 +441,7 @@ export function EscolasDaRede() {
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-wrap items-end gap-3">
-          <div className="w-[280px]">
+          <div className="w-[280px] max-w-full">
             <SearchInput
               id="busca-escola"
               label="Buscar escola"
@@ -450,7 +450,7 @@ export function EscolasDaRede() {
               onChange={(e) => setBusca(e.target.value)}
             />
           </div>
-          <div className="w-[180px]">
+          <div className="w-[180px] max-w-full">
             <Selection
               id="filtro-regional"
               label="Regional"
@@ -461,7 +461,7 @@ export function EscolasDaRede() {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {/* SEMPRE visível: a operação deixou de exigir seleção prévia. A busca
               da pessoa é independente das escolas marcadas, e as marcadas entram
               como sugestão de destino — o que o card pede. Antes o botão só
@@ -499,7 +499,7 @@ export function EscolasDaRede() {
             {unidadesSelecionadas.length === 1 ? "" : "s"} selecionada
             {unidadesSelecionadas.length === 1 ? "" : "s"}
           </span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="ghost" size="sm" onClick={() => setSelecionadas([])}>
               Limpar seleção
             </Button>

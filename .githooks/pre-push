@@ -55,14 +55,14 @@ MSG
   if [ "$sha_local" != "$VAZIO" ]; then
     case "$branch_remota" in
       dev-local|dev|hml|main) : ;;
-      exp-[0-9][0-9]-*) : ;;
+      exp0[1-9]e[fm][1-4]b|app-[0-9][0-9]-*) : ;;
       *)
         if ! printf '%s' "$branch_remota" | grep -Eq "^($TIPOS)/[a-z0-9][a-z0-9._-]*$"; then
           cat >&2 <<MSG
 
   ✗ nome de branch fora do padrão: '$branch_remota'
 
-    Experiência nova:  exp-NN-slug          (ex.: exp-12-fracoes)
+    Experiência nova:  o código dela        (ex.: exp06ef3b, app-93-diario-de-bordo — ADR-110)
     Qualquer outra:    tipo/slug            (ex.: fix/quota-por-perfil)
     Tipos: ${TIPOS//|/, }
 

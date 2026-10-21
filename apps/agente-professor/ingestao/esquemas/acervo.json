@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "tipo": {
+      "type": "string",
+      "retrievable": true,
+      "indexable": true
+    },
+    "titulo": {
+      "type": "string",
+      "retrievable": true,
+      "keyPropertyMapping": "title"
+    },
+    "componente_slug": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "retrievable": true,
+        "indexable": true
+      }
+    },
+    "etapa": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "retrievable": true,
+        "indexable": true
+      }
+    },
+    "anos": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "retrievable": true,
+        "indexable": true
+      }
+    },
+    "serie": {
+      "type": "string",
+      "retrievable": true,
+      "indexable": true
+    },
+    "pagina_inicial_original": {
+      "type": "integer",
+      "retrievable": true
+    },
+    "uri_original": {
+      "type": "string",
+      "retrievable": true
+    }
+  }
+}

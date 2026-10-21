@@ -99,6 +99,9 @@ export const DistribuicaoSchema = z.object({
   desequilibrio: z.number(),
   tolerancia: z.number(),
   precisaRedistribuir: z.boolean(),
+  /** A atividade tem equipes montadas: o lado passa a ser de quem divide a
+   *  tela, e redistribuir fica desligado (H13.4.3). */
+  comEquipes: z.boolean(),
 });
 
 /** Duas formas de resposta: "já estava equilibrada" e "movi estes". */

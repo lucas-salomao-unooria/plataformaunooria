@@ -75,7 +75,7 @@ describe("POST /observabilidade/publico/erros-cliente", () => {
   it("IGNORA o expId do corpo: antes do hub:init nenhuma experiência conhece a api", () => {
     const { metricas } = metricasEmMemoria();
     const ctrl = new ObservabilidadePublicoController(metricas);
-    ctrl.errosCliente({ ...CORPO, expId: "exp-01-instanooria" }, req("203.0.113.11"));
+    ctrl.errosCliente({ ...CORPO, expId: "exp08ef1b" }, req("203.0.113.11"));
     const [obj] = erro.mock.calls[0] as [Record<string, unknown>, string];
     expect(obj).toMatchObject({ expId: "hub", serviceContext: { service: "hub", version: CORPO.versao } });
   });

@@ -61,6 +61,8 @@ export const FeedPostSchema = z.object({
     avatarSeed: z.string(),
   }),
   imageUrl: z.string().nullable(),
+  /** O texto alternativo da imagem gerada, ou `null` (ADR-163). */
+  imageAlt: z.string().nullable(),
   /** Arte procedural quando a imagem não ficou pronta: o feed nunca fica com
    *  buraco, e `fallback` não é erro. */
   fallbackArt: z.object({ corFundo: z.string(), emojis: z.string() }).optional(),
@@ -153,6 +155,7 @@ const PostPerdidoSchema = z.object({
   id: Uuid,
   author: z.object({ handle: z.string(), displayName: z.string(), verificado: z.boolean() }),
   imageUrl: z.string().nullable(),
+  imageAlt: z.string().nullable(),
   caption: z.string(),
   hashtags: z.array(z.string()),
   likesCount: z.number().int(),
@@ -233,6 +236,7 @@ const PostDoDossieSchema = z.object({
   intensidade: z.number(),
   caption: z.string(),
   imageUrl: z.string().nullable(),
+  imageAlt: z.string().nullable(),
   imageStatus: z.string(),
   categoria: z.string(),
   handle: z.string(),
@@ -363,8 +367,86 @@ export const DossieSchema = z.object({
     .passthrough(),
   posts: z.object({
     topDwell: z.array(
-      PostDoDossieSchema.extend({ dwellMs: z.number(), segundos: z.number() }),
+      /* Lado, intensidade e categoria saem para o ESTUDANTE enquanto o Raio-x
+         está pendente (ADR-167): o post do lado dele em que mais parou entra
+         sempre no Raio-x. */
+      PostDoDossieSchema.extend({
+        dwellMs: z.number(),
+        segundos: z.number(),
+        lado: z.string().optional(),
+        intensidade: z.number().optional(),
+        categoria: z.string().optional(),
+      }),
     ),
     ocultados: z.array(PostDoDossieSchema),
   }),
 });
+
+// ------------------------------------------------------- o Canal A (ADR-167)
+
+const SituacaoDaTarefaSchema = z.enum(["indisponivel", "aguardando", "pendente", "enviada", "encerrada"]);
+
+/** `GET /runs/:id/tarefas` — é por ela que a experiência decide o desvio por fase. */
+export const SituacaoDasTarefasSchema = z.object({
+  revelacaoConcluida: z.boolean(),
+  raioX: SituacaoDaTarefaSchema,
+  termos: SituacaoDaTarefaSchema,
+  envio: SituacaoDaTarefaSchema,
+});
+
+/** O 6a: seis posts sanitizados (sem lado) e os rótulos dos lados. */
+export const RaioXSchema = z.object({
+  situacao: SituacaoDaTarefaSchema,
+  rotulos: z.object({ A: z.string(), B: z.string() }),
+  posts: z.array(FeedPostSchema),
+});
+
+const OpcaoDoRaioXSchema = z.enum(["A", "B", "neutro"]);
+export const RespostaDoRaioXSchema = z.object({
+  respostas: z
+    .record(Uuid, OpcaoDoRaioXSchema)
+    .refine((r) => Object.keys(r).length === 6, "uma resposta para cada um dos 6 posts"),
+});
+
+/** A ponte da revelação: cada post com de onde veio. */
+export const DevolutivaDoRaioXSchema = z.object({
+  posts: z.array(FeedPostSchema.extend({ origem: OpcaoDoRaioXSchema })),
+});
+
+const ClausulaIdSchema = z.enum(["c1", "c2", "c3", "c4", "c5"]);
+const EfeitoIdSchema = z.enum(["e1", "e2", "e3"]);
+const Opcao = z.object({ id: z.string(), texto: z.string() });
+
+export const TermosSchema = z.object({
+  situacao: SituacaoDaTarefaSchema,
+  clausulas: z.array(Opcao),
+  efeitos: z.array(Opcao),
+  mudancas: z.array(Opcao),
+});
+
+export const RespostaDosTermosSchema = z.object({
+  /** Pode ser nenhuma, algumas ou todas. */
+  marcadas: z.array(ClausulaIdSchema).max(5),
+  /** O efeito de cada cláusula marcada — e só delas (o serviço confere). */
+  efeitos: z.record(ClausulaIdSchema, EfeitoIdSchema),
+  mudanca: z.enum(["controle", "forma", "aceitacao"]),
+});
+
+export const EnvioSchema = z.object({
+  situacao: SituacaoDaTarefaSchema,
+  posts: z.array(FeedPostSchema.extend({ bio: z.string().nullable() })),
+  mensagens: z.array(Opcao),
+});
+
+export const RespostaDoEnvioSchema = z.object({
+  posts: z
+    .array(Uuid)
+    .min(1, "escolhe pelo menos um post")
+    .max(3, "até 3 posts")
+    .refine((ids) => new Set(ids).size === ids.length, "o mesmo post duas vezes"),
+  mensagem: z.enum(["m1", "m2", "m3", "m4"]),
+  frase: z.string().trim().max(140).nullable().optional(),
+});
+
+export const TarefaEnviadaSchema = z.object({ enviada: z.literal(true) });
+export const RevelacaoConcluidaSchema = z.object({ ok: z.literal(true) });

@@ -5,7 +5,7 @@ describe("instalarCapturaDeErros", () => {
   function montar() {
     const enviar = vi.fn<(erro: ErroDeCliente) => Promise<unknown>>(async () => undefined);
     const notificarHub = vi.fn();
-    const captura = instalarCapturaDeErros({ expId: "exp-02-unootube", versao: "1.2.3", sessaoId: "s", enviar, notificarHub, traceAtivo: () => ({ traceId: "a".repeat(32), spanId: "b".repeat(16) }) });
+    const captura = instalarCapturaDeErros({ expId: "exp04ef1b", versao: "1.2.3", sessaoId: "s", enviar, notificarHub, traceAtivo: () => ({ traceId: "a".repeat(32), spanId: "b".repeat(16) }) });
     return { enviar, notificarHub, captura };
   }
 
@@ -14,7 +14,7 @@ describe("instalarCapturaDeErros", () => {
     window.dispatchEvent(new ErrorEvent("error", { error: new TypeError("boom"), message: "boom" }));
     expect(enviar).toHaveBeenCalledTimes(1);
     const corpo = enviar.mock.calls[0]?.[0] as unknown as Record<string, unknown>;
-    expect(corpo).toMatchObject({ expId: "exp-02-unootube", versao: "1.2.3", mensagem: "boom", sessaoId: "s", traceId: "a".repeat(32) });
+    expect(corpo).toMatchObject({ expId: "exp04ef1b", versao: "1.2.3", mensagem: "boom", sessaoId: "s", traceId: "a".repeat(32) });
     expect(String(corpo.url)).not.toContain("?");
     expect(notificarHub).toHaveBeenCalledWith(expect.objectContaining({ mensagem: "boom", hash: expect.any(String) }));
     captura.desinstalar();

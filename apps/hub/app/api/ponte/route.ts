@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
+import { EXP_ID_RE } from "@edu/sdk";
 import { logDaRequisicao } from "@/lib/log";
 
 /**
@@ -17,7 +18,7 @@ const Schema = z
   .object({
     resultado: z.enum(["ok", "protocolo-incompativel"]),
     protocolo: z.number().int().min(0).max(99),
-    expId: z.string().regex(/^(exp-\d{2}-[a-z0-9-]+)?$/),
+    expId: z.union([z.literal(""), z.string().regex(EXP_ID_RE)]),
   })
   .strict();
 

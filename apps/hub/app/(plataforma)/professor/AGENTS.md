@@ -1,6 +1,9 @@
 # apps/hub/app/(plataforma)/professor — a área do professor
 
-Complementa o `AGENTS.md` de `apps/hub`, que vence em conflito.
+Complementa o `AGENTS.md` de `apps/hub`, que vence em conflito. A FICHA da
+missão — o despachante que escolhe o corpo dela, e o que ela hospeda (equipes,
+evidência, A Seleção) — tem o `AGENTS.md` da pasta dela:
+[`entre-redes/AGENTS.md`](entre-redes/AGENTS.md).
 
 ## A sala de aula no hub (ADR-69)
 
@@ -45,7 +48,7 @@ sintoma de que a ficha não está dando conta** — o lugar de resolver é lá.
 
 **A ficha abre NA TURMA, e isso é o ponto.** O despachante
 (`[ano]/[unidade]/page.tsx`) lê `?turmaId=`, resolve a turma com
-`turmaDaConducao` e a repassa aos sete corpos; a Vila do Lume faz o mesmo na
+`turmaDaConducao` e a repassa aos nove corpos; a Vila do Lume faz o mesmo na
 rota própria. Com turma: a faixa de contexto diz qual é, `comTurma()` repõe o
 parâmetro nos links de dentro (resultados, guia da Vila, nova atividade) e a
 lista de atividades do Instanooria vem filtrada pela api (`?turmaId=`), não por
@@ -59,7 +62,7 @@ continuam oferecendo o próprio seletor.
 ficha não tem como nomear na tela uma turma que não é dele.
 
 **A faixa de contexto é do DESPACHANTE, não dos corpos** — mesma razão da trilha
-(ADR-77) e do `EscopoDaEscola` (ADR-85): são sete corpos, e sete cópias
+(ADR-77) e do `EscopoDaEscola` (ADR-85): são nove corpos, e nove cópias
 divergem.
 
 `/exp/[expId]` confere a liberação ANTES de montar o embed e responde 404 sem
@@ -67,6 +70,32 @@ ela. Só para estudante: professor e gestor não chegam nesta rota, e `/dev-embe
 segue sem porta (é bancada de desenvolvimento). A api recusaria de qualquer
 jeito, mas aí o aparelho carregaria e quebraria por dentro, com o token já
 assinado.
+
+## O agente de IA do professor no layout (2026-09-30)
+
+O chat flutuante (`components/agente-professor/`, contrato em
+`docs/regras/agente-professor.md`) é montado pelo LAYOUT desta área — toda tela
+do professor o tem sem a página lembrar dele. Três coisas que quebram em
+silêncio:
+
+- **Ele é IRMÃO do `<main>`, DEPOIS dele — nunca dentro.** Dentro, seria mais
+  um filho do `main` e as telas de embed perderiam o `main:has(> .tela-cheia)`:
+  a barra de rolagem parada voltaria por causa de um botão `fixed`, cujo lugar
+  na árvore nem muda onde ele aparece.
+- **Só monta com o produto LIGADO** (`produtoLigado("agente-professor")`,
+  resolvido no servidor). Desligado, não há botão, painel nem chamada. E **não
+  há card na home, de propósito**: o slug mora em `PRODUTOS_SEM_CARD`
+  (`lib/produtos.ts`), fora da lista que a home itera, só para dar nome ao
+  interruptor do painel da Unooria.
+- **`key` na escola ativa** (`session.usuario.escolaId`), pela razão do
+  `EscopoDaEscola` (ADR-85): a conversa pertence a (professor, escola), e o
+  `router.refresh()` da troca de escola não remonta Client Component — sem a
+  `key`, a lista e o turno no ar seriam os da escola de antes.
+
+Em janela estreita (< 1168px) o botão cruza a coluna do conteúdo, e a casca dá
+ao `main` uma folga embaixo do tamanho dele (`packages/ui/styles/plataforma.css`,
+gancho `data-agente-professor`) — sem ela, o fim de um formulário e o rodapé
+das telas `.tela-cheia` ficavam debaixo do botão, sem como rolar para fora.
 
 ## O guia da aula (ADR-65)
 
@@ -85,8 +114,9 @@ missão que o professor roda ter a informação no mesmo lugar da primeira.
 `ReactNode` que a página da missão ancora ao fim de uma seção
 (`blocos={{ debate: <... /> }}`). **Toda missão publicada tem o seu**: os
 momentos e a revelação do Instanooria, os cartões da Vila por turma, a tabela
-dos vieses do unooGPT, os vídeos do UnooTube com o gabarito, as intervenções do
-Rastro do Boato e as respostas do Eco no Grupo — as quatro últimas por rota
+dos vieses do unooGPT, as intervenções do
+Rastro do Boato, a regra do feed com o gabarito e as perguntas da plenária do
+Júri Estadual — as últimas por rota
 `professor-only` da api (`/<slug>/professor/...`). O custo de copiar qualquer um
 deles é o professor projetar para a turma uma mensagem que ninguém recebeu.
 
@@ -113,21 +143,3 @@ com `guia-bloco` (e `guia-bloco--longo` se puder quebrar entre folhas).
 **por ano** (`EF04CO08`, `EF08CO11`) mais `EF15CO*` (1º–5º), `EF69CO*` (6º–9º) e
 `EM13CO*`. `EF67CO`/`EF89CO` **não existem** — a analogia com as outras áreas já
 produziu códigos inventados uma vez, e um teste guarda a forma.
-
-## A ficha da missão é um DESPACHANTE, e o fallback dele é o Instanooria
-
-`app/(plataforma)/professor/entre-redes/[ano]/[unidade]/page.tsx` escolhe o corpo
-da ficha por `missao.expId`, e o `return` final — sem `if` nenhum — é
-`<MissaoInstanooria>`. **Missão publicada sem ramo não quebra: ela mostra a ficha
-de outra missão.** Com "Nova atividade", que grava em `exp_01_activities` e a
-missão nova nunca lê, e sem "Abrir a aula e os resultados", que é o único caminho
-para o painel da turma.
-
-Aconteceu duas vezes — a exp-06 e, em 2026-09-11, a exp-08, com o aviso já
-escrito em `missao-rastro-boato.tsx`, no arquivo ao lado. Comentário não é rede:
-`lib/entre-redes/despachante-da-ficha.test.ts` lê o `page.tsx` e reprova toda
-missão publicada com `expId` que não tenha ramo próprio, com uma lista de
-exceções (`MISSOES_NO_FALLBACK`) que exige declarar por escrito quem usa o corpo
-do Instanooria de propósito.
-
-**Missão nova = ramo no despachante + `missao-<slug>.tsx`, no mesmo trabalho.**

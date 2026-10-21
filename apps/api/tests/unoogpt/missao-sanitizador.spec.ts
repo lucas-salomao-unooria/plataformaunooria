@@ -24,6 +24,9 @@ describe('invariante: o que cruza a fronteira do cliente é allowlist', () => {
     'rodadas',
     'perguntasGastas',
     'tentativa',
+    'rodadaDaTurma',
+    'ofertaSaude',
+    'registroConcluido',
     'alocacao',
     'justificativas',
   ];
@@ -35,6 +38,7 @@ describe('invariante: o que cruza a fronteira do cliente é allowlist', () => {
     rodadas: 1,
     perguntasGastas: 1,
     tentativa: 1,
+    rodada: 2,
     alocacaoAlfa: 'valeverde',
     alocacaoBravo: null,
     justificativaAlfa: 'censo',
@@ -43,6 +47,10 @@ describe('invariante: o que cruza a fronteira do cliente é allowlist', () => {
 
   it('a Sessão pública tem exatamente estas chaves', () => {
     expect(Object.keys(sanitizarSessao(BRUTA)).sort()).toEqual([...CHAVES_DA_SESSAO].sort());
+  });
+
+  it('a rodada da TURMA desce como `rodadaDaTurma` (a chave da memória das perguntas)', () => {
+    expect(sanitizarSessao(BRUTA).rodadaDaTurma).toBe(2);
   });
 
   it('chave nova no banco NÃO atravessa por omissão', () => {
@@ -94,7 +102,7 @@ describe('invariante: o que cruza a fronteira do cliente é allowlist', () => {
       agora,
     );
     expect(Object.keys(publico).sort()).toEqual(
-      ['modo', 'iniciadoEm', 'duracaoSeg', 'encerradoEm', 'pivoSeg', 'pivoMin', 'agora'].sort(),
+      ['modo', 'iniciadoEm', 'duracaoSeg', 'encerradoEm', 'pivoSeg', 'pivoMin', 'agora', 'fechamentoAberto'].sort(),
     );
     expect(publico.agora).toBe(agora.toISOString());
     expect(JSON.stringify(publico)).not.toContain('tenant');
