@@ -3,7 +3,7 @@ import { ButtonUnv, GestureHint, IconUnv, PostCard } from "@edu/ui/ds-unoovista"
 import { FOTOS_DO_POST, iniciais, laminasDoPost, lerGesto, nomeDaConta } from "../../lib/regras";
 import { E2 } from "../../lib/textos";
 import type { PostPublico } from "../../lib/tipos";
-import { srcDaFoto, type usePaleta } from "../componentes/midia";
+import { altDaFoto, srcDaFoto, type usePaleta } from "../componentes/midia";
 
 /** Acima disto, a legenda sai recolhida com o "...mais" (o app real corta em duas linhas). */
 const LEGENDA_CURTA = 96;
@@ -27,7 +27,9 @@ export function recolher(texto: string, limite = LEGENDA_CURTA): string {
  *
  * **Curtir** é o gesto que afunila o feed, no servidor: pelo coração da pílula
  * ou pelo toque duplo na mídia, como no app real. O toque duplo só CURTE.
- * **Salvar** grava o evento e não pesa (PRD v2). **Comentar e compartilhar**
+ * **Salvar** abre as PASTAS da mostra (ADR-176, a separação da EF06CO01): a
+ * folha é do feed (`feed.tsx`), aqui só o toque. Salvar grava e não pesa
+ * (PRD v2). **Comentar e compartilhar**
  * respondem com a linha da comissão (`e2.rotulo.comentarios_desabilitados`):
  * um botão morto parece defeito para a criança.
  *
@@ -68,7 +70,8 @@ export function PostDoFeed({
   comDica: boolean;
   refDoCartao: Ref<HTMLElement>;
   aoCurtir: (curtiu: boolean, gesto: Gesto) => void;
-  aoSalvar: (salvou: boolean) => void;
+  /** O toque no "Salvar": abre as pastas (guardado ou não, a folha mostra onde está). */
+  aoSalvar: () => void;
   /** Comentar ou compartilhar: a comissão responde que estão fechados. */
   aoFechado: (acao: "comentar" | "compartilhar") => void;
   aoDeslizar: (lamina: number) => void;
@@ -81,6 +84,8 @@ export function PostDoFeed({
   const conta = nomeDaConta(post.perfil);
   const total = laminasDoPost(post);
   const noBastidor = lamina > FOTOS_DO_POST;
+  /* `?.`: o feed gravado de uma sessão antiga não tem `laminas`. */
+  const fotoDoBastidor = post.laminas?.bastidor ?? null;
 
   function irPara(nova: number) {
     if (nova === lamina || nova < 1 || nova > total) return;
@@ -172,7 +177,20 @@ export function PostDoFeed({
           )}
         </div>
       </div>
-      {noBastidor ? (
+      {noBastidor && fotoDoBastidor ? (
+        /* Com a foto gerada (0.8.0, ADR-178), a imagem ocupa a lâmina e o texto
+           desce para baixo dela (`bastidor-do-post`, depois das ações). */
+        <PostCard.Media
+          {...gestos}
+          key={lamina}
+          src={fotoDoBastidor}
+          alt={E2.altDoBastidor(post.titulo)}
+          errorLabel={E2.placeholderMidia}
+          errorDescription={E2.placeholderLegenda}
+          currentIndex={lamina}
+          totalCount={total}
+        />
+      ) : noBastidor ? (
         <PostCard.Media {...gestos} key={lamina} alt={E2.bastidor} currentIndex={lamina} totalCount={total}>
           <div className="lamina-do-bastidor">
             <p className="lamina-do-bastidor__titulo">{E2.bastidor}</p>
@@ -184,7 +202,7 @@ export function PostDoFeed({
           {...gestos}
           key={lamina}
           src={srcDaFoto(post, lamina, paleta)}
-          alt={post.imagem.alt}
+          alt={altDaFoto(post, lamina, E2.altDaFoto)}
           errorLabel={E2.placeholderMidia}
           errorDescription={E2.placeholderLegenda}
           currentIndex={lamina}
@@ -197,10 +215,16 @@ export function PostDoFeed({
         currentIndex={lamina}
         totalCount={total}
         onLike={() => aoCurtir(!curtido, "coracao")}
-        onSave={() => aoSalvar(!salvo)}
+        onSave={aoSalvar}
         onComment={() => aoFechado("comentar")}
         onShare={() => aoFechado("compartilhar")}
       />
+      {noBastidor && fotoDoBastidor && (
+        <div className="bastidor-do-post" data-bastidor-do-post>
+          <p className="lamina-do-bastidor__titulo">{E2.bastidor}</p>
+          <p className="lamina-do-bastidor__texto">{post.bastidor}</p>
+        </div>
+      )}
       <PostCard.Caption username={conta}>
         {recolhida ? `${recolher(legenda)} ` : `${legenda} `}
         {longa && (

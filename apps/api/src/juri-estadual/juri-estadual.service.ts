@@ -20,7 +20,6 @@ import {
   conteudoDoBancoPadrao,
   ehConteudoDoBancoPadrao as ehDoBancoPadrao,
 } from "./banco-padrao";
-import { CARTOES_DE_ATITUDE, CARTOES_DE_MECANISMO, CASO_MARIANA } from "./conteudo";
 import { AreaSchema, ProjetoDoPacoteSchema } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
 import {
@@ -28,7 +27,6 @@ import {
   aplicarPermanencia,
   aplicarSalvamento,
   cedulaLiberada,
-  embaralhar,
   feedCompleto,
   feedSemCurtidas,
   fimDoFeed,
@@ -42,9 +40,12 @@ import {
   type ProjetoDoMotor,
 } from "./regras/afunilamento";
 import {
+  aplicarPastas,
   corrigirClassificacao,
+  estandesSemPasta,
   itensDaClassificacao,
-  type RespostaDaClassificacao,
+  respostasDasPastas,
+  type Pastas,
 } from "./regras/classificacao";
 import {
   MARCADOR_DA_CLASSIFICACAO,
@@ -56,6 +57,7 @@ import {
   auditoriaDaLinha,
   feedDaLinha,
   ocultosAbertos,
+  pastasDaLinha,
   ordemDaGaleria,
   registrarAcao,
   type AcaoDaGaleria,
@@ -86,12 +88,12 @@ import {
   type PassoPedido,
 } from "./regras/passos";
 import type { ConteudoDoPacote } from "./regras/preparo";
+import { LAMINAS, chaveDaMidia, ehChaveDaMidia, nomeDaLamina } from "./regras/laminas";
 import { postPublico, projetoDaGaleria, type Midia, type PostPublico } from "./regras/publico";
 import {
   AREAS,
   DISCIPLINAS,
   EXP_ID,
-  ID_DE_PROJETO_RE,
   ORIGENS_DO_PACOTE,
   POSTS_DE_ABERTURA,
   VERSAO_DO_INSTRUMENTO,
@@ -99,6 +101,7 @@ import {
   compararIdsDeProjeto,
   idsDoPacoteCom,
   type AcaoDaRevisao,
+  type Area,
   type Conviccao,
   type Disciplina,
   type OrigemDoPacote,
@@ -122,11 +125,12 @@ export { EXP_ID } from "./vocabulario";
  * quarenta, com a contagem por área e o contrafactual sem curtidas desta
  * sessão — só com a etapa `galeria` aberta.
  *
- * **O gabarito das duas tarefas nunca desce** (ADR-174): os estandes da
- * separação e as peças da regra chegam com ids OPACOS e embaralhados pela
- * semente da sessão, e quem corrige é o servidor (`regras/classificacao.ts`,
- * `regras/regra.ts`, regra 3). A criança não vê quantos acertou na separação;
- * a regra certa só desce depois do envio.
+ * **O gabarito das duas tarefas nunca desce** (ADR-174): a separação é feita
+ * nas PASTAS do salvar, no feed (ADR-176), e corrigida aqui no voto; as peças
+ * da regra chegam com ids OPACOS e embaralhados pela semente da sessão. Quem
+ * corrige é o servidor (`regras/classificacao.ts`, `regras/regra.ts`, regra
+ * 3). A criança não vê quantos acertou na separação; a regra certa só desce
+ * depois do envio.
  */
 
 /**
@@ -213,12 +217,12 @@ function conteudoDaLinha(bruto: Prisma.JsonValue, contexto: { escolaId: string; 
   throw erroDeJogo("atividade-nao-preparada");
 }
 
-/** As URLs de imagem do pacote, só com chave de projeto conhecida e valor texto. */
+/** As URLs de imagem do pacote, só com chave de lâmina conhecida (`proj-a1`, `proj-a1:detalhe`) e valor texto. */
 function midiaDaLinha(bruto: Prisma.JsonValue): Record<string, string> {
   if (bruto === null || typeof bruto !== "object" || Array.isArray(bruto)) return {};
   const midia: Record<string, string> = {};
-  for (const [id, url] of Object.entries(bruto)) {
-    if (ID_DE_PROJETO_RE.test(id) && typeof url === "string" && url.length > 0) midia[id] = url;
+  for (const [chave, url] of Object.entries(bruto)) {
+    if (ehChaveDaMidia(chave) && typeof url === "string" && url.length > 0) midia[chave] = url;
   }
   return midia;
 }
@@ -247,9 +251,10 @@ function projetosDoMotor(pacote: PacoteLido): ProjetoDoMotor[] {
   return pacote.conteudo.projetos.map((p) => ({ id: p.id, area: areaDoProjeto(p.id) }));
 }
 
+/** Contado por LÂMINA (ADR-178): quatro imagens por estande. */
 function resumoDaMidia(pacote: PacoteLido): { total: number; prontas: number } {
-  const projetos = pacote.conteudo.projetos;
-  return { total: projetos.length, prontas: projetos.filter((p) => pacote.midia[p.id]).length };
+  const chaves = pacote.conteudo.projetos.flatMap((p) => LAMINAS.map((l) => chaveDaMidia(p.id, l)));
+  return { total: chaves.length, prontas: chaves.filter((c) => pacote.midia[c]).length };
 }
 
 /**
@@ -279,7 +284,7 @@ function pesoDaLinha(votadoEm: Date | null, atualizadoEm: Date | null): number {
 /** O que a tela MEDIU no feed — o corpo de `EventosDoFeedSchema`. */
 type EventosMedidos = {
   curtidas: { postId: string; curtiu: boolean }[];
-  salvamentos: { postId: string; salvou: boolean }[];
+  salvamentos: { postId: string; salvou: boolean; pasta?: Area }[];
   permanencias: string[];
   proximo: boolean;
 };
@@ -335,8 +340,8 @@ export class JuriEstadualService {
 
   /**
    * Boot da experiência e o F5. Na primeira entrada do estudante na rodada,
-   * nasce a sessão (com a semente). Cada bloco do fim da missão
-   * (`classificacao`, `cadeia`, `mariana`) só vem do passo dele.
+   * nasce a sessão (com a semente). O bloco da regra (`cadeia`) só vem do
+   * passo dele.
    */
   async sessao(escolaId: string, estudanteId: string, turmaId: string | null) {
     return this.prisma.comTenancy(async (tx) => {
@@ -381,6 +386,16 @@ export class JuriEstadualService {
         }
         return { passo: passoEfetivo(r.passo, ctx.gate.etapa), etapa: ctx.gate.etapa };
       }
+      /* A sessão ANTIGA parada na tela da separação da 0.6.0 (que saiu, ADR-176): segue para a espera, sem marca. */
+      if (para === "lacrada") {
+        if (r.passo !== atual) {
+          await tx.exp06ef1bSessao.updateMany({
+            where: { id: ctx.sessao.id, escolaId, passo: "classificacao" },
+            data: { passo: "lacrada" },
+          });
+        }
+        return { passo: passoEfetivo(r.passo, ctx.gate.etapa), etapa: ctx.gate.etapa };
+      }
       let estado = feedDaLinha(ctx.sessao);
       if (r.passo === "feed" && (atual !== "feed" || estado.servidos.length === 0)) {
         const servidos =
@@ -393,12 +408,13 @@ export class JuriEstadualService {
         });
         estado = { ...estado, servidos };
       }
-      return this.feedPublico(ctx.pacote, estado, ctx.sessao.feedIniciadoEm);
+      return this.feedPublico(ctx.pacote, estado, pastasDaLinha(ctx.sessao), ctx.sessao.feedIniciadoEm);
     }, escolaId);
   }
 
   /**
-   * O que a tela MEDIU desde a última chamada — curtidas e salvos (estado) e
+   * O que a tela MEDIU desde a última chamada — curtidas e salvos (estado, o
+   * salvo com a PASTA em que a criança o guardou, ADR-176) e
    * permanências (fato) —, e o próximo post quando ela chegou ao fim do que foi
    * servido. A ordem importa: as curtidas entram ANTES de o motor escolher o
    * próximo, porque é a curtida que afunila.
@@ -422,7 +438,9 @@ export class JuriEstadualService {
       const agora = new Date();
       const iniciadoEm = ctx.sessao.feedIniciadoEm ?? (eventos.proximo ? agora : null);
       const antes = feedDaLinha(ctx.sessao);
+      const pastasAntes = pastasDaLinha(ctx.sessao);
       let estado = aplicarEventos(antes, eventos);
+      const pastas = aplicarPastas(pastasAntes, estado.salvos, eventos.salvamentos);
       if (eventos.proximo && !tempoDoFeedEsgotado(iniciadoEm, agora)) {
         estado = {
           ...estado,
@@ -431,19 +449,20 @@ export class JuriEstadualService {
       }
 
       const iniciouAgora = ctx.sessao.feedIniciadoEm === null && iniciadoEm !== null;
-      if (iniciouAgora || canonico(estado) !== canonico(antes)) {
+      if (iniciouAgora || canonico(estado) !== canonico(antes) || canonico(pastas) !== canonico(pastasAntes)) {
         await tx.exp06ef1bSessao.update({
           where: { id: ctx.sessao.id },
           data: {
             postsServidos: [...estado.servidos],
             curtidos: [...estado.curtidos],
             salvos: [...estado.salvos],
+            pastas,
             permanencias: [...estado.permanencias],
             ...(iniciouAgora ? { feedIniciadoEm: iniciadoEm } : {}),
           },
         });
       }
-      return this.feedPublico(ctx.pacote, estado, iniciadoEm, agora);
+      return this.feedPublico(ctx.pacote, estado, pastas, iniciadoEm, agora);
     }, escolaId);
   }
 
@@ -483,6 +502,12 @@ export class JuriEstadualService {
    * OU com os 8 minutos do feed esgotados; o projeto tem de ter aparecido no
    * feed desta criança. O batimento da cédula se apaga no mesmo update.
    *
+   * **A SEPARAÇÃO (EF06CO01) é corrigida AQUI** desde a 0.7.0 (ADR-176): a
+   * criança guardou cada estande numa pasta durante o feed, e o voto só lacra
+   * com todos guardados (409 `estandes-sem-pasta`). As respostas saem das
+   * pastas no formato da 0.6.0, vão para as colunas `classificacao_*` no mesmo
+   * update do voto, e a marca entra na mesma transação. A tela não vê o acerto.
+   *
    * Concorrente: dois toques chegam como duas requisições, o lock por
    * estudante as põe em fila, e a segunda relê a sessão já votada — 409
    * `voto-ja-lacrado`. O `WHERE votado_em IS NULL` é a segunda tranca, e o
@@ -503,62 +528,34 @@ export class JuriEstadualService {
       if (!cedulaLiberada(feed, ctx.sessao.feedIniciadoEm, new Date())) throw erroDeJogo("feed-incompleto");
       if (!projetoFoiExibido(feed.servidos, voto.projetoId)) throw erroDeJogo("projeto-fora-do-feed");
 
+      const pastas = pastasDaLinha(ctx.sessao);
+      const itens = itensDaClassificacao(ctx.sessao.semente, feed.servidos);
+      const respostas = respostasDasPastas(itens, feed.servidos, pastas);
+      if (!respostas) throw erroDeJogo("estandes-sem-pasta");
+      const correcao = corrigirClassificacao(itens, respostas);
+      if (!correcao) throw erroDeJogo("estandes-sem-pasta");
+      const nivel = nivelDaClassificacao(correcao);
+      const gate = await this.gateDaSessao(tx, escolaId, ctx);
+
+      const agora = new Date();
       const { count } = await tx.exp06ef1bSessao.updateMany({
         where: { id: ctx.sessao.id, escolaId, votadoEm: null, passo: "feed" },
         data: {
           votoProjeto: voto.projetoId,
           conviccao: voto.conviccao,
-          votadoEm: new Date(),
-          /* Depois do voto, a SEPARAÇÃO (EF06CO01, ADR-174); a espera vem depois dela. */
-          passo: "classificacao",
+          votadoEm: agora,
+          /* A separação das pastas, corrigida no voto (ADR-176); depois dele, a espera. */
+          classificacaoRespostas: respostas.map((r) => ({ itemId: r.itemId, area: r.area })),
+          classificacaoAcertos: correcao.acertos,
+          classificacaoTotal: correcao.total,
+          classificadaEm: agora,
+          classificacaoStatus: nivel,
+          passo: "lacrada",
           cedulaBatimentoEm: null,
           cedulaInativaDesde: null,
         },
       });
       if (count === 0) throw erroDeJogo("voto-ja-lacrado");
-      const sessao = await tx.exp06ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
-      return this.estado(sessao, ctx.gate);
-    }, escolaId);
-  }
-
-  /**
-   * A SEPARAÇÃO (EF06CO01, ADR-174), logo depois do voto: a criança põe cada
-   * estande que viu numa das quatro áreas. Uma vez só — reenviar é 409
-   * `classificacao-ja-enviada` —, e o corpo é conferido contra os itens DESTA
-   * sessão (id de outra sessão, item faltando ou repetido = 400). Corrige,
-   * grava, marca e leva à espera (`lacrada`). Devolve só o estado: a criança
-   * não vê quantos acertou — a galeria, depois, mostra o que ficou fora por
-   * área.
-   */
-  async classificar(
-    escolaId: string,
-    estudanteId: string,
-    turmaId: string | null,
-    respostas: readonly RespostaDaClassificacao[],
-  ) {
-    return this.prisma.comTenancy(async (tx) => {
-      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
-      if (ctx.sessao.classificadaEm) throw erroDeJogo("classificacao-ja-enviada");
-      if (normalizarPasso(ctx.sessao.passo) !== "classificacao") throw erroDeJogo("passo-invalido");
-      const itens = itensDaClassificacao(ctx.sessao.semente, feedDaLinha(ctx.sessao).servidos);
-      const correcao = corrigirClassificacao(itens, respostas);
-      if (!correcao) throw erroDeJogo("payload-invalido");
-      const gate = await this.gateDaSessao(tx, escolaId, ctx);
-
-      const nivel = nivelDaClassificacao(correcao);
-      const { count } = await tx.exp06ef1bSessao.updateMany({
-        where: { id: ctx.sessao.id, escolaId, classificadaEm: null, passo: "classificacao" },
-        data: {
-          classificacaoRespostas: respostas.map((r) => ({ itemId: r.itemId, area: r.area })),
-          classificacaoAcertos: correcao.acertos,
-          classificacaoTotal: correcao.total,
-          classificadaEm: new Date(),
-          classificacaoStatus: nivel,
-          passo: "lacrada",
-        },
-      });
-      if (count === 0) throw erroDeJogo("classificacao-ja-enviada");
-
       await this.marcar(tx, ctx, gate, MARCADOR_DA_CLASSIFICACAO, nivel);
       const sessao = await tx.exp06ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
       return this.estado(sessao, gate);
@@ -712,7 +709,9 @@ export class JuriEstadualService {
           cadeiaTentativas: 1,
           cadeiaMontadaEm: new Date(),
           logicaStatus: nivel,
-          passo: "mariana",
+          /* A regra CONCLUI desde a 0.7.0 (ADR-176): o caso Mariana saiu. `fim` e `concluida_em` juntos (CHECK). */
+          passo: "fim",
+          concluidaEm: new Date(),
         },
       });
       /* Sem linha atualizada, outro envio chegou antes: não marca de novo. */
@@ -723,50 +722,17 @@ export class JuriEstadualService {
   }
 
   /**
-   * O caso Mariana: um cartão de mecanismo e um de atitude. Grava a escolha e
-   * CONCLUI (passo `fim` e `concluida_em` no mesmo update — o CHECK `fim ⇔
-   * concluida_em` vale por statement); as enquetes saíram com a ficha 5
-   * (ADR-174). Não marca evidência e não diz qual é o certo (é a
-   * transferência, conversada na plenária). Escolher de novo devolve o estado,
-   * sem trocar a primeira escolha.
-   */
-  async escolherCartoes(
-    escolaId: string,
-    estudanteId: string,
-    turmaId: string | null,
-    cartoes: { mecanismo: string; atitude: string },
-  ) {
-    return this.prisma.comTenancy(async (tx) => {
-      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
-      if (ctx.sessao.cartoesEm) return this.estado(ctx.sessao, ctx.gate);
-      if (normalizarPasso(ctx.sessao.passo) !== "mariana") throw erroDeJogo("passo-invalido");
-      const { count } = await tx.exp06ef1bSessao.updateMany({
-        where: { id: ctx.sessao.id, escolaId, cartoesEm: null, passo: "mariana" },
-        data: {
-          mecanismo: cartoes.mecanismo,
-          atitude: cartoes.atitude,
-          cartoesEm: new Date(),
-          passo: "fim",
-          concluidaEm: new Date(),
-        },
-      });
-      if (count === 0) throw erroDeJogo("passo-invalido");
-      const sessao = await tx.exp06ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
-      return this.estado(sessao, ctx.gate);
-    }, escolaId);
-  }
-
-  /**
-   * O crachá homologado das sessões ANTIGAS — de `enquetes` para `fim`;
-   * idempotente em `fim`. Desde a 0.6.0 os cartões já concluem: a rota fica
-   * para quem parou nas enquetes antes da troca (ADR-174).
+   * O crachá homologado das sessões ANTIGAS — de `mariana` (0.6.0) ou de
+   * `enquetes` (até a 0.5.0) para `fim`; idempotente em `fim`. Desde a 0.7.0 a
+   * regra já conclui (ADR-176): a rota fica para quem parou no caso Mariana ou
+   * nas enquetes antes da troca, sem marcar nada.
    */
   async concluir(escolaId: string, estudanteId: string, turmaId: string | null) {
     return this.prisma.comTenancy(async (tx) => {
       const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
       const atual = normalizarPasso(ctx.sessao.passo);
       if (atual === "fim") return this.estado(ctx.sessao, ctx.gate);
-      if (atual !== "enquetes") throw erroDeJogo("passo-invalido");
+      if (atual !== "enquetes" && atual !== "mariana") throw erroDeJogo("passo-invalido");
       /* Passo e carimbo no mesmo update: o CHECK `fim ⇔ concluida_em` vale por statement. */
       const sessao = await tx.exp06ef1bSessao.update({
         where: { id: ctx.sessao.id },
@@ -1145,9 +1111,9 @@ export class JuriEstadualService {
    * do ar a de agora.
    *
    * O MESMO conteúdo do pacote mais recente não é atividade nova: é o segundo
-   * clique em "Criar atividade" (idempotente). As imagens de projeto com a
-   * MESMA descrição de um pacote recente da turma são herdadas: o arquivo no
-   * bucket é o hash da descrição.
+   * clique em "Criar atividade" (idempotente). As imagens de projeto com o
+   * MESMO pedido de um pacote recente da turma são herdadas, lâmina a lâmina: o
+   * arquivo no bucket é o hash do pedido (`nomeDaLamina`).
    */
   async homologar(
     escolaId: string,
@@ -1208,20 +1174,27 @@ export class JuriEstadualService {
         };
       }
 
-      const urlDaDescricao = new Map<string, string>();
+      /* Pelo nome do arquivo do pedido, não pela URL: a imagem refeita tem
+         outra URL, e é ela que o professor escolheu para aquele pedido. */
+      const urlDoPedido = new Map<string, string>();
       for (const velho of [...recentes].reverse()) {
         const midia = midiaDaLinha(velho.midia);
         const lido = LeituraDoConteudoSchema.safeParse(velho.conteudo);
         if (!lido.success) continue;
         for (const p of lido.data.projetos) {
-          const url = midia[p.id];
-          if (url) urlDaDescricao.set(p.imagem.descricao, url);
+          for (const lamina of LAMINAS) {
+            const url = midia[chaveDaMidia(p.id, lamina)];
+            if (url) urlDoPedido.set(nomeDaLamina(lamina, p), url);
+          }
         }
       }
       const herdada: Record<string, string> = {};
       for (const p of conteudo.projetos) {
-        const url = urlDaDescricao.get(p.imagem.descricao) ?? (origem === "padrao" ? imagensDoBanco[p.id] : undefined);
-        if (url) herdada[p.id] = url;
+        for (const lamina of LAMINAS) {
+          const chave = chaveDaMidia(p.id, lamina);
+          const url = urlDoPedido.get(nomeDaLamina(lamina, p)) ?? (origem === "padrao" ? imagensDoBanco[chave] : undefined);
+          if (url) herdada[chave] = url;
+        }
       }
 
       const agora = new Date();
@@ -1396,15 +1369,16 @@ export class JuriEstadualService {
   }
 
   /**
-   * Grava a URL de UMA imagem no pacote. Concatenação de JSONB no próprio
+   * Grava a URL de UMA imagem no pacote, pela chave da lâmina (`proj-a1`,
+   * `proj-a1:detalhe`). Concatenação de JSONB no próprio
    * UPDATE (`midia || {proj-a1: url}`), e não ler-modificar-gravar: duas abas do
    * preparo gravando imagens diferentes não podem apagar uma à outra.
    */
-  async registrarMidia(escolaId: string, pacoteId: string, projetoId: string, url: string): Promise<void> {
+  async registrarMidia(escolaId: string, pacoteId: string, chave: string, url: string): Promise<void> {
     await this.prisma.comTenancy(
       (tx) => tx.$executeRaw`
         UPDATE exp06ef1b_pacotes
-           SET midia = midia || jsonb_build_object(${projetoId}::text, ${url}::text),
+           SET midia = midia || jsonb_build_object(${chave}::text, ${url}::text),
                atualizado_em = now()
          WHERE id = ${pacoteId}::uuid AND escola_id = ${escolaId}`,
       escolaId,
@@ -1432,13 +1406,21 @@ export class JuriEstadualService {
       .filter((p): p is PostPublico => p !== null);
   }
 
-  /** O feed como a tela o desenha: os posts servidos, pela allowlist, e o relógio dos 8 minutos. */
-  private feedPublico(pacote: PacoteLido, estado: EstadoDoFeed, iniciadoEm: Date | null, agora = new Date()) {
+  /** O feed como a tela o desenha: os posts servidos, pela allowlist, as pastas e o relógio dos 8 minutos. */
+  private feedPublico(
+    pacote: PacoteLido,
+    estado: EstadoDoFeed,
+    pastas: Pastas,
+    iniciadoEm: Date | null,
+    agora = new Date(),
+  ) {
     const fim = fimDoFeed(iniciadoEm);
     return {
       posts: this.postsPublicos(pacote, estado.servidos),
       curtidos: [...estado.curtidos],
       salvos: [...estado.salvos],
+      pastas: { ...pastas },
+      semPasta: estandesSemPasta(estado.servidos, pastas),
       completo: feedCompleto(estado),
       tempoEsgotado: tempoDoFeedEsgotado(iniciadoEm, agora),
       encerraEm: fim ? fim.toISOString() : null,
@@ -1463,7 +1445,7 @@ export class JuriEstadualService {
       aguardandoOProfessor: aguardandoOProfessor(passo, gate.etapa),
       tema: pacote.conteudo.tema,
       categorias: pacote.conteudo.categorias.map((c) => ({ area: c.area, nome: c.nome, hashtag: c.hashtag })),
-      feed: this.feedPublico(pacote, feed, sessao.feedIniciadoEm),
+      feed: this.feedPublico(pacote, feed, pastasDaLinha(sessao), sessao.feedIniciadoEm),
       voto:
         sessao.votoProjeto && sessao.conviccao
           ? { projetoId: sessao.votoProjeto, conviccao: sessao.conviccao as Conviccao }
@@ -1472,39 +1454,12 @@ export class JuriEstadualService {
         acao === "manter" || acao === "trocar" || acao === "complementar"
           ? { acao, projetoId: acao === "trocar" ? sessao.votoRevisado : null }
           : null,
-      /*
-       * A separação só existe no passo dela: os estandes vistos, com id opaco,
-       * título e imagem — sem área, hashtag nem perfil (o perfil é a hashtag).
-       * As opções são as `categorias`, acima.
-       */
-      classificacao:
-        efetivo === "classificacao"
-          ? {
-              itens: itensDaClassificacao(sessao.semente, feed.servidos).map((item) => {
-                const projeto = pacote.conteudo.projetos.find((p) => p.id === item.projetoId);
-                return {
-                  id: item.id,
-                  titulo: projeto?.titulo ?? "",
-                  imagem: { url: pacote.midia[item.projetoId] ?? null, alt: projeto?.imagem.alt ?? "" },
-                };
-              }),
-            }
-          : null,
       /* A regra (o passo guarda o nome `cadeia`): as peças e, depois do envio, a revelação. */
       cadeia: passoNoMinimo(efetivo, "cadeia")
         ? {
             ...pecasPublicas(pecasDaSessao(sessao.semente)),
             enviada: sessao.cadeiaMontadaEm !== null,
             revelacao: this.revelacao(sessao),
-          }
-        : null,
-      mariana: passoNoMinimo(efetivo, "mariana")
-        ? {
-            caso: CASO_MARIANA,
-            /* Os cinco juntos, embaralhados pela sessão: o certo não é sempre o primeiro. `certo` não desce. */
-            mecanismos: embaralhar(CARTOES_DE_MECANISMO, sessao.semente, "mecanismos").map((c) => ({ id: c.id, texto: c.texto })),
-            atitudes: embaralhar(CARTOES_DE_ATITUDE, sessao.semente, "atitudes").map((c) => ({ id: c.id, texto: c.texto })),
-            escolha: sessao.mecanismo && sessao.atitude ? { mecanismo: sessao.mecanismo, atitude: sessao.atitude } : null,
           }
         : null,
       concluida: sessao.concluidaEm !== null,

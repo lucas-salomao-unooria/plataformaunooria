@@ -13,7 +13,7 @@ import { Cabecalho } from "./cabecalho";
  *   plataforma numa faixa própria (`.fim__escola`, fundo e fonte da seção
  *   `unooria`), abaixo da comissão. Não é a plataforma vestida de app: é a
  *   escola tomando a palavra depois que a ficção encerrou — a mesma regra da
- *   cadeia e do caso Mariana.
+ *   tela da regra SE … ENTÃO, que leva até aqui.
  *
  * Não há botão: a missão acabou, e o hub já recebeu o `concluir`.
  */

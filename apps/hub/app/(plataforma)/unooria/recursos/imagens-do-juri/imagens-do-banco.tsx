@@ -4,12 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { Button, Card, FeedbackAlert, Icon, ProgressBar, SectionHeader, Tabs, Tag } from "@edu/ui/ds";
 import {
   CAMINHO_DAS_IMAGENS_DO_BANCO,
+  LAMINAS,
+  ROTULO_DA_LAMINA,
   areaDoProjeto,
+  chaveDaMidia,
   continuarGerando,
   erroDaResposta,
   falhasAcumuladas,
   idsDoBancoPorArea,
+  laminasSemImagem,
   numeroDoProjeto,
+  projetoDaChave,
   rotuloCurtoDaArea,
   rotuloDaAbaDaArea,
   textoDoProgressoDoBanco,
@@ -24,7 +29,7 @@ type Aviso = { tipo: "success" | "warning" | "error"; texto: string };
 
 /**
  * A grade e o laço das imagens do banco padrão do Júri. O laço é o mesmo da
- * customização do professor (`continuarGerando`): a api gera ATÉ QUATRO por
+ * customização do professor (`continuarGerando`): a api gera ATÉ OITO por
  * chamada (o BFF corta a espera em 3 min), e a tela repete enquanto falta
  * alguma e a chamada anterior gerou pelo menos uma — repetir depois de uma
  * volta sem nada seria pedir de novo as mesmas que o provedor acabou de recusar.
@@ -32,6 +37,9 @@ type Aviso = { tipo: "success" | "warning" | "error"; texto: string };
  * A grade é agrupada por área com o `Tabs` do DS (controlado, só a aba aberta
  * renderizada). A api devolve só os ids e as URLs — o conteúdo do banco mora
  * nela —, por isso cada imagem é nomeada pelo número do projeto na área.
+ *
+ * Quatro imagens por projeto desde a 0.8.0 (ADR-178): as lâminas do carrossel
+ * do post (`LAMINAS`), lado a lado no cartão do projeto.
  */
 export function ImagensDoBancoDoJuri({ inicial }: { inicial: ImagensDoBancoPadrao }) {
   const [banco, setBanco] = useState<ImagensDoBancoPadrao>(inicial);
@@ -50,6 +58,7 @@ export function ImagensDoBancoDoJuri({ inicial }: { inicial: ImagensDoBancoPadra
   }, []);
 
   const porArea = idsDoBancoPorArea(banco);
+  const projetosDoBanco = porArea.reduce((n, a) => n + a.ids.length, 0);
   const aberta = porArea.find((a) => a.area === area) ?? porArea[0];
 
   async function gerar() {
@@ -59,7 +68,7 @@ export function ImagensDoBancoDoJuri({ inicial }: { inicial: ImagensDoBancoPadra
     let geradas = 0;
     let ultimo: GeracaoDoBancoPadrao | null = null;
     /* Teto de voltas por precaução: `continuarGerando` já para quando uma
-       chamada não anda, e cada volta faz até quatro imagens. */
+       chamada não anda, e cada volta faz até oito imagens. */
     const tetoDeVoltas = Math.max(banco.faltam.length, 1) + 2;
     try {
       for (let volta = 0; volta < tetoDeVoltas && vivo.current; volta += 1) {
@@ -110,7 +119,7 @@ export function ImagensDoBancoDoJuri({ inicial }: { inicial: ImagensDoBancoPadra
     <section className="flex flex-col gap-4" data-imagens-do-banco-do-juri>
       <SectionHeader
         title="Imagens do banco padrão do Júri Estadual"
-        description={`Uma imagem para cada um dos ${banco.total} projetos do banco padrão da missão do 6º ano. Toda atividade criada com o banco padrão usa as que já existem; o projeto sem imagem aparece com a arte desenhada da missão.`}
+        description={`Quatro imagens para cada um dos ${projetosDoBanco} projetos do banco padrão da missão do 6º ano — as fotos do carrossel do post: a foto do estande, o projeto de perto, a equipe e os bastidores. Toda atividade criada com o banco padrão usa as que já existem; a imagem que faltar aparece com a arte desenhada da missão.`}
       />
 
       <Card variant="outlined">
@@ -124,7 +133,7 @@ export function ImagensDoBancoDoJuri({ inicial }: { inicial: ImagensDoBancoPadra
             data-progresso-do-banco
           />
           <p className="max-w-3xl text-[13px] leading-snug text-unooria-neutral-700">
-            Cada rodada gera até quatro imagens, e a tela repete sozinha até não faltar nenhuma. As que faltam levam
+            Cada rodada gera até oito imagens, e a tela repete sozinha até não faltar nenhuma. As que faltam levam
             vários minutos: deixe esta página aberta enquanto saem. O custo aparece em Custos de IA.
           </p>
           <div className="flex flex-wrap items-center gap-3">
@@ -150,7 +159,13 @@ export function ImagensDoBancoDoJuri({ inicial }: { inicial: ImagensDoBancoPadra
           {falhas.length > 0 && !gerando ? (
             <p className="text-[12px] leading-snug text-unooria-neutral-700" data-falharam={falhas.length}>
               {falhas.length === 1 ? "1 imagem falhou" : `${falhas.length} imagens falharam`} nesta sessão (
-              {falhas.map((id) => `${rotuloCurtoDaArea(areaDoProjeto(id))}, projeto ${numeroDoProjeto(id)}`).join("; ")}).
+              {falhas
+                .map((chave) => {
+                  const id = projetoDaChave(chave);
+                  const lamina = LAMINAS.find((l) => chaveDaMidia(id, l) === chave) ?? "capa";
+                  return `${rotuloCurtoDaArea(areaDoProjeto(id))}, projeto ${numeroDoProjeto(id)} (${ROTULO_DA_LAMINA[lamina]})`;
+                })
+                .join("; ")}).
               Gerar de novo tenta só as que faltam.
             </p>
           ) : null}
@@ -166,8 +181,8 @@ export function ImagensDoBancoDoJuri({ inicial }: { inicial: ImagensDoBancoPadra
             items={porArea.map((a) => ({
               value: a.area,
               label: rotuloDaAbaDaArea(rotuloCurtoDaArea(a.area), a.ids.length, {
-                quantos: a.ids.filter((id) => !banco.imagens[id]).length,
-                texto: "sem imagem",
+                quantos: a.ids.filter((id) => laminasSemImagem(id, banco.imagens) > 0).length,
+                texto: "com imagem faltando",
               }),
               showIcon: false,
             }))}
@@ -175,42 +190,52 @@ export function ImagensDoBancoDoJuri({ inicial }: { inicial: ImagensDoBancoPadra
           {aberta ? (
             <ul
               key={aberta.area}
-              className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
+              className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
               aria-label={`As imagens da ${rotuloCurtoDaArea(aberta.area)}`}
               data-area={aberta.area}
             >
               {aberta.ids.map((id) => {
-                const url = banco.imagens[id];
-                const falhou = falhas.includes(id);
+                const faltam = laminasSemImagem(id, banco.imagens);
+                const falhou = LAMINAS.some((l) => falhas.includes(chaveDaMidia(id, l)));
                 const nome = `Projeto ${numeroDoProjeto(id)}`;
                 return (
                   <li
                     key={id}
                     className="flex flex-col gap-2 rounded-lg border border-unooria-neutral-200 p-3"
                     data-imagem-do-banco={id}
-                    data-tem-imagem={url ? "sim" : "nao"}
+                    data-tem-imagem={faltam === 0 ? "sim" : "nao"}
                   >
-                    {/* O quadro tem a proporção da foto do estande no post (4:3). É MEDIDA, não componente. */}
-                    <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-md bg-unooria-neutral-100">
-                      {url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={url}
-                          alt={`Imagem do projeto ${numeroDoProjeto(id)} da ${rotuloCurtoDaArea(aberta.area)} do banco padrão`}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span className="px-3 text-center text-[12px] text-unooria-neutral-600">
-                          {gerando ? "Na fila para gerar" : "Ainda sem imagem"}
-                        </span>
-                      )}
-                    </div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-[13px] font-semibold text-unooria-neutral-950">{nome}</span>
-                      <Tag variant={url ? "success" : falhou ? "warning" : "neutral"} size="sm">
-                        {url ? "Pronta" : falhou ? "Falhou" : "Falta"}
+                      <Tag variant={faltam === 0 ? "success" : falhou ? "warning" : "neutral"} size="sm">
+                        {faltam === 0 ? "Pronto" : falhou ? "Falhou" : `Faltam ${faltam} de ${LAMINAS.length}`}
                       </Tag>
                     </div>
+                    <ul className="grid grid-cols-2 gap-2" aria-label={`As quatro imagens do projeto ${numeroDoProjeto(id)}`}>
+                      {LAMINAS.map((lamina) => {
+                        const url = banco.imagens[chaveDaMidia(id, lamina)];
+                        return (
+                          <li key={lamina} className="flex flex-col gap-1" data-lamina={lamina}>
+                            {/* O quadro tem a proporção da foto do post (4:3). É MEDIDA, não componente. */}
+                            <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-md bg-unooria-neutral-100">
+                              {url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={url}
+                                  alt={`${ROTULO_DA_LAMINA[lamina]} do projeto ${numeroDoProjeto(id)} da ${rotuloCurtoDaArea(aberta.area)} do banco padrão`}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <span className="px-2 text-center text-[11px] text-unooria-neutral-600">
+                                  {gerando ? "Na fila para gerar" : "Ainda sem imagem"}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] font-semibold text-unooria-neutral-800">{ROTULO_DA_LAMINA[lamina]}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </li>
                 );
               })}

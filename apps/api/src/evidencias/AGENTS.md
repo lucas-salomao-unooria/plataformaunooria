@@ -10,9 +10,10 @@ do ar, acertou a pergunta) e isso morria dentro da experiência; aqui vira o
 nível que o professor lê, corrige e leva para o boletim.
 
 A plataforma entrou primeiro; as missões entram uma a uma, cada uma com a sua
-ficha. **A primeira é Quem Mandou Isso?** (`fichas/exp05ef1b.ts` v4, ADR-171,
-sem as P1/P2): só ações rotuladas, cada uma na transação do próprio envio —
-Mural (EF05CO08), cartão de frases (CO03), regra do tio (CO04). Sem resolvedor.
+ficha. **A primeira é Quem Mandou Isso?** (`fichas/exp05ef1b.ts` v5, ADR-177;
+sem as P1/P2 desde a ADR-171): só ações rotuladas, cada uma na transação do
+próprio envio — Mural (EF05CO08), alerta do grupo no 4º envio (CO03), robô do
+grupo (CO04). Sem resolvedor.
 **A segunda é A Seleção (`exp07ef1b`)**: `fichas/exp07ef1b.ts` v2 (ADR-170,
 que tirou as enquetes P1/P2): EF07CO11 pela legenda lida por IA, marcada numa
 transação só dela DEPOIS da resposta; EF07CO08 pela marcação do post do colega,
@@ -26,9 +27,10 @@ o histórico (`evidencias_eventos.para.motivo`), para todas as missões.
 nenhuma pergunta e nenhum resolvedor de contexto. O marcador parcial tem teto
 em "em processo" e o final grava o COMBINADO: é assim que uma régua "A só com
 as duas" cabe no "vale o melhor" desta porta, sem regra nova na plataforma.
-**A quarta é o Júri Estadual (`exp06ef1b`)**: `fichas/exp06ef1b.ts` v5
-(ADR-174, que tirou as enquetes P1–P3 e a EF06CO10): só ações rotuladas, cada
-uma na transação do próprio envio — `classificacao`, a separação (EF06CO01, a
+**A quarta é o Júri Estadual (`exp06ef1b`)**: `fichas/exp06ef1b.ts` v6
+(ADR-176 sobre a 174, que tirou as enquetes P1–P3 e a EF06CO10): só ações
+rotuladas, cada uma na transação do próprio envio — `classificacao`, a
+separação nas PASTAS do feed, corrigida e marcada no VOTO (EF06CO01, a
 principal; < 4 estandes vistos = sem marca), e `regra`, a SE … ENTÃO (EF06CO03,
 id novo: a `cadeia` da v4 fica no histórico). Sem resolvedor.
 **A quinta é o Unoovista (`exp08ef1b`)**: `fichas/exp08ef1b.ts` v2 (ADR-167,

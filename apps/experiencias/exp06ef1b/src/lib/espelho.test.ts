@@ -19,7 +19,6 @@ import {
   type AreaSemCurtidas,
   type Feed,
   type Galeria,
-  type ItemDaClassificacao,
   type PecaDaRegra,
   type PostPublico,
   type ProjetoDaGaleria,
@@ -86,17 +85,17 @@ function chavesDoSchema(nome: string): string[] {
 const CHAVES = {
   sessao: {
     pacoteId: 1, rodada: 1, passo: 1, passoDoEstudante: 1, etapa: 1, aguardandoOProfessor: 1, tema: 1,
-    categorias: 1, feed: 1, voto: 1, revisao: 1, classificacao: 1, cadeia: 1, mariana: 1, concluida: 1,
+    categorias: 1, feed: 1, voto: 1, revisao: 1, cadeia: 1, concluida: 1,
   } satisfies Record<keyof Sessao, 1>,
   feed: {
-    posts: 1, curtidos: 1, salvos: 1, completo: 1, tempoEsgotado: 1, encerraEm: 1, cedulaLiberada: 1,
+    posts: 1, curtidos: 1, salvos: 1, pastas: 1, semPasta: 1, completo: 1, tempoEsgotado: 1, encerraEm: 1,
+    cedulaLiberada: 1,
   } satisfies Record<keyof Feed, 1>,
-  item: { id: 1, titulo: 1, imagem: 1 } satisfies Record<keyof ItemDaClassificacao, 1>,
   peca: { id: 1, texto: 1 } satisfies Record<keyof PecaDaRegra, 1>,
   revelacao: { escolha: 1, certa: 1, motivo: 1, area: 1 } satisfies Record<keyof RevelacaoDaRegra, 1>,
   post: {
     id: 1, projetoId: 1, tipo: 1, area: 1, titulo: 1, escola: 1, perfil: 1, texto: 1, legenda: 1, bastidor: 1,
-    hashtags: 1, imagem: 1,
+    hashtags: 1, imagem: 1, laminas: 1,
   } satisfies Record<keyof PostPublico, 1>,
   galeria: {
     invisibilidade: 1, porArea: 1, semCurtidas: 1, projetos: 1, ocultosAbertos: 1, podeManter: 1,
@@ -105,7 +104,7 @@ const CHAVES = {
   porArea: { area: 1, vistos: 1, total: 1 } satisfies Record<keyof VistosPorArea, 1>,
   semCurtidas: { area: 1, posts: 1 } satisfies Record<keyof AreaSemCurtidas, 1>,
   projeto: {
-    id: 1, area: 1, titulo: 1, escola: 1, perfil: 1, legenda: 1, resumo: 1, hashtags: 1, imagem: 1, exibidoNoSeuFeed: 1,
+    id: 1, area: 1, titulo: 1, escola: 1, perfil: 1, legenda: 1, resumo: 1, hashtags: 1, imagem: 1, laminas: 1, exibidoNoSeuFeed: 1,
   } satisfies Record<keyof ProjetoDaGaleria, 1>,
 };
 
@@ -155,11 +154,15 @@ describe("o vocabulário é o da api, na mesma ordem", () => {
     }
     expect(conteudo).not.toContain("BLOCOS_DA_CADEIA");
     expect(conteudo).not.toContain("PACOTES_DA_CURTIDA");
+    /* O caso Mariana e os cartões saíram (ADR-176): a regra conclui. */
+    expect(conteudo).not.toContain("CASO_MARIANA");
+    expect(ler(CONTRATO)).not.toMatch(/export const (CartoesSchema|ClassificacaoSchema)/);
     expect(PASSOS).not.toContain("pacotes" as never);
   });
 
-  test("a ficha 5 (ADR-174): EF06CO01 e EF06CO03 por ação, sem pergunta — a EF06CO10 e a EF06CO07 saíram", () => {
+  test("a ficha 6 (ADR-176): EF06CO01 e EF06CO03 por ação, sem pergunta — a EF06CO10 e a EF06CO07 saíram", () => {
     const ficha = ler(FICHA);
+    expect(ficha).toContain("versao: 6,");
     const codigos = [...ficha.matchAll(/codigo: "(EF\d{2}CO\d{2})"/g)].map((m) => m[1]);
     expect(codigos).toEqual(["EF06CO01", "EF06CO03"]);
     expect(ficha).toContain("perguntas: [],");
@@ -172,7 +175,6 @@ describe("os campos do espelho são os do contrato", () => {
   test.each([
     ["SessaoSchema", CHAVES.sessao],
     ["FeedSchema", CHAVES.feed],
-    ["ItemDaClassificacaoSchema", CHAVES.item],
     ["PecaPublicaSchema", CHAVES.peca],
     ["RevelacaoDaRegraSchema", CHAVES.revelacao],
     ["PostPublicoSchema", CHAVES.post],
@@ -191,7 +193,7 @@ describe("passoEfetivo — a mesma resposta da api num F5", () => {
     expect(Object.keys(TELA_DO_PASSO)).toEqual([...PASSOS]);
   });
 
-  test("antes do voto, a etapa não toca a criança — nem na separação, que é dela", () => {
+  test("antes do voto, a etapa não toca a criança — nem na separação antiga da 0.6.0", () => {
     for (const etapa of ETAPAS) {
       expect(passoEfetivo("credencial", etapa)).toBe("credencial");
       expect(passoEfetivo("feed", etapa)).toBe("feed");

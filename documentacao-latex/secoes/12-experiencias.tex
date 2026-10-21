@@ -54,13 +54,15 @@ a partir da 0.2.0 depois de a primeira versão sair (\adrr{ADR-114},
 missões com ficha pedagógica: as perguntas finais passam pelas rotas genéricas
 de \arq{evidencias}, e não pelo módulo de cada uma. A \cd{exp05ef1b} não tem
 mais pergunta (\adrr{ADR-171}): as três habilidades são marcadas pelo módulo
-dela, nas ações.
+dela, nas ações --- o Mural, o alerta do grupo e o robô do grupo
+(\adrr{ADR-177}).
 
 A unidade 1 do 6º ano é \textbf{O Júri Estadual de Projetos}
 (\adrr{ADR-137}), no Unoovista, que nasceu na 0.1.0, na porta 5185, e está
-na 0.5.0 desde os quarenta projetos (\adrr{ADR-164}), depois da 0.2.0 dos
-ajustes do PO (\adrr{ADR-151}), da 0.3.0 do ciclo do voto (\adrr{ADR-152}) e da
-0.4.0 do PRD v2 (\adrr{ADR-157}). O 6º ano
+na 0.7.0 desde os ajustes do time que rodou a missão (\adrr{ADR-176}), depois
+da 0.2.0 dos ajustes do PO (\adrr{ADR-151}), da 0.3.0 do ciclo do voto
+(\adrr{ADR-152}), da 0.4.0 do PRD v2 (\adrr{ADR-157}), da 0.5.0 dos quarenta
+projetos (\adrr{ADR-164}) e da 0.6.0 do Canal A (\adrr{ADR-174}). O 6º ano
 passa a ter duas missões: ela e O Rastro do Boato (\cd{exp06ef2b}), da
 unidade 2.
 
@@ -244,13 +246,14 @@ da missão injeta o que só ela sabe montar:
     motor executou (curtir e ficar pesam, salvar não, o limiar e o resto do
     feed só com projetos novos da área em foco, \adrr{ADR-157},
     \adrr{ADR-164}), as peças da regra SE \ldots{} ENTÃO com a certa marcada
-    (\adrr{ADR-174}) e o caso Mariana com os cartões
-    certos marcados. O componente é \arq{guia/\B{}material-do-juri.tsx}. O
-    guia tem 29\,min em tela e o corte depois do Passo 3; a nota pedagógica da
+    (\adrr{ADR-174}); o caso Mariana saiu na 0.7.0 (\adrr{ADR-176}). O
+    componente é \arq{guia/\B{}material-do-juri.tsx}. O
+    guia tem cerca de 24\,min em tela (eram 29 com o caso Mariana; o Passo 6,
+    \enquote{Refletir}, é fora da tela) e o corte depois do Passo 3; a nota pedagógica da
     EF06CO10 saiu com ela (\adrr{ADR-174}). Com quarenta estandes, o total fora do feed é o
-    mesmo para todos; o guia manda comparar as telas ÁREA POR ÁREA e o feed
-    \enquote{sem as suas curtidas}, nunca anunciar um número
-    (\adrr{ADR-164}).
+    mesmo para todos; o guia manda comparar ÁREA POR ÁREA, pela grade de cada
+    \emph{hashtag} e pelas pastas da aba Jurado, nunca anunciar um número
+    (\adrr{ADR-164}, \adrr{ADR-176}).
   \item \textbf{backup-exp04ef1b} (o UnooTube, arquivado na \adrr{ADR-116}; o
     bloco saiu do guia com ele) --- a tabela dos 21 vídeos, com o \cd{factual} de
     cada um, vinha de \rota{GET /unootube/professor/videos}. A criança de nove
@@ -1296,7 +1299,7 @@ texto.
 \label{sec:exp05ef1b}
 
 \textbf{5º ano · Unidade 1 · clone de mensageiro móvel · \cd{unoochat}
-(tema claro, \adrr{ADR-134}) · 0.5.0}
+(tema claro, \adrr{ADR-134}) · 0.6.0}
 
 A Nina pede ajuda: \enquote{rolou uma confusão sobre} o tema que a professora
 escreveu no preparo. No grupo \enquote{Turma 5ºB} chegam oito mensagens de
@@ -1305,14 +1308,18 @@ emocional ou neutra ---, e a criança encaminha \textbf{exatamente três} ao
 \enquote{Mural da Turma}, confirma e diz, numa enquete, o que pesou na escolha.
 Quando a professora libera a revelação, cada mensagem do Mural ganha
 \textbf{dois} crachás, e a descoberta é que um eixo não prediz o outro: a
-mensagem séria podia ser falsa, e a alarmada, verdadeira. Logo abaixo dos
-crachás vem o \textbf{cartão de frases}: seis frases com E, OU e NÃO sobre as
-três mensagens dela, para responder Sim ou Não. Depois vêm a síntese e a
-reflexão: o \textbf{desafio do tio}, em que a criança monta com peças a regra
-\enquote{Se a mensagem for\ldots, então eu\ldots e depois\ldots}, diz o que
-ela vai fazer com o áudio do tio antes de cada teste, e a envia. Desde a 0.5.0
-a missão é \textbf{só Canal A} (\adrr{ADR-171}): toda habilidade é medida pelo
-que a criança faz, e as perguntas P1 e P2 saíram. A primeira versão saiu na
+mensagem séria podia ser falsa, e a alarmada, verdadeira. No fim do Mural
+revelado vem o \textbf{alerta do grupo}: com o quadro das oito mensagens e
+os crachás de cada uma, a criança monta um filtro com NÃO, E e OU para
+quatro pedidos (\enquote{as falsas e emocionais}, \ldots), vê quais
+mensagens passam e envia cada alerta ao grupo. Depois vêm a síntese e a
+reflexão: o \textbf{desafio do tio}, em que a criança monta com blocos o
+\textbf{robô do grupo} --- \enquote{para cada mensagem nova, se a mensagem
+for\ldots, o robô\ldots e depois\ldots} ---, liga-o para vê-lo agir em quatro
+mensagens e o envia. Desde a 0.5.0 a missão é \textbf{só Canal A}
+(\adrr{ADR-171}): toda habilidade é medida pelo que a criança faz, e as
+perguntas P1 e P2 saíram; na 0.6.0 o alerta substituiu o cartão de frases e
+o robô substituiu a regra do tio com previsão (\adrr{ADR-177}). A primeira versão saiu na
 \adrr{ADR-114}; esta volta com o mesmo código, e as decisões dela estão na
 \adrr{ADR-118}.
 
@@ -1370,7 +1377,8 @@ produto responder (\adrr{ADR-118}).
 
 O passo do estudante \textbf{não é coluna}: é \cd{passoEfetivo(latches, fase)},
 em \arq{regras/passos.ts}. Os \emph{latches} são carimbos da sessão, cada um com
-\emph{CHECK} exigindo o anterior (Seção~\ref{sec:tabelas-exp05ef1b}):
+\emph{CHECK}: o voto exige o Mural, e o alerta e o robô exigem só o voto ---
+o robô não depende do alerta (Seção~\ref{sec:tabelas-exp05ef1b}):
 
 \begin{tabularx}{\linewidth}{@{}L{30mm}L{34mm}X@{}}
 \toprule
@@ -1385,18 +1393,24 @@ A seta de encaminhar & \rota{PUT /selecao} & Nada: é o rascunho da triagem, de 
   \cd{mural-ja-enviado}.\\
 O voto & \rota{POST /enquete} & O \textbf{latch 2}: um dos quatro motivos. Quem
   votou espera a turma.\\
-\zebra \enquote{Enviar} no cartão & \rota{POST /operacoes} & O \textbf{latch 3}:
-  as seis respostas de uma vez, com a marca da EF05CO03 na MESMA transação.
-  Abre na revelação DO ESTUDANTE; a mesma resposta de novo é idempotente, outra
-  é 409 \cd{cartao-ja-enviado}.\\
-\enquote{Testar no áudio do tio} & \rota{POST /regra/teste} & Nada: grava o
-  teste (as peças, a previsão e o que a regra fez). Só na reflexão, com o
-  cartão enviado; até 5 testes.\\
-\zebra \enquote{Enviar minha regra} & \rota{POST /regra} & O \textbf{latch 4}:
-  a regra final, com a marca da EF05CO04 na MESMA transação. Outra regra
-  depois é 409 \cd{regra-ja-enviada}.\\
-Depois da regra & \rota{POST /concluir} & O fim, que a experiência chama
-  sozinha depois do envio da regra. Não exige o cartão nem a regra: quem sai
+\zebra \enquote{Ver resultado} no alerta & \rota{POST /alerta/execucao} &
+  Nada: executa o filtro do pedido da vez no servidor e devolve quais
+  mensagens passam. Só na janela do alerta; até 3 por pedido (409
+  \cd{limite-execucoes}); pedido fora de ordem é 409
+  \cd{alerta-fora-de-ordem}.\\
+\enquote{Enviar alerta ao grupo} & \rota{POST /alerta/envio} & Trava o
+  pedido; o \textbf{latch 3} é o QUARTO envio, com a marca da EF05CO03 na
+  MESMA transação. Exige a última expressão executada (400
+  \cd{execute-antes}); o mesmo envio é idempotente, outro é 409
+  \cd{alerta-ja-enviado}.\\
+\zebra \enquote{Ligar o robô} & \rota{POST /robo/ligar} & Nada: grava a
+  ligação (os blocos e o que o robô fez em cada mensagem). Só na reflexão,
+  sem exigir o alerta; até 5 (409 \cd{ligacoes-esgotadas}).\\
+\enquote{Enviar meu robô} & \rota{POST /robo} & O \textbf{latch 4}: o robô
+  final, com a marca da EF05CO04 na MESMA transação. Outro robô depois é 409
+  \cd{robo-ja-enviado}.\\
+\zebra Depois do robô & \rota{POST /concluir} & O fim, que a experiência chama
+  sozinha depois do envio do robô. Não exige o alerta nem o robô: quem sai
   antes fica \enquote{Não avaliado}. Exige o voto e a reflexão liberada pela
   turma (409 \cd{reflexao-nao-liberada} antes).\\
 \bottomrule
@@ -1415,18 +1429,21 @@ As mensagens saem por \cd{mensagensPublicas} (um \cd{Omit} de \cd{veracidade} e
 estar na revelação --- e traz só os dois eixos das TRÊS que ele encaminhou,
 mais o \emph{callback} do motivo votado e as duas barras da turma. O teste da
 api varre as CHAVES, não o texto. Na experiência, a varredura é por CONTEÚDO
---- o banco curado, o par id e eixo, o nível e o gabarito da regra e do cartão
+--- o banco curado, o par id e eixo, o nível e o gabarito do robô e do alerta
 ---, no \cd{src/} pelo \cd{vitest} e no \cd{dist/} por \cd{grep}: as chaves
 \cd{veracidade} e os rótulos dos crachás existem no \emph{bundle}, e está
 certo.
 
-O \textbf{cartão de frases} desce com a revelação, e \textbf{sem} a resposta
-esperada: o servidor gera as frases das três mensagens do estudante, com
-semente na sessão (o F5 devolve as mesmas), e só guarda a resposta certa no
-envio, que responde com o estado e nada diz do acerto. As \textbf{peças da
-regra} descem só com id e rótulo: quais condições pegam o áudio do tio e de
-que tipo é cada ação são o gabarito dela, e quem simula a regra é o servidor
---- o resultado do teste volta pronto.
+O \textbf{quadro do alerta} desce com a revelação e traz os crachás das OITO
+mensagens (decisão de produto: o filtro precisa de sobre o que operar), com o
+rótulo derivado do remetente (\enquote{Mensagem de\ldots}, sem campo novo no
+pacote) e \enquote{Você enviou} nas três da criança. Os \textbf{pedidos}
+descem \textbf{sem} a expressão esperada, e quem executa o filtro é o
+servidor: a tela recebe os ids que passaram e só pinta, sem cor de acerto.
+Os \textbf{blocos do robô} descem só com id, rótulo e ícone: o TIPO de cada
+ação é o gabarito dele, e quem executa o robô é o servidor --- o resultado de
+cada mensagem volta pronto. Os sinais das quatro mensagens do robô são
+abertos.
 
 \subsection{Três botões, sempre para a frente}
 
@@ -1442,20 +1459,22 @@ mesmo passo.
 
 \textbf{A revelação não empurra a triagem}, e é a diferença para a v1: quem não
 tinha confirmado continua escolhendo, confirma, vota e só então recebe a
-própria revelação --- junto com o passo da turma, que pode já ser o da
-regra. Nesse caso a experiência mostra o Mural revelado antes do passo
+própria revelação --- junto com o passo da turma, que pode já ser o do
+robô. Nesse caso a experiência mostra o Mural revelado antes do passo
 corrente; o servidor não guarda \enquote{já viu}, e um F5 mostra de novo.
-\textbf{O cartão de frases segue o caminho da criança, não o botão da
-professora}: aparece com os crachás (na revelação e na síntese) e só fecha
-quando ela o envia. Na fase \cd{reflexao}, quem ainda não o enviou cai no
-passo \cd{cartao} --- o Mural inteiro, com o cartão no fim --- e só depois no
-passo \cd{regra}: ninguém chega ao tio sem ter visto os crachás, nem quem
-votou atrasado (\adrr{ADR-171}).
+\textbf{O alerta é uma janela da revelação, não um passo}
+(\adrr{ADR-177}): aceita jogada com o voto dado, a revelação DELA aberta e a
+turma ainda na fase \cd{revelacao}; \enquote{Apresentar Síntese} o fecha (409
+\cd{alerta-fechado}), e ficam as bolhas já enviadas. Quem votou depois da
+síntese não tem alerta e fica \enquote{Não avaliado} na EF05CO03 --- o custo
+declarado de não seguir o caminho da criança, como fazia o cartão de frases
+da \adrr{ADR-171}. Na fase \cd{reflexao}, todo mundo vai ao robô: ele não
+exige o alerta.
 
 \subsection{A régua pedagógica: só o Canal A}
 
 É a primeira missão com ficha (\arq{evidencias/fichas/exp05ef1b.ts}), hoje na
-\textbf{versão 4} (\adrr{ADR-171}): toda habilidade é medida pelo que a
+\textbf{versão 5} (\adrr{ADR-177}; sem pergunta desde a 4, \adrr{ADR-171}): toda habilidade é medida pelo que a
 criança FAZ, e a ficha não tem pergunta. Toda rodada mede as três de novo,
 também no mesmo pacote (\adrr{ADR-145}); vale a melhor rodada. As marcas são
 de AÇÃO, gravadas pelo módulo da missão na transação de cada envio --- não há
@@ -1470,26 +1489,28 @@ mais resolvedor de contexto (\cd{registrarContexto}), e
   duas e uma falsa, de qualquer tipo, \cd{em\_processo}; uma ou nenhuma
   verdadeira, \cd{nao\_atingiu} (\arq{regras/evidencia.ts}, conferida nas 56
   combinações; a régua v2 da \adrr{ADR-120}).\\
-\zebra \textbf{EF05CO03} & O cartão de frases, depois dos crachás &
-  Seis frases sobre as três mensagens encaminhadas: duas com E, duas com OU e
-  duas com NÃO; cada mensagem em duas frases, com operadores diferentes; E e
-  OU ligam um valor de cada eixo, NÃO nega um valor só. Três certas e três
-  erradas: responder tudo igual acerta só três. 5 ou 6 acertos são
-  \cd{atingiu}, 3 ou 4 \cd{em\_processo}, 0 a 2 \cd{nao\_atingiu}
-  (\arq{regras/operacoes.ts}, conferida nas 56 trincas). No chute, 10,9\,\% de
-  chance de \cd{atingiu}.\\
-\textbf{EF05CO04} & A regra do tio, montada com peças & \enquote{Se} uma de
-  quatro condições, \enquote{então} uma ou duas de oito ações, em ordem; antes
-  de cada teste, a \textbf{previsão} do que a regra fará com o áudio (cinco
-  opções, as mesmas cinco respostas do teste). \cd{nao\_atingiu}: a regra
-  enviada encaminha antes de checar. \cd{atingiu}: a PRIMEIRA regra testada já
-  pega o áudio e manda checar, a PRIMEIRA previsão acertou, e a enviada
-  continua assim. \cd{em\_processo}: todo o resto --- chegar lá só depois do
-  teste, errar a previsão, só esperar, condição que não pega o áudio, enviar
-  sem testar, e checar e encaminhar de qualquer jeito (o teto). A peça
-  \enquote{encaminho só se a notícia se confirmar} é o jeito certo de
-  terminar, depois de uma checagem (\arq{regras/regra.ts}). No chute, 5,0\,\%
-  de chance de \cd{atingiu}.\\
+\zebra \textbf{EF05CO03} & O alerta do grupo, no fim do Mural revelado &
+  Quatro pedidos fixos (falsas E emocionais; falsas OU neutras; verdadeiras
+  OU emocionais; verdadeiras E neutras), um filtro \cd{\{a, op?, b?\}} com
+  NÃO em cada parte (36 possíveis), até três execuções por pedido.
+  Equivalência por tabela-verdade: 2 pontos se a PRIMEIRA execução já era
+  equivalente (e a enviada também), 1 se só a enviada, 0 senão. Com os quatro
+  enviados, 6 a 8 são \cd{atingiu}, 3 a 5 \cd{em\_processo}, 0 a 2
+  \cd{nao\_atingiu}; menos de quatro, sem marca (\arq{regras/alerta.ts},
+  conferida nos $36^4$ casos). No chute, 0,07\,\% de chance de
+  \cd{atingiu}.\\
+\textbf{EF05CO04} & O robô do grupo, montado com blocos & Laço opcional
+  \enquote{para cada mensagem nova}, SE uma de quatro condições, ENTÃO e E
+  DEPOIS uma ou duas de oito ações. O servidor o executa em quatro mensagens
+  fixas (o tio: urgente e alarmante, parente; o banco: urgente e alarmante,
+  link; a vizinha: nenhum sinal; a corrente: urgente e alarmante, promessa);
+  sem o laço, só na primeira. \cd{nao\_atingiu}: o robô enviado encaminha
+  antes de checar. \cd{atingiu}: laço, condição \enquote{urgente e
+  alarmante} e ações que checam antes de encaminhar, já na PRIMEIRA ligação,
+  e o enviado continua assim. \cd{em\_processo}: todo o resto --- chegar lá
+  só depois de ligar, condição que pega uma mensagem só, só esperar, enviar
+  sem ligar (\arq{regras/robo.ts}, conferida nos 512 robôs). Sem previsão. No
+  chute, 6,25\,\% de chance de \cd{atingiu}.\\
 \bottomrule
 \end{tabularx}
 
@@ -1497,8 +1518,9 @@ Quem não faz a ação fica \enquote{Não avaliado} nela --- a ausência de marc
 ---, nunca \cd{nao\_atingiu}, e o professor ajusta. O critério de cada nível
 está escrito na ficha e aparece no fim do painel de habilidades. Os níveis que
 a P1 e a P2 deram em rodadas já jogadas ficam no histórico, gravados com a
-versão 3 da ficha. A missão cobre a seleção condicional e a sequência de duas
-ações da EF05CO04; repetição e colaboração ficam fora.
+versão 3 da ficha, e os do cartão de frases e da regra do tio, com a versão
+4. A EF05CO04 cobre a repetição (o laço), a seleção condicional e a sequência
+de duas ações; a colaboração fica fora.
 
 \subsection{Onde a fronteira do disfarce cai --- uma vez, no fim}
 
@@ -1506,14 +1528,20 @@ O critério é o de sempre, \textbf{quem está falando} (\adrr{ADR-72}). Do conv
 até a síntese é o mensageiro, revelação inclusive: os crachás são
 \cd{MessageTag}, e o termômetro e a lâmina da síntese entram como IMAGEM enviada
 no chat --- mensageiro não tem gráfico, mas recebe foto de gráfico. O
-\textbf{cartão de frases fica no clone}, no fim do Mural revelado: a Nina pede
-para conferir as frases, e cada uma é um grupo Sim/Não com o \cd{Radio} do
-Unoochat. O \textbf{desafio do tio e \enquote{Missão Concluída} são a casca}
-(\cd{@edu/ui/ds}): o desafio é sobre o grupo da FAMÍLIA, não o da turma, e
-montar a regra dentro do clone a devolveria à ficção que a missão acabou de
-desmontar. A fala da Nina aparece num \cd{Card} com o rosto dela, as peças
-são \cd{Selection} e os testes, cards neutros; \enquote{Missão Concluída}
-mostra a regra enviada e a despedida da Nina. Cada família mora num arquivo, e
+\textbf{alerta do grupo fica no clone}, no fim do Mural revelado, abaixo da
+faixa \enquote{Alerta do grupo}: o montador é um balão com o quadro, os chips
+do filtro são o \cd{FilterChip} do Unoochat (que a ponte ganhou na 0.6.0) e
+o alerta enviado é uma bolha ENVIADA no grupo --- alerta de grupo é gesto de
+app de mensagem. O \textbf{desafio do tio e \enquote{Missão Concluída} são a
+casca} (\cd{@edu/ui/ds}): o desafio é sobre o grupo da FAMÍLIA, não o da
+turma, e montar o robô dentro do clone o devolveria à ficção que a missão
+acabou de desmontar. A fala da Nina aparece num \cd{Card} com o rosto dela;
+os blocos são o \cd{PuzzleTrack} e o \cd{PuzzleBlock} da \cd{unooria}, no
+padrão do Montador da Chave da exp04ef1b, só por toque (o DS não tem
+arraste); a ligação mostra as quatro mensagens chegando, cada uma com o que
+o robô fez. \enquote{Missão Concluída} mostra o card \enquote{Seu robô do
+grupo} e a despedida da Nina. Não há \enquote{Ouvir o desafio}: sem
+gravação na V1. Cada família mora num arquivo, e
 cada arquivo só importa a sua ponte.
 
 \subsection{O chat que chega aos poucos (0.4.0)}
@@ -1541,8 +1569,8 @@ para a tela da professora.
 
 \begin{regra}
 \textbf{A missão não tem mais texto livre de menor} (\adrr{ADR-145}): a regra
-do tio voltou na 0.5.0 montada com peças, sem campo de texto
-(\adrr{ADR-171}). O que foi escrito antes continua na tabela confinada
+do tio voltou na 0.5.0 montada com peças (\adrr{ADR-171}) e virou, na 0.6.0,
+o robô montado com blocos (\adrr{ADR-177}), sem campo de texto. O que foi escrito antes continua na tabela confinada
 \cd{exp05ef1b\_reflexoes}, com RLS e na redação do \emph{log} (\cd{entao},
 \cd{acaoEntao}, \cd{acao\_entao}); nenhuma rota o escreve.
 \end{regra}
@@ -1578,7 +1606,7 @@ podcast fica na página da atividade, em \enquote{A aula e os resultados}, com a
 transcrição e o botão de gerar o áudio.
 
 \begin{atencao}
-Os rádios do \cd{Poll} e do cartão e os \cd{Selection} da regra são campos de formulário, e o manifesto declara
+Os rádios do \cd{Poll} e da folha de encaminhar são campos de formulário, e o manifesto declara
 \cd{permissoes: ["forms"]} --- sem o \emph{token} de \emph{sandbox}, um
 formulário morre em silêncio (a lição da exp02em1b). O
 \cd{viewport} é 375 por 812, e a porta em \emph{dev} é a 5184, com
@@ -1756,32 +1784,34 @@ evidências, e exige o \emph{podcast} pronto, com a voz do TTS. Antes, a suíte 
 
 \textbf{6º ano \textperiodcentered{} Unidade 1 \textperiodcentered{} clone de
 rede social de fotos \textperiodcentered{} \cd{unoovista}, com a tela da escola
-em \cd{unooria} \textperiodcentered{} 0.6.0 (o Canal A puro)}
+em \cd{unooria} \textperiodcentered{} 0.7.0 (os ajustes do time, \adrr{ADR-176})}
 
 O estudante é jurado de uma mostra científica estadual, dentro do Unoovista. A
 comissão entrega o crachá, e ele rola um feed de dez posts dos estandes ---
 quatro áreas, dez projetos por área, nenhum post repetido --- ou oito minutos,
 o que vier primeiro, curtindo o que quiser. As curtidas e o tempo parado num
 post \textbf{afunilam o feed em silêncio}: vencida a área líder, o resto do
-feed é só dela, com projetos novos dela. Ele vota numa cédula
-lacrada de quatro elementos (o \emph{latch} 1), \textbf{separa nas quatro
-áreas os estandes que viu} (EF06CO01, ainda na voz da comissão) e espera a
-turma: é o PICO, em
+feed é só dela, com projetos novos dela. Enquanto rola, \textbf{guarda cada
+estande na pasta da área dele}, no Salvar do post, como as coleções de posts
+salvos de uma rede social (EF06CO01, na voz da comissão). Ele vota numa cédula
+lacrada de quatro elementos (o \emph{latch} 1), que só fecha com todo estande
+visto numa pasta, e espera a turma: é o PICO, em
 que o professor projeta na lousa a dispersão dos votos por área e conduz a
 plenária. Quando o professor clica \enquote{Liberar Auditoria}, cada um vê a
-\textbf{Galeria Oculta}: quantos dos estandes nunca chegaram ao feed dele,
-\textbf{o que ficou fora por área} e o \textbf{contraste sem curtidas} --- o
-feed que ele teria visto sem as próprias curtidas ---, busca por \emph{hashtag}, inspeciona estandes e \enquote{Mantém o voto
+\textbf{Galeria Oculta}: quantos dos estandes nunca chegaram ao feed dele;
+busca por \emph{hashtag}, inspeciona estandes e \enquote{Mantém o voto
 inicial} ou \enquote{Confirma o Voto Revisado} (o \emph{latch} 2). Daí segue
 sozinho: na tela da escola, monta a \textbf{regra SE \ldots{} ENTÃO} que o
-programa do feed executou (EF06CO03) e vê a regra certa ligada ao próprio feed;
-ainda na escola, resolve o caso Mariana, cujos cartões encerram a missão, e
-recebe o crachá homologado, com o infográfico da Unooria embaixo. A versão
+programa do feed executou (EF06CO03), vê a regra certa ligada ao próprio feed
+e, em \enquote{Concluir o Julgamento}, recebe o crachá homologado, com o
+infográfico da Unooria embaixo: a regra encerra a missão. A versão
 vigente segue o PRD v2 com os desvios aprovados (\adrr{ADR-157}), que supera a
 \adrr{ADR-151} e a \adrr{ADR-152} no que conflitam, os quarenta projetos
 (\adrr{ADR-164}), que substituem a saturação por formatos e a taxa de
 invisibilidade, e o Canal A puro (\adrr{ADR-174}), que tira a EF06CO10, as
-enquetes, a cadeia de quatro blocos e o par simulado; a origem está na
+enquetes, a cadeia de quatro blocos e o par simulado, e os ajustes do time
+que rodou a missão (\adrr{ADR-176}), que levam a separação para as pastas do
+feed, tiram o caso Mariana e enxugam a Galeria Oculta; a origem está na
 \adrr{ADR-137}.
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
@@ -1794,7 +1824,7 @@ O motor do feed é do servidor & \arq{regras/afunilamento.ts}, puro e
   de 5\,s com 60\,\% do post visível é um fato por post --- e manda em
   \rota{POST /juri-estadual/feed/eventos}. A abertura são quatro posts, um de
   cada área. Curtida vale 3, permanência vale 1, \textbf{salvar vale 0} (grava
-  o evento, não pesa). Com 6 numa área ela é a líder; \textbf{sem curtida
+  o evento e a pasta, não pesa). Com 6 numa área ela é a líder; \textbf{sem curtida
   nenhuma, a permanência sozinha elege}.\\
 \zebra O feed sem repetição & Desde a 0.5.0 (\adrr{ADR-164}) o motor serve
   só \cd{apresentacao} (id \cd{proj-xN:apresentacao}, de \cd{proj-a1} a
@@ -1803,7 +1833,10 @@ O motor do feed é do servidor & \arq{regras/afunilamento.ts}, puro e
   cedo vê 7/1/1/1 projetos por área; quem não interage, 3/3/2/2 --- os dois
   ficam com 30 de 40 fora, e o que muda é QUAIS. O \cd{bastidor} é a quarta
   lâmina do carrossel do próprio post (\enquote{Bastidores do estande}, depois
-  das três fotos). A saturação por formatos da 0.4.0 (bastidor, protótipo e
+  das três fotos). Desde a 0.8.0 (\adrr{ADR-178}) as fotos 2 e 3 e os
+  bastidores têm imagem gerada (\cd{laminas} no post e na ficha da galeria,
+  URL ou \cd{null}); com a dos bastidores, o texto vem embaixo da imagem, e
+  sem imagem a lâmina é a de antes. A saturação por formatos da 0.4.0 (bastidor, protótipo e
   depoimento como posts) saiu; as sessões 2.0.0 continuam de onde pararam, só
   com apresentações novas.\\
 Os 8 minutos & O 1º \cd{proximo: true} grava \cd{feed\_iniciado\_em};
@@ -1815,30 +1848,31 @@ Os 8 minutos & O 1º \cd{proximo: true} grava \cd{feed\_iniciado\_em};
   manda \rota{POST /juri-estadual/cedula/batimento} a cada 15\,s; o painel do
   professor acende o ícone de ocioso com mais de 60\,s, e ele apaga sozinho
   sem batimento por 40\,s.\\
-A separação (EF06CO01) & O passo \cd{classificacao}, entre o voto e a
-  espera (\adrr{ADR-174}). \rota{GET /juri-estadual/\B{}sessao} traz os estandes
-  DISTINTOS que o feed serviu (até dez), com id opaco \cd{cl-xxx} embaralhado
-  pela semente, título e imagem --- sem área, \emph{hashtag} nem perfil (o
-  perfil do post é a \emph{hashtag}). A criança escolhe a área de cada um por
-  toque ou teclado (\cd{Chip} em grupo de rádio, sem arrastar,
-  \adrr{ADR-162}), na voz da comissão. \rota{POST /juri-estadual/\B{}classificacao},
-  uma vez só (409 \cd{classificacao-ja-enviada}; corpo incompleto ou de outra
-  sessão, 400), corrige no servidor (\arq{regras/classificacao.ts}) e responde
-  só o estado: a criança não vê o acerto. Com a galeria já liberada, ela
-  termina a separação e entra na galeria em seguida.\\
+A separação (EF06CO01) nas pastas & No feed, desde a 0.7.0
+  (\adrr{ADR-176}). O Salvar do post abre a folha \enquote{Salvar em} com as
+  quatro pastas (as áreas do pacote); tocar numa guarda o post, ou o MOVE, e
+  \enquote{Remover dos salvos} o tira. \rota{POST /juri-estadual/feed/eventos}
+  leva \cd{salvamentos[].pasta}; o feed devolve \cd{pastas} e \cd{semPasta}
+  (os estandes vistos ainda sem pasta). A cédula fica travada, e diz quantos
+  faltam, até \cd{semPasta} ser zero; o voto incompleto é 409
+  \cd{estandes-sem-pasta}. No mesmo \emph{update} do voto o servidor corrige as
+  pastas (\arq{regras/classificacao.ts}), grava \cd{classificacao\_*} e marca;
+  a criança não vê o acerto. O post mostra perfil e \emph{hashtag}, que a tela
+  própria da 0.6.0 escondia: é o risco aceito na \adrr{ADR-176}.\\
 \zebra O acervo não desce antes da galeria & O post é uma \emph{allowlist}
   (\arq{regras/publico.ts}). \rota{GET /juri-estadual/galeria} exige o passo
   efetivo \cd{galeria} --- o voto E a etapa (403 \cd{galeria-nao-liberada}) ---
   e traz, tudo calculado no servidor (o motor nunca desce):
   \cd{invisibilidade} \cd{\{ocultos, total\}} (\enquote{30 de 40 estandes
   nunca chegaram ao seu feed}, sem porcentagem; o total é o do pacote),
-  \cd{porArea} (\enquote{Tecnologia: você viu 7 de 10}), \cd{semCurtidas} (o
-  \textbf{contrafactual} \enquote{Sem as suas curtidas, o seu feed teria
-  trazido:\ldots}: o feed desta sessão recalculado com a mesma semente, sem
-  curtidas nem permanências, com N = os posts que a criança viu),
-  \cd{ocultosAbertos}, \cd{podeManter} e o \cd{resumo} (o bastidor, a ficha de
-  inspeção). A grade de 3 colunas mostra os ocultos de UMA área, escolhida por
-  \emph{chips}; abre na área que mais ficou fora.\\
+  \cd{porArea}, \cd{semCurtidas} (o \textbf{contrafactual}: o feed desta
+  sessão recalculado com a mesma semente, sem curtidas nem permanências, com
+  N = os posts que a criança viu), \cd{ocultosAbertos}, \cd{podeManter} e o
+  \cd{resumo} (o bastidor, a ficha de inspeção). Desde a 0.7.0
+  (\adrr{ADR-176}) a tela vai do badge direto à busca: a contagem por área e
+  o contraste \enquote{Sem as suas curtidas} saíram dela, e \cd{porArea} só
+  escolhe a área inicial da grade. A grade de 3 colunas mostra os ocultos de
+  UMA área, escolhida por \emph{chips}; abre na área que mais ficou fora.\\
 A revisão: dois botões & \cd{manter} exige ao menos um oculto aberto
   (409 \cd{galeria-sem-inspecao}); \cd{trocar} aceita os outros projetos do
   pacote (a lista é filtrada pelos mesmos \emph{chips} de área). Depois,
@@ -1858,20 +1892,23 @@ A regra SE \ldots{} ENTÃO (EF06CO03) & No passo \cd{cadeia} (o nome
   da escola. \rota{POST /juri-estadual/\B{}regra}, uma vez só, responde a
   \textbf{revelação}: as peças escolhidas, as certas e o \cd{motivo}
   (\cd{curtidas}, \cd{permanencia} ou \cd{variado}, com a área em foco do feed
-  desta criança, \arq{regras/regra.ts}); a tela a mostra antes do caso
-  Mariana. Enviar de novo devolve a mesma revelação. \enquote{Ficar muito
+  desta criança, \arq{regras/regra.ts}), e \textbf{conclui a missão} (passo
+  \cd{fim} e \cd{concluida\_em} no mesmo \emph{update}, \adrr{ADR-176}); a tela
+  mostra a revelação e o botão \enquote{Concluir o Julgamento}. Enviar de novo
+  devolve a mesma revelação. \enquote{Ficar muito
   tempo} não é distrator: o motor pesa a permanência.\\
-\zebra Mariana & O caso e os cinco cartões literais (\cd{m1}--\cd{m3},
-  \cd{t1}--\cd{t2}), embaralhados por sessão, na tela da escola. Grava a
-  escolha, não vira evidência e \textbf{conclui a missão} (passo \cd{fim} e
-  \cd{concluida\_em} no mesmo \emph{update}); \rota{POST /juri-estadual/\B{}concluir}
-  fica só para sessões antigas paradas em \cd{enquetes}.\\
+\zebra Sessões antigas & O caso Mariana e a tela da separação saíram na 0.7.0
+  (\adrr{ADR-176}); os passos \cd{mariana} e \cd{classificacao} ficam no
+  \emph{CHECK}. Parada em \cd{classificacao}, a tela pede \rota{POST passo
+  \{para: "lacrada"\}} e segue para a espera SEM marca da EF06CO01; parada em
+  \cd{mariana} ou \cd{enquetes}, \rota{POST /juri-estadual/\B{}concluir}.\\
 Atividade e rodada & A ATIVIDADE é o \textbf{pacote}, com origem
   \cd{ia} ou \cd{padrao}. Criar não põe no ar (\adrr{ADR-130}); zerar abre a
   rodada seguinte e apaga a evidência do pacote (\adrr{ADR-155}).\\
-\zebra Evidência & A ficha \arq{evidencias/fichas/exp06ef1b.ts}, \textbf{versão 5}
-  (\adrr{ADR-174}), sem perguntas, dois marcadores de ação.
-  \textbf{EF06CO01} (a principal) por \cd{classificacao}, a separação: 90\,\%
+\zebra Evidência & A ficha \arq{evidencias/fichas/exp06ef1b.ts}, \textbf{versão 6}
+  (\adrr{ADR-176}, sobre a 5 da \adrr{ADR-174}), sem perguntas, dois marcadores
+  de ação. \textbf{EF06CO01} (a principal) por \cd{classificacao}
+  (\enquote{Pastas dos estandes}), marcada no voto: 90\,\%
   ou mais certos = \cd{atingiu} (9 ou 10 de 10); 50\,\% ou mais =
   \cd{em\_processo}; menos = \cd{nao\_atingiu}; com menos de quatro estandes
   vistos, SEM marca. \textbf{EF06CO03} por \cd{regra}: as duas peças certas =
@@ -1889,8 +1926,10 @@ Equipes e o painel & O painel conta por COMPUTADOR e é PROJETADO: a
   de 30\,\% ---, que substituiu a invisibilidade média, \adrr{ADR-164}). Cada leitura conta em
   \cd{painel\_vistas}.\\
 \zebra Mídia & As imagens são do professor, no preparo, em duas fases
-  (\rota{homologar} e \rota{aprovar-imagens}), quatro por chamada, quarenta por
-  atividade; sem imagem, a arte procedural. O banco padrão já nasce com as
+  (\rota{homologar} e \rota{aprovar-imagens}), oito por chamada; quatro por
+  estande, as lâminas do carrossel (a foto do estande, o projeto de perto, a
+  equipe e os bastidores, \adrr{ADR-178}), 160 por atividade; sem imagem, a
+  arte procedural. O banco padrão já nasce com as
   imagens aprovadas: as do banco que o \cd{admin} gerou
   (\rota{/unooria/recursos/imagens-do-juri}, \adrr{ADR-164}), e a arte
   procedural no estande que ainda não tem.\\
@@ -1938,9 +1977,11 @@ vagas que a IA escreve e o professor revisa na criação (\rota{homologar}).
     estandes}) e \textbf{sem post repetido} no feed (0.5.0).
   \item \textbf{Sem busca antes do voto}: a aba Busca responde fechada.
   \item \textbf{Sem contagem de curtidas} no post e \textbf{sem cronômetro}.
-  \item \textbf{Sem certo ou errado na separação}, nem depois do envio: o
-    nível é do professor (0.6.0).
-  \item \textbf{Sem arrastar} na separação nem na regra (\adrr{ADR-162}).
+  \item \textbf{Sem certo ou errado nas pastas}, nem depois do voto: o
+    nível é do professor.
+  \item \textbf{Sem arrastar} nas pastas nem na regra (\adrr{ADR-162}).
+  \item \textbf{Sem caso Mariana} e \textbf{sem contagem por área nem
+    contraste na Galeria Oculta} (0.7.0, \adrr{ADR-176}).
   \item \textbf{Sem enquetes nos Stories} nem cadeia de quatro blocos (0.6.0,
     \adrr{ADR-174}).
   \item \textbf{Sem nome ligado a escolha} na lousa.
@@ -1950,20 +1991,23 @@ vagas que a IA escreve e o professor revisa na criação (\rota{homologar}).
 O manifesto declara \cd{viewport} 375 por 812, \cd{permissoes: ["forms"]}, o
 \cd{produto} \cd{entre-redes} e a porta 5185 (\cd{strictPort}). A barra
 inferior tem \textbf{quatro abas} (Início, Busca, Notificações, Jurado),
-nenhuma com fluxo próprio. O caso Mariana e o infográfico final estão na seção
-\cd{unooria} do DS --- o infográfico numa faixa própria (\cd{.fim\_\_escola})
-embaixo do fim da comissão. A versão está na \textbf{0.6.0} nos três lugares
+nenhuma com fluxo próprio (o Jurado mostra \enquote{Suas pastas}). A regra e
+o infográfico final estão na seção \cd{unooria} do DS --- o infográfico numa faixa própria (\cd{.fim\_\_escola})
+embaixo do fim da comissão. A versão está na \textbf{0.7.0} nos três lugares
 (\arq{experiencia.json}, \arq{package.json} e \cd{EXP\_VERSION}), com o
-instrumento 4.0.0. As migrações
+instrumento 5.0.0. As migrações
 \arq{20261010120000\_\B{}exp06ef1b\_\B{}prd\_\B{}v2},
 \arq{20261014120000\_\B{}exp06ef1b\_\B{}quarenta\_\B{}projetos} e
-\arq{20261018090000\_\B{}exp06ef1b\_\B{}canal\_\B{}a} não apagam
+\arq{20261018090000\_\B{}exp06ef1b\_\B{}canal\_\B{}a} e
+\arq{20261020120000\_\B{}exp06ef1b\_\B{}ajustes\_\B{}do\_\B{}time} não apagam
 coluna; a segunda só troca dois \emph{CHECKs} (16 ou 40 projetos; o id
 \cd{proj-a10}), e a terceira acrescenta as seis colunas da separação e da
 regra, o passo \cd{classificacao} e \emph{CHECKs} fracos de propósito (uma
-sessão da 0.5.0 em \cd{lacrada} sem separação continua válida). Pacotes de
-dezesseis, sessões 2.0.0 e sessões paradas em \cd{enquetes} continuam
-legíveis.
+sessão da 0.5.0 em \cd{lacrada} sem separação continua válida); a quarta
+acrescenta a coluna \cd{pastas} (\cd{JSONB}) e afrouxa o \emph{CHECK} dos
+cartões (quem tem cartões está em \cd{enquetes} ou \cd{fim}). Pacotes de
+dezesseis, sessões 2.0.0 e sessões paradas em \cd{classificacao},
+\cd{mariana} ou \cd{enquetes} continuam legíveis.
 \end{atencao}
 
 As suítes da api (\arq{tests/\B{}juri-estadual-\B{}regras.spec.ts}, sem banco,
@@ -1972,8 +2016,11 @@ tabelas) e \arq{tests/\B{}juri-estadual-\B{}midia.spec.ts} cobrem os
 quarenta em centenas de sementes (curtiu cedo: dez distintos, 7/1/1/1; sem
 toque: 3/3/2/2; 30 de 40; o contrafactual; a concentração 70 por 30), a 0.4.x
 continuada, os \emph{CHECKs} (16 e 40 sim, 15 não; \cd{proj-d10} sim,
-\cd{proj-a11} não), o relógio, o batimento, os \emph{latches}, a separação e
-a regra (uma vez só, a correção no servidor, a revelação), o banco padrão de quarenta e as imagens dele (guarda de \cd{admin},
+\cd{proj-a11} não), o relógio, o batimento, os \emph{latches}, as pastas
+(guardar, mover, tirar, sem peso no feed), o voto que corrige a separação
+(409 sem todas as pastas; 7 de 10 = em processo), a regra (uma vez só, a
+correção no servidor, a revelação, a conclusão), as sessões antigas em
+\cd{classificacao} e \cd{mariana}, o banco padrão de quarenta e as imagens dele (guarda de \cd{admin},
 só as que faltam, atribuição no medidor), o preparo em cinco chamadas e o
 \emph{fallback}. A suíte de ponta a ponta
 \arq{scripts/e2e/estudante/\B{}13-juri-estadual.mjs} passou com IA real na

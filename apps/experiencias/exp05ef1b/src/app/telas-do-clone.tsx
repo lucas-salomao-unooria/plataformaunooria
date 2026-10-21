@@ -7,6 +7,7 @@ import {
   ChatHeader,
   ChatListItem,
   ChatWallpaper,
+  FilterChip,
   ForwardButton,
   MessageBubble,
   MessageComposer,
@@ -30,12 +31,17 @@ import {
   horarioDaMensagem,
   tomDoRemetente,
   iniciais,
-  cartaoCompleto,
+  andamentoDo,
+  expressaoDoMontador,
+  montadorDe,
   outrosParticipantes,
-  partesDaFrase,
+  pedidoDaVez,
+  podeEnviarAlerta,
+  referenciasDoAlerta,
+  type MontadorDoFiltro,
 } from "../lib/regras";
 import { TEXTOS } from "../lib/textos";
-import type { Cartao, MensagemPublica, Opcao, PacotePublico, Resposta, Revelacao } from "../lib/tipos";
+import type { Alerta, Atributo, Conector, Expressao, MensagemPublica, Opcao, PacotePublico, Revelacao } from "../lib/tipos";
 import { BalaoDaMensagem, MidiaAberta } from "./componentes/balao";
 /* A foto da Nina é ilustração em SVG, importada pelo Vite: entra no bundle
    versionado, e a missão continua sem mídia binária (ADR-145). */
@@ -45,8 +51,8 @@ import { LaminaDaSintese, TermometroDaTurma, altDoTermometro } from "./component
 /**
  * As telas de DENTRO do mensageiro. Aqui quem fala é o APP clonado, e só ele:
  * nenhum componente, token ou palavra da plataforma entra (`@edu/ui/ds-unoochat`
- * e mais nada). O disfarce vale do convite da Nina até o cartão de frases, no
- * Mural; a regra do tio e o fim são da escola — ver o `AGENTS.md` da pasta.
+ * e mais nada). O disfarce vale do convite da Nina até o alerta do grupo, no
+ * Mural; o robô do grupo e o fim são da escola — ver o `AGENTS.md` da pasta.
  *
  * As falhas também falam na voz do app: "Conectando..." no lugar da presença do
  * cabeçalho (como o app real faz sem sinal), nunca "erro de servidor".
@@ -417,11 +423,11 @@ export function GrupoDaTurma({
 /**
  * Em que ponto o Mural está. É UMA conversa só, que vai ganhando mensagens:
  * as três encaminhadas, a enquete, a espera, e — depois dos botões do
- * professor — os crachás, o termômetro, o cartão de frases e a lâmina.
- * `cartao` é a reflexão de quem ainda não enviou o cartão (inclusive quem
- * votou atrasado): vê tudo de uma vez, e o cartão no fim.
+ * professor — os crachás, o termômetro, o alerta do grupo e a lâmina. O
+ * alerta aceita jogada só na revelação (`alerta.aberto`); na síntese ficam os
+ * alertas enviados.
  */
-export type EtapaDoMural = "revisao" | "enquete" | "espera" | "revelacao" | "sintese" | "cartao";
+export type EtapaDoMural = "revisao" | "enquete" | "espera" | "revelacao" | "sintese";
 
 export function MuralDaTurma({
   etapa,
@@ -430,16 +436,15 @@ export function MuralDaTurma({
   motivos,
   motivo,
   revelacao,
-  cartao,
-  falaDoCartao,
-  respostas,
+  alerta,
+  limiteDeExecucoes,
   conectado,
   ocupado,
   aoRevisar,
   aoConfirmar,
   aoVotar,
-  aoResponderFrase,
-  aoEnviarCartao,
+  aoExecutarAlerta,
+  aoEnviarAlerta,
 }: {
   etapa: EtapaDoMural;
   /** As três escolhidas, na ordem do grupo. */
@@ -449,34 +454,31 @@ export function MuralDaTurma({
   motivos: Opcao[];
   motivo: string | null;
   revelacao: Revelacao | null;
-  /** O cartão de frases (EF05CO03) — chega junto com a revelação desta criança. */
-  cartao: Cartao | null;
-  falaDoCartao: string;
-  /** As respostas marcadas nesta aba, antes do envio. */
-  respostas: Readonly<Record<string, Resposta>>;
+  /** O alerta do grupo (EF05CO03) — chega junto com a revelação desta criança. */
+  alerta: Alerta | null;
+  /** "Ver resultado" por pedido (`limites.execucoes`). */
+  limiteDeExecucoes: number;
   conectado: boolean;
   ocupado: boolean;
   aoRevisar: () => void;
   aoConfirmar: () => void;
   aoVotar: (motivo: string) => void;
-  aoResponderFrase: (fraseId: string, resposta: Resposta) => void;
-  aoEnviarCartao: () => void;
+  aoExecutarAlerta: (pedido: number, expressao: Expressao) => void;
+  aoEnviarAlerta: (pedido: number, expressao: Expressao) => void;
 }) {
   const [escolha, setEscolha] = useState<string | null>(motivo);
   const [midia, setMidia] = useState<{ mensagem: MensagemPublica; hora: string } | null>(null);
   const topo = useRef<HTMLDivElement>(null);
   const fim = useRef<HTMLDivElement>(null);
 
-  const revelado = etapa === "revelacao" || etapa === "sintese" || etapa === "cartao";
-  const comSintese = etapa === "sintese" || etapa === "cartao";
-  const cartaoAberto = revelado && cartao !== null && !cartao.enviado;
-  const completo = cartao !== null && cartaoCompleto(cartao.frases, respostas);
+  const revelado = etapa === "revelacao" || etapa === "sintese";
+  const comSintese = etapa === "sintese";
   const confirmado = etapa !== "revisao";
   const votou = etapa !== "revisao" && etapa !== "enquete";
 
   /* A revelação abre no TOPO (os crachás em cima das três mensagens são o que
-     salta); a síntese, o cartão pendente da reflexão e as etapas anteriores,
-     no FIM (a mensagem nova). */
+     salta, e a faixa do alerta convida a rolar); a síntese e as etapas
+     anteriores, no FIM (a mensagem nova). */
   useEffect(() => {
     if (etapa === "revelacao") topo.current?.scrollIntoView({ block: "start" });
     else fim.current?.scrollIntoView({ block: "end" });
@@ -572,6 +574,18 @@ export function MuralDaTurma({
             </>
           )}
 
+          {/* O alerta vem depois dos crachás e do termômetro: é a mensagem que
+              espera a criança agir. Na síntese ficam só os enviados. */}
+          {revelado && alerta && (
+            <AlertaDoGrupo
+              alerta={alerta}
+              limite={limiteDeExecucoes}
+              ocupado={ocupado}
+              aoExecutar={aoExecutarAlerta}
+              aoEnviar={aoEnviarAlerta}
+            />
+          )}
+
           {comSintese && (
             <>
               <MessageBubble direction="in" maxWidth={300}>
@@ -585,19 +599,6 @@ export function MuralDaTurma({
             </>
           )}
 
-          {/* O cartão de frases vem por último: é a mensagem que espera resposta. */}
-          {revelado && cartao && (
-            <CartaoDeFrases
-              cartao={cartao}
-              fala={falaDoCartao}
-              respostas={respostas}
-              ocupado={ocupado}
-              aoResponder={aoResponderFrase}
-            />
-          )}
-          {etapa === "cartao" && cartao && !cartao.enviado && (
-            <SystemMessage role="status">{TEXTOS.cartao.antesDoDesafio}</SystemMessage>
-          )}
           <div ref={fim} />
         </div>
       </ChatWallpaper>
@@ -610,13 +611,6 @@ export function MuralDaTurma({
             </Button>
             <Button size="lg" block onClick={aoConfirmar} disabled={ocupado}>
               {TEXTOS.mural.confirmar}
-            </Button>
-          </div>
-        )}
-        {cartaoAberto && (
-          <div className="rodape__acao">
-            <Button size="lg" block onClick={aoEnviarCartao} disabled={!completo || ocupado}>
-              {TEXTOS.cartao.enviar}
             </Button>
           </div>
         )}
@@ -647,65 +641,181 @@ function CrachasDaMensagem({ veracidade, tom }: { veracidade: "verdadeira" | "fa
   );
 }
 
-// ─────────────────────── E4: o cartão de frases (EF05CO03), no Mural
+// ─────────────────────── E4-ALU-01: o alerta do grupo (EF05CO03), no Mural
 
 /**
- * O cartão: seis frases com E, OU e NÃO sobre as três mensagens que a criança
- * encaminhou, cada uma com Sim/Não. Vem DEPOIS dos crachás — eles dão os
- * valores simples, e a frase pede a operação sobre eles, que é o que a
- * habilidade mede.
+ * O alerta do grupo: quatro pedidos, um por vez. Para cada um, a criança monta
+ * um filtro (uma condição, ou duas ligadas por E ou OU, cada uma com o NÃO),
+ * toca "Ver resultado" — o SERVIDOR executa e devolve quem passou — e envia o
+ * alerta ao grupo. Enviado, o pedido trava e vira uma bolha no grupo.
  *
- * A resposta certa não está aqui (ela nunca desce): a tela só guarda o que a
- * criança marcou e envia as seis de uma vez. Depois do envio, tudo congela, e
- * nada diz se ela acertou. A dica do OU fica sempre à vista: em português
- * "ou" costuma soar exclusivo, e o erro seria de leitura, não de lógica.
+ * Nada aqui sabe a expressão esperada (ela não desce): a tela pinta o que o
+ * servidor executou, sem cor de acerto. Se o filtro estava errado, a bolha
+ * lista as mensagens erradas — a tela não comenta.
  */
-function CartaoDeFrases({
-  cartao,
-  fala,
-  respostas,
+function AlertaDoGrupo({
+  alerta,
+  limite,
   ocupado,
-  aoResponder,
+  aoExecutar,
+  aoEnviar,
 }: {
-  cartao: Cartao;
-  fala: string;
-  respostas: Readonly<Record<string, Resposta>>;
+  alerta: Alerta;
+  limite: number;
   ocupado: boolean;
-  aoResponder: (fraseId: string, resposta: Resposta) => void;
+  aoExecutar: (pedido: number, expressao: Expressao) => void;
+  aoEnviar: (pedido: number, expressao: Expressao) => void;
 }) {
-  const travado = cartao.enviado || ocupado;
+  const daVez = pedidoDaVez(alerta);
+  const enviados = alerta.andamento
+    .filter((a) => a.enviado)
+    .sort((x, y) => x.pedido - y.pedido);
   return (
     <>
-      <MessageBubble direction="in">{fala}</MessageBubble>
-      <MessageBubble direction="in" tail={false} maxWidth={320}>
-        <div className="cartao">
-          <p className="cartao__instrucao">{TEXTOS.cartao.instrucao}</p>
-          <p className="cartao__dica">{TEXTOS.cartao.dicaOu}</p>
-          {cartao.frases.map((f) => (
-            <fieldset className="cartao__frase" key={f.id} disabled={travado}>
-              <legend className="cartao__texto">
-                {partesDaFrase(f.texto).map((parte, i) =>
-                  parte.operador ? <strong key={i}>{parte.texto}</strong> : <span key={i}>{parte.texto}</span>,
-                )}
-              </legend>
-              <div className="cartao__opcoes">
-                {(["sim", "nao"] as const).map((r) => (
-                  <Radio
-                    key={r}
-                    name={`frase-${f.id}`}
-                    value={r}
-                    label={r === "sim" ? TEXTOS.cartao.sim : TEXTOS.cartao.nao}
-                    checked={respostas[f.id] === r}
-                    onChange={() => aoResponder(f.id, r)}
-                    disabled={travado}
-                  />
-                ))}
-              </div>
-            </fieldset>
+      <SystemMessage>{TEXTOS.alerta.faixa}</SystemMessage>
+      {enviados.map((a) => (
+        <MessageBubble key={a.pedido} direction="out" delivery="read" maxWidth={300}>
+          <strong>{TEXTOS.alerta.bolhaTitulo}</strong>
+          <br />
+          {TEXTOS.alerta.bolha(referenciasDoAlerta(a.enviado?.passam ?? [], alerta.quadro))}
+        </MessageBubble>
+      ))}
+      {daVez && alerta.aberto && (
+        /* `key`: o montador de cada pedido nasce vazio (ou com a última execução dele). */
+        <MontadorDoAlerta
+          key={daVez.n}
+          alerta={alerta}
+          pedido={daVez}
+          primeiro={enviados.length === 0}
+          limite={limite}
+          ocupado={ocupado}
+          aoExecutar={aoExecutar}
+          aoEnviar={aoEnviar}
+        />
+      )}
+      {!daVez && <SystemMessage role="status">{TEXTOS.alerta.enviados}</SystemMessage>}
+      {daVez && !alerta.aberto && <SystemMessage role="status">{TEXTOS.alerta.fechou}</SystemMessage>}
+    </>
+  );
+}
+
+const ATRIBUTOS_DO_FILTRO: readonly Atributo[] = ["falsa", "emocional"];
+const CONECTORES_DO_FILTRO: readonly Conector[] = ["E", "OU"];
+
+function MontadorDoAlerta({
+  alerta,
+  pedido,
+  primeiro,
+  limite,
+  ocupado,
+  aoExecutar,
+  aoEnviar,
+}: {
+  alerta: Alerta;
+  /** Execuções por pedido (`limites.execucoes`). */
+  limite: number;
+  pedido: { n: number; texto: string };
+  primeiro: boolean;
+  ocupado: boolean;
+  aoExecutar: (pedido: number, expressao: Expressao) => void;
+  aoEnviar: (pedido: number, expressao: Expressao) => void;
+}) {
+  const { execucoes } = andamentoDo(alerta, pedido.n);
+  const ultima = execucoes.at(-1) ?? null;
+  /* Um F5 no meio do pedido volta ao último filtro executado. */
+  const [montador, setMontador] = useState<MontadorDoFiltro>(() => montadorDe(ultima?.expressao ?? null));
+  const naTela = expressaoDoMontador(montador);
+  const restam = execucoes.length < limite;
+  const podeEnviar = podeEnviarAlerta(execucoes, naTela);
+  const passam = new Set(ultima?.passam ?? []);
+  const total = alerta.pedidos.length;
+
+  const condicao = (lado: "a" | "b", rotulo: string) => {
+    const c = montador[lado];
+    return (
+      <div className="alerta__condicao" role="group" aria-label={rotulo}>
+        <FilterChip
+          label={TEXTOS.alerta.nao}
+          selected={c.nao}
+          disabled={ocupado}
+          onClick={() => setMontador((m) => ({ ...m, [lado]: { ...m[lado], nao: !m[lado].nao } }))}
+        />
+        {ATRIBUTOS_DO_FILTRO.map((attr) => (
+          <FilterChip
+            key={attr}
+            label={TEXTOS.alerta.atributo[attr]}
+            selected={c.attr === attr}
+            disabled={ocupado}
+            onClick={() =>
+              setMontador((m) => ({ ...m, [lado]: { ...m[lado], attr: m[lado].attr === attr ? null : attr } }))
+            }
+          />
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <MessageBubble direction="in" tail={false} maxWidth={320}>
+      <div className="alerta">
+        <p className="alerta__contador">{TEXTOS.alerta.contador(pedido.n, total)}</p>
+        <p className="alerta__pedido">{pedido.texto}</p>
+        {primeiro && <p className="alerta__instrucao">{TEXTOS.alerta.instrucao}</p>}
+
+        <p className="alerta__rotulo">{TEXTOS.alerta.quadro}</p>
+        <ul className="alerta__quadro">
+          {alerta.quadro.map((m) => {
+            const v = TEXTOS.revelacao.veracidade[m.veracidade];
+            const t = TEXTOS.revelacao.tom[m.tom];
+            const classe = ultima ? (passam.has(m.id) ? "alerta__linha alerta__linha--passa" : "alerta__linha alerta__linha--fora") : "alerta__linha";
+            return (
+              <li key={m.id} className={classe}>
+                <span className="alerta__nome">{m.rotulo}</span>
+                <span className="alerta__etiquetas">
+                  {m.voceEnviou && <MessageTag>{TEXTOS.alerta.voceEnviou}</MessageTag>}
+                  <MessageTag icon={v.icone}>{v.rotulo}</MessageTag>
+                  <MessageTag icon={t.icone}>{t.rotulo}</MessageTag>
+                  {ultima && passam.has(m.id) && (
+                    <MessageTag icon={TEXTOS.alerta.destacada.icone}>{TEXTOS.alerta.destacada.rotulo}</MessageTag>
+                  )}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+
+        <p className="alerta__rotulo">{TEXTOS.alerta.montar}</p>
+        {condicao("a", TEXTOS.alerta.primeiraCondicao)}
+        <div className="alerta__condicao" role="group" aria-label={TEXTOS.alerta.ligacao}>
+          {CONECTORES_DO_FILTRO.map((op) => (
+            <FilterChip
+              key={op}
+              label={TEXTOS.alerta.conector[op]}
+              selected={montador.op === op}
+              disabled={ocupado}
+              onClick={() => setMontador((m) => ({ ...m, op: m.op === op ? null : op }))}
+            />
           ))}
         </div>
-      </MessageBubble>
-      {cartao.enviado && <SystemMessage role="status">{TEXTOS.cartao.enviado}</SystemMessage>}
-    </>
+        {montador.op && condicao("b", TEXTOS.alerta.segundaCondicao)}
+        <p className="alerta__dica">{TEXTOS.alerta.dicaOu}</p>
+
+        {ultima && (
+          <p className="alerta__resultado" role="status">
+            {TEXTOS.alerta.passam(ultima.passam.length)} {TEXTOS.alerta.execucao(execucoes.length, limite)}
+          </p>
+        )}
+        <div className="alerta__acoes">
+          <Button variant="outline" block disabled={!naTela || !restam || ocupado} onClick={() => naTela && aoExecutar(pedido.n, naTela)}>
+            {TEXTOS.alerta.verResultado}
+          </Button>
+          <Button block disabled={!podeEnviar || ocupado} onClick={() => naTela && aoEnviar(pedido.n, naTela)}>
+            {TEXTOS.alerta.enviar}
+          </Button>
+        </div>
+        {!restam && !podeEnviar && <p className="alerta__dica">{TEXTOS.alerta.semExecucoes}</p>}
+        {!podeEnviar && restam && <p className="alerta__dica">{TEXTOS.alerta.executeAntes}</p>}
+      </div>
+    </MessageBubble>
   );
 }

@@ -206,5 +206,8 @@ export type Disciplina = (typeof DISCIPLINAS)[number];
  * por área e mostra o contrafactual sem curtidas. 4.0.0 (2026-10-18, ADR-174):
  * o Canal A puro — a separação depois do voto (EF06CO01) e a regra SE … ENTÃO
  * no lugar da cadeia (EF06CO03); sem enquetes, e a galeria não marca nada.
+ * 5.0.0 (2026-10-20, ADR-176): a separação vira as PASTAS do salvar no feed
+ * (corrigida no voto), o caso Mariana sai (a regra conclui) e a galeria deixa
+ * de mostrar a contagem por área e o contrafactual.
  */
-export const VERSAO_DO_INSTRUMENTO = "4.0.0";
+export const VERSAO_DO_INSTRUMENTO = "5.0.0";

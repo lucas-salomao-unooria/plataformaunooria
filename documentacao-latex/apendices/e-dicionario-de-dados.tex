@@ -107,7 +107,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp06ef2b\_auditorias} & Tenant & Cada abertura de \enquote{Dados da mensagem} --- a evidência que a missão mede\\
 \cd{exp06ef2b\_reflexoes} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
 \zebra \cd{exp06ef2b\_gates\_turma} & Tenant & A etapa da aula, por turma\\
-\cd{exp06ef1b\_pacotes} & Tenant & A ATIVIDADE do Júri Estadual de Projetos: as 4 áreas e os 40 projetos (16 nos pacotes da 0.4.x, ainda legíveis, \adrr{ADR-164}) que a IA gerou ou o banco padrão trouxe (\adrr{ADR-157}) e o professor aprovou, a telemetria docente, as URLs das imagens e \cd{imagens\_aprovadas\_em}, a segunda fase da aprovação (\adrr{ADR-151})\\
+\cd{exp06ef1b\_pacotes} & Tenant & A ATIVIDADE do Júri Estadual de Projetos: as 4 áreas e os 40 projetos (16 nos pacotes da 0.4.x, ainda legíveis, \adrr{ADR-164}) que a IA gerou ou o banco padrão trouxe (\adrr{ADR-157}) e o professor aprovou, a telemetria docente, as URLs das imagens (quatro por projeto, chaveadas por lâmina: \cd{proj-a1}, \cd{proj-a1:detalhe}, \adrr{ADR-178}) e \cd{imagens\_aprovadas\_em}, a segunda fase da aprovação (\adrr{ADR-151})\\
 \zebra \cd{exp06ef1b\_gates\_turma} & Tenant & A etapa da aula (a Galeria Oculta; o desvio saiu com a \adrr{ADR-157}), a atividade em andamento e a rodada, por turma\\
 \cd{exp06ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o feed servido e o relógio dele, as curtidas e os salvos, o batimento da cédula, os dois votos, a separação dos estandes, a auditoria da galeria, os status das ações, a regra SE \ldots{} ENTÃO (no carimbo da cadeia) e os cartões --- sem texto livre (as colunas da justificativa e do desvio ficam sem uso, \adrr{ADR-157})\\
 \zebra \cd{exp06ef1b\_gates\_historico} & Tenant & Uma linha por etapa liberada pelo professor (\adrr{ADR-157})\\
@@ -122,7 +122,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp08ef4b\_gates\_turma} & Tenant & O \emph{checkpoint} do debate, por turma\\
 \cd{exp05ef1b\_pacotes} & Tenant & O pacote da turma --- as 8 mensagens com o gabarito; é a atividade da evidência\\
 \zebra \cd{exp05ef1b\_gates\_turma} & Tenant & O relógio da turma: triagem, revelação, síntese, reflexão\\
-\cd{exp05ef1b\_sessoes} & Tenant & A sessão por rodada, com os \emph{latches} (Mural, voto, cartão de frases, regra do tio, conclusão)\\
+\cd{exp05ef1b\_sessoes} & Tenant & A sessão por rodada, com os \emph{latches} (Mural, voto, alerta do grupo, robô do grupo, conclusão)\\
 \zebra \cd{exp05ef1b\_reflexoes} & Tenant & A regra Se/Então (texto livre do estudante); só histórico desde a \adrr{ADR-145}\\
 \cd{app\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
 \zebra \cd{app\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
@@ -1686,20 +1686,26 @@ as colunas da sessão, que é onde o feed e os \emph{latches} moram.
   \cd{prototipo} e \cd{depoimento}. Os
   pesos por área são derivados delas (curtida 3, permanência 1; o salvo
   pesa 0 desde a \adrr{ADR-157}), nunca gravados.\\
-\cd{voto\_\B{}projeto}, \cd{conviccao}, \cd{votado\_em} & \cd{TEXT?},
+\cd{pastas} & \cd{JSONB} & Desde a \adrr{ADR-176}: a PASTA de cada post salvo,
+  \cd{\{postId: area\}} --- a separação da EF06CO01, feita no feed. Salvar de
+  novo com outra pasta move o post; tirar dos salvos apaga a chave. Padrão
+  \cd{'\{\}'}; o \emph{CHECK} \cd{exp06ef1b\_\B{}sessoes\_\B{}pastas\_\B{}check} só
+  exige objeto. Não pesa no motor. Corrigida no voto, que grava as colunas
+  \cd{classificacao\_*}.\\
+\zebra \cd{voto\_\B{}projeto}, \cd{conviccao}, \cd{votado\_em} & \cd{TEXT?},
   \cd{TIMESTAMPTZ?} & O \emph{latch} 1, juntos. A convicção é
   \cd{examinei\_bem} $|$ \cd{vi\_tudo} --- as duas afirmam certeza.\\
-\zebra \cd{voto\_motivo}, \cd{voto\_trecho} & \cd{TEXT?}, \cd{INTEGER?} &
+\cd{voto\_motivo}, \cd{voto\_trecho} & \cd{TEXT?}, \cd{INTEGER?} &
   SEM USO desde a \adrr{ADR-157}. Era a justificativa de antes (\adrr{ADR-152}): o cartão de motivo
   (\cd{v1}--\cd{v3}) e o índice (0 a 11) da frase grifada da legenda do
   estande votado. Par: os dois juntos, e só com \cd{votado\_em}. Nulos nas
   sessões que votaram antes da migração.\\
-\cd{auditoria} & \cd{JSONB} & \cd{\{abertos: string[], buscas: [\{tipo,
+\zebra \cd{auditoria} & \cd{JSONB} & \cd{\{abertos: string[], buscas: [\{tipo,
   area\}]\}}: o que a criança abriu e buscou na galeria. O texto digitado nunca
   chega aqui. Até a 0.5.0 foi a base da EF06CO10 e da EF06CO01
   (\adrr{ADR-151}, \adrr{ADR-152}); desde a \adrr{ADR-174} não marca
   habilidade: o painel mostra quem abriu e quem buscou.\\
-\zebra \cd{classificacao\_\B{}respostas}, \cd{classificacao\_\B{}acertos},
+\cd{classificacao\_\B{}respostas}, \cd{classificacao\_\B{}acertos},
   \cd{classificacao\_\B{}total}, \cd{classificada\_\B{}em} & \cd{JSONB?},
   \cd{INTEGER?}, \cd{INTEGER?}, \cd{TIMESTAMPTZ?} & A separação
   (EF06CO01, \adrr{ADR-174}): as respostas (\emph{array} de \cd{\{itemId,
@@ -1707,34 +1713,35 @@ as colunas da sessão, que é onde o feed e os \emph{latches} moram.
   distintos vistos (0 a 10) e o carimbo. As quatro juntas, só depois do voto,
   acertos dentro do total (\cd{exp06ef1b\_\B{}sessoes\_\B{}classificacao\_\B{}check}); com
   o passo em \cd{classificacao}, nulas. Nulas também nas sessões que votaram na
-  0.5.0.\\
-\cd{revisao\_acao}, \cd{voto\_\B{}revisado}, \cd{revisado\_em} & \cd{TEXT?},
+  0.5.0. Desde a \adrr{ADR-176}, gravadas no próprio \cd{UPDATE} do voto, lidas
+  das \cd{pastas} (no mesmo formato da 0.6.0).\\
+\zebra \cd{revisao\_acao}, \cd{voto\_\B{}revisado}, \cd{revisado\_em} & \cd{TEXT?},
   \cd{TIMESTAMPTZ?} & O \emph{latch} 2: \cd{manter} (o voto final repete o
   lacrado) $|$ \cd{trocar} (outro projeto do pacote) (\cd{complementar}, da 0.3.0, segue aceito e é lido
   como manter). O carimbo leva o passo a \cd{revisada}.\\
-\zebra \cd{auditoria\_status}, \cd{classificacao\_\B{}status}, \cd{logica\_status} &
+\cd{auditoria\_status}, \cd{classificacao\_\B{}status}, \cd{logica\_status} &
   \cd{VARCHAR(16)?} & O nível das ações (\cd{atingiu} $|$
   \cd{em\_processo} $|$ \cd{nao\_atingiu}), ou nulo (sem marca). Desde a
   \adrr{ADR-174}, \cd{classificacao\_\B{}status} vem da separação (exige
   \cd{classificada\_\B{}em}; nas linhas antigas, da revisão, com
   \cd{revisado\_em}), \cd{logica\_status} da regra, e \cd{auditoria\_status}
   não é mais escrito.\\
-\cd{enquete\_ef06co*\_alt} & \cd{VARCHAR(64)?} & Criadas pelo PRD v2 e
+\zebra \cd{enquete\_ef06co*\_alt} & \cd{VARCHAR(64)?} & Criadas pelo PRD v2 e
   nunca escritas; as enquetes saíram com a \adrr{ADR-174}.\\
-\zebra \cd{complemento\_\B{}projeto} & \cd{TEXT?} & SEM USO desde a \adrr{ADR-157}. O estande indicado no
+\cd{complemento\_\B{}projeto} & \cd{TEXT?} & SEM USO desde a \adrr{ADR-157}. O estande indicado no
   \cd{complementar}: existia só nele, e nunca igual ao voto (\emph{CHECK}).\\
-\cd{revisao\_motivo}, \cd{revisao\_trecho} & \cd{TEXT?}, \cd{INTEGER?} &
+\zebra \cd{revisao\_motivo}, \cd{revisao\_trecho} & \cd{TEXT?}, \cd{INTEGER?} &
   SEM USO desde a \adrr{ADR-157}. A justificativa de depois: o cartão (\cd{r1}--\cd{r3}) e o índice da frase
   da legenda do estande da decisão (o do voto, ao manter). Par, e só com
   \cd{revisado\_em}.\\
-\zebra \cd{desvio\_\B{}servidos}, \cd{desvio\_\B{}curtidos}, \cd{desvio\_\B{}salvos},
+\cd{desvio\_\B{}servidos}, \cd{desvio\_\B{}curtidos}, \cd{desvio\_\B{}salvos},
   \cd{desvio\_\B{}permanencias} & \cd{JSONB} & SEM USO desde a \adrr{ADR-157}. O feed da rodada de desvio
   (\adrr{ADR-152}), com os pesos só dele; os servidos, até seis.\\
-\cd{desvio\_\B{}concluido\_em} & \cd{TIMESTAMPTZ?} & SEM USO desde a
+\zebra \cd{desvio\_\B{}concluido\_em} & \cd{TIMESTAMPTZ?} & SEM USO desde a
   \adrr{ADR-157}; nas sessões antigas, exige \cd{revisado\_em}. A migração o preencheu
   com \cd{revisado\_em} nas sessões que já tinham passado da revisão. Sem
   evidência.\\
-\zebra \cd{cadeia\_\B{}tentativas}, \cd{cadeia\_\B{}montada\_em} & \cd{INTEGER},
+\cd{cadeia\_\B{}tentativas}, \cd{cadeia\_\B{}montada\_em} & \cd{INTEGER},
   \cd{TIMESTAMPTZ?} & Até a 0.5.0, a base da EF06CO03 (as tentativas da
   cadeia). Desde a \adrr{ADR-174}, o CARIMBO da regra SE \ldots{} ENTÃO:
   \cd{cadeia\_\B{}montada\_em} com \cd{cadeia\_\B{}tentativas = 1}, para os
@@ -1742,23 +1749,25 @@ as colunas da sessão, que é onde o feed e os \emph{latches} moram.
   tentativa. (As colunas \cd{pacotes\_tentativas} e
   \cd{pacotes\_remontados\_em}, da EF06CO07, foram apagadas pela
   \arq{20261006120000}, \adrr{ADR-151}.)\\
-\cd{regra\_se}, \cd{regra\_entao} & \cd{VARCHAR(32)?} & A regra SE
+\zebra \cd{regra\_se}, \cd{regra\_entao} & \cd{VARCHAR(32)?} & A regra SE
   \ldots{} ENTÃO (EF06CO03, \adrr{ADR-174}): os ids das peças escolhidas
   (\cd{PECAS\_DO\_SE} e \cd{PECAS\_DO\_\B{}ENTAO} de \arq{conteudo.ts}, não os
   opacos). Juntas, e só com \cd{cadeia\_\B{}montada\_em}
   (\cd{exp06ef1b\_\B{}sessoes\_\B{}regra\_\B{}check}).\\
-\zebra \cd{mecanismo}, \cd{atitude}, \cd{cartoes\_em} & \cd{TEXT?},
+\cd{mecanismo}, \cd{atitude}, \cd{cartoes\_em} & \cd{TEXT?},
   \cd{TIMESTAMPTZ?} & O caso Mariana: \cd{m1}--\cd{m3} e \cd{t1}--\cd{t2}. Não é
-  evidência. Desde a \adrr{ADR-174}, gravar os cartões conclui a missão.\\
-\cd{concluida\_em} & \cd{TIMESTAMPTZ?} & EQUIVALENTE ao passo \cd{fim}.\\
-\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{4.0.0} desde a \adrr{ADR-174}
-  (\cd{3.0.0} da \adrr{ADR-164}, \cd{2.0.0} da \adrr{ADR-157}, \cd{1.1.0} da \adrr{ADR-152}, \cd{1.0.0} antes).\\
+  evidência. Na \adrr{ADR-174}, gravar os cartões concluía a missão; SEM USO
+  desde a \adrr{ADR-176}, que tirou o caso (a regra conclui). Só nas linhas
+  antigas, e só em \cd{enquetes} ou \cd{fim} (\emph{CHECK}).\\
+\zebra \cd{concluida\_em} & \cd{TIMESTAMPTZ?} & EQUIVALENTE ao passo \cd{fim}.\\
+\cd{versao\_instrumento} & \cd{TEXT} & \cd{5.0.0} desde a \adrr{ADR-176} (\cd{4.0.0} da
+  \adrr{ADR-174}, \cd{3.0.0} da \adrr{ADR-164}, \cd{2.0.0} da \adrr{ADR-157}, \cd{1.1.0} da \adrr{ADR-152}, \cd{1.0.0} antes).\\
 \bottomrule
 \end{tabularx}
 
 \begin{regra}
-A peça certa da regra SE \ldots{} ENTÃO e o cartão certo de Mariana
-\textbf{não estão no banco}: são o esqueleto da missão, em \arq{conteudo.ts}, e só
+A peça certa da regra SE \ldots{} ENTÃO (e o cartão certo de Mariana, que saiu
+com a \adrr{ADR-176}) \textbf{não estão no banco}: são o esqueleto da missão, em \arq{conteudo.ts}, e só
 \rota{GET /juri-estadual/professor/material} os devolve. A mostra --- os
 quarenta projetos (dezesseis nos pacotes da 0.4.x) --- mora no \cd{JSONB} de \cd{exp06ef1b\_pacotes}, e o
 estudante só recebe os posts que o feed serviu até a galeria abrir
@@ -2471,26 +2480,38 @@ máquina, e são justamente essas crianças que o debate tenta alcançar.
   regra Se/Então, que saiu (\adrr{ADR-145}); nenhuma rota o escreve. Exige
   \cd{votou\_em}.\\
 \cd{frases\_operacoes}, \cd{respostas\_operacoes}, \cd{operacoes\_em} &
-  \cd{JSONB?}, \cd{JSONB?}, \cd{TIMESTAMPTZ?} & \textbf{O latch 3}, o cartão de
-  frases da EF05CO03 (\adrr{ADR-171}): as seis frases COMO a criança as viu,
-  com o operador e a resposta esperada, e as seis respostas dela, gravadas no
-  envio. \emph{CHECK} \cd{exp05ef1b\_sessoes\_operacoes\_check}: o carimbo
-  exige \cd{votou\_em} e os dois \emph{arrays} com seis itens.\\
-\zebra \cd{regra\_testes} & \cd{JSONB} & Os testes da regra do tio, em ordem:
-  \cd{[\{condicao, acoes, previsao, situacao, em\}]}, \cd{NOT NULL DEFAULT
-  '[]'}. A régua da EF05CO04 lê o PRIMEIRO. \emph{CHECK}
+  \cd{JSONB?}, \cd{JSONB?}, \cd{TIMESTAMPTZ?} & \textbf{Histórico}: o cartão
+  de frases da EF05CO03 (\adrr{ADR-171}), que saiu na \adrr{ADR-177};
+  nenhuma rota as escreve. \emph{CHECK}
+  \cd{exp05ef1b\_sessoes\_operacoes\_check}: o carimbo exige \cd{votou\_em} e
+  os dois \emph{arrays} com seis itens.\\
+\zebra \cd{alertas}, \cd{alertas\_em} & \cd{JSONB}, \cd{TIMESTAMPTZ?} &
+  \textbf{O latch 3}, o alerta do grupo da EF05CO03 (\adrr{ADR-177}): um item
+  por pedido aberto, \cd{[\{pedido, execucoes: [\{expressao, passam\}],
+  enviado\}]}, \cd{NOT NULL DEFAULT '[]'}; a expressão é \cd{\{a, op?, b?\}}.
+  O carimbo sai no QUARTO envio, com a marca. \emph{CHECKs}
+  \cd{exp05ef1b\_sessoes\_alertas\_check} (\emph{array} de até quatro, não
+  vazio só com \cd{votou\_em}) e \cd{exp05ef1b\_sessoes\_alertas\_em\_check}
+  (o carimbo exige o voto e os quatro).\\
+\cd{regra\_testes} & \cd{JSONB} & As ligações do robô do grupo, em ordem:
+  \cd{[\{laco, condicao, acoes, resultados: [\{mensagemId, situacao\}],
+  em\}]}, \cd{NOT NULL DEFAULT '[]'} (o nome ficou da regra do tio da
+  \adrr{ADR-171}; linha antiga, com \cd{previsao} e sem \cd{laco}, é lida
+  como ligação sem laço). A régua da EF05CO04 lê a PRIMEIRA. \emph{CHECK}
   \cd{exp05ef1b\_sessoes\_regra\_testes\_check}: \emph{array} de até cinco
-  (limite técnico), e não vazio só com \cd{operacoes\_em}.\\
-\cd{regra\_final}, \cd{regra\_em} & \cd{JSONB?}, \cd{TIMESTAMPTZ?} &
-  \textbf{O latch 4}: a regra enviada, \cd{\{condicao, acoes\}}. \emph{CHECKs}
-  \cd{exp05ef1b\_sessoes\_regra\_check} (exige \cd{operacoes\_em} e uma das
-  quatro condições) e \cd{exp05ef1b\_sessoes\_regra\_final\_check} (os dois
-  nulos juntos).\\
-\zebra \cd{concluido\_em} & \cd{TIMESTAMPTZ?} & Exige \cd{votou\_em} (migração
-  \cd{20261005120000}; antes exigia \cd{reflexao\_em}) --- e não o cartão nem
-  a regra: quem sai antes deles fica \enquote{Não avaliado}.\\
-\cd{versao\_instrumento} & \cd{TEXT} & \cd{'2.4.0'} desde a \adrr{ADR-171}
-  (\cd{'2.3.0'} desde a \adrr{ADR-145}, \cd{'2.2.0'} antes). Na linha, para
+  (limite técnico), e não vazio só com \cd{votou\_em} --- não exige o
+  alerta.\\
+\zebra \cd{regra\_final}, \cd{regra\_em} & \cd{JSONB?}, \cd{TIMESTAMPTZ?} &
+  \textbf{O latch 4}: o robô enviado, \cd{\{laco, condicao, acoes\}}.
+  \emph{CHECKs} \cd{exp05ef1b\_sessoes\_regra\_check} (exige \cd{votou\_em} e
+  uma das quatro condições) e \cd{exp05ef1b\_sessoes\_regra\_final\_check}
+  (os dois nulos juntos).\\
+\cd{concluido\_em} & \cd{TIMESTAMPTZ?} & Exige \cd{votou\_em} (migração
+  \cd{20261005120000}; antes exigia \cd{reflexao\_em}) --- e não o alerta nem
+  o robô: quem sai antes deles fica \enquote{Não avaliado}.\\
+\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{'2.5.0'} desde a \adrr{ADR-177}
+  (\cd{'2.4.0'} desde a \adrr{ADR-171}, \cd{'2.3.0'} desde a \adrr{ADR-145},
+  \cd{'2.2.0'} antes). Na linha, para
   reprocessar o histórico se o instrumento mudar.\\
 \bottomrule
 \end{tabularx}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { BottomSheetUnv, ButtonUnv, Chip, IconUnv, InlineHint } from "@edu/ui/ds-unoovista";
 import type { EstandeDoFeed } from "../../lib/regras";
-import { E3 } from "../../lib/textos";
+import { E3, PASTAS } from "../../lib/textos";
 import { CONVICCOES, type Conviccao } from "../../lib/tipos";
 import { srcDoEstande, usePaleta } from "../componentes/midia";
 import { Escolha } from "./escolha";
@@ -14,7 +14,10 @@ import { Escolha } from "./escolha";
  * 2. os estandes que APARECERAM no feed (a api recusa os outros);
  * 3. a certeza — a pergunta e as duas respostas, que AFIRMAM certeza de
  *    propósito ("Sim" / "Com certeza"): é a aposta que a galeria confronta;
- * 4. o botão, travado até as duas escolhas.
+ * 4. o botão, travado até as duas escolhas — e, desde a 0.7.0 (ADR-176),
+ *    até todo estande visto estar numa pasta: a separação da EF06CO01 é
+ *    corrigida NO voto. Faltando, a comissão diz quantos logo acima do botão (a
+ *    api recusa com 409 `estandes-sem-pasta` se a tela errar).
  *
  * **O aviso de inatividade** (E3-SIS-01): 60 s sem toque com a cédula ABERTA,
  * a linha da comissão aparece NO TOPO DA FOLHA, numa região `role="alert"`
@@ -27,6 +30,7 @@ import { Escolha } from "./escolha";
 export function Cedula({
   aberta,
   estandes,
+  semPasta,
   parado,
   enviando,
   aoFechar,
@@ -34,6 +38,8 @@ export function Cedula({
 }: {
   aberta: boolean;
   estandes: readonly EstandeDoFeed[];
+  /** Estandes vistos ainda fora das pastas (do servidor). */
+  semPasta: number;
   /** 60 s sem toque com a folha aberta. */
   parado: boolean;
   enviando: boolean;
@@ -43,7 +49,7 @@ export function Cedula({
   const paleta = usePaleta();
   const [projeto, setProjeto] = useState<string | null>(null);
   const [conviccao, setConviccao] = useState<Conviccao | null>(null);
-  const pode = projeto !== null && conviccao !== null && !enviando;
+  const pode = projeto !== null && conviccao !== null && semPasta === 0 && !enviando;
 
   return (
     <BottomSheetUnv
@@ -84,6 +90,12 @@ export function Cedula({
           ))}
         </div>
         <div className="cedula__confirmar">
+          {/* Junto do botão, que é o que ela olha: no topo da folha, o motivo ficava fora de vista. */}
+          {semPasta > 0 && (
+            <div className="cedula__pastas" role="status">
+              <InlineHint tone="friction">{PASTAS.faltam(semPasta)}</InlineHint>
+            </div>
+          )}
           <ButtonUnv
             variant="primary"
             size="lg"

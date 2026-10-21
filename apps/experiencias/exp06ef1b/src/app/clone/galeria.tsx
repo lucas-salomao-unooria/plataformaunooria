@@ -6,7 +6,6 @@ import {
   Chip,
   IconUnv,
   InlineHint,
-  ListItem,
   NotificationItem,
   SearchField,
 } from "@edu/ui/ds-unoovista";
@@ -15,12 +14,11 @@ import {
   casaComABusca,
   classificarBusca,
   comCerquilha,
-  contagemSemCurtidas,
   iniciais,
   ocultosDaArea,
   opcoesDaTroca,
 } from "../../lib/regras";
-import { CONTAS, E4 } from "../../lib/textos";
+import { CONTAS, E2, E4 } from "../../lib/textos";
 import type {
   AcaoDaGaleria,
   Area,
@@ -29,7 +27,7 @@ import type {
   ProjetoDaGaleria,
   Voto,
 } from "../../lib/tipos";
-import { srcDaFoto, srcDoEstande, usePaleta } from "../componentes/midia";
+import { altDaFoto, srcDaFoto, srcDoEstande, usePaleta } from "../componentes/midia";
 import { Cabecalho } from "./cabecalho";
 import { Escolha } from "./escolha";
 
@@ -44,13 +42,12 @@ export type CorpoDaRevisao = { acao: "manter" } | { acao: "trocar"; projetoId: s
  *
  * - **A notificação da comissão** abre a tela, e logo abaixo o voto lacrado.
  * - **O badge é "X de Y"** (0.5.0), os dois números REAIS da sessão
- *   (`GaleriaSchema.invisibilidade`), sem porcentagem. Com quarenta estandes e
- *   dez posts sem repetição, o X é o MESMO para toda criança (30 de 40) — por
- *   isso a prova central é o que vem logo abaixo:
- * - **Por área** ("Tecnologia: você viu 7 de 10", `porArea`) e o **contraste**
- *   ("Sem as suas curtidas, o seu feed teria trazido: Tecnologia 3, …",
- *   `semCurtidas`): o feed que ESTA criança teria tido. Os dois vêm calculados
- *   da api — o motor não desce para o bundle; a tela só conta e escreve.
+ *   (`GaleriaSchema.invisibilidade`), sem porcentagem, e logo abaixo a busca.
+ * - **A contagem por área e o contraste "sem as suas curtidas" SAÍRAM da tela**
+ *   na 0.7.0, a pedido do time que rodou a missão (ADR-176): a tela ficou
+ *   longa demais antes da busca, e quem conduz a comparação é a grade e a
+ *   lousa do professor. A api continua mandando `porArea` (é ele que escolhe a
+ *   área em que a grade abre) e `semCurtidas`.
  * - **A grade é dos ocultos DE UMA ÁREA**, a dos chips. Abre na área que mais
  *   ficou fora (sem contar como busca: a criança não tocou em nada); tocar num
  *   chip troca a área e conta como busca por hashtag (a EF06CO01). Cada
@@ -135,7 +132,6 @@ export function Galeria({
   }
 
   const { ocultos, total } = galeria.invisibilidade;
-  const contraste = contagemSemCurtidas(galeria.semCurtidas);
 
   return (
     <div className="tela">
@@ -158,24 +154,6 @@ export function Galeria({
         <InlineHint tone="friction" announce>
           {E4.badge(ocultos, total)}
         </InlineHint>
-        <h3 className="galeria__secao">{E4.porArea}</h3>
-        <ul className="galeria__areas">
-          {galeria.porArea.map((a) => (
-            <li key={a.area}>
-              <ListItem size="sm" title={E4.vistosNaArea(nomeDa(a.area), a.vistos, a.total)} />
-            </li>
-          ))}
-        </ul>
-        <h3 className="galeria__secao" id="galeria-contraste">
-          {E4.semCurtidas}
-        </h3>
-        <ul className="galeria__contraste" aria-labelledby="galeria-contraste">
-          {contraste.map((a) => (
-            <li key={a.area}>
-              <BadgeUnv variant="neutral">{E4.semCurtidasDaArea(nomeDa(a.area), a.posts)}</BadgeUnv>
-            </li>
-          ))}
-        </ul>
         <SearchField
           block
           value={texto}
@@ -261,14 +239,20 @@ export function Galeria({
             {/* A faixa rola na horizontal: recebe foco para o teclado alcançar as
                 fotos escondidas (WCAG 2.1.1, ADR-162). */}
             <div className="ficha__fotos" tabIndex={0} role="group" aria-label="Fotos do projeto">
-              {[1, 2, 3].map((n) => (
-                <img
-                  key={n}
-                  className="ficha__imagem"
-                  src={srcDaFoto({ projetoId: ficha.id, titulo: ficha.titulo, imagem: ficha.imagem }, n, paleta)}
-                  alt={n === 1 ? ficha.imagem.alt : ""}
-                />
-              ))}
+              {[1, 2, 3].map((n) => {
+                const estande = { projetoId: ficha.id, titulo: ficha.titulo, imagem: ficha.imagem, laminas: ficha.laminas };
+                return (
+                  <img
+                    key={n}
+                    className="ficha__imagem"
+                    src={srcDaFoto(estande, n, paleta)}
+                    alt={n === 1 || ficha.laminas?.[n === 2 ? "detalhe" : "equipe"] ? altDaFoto(estande, n, E2.altDaFoto) : ""}
+                  />
+                );
+              })}
+              {ficha.laminas?.bastidor && (
+                <img className="ficha__imagem" src={ficha.laminas.bastidor} alt={E2.altDoBastidor(ficha.titulo)} />
+              )}
             </div>
             <p className="ficha__resumo">{ficha.resumo}</p>
             <div className="ficha__hashtags">

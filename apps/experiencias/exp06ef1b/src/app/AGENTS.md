@@ -35,10 +35,19 @@ passam no typecheck e enganam.
    `ButtonUnv` do DS. Desde a 0.5.0 ela mostra os ocultos de UMA área (3 a 9,
    não 30). Pedido: ação ou rótulo por bloco no `MediaGrid`.
 
-**A 0.5.0 não abriu compensação nova.** A contagem por área é `ListItem`, o
-contraste é `BadgeUnv` (sem barra: o DS não tem gráfico, e o número basta), e a
-lâmina do bastidor é o `PostCard.Media` SEM `src` — o DS desenha `children`
-como slide; `.lamina-do-bastidor` é só tipografia do conteúdo.
+**A 0.5.0 não abriu compensação nova.** A lâmina do bastidor é o
+`PostCard.Media` SEM `src` — o DS desenha `children` como slide;
+`.lamina-do-bastidor` é só tipografia do conteúdo. Com a foto dos bastidores
+(0.8.0), `Media` com `src` não aceita filhos: o texto vai DEPOIS das ações
+(`.bastidor-do-post`) — antes delas quebraria o `media + actions` do DS. (A contagem por área e o
+contraste, `ListItem` e `BadgeUnv`, saíram da galeria na 0.7.0.)
+
+**A 0.7.0 também não** (ADR-176). As PASTAS do salvar são um `BottomSheetUnv`
+com um `ListItem` por pasta — `aria-label` "Pasta …" e `aria-pressed` na pasta
+onde o post está —, o `IconUnv` `bookmark`/`bookmarkFilled` (e `check`) e um
+`ButtonUnv` para "Remover dos salvos"; o pedido da comissão no topo do feed é
+`InlineHint` `neutral`, e o "faltam N" da cédula, `InlineHint` `friction`.
+"Suas pastas", no Jurado, é `ListItem`. Tudo do DS, nada de CSS de controle.
 
 **Não são compensação**: o carimbo do voto (moldura tracejada de ficção — o
 desenho do selo é o `IconUnv`), a arte procedural dos estandes (conteúdo, não
@@ -65,7 +74,9 @@ teclado: o teclado já funcionava e escondia o defeito.
   contêiner posicionado mais próximo: `.tela` é `position: relative`.
 - Os glifos da seção `unooria` são ligadura do Material Symbols: a folha
   `fonts/unooria.css` é obrigatória (sem ela, "mail" aparece escrito).
-- `Chip` aceita os atributos de `<button>`: na SEPARAÇÃO (0.6.0) ele é `radio`
-  num `radiogroup` (`aria-checked`), como a certeza da cédula. O `ListItem` do
-  estande vai com `as="div"`: sem `onClick`, um `<button>` seria um botão sem
-  ação no meio da lista do teclado.
+- `Chip` aceita os atributos de `<button>`: na certeza da cédula ele é `radio`
+  num `radiogroup` (`aria-checked`). (A SEPARAÇÃO com `Chip` rádio da 0.6.0
+  saiu com a tela dela.)
+- `ListItem` com `onClick` é `<button>` e aceita `aria-pressed`/`aria-label`:
+  é assim que a folha das pastas diz qual está marcada. Sem `onClick`, vai
+  `as="div"` — um `<button>` sem ação no meio da lista do teclado engana.

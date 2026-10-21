@@ -8,12 +8,11 @@ import {
   EnqueteSchema,
   EstadoSchema,
   GateDoEstudanteSchema,
+  JogadaDoAlertaSchema,
   MuralSchema,
-  OperacoesSchema,
-  RegraSchema,
+  RoboSchema,
   SelecaoSchema,
   SessaoSchema,
-  TesteDaRegraSchema,
 } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
 import { QuemMandouIssoService } from "./quem-mandou-isso.service";
@@ -58,12 +57,12 @@ export class QuemMandouIssoController {
   @Contrato({
     resumo: "O estado da missão e as 8 mensagens do grupo, sem o gabarito.",
     descricao:
-      "As mensagens saem **sem `veracidade` e `tom`** — o tipo do servidor é um `Omit`. O gabarito só aparece em `revelacao`, e `revelacao` é `null` até o estudante VOTAR na enquete e a turma abrir a revelação; ela traz só as TRÊS mensagens dele.\n\n`pacote` é `null` enquanto o professor não aprovou um pacote para a turma: **a missão nasce vazia** e a tela é de espera.\n\n`passo` é DERIVADO no servidor (os latches da sessão × a fase da turma): `abertura → grupo → enquete → espera → revelacao → sintese → cartao → regra → concluida`. `grupo` cobre o grupo E o Mural (as duas vistas da mesma seleção); `selecao` restaura um F5.\n\n`cartao` (as seis frases com E, OU e NÃO, sem a resposta esperada) desce junto com `revelacao`; `regra` (os testes e a regra enviada), no passo `regra`.",
+      "As mensagens saem **sem `veracidade` e `tom`** — o tipo do servidor é um `Omit`. O gabarito só aparece em `revelacao`, e `revelacao` é `null` até o estudante VOTAR na enquete e a turma abrir a revelação; ela traz só as TRÊS mensagens dele.\n\n`pacote` é `null` enquanto o professor não aprovou um pacote para a turma: **a missão nasce vazia** e a tela é de espera.\n\n`passo` é DERIVADO no servidor (os latches da sessão × a fase da turma): `abertura → grupo → enquete → espera → revelacao → sintese → regra → concluida`. `grupo` cobre o grupo E o Mural (as duas vistas da mesma seleção); `selecao` restaura um F5.\n\n`alerta` (o quadro das OITO mensagens com os crachás, os quatro pedidos SEM a expressão esperada e o andamento) desce junto com `revelacao`; `robo` (as quatro mensagens, as ligações e o robô enviado), no passo `regra` — a reflexão.",
     resposta: SessaoSchema,
     notas: [
       NOTA_DA_PORTA,
-      "Quem ainda não confirmou o Mural quando a turma abre a revelação CONTINUA no grupo; depois de votar, recebe `revelacao` (e o `cartao`) junto com o passo da turma — a tela mostra os crachás antes do passo corrente.",
-      "Na reflexão, quem ainda não enviou o cartão cai no passo `cartao`, ANTES da `regra`: o cartão segue o caminho do estudante, não o botão do professor.",
+      "Quem ainda não confirmou o Mural quando a turma abre a revelação CONTINUA no grupo; depois de votar, recebe `revelacao` (e o `alerta`) junto com o passo da turma — a tela mostra os crachás antes do passo corrente.",
+      "O alerta NÃO é passo: aceita jogada só com a turma na revelação (`alerta.aberto`) e fecha na síntese. Quem não enviou os quatro fica \"Não avaliado\" na EF05CO03 e segue para o robô do mesmo jeito.",
       "Só o Canal A (2.4.0): a missão não tem pergunta de múltipla escolha, e `GET /evidencias/exp05ef1b/perguntas/*` responde **404**.",
     ],
   })
@@ -158,71 +157,92 @@ export class QuemMandouIssoController {
     return this.missao.votar(req.auth.escolaId, req.auth.usuarioId, motivo);
   }
 
-  @Post("operacoes")
+  @Post("alerta/execucao")
   @HttpCode(200)
   @Contrato({
-    resumo: "O cartão de frases com E, OU e NÃO — o latch 3 (EF05CO03).",
+    resumo: '"Ver resultado" no alerta do grupo: executa o filtro do pedido da vez (EF05CO03).',
     descricao:
-      "As seis respostas (`sim`/`nao`) por id de frase, todas de uma vez. O servidor recalcula as frases da sessão, grava-as com a resposta esperada, e na MESMA transação marca a **EF05CO03**: 5 ou 6 acertos → atingiu; 3 ou 4 → em processo; 0 a 2 → não atingiu. Nada do acerto volta ao estudante.",
-    corpo: OperacoesSchema,
+      "O número do pedido (1 a 4) e o filtro que está na tela — uma condição (`a`), ou duas ligadas por `op` (`E`/`OU`), cada uma com o interruptor `nao`. O servidor executa sobre as oito mensagens, GRAVA a execução e devolve no estado (`alerta.andamento`) os ids que passaram. A PRIMEIRA execução de cada pedido é a que a régua lê. Nada diz se o filtro atende o pedido.",
+    corpo: JogadaDoAlertaSchema,
     resposta: EstadoSchema,
     notas: [
       NOTA_DA_PORTA,
-      "Aceito a partir da revelação DO ESTUDANTE (voto dado e revelação aberta pela turma), em qualquer fase dali em diante: **409** `enquete-nao-votada` e `cartao-nao-liberado` antes disso.",
-      "Idempotente para o duplo toque: as MESMAS respostas devolvem o estado; outras são **409** `cartao-ja-enviado`. Frase faltando ou repetida é **400** `payload-invalido`.",
+      "**409** `enquete-nao-votada` antes do voto, `alerta-nao-liberado` antes da revelação e `alerta-fechado` a partir da síntese (ou com os quatro enviados).",
+      "Um pedido por vez, em ordem: **409** `alerta-fora-de-ordem` para outro pedido. No máximo 3 execuções por pedido (**409** `limite-execucoes`).",
+      "**400** `payload-invalido` com `op` sem `b` (ou `b` sem `op`).",
     ],
   })
-  operacoes(@Body() corpo: unknown, @Req() req: Autenticado) {
+  executarAlerta(@Body() corpo: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
-    const { respostas } = valida(OperacoesSchema, corpo);
-    return this.missao.responderCartao(req.auth.escolaId, req.auth.usuarioId, respostas);
+    const { pedido, expressao } = valida(JogadaDoAlertaSchema, corpo);
+    return this.missao.executarAlerta(req.auth.escolaId, req.auth.usuarioId, pedido, expressao);
   }
 
-  @Post("regra/teste")
+  @Post("alerta/envio")
   @HttpCode(200)
   @Contrato({
-    resumo: "Testa a regra do tio — com a previsão do estudante ANTES do resultado (EF05CO04).",
+    resumo: '"Enviar alerta ao grupo" — trava o pedido e abre o próximo (EF05CO03).',
     descricao:
-      "A regra montada com peças (`condicao` e uma ou duas `acoes`, em ordem) e a `previsao` do que ela vai fazer com o áudio do tio. Grava o teste; o resultado volta em `regra.testes` do estado (`situacao` e a frase). O primeiro teste é o que a régua lê.",
-    corpo: TesteDaRegraSchema,
+      "A expressão enviada precisa ser a ÚLTIMA executada no pedido: a criança envia o que viu passar. No QUARTO envio, o latch `alertas_em` e, na MESMA transação, a marca da **EF05CO03**: cada pedido vale 2 se a primeira execução já atendia o pedido (por tabela-verdade), 1 se só a enviada atende, 0 senão; a soma de 6 a 8 atinge, de 3 a 5 está em processo, de 0 a 2 não atinge. Menos de quatro enviados = **Não avaliado** (sem marca).",
+    corpo: JogadaDoAlertaSchema,
     resposta: EstadoSchema,
     notas: [
       NOTA_DA_PORTA,
-      "Só na reflexão, com o cartão enviado e a regra ainda não enviada: **409** `reflexao-nao-liberada`, `cartao-pendente` e `regra-ja-enviada`. No máximo 5 testes (**409** `testes-esgotados`).",
-      "**400** `regra-invalida` com a mesma ação duas vezes.",
+      "**400** `execute-antes` se a expressão não é a última executada (ou o pedido nem foi executado).",
+      "Os mesmos **409** da execução. Idempotente: o MESMO envio de novo devolve o estado (inclusive depois de a janela fechar); outro, para um pedido já enviado, é **409** `alerta-ja-enviado`.",
     ],
   })
-  testarRegra(@Body() corpo: unknown, @Req() req: Autenticado) {
+  enviarAlerta(@Body() corpo: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
-    const { condicao, acoes, previsao } = valida(TesteDaRegraSchema, corpo);
-    return this.missao.testarRegra(req.auth.escolaId, req.auth.usuarioId, condicao, acoes, previsao);
+    const { pedido, expressao } = valida(JogadaDoAlertaSchema, corpo);
+    return this.missao.enviarAlerta(req.auth.escolaId, req.auth.usuarioId, pedido, expressao);
   }
 
-  @Post("regra")
+  @Post("robo/ligar")
   @HttpCode(200)
   @Contrato({
-    resumo: '"Enviar minha regra" — o latch 4 (EF05CO04).',
+    resumo: '"Ligar o robô" do grupo — o servidor executa o robô nas quatro mensagens (EF05CO04).',
     descricao:
-      "A regra final. Na MESMA transação, a marca da **EF05CO04**: não atingiu se encaminha antes de checar; atingiu se a PRIMEIRA regra testada já pegava o áudio e mandava checar, a primeira previsão acertou, e a enviada continua assim; em processo em todo o resto (inclusive enviar sem testar).",
-    corpo: RegraSchema,
+      "O robô montado com blocos: `laco` (o \"para cada mensagem nova\"), a `condicao` e uma ou duas `acoes`, em ordem. O servidor executa e grava a ligação; o resultado de cada mensagem volta em `robo.ligacoes` do estado (a tela só anima). Sem o laço, o robô só olha a primeira mensagem. A PRIMEIRA ligação é a que a régua lê.",
+    corpo: RoboSchema,
     resposta: EstadoSchema,
     notas: [
       NOTA_DA_PORTA,
-      "Os mesmos **409** do teste. Idempotente: a MESMA regra de novo devolve o estado; outra é **409** `regra-ja-enviada`.",
+      "Só na reflexão, antes de enviar o robô e de concluir — SEM exigir o alerta: **409** `reflexao-nao-liberada` e `robo-ja-enviado`. No máximo 5 ligações (**409** `ligacoes-esgotadas`).",
+      "**400** `robo-invalido` com a mesma ação duas vezes.",
     ],
   })
-  enviarRegra(@Body() corpo: unknown, @Req() req: Autenticado) {
+  ligarRobo(@Body() corpo: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
-    const { condicao, acoes } = valida(RegraSchema, corpo);
-    return this.missao.enviarRegra(req.auth.escolaId, req.auth.usuarioId, condicao, acoes);
+    const { laco, condicao, acoes } = valida(RoboSchema, corpo);
+    return this.missao.ligarRobo(req.auth.escolaId, req.auth.usuarioId, laco, condicao, acoes);
+  }
+
+  @Post("robo")
+  @HttpCode(200)
+  @Contrato({
+    resumo: '"Enviar meu robô" — o latch do robô (EF05CO04).',
+    descricao:
+      "O robô final, definitivo. Na MESMA transação, a marca da **EF05CO04**: não atingiu se as ações encaminham antes de checar; atingiu se o enviado tem o laço, a condição é \"urgente e alarmante\" (a única que pega as três mensagens de risco) e as ações checam antes de encaminhar, e a PRIMEIRA ligação já era assim; em processo em todo o resto (inclusive enviar sem ligar). Quem fecha a missão é o `POST /concluir`, que a tela chama logo depois.",
+    corpo: RoboSchema,
+    resposta: EstadoSchema,
+    notas: [
+      NOTA_DA_PORTA,
+      "Os mesmos **409** da ligação. Idempotente: o MESMO robô de novo devolve o estado; outro é **409** `robo-ja-enviado`.",
+    ],
+  })
+  enviarRobo(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    const { laco, condicao, acoes } = valida(RoboSchema, corpo);
+    return this.missao.enviarRobo(req.auth.escolaId, req.auth.usuarioId, laco, condicao, acoes);
   }
 
   @Post("concluir")
   @HttpCode(200)
   @Contrato({
-    resumo: "Encerra a missão, depois da regra do tio.",
+    resumo: "Encerra a missão, depois do robô do grupo.",
     descricao:
-      "Não exige o cartão nem a regra: quem sai antes fica **Não avaliado** em EF05CO03/EF05CO04 (a ausência de marca), nunca \"não atingiu\".",
+      "Não exige o alerta nem o robô: quem sai antes fica **Não avaliado** em EF05CO03/EF05CO04 (a ausência de marca), nunca \"não atingiu\".",
     resposta: EstadoSchema,
     notas: [
       NOTA_DA_PORTA,

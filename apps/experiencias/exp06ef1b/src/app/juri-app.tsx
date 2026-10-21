@@ -11,11 +11,14 @@ import {
   esperaAteEncerrar,
   estandesDoFeed,
   gateMudou,
+  pastasNaTela,
   protocoloDoVoto,
+  semPastaNaTela,
   vozDaTela,
+  type SalvamentoPendente,
 } from "../lib/regras";
 import { telemetria } from "../lib/telemetria";
-import { E2 } from "../lib/textos";
+import { E2, PASTAS } from "../lib/textos";
 import {
   ROTA,
   type AcaoDaGaleria,
@@ -35,17 +38,17 @@ import { Espera } from "./clone/espera";
 import { Feed } from "./clone/feed";
 import { Fim } from "./clone/fim";
 import { Galeria, type CorpoDaRevisao } from "./clone/galeria";
-import { Separacao } from "./clone/separacao";
 import type { Conexao } from "./conexao";
-import { Indisponivel, Mariana, Regra } from "./escola/telas-da-escola";
+import { Indisponivel, Regra } from "./escola/telas-da-escola";
 import { useOciosidade } from "./inatividade";
 
-/** Junta curtidas, salvos e permanências por este tempo antes de ir à api (um toque duplo não vira duas idas). */
+/** Junta curtidas, salvos (com a pasta) e permanências por este tempo antes de ir à api (um toque duplo não vira duas idas). */
 const JANELA_DOS_EVENTOS_MS = 400;
 
 interface FilaDoFeed {
   curtidas: Map<string, boolean>;
-  salvamentos: Map<string, boolean>;
+  /** O salvar leva a PASTA desde a 0.7.0 (ADR-176); tirar dos salvos vai sem. */
+  salvamentos: Map<string, SalvamentoPendente>;
   permanencias: Set<string>;
   /** O tamanho do feed para o qual o próximo já foi pedido — o mesmo fim não pede dois. */
   proximoPara: number | null;
@@ -95,6 +98,8 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
   /* Curtidas e salvos que a tela mostra: o que o servidor devolveu, com o que ainda está na fila. */
   const [curtidos, setCurtidos] = useState<ReadonlySet<string>>(() => new Set(inicial.feed.curtidos));
   const [salvos, setSalvos] = useState<ReadonlySet<string>>(() => new Set(inicial.feed.salvos));
+  /* As pastas que a tela mostra (ADR-176): as do servidor, com a fila por cima. */
+  const [pastas, setPastas] = useState<Partial<Record<string, Area>>>(() => ({ ...inicial.feed.pastas }));
   const { executar, sinalizar } = conexao;
 
   const sessaoRef = useRef(sessao);
@@ -120,6 +125,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     setCedulaAberta(false);
     setCurtidos(new Set(sessao.feed.curtidos));
     setSalvos(new Set(sessao.feed.salvos));
+    setPastas({ ...sessao.feed.pastas });
   }
   const lembrar = useCallback(
     (parte: Parameters<typeof gravarMemoria>[1]) => {
@@ -134,6 +140,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
   const marcarDaSessao = useCallback((nova: Sessao) => {
     setCurtidos(new Set(nova.feed.curtidos));
     setSalvos(new Set(nova.feed.salvos));
+    setPastas({ ...nova.feed.pastas });
   }, []);
 
   const recarregar = useCallback(async () => {
@@ -147,7 +154,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     }
   }, [executar, marcarDaSessao]);
 
-  /** O estado que uma rota de passo devolveu (voto, revisão, passo, cartões, concluir). */
+  /** O estado que uma rota de passo devolveu (voto, revisão, passo, concluir). */
   const aplicarEstado = useCallback((estado: Estado) => {
     setSessao((atual) => ({
       ...atual,
@@ -256,7 +263,9 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
   const aplicarFeed = useCallback((feed: DadosDoFeed) => {
     setSessao((s) => ({ ...s, feed }));
     setCurtidos(curtidosNaTela(feed.curtidos, fila.current.curtidas));
-    setSalvos(curtidosNaTela(feed.salvos, fila.current.salvamentos));
+    const salvando = new Map([...fila.current.salvamentos].map(([postId, s]) => [postId, s.salvou]));
+    setSalvos(curtidosNaTela(feed.salvos, salvando));
+    setPastas(pastasNaTela(feed.pastas, fila.current.salvamentos));
     if (feed.cedulaLiberada && !liberadaAntes.current) {
       liberadaAntes.current = true;
       telemetria.completouOFeed(!feed.completo);
@@ -281,7 +290,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     f.releitura = false;
     if (f.curtidas.size === 0 && f.salvamentos.size === 0 && f.permanencias.size === 0 && !proximo && !releitura) return;
     const curtidas = [...f.curtidas].map(([postId, curtiu]) => ({ postId, curtiu }));
-    const salvamentos = [...f.salvamentos].map(([postId, salvou]) => ({ postId, salvou }));
+    const salvamentos = [...f.salvamentos].map(([postId, { salvou, pasta }]) => ({ postId, salvou, ...(pasta ? { pasta } : {}) }));
     const permanencias = [...f.permanencias];
     f.curtidas.clear();
     f.salvamentos.clear();
@@ -348,10 +357,24 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     sincronizarEmBreve();
   }
 
-  function salvar(postId: string, salvou: boolean) {
-    fila.current.salvamentos.set(postId, salvou);
+  /**
+   * Guardar numa PASTA (ADR-176) — ou mover, salvando de novo noutra — ou tirar
+   * dos salvos (`pasta: null`). É estado, como a curtida: a tela mostra na hora
+   * e a fila leva ao servidor, que devolve o mapa inteiro.
+   */
+  function salvar(postId: string, pasta: Area | null) {
+    const salvou = pasta !== null;
+    fila.current.salvamentos.set(postId, salvou ? { salvou, pasta } : { salvou });
     setSalvos((atual) => alternar(atual, postId, salvou));
-    telemetria.salvou(postId, salvou);
+    setPastas((atual) => {
+      const novas = { ...atual };
+      if (pasta) novas[postId] = pasta;
+      else delete novas[postId];
+      return novas;
+    });
+    telemetria.salvou(postId, salvou, pasta);
+    const nome = pasta ? sessaoRef.current.categorias.find((c) => c.area === pasta)?.nome : undefined;
+    setAviso(nome ? PASTAS.salvoEm(nome) : PASTAS.removido);
     sincronizarEmBreve();
   }
 
@@ -392,6 +415,8 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
       if (sessaoRef.current.passo === "credencial" || sessaoRef.current.passo === "feed") {
         setSessao((s) => ({ ...s, passo: "feed", passoDoEstudante: "feed", feed }));
         setCurtidos(new Set(feed.curtidos));
+        setSalvos(new Set(feed.salvos));
+        setPastas({ ...feed.pastas });
       } else {
         void recarregar();
       }
@@ -406,36 +431,16 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     const { projetoId, conviccao } = voto;
     setOcupado(true);
     try {
-      // As curtidas, os salvos e as permanências que ainda estão na janela vão antes do voto.
+      // As curtidas, as pastas e as permanências que ainda estão na janela vão antes do voto:
+      // é NO voto que o servidor corrige a separação das pastas (ADR-176).
       await esvaziarAFila();
       const estado = await executar(() => api.post<Estado>(`${ROTA}/voto`, voto));
       telemetria.votou(conviccao, estandesDoFeed(sessaoRef.current.feed.posts).length);
       setCedulaAberta(false);
       setSessao((s) => ({ ...s, voto: { projetoId, conviccao } }));
       aplicarEstado(estado);
-      /* Os estandes da separação só descem na sessão (ADR-174). */
-      await recarregar();
     } catch (erro) {
       setCedulaAberta(false);
-      tratarFalha(erro);
-    } finally {
-      setOcupado(false);
-    }
-  }
-
-  /**
-   * A SEPARAÇÃO (EF06CO01): uma vez só, e a resposta é só o estado — a criança
-   * não vê quantos acertou. Com a galeria já liberada, a api a põe direto nela.
-   */
-  async function separar(respostas: { itemId: string; area: Area }[]) {
-    setOcupado(true);
-    try {
-      const estado = await executar(() => api.post<Estado>(`${ROTA}/classificacao`, { respostas }));
-      telemetria.separou(respostas.length);
-      lembrar({ separacao: {} });
-      setSessao((s) => ({ ...s, classificacao: null }));
-      aplicarEstado(estado);
-    } catch (erro) {
       tratarFalha(erro);
     } finally {
       setOcupado(false);
@@ -505,9 +510,10 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
 
   /**
    * A REGRA (EF06CO03): uma vez só. A resposta traz a REVELAÇÃO, e a tela a
-   * mostra no lugar das peças ANTES de seguir: o estado novo (`mariana`) só é
-   * aplicado no "Continuar". Num F5 depois do envio a api já está em
-   * `mariana`, e a tela vai direto ao caso.
+   * mostra no lugar das peças ANTES de seguir: o estado novo (`fim` desde a
+   * 0.7.0 — a regra CONCLUI, o caso Mariana saiu, ADR-176) só é aplicado no
+   * "Concluir o Julgamento". Num F5 depois do envio a api já está em `fim`, e a
+   * tela vai direto à conclusão.
    */
   const estadoDepoisDaRegra = useRef<Estado | null>(null);
   async function enviarRegra(escolha: { se: string; entao: string }) {
@@ -535,23 +541,11 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
   function seguirDaRegra() {
     const estado = estadoDepoisDaRegra.current;
     estadoDepoisDaRegra.current = null;
-    if (estado) aplicarEstado(estado);
-    void recarregar();
-  }
-
-  async function registrarCartoes(mecanismo: string, atitude: string) {
-    setOcupado(true);
-    try {
-      const estado = await executar(() => api.post<Estado>(`${ROTA}/cartoes`, { mecanismo, atitude }));
-      telemetria.escolheuOsCartoes();
+    if (estado) {
       aplicarEstado(estado);
-      /* Os cartões CONCLUEM desde a 0.6.0 (ADR-174): sem enquetes. */
       if (estado.passo === "fim") avisarConclusao();
-    } catch (erro) {
-      tratarFalha(erro);
-    } finally {
-      setOcupado(false);
     }
+    void recarregar();
   }
 
   /**
@@ -564,7 +558,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     concluir({ votou: true, revisou: true });
   }
 
-  /* Uma sessão ANTIGA parada nas enquetes (antes da 0.6.0): a tela conclui sozinha. */
+  /* Uma sessão ANTIGA parada no caso Mariana (0.6.0) ou nas enquetes: a tela conclui sozinha. */
   const concluindo = useRef(false);
   useEffect(() => {
     if (tela !== "concluindo" || concluindo.current) return;
@@ -577,6 +571,19 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
       .catch(tratarFalha)
       .finally(() => {
         concluindo.current = false;
+      });
+  }, [tela, executar, aplicarEstado, tratarFalha]);
+
+  /* Uma sessão ANTIGA parada na tela da separação (0.6.0), que saiu: a tela pede a espera sozinha. */
+  const saindo = useRef(false);
+  useEffect(() => {
+    if (tela !== "saindoDaSeparacao" || saindo.current) return;
+    saindo.current = true;
+    void executar(() => api.post<Estado>(`${ROTA}/passo`, { para: "lacrada" }))
+      .then(aplicarEstado)
+      .catch(tratarFalha)
+      .finally(() => {
+        saindo.current = false;
       });
   }, [tela, executar, aplicarEstado, tratarFalha]);
 
@@ -626,6 +633,8 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
               posts={sessao.feed.posts}
               curtidos={curtidos}
               salvos={salvos}
+              pastas={pastas}
+              categorias={sessao.categorias}
               podeCrescer={!sessao.feed.completo && !sessao.feed.tempoEsgotado}
               cedulaLiberada={sessao.feed.cedulaLiberada}
               carregando={carregandoPost}
@@ -650,29 +659,13 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
             <Cedula
               aberta={cedulaAberta}
               estandes={estandesDoFeed(sessao.feed.posts)}
+              semPasta={semPastaNaTela(sessao.feed.posts, pastas)}
               parado={parado}
               enviando={ocupado}
               aoFechar={() => setCedulaAberta(false)}
               aoVotar={(voto) => void votar(voto)}
             />
           </>
-        );
-
-      case "separacao":
-        return sessao.classificacao ? (
-          <Separacao
-            key={`${sessao.pacoteId}:${sessao.rodada}`}
-            itens={sessao.classificacao.itens}
-            categorias={sessao.categorias}
-            guardada={memoria.separacao}
-            enviando={ocupado}
-            aoMudar={(escolhas) => lembrar({ separacao: escolhas })}
-            aoEnviar={(respostas) => void separar(respostas)}
-          />
-        ) : (
-          <div className="tela" aria-busy="true">
-            <div className="esqueleto__topo" />
-          </div>
         );
 
       case "espera":
@@ -700,6 +693,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
         );
 
       case "avancando":
+      case "saindoDaSeparacao":
         return (
           <div className="tela" aria-busy="true">
             <div className="esqueleto__topo" />
@@ -720,25 +714,6 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
             aoMudar={(escolha) => lembrar(escolha)}
             aoEnviar={(escolha) => void enviarRegra(escolha)}
             aoContinuar={seguirDaRegra}
-          />
-        ) : (
-          <div className="escola" aria-busy="true" />
-        );
-
-      case "mariana":
-        return sessao.mariana ? (
-          <Mariana
-            key={`${sessao.pacoteId}:${sessao.rodada}`}
-            caso={sessao.mariana.caso}
-            mecanismos={sessao.mariana.mecanismos}
-            atitudes={sessao.mariana.atitudes}
-            inicial={{
-              mecanismo: sessao.mariana.escolha?.mecanismo ?? memoria.mecanismo,
-              atitude: sessao.mariana.escolha?.atitude ?? memoria.atitude,
-            }}
-            enviando={ocupado}
-            aoMudar={(escolha) => lembrar(escolha)}
-            aoRegistrar={(m, a) => void registrarCartoes(m, a)}
           />
         ) : (
           <div className="escola" aria-busy="true" />

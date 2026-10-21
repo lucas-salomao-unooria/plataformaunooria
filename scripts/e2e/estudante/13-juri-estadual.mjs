@@ -50,10 +50,10 @@ import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from ".
  *    (quem curtiu × quem não curtiu, os dois `MetricCard`) depois dele: no pico
  *    ela entregaria que o feed se adaptou.
  * 8. **A Galeria Oculta**: "30 de 40 estandes nunca chegaram ao seu feed" —
- *    IGUAL para quem curtiu e para quem não curtiu —, o que chegou POR ÁREA
- *    ("Tecnologia: você viu 7 de 10"), e o contraste "Sem as suas curtidas, o
- *    seu feed teria trazido:", que para quem não curtiu é o próprio feed real
- *    e para quem curtiu é outro. A grade dos ocultos é de UMA área, a do chip
+ *    IGUAL para quem curtiu e para quem não curtiu —, e logo abaixo a busca:
+ *    a contagem por área e o contraste "sem as suas curtidas" SAÍRAM da tela
+ *    (ADR-176), e a api continua os calculando (a suíte prova os números pela
+ *    api). A grade dos ocultos é de UMA área, a do chip
  *    (abre na que mais ficou fora, e só o TOQUE no chip conta como busca), com
  *    três colunas; a busca por texto, a ficha de auditoria e a revisão de DOIS
  *    botões — "Manter meu voto inicial" só acende depois de abrir um oculto, e
@@ -62,12 +62,17 @@ import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from ".
  * 9. **A regra SE … ENTÃO (EF06CO03, ADR-174), da escola**: o Léo, as duas
  *    escolhas (três peças cada, sem a certa), uma tentativa só e a revelação
  *    ligada ao feed de cada um; o primeiro acerta as duas, o segundo uma.
- * 10. **Mariana**: os cinco cartões literais (3 de mecanismo, 2 de atitude),
- *    que CONCLUEM a missão (sem enquetes), e o fim com a faixa da Unooria (o
- *    infográfico "Como os robôs leem nossas curtidas").
+ * 10. **A regra CONCLUI** (ADR-176: o caso Mariana saiu): "Concluir o
+ *    Julgamento" leva ao fim com a faixa da Unooria (o infográfico "Como os
+ *    robôs leem nossas curtidas").
+ * 13. **As PASTAS do salvar** (EF06CO01, ADR-176): no feed, "Salvar
+ *    publicação" abre "Salvar em" com as quatro pastas da mostra; a comissão
+ *    pede no topo do feed; a cédula fica travada enquanto falta estande sem
+ *    pasta, e a separação é corrigida NO voto. A tela "Organize o que você
+ *    viu" saiu.
  * 11. **O painel da professora** não tem voto, taxa, concentração nem nível
  *    (nem acerto) por criança; mostra quem SEPAROU, e as duas habilidades da
- *    ficha 5 (EF06CO01, EF06CO03) ficam no painel de habilidades, com o nível
+ *    ficha 6 (EF06CO01, EF06CO03) ficam no painel de habilidades, com o nível
  *    que a régua dá — a EF06CO10 saiu.
  * 12. **O podcast de recapitulação** do banco padrão é o roteiro fixo
  *    (aud-exp06ef1b-01), na página da atividade.
@@ -119,9 +124,17 @@ const COPY = {
   inatividade: "Jurado, a plenária aguarda seu voto para prosseguir.",
   espera: "Aguardando o encerramento do prazo de votação da comissão de jurados.",
   badge: (ocultos, total) => `${ocultos} de ${total} estandes nunca chegaram ao seu feed`,
-  vistosNaArea: (nome, vistos, total) => `${nome}: você viu ${vistos} de ${total}`,
-  semCurtidas: "Sem as suas curtidas, o seu feed teria trazido:",
-  semCurtidasDaArea: (nome, posts) => `${nome} ${posts}`,
+  /* Saíram da galeria na 0.7.0 (ADR-176): a suíte prova que NÃO aparecem. */
+  porAreaQueSaiu: "O que chegou ao seu feed, por área:",
+  semCurtidasQueSaiu: "Sem as suas curtidas, o seu feed teria trazido:",
+  pedidoDasPastas: "A comissão pede: salve cada estande na pasta da área dele.",
+  salvarEm: "Salvar em",
+  pastaDe: (nome) => `Pasta ${nome}`,
+  faltam: (n) =>
+    n === 1
+      ? "Antes de votar, salve na pasta da área o estande que ainda falta."
+      : `Antes de votar, salve cada estande na pasta da área dele: faltam ${n}.`,
+  suasPastas: "Suas pastas",
   gradeOculta: (nome) => `Projetos de ${nome} que não chegaram ao seu feed`,
   gradeBusca: "Projetos encontrados",
   grupoDaRevisao: "Projetos da mostra",
@@ -134,14 +147,12 @@ const COPY = {
   ficha: "Ficha Técnica de Auditoria",
   voltar: "Voltar à Galeria",
   leo: "Você viveu na prática o que Léo investigou no livro didático!",
-  separacao: "Organize o que você viu",
-  enviarSeparacao: "Enviar Organização à Comissão",
+  separacaoQueSaiu: "Organize o que você viu",
   grupoDoSe: "SE — a condição",
   grupoDoEntao: "ENTÃO — a ação",
   enviarRegra: "Enviar a Regra",
   regraCerta: "A regra que o aplicativo seguiu:",
-  avancar: "Continuar para a Reflexão",
-  submeter: "Submeter Análise do Júri",
+  avancar: "Concluir o Julgamento",
   fimTitulo: "Credenciamento de Jurado Concluído",
   infografico: "Como os robôs leem nossas curtidas",
 };
@@ -296,12 +307,13 @@ await suite(
       "O crachá é um modal sobre a timeline desfocada; a TopBar traz @jurado_oficial, a barra tem as quatro abas, com a Busca fechada, e o carrossel termina nos Bastidores do estande",
       "Dez posts sem repetir nenhum; quem curte cedo recebe os posts 5 a 10 só da área curtida, com projetos novos (7/1/1/1)",
       "Salvar grava e não pesa: quem só salva vê as quatro áreas misturadas (3/3/2/2)",
+      "As PASTAS (EF06CO01, ADR-176): no feed, o Salvar abre “Salvar em” com as quatro pastas da mostra; a aba Jurado conta os estandes de cada pasta",
       "A cédula tem quatro elementos, e parado 60 s com ela aberta o aviso acende no topo e a professora vê o ícone de ocioso",
-      "Depois do voto, a separação dos estandes vistos nas quatro áreas, sem hashtag e uma vez só (EF06CO01); o lacre e a espera com três elementos; o F5 volta à espera",
+      "A cédula fica travada enquanto falta estande sem pasta, e diz quantos; a separação é corrigida no voto, sem tela própria — o lacre e a espera com três elementos; o F5 volta à espera",
       "Um botão só, Liberar Auditoria, e ele não volta; só depois dele a lousa mostra a concentração do feed (quem curtiu × quem não curtiu)",
-      "A Galeria Oculta: 30 de 40 para os dois, o que chegou por área, o feed “sem as suas curtidas” (o real de quem não curtiu, outro para quem curtiu), a grade por área e a revisão de dois botões — Manter só depois de abrir um oculto",
+      "A Galeria Oculta: 30 de 40 para os dois e a busca logo abaixo — sem a contagem por área nem o “sem as suas curtidas” na tela (a api os calcula: por área e contrafactual provados nela) —, a grade por área e a revisão de dois botões — Manter só depois de abrir um oculto",
       "A regra SE … ENTÃO (EF06CO03): três peças de cada lado, uma tentativa, e a revelação ligada ao feed de cada um",
-      "Mariana, os cinco cartões que concluem a missão, e a faixa da Unooria no fim",
+      "A regra conclui a missão (o caso Mariana saiu), e a faixa da Unooria no fim",
       "O painel da professora: sem voto, taxa, concentração, acerto nem nível; quem separou; EF06CO01 e EF06CO03 com o nível da régua",
     ],
     comando: "node scripts/e2e/estudante/13-juri-estadual.mjs",
@@ -557,9 +569,27 @@ await suite(
     const gradeDeImagens = prof.locator("[data-imagens-do-juri]");
     const abasDasImagens = await percorrerAbas(prof, gradeDeImagens, "[data-imagem-do-estande]");
     r.exigir(
-      abasDasImagens.length === 4 && abasDasImagens.every((a) => a.itens === 10 && /\S · (10|\d+ sem imagem)$/.test(a.rotulo)),
-      `a grade de imagens: quatro abas, dez estandes em cada, e o rótulo diz quantos estão sem imagem (${resumoDasAbas(abasDasImagens)})`,
+      abasDasImagens.length === 4 && abasDasImagens.every((a) => a.itens === 10 && /\S · (10|\d+ com imagem faltando)$/.test(a.rotulo)),
+      `a grade de imagens: quatro abas, dez estandes em cada, e o rótulo diz quantos têm imagem faltando (${resumoDasAbas(abasDasImagens)})`,
     );
+    /* Quatro imagens por estande (0.8.0, ADR-178): as lâminas do carrossel do post. */
+    const laminasDoCartao = await gradeDeImagens.locator("[data-imagem-do-estande]").first().locator("[data-lamina]").evaluateAll((els) =>
+      els.map((el) => el.getAttribute("data-lamina")),
+    );
+    r.exigir(
+      laminasDoCartao.join(",") === "capa,detalhe,equipe,bastidor",
+      `cada estande da grade de imagens mostra as quatro lâminas do carrossel, na ordem do post (${laminasDoCartao.join(", ")})`,
+    );
+    await gradeDeImagens.locator("[data-imagem-do-estande]").first().scrollIntoViewIfNeeded();
+    await r.registrar(prof, "imagens-quatro-por-estande", {
+      titulo: "Quatro imagens por estande, na aprovação do professor",
+      mostra:
+        "A grade “Imagens dos estandes” da atividade: cada cartão traz a foto do estande, o projeto de perto, a " +
+        "equipe no estande e os bastidores, cada uma com o seu “Gerar outra”.",
+      prova:
+        "Desde a 0.8.0 (ADR-178) as fotos 2 e 3 do carrossel e a dos bastidores também são geradas, cada uma com o " +
+        "seu pedido; o professor confere e troca cada lâmina antes de a turma ver.",
+    });
     /* A foto enquadra a barra de abas (o contêiner é maior que a tela). */
     await estandesDaAtividade.getByRole("tablist").first().evaluate((el) => el.scrollIntoView({ block: "start" }));
     await r.registrar(prof, "estandes-em-abas", {
@@ -655,40 +685,49 @@ await suite(
       if ((await opcao.getAttribute("aria-checked")) !== "true") throw new Error("a cédula não marcou o projeto tocado");
       await folha.getByRole("group", { name: "Sua certeza" }).getByRole("button", { name: certeza, exact: true }).click();
     };
-    /* O voto leva à SEPARAÇÃO (ADR-174), não mais direto à espera. */
+    /* O voto leva direto à espera: a separação das pastas é corrigida NELE (ADR-176). */
     const lacrar = async (q, folha) => {
       await folha.getByRole("button", { name: "Confirmar Voto Oficial" }).click();
-      await q().getByRole("heading", { name: COPY.separacao }).waitFor({ timeout: 15_000 });
+      await q().getByText(/^Voto Registrado e Lacrado — Protocolo #/).first().waitFor({ timeout: 20_000 });
     };
 
     /**
-     * A SEPARAÇÃO (EF06CO01): um grupo de rádio por estande visto, com o nome de
-     * cada área. A suíte sabe a área certa pelo FEED da sessão (o post traz a
-     * área; a tela de separar, não) e erra de propósito os `erradas` primeiros.
-     * Devolve quantos estandes a tela pediu.
+     * Uma PASTA (EF06CO01, ADR-176): "Salvar publicação" (ou "Remover dos
+     * salvos", se o post já está numa pasta) abre a folha "Salvar em"; a suíte
+     * toca a pasta e espera a api gravá-la — o desfecho, não o relógio.
      */
-    const separar = async (pagina, qq, erradas = 0) => {
-      const sessao = await sessaoDe(pagina);
-      const areaDoTitulo = new Map(sessao.feed.posts.map((x) => [x.titulo, x.area]));
-      const nomeDaArea = new Map(sessao.categorias.map((c) => [c.area, c.nome]));
-      const grupos = qq().getByRole("radiogroup", { name: /^Área do estande / });
-      await grupos.first().waitFor({ timeout: 20_000 });
-      const total = await grupos.count();
-      const enviar = qq().getByRole("button", { name: COPY.enviarSeparacao });
-      for (let i = 0; i < total; i += 1) {
-        r.exigir(i === 0 || (await enviar.isDisabled()), "“Enviar” só acende com TODOS os estandes separados");
-        const grupo = grupos.nth(i);
-        const titulo = ((await grupo.getAttribute("aria-label")) ?? "").replace(/^Área do estande /, "");
-        const certa = areaDoTitulo.get(titulo);
-        if (!certa) throw new Error(`a separação mostra um estande que o feed não serviu: “${titulo}”`);
-        const area = i < erradas ? [...nomeDaArea.keys()].find((a) => a !== certa) : certa;
-        await grupo.getByRole("radio", { name: nomeDaArea.get(area), exact: true }).click();
-      }
-      return { total, enviar };
+    const salvarNaPasta = async (pagina, qq, postId, area, nome) => {
+      const artigo = qq().locator(`article[data-post-id="${postId}"]`);
+      await artigo.scrollIntoViewIfNeeded();
+      await artigo.getByRole("button", { name: /^(Salvar publicação|Remover dos salvos)$/ }).click();
+      const folha = qq().getByRole("dialog", { name: COPY.salvarEm });
+      await folha.waitFor({ timeout: 10_000 });
+      await folha.getByRole("button", { name: COPY.pastaDe(nome), exact: true }).click();
+      await folha.waitFor({ state: "hidden", timeout: 10_000 });
+      await esperarNaApi(pagina, "/juri-estadual/sessao", (s) => s?.feed?.pastas?.[postId] === area, {
+        oQue: `a pasta de ${postId}`,
+      });
     };
-    const enviarASeparacao = async (qq, enviar) => {
-      await enviar.click();
-      await qq().getByText(/^Voto Registrado e Lacrado — Protocolo #/).first().waitFor({ timeout: 20_000 });
+
+    /**
+     * Guarda nas pastas todo estande visto que ainda não está numa. A suíte sabe
+     * a área certa pelo FEED da sessão (o post traz a área) e erra de propósito
+     * as `erradas` primeiras. Devolve quantos estandes o feed mostrou.
+     */
+    const guardarNasPastas = async (pagina, qq, erradas = 0) => {
+      const sessao = await sessaoDe(pagina);
+      const nomeDaArea = new Map(sessao.categorias.map((c) => [c.area, c.nome]));
+      const vistos = new Set();
+      let feitas = 0;
+      for (const post of sessao.feed.posts) {
+        if (vistos.has(post.projetoId)) continue;
+        vistos.add(post.projetoId);
+        if (sessao.feed.pastas?.[post.id]) continue;
+        const area = feitas < erradas ? [...nomeDaArea.keys()].find((a) => a !== post.area) : post.area;
+        await salvarNaPasta(pagina, qq, post.id, area, nomeDaArea.get(area));
+        feitas += 1;
+      }
+      return vistos.size;
     };
 
     const plenaria = (qq) => qq().locator(".plenaria");
@@ -784,16 +823,59 @@ await suite(
       await p.mouse.move(caixa.x + caixa.width * 0.2, yDoMeio, { steps: 6 });
       await p.mouse.up();
     };
+    /* As fotos 2 e 3 (0.8.0, ADR-178): a gerada da lâmina quando a api a manda,
+       senão a arte procedural (`data:`). Os dois estados são legítimos — o
+       banco padrão pode não ter as imagens no storage —, e cada um se prova. */
+    const laminasDaApi = abertura[0].laminas ?? { detalhe: null, equipe: null, bastidor: null };
+    const srcDaLamina = async (rotulo) =>
+      primeiroPost.locator(`[aria-roledescription="carrossel"][aria-label="${rotulo}"] img`).first().getAttribute("src");
+    const fotoCerta = (src, esperada) => (esperada ? src === esperada : Boolean(src?.startsWith("data:image/svg")));
+    /* O aviso da Busca fechada ainda pode estar sobre o feed: a foto espera ele sair. */
+    await aviso(q, COPY.buscaFechada).waitFor({ state: "hidden", timeout: 10_000 }).catch(() => {});
     await arrastarParaAEsquerda();
     await primeiroPost.locator('[aria-label="Foto 2 de 3"]').first().waitFor({ timeout: 10_000 });
+    const src2 = await srcDaLamina("Foto 2 de 3");
+    r.exigir(
+      fotoCerta(src2, laminasDaApi.detalhe),
+      `a foto 2 é ${laminasDaApi.detalhe ? "a imagem gerada do projeto de perto" : "a arte procedural (a api não mandou imagem para a lâmina)"} (${String(src2).slice(0, 50)}…)`,
+    );
+    await semAnimacao(q);
+    await r.registrar(p, "carrossel-foto-2", {
+      titulo: "Foto 2 do carrossel: o projeto de perto",
+      mostra: laminasDaApi.detalhe
+        ? "A segunda lâmina do post: a imagem gerada do protótipo de perto, sobre a mesa do estande."
+        : "A segunda lâmina do post: a arte desenhada (esta mostra ainda não tem a imagem gerada da lâmina).",
+      prova: "A foto 2 é a imagem da lâmina “detalhe” que a api mandou; sem ela, a arte desenhada de antes.",
+    });
     await arrastarParaAEsquerda();
     await primeiroPost.locator('[aria-label="Foto 3 de 3"]').first().waitFor({ timeout: 10_000 });
+    const src3 = await srcDaLamina("Foto 3 de 3");
+    r.exigir(
+      fotoCerta(src3, laminasDaApi.equipe),
+      `a foto 3 é ${laminasDaApi.equipe ? "a imagem gerada da equipe no estande" : "a arte procedural (a api não mandou imagem para a lâmina)"} (${String(src3).slice(0, 50)}…)`,
+    );
+    await semAnimacao(q);
+    await r.registrar(p, "carrossel-foto-3", {
+      titulo: "Foto 3 do carrossel: a equipe no estande",
+      mostra: laminasDaApi.equipe
+        ? "A terceira lâmina do post: a imagem gerada da equipe apresentando o projeto, sem rosto identificável."
+        : "A terceira lâmina do post: a arte desenhada (esta mostra ainda não tem a imagem gerada da lâmina).",
+      prova: "A foto 3 é a imagem da lâmina “equipe” que a api mandou; sem ela, a arte desenhada de antes.",
+    });
     await arrastarParaAEsquerda();
     const laminaDoBastidor = primeiroPost.locator(`[aria-roledescription="carrossel"][aria-label="${COPY.bastidor}"]`).first();
     await laminaDoBastidor.waitFor({ timeout: 10_000 }).catch(() => {
       throw new Error(`o terceiro arrasto não levou à 4ª lâmina, “${COPY.bastidor}”`);
     });
-    const textoDaLamina = (await laminaDoBastidor.innerText()).replace(/\s+/g, " ").trim();
+    /* Com a foto dos bastidores, o texto desce para baixo da imagem; sem ela, fica na lâmina. */
+    const ondeEstaOTexto = laminasDaApi.bastidor ? primeiroPost.locator("[data-bastidor-do-post]") : laminaDoBastidor;
+    const textoDaLamina = (await ondeEstaOTexto.innerText()).replace(/\s+/g, " ").trim();
+    if (laminasDaApi.bastidor) {
+      r.exigir(
+        (await laminaDoBastidor.locator("img").first().getAttribute("src")) === laminasDaApi.bastidor,
+        "a 4ª lâmina mostra a imagem gerada dos bastidores, e o texto do teste vem embaixo dela",
+      );
+    }
     const bastidorDaApi = (abertura[0].bastidor ?? "").replace(/\s+/g, " ").trim();
     r.exigir(
       bastidorDaApi !== "" && textoDaLamina.includes(COPY.bastidor) && textoDaLamina.includes(bastidorDaApi),
@@ -806,7 +888,7 @@ await suite(
     await semAnimacao(q);
     await r.registrar(p, "carrossel-bastidor", {
       titulo: "O carrossel termina nos Bastidores do estande",
-      mostra: `O primeiro post depois de três arrastos com o mouse: a 4ª lâmina, “${COPY.bastidor}”, com o texto do protótipo em teste.`,
+      mostra: `O primeiro post depois de três arrastos com o mouse: a 4ª lâmina, “${COPY.bastidor}”, ${laminasDaApi.bastidor ? "com a imagem da bancada de testes e, embaixo dela, o texto do protótipo em teste" : "com o texto do protótipo em teste (sem imagem gerada para a lâmina)"}.`,
       prova:
         "Até a 0.4.x o bastidor era um post SEPARADO, que repetia o projeto (a saturação). Desde a 0.5.0 nenhum post " +
         "se repete: o bastidor é a última lâmina do próprio post, com o mesmo gesto e as mesmas setas das fotos.",
@@ -870,6 +952,70 @@ await suite(
       detalhe: `${projetosDistintos1} projetos distintos em 10 posts · por área ${distribuicao1.join("/")}`,
     });
 
+    // ── ESTUDANTE 1: as PASTAS do salvar (EF06CO01, ADR-176) ─────────────
+    const pedido = q().getByText(COPY.pedidoDasPastas).first();
+    r.exigir(await pedido.isVisible(), `no topo do feed, a comissão pede: “${COPY.pedidoDasPastas}”`);
+    r.exigir(!SPOILER.test(COPY.pedidoDasPastas), "o pedido das pastas, antes da galeria, não diz algoritmo, bolha, filtro nem oculto");
+    const categoriasDoFeed = (await sessaoDe(p)).categorias;
+    const primeiroDoFeed = feed1.posts[0];
+    /* O aviso de "Comentários restritos" (4 s) do passo anterior ainda pode estar na
+       tela e cobriria a última pasta no print: espera ele sair — o desfecho, não o relógio. */
+    await aviso(q, COPY.comentariosFechados).waitFor({ state: "hidden", timeout: 10_000 }).catch(() => {});
+    const artigoDoPrimeiro = q().locator(`article[data-post-id="${primeiroDoFeed.id}"]`);
+    await artigoDoPrimeiro.scrollIntoViewIfNeeded();
+    await artigoDoPrimeiro.getByRole("button", { name: "Salvar publicação", exact: true }).click();
+    const folhaDasPastas = q().getByRole("dialog", { name: COPY.salvarEm });
+    await folhaDasPastas.waitFor({ timeout: 10_000 });
+    const pastasNaFolha = [];
+    for (const c of categoriasDoFeed) {
+      if ((await folhaDasPastas.getByRole("button", { name: COPY.pastaDe(c.nome), exact: true }).count()) > 0) pastasNaFolha.push(c.nome);
+    }
+    r.exigir(
+      pastasNaFolha.length === 4,
+      `“${COPY.salvarEm}” oferece as quatro pastas da mostra, com os nomes das áreas do pacote (${pastasNaFolha.join(", ")})`,
+    );
+    r.exigir(!SPOILER.test(await folhaDasPastas.innerText()), "a folha das pastas não diz algoritmo, bolha, filtro nem oculto");
+    await semAnimacao(q);
+    await r.registrar(p, "pastas-do-salvar", {
+      titulo: "Salvar em: as pastas da mostra",
+      mostra: `O pedido da comissão no topo do feed e, sobre o post, a folha “${COPY.salvarEm}” com as quatro pastas: ${pastasNaFolha.join(", ")}.`,
+      prova:
+        "A EF06CO01 no próprio feed (ADR-176): classificar cada estande na coleção a que pertence, como as coleções " +
+        "de posts salvos de uma rede social. Salvar não pesa no feed; quem corrige a pasta é o servidor, no voto.",
+    });
+    const nomeDaPrimeira = categoriasDoFeed.find((c) => c.area === primeiroDoFeed.area)?.nome;
+    await folhaDasPastas.getByRole("button", { name: COPY.pastaDe(nomeDaPrimeira), exact: true }).click();
+    await folhaDasPastas.waitFor({ state: "hidden", timeout: 10_000 });
+    await esperarNaApi(p, "/juri-estadual/sessao", (s) => s?.feed?.pastas?.[primeiroDoFeed.id] === primeiroDoFeed.area, {
+      oQue: "a primeira pasta",
+    });
+    const estandesSeparados1 = await guardarNasPastas(p, q, 0);
+    const pastas1 = (await sessaoDe(p)).feed;
+    r.exigir(
+      estandesSeparados1 === projetosDistintos1 && pastas1.semPasta === 0,
+      `os ${projetosDistintos1} estandes do feed estão nas pastas, e a api diz que não falta nenhum (faltam ${pastas1.semPasta})`,
+    );
+    r.exigir(
+      pastas1.curtidos.length === 2 && JSON.stringify(distribuicao(postsPorArea(pastas1.posts))) === "[7,1,1,1]",
+      "guardar nas pastas não mexeu no feed: as mesmas duas curtidas e o mesmo 7/1/1/1",
+    );
+    await aba("Jurado").click();
+    await q().getByText(COPY.suasPastas).first().waitFor({ timeout: 10_000 });
+    const textoDoPerfil = await q().locator(".pastas").first().innerText();
+    const contagemDasPastas = [...textoDoPerfil.matchAll(/(\d+) estandes?/g)].map((m) => Number(m[1]));
+    r.exigir(
+      contagemDasPastas.length === 4 && contagemDasPastas.reduce((n, x) => n + x, 0) === projetosDistintos1,
+      `a aba Jurado mostra as quatro pastas, somando os ${projetosDistintos1} estandes (${contagemDasPastas.join(" + ")})`,
+    );
+    await semAnimacao(q);
+    await r.registrar(p, "pastas-no-perfil", {
+      titulo: "As pastas, na aba Jurado",
+      mostra: `“${COPY.suasPastas}”: as quatro pastas com quantos estandes cada uma guarda (${contagemDasPastas.join(", ")}).`,
+      prova: "É a criança vendo o que ela mesma separou — sem certo nem errado: o nível é do professor, no painel de habilidades.",
+    });
+    await aba("Início").click();
+    await artigos1.first().waitFor({ timeout: 10_000 });
+
     // ── ESTUDANTE 1: a cédula de quatro elementos, e o lacre ─────────────
     const votado1 = feed1.posts.find((x) => x.area === areaCurtida && x.tipo === "apresentacao");
     const folha1 = await abrirACedula(q);
@@ -892,39 +1038,13 @@ await suite(
     });
     await lacrar(q, folha1);
 
-    // ── ESTUDANTE 1: a separação (EF06CO01), tudo certo ─────────────────
-    const listaDaSeparacao = q().locator(".separacao__lista");
-    const textoDaSeparacao = await listaDaSeparacao.innerText();
-    const hashtagsDoFeed = feed1.posts.flatMap((x) => x.hashtags).map((h) => h.replace(/^#*/, "#"));
-    r.exigir(
-      !textoDaSeparacao.includes("#") && hashtagsDoFeed.every((h) => !textoDaSeparacao.includes(h)),
-      "a separação não mostra hashtag nem perfil: só o título e a imagem do estande (o perfil do post é a hashtag)",
-    );
-    /* Só a MOLDURA: o título de um estande pode dizer "filtro" (de água) sem ser spoiler. */
-    const molduraDaSeparacao = `${await q().getByRole("heading", { name: COPY.separacao }).innerText()} ${await q().locator(".separacao__instrucao").innerText()}`;
-    r.exigir(!SPOILER.test(molduraDaSeparacao), "a moldura da separação, antes da galeria, não diz algoritmo, bolha, filtro nem oculto");
-    const { total: estandesSeparados1, enviar: enviar1 } = await separar(p, q, 0);
-    r.exigir(
-      estandesSeparados1 === projetosDistintos1,
-      `a separação pede os ${projetosDistintos1} estandes distintos que o feed serviu (pediu ${estandesSeparados1})`,
-    );
-    r.exigir(!(await enviar1.isDisabled()), "com todos separados, “Enviar Organização à Comissão” acende");
-    await semAnimacao(q);
-    await r.registrar(p, "separacao", {
-      titulo: "Organize o que você viu",
-      mostra: `Depois do voto, os ${estandesSeparados1} estandes do feed — só título e imagem — e, em cada um, as quatro áreas da mostra; todos separados.`,
-      prova:
-        "A EF06CO01 (ADR-174): classificar cada estande na coleção a que pertence. Sem a hashtag na tela, a criança " +
-        "não copia a etiqueta; ids opacos, e quem corrige é o servidor. Uma vez só, antes da Galeria Oculta.",
-      inteira: true,
-    });
-    await enviarASeparacao(q, enviar1);
-    r.exigir(!CARIMBO_OU_ACERTO.test(await q().locator(".tela").innerText()), "depois do envio, a tela não diz quantos acertou");
+    r.exigir(!CARIMBO_OU_ACERTO.test(await q().locator(".tela").innerText()), "depois do voto, a tela não diz quantos estandes ficaram na pasta certa");
+    r.exigir((await q().getByText(COPY.separacaoQueSaiu).count()) === 0, `a tela “${COPY.separacaoQueSaiu}” saiu: o voto leva direto ao lacre`);
     await conferirOPico(q, "o primeiro estudante");
     await r.registrar(p, "lacre-e-espera", {
       titulo: "O lacre, e a espera",
       mostra: "O brasão, “Voto Registrado e Lacrado — Protocolo #…” e a ordem da comissão, e nada mais.",
-      prova: "O voto é o LATCH 1, e a separação vem logo depois dele: só existem quando a api confirma. Quem tira a criança daqui é o polling do gate.",
+      prova: "O voto é o LATCH 1, e a separação das pastas é corrigida nele: só existem quando a api confirma. Quem tira a criança daqui é o polling do gate.",
     });
     await p.reload({ waitUntil: "domcontentloaded" });
     await plenaria(q).waitFor({ timeout: 40_000 });
@@ -938,11 +1058,13 @@ await suite(
     await q2().locator("article[data-post-id]").nth(3).waitFor({ timeout: 20_000 });
     r.exigir(!(await botaoDaCedula(q2).isVisible()), "antes do 10º post (ou dos 8 minutos) o botão da cédula não aparece");
     const salvos = [];
+    const categorias2 = (await sessaoDe(p2)).categorias;
+    /* Os três primeiros vão para uma pasta ERRADA, de propósito: 7 de 10 é "em processo". */
     await rolarAteOsDez(q2, async (postId) => {
       if (salvos.length >= 3) return;
-      const artigo = q2().locator(`article[data-post-id="${postId}"]`);
-      await artigo.getByRole("button", { name: "Salvar publicação", exact: true }).click();
-      await esperarNaApi(p2, "/juri-estadual/sessao", (s) => s?.feed?.salvos?.includes(postId), { oQue: `o salvo em ${postId}` });
+      const post = (await sessaoDe(p2)).feed.posts.find((x) => x.id === postId);
+      const errada = categorias2.find((c) => c.area !== post?.area);
+      await salvarNaPasta(p2, q2, postId, errada.area, errada.nome);
       salvos.push(postId);
     });
     const feed2 = (await sessaoDe(p2)).feed;
@@ -993,11 +1115,45 @@ await suite(
       prova: "Cédula aberta e mais de 60 s sem toque; o ícone tem texto para leitor de tela e some sozinho quando ela volta.",
     });
 
+    /* A CÉDULA TRAVADA: o segundo só guardou três estandes nas pastas. */
+    const faltamNaCedula = (await sessaoDe(p2)).feed.semPasta;
     await marcarOVoto(folha2, null, "Sim");
-    await lacrar(q2, folha2);
-    /* O segundo erra três estandes de propósito: 7 de 10 é "em processo". */
-    const { total: estandesSeparados2, enviar: enviar2 } = await separar(p2, q2, 3);
-    await enviarASeparacao(q2, enviar2);
+    r.exigir(
+      faltamNaCedula === 7 && (await folha2.getByText(COPY.faltam(faltamNaCedula)).count()) > 0,
+      `com estande fora das pastas, a cédula diz “${COPY.faltam(faltamNaCedula)}”`,
+    );
+    r.exigir(
+      await folha2.getByRole("button", { name: "Confirmar Voto Oficial" }).isDisabled(),
+      "e o voto fica travado, mesmo com o projeto e a certeza escolhidos",
+    );
+    r.provocado(
+      /juri-estadual\/voto/,
+      "a suíte manda o voto pela api com estande fora das pastas, de propósito: é a trava da separação no voto (ADR-176)",
+    );
+    const recusa = await mandarApi(p2, "/juri-estadual/voto", {
+      projetoId: feed2.posts[0].projetoId,
+      conviccao: "examinei_bem",
+    });
+    r.exigir(
+      recusa.status === 409 && recusa.corpo?.codigo === "estandes-sem-pasta",
+      `a api recusa o voto sem as pastas: 409 estandes-sem-pasta (veio ${recusa.status} ${recusa.corpo?.codigo ?? ""})`,
+    );
+    await semAnimacao(q2);
+    await r.registrar(p2, "cedula-sem-pastas", {
+      titulo: "A cédula espera as pastas",
+      mostra: `A cédula com o projeto e a certeza escolhidos, “${COPY.faltam(faltamNaCedula)}” no topo e Confirmar Voto Oficial apagado.`,
+      prova:
+        "A separação da EF06CO01 é corrigida NO voto (ADR-176): a cédula só lacra com todo estande visto numa pasta. " +
+        "A tela trava o botão, e a api recusa com 409 se a tela errar.",
+    });
+    await p2.keyboard.press("Escape");
+    await folha2.waitFor({ state: "hidden", timeout: 10_000 });
+    const estandesSeparados2 = await guardarNasPastas(p2, q2, 0);
+    r.exigir((await sessaoDe(p2)).feed.semPasta === 0, "guardados os outros sete, não falta pasta nenhuma");
+    const folha2b = await abrirACedula(q2);
+    await marcarOVoto(folha2b, null, "Sim");
+    r.exigir((await folha2b.getByText(/^Antes de votar/).count()) === 0, "com tudo nas pastas, o aviso some e o voto destrava");
+    await lacrar(q2, folha2b);
     await conferirOPico(q2, "o segundo estudante");
 
     // ═══ PROFESSORA: a lousa do pico, e Liberar Auditoria ════════════════
@@ -1005,7 +1161,7 @@ await suite(
       prof,
       `${caminhoDaTurma}/painel`,
       (c) => (c?.resumo?.computadores?.votaram ?? 0) >= 2 && (c?.resumo?.separaram ?? 0) >= 2,
-      { oQue: "os dois votos e as duas separações no painel da aula" },
+      { oQue: "os dois votos e as duas separações (as pastas, corrigidas no voto) no painel da aula" },
     );
     const { resumo } = painelNoPico;
     r.exigir(
@@ -1138,21 +1294,6 @@ await suite(
       JSON.stringify(distribuicao(vistos2)) === "[3,3,2,2]",
       `quem não curtiu viu as quatro áreas misturadas, 3/3/2/2 (${porAreaEmTexto(g2.porArea)})`,
     );
-    for (const [qq, g, quem] of [
-      [q, g1, "do primeiro"],
-      [q2, g2, "do segundo"],
-    ]) {
-      const faltando = [];
-      for (const a of g.porArea) {
-        const linha = COPY.vistosNaArea(nomeDa(a.area), a.vistos, a.total);
-        if ((await qq().getByText(linha, { exact: true }).count()) === 0) faltando.push(linha);
-      }
-      r.exigir(
-        faltando.length === 0,
-        `a galeria ${quem} escreve o que chegou por área, com os números da api — “${COPY.vistosNaArea(nomeDa(g.porArea[0].area), g.porArea[0].vistos, g.porArea[0].total)}”…${faltando.length ? ` (faltou: ${faltando.join("; ")})` : ""}`,
-      );
-    }
-
     /* O CONTRAFACTUAL: o feed que ESTA sessão teria tido sem curtidas e sem
        permanências (a mesma semente, o mesmo motor). Para quem não curtiu, é o
        próprio feed; para quem curtiu, é outro. */
@@ -1171,21 +1312,24 @@ await suite(
       somaSem1 === 10 && g1.semCurtidas.some((a) => a.posts.length !== (reais1[a.area] ?? 0)),
       `para quem curtiu, “sem as suas curtidas” é OUTRO feed: ${contagemEmTexto(sem1)} — contra o real ${contagemEmTexto(reais1)}`,
     );
-    for (const [qq, g, quem] of [
-      [q, g1, "do primeiro"],
-      [q2, g2, "do segundo"],
+    /* Na TELA, a contagem por área e o contraste saíram (ADR-176): do badge, direto à busca. */
+    for (const [qq, quem] of [
+      [q, "do primeiro"],
+      [q2, "do segundo"],
     ]) {
-      const contraste = qq().getByRole("list", { name: COPY.semCurtidas });
-      const faltando = [];
-      for (const a of g.semCurtidas) {
-        const badge = COPY.semCurtidasDaArea(nomeDa(a.area), a.posts.length);
-        if ((await contraste.getByText(badge, { exact: true }).count()) === 0) faltando.push(badge);
-      }
       r.exigir(
-        (await qq().getByText(COPY.semCurtidas).count()) > 0 && faltando.length === 0,
-        `a galeria ${quem} mostra “${COPY.semCurtidas}” com um badge por área (${g.semCurtidas.map((a) => COPY.semCurtidasDaArea(nomeDa(a.area), a.posts.length)).join(", ")})${faltando.length ? ` — faltou: ${faltando.join("; ")}` : ""}`,
+        (await qq().getByText(COPY.porAreaQueSaiu).count()) === 0 && (await qq().getByText(COPY.semCurtidasQueSaiu).count()) === 0,
+        `a galeria ${quem} não mostra mais “${COPY.porAreaQueSaiu}” nem “${COPY.semCurtidasQueSaiu}”`,
       );
     }
+    const ordemNaGaleria = await q()
+      .locator(".galeria")
+      .evaluate((el) => [...el.children].map((c) => (c.matches("[role=search], input, .unv-search-field") || c.querySelector("input") ? "busca" : c.tagName.toLowerCase())));
+    const posicaoDaBusca = ordemNaGaleria.indexOf("busca");
+    r.exigir(
+      posicaoDaBusca > 0 && !ordemNaGaleria.slice(0, posicaoDaBusca).includes("ul"),
+      `entre o badge e a busca não há mais lista nenhuma (${ordemNaGaleria.slice(0, posicaoDaBusca + 1).join(" → ")})`,
+    );
 
     /* A GRADE é dos ocultos de UMA área: abre na que mais ficou fora. */
     const areaInicial1 = areaComMaisOcultos(g1.porArea);
@@ -1208,12 +1352,13 @@ await suite(
     await r.registrar(p, "galeria-oculta", {
       titulo: "A Galeria Oculta: o que sumiu, por área",
       mostra:
-        `A auditoria da comissão, o voto lacrado, “${COPY.badge(fora1.ocultos, fora1.total)}”, o que chegou por ` +
-        `área (${porAreaEmTexto(g1.porArea)}), “${COPY.semCurtidas}” com um badge por área, e a grade de três ` +
-        `colunas com os ocultos de ${nomeDa(areaInicial1)}; embaixo, os dois botões da revisão, com Manter desligado.`,
+        `A auditoria da comissão, o voto lacrado, “${COPY.badge(fora1.ocultos, fora1.total)}”, logo abaixo a busca e os ` +
+        `chips, e a grade de três colunas com os ocultos de ${nomeDa(areaInicial1)}; embaixo, os dois botões da ` +
+        "revisão, com Manter desligado.",
       prova:
-        "Com 40 estandes e dez posts, o total escondido é igual para todos — a prova é QUAL área sumiu. Os números " +
-        "são do servidor, sobre o feed DESTA criança, e o contrafactual também: o motor nunca desce para o bundle.",
+        "Com 40 estandes e dez posts, o total escondido é igual para todos — a prova é QUAL área sumiu, e a grade " +
+        "abre na que mais ficou fora. A contagem por área e o contraste saíram da tela (ADR-176); os números " +
+        "seguem calculados pelo servidor, sobre o feed DESTA criança.",
       detalhe: `${fora1.ocultos} de ${fora1.total} · por área ${porAreaEmTexto(g1.porArea)} · sem curtidas ${contagemEmTexto(sem1)}`,
       inteira: true,
     });
@@ -1230,8 +1375,8 @@ await suite(
     await r.registrar(p2, "galeria-de-quem-nao-curtiu", {
       titulo: "A mesma galeria, o mesmo total — outras áreas",
       mostra:
-        `A galeria de quem só salvou: o mesmo “${COPY.badge(fora2.ocultos, fora2.total)}”, mas ` +
-        `${porAreaEmTexto(g2.porArea)} — e “sem as suas curtidas” igual ao feed que ele teve.`,
+        `A galeria de quem só salvou: o mesmo “${COPY.badge(fora2.ocultos, fora2.total)}”, e a grade aberta em ` +
+        `${nomeDa(areaInicial2)} — o feed dele teve ${porAreaEmTexto(g2.porArea)}.`,
       prova:
         `${porAreaEmTexto(g1.porArea)} contra ${porAreaEmTexto(g2.porArea)}: o total não distingue os dois; as ` +
         "áreas, sim. Foram as curtidas, não o acaso, que esconderam uma parte da mostra e não outra.",
@@ -1271,7 +1416,7 @@ await suite(
     await r.registrar(p, "galeria-ficha", {
       titulo: "A ficha de auditoria",
       mostra: `Depois do chip ${chip} (a grade trocou para ${categoriaBuscada.nome}), a ficha de “${ocultosDaBusca[0].titulo}”: as três fotos, o resumo técnico, as hashtags e Voltar à Galeria.`,
-      prova: "A busca por hashtag e a ficha de auditoria são a experiência da galeria: desde a ficha 5 (ADR-174) elas não marcam habilidade — a EF06CO01 já foi medida na separação.",
+      prova: "A busca por hashtag e a ficha de auditoria são a experiência da galeria: elas não marcam habilidade — a EF06CO01 já foi medida no voto, pelas pastas.",
     });
     await ficha1.getByRole("button", { name: COPY.voltar }).click();
     await ficha1.waitFor({ state: "detached", timeout: 10_000 });
@@ -1374,30 +1519,11 @@ await suite(
     });
     await q().getByRole("button", { name: COPY.avancar }).click();
 
-    // ═══ ESTUDANTE 1: Mariana ════════════════════════════════════════════
-    await q().getByText(/Mariana/).first().waitFor({ timeout: 20_000 });
-    const mariana = (await sessaoDe(p)).mariana;
-    r.exigir(
-      mariana?.mecanismos?.length === 3 && mariana?.atitudes?.length === 2 && /Chapa B/.test(mariana.caso),
-      `o caso Mariana traz a Chapa B e os cinco cartões, 3 de mecanismo e 2 de atitude (${mariana?.mecanismos?.length}+${mariana?.atitudes?.length})`,
-    );
-    r.exigir((await q().getByRole("radio").count()) === 5, "os cinco cartões aparecem juntos, como opções neutras");
-    const cartaoDeMecanismo = mariana.mecanismos.find((c) => /bolha/i.test(c.texto)) ?? mariana.mecanismos[0];
-    const cartaoDeAtitude = mariana.atitudes.find((c) => /Buscar/i.test(c.texto)) ?? mariana.atitudes[0];
-    await q().getByRole("radio", { name: cartaoDeMecanismo.texto, exact: true }).click();
-    await q().getByRole("radio", { name: cartaoDeAtitude.texto, exact: true }).click();
-    await semAnimacao(q);
-    await r.registrar(p, "caso-mariana", {
-      titulo: "O caso de Mariana",
-      mostra: "A eleição do grêmio (Chapa A e Chapa B) e os cinco cartões, um de mecanismo e um de atitude escolhidos.",
-      prova: "A transferência para um caso novo. A tela não diz qual cartão é o certo, e a escolha não vira nota.",
-      inteira: true,
-    });
-    await q().getByRole("button", { name: COPY.submeter }).click();
-
-    // ═══ ESTUDANTE 1: os cartões CONCLUEM (sem enquetes, ADR-174) ════════
+    // ═══ ESTUDANTE 1: a regra CONCLUI (ADR-176: o caso Mariana saiu) ══════
     await q().getByText(COPY.fimTitulo).first().waitFor({ timeout: 20_000 });
-    r.exigir((await sessaoDe(p)).concluida === true, "os cartões do caso Mariana concluem a missão — as enquetes saíram");
+    const sessaoNoFim = await sessaoDe(p);
+    r.exigir(sessaoNoFim.concluida === true && sessaoNoFim.passo === "fim", "a regra enviada conclui a missão — sem o caso Mariana");
+    r.exigir(!("mariana" in sessaoNoFim) && (await q().getByText(/Mariana/).count()) === 0, "o caso Mariana não existe mais: nem na sessão, nem na tela");
     const faixa = q().getByRole("region", { name: COPY.infografico });
     await faixa.waitFor({ timeout: 10_000 });
     await faixa.scrollIntoViewIfNeeded();
@@ -1457,7 +1583,7 @@ await suite(
     const textoDasHabilidades = await habilidades.innerText();
     r.exigir(
       ["EF06CO01", "EF06CO03"].every((codigo) => textoDasHabilidades.includes(codigo)) && !textoDasHabilidades.includes("EF06CO10"),
-      "o painel de habilidades mostra EF06CO01 e EF06CO03 — e não a EF06CO10, que saiu (ADR-174)",
+      "o painel de habilidades mostra EF06CO01 e EF06CO03 — e não a EF06CO10, que saiu (ADR-174; ficha 6, ADR-176)",
     );
     const caminhoDaEvidencia = `/evidencias/turma/${turmaId}/missao/${EXP_ID}/atividade/${atividadeId}`;
     const nivelDe = (c, quem, codigo) => {
@@ -1473,7 +1599,7 @@ await suite(
     const esperado = {
       [`${PRIMEIRO.login} EF06CO01`]: [nivelDe(evidencia, PRIMEIRO, "EF06CO01"), "atingiu"],
       [`${PRIMEIRO.login} EF06CO03`]: [nivelDe(evidencia, PRIMEIRO, "EF06CO03"), "atingiu"],
-      [`${SEGUNDO.login} EF06CO01 (${estandesSeparados2 - 3} de ${estandesSeparados2})`]: [nivelDe(evidencia, SEGUNDO, "EF06CO01"), "em_processo"],
+      [`${SEGUNDO.login} EF06CO01 (${estandesSeparados2 - 3} de ${estandesSeparados2} nas pastas certas)`]: [nivelDe(evidencia, SEGUNDO, "EF06CO01"), "em_processo"],
       [`${SEGUNDO.login} EF06CO03`]: [nivelDe(evidencia, SEGUNDO, "EF06CO03"), "em_processo"],
     };
     for (const [quem, [veio, regua]] of Object.entries(esperado)) {
@@ -1482,7 +1608,7 @@ await suite(
     await linhaDoPrimeiro.scrollIntoViewIfNeeded();
     await r.registrar(prof, "resultados-e-habilidades", {
       titulo: "A folha da turma, a separação e as habilidades",
-      mostra: "Onde cada um está, a coluna “Separação” e o painel de habilidades da BNCC com a EF06CO01 e a EF06CO03.",
+      mostra: "Onde cada um está, a coluna “Separação” (as pastas) e o painel de habilidades da BNCC com a EF06CO01 e a EF06CO03.",
       prova: "A folha diz só o progresso — nunca voto, taxa, concentração, acerto ou nível ligados a nome. A concentração mora só na lousa, agregada; o nível (a separação e a regra), no painel de habilidades.",
       inteira: true,
     });

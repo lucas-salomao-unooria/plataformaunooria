@@ -6,9 +6,10 @@
  * - `exp05ef1b_gates_turma.fase` — o relógio da TURMA, que o professor move
  *   com os três botões do painel (revelação, síntese, reflexão);
  * - os CARIMBOS da sessão do estudante (`entrou_em`, `confirmado_em`,
- *   `votou_em`, `operacoes_em`, `regra_em`, `concluido_em`) — cada um é um
- *   latch. A `reflexao_em` ficou no banco só para o histórico (a regra
- *   Se/Então de texto livre, ADR-145).
+ *   `votou_em`, `alertas_em`, `regra_em`, `concluido_em`) — cada um é um
+ *   latch. A `reflexao_em` (a regra Se/Então de texto livre, ADR-145) e a
+ *   `operacoes_em` (o cartão de frases da 2.4.0) ficaram no banco só para o
+ *   histórico.
  *
  * **O passo NÃO é coluna.** Ele é DERIVADO: `passoEfetivo(carimbos, fase)`.
  * Uma coluna `passo` seria uma terceira fonte que os latches já dizem — e que
@@ -70,7 +71,6 @@ export const PASSOS = [
   "espera",
   "revelacao",
   "sintese",
-  "cartao",
   "regra",
   "concluida",
 ] as const;
@@ -81,8 +81,6 @@ export interface MarcosDaSessao {
   entrou: boolean;
   confirmou: boolean;
   votou: boolean;
-  /** Enviou o cartão de frases (EF05CO03) — `operacoes_em`. */
-  respondeuCartao: boolean;
   concluiu: boolean;
 }
 
@@ -96,14 +94,12 @@ export interface MarcosDaSessao {
  *    vota, e vê a própria revelação depois (default aceito). Empurrá-lo
  *    mediria outra coisa, e mostraria o gabarito a quem ainda escolhe.
  * 3. Depois do voto, a FASE decide: espera na triagem, e então revelação,
- *    síntese e a reflexão (a fase `reflexao`: a regra do tio), conforme o
- *    professor abre.
- * 4. **O cartão de frases segue o caminho DA CRIANÇA, não o botão do
- *    professor.** Ele aparece com os crachás (na revelação e na síntese, a
- *    experiência o mostra pelo `cartao` do estado) e só fecha quando ela o
- *    envia. Na reflexão, quem ainda não o enviou cai no passo `cartao` ANTES
- *    da `regra`: ninguém chega ao tio sem ter passado por ele — nem quem votou
- *    atrasado.
+ *    síntese e a reflexão (a fase `reflexao`: o robô do grupo — o passo
+ *    `regra`, nome que ficou da 2.4.0), conforme o professor abre.
+ * 4. **O alerta do grupo NÃO é passo** (2.5.0): ele vive no fim do Mural
+ *    revelado, só enquanto a turma está na `revelacao`, e fecha quando o
+ *    professor apresenta a síntese. Quem não enviou os quatro fica "Não
+ *    avaliado" na EF05CO03 e segue para o robô do mesmo jeito.
  *
  * O aluno que vota DEPOIS de a turma passar da revelação cai direto no passo
  * da turma, e a revelação dele vai junto na resposta (`revelacao` não é
@@ -123,15 +119,24 @@ export function passoEfetivo(sessao: MarcosDaSessao | null, fase: Fase | null): 
     case "explicar":
       return "sintese";
     case "reflexao":
-      return sessao.respondeuCartao ? "regra" : "cartao";
+      return "regra";
   }
 }
 
 /**
  * O gabarito das TRÊS mensagens do estudante desce? Só depois do voto (o
  * latch 2) E da revelação aberta pela turma. Antes disso a resposta não tem
- * onde carregá-lo (`revelacao: null`).
+ * onde carregá-lo (`revelacao: null`, `alerta: null`).
  */
 export function revelacaoAberta(sessao: MarcosDaSessao | null, fase: Fase | null): boolean {
   return Boolean(sessao?.votou) && faseAtingiu(fase, "revelacao");
+}
+
+/**
+ * O alerta do grupo aceita jogada? Só com a revelação DELA aberta e a turma
+ * AINDA na revelação: a síntese o fecha (`409 alerta-fechado`). Não é passo —
+ * é uma janela dentro da revelação.
+ */
+export function alertaAberto(sessao: MarcosDaSessao | null, fase: Fase | null): boolean {
+  return revelacaoAberta(sessao, fase) && (fase ?? FASE_INICIAL) === "revelacao";
 }

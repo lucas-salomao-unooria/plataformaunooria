@@ -18,6 +18,8 @@ import {
   faseAtingiu,
   mensagemPorId,
   mensagensEmOrdem,
+  alertasNaFolha,
+  ligacoesNaFolha,
   mudouAEvidencia,
   percentualComBase,
   quadranteDe,
@@ -74,7 +76,7 @@ const PACOTE: MensagemDoPacote[] = [
 function painel(parcial: Partial<Pick<PainelDaTurma, "atividade" | "progresso">>): Pick<PainelDaTurma, "atividade" | "progresso"> {
   return {
     atividade: { pacoteId: "p1", rodada: 1, tema: "o passeio ao museu" },
-    progresso: { unidades: 4, entraram: 4, confirmaram: 2, votaram: 2, responderamCartao: 0, enviaramRegra: 0, concluiram: 0 },
+    progresso: { unidades: 4, entraram: 4, confirmaram: 2, votaram: 2, enviaramAlertas: 0, enviaramRobo: 0, concluiram: 0 },
     ...parcial,
   };
 }
@@ -300,8 +302,8 @@ describe("o painel que se atualiza sozinho", () => {
   test("consulta enquanto há aula e alguém não concluiu", () => {
     expect(deveConsultar(painel({ atividade: null }))).toBe(false);
     expect(deveConsultar(painel({}))).toBe(true);
-    expect(deveConsultar(painel({ progresso: { unidades: 0, entraram: 0, confirmaram: 0, votaram: 0, responderamCartao: 0, enviaramRegra: 0, concluiram: 0 } }))).toBe(true);
-    expect(deveConsultar(painel({ progresso: { unidades: 3, entraram: 3, confirmaram: 3, votaram: 3, responderamCartao: 0, enviaramRegra: 0, concluiram: 3 } }))).toBe(false);
+    expect(deveConsultar(painel({ progresso: { unidades: 0, entraram: 0, confirmaram: 0, votaram: 0, enviaramAlertas: 0, enviaramRobo: 0, concluiram: 0 } }))).toBe(true);
+    expect(deveConsultar(painel({ progresso: { unidades: 3, entraram: 3, confirmaram: 3, votaram: 3, enviaramAlertas: 0, enviaramRobo: 0, concluiram: 3 } }))).toBe(false);
   });
 
   test("relê a página só quando muda o que a evidência registra", () => {
@@ -310,9 +312,9 @@ describe("o painel que se atualiza sozinho", () => {
     expect(mudouAEvidencia(antes, painel({ progresso: { ...antes.progresso, votaram: 3 } }))).toBe(false);
     expect(mudouAEvidencia(antes, painel({ progresso: { ...antes.progresso, confirmaram: 3 } }))).toBe(true);
     expect(mudouAEvidencia(antes, painel({ progresso: { ...antes.progresso, concluiram: 1 } }))).toBe(true);
-    /* O cartão e a regra marcam a EF05CO03 e a EF05CO04: o painel de habilidades acompanha. */
-    expect(mudouAEvidencia(antes, painel({ progresso: { ...antes.progresso, responderamCartao: 1 } }))).toBe(true);
-    expect(mudouAEvidencia(antes, painel({ progresso: { ...antes.progresso, enviaramRegra: 1 } }))).toBe(true);
+    /* O 4º alerta e o robô marcam a EF05CO03 e a EF05CO04: o painel de habilidades acompanha. */
+    expect(mudouAEvidencia(antes, painel({ progresso: { ...antes.progresso, enviaramAlertas: 1 } }))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({ progresso: { ...antes.progresso, enviaramRobo: 1 } }))).toBe(true);
     expect(mudouAEvidencia(antes, painel({ atividade: { pacoteId: "p1", rodada: 2, tema: "x" } }))).toBe(true);
   });
 });
@@ -336,5 +338,19 @@ describe("o termômetro e a folha", () => {
     expect(rotuloDaOpcao(opcoes, "urgencia")).toBe("Urgência (precisava avisar logo)");
     expect(rotuloDaOpcao(opcoes, "outro")).toBe("outro");
     expect(rotuloDaOpcao(opcoes, null)).toBeNull();
+  });
+});
+
+describe("a folha: o alerta e o robô de cada linha", () => {
+  test("os alertas como pontos sobre 8 e enviados sobre 4; sem alerta, um traço", () => {
+    expect(alertasNaFolha({ pontos: 7, enviados: 4 })).toBe("7/8 · 4/4 enviados");
+    expect(alertasNaFolha({ pontos: 0, enviados: 2 })).toBe("0/8 · 2/4 enviados");
+    expect(alertasNaFolha(null)).toBe("—");
+  });
+
+  test("as ligações do robô, com concordância — e o envio sem ligar dito por extenso", () => {
+    expect(ligacoesNaFolha(0)).toBe("enviado sem ligar");
+    expect(ligacoesNaFolha(1)).toBe("ligado 1 vez");
+    expect(ligacoesNaFolha(3)).toBe("ligado 3 vezes");
   });
 });

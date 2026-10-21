@@ -16,9 +16,9 @@ capacidade que `admin` tem e `gestor_contrato` não.
 
 Debaixo de Recursos, com link no fim de `/unooria/recursos`: `GET`/`POST
 /juri-estadual/banco-padrao/imagens`, só `admin` (prefixo `juri-estadual` do
-BFF). O laço é o `continuarGerando` (quatro por chamada); a api
-manda só ids e URLs, e a grade (aba por área) nomeia pelo número. Api fora do
-ar é erro, nunca "0 de 40".
+BFF). O laço é o `continuarGerando` (oito por chamada); a api
+manda só chaves de lâmina e URLs (quatro por projeto, ADR-178), e a grade (aba
+por área) nomeia pelo número. Api fora do ar é erro, nunca "0 de 160".
 
 ### O segundo item: Uso de IA (ADR-105, 2026-09-15)
 

@@ -2,8 +2,9 @@ import { z } from "zod";
 import { falasDoTemaSchema } from "../podcast/roteiro";
 import { VAGAS_DO_PODCAST } from "./podcast";
 import { problemasDoPacote } from "./invariantes";
+import { LAMINAS, ehChaveDaMidia } from "./regras/laminas";
 import { ETAPAS, PASSOS, PASSOS_PEDIDOS } from "./regras/passos";
-import { IDS_DE_ATITUDE, IDS_DE_MECANISMO, PECAS_DO_ENTAO, PECAS_DO_SE } from "./conteudo";
+import { PECAS_DO_ENTAO, PECAS_DO_SE } from "./conteudo";
 import {
   ACOES_DA_REVISAO,
   AREAS,
@@ -33,11 +34,10 @@ import {
  *   `GET galeria`, com a etapa `galeria` liberada pelo professor;
  * - a REGRA do motor: nenhum peso, nenhuma área líder. O contrafactual é
  *   CALCULADO no servidor e desce pronto: o motor nunca vai ao bundle;
- * - o GABARITO das duas tarefas do Canal A (ADR-174): os estandes da
- *   separação descem sem área, hashtag nem perfil, e as peças da regra sem
- *   `certa`, todos com ids OPACOS e embaralhados pela sessão — quem corrige é
- *   o servidor (regra 3). A regra certa só desce DEPOIS do envio;
- * - o cartão certo do caso Mariana.
+ * - o GABARITO das duas tarefas do Canal A (ADR-174): o acerto da separação
+ *   (as pastas do feed, ADR-176) nunca desce, e as peças da regra descem sem
+ *   `certa`, com ids OPACOS e embaralhados pela sessão — quem corrige é o
+ *   servidor (regra 3). A regra certa só desce DEPOIS do envio.
  */
 
 // ------------------------------------------------------------------ comuns
@@ -47,7 +47,10 @@ export const PassoSchema = z.enum(PASSOS);
 export const EtapaSchema = z.enum(ETAPAS);
 export const IdDeProjetoSchema = z.string().regex(ID_DE_PROJETO_RE);
 export const IdDePostSchema = z.string().regex(ID_DE_POST_RE);
-/** Ids opacos por sessão (`cl-` os estandes da separação, `rg-` as peças da regra): não dizem o que o item é. */
+/** A chave de uma imagem na `midia` do pacote: `proj-a1` (a capa) ou `proj-a1:detalhe` (ADR-178). */
+export const ChaveDaMidiaSchema = z.string().refine(ehChaveDaMidia, "chave de imagem desconhecida");
+export const LaminaSchema = z.enum(LAMINAS);
+/** Ids opacos por sessão (`cl-` os estandes da separação, só no servidor; `rg-` as peças da regra): não dizem o que o item é. */
 export const IdDeItemSchema = z.string().regex(/^cl-[a-z0-9]{3}$/);
 export const IdDePecaSchema = z.string().regex(/^rg-[a-z0-9]{3}$/);
 
@@ -58,13 +61,19 @@ export const PedirPassoSchema = z.object({ para: z.enum(PASSOS_PEDIDOS) });
 /**
  * O que o cliente MEDIU desde a última chamada, e se quer o próximo post.
  * Curtida e salvo são estado (true/false), permanência é fato (uma por post).
- * Salvar é gravado e NÃO pesa no motor. O teto de 20 é folga: o feed inteiro
- * tem dez posts. O primeiro `proximo: true` é a 1ª ROLAGEM: liga o relógio de
- * 8 minutos do servidor.
+ * Salvar é gravado e NÃO pesa no motor. Desde a 0.7.0 (ADR-176) o salvar leva
+ * a PASTA — a área em que a criança guardou o post, a separação da EF06CO01;
+ * salvar de novo com outra pasta MOVE o post. Sem `pasta` (bundle anterior),
+ * o post é salvo sem pasta. O teto de 20 é folga: o feed inteiro tem dez
+ * posts. O primeiro `proximo: true` é a 1ª ROLAGEM: liga o relógio de 8
+ * minutos do servidor.
  */
 export const EventosDoFeedSchema = z.object({
   curtidas: z.array(z.object({ postId: IdDePostSchema, curtiu: z.boolean() })).max(20).default([]),
-  salvamentos: z.array(z.object({ postId: IdDePostSchema, salvou: z.boolean() })).max(20).default([]),
+  salvamentos: z
+    .array(z.object({ postId: IdDePostSchema, salvou: z.boolean(), pasta: AreaSchema.optional() }))
+    .max(20)
+    .default([]),
   permanencias: z.array(IdDePostSchema).max(20).default([]),
   /** `true` quando a tela chegou ao último post servido: o servidor serve o próximo. */
   proximo: z.boolean().default(false),
@@ -110,26 +119,8 @@ export const RevisaoDoVotoSchema = z.discriminatedUnion("acao", [
   z.object({ acao: z.literal(ACOES_DA_REVISAO[1]), projetoId: IdDeProjetoSchema }),
 ]);
 
-/**
- * A SEPARAÇÃO (EF06CO01): uma área para cada estande que a criança viu. O teto
- * de 10 é o do feed; os itens diferentes, e o "é desta sessão", quem confere é
- * o servidor (400).
- */
-export const ClassificacaoSchema = z.object({
-  respostas: z
-    .array(z.object({ itemId: IdDeItemSchema, area: AreaSchema }))
-    .min(1)
-    .max(POSTS_NO_FEED)
-    .refine((r) => new Set(r.map((x) => x.itemId)).size === r.length, "itens diferentes"),
-});
-
 /** A REGRA (EF06CO03): a peça do SE e a do ENTÃO, ids opacos da sessão. */
 export const RegraSchema = z.object({ se: IdDePecaSchema, entao: IdDePecaSchema });
-
-export const CartoesSchema = z.object({
-  mecanismo: z.enum(IDS_DE_MECANISMO as [string, ...string[]]),
-  atitude: z.enum(IDS_DE_ATITUDE as [string, ...string[]]),
-});
 
 // --------------------------------------------------------- saída: estudante
 
@@ -143,6 +134,17 @@ const ImagemPublicaSchema = z.object({
   /** `null` enquanto o professor não gerou (ou a geração falhou): a tela desenha a arte procedural. */
   url: z.string().nullable(),
   alt: z.string(),
+});
+
+/**
+ * As fotos 2 e 3 do carrossel e a dos bastidores (0.8.0, ADR-178). `null` é a
+ * lâmina sem imagem: a tela desenha a arte procedural (e, nos bastidores, só o
+ * texto). O `alt` delas a tela monta do título — não há descrição por lâmina.
+ */
+const LaminasPublicasSchema = z.object({
+  detalhe: z.string().nullable(),
+  equipe: z.string().nullable(),
+  bastidor: z.string().nullable(),
 });
 
 /**
@@ -168,12 +170,17 @@ export const PostPublicoSchema = z.object({
   bastidor: z.string(),
   hashtags: z.array(z.string()),
   imagem: ImagemPublicaSchema,
+  laminas: LaminasPublicasSchema,
 });
 
 export const FeedSchema = z.object({
   posts: z.array(PostPublicoSchema).max(POSTS_NO_FEED),
   curtidos: z.array(IdDePostSchema),
   salvos: z.array(IdDePostSchema),
+  /** A pasta (área) de cada post salvo — a separação da EF06CO01 (ADR-176). Post salvo sem pasta não aparece. */
+  pastas: z.record(IdDePostSchema, AreaSchema),
+  /** Quantos estandes vistos ainda não estão numa pasta: o voto só lacra com zero. */
+  semPasta: z.number().int().min(0),
   /** Os dez chegaram. */
   completo: z.boolean(),
   /** Os 8 minutos do servidor, desde a 1ª rolagem, acabaram: o feed não serve mais. */
@@ -196,6 +203,7 @@ export const ProjetoDaGaleriaSchema = z.object({
   resumo: z.string(),
   hashtags: z.array(z.string()),
   imagem: ImagemPublicaSchema,
+  laminas: LaminasPublicasSchema,
   exibidoNoSeuFeed: z.boolean(),
 });
 
@@ -251,13 +259,6 @@ export const GaleriaSchema = z.object({
   podeManter: z.boolean(),
 });
 
-/** Um estande na tela da separação: id opaco, título e imagem — sem área, hashtag nem perfil. */
-export const ItemDaClassificacaoSchema = z.object({
-  id: IdDeItemSchema,
-  titulo: z.string(),
-  imagem: z.object({ url: z.string().nullable(), alt: z.string() }),
-});
-
 export const PecaPublicaSchema = z.object({ id: IdDePecaSchema, texto: z.string() });
 
 /**
@@ -271,8 +272,6 @@ export const RevelacaoDaRegraSchema = z.object({
   motivo: z.enum(["curtidas", "permanencia", "variado"]),
   area: AreaSchema.nullable(),
 });
-
-const CartaoSchema = z.object({ id: z.string(), texto: z.string() });
 
 /** O estado do estudante. Cada bloco só aparece do passo dele em diante. */
 export const SessaoSchema = z.object({
@@ -296,8 +295,6 @@ export const SessaoSchema = z.object({
       projetoId: IdDeProjetoSchema.nullable(),
     })
     .nullable(),
-  /** Só no passo `classificacao`: os estandes que a criança viu, embaralhados. As opções são as `categorias`. */
-  classificacao: z.object({ itens: z.array(ItemDaClassificacaoSchema).max(POSTS_NO_FEED) }).nullable(),
   /**
    * A REGRA (o passo guarda o nome `cadeia`), do passo dela em diante: as
    * peças embaralhadas e, depois do envio, a revelação. `enviada` sem
@@ -311,15 +308,6 @@ export const SessaoSchema = z.object({
       revelacao: RevelacaoDaRegraSchema.nullable(),
     })
     .nullable(),
-  /** Do passo `mariana` em diante. `escolha` volta num F5. */
-  mariana: z
-    .object({
-      caso: z.string(),
-      mecanismos: z.array(CartaoSchema),
-      atitudes: z.array(CartaoSchema),
-      escolha: z.object({ mecanismo: z.string(), atitude: z.string() }).nullable(),
-    })
-    .nullable(),
   concluida: z.boolean(),
 });
 
@@ -329,7 +317,7 @@ export const GatePublicoSchema = z.object({
   etapa: EtapaSchema,
 });
 
-/** A resposta das rotas que só mudam o passo (voto, separação, revisão, cartões, concluir). */
+/** A resposta das rotas que só mudam o passo (voto, revisão, concluir). */
 export const EstadoSchema = z.object({ passo: PassoSchema, etapa: EtapaSchema });
 
 /** A resposta da regra: o estado e a revelação, que só existe depois do envio. */
@@ -513,10 +501,16 @@ export const ImagensAprovadasSchema = z.object({
   imagensAprovadasEm: z.string(),
 });
 
-/** `POST :turmaId/pacotes/:pacoteId/imagens/:projetoId/refazer` — a imagem nova de UM estande. */
+/** A query do refazer: qual lâmina (sem ela, a capa — o contrato de antes da 0.8.0). */
+export const LaminaDoRefazerSchema = z.object({ lamina: LaminaSchema.default("capa") });
+
+/** `POST :turmaId/pacotes/:pacoteId/imagens/:projetoId/refazer?lamina=` — a imagem nova de UMA lâmina de um estande. */
 export const ImagemRefeitaSchema = z.object({
   pacoteId: z.string().uuid(),
   projetoId: IdDeProjetoSchema,
+  lamina: LaminaSchema,
+  /** A chave na `midia` (`proj-a1`, `proj-a1:detalhe`). */
+  chave: ChaveDaMidiaSchema,
   url: z.string(),
 });
 
@@ -532,9 +526,9 @@ export const ProgressoDaMidiaSchema = z.object({
   total: z.number().int().min(0),
   prontas: z.number().int().min(0),
   faltam: z.number().int().min(0),
-  geradas: z.array(IdDeProjetoSchema),
+  geradas: z.array(ChaveDaMidiaSchema),
   /** As que falharam NESTA chamada — seguem com a arte procedural. */
-  falharam: z.array(IdDeProjetoSchema),
+  falharam: z.array(ChaveDaMidiaSchema),
   completo: z.boolean(),
   imagens: z.record(z.string()),
 });
@@ -624,17 +618,13 @@ export const ZerarTurmaSchema = z.object({
 
 /**
  * O material do professor (guia da aula): o esqueleto fixo COM gabarito — as
- * peças da regra com a certa marcada, os cartões certos — e a plenária.
+ * peças da regra com a certa marcada — e a plenária. O caso Mariana saiu na
+ * 0.7.0 (ADR-176).
  */
 const PecaComGabaritoSchema = z.object({ texto: z.string(), certa: z.boolean() });
 
 export const MaterialSchema = z.object({
   pecas: z.object({ se: z.array(PecaComGabaritoSchema), entao: z.array(PecaComGabaritoSchema) }),
-  mariana: z.object({
-    caso: z.string(),
-    mecanismos: z.array(CartaoSchema.extend({ certo: z.boolean() })),
-    atitudes: z.array(CartaoSchema.extend({ certo: z.boolean() })),
-  }),
   plenaria: z.array(z.string()),
   regra: z.object({
     pesoDaCurtida: z.number().int(),
@@ -648,22 +638,22 @@ export const MaterialSchema = z.object({
 // ───────────────────────────────────── admin: as imagens do banco padrão
 
 /**
- * As imagens do BANCO PADRÃO (`GET /juri-estadual/banco-padrao/imagens`): uma
- * por projeto, com o MESMO nome determinístico da customização (o hash da
- * descrição), então o arquivo que existe no storage serve a todo pacote
- * `padrao`. `faltam` são os ids sem arquivo.
+ * As imagens do BANCO PADRÃO (`GET /juri-estadual/banco-padrao/imagens`): quatro
+ * por projeto (as lâminas, ADR-178), com o MESMO nome determinístico da
+ * customização (o hash do pedido), então o arquivo que existe no storage serve
+ * a todo pacote `padrao`. `faltam` são as chaves sem arquivo.
  */
 export const ImagensDoBancoPadraoSchema = z.object({
   total: z.number().int().min(0),
   prontas: z.number().int().min(0),
-  faltam: z.array(IdDeProjetoSchema),
+  faltam: z.array(ChaveDaMidiaSchema),
   completo: z.boolean(),
   imagens: z.record(z.string()),
 });
 
 /** `POST /juri-estadual/banco-padrao/imagens`: o progresso, e o que ESTA chamada gerou ou não conseguiu. */
 export const GeracaoDoBancoPadraoSchema = ImagensDoBancoPadraoSchema.extend({
-  geradas: z.array(IdDeProjetoSchema),
+  geradas: z.array(ChaveDaMidiaSchema),
   /** As que falharam NESTA chamada — chame de novo. */
-  falharam: z.array(IdDeProjetoSchema),
+  falharam: z.array(ChaveDaMidiaSchema),
 });

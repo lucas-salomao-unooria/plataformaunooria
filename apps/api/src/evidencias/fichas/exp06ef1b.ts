@@ -2,13 +2,17 @@ import type { FichaPedagogica } from "./tipos";
 
 /**
  * A FICHA DO JÚRI ESTADUAL DE PROJETOS (exp06ef1b, 6º ano, unidade 1) —
- * versão 5, de 2026-10-18 (ADR-174): só o Canal A. Toda habilidade é medida
- * pelo que a criança FAZ, contra o TEXTO OFICIAL da BNCC; as enquetes P1–P3
- * saíram, como no 4º, 5º, 7º e 8º anos e na 2ª série. O PO reordenou o foco:
+ * versão 6, de 2026-10-20 (ADR-176, os ajustes do time que rodou a missão),
+ * sobre a versão 5 (ADR-174, só o Canal A). Toda habilidade é medida pelo que
+ * a criança FAZ, contra o TEXTO OFICIAL da BNCC; as enquetes P1–P3 saíram,
+ * como no 4º, 5º, 7º e 8º anos e na 2ª série. O PO reordenou o foco:
  *
- *   - **EF06CO01** (a primária) pela SEPARAÇÃO: logo depois do voto, a criança
- *     põe cada estande que viu numa das quatro áreas
- *     (`juri-estadual/regras/classificacao.ts#nivelDaClassificacao`);
+ *   - **EF06CO01** (a primária) pela SEPARAÇÃO nas PASTAS: no próprio feed, o
+ *     "Salvar" do post abre as quatro pastas da mostra, e a criança guarda cada
+ *     estande na área dele; o servidor corrige no voto
+ *     (`juri-estadual/regras/classificacao.ts#nivelDaClassificacao`). A régua
+ *     é a da versão 5; o que mudou foi ONDE a criança separa — por isso a
+ *     versão sobe, e as marcas da 5 ficam com a delas;
  *   - **EF06CO03** pela REGRA SE … ENTÃO montada com peças, depois da revisão do
  *     voto (`juri-estadual/regras/regra.ts#nivelDaRegra`).
  *
@@ -25,18 +29,18 @@ import type { FichaPedagogica } from "./tipos";
  */
 export const FICHA_EXP06EF1B: FichaPedagogica = {
   expId: "exp06ef1b",
-  versao: 5,
+  versao: 6,
   habilidades: [
     {
       codigo: "EF06CO01",
-      marcadores: [{ id: "classificacao", tipo: "acao", rotulo: "Separação dos estandes" }],
+      marcadores: [{ id: "classificacao", tipo: "acao", rotulo: "Pastas dos estandes" }],
       criterios: {
         atingiu:
-          "Logo depois do voto, separa nas quatro áreas os estandes que viu no feed e acerta 9 ou 10 de cada 10 (90% ou mais).",
-        em_processo: "Separa os estandes nas áreas e acerta de 5 a 8 de cada 10 (de 50% a 89%).",
-        nao_atingiu: "Separa os estandes nas áreas e acerta 4 ou menos de cada 10.",
+          "Durante o feed, guarda nas pastas das quatro áreas os estandes que viu e acerta 9 ou 10 de cada 10 (90% ou mais).",
+        em_processo: "Guarda os estandes nas pastas das áreas e acerta de 5 a 8 de cada 10 (de 50% a 89%).",
+        nao_atingiu: "Guarda os estandes nas pastas das áreas e acerta 4 ou menos de cada 10.",
         observacao:
-          'É o "classificar informações, agrupando-as em coleções" da BNCC: cada área é uma coleção, e a criança associa cada estande a ela. Na tela de separar não aparece a hashtag, só o título e a imagem. Uma tentativa, antes da Galeria Oculta (que mostra o que ficou fora por área). Quem viu menos de quatro estandes, ou não separou, fica "Não avaliado", e você pode ajustar.',
+          'É o "classificar informações, agrupando-as em coleções" da BNCC: cada pasta é uma coleção, como as coleções de posts salvos de uma rede social, e a criança associa cada estande a ela. O voto só fecha com todo estande visto numa pasta, e a correção acontece no voto, antes da Galeria Oculta. O post mostra o perfil e a hashtag da área: a pasta certa está ao alcance de quem lê o post com atenção. Quem viu menos de quatro estandes fica "Não avaliado", e você pode ajustar.',
       },
     },
     {

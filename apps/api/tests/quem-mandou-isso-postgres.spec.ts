@@ -33,7 +33,7 @@ import {
 import { PreparoDaExp05ef1bService } from "../src/quem-mandou-isso/preparo.service";
 import { QuemMandouIssoTurmasController } from "../src/quem-mandou-isso/quem-mandou-isso-turmas.controller";
 import { QuemMandouIssoService } from "../src/quem-mandou-isso/quem-mandou-isso.service";
-import { frasesDoCartao, sementeDoCartao, type Resposta } from "../src/quem-mandou-isso/regras/operacoes";
+import type { Expressao } from "../src/quem-mandou-isso/regras/alerta";
 import { FASES } from "../src/quem-mandou-isso/regras/passos";
 import { liberarParaTeste } from "./liberar-de-teste";
 import { criarRoleDeRuntime, urlDeRuntime } from "./role-de-runtime";
@@ -47,8 +47,9 @@ import { FALAS_DO_TEMA_PADRAO } from "../src/quem-mandou-isso/podcast";
  * falso), os CHECKs recusando o que dizem recusar e o vocabulário deles igual
  * ao do código, a porta da sala (ADR-69) em TODA rota de estudante, a missão
  * que nasce vazia, o preparo com a quota (e o 404 antes de gastar token), os
- * três latches — inclusive sob dois toques em paralelo —, a marca da
- * EF05CO08 na MESMA transação do Mural, o gabarito ausente antes da revelação,
+ * latches — inclusive sob dois toques em paralelo —, as marcas na MESMA
+ * transação de cada envio (o Mural, o 4º alerta, o robô), o gabarito ausente
+ * antes da revelação, a janela do alerta (abre na revelação, fecha na síntese),
  * o painel POR COMPUTADOR, o texto do menor só para quem leciona, e a rodada
  * nova que guarda o histórico.
  *
@@ -188,18 +189,25 @@ async function aprovar(turmaId: string, professorId: string, corpo: unknown, esc
   return controller.aprovar(turmaId, undefined, corpo, { auth: { ...req(professorId).auth, escolaId } });
 }
 
-/**
- * As respostas do cartão de um estudante: `certas` (o gabarito recalculado da
- * MESMA semente que o servidor usa) ou todas iguais. A tela não sabe o
- * gabarito; quem o recalcula aqui é o teste.
- */
-async function respostasDoCartao(estudanteId: string, como: "certas" | Resposta, pacoteId = pacote5A, rodada = 1) {
-  const s = await prisma.exp05ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId, pacoteId, rodada } });
-  const msgs = s.selecao.map((id) => mensagensDoPadrao().find((m) => m.id === id) as MensagemDoPacote);
-  return frasesDoCartao(msgs, sementeDoCartao(ESCOLA, estudanteId, { id: pacoteId, rodada })).map((f) => ({
-    fraseId: f.id,
-    resposta: como === "certas" ? f.esperado : como,
-  }));
+/** Os filtros do alerta, como a tela os monta. */
+const F = (nao = false) => ({ attr: "falsa" as const, nao });
+const EMO = (nao = false) => ({ attr: "emocional" as const, nao });
+const FILTRO = {
+  /** Os quatro pedidos, na forma esperada. */
+  certo: [
+    { a: F(), op: "E", b: EMO() },
+    { a: F(), op: "OU", b: EMO(true) },
+    { a: F(true), op: "OU", b: EMO() },
+    { a: F(true), op: "E", b: EMO(true) },
+  ] as Expressao[],
+  falsaOuEmocional: { a: F(), op: "OU", b: EMO() } as Expressao,
+  soFalsa: { a: F() } as Expressao,
+};
+
+/** Executa e envia o MESMO filtro num pedido — o caminho de quem já sabe. */
+async function alertaDePrimeira(estudanteId: string, pedido: number, expressao: Expressao) {
+  await service.executarAlerta(ESCOLA, estudanteId, pedido, expressao);
+  return service.enviarAlerta(ESCOLA, estudanteId, pedido, expressao);
 }
 
 /** As chaves do gabarito, em qualquer profundidade de um JSON. */
@@ -279,10 +287,11 @@ describe("a porta da sala (ADR-69)", () => {
       () => service.enviarAoMural(ESCOLA, ids.fabi, ["msg_1", "msg_2", "msg_3"]),
       () => service.votar(ESCOLA, ids.fabi, "urgencia"),
       () => service.concluir(ESCOLA, ids.fabi),
-      /* As ações do Canal A (o cartão e a regra) passam pela mesma porta. */
-      () => service.responderCartao(ESCOLA, ids.fabi, []),
-      () => service.testarRegra(ESCOLA, ids.fabi, "urgente_alarmante", ["comparar_fonte"], "checa"),
-      () => service.enviarRegra(ESCOLA, ids.fabi, "urgente_alarmante", ["comparar_fonte"]),
+      /* As ações do Canal A (o alerta e o robô) passam pela mesma porta. */
+      () => service.executarAlerta(ESCOLA, ids.fabi, 1, FILTRO.soFalsa),
+      () => service.enviarAlerta(ESCOLA, ids.fabi, 1, FILTRO.soFalsa),
+      () => service.ligarRobo(ESCOLA, ids.fabi, true, "urgente_alarmante", ["comparar_fonte"]),
+      () => service.enviarRobo(ESCOLA, ids.fabi, true, "urgente_alarmante", ["comparar_fonte"]),
     ]) {
       expect(await recusa(chamada())).toEqual(naoLiberada);
     }
@@ -481,12 +490,14 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     expect(sessao.textos.nina.convite).toBe(falaDaNina(PACOTE_PADRAO.tema));
     expect(sessao.textos.nina.tio).toMatch(/meu tio mandou um áudio/);
     expect(sessao.opcoes.condicoes.map((c) => c.id)).toEqual([...CONDICOES]);
-    /* As peças descem só com id e rótulo: o tipo de cada ação e quais
-       condições pegam o áudio são o gabarito da regra. */
-    for (const lista of Object.values(sessao.opcoes)) {
-      for (const opcao of lista) expect(Object.keys(opcao).sort()).toEqual(["id", "rotulo"]);
+    expect(sessao.opcoes.laco).toEqual({ rotulo: "para cada mensagem nova", icone: "🔁" });
+    /* Os blocos descem com id, rótulo e ícone: o TIPO de cada ação é o
+       gabarito do robô. */
+    for (const bloco of [...sessao.opcoes.condicoes, ...sessao.opcoes.acoes]) {
+      expect(Object.keys(bloco).sort()).toEqual(["icone", "id", "rotulo"]);
     }
-    expect(sessao).toMatchObject({ cartao: null, regra: null });
+    expect(sessao.limites).toEqual({ encaminhamentos: 3, execucoes: 3, ligacoes: 5 });
+    expect(sessao).toMatchObject({ alerta: null, robo: null });
     expect(chavesDeGabarito(sessao)).toEqual([]);
     const texto = JSON.stringify(sessao.pacote);
     for (const valor of ["verdadeira", "falsa", "emocional", "neutra"]) expect(texto).not.toContain(`"${valor}"`);
@@ -549,11 +560,9 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     expect(await codigo(service.votar(ESCOLA, ids.ana, "medo_indignacao"))).toBe("enquete-ja-votada");
     /* A reflexão só abre com a fase da turma: concluir antes é 409. */
     expect(await codigo(service.concluir(ESCOLA, ids.ana))).toBe("reflexao-nao-liberada");
-    /* O cartão só abre com a revelação DELA, e a regra só na reflexão. */
-    expect(await codigo(service.responderCartao(ESCOLA, ids.ana, await respostasDoCartao(ids.ana, "sim")))).toBe(
-      "cartao-nao-liberado",
-    );
-    expect(await codigo(service.testarRegra(ESCOLA, ids.ana, "urgente_alarmante", ["comparar_fonte"], "checa"))).toBe(
+    /* O alerta só abre com a revelação DELA, e o robô só na reflexão. */
+    expect(await codigo(service.executarAlerta(ESCOLA, ids.ana, 1, FILTRO.soFalsa))).toBe("alerta-nao-liberado");
+    expect(await codigo(service.ligarRobo(ESCOLA, ids.ana, true, "urgente_alarmante", ["comparar_fonte"]))).toBe(
       "reflexao-nao-liberada",
     );
   });
@@ -600,8 +609,8 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
       entraram: 3,
       confirmaram: 3,
       votaram: 3,
-      responderamCartao: 0,
-      enviaramRegra: 0,
+      enviaramAlertas: 0,
+      enviaramRobo: 0,
       concluiram: 0,
     });
     const linhas = painel.linhas.map((l) => [l.nome, l.equipe?.membros.map((m) => m.nome) ?? null, l.passo]);
@@ -615,8 +624,8 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
   test("antes da revelação, a sessão de quem votou continua SEM gabarito", async () => {
     const sessao = await service.sessao(ESCOLA, ids.bia);
     expect(sessao.revelacao).toBeNull();
-    /* O cartão depende do gabarito das três dela: também não desce. */
-    expect(sessao.cartao).toBeNull();
+    /* O alerta traz o quadro com os crachás das oito: também não desce. */
+    expect(sessao.alerta).toBeNull();
     expect(chavesDeGabarito(sessao)).toEqual([]);
   });
 
@@ -661,32 +670,87 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     expect(chavesDeGabarito(sessao.pacote)).toEqual([]);
   });
 
-  test("o cartão da Ana: seis frases SEM a resposta esperada, que ela responde depois dos crachás", async () => {
+  test("o alerta da Ana: o quadro das OITO com os crachás e os pedidos SEM a expressão esperada", async () => {
     const sessao = SessaoSchema.parse(await service.sessao(ESCOLA, ids.ana));
-    expect(sessao.cartao?.enviado).toBe(false);
-    expect(sessao.cartao?.frases.map((f) => f.id)).toEqual(["f1", "f2", "f3", "f4", "f5", "f6"]);
-    expect(JSON.stringify(sessao.cartao)).not.toContain("esperado");
-    /* As mesmas frases a cada leitura (a semente é a sessão): um F5 não troca o cartão. */
-    expect((await service.sessao(ESCOLA, ids.ana)).cartao).toEqual(sessao.cartao);
-
-    const estado = EstadoSchema.parse(await service.responderCartao(ESCOLA, ids.ana, await respostasDoCartao(ids.ana, "certas")));
-    expect(estado.cartao?.enviado).toBe(true);
-    expect(JSON.stringify(estado)).not.toContain("esperado");
-    const marca = await prisma.evidenciaMarca.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana, habilidade: "EF05CO03" } });
-    expect(marca).toMatchObject({ marcador: "cartao-de-frases", status: "atingiu", atividadeId: pacote5A, rodada: 1 });
-    /* A foto da tentativa: as frases COM a resposta esperada, e as respostas dela. */
-    const linha = await prisma.exp05ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
-    expect(linha.frasesOperacoes).toHaveLength(6);
-    expect(JSON.stringify(linha.frasesOperacoes)).toContain("esperado");
+    const alerta = sessao.alerta;
+    expect(alerta?.aberto).toBe(true);
+    expect(alerta?.andamento).toEqual([]);
+    /* Os atributos das cinco que ela NÃO enviou aparecem aqui (decisão de produto). */
+    expect(alerta?.quadro.map((m) => [m.id, m.veracidade, m.tom, m.voceEnviou])).toEqual(
+      mensagensDoPadrao().map((m) => [m.id, m.veracidade, m.tom, ["msg_1", "msg_5", "msg_3"].includes(m.id)]),
+    );
+    expect(alerta?.quadro[0]?.rotulo).toBe("Mensagem de Pedro Henrique");
+    expect(alerta?.pedidos.map((p) => p.n)).toEqual([1, 2, 3, 4]);
+    expect(alerta?.pedidos[0]?.texto).toBe("Destaque para o grupo as mensagens falsas e emocionais.");
+    /* A expressão esperada fica no servidor. */
+    expect(JSON.stringify(alerta)).not.toContain("esperada");
+    expect(alerta?.pedidos.every((p) => Object.keys(p).sort().join() === "n,texto")).toBe(true);
   });
 
-  test("o cartão é um latch: as MESMAS respostas são idempotentes, outras são 409 — e nada muda", async () => {
-    await service.responderCartao(ESCOLA, ids.ana, await respostasDoCartao(ids.ana, "certas"));
-    expect(await codigo(service.responderCartao(ESCOLA, ids.ana, await respostasDoCartao(ids.ana, "sim")))).toBe("cartao-ja-enviado");
-    expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana, habilidade: "EF05CO03" } })).toBe(1);
-    /* Faltando uma frase: o cartão não envia pela metade. */
-    const cinco = (await respostasDoCartao(ids.duda, "sim")).slice(0, 5);
-    expect(await codigo(service.responderCartao(ESCOLA, ids.duda, cinco))).toBe("payload-invalido");
+  test("o alerta: executar grava o resultado; um pedido por vez; enviar exige a ÚLTIMA executada", async () => {
+    expect(await recusa(service.enviarAlerta(ESCOLA, ids.ana, 1, FILTRO.certo[0]!))).toMatchObject({
+      status: 400,
+      corpo: { codigo: "execute-antes" },
+    });
+    expect(await codigo(service.executarAlerta(ESCOLA, ids.ana, 2, FILTRO.certo[1]!))).toBe("alerta-fora-de-ordem");
+    /* Corrige depois de ver o resultado: o OU deixa passar 6. */
+    let estado = EstadoSchema.parse(await service.executarAlerta(ESCOLA, ids.ana, 1, FILTRO.falsaOuEmocional));
+    expect(estado.alerta?.andamento[0]?.execucoes[0]?.passam).toEqual(["msg_1", "msg_2", "msg_4", "msg_5", "msg_6", "msg_7"]);
+    estado = EstadoSchema.parse(await service.executarAlerta(ESCOLA, ids.ana, 1, FILTRO.certo[0]!));
+    expect(estado.alerta?.andamento[0]?.execucoes.map((e) => e.passam)).toEqual([
+      ["msg_1", "msg_2", "msg_4", "msg_5", "msg_6", "msg_7"],
+      ["msg_4", "msg_7"],
+    ]);
+    /* A que está na tela não é a última executada: 400. */
+    expect(await codigo(service.enviarAlerta(ESCOLA, ids.ana, 1, FILTRO.falsaOuEmocional))).toBe("execute-antes");
+    /* `op` sem `b`: a forma é recusada. */
+    expect(await codigo(service.executarAlerta(ESCOLA, ids.ana, 1, { a: F(), op: "E" } as Expressao))).toBe("payload-invalido");
+
+    estado = EstadoSchema.parse(await service.enviarAlerta(ESCOLA, ids.ana, 1, FILTRO.certo[0]!));
+    expect(estado.alerta?.andamento[0]?.enviado).toEqual({ expressao: FILTRO.certo[0], passam: ["msg_4", "msg_7"] });
+    /* Idempotente; outro filtro para o pedido já enviado é 409; e o próximo abriu. */
+    await service.enviarAlerta(ESCOLA, ids.ana, 1, FILTRO.certo[0]!);
+    expect(await codigo(service.enviarAlerta(ESCOLA, ids.ana, 1, FILTRO.soFalsa))).toBe("alerta-ja-enviado");
+    expect(await codigo(service.executarAlerta(ESCOLA, ids.ana, 1, FILTRO.soFalsa))).toBe("alerta-fora-de-ordem");
+    /* Nenhuma marca antes do QUARTO envio. */
+    expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana, habilidade: "EF05CO03" } })).toBe(0);
+  });
+
+  test("a marca da EF05CO03 sai no QUARTO envio, na MESMA transação do carimbo", async () => {
+    await alertaDePrimeira(ids.ana, 2, FILTRO.certo[1]!);
+    /* Comutado é EQUIVALENTE: a tabela-verdade é a mesma. */
+    await alertaDePrimeira(ids.ana, 3, { a: EMO(), op: "OU", b: F(true) });
+    await service.executarAlerta(ESCOLA, ids.ana, 4, FILTRO.certo[3]!);
+
+    const espiao = jest.spyOn(evidencias, "marcar").mockRejectedValueOnce(new Error("a evidência caiu"));
+    await expect(service.enviarAlerta(ESCOLA, ids.ana, 4, FILTRO.certo[3]!)).rejects.toThrow("a evidência caiu");
+    espiao.mockRestore();
+    const antes = await prisma.exp05ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
+    expect(antes.alertasEm).toBeNull();
+
+    const estado = EstadoSchema.parse(await service.enviarAlerta(ESCOLA, ids.ana, 4, FILTRO.certo[3]!));
+    expect(estado.alerta?.aberto).toBe(false);
+    expect(estado.alerta?.andamento.map((a) => a.enviado?.passam.length)).toEqual([2, 6, 6, 2]);
+    /* 1 (corrigiu) + 2 + 2 + 2 = 7 → atingiu. */
+    const marca = await prisma.evidenciaMarca.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana, habilidade: "EF05CO03" } });
+    expect(marca).toMatchObject({ marcador: "alerta-do-grupo", status: "atingiu", atividadeId: pacote5A, rodada: 1 });
+    const depois = await prisma.exp05ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
+    expect(depois.alertasEm).not.toBeNull();
+    /* Com os quatro enviados, a janela fechou PARA ELA. */
+    expect(await codigo(service.executarAlerta(ESCOLA, ids.ana, 4, FILTRO.soFalsa))).toBe("alerta-fechado");
+  });
+
+  test("a Duda: no máximo 3 execuções por pedido, e dois alertas enviados", async () => {
+    for (let i = 0; i < 3; i++) await service.executarAlerta(ESCOLA, ids.duda, 1, FILTRO.soFalsa);
+    expect(await codigo(service.executarAlerta(ESCOLA, ids.duda, 1, FILTRO.soFalsa))).toBe("limite-execucoes");
+    await service.enviarAlerta(ESCOLA, ids.duda, 1, FILTRO.soFalsa);
+    await alertaDePrimeira(ids.duda, 2, FILTRO.soFalsa);
+  });
+
+  test("a Bia envia os quatro errados (0 de 8): não atingiu, e o Caio recebe a cópia pela equipe", async () => {
+    for (const n of [1, 2, 3, 4]) await alertaDePrimeira(ids.bia, n, FILTRO.falsaOuEmocional);
+    const caio = await prisma.evidencia.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.caio, habilidade: "EF05CO03" } });
+    expect(caio).toMatchObject({ status: "nao_atingiu", origem: "equipe", fonteEstudanteId: ids.bia });
   });
 
   test("a fase só anda para a frente: síntese, e a revelação de novo não volta", async () => {
@@ -695,76 +759,92 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     expect((await service.gate(ESCOLA, ids.ana)).passo).toBe("sintese");
   });
 
-  test("o cartão segue o caminho da criança: a Duda responde na SÍNTESE, e tudo igual dá 3 — em processo", async () => {
-    await service.responderCartao(ESCOLA, ids.duda, await respostasDoCartao(ids.duda, "nao"));
-    const marca = await prisma.evidenciaMarca.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.duda, habilidade: "EF05CO03" } });
-    expect(marca.status).toBe("em_processo");
+  test("a síntese FECHA o alerta: a Duda fica com 2 de 4 — Não avaliado, sem marca", async () => {
+    expect(await codigo(service.executarAlerta(ESCOLA, ids.duda, 3, FILTRO.certo[2]!))).toBe("alerta-fechado");
+    expect(await codigo(service.enviarAlerta(ESCOLA, ids.duda, 3, FILTRO.certo[2]!))).toBe("alerta-fechado");
+    /* O que já foi enviado continua idempotente, e visível. */
+    const estado = EstadoSchema.parse(await service.enviarAlerta(ESCOLA, ids.duda, 2, FILTRO.soFalsa));
+    expect(estado.alerta).toMatchObject({ aberto: false });
+    expect(estado.alerta?.andamento.filter((a) => a.enviado)).toHaveLength(2);
+    expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, estudanteId: ids.duda, habilidade: "EF05CO03" } })).toBe(0);
   });
 
-  test("liberar a reflexão: quem enviou o cartão vai à regra; quem não enviou, ao cartão PRIMEIRO", async () => {
+  test("liberar a reflexão: TODO mundo vai ao robô — o alerta não segura ninguém", async () => {
     await service.mudarGate(ESCOLA, ids.turma5A, ids.professora, "liberar_reflexao");
-    expect((await service.gate(ESCOLA, ids.ana)).passo).toBe("regra");
-    expect((await service.gate(ESCOLA, ids.bia)).passo).toBe("cartao");
-    expect(await codigo(service.testarRegra(ESCOLA, ids.bia, "urgente_alarmante", ["comparar_fonte"], "checa"))).toBe("cartao-pendente");
+    for (const id of [ids.ana, ids.bia, ids.duda]) expect((await service.gate(ESCOLA, id)).passo).toBe("regra");
+    const sessao = SessaoSchema.parse(await service.sessao(ESCOLA, ids.duda));
+    expect(sessao.robo).toMatchObject({ ligacoes: [], podeLigar: true, enviado: null });
+    expect(sessao.robo?.mensagens.map((m) => [m.remetente, m.tipo, m.atributos])).toEqual([
+      ["Tio Paulo · áudio 0:23", "audio", ["urgente_alarmante", "parente_proximo"]],
+      ["Banco Seguro", "texto", ["urgente_alarmante", "link_nao_checado"]],
+      ["Dona Rita, vizinha", "texto", []],
+      ["Corrente", "texto", ["urgente_alarmante", "promessa_incrivel"]],
+    ]);
+    /* O TIPO das ações não desce. */
+    expect(JSON.stringify(sessao.robo)).not.toMatch(/checagem|repasse|"tipo":"(espera|condicional)"/);
     const painel = PainelSchema.parse(await service.painel(ESCOLA, ids.turma5A, ids.professora));
-    expect(painel.progresso).toMatchObject({ responderamCartao: 2, enviaramRegra: 0 });
+    expect(painel.progresso).toMatchObject({ enviaramAlertas: 2, enviaramRobo: 0 });
     /* A tabela da regra Se/Então de texto livre (2.2) segue sem escrita nova. */
     expect(await prisma.exp05ef1bReflexao.count({ where: { escolaId: ESCOLA } })).toBe(0);
   });
 
-  test("a Bia responde o cartão na reflexão, e o Caio recebe a cópia do nível pela equipe", async () => {
-    expect((await service.responderCartao(ESCOLA, ids.bia, await respostasDoCartao(ids.bia, "certas"))).passo).toBe("regra");
-    const caio = await prisma.evidencia.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.caio, habilidade: "EF05CO03" } });
-    expect(caio).toMatchObject({ status: "atingiu", origem: "equipe", fonteEstudanteId: ids.bia });
-  });
-
-  test("a regra da Ana: o teste devolve o que a regra fez, e a régua lê o PRIMEIRO teste", async () => {
-    /* Primeiro teste: só espera — e ela previu certo o que essa regra faria. */
-    let estado = EstadoSchema.parse(await service.testarRegra(ESCOLA, ids.ana, "urgente_alarmante", ["esperar"], "sem_conferir"));
-    expect(estado.regra?.testes.map((t) => [t.situacao, t.previsao])).toEqual([["sem_conferir", "sem_conferir"]]);
-    expect(estado.regra?.testes[0]?.resultado).toBe("Sua regra pegou o áudio, mas não diz como conferir.");
-    /* Corrige depois do retorno do teste. */
+  test("o robô da Ana: sem laço trata 1 das 4; com laço, as 4 — e a régua lê a PRIMEIRA ligação", async () => {
+    let estado = EstadoSchema.parse(
+      await service.ligarRobo(ESCOLA, ids.ana, false, "urgente_alarmante", ["comparar_fonte", "encaminhar_se_confirmar"]),
+    );
+    expect(estado.robo?.ligacoes[0]).toMatchObject({ laco: false, resumo: "O robô tratou 1 das 4 mensagens." });
+    expect(estado.robo?.ligacoes[0]?.resultados.map((r) => r.situacao)).toEqual(["checa", "nao_olhou", "nao_olhou", "nao_olhou"]);
+    expect(estado.robo?.ligacoes[0]?.resultados[1]?.texto).toBe("O robô não olhou esta mensagem");
     estado = EstadoSchema.parse(
-      await service.testarRegra(ESCOLA, ids.ana, "urgente_alarmante", ["comparar_fonte", "encaminhar_se_confirmar"], "checa"),
+      await service.ligarRobo(ESCOLA, ids.ana, true, "urgente_alarmante", ["comparar_fonte", "encaminhar_se_confirmar"]),
     );
-    expect(estado.regra?.testes.map((t) => t.situacao)).toEqual(["sem_conferir", "checa"]);
-    estado = EstadoSchema.parse(await service.enviarRegra(ESCOLA, ids.ana, "urgente_alarmante", ["comparar_fonte", "encaminhar_se_confirmar"]));
-    expect(estado.regra?.enviada?.emPalavras).toBe(
-      "Se a mensagem for urgente e alarmante, então eu comparo com uma fonte confiável e depois encaminho só se a notícia se confirmar.",
+    expect(estado.robo?.ligacoes[1]?.resultados.map((r) => r.situacao)).toEqual(["checa", "checa", "passou", "checa"]);
+    expect(estado.robo?.ligacoes[1]?.resumo).toBe("O robô tratou as 4 mensagens.");
+    /* A ligação fica gravada com o laço e o resultado. */
+    const linha = await prisma.exp05ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
+    expect(linha.regraTestes).toMatchObject([{ laco: false }, { laco: true, resultados: expect.any(Array) }]);
+
+    estado = EstadoSchema.parse(
+      await service.enviarRobo(ESCOLA, ids.ana, true, "urgente_alarmante", ["comparar_fonte", "encaminhar_se_confirmar"]),
     );
-    expect(estado.regra?.podeTestar).toBe(false);
-    /* Chegou à regra boa só DEPOIS do teste: em processo. */
+    expect(estado.robo?.enviado?.emPalavras).toBe(
+      "Para cada mensagem nova, se a mensagem for urgente e alarmante, o robô compara com fonte confiável e depois encaminha só se confirmar.",
+    );
+    expect(estado.robo?.podeLigar).toBe(false);
+    /* Chegou ao robô completo só DEPOIS de ligar sem o laço: em processo. */
     const marcas = await prisma.evidenciaMarca.findMany({ where: { escolaId: ESCOLA, estudanteId: ids.ana }, orderBy: { habilidade: "asc" } });
     expect(marcas.map((m) => [m.habilidade, m.marcador, m.status])).toEqual([
-      ["EF05CO03", "cartao-de-frases", "atingiu"],
-      ["EF05CO04", "regra-do-tio", "em_processo"],
+      ["EF05CO03", "alerta-do-grupo", "atingiu"],
+      ["EF05CO04", "robo-do-grupo", "em_processo"],
       ["EF05CO08", "selecao-do-mural", "atingiu"],
     ]);
   });
 
-  test("a regra enviada é um latch: a mesma é idempotente; outra, ou um teste depois, é 409", async () => {
-    await service.enviarRegra(ESCOLA, ids.ana, "urgente_alarmante", ["comparar_fonte", "encaminhar_se_confirmar"]);
-    expect(await codigo(service.enviarRegra(ESCOLA, ids.ana, "parente_proximo", ["esperar"]))).toBe("regra-ja-enviada");
-    expect(await codigo(service.testarRegra(ESCOLA, ids.ana, "parente_proximo", ["esperar"], "sem_conferir"))).toBe("regra-ja-enviada");
+  test("o robô enviado é um latch: o mesmo é idempotente; outro, ou ligar depois, é 409", async () => {
+    await service.enviarRobo(ESCOLA, ids.ana, true, "urgente_alarmante", ["comparar_fonte", "encaminhar_se_confirmar"]);
+    expect(await codigo(service.enviarRobo(ESCOLA, ids.ana, false, "urgente_alarmante", ["comparar_fonte", "encaminhar_se_confirmar"]))).toBe(
+      "robo-ja-enviado",
+    );
+    expect(await codigo(service.ligarRobo(ESCOLA, ids.ana, true, "parente_proximo", ["esperar"]))).toBe("robo-ja-enviado");
     expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana, habilidade: "EF05CO04" } })).toBe(1);
   });
 
-  test("a Duda acerta de primeira e prevê certo: atingiu", async () => {
-    await service.testarRegra(ESCOLA, ids.duda, "parente_proximo", ["perguntar_adulto"], "checa");
-    await service.enviarRegra(ESCOLA, ids.duda, "parente_proximo", ["perguntar_adulto"]);
+  test("a Duda monta o robô completo de primeira — sem ter fechado o alerta: atingiu", async () => {
+    await service.ligarRobo(ESCOLA, ids.duda, true, "urgente_alarmante", ["perguntar_adulto"]);
+    await service.enviarRobo(ESCOLA, ids.duda, true, "urgente_alarmante", ["perguntar_adulto"]);
     const marca = await prisma.evidenciaMarca.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.duda, habilidade: "EF05CO04" } });
     expect(marca.status).toBe("atingiu");
   });
 
-  test("a Bia: ação repetida é 400, o sexto teste é 409, e encaminhar antes de checar é não atingiu", async () => {
-    expect(await codigo(service.testarRegra(ESCOLA, ids.bia, "urgente_alarmante", ["esperar", "esperar"], "sem_conferir"))).toBe(
-      "regra-invalida",
-    );
-    for (let i = 0; i < 5; i++) await service.testarRegra(ESCOLA, ids.bia, "urgente_alarmante", ["encaminhar_logo"], "repassa_antes");
-    expect(await codigo(service.testarRegra(ESCOLA, ids.bia, "urgente_alarmante", ["encaminhar_logo"], "repassa_antes"))).toBe(
-      "testes-esgotados",
-    );
-    await service.enviarRegra(ESCOLA, ids.bia, "urgente_alarmante", ["encaminhar_logo"]);
+  test("a Bia: ação repetida é 400, a sexta ligação é 409, e encaminhar antes de checar é não atingiu", async () => {
+    expect(await recusa(service.ligarRobo(ESCOLA, ids.bia, true, "urgente_alarmante", ["esperar", "esperar"]))).toMatchObject({
+      status: 400,
+      corpo: { codigo: "robo-invalido" },
+    });
+    for (let i = 0; i < 5; i++) await service.ligarRobo(ESCOLA, ids.bia, true, "urgente_alarmante", ["encaminhar_logo"]);
+    expect(await codigo(service.ligarRobo(ESCOLA, ids.bia, true, "urgente_alarmante", ["encaminhar_logo"]))).toBe("ligacoes-esgotadas");
+    expect((await service.sessao(ESCOLA, ids.bia)).robo?.podeLigar).toBe(false);
+    await service.enviarRobo(ESCOLA, ids.bia, true, "urgente_alarmante", ["encaminhar_logo"]);
     const caio = await prisma.evidencia.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.caio, habilidade: "EF05CO04" } });
     expect(caio).toMatchObject({ status: "nao_atingiu", origem: "equipe" });
   });
@@ -776,30 +856,34 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     });
   });
 
-  test("concluir: o Caio nunca abriu o grupo, e depois do fim a regra não aceita mais teste", async () => {
+  test("concluir: o Caio nunca abriu o grupo, e depois do fim o robô não liga mais", async () => {
     expect(await codigo(service.concluir(ESCOLA, ids.caio))).toBe("grupo-nao-aberto");
     expect((await service.concluir(ESCOLA, ids.ana)).passo).toBe("concluida");
     expect((await service.concluir(ESCOLA, ids.ana)).concluido).toBe(true);
-    expect(await codigo(service.testarRegra(ESCOLA, ids.ana, "urgente_alarmante", ["esperar"], "sem_conferir"))).toBe("regra-ja-enviada");
+    expect(await codigo(service.ligarRobo(ESCOLA, ids.ana, true, "urgente_alarmante", ["esperar"]))).toBe("robo-ja-enviado");
+    /* Quem concluiu ainda vê o robô enviado (o card final). */
+    expect((await service.sessao(ESCOLA, ids.ana)).robo?.enviado).not.toBeNull();
   });
 
-  test("a folha: o cartão e a regra de cada linha, sem texto livre — a mesma para professor e gestor", async () => {
+  test("a folha: os alertas e o robô de cada linha, sem texto livre — a mesma para professor e gestor", async () => {
     const daProfessora = PainelSchema.parse(await service.painel(ESCOLA, ids.turma5A, ids.professora));
     const doGestor = PainelSchema.parse(await service.painel(ESCOLA, ids.turma5A));
-    const linhaDaAna = (p: typeof daProfessora) => p.linhas.find((l) => l.estudanteId === ids.ana);
-    expect(linhaDaAna(doGestor)).toEqual(linhaDaAna(daProfessora));
-    expect(linhaDaAna(doGestor)).toMatchObject({
+    const linhaDe = (p: typeof daProfessora, id: string) => p.linhas.find((l) => l.estudanteId === id);
+    expect(linhaDe(doGestor, ids.ana)).toEqual(linhaDe(daProfessora, ids.ana));
+    expect(linhaDe(doGestor, ids.ana)).toMatchObject({
       passo: "concluida",
       motivo: "urgencia",
       selecao: ["msg_1", "msg_5", "msg_3"],
-      cartao: { acertos: 6, porOperador: { E: 2, OU: 2, NAO: 2 } },
-      regra: {
+      alertas: { pontos: 7, enviados: 4 },
+      robo: {
         emPalavras:
-          "Se a mensagem for urgente e alarmante, então eu comparo com uma fonte confiável e depois encaminho só se a notícia se confirmar.",
-        testes: 2,
+          "Para cada mensagem nova, se a mensagem for urgente e alarmante, o robô compara com fonte confiável e depois encaminha só se confirmar.",
+        ligacoes: 2,
       },
     });
-    expect(daProfessora.progresso).toMatchObject({ responderamCartao: 3, enviaramRegra: 3, concluiram: 1 });
+    /* A Duda enviou 2 dos 4 (os dois errados): a folha mostra, o nível não existe. */
+    expect(linhaDe(daProfessora, ids.duda)?.alertas).toEqual({ pontos: 0, enviados: 2 });
+    expect(daProfessora.progresso).toMatchObject({ enviaramAlertas: 2, enviaramRobo: 3, concluiram: 1 });
   });
 });
 
@@ -1000,12 +1084,12 @@ describe("os CHECKs recusam o que dizem recusar", () => {
     ["regra sem o voto", `UPDATE exp05ef1b_sessoes SET reflexao_em = now(), motivo = NULL, votou_em = NULL, concluido_em = NULL WHERE {S}`],
     ["concluída sem o voto", `UPDATE exp05ef1b_sessoes SET motivo = NULL, votou_em = NULL WHERE {S}`],
     ["tempo de feed negativo", `UPDATE exp05ef1b_sessoes SET tempo_feed_segundos = -1 WHERE {S}`],
-    ["cartão sem o voto", `UPDATE exp05ef1b_sessoes SET motivo = NULL, votou_em = NULL, concluido_em = NULL WHERE {S}`],
-    ["cartão com 5 frases", `UPDATE exp05ef1b_sessoes SET frases_operacoes = frases_operacoes - 0 WHERE {S}`],
-    ["regra sem o cartão", `UPDATE exp05ef1b_sessoes SET operacoes_em = NULL WHERE {S}`],
-    ["regra sem carimbo", `UPDATE exp05ef1b_sessoes SET regra_em = NULL WHERE {S}`],
-    ["condição da regra fora do vocabulário", `UPDATE exp05ef1b_sessoes SET regra_final = '{"condicao":"sempre","acoes":["esperar"]}' WHERE {S}`],
-    ["seis testes", `UPDATE exp05ef1b_sessoes SET regra_testes = regra_testes || regra_testes || regra_testes WHERE {S}`],
+    ["alertas carimbados com 3 pedidos", `UPDATE exp05ef1b_sessoes SET alertas = alertas - 0 WHERE {S}`],
+    ["cinco pedidos de alerta", `UPDATE exp05ef1b_sessoes SET alertas = alertas || '[{}]'::jsonb WHERE {S}`],
+    ["alertas que não são lista", `UPDATE exp05ef1b_sessoes SET alertas = '{}'::jsonb, alertas_em = NULL WHERE {S}`],
+    ["robô sem carimbo", `UPDATE exp05ef1b_sessoes SET regra_em = NULL WHERE {S}`],
+    ["condição do robô fora do vocabulário", `UPDATE exp05ef1b_sessoes SET regra_final = '{"laco":true,"condicao":"sempre","acoes":["esperar"]}' WHERE {S}`],
+    ["seis ligações", `UPDATE exp05ef1b_sessoes SET regra_testes = regra_testes || regra_testes || regra_testes WHERE {S}`],
     ["Então de espaços", `UPDATE exp05ef1b_reflexoes SET acao_entao = '                    ' WHERE {S}`],
     ["Então curto", `UPDATE exp05ef1b_reflexoes SET acao_entao = 'curto demais' WHERE {S}`],
     ["condição fora do vocabulário", `UPDATE exp05ef1b_reflexoes SET condicional_se = 'sempre' WHERE {S}`],
@@ -1025,6 +1109,27 @@ describe("os CHECKs recusam o que dizem recusar", () => {
     ["dois ativos na turma", `UPDATE exp05ef1b_pacotes SET ativo = true WHERE id = '{P}'::uuid`],
   ])("pacote: %s", async (_nome, sql) => {
     await expect(prisma.$executeRawUnsafe(sql.replace("{P}", pacote5A))).rejects.toThrow();
+  });
+
+  test("alertas sem o voto: recusado pelo CHECK do alerta (isolado dos outros latches)", async () => {
+    /* A Bia da 5A: tirar o voto dela derrubaria também o robô e o fim — por
+       isso o teste zera esses dois e prova que, ainda assim, o alerta segura. */
+    const daBia = `escola_id = '${ESCOLA}' AND estudante_id = '${ids.bia}'::uuid AND rodada = 1`;
+    await expect(
+      prisma.$executeRawUnsafe(
+        `UPDATE exp05ef1b_sessoes SET motivo = NULL, votou_em = NULL, regra_em = NULL, regra_final = NULL, regra_testes = '[]', alertas_em = NULL WHERE ${daBia}`,
+      ),
+    ).rejects.toThrow(/exp05ef1b_sessoes_alertas_check/);
+  });
+
+  test("o robô NÃO depende do cartão (2.5.0): os CHECKs dele não citam `operacoes_em`", async () => {
+    for (const nome of ["exp05ef1b_sessoes_regra_check", "exp05ef1b_sessoes_regra_testes_check"]) {
+      const [linha] = await prisma.$queryRawUnsafe<{ def: string }[]>(
+        `SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conname = '${nome}'`,
+      );
+      expect({ nome, def: linha?.def ?? "" }).toEqual({ nome, def: expect.stringContaining("votou_em") });
+      expect(linha?.def ?? "").not.toContain("operacoes_em");
+    }
   });
 
   test("fase fora do vocabulário", async () => {
@@ -1055,14 +1160,26 @@ describe("o guia da aula", () => {
   test("o banco curado COM gabarito e as duas ações por dentro — para quem dá aula", () => {
     const m = MaterialSchema.parse(service.material());
     expect(m.padrao.convite).toBe(falaDaNina(PACOTE_PADRAO.tema));
-    expect(m.cartao.exemplo).toHaveLength(6);
-    expect(m.cartao.exemplo.filter((f) => f.esperado === "sim")).toHaveLength(3);
-    expect(m.regra.condicoes.filter((c) => c.pegaOAudio).map((c) => c.id)).toEqual(["urgente_alarmante", "parente_proximo"]);
-    expect(m.regra.acoes.filter((a) => a.tipo === "checagem")).toHaveLength(4);
+    expect(m.alerta.pedidos.map((p) => [p.n, p.emPalavras, p.passamNoPadrao])).toEqual([
+      [1, "Falsa E Emocional", 2],
+      [2, "Falsa OU NÃO Emocional", 6],
+      [3, "NÃO Falsa OU Emocional", 6],
+      [4, "NÃO Falsa E NÃO Emocional", 2],
+    ]);
+    expect(m.alerta.pedidos[0]?.esperada).toEqual(FILTRO.certo[0]);
+    expect(m.robo.condicoes.map((c) => [c.id, c.riscos])).toEqual([
+      ["urgente_alarmante", 3],
+      ["parente_proximo", 1],
+      ["link_nao_checado", 1],
+      ["promessa_incrivel", 1],
+    ]);
+    expect(m.robo.mensagensDeRisco).toBe(3);
+    expect(m.robo.acoes.filter((a) => a.tipo === "checagem")).toHaveLength(4);
+    expect(m.robo.mensagens).toHaveLength(4);
     expect(m.habilidades.map((h) => [h.codigo, h.rotulo])).toEqual([
       ["EF05CO08", "Seleção do Mural"],
-      ["EF05CO03", "Cartão de frases"],
-      ["EF05CO04", "Regra do tio"],
+      ["EF05CO03", "Alerta do grupo"],
+      ["EF05CO04", "Robô do grupo"],
     ]);
     expect(m.roteiro.perguntas).toHaveLength(3);
   });

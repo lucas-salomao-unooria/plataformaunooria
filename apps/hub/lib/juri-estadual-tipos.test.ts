@@ -41,6 +41,11 @@ import {
   distribuirErros,
   erroDaResposta,
   estadoDaImagem,
+  LAMINAS,
+  ROTULO_DA_LAMINA,
+  chaveDaMidia,
+  laminasSemImagem,
+  projetoDaChave,
   estandesPorArea,
   falhaDaIa,
   falhasAcumuladas,
@@ -191,13 +196,21 @@ describe("o espelho das invariantes e do contrato", () => {
   test("as imagens do banco padrão: a forma do progresso e da geração", () => {
     const progresso = /export const ImagensDoBancoPadraoSchema = z\.object\(\{([\s\S]*?)\n\}\);/.exec(contrato)?.[1] ?? "";
     expect([...progresso.matchAll(/^\s{2}(\w+):/gm)].map((m) => m[1])).toEqual(["total", "prontas", "faltam", "completo", "imagens"]);
-    expect(progresso).toMatch(/faltam: z\.array\(IdDeProjetoSchema\)/);
+    expect(progresso).toMatch(/faltam: z\.array\(ChaveDaMidiaSchema\)/);
     const geracao = /export const GeracaoDoBancoPadraoSchema = ImagensDoBancoPadraoSchema\.extend\(\{([\s\S]*?)\n\}\);/.exec(contrato)?.[1] ?? "";
     expect([...geracao.matchAll(/^\s{2}(\w+):/gm)].map((m) => m[1])).toEqual(["geradas", "falharam"]);
     const controller = ler("juri-estadual-banco-padrao.controller.ts");
     expect(controller).toContain('@Controller("juri-estadual/banco-padrao")');
     expect(controller).toContain('@Get("imagens")');
     expect(controller).toContain('@Post("imagens")');
+  });
+
+  test("as lâminas do carrossel são as da api, na mesma ordem, e a chave da capa é o id (ADR-178)", () => {
+    const fonte = ler("regras/laminas.ts");
+    const declaradas = /export const LAMINAS = \[([^\]]*)\]/.exec(fonte)?.[1] ?? "";
+    expect([...declaradas.matchAll(/"([a-z]+)"/g)].map((m) => m[1])).toEqual([...LAMINAS]);
+    expect(fonte).toContain('return lamina === "capa" ? projetoId : `${projetoId}:${lamina}`;');
+    expect(contrato).toMatch(/lamina: LaminaSchema\.default\("capa"\)/);
   });
 
   test("os tetos dos parâmetros do preparo", () => {
@@ -430,7 +443,7 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
     concluiu: false,
   });
   const painel = (
-    passos: Passo[] = ["galeria", "cadeia", "cadeia", "mariana"],
+    passos: Passo[] = ["galeria", "cadeia", "cadeia", "fim"],
     resumo: Partial<{ separaram: number; revisaram: number; concluiram: number }> = {},
     rodada = 1,
     id = "p1",
@@ -456,18 +469,18 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
     },
   });
 
-  test("relê na separação, na regra enviada, e quando a atividade ou a rodada trocam (ficha 5, ADR-174)", () => {
+  test("relê na separação, na regra enviada, e quando a atividade ou a rodada trocam (ficha 6, ADR-176)", () => {
     const antes = painel();
     expect(mudouAEvidencia(antes, painel())).toBe(false);
-    // A separação marca a EF06CO01.
+    // A separação das pastas, corrigida no voto, marca a EF06CO01.
     expect(mudouAEvidencia(antes, painel(undefined, { separaram: 5 }))).toBe(true);
-    // A regra enviada: a linha sai de `cadeia` (EF06CO03), sem contador no resumo.
-    expect(mudouAEvidencia(antes, painel(["galeria", "cadeia", "mariana", "mariana"]))).toBe(true);
+    // A regra enviada: a linha sai de `cadeia` para `fim` (EF06CO03), sem contador no resumo.
+    expect(mudouAEvidencia(antes, painel(["galeria", "cadeia", "fim", "fim"]))).toBe(true);
     expect(mudouAEvidencia(antes, painel(undefined, {}, 2))).toBe(true);
     expect(mudouAEvidencia(antes, painel(undefined, {}, 1, "p2"))).toBe(true);
   });
 
-  test("o que não marca nada não relê a página: a espera, a galeria, a revisão do voto e os cartões", () => {
+  test("o que não marca nada não relê a página: a espera, a galeria, a revisão do voto e a sessão antiga que conclui", () => {
     expect(mudouAEvidencia(painel(["feed"]), painel(["classificacao"]))).toBe(false);
     expect(mudouAEvidencia(painel(["lacrada"]), painel(["galeria"]))).toBe(false);
     expect(mudouAEvidencia(painel(), painel(undefined, { revisaram: 4 }))).toBe(false);
@@ -499,6 +512,16 @@ describe("as imagens", () => {
     expect(porArea[1]?.ids).toEqual(["proj-b1"]);
     expect(textoDoProgressoDoBanco({ total: 40, prontas: 12 })).toBe("12 de 40 imagens do banco prontas.");
     expect(textoDoProgressoDoBanco({ total: 40, prontas: 40 })).toBe("As 40 imagens do banco estão prontas.");
+  });
+
+  test("as chaves das lâminas (ADR-178): a capa é o id; o banco agrupa as quatro no projeto", () => {
+    expect(chaveDaMidia("proj-a1", "capa")).toBe("proj-a1");
+    expect(chaveDaMidia("proj-a1", "bastidor")).toBe("proj-a1:bastidor");
+    expect(projetoDaChave("proj-a1:equipe")).toBe("proj-a1");
+    expect(laminasSemImagem("proj-a1", { "proj-a1": "u", "proj-a1:detalhe": "u" })).toBe(2);
+    const porArea = idsDoBancoPorArea({ imagens: { "proj-a1:detalhe": "u" }, faltam: ["proj-a1", "proj-a2:bastidor", "proj-a2:selfie:x"] });
+    expect(porArea[0]?.ids).toEqual(["proj-a1", "proj-a2"]);
+    expect(LAMINAS.map((l) => ROTULO_DA_LAMINA[l])).toHaveLength(4);
   });
 });
 

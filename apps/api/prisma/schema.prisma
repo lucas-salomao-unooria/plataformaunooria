@@ -2737,15 +2737,22 @@ model Exp05ef1bSessao {
   frasesOperacoes    Json?     @map("frases_operacoes")
   respostasOperacoes Json?     @map("respostas_operacoes")
   operacoesEm        DateTime? @map("operacoes_em") @db.Timestamptz(6)
-  /// A REGRA DO TIO (EF05CO04, 2.4.0): os testes em ordem
-  /// ([{condicao, acoes, previsao, situacao, em}], no máximo 5) e a regra
-  /// enviada ({condicao, acoes}). A régua lê o PRIMEIRO teste.
+  /// O ALERTA DO GRUPO (EF05CO03, 2.5.0): um item por pedido aberto, em ordem
+  /// ([{pedido, execucoes: [{expressao, passam, em}], enviado}], no máximo 4).
+  /// O carimbo é o QUARTO envio, junto da marca (CHECK `alertas_em_check`).
+  /// O cartão de frases da 2.4.0 (as três colunas acima) fica pelo histórico.
+  alertas            Json      @default("[]")
+  alertasEm          DateTime? @map("alertas_em") @db.Timestamptz(6)
+  /// O ROBÔ DO GRUPO (EF05CO04, 2.5.0) reusa as colunas da regra do tio da
+  /// 2.4.0: as ligações em ordem ([{laco, condicao, acoes, resultados, em}],
+  /// no máximo 5) e o robô enviado ({laco, condicao, acoes}). A régua lê a
+  /// PRIMEIRA ligação. Linha da 2.4.0, sem `laco`, é lida como robô sem laço.
   regraTestes        Json      @default("[]") @map("regra_testes")
   regraFinal         Json?     @map("regra_final")
   regraEm            DateTime? @map("regra_em") @db.Timestamptz(6)
   concluidoEm        DateTime? @map("concluido_em") @db.Timestamptz(6)
   /// A versão do instrumento, na linha, para reprocessar o histórico se ele mudar.
-  versaoInstrumento  String    @default("2.4.0") @map("versao_instrumento")
+  versaoInstrumento  String    @default("2.5.0") @map("versao_instrumento")
 
   criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
@@ -3443,6 +3450,9 @@ model Exp06ef1bSessao {
   curtidos      Json @default("[]")
   /// Os posts salvos AGORA (tirar dos salvos tira daqui).
   salvos        Json @default("[]")
+  /// A PASTA de cada post salvo (`{postId: area}`) — a separação da EF06CO01
+  /// feita no feed desde a 0.7.0 (ADR-176); corrigida no voto.
+  pastas        Json @default("{}")
   /// Os posts em que o estudante ficou mais de 5 s (uma vez por post).
   permanencias  Json @default("[]")
 

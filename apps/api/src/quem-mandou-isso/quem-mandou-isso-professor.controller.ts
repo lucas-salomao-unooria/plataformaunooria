@@ -22,9 +22,9 @@ export class QuemMandouIssoProfessorController {
 
   @Get("material")
   @Contrato({
-    resumo: "O guia da aula: o banco curado com gabarito, o roteiro e as perguntas de evidência.",
+    resumo: "O guia da aula: o banco curado com gabarito, o roteiro, os pedidos do alerta e os blocos do robô.",
     descricao:
-      "**Quem dá aula e quem administra.** O hub não guarda cópia: em paráfrase, o que sustenta a lição — a falsa NÃO parece malfeita, a verdadeira NÃO parece profissional — desaparece.\n\nÉ o BANCO CURADO, não o pacote da turma (esse está em `GET /quem-mandou-isso/turmas/:turmaId/pacote`). As perguntas de evidência vêm COM o nível de cada alternativa — é o professor quem lê; o estudante nunca o recebe.",
+      "**Quem dá aula e quem administra.** O hub não guarda cópia: em paráfrase, o que sustenta a lição — a falsa NÃO parece malfeita, a verdadeira NÃO parece profissional — desaparece.\n\nÉ o BANCO CURADO, não o pacote da turma (esse está em `GET /quem-mandou-isso/turmas/:turmaId/pacote`). Os quatro pedidos do alerta vêm COM a expressão esperada, e os blocos do robô com o TIPO de cada ação — é o professor quem lê; o estudante nunca o recebe.",
     resposta: MaterialSchema,
     notas: ["Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato."],
   })

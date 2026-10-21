@@ -6,16 +6,17 @@ import { AssetsService } from "../assets/assets.service";
 import { logger } from "../observabilidade/logger";
 import { conteudoDoBancoPadrao } from "./banco-padrao";
 import type { GeracaoDoBancoPadraoSchema, ImagensDoBancoPadraoSchema } from "./contrato-de-rotas";
-import { IMAGENS_POR_CHAMADA, TAMANHO_DA_IMAGEM, nomeDaImagem } from "./midia.service";
-import { promptDaImagem } from "./prompts";
+import { IMAGENS_EM_PARALELO, IMAGENS_POR_CHAMADA, TAMANHO_DA_IMAGEM } from "./midia.service";
+import { laminasDosProjetos, nomeDaLamina, promptDeLamina } from "./regras/laminas";
 import { EXP_ID } from "./vocabulario";
 
 /**
- * As IMAGENS DO BANCO PADRÃO — uma por projeto, quarenta, geradas fora de
+ * As IMAGENS DO BANCO PADRÃO — quatro por projeto (as lâminas do carrossel,
+ * ADR-178), cento e sessenta, geradas fora de
  * qualquer turma pelo `admin` (`POST /juri-estadual/banco-padrao/imagens`) e
  * LIGADAS ao pacote `padrao` quando ele nasce.
  *
- * - **O nome é o da customização** (`nomeDaImagem(descricao)`, com a versão do
+ * - **O nome é o da customização** (`nomeDaLamina`, com a versão do
  *   pedido de imagem): a descrição do banco é derivada do título, então o
  *   arquivo de um projeto do banco é sempre o mesmo, e uma turma que homologar o
  *   banco padrão (o fallback) e gerar as imagens dele acha o arquivo pronto.
@@ -24,9 +25,9 @@ import { EXP_ID } from "./vocabulario";
  * - **Sem quota de professor**: é custo da plataforma, não de uma turma, e o
  *   `QuotaService` não conhece o `admin`. Quem enxerga o gasto é o painel de
  *   custos (ADR-161), pela atribuição explícita abaixo; quem segura a mão é o
- *   rate limit da rota e o lote de quatro.
- * - **Incremental e idempotente**, como a customização: até quatro novas por
- *   chamada (o BFF corta em 180 s), e o que já existe no storage não é gerado
+ *   rate limit da rota e o lote de `IMAGENS_POR_CHAMADA`.
+ * - **Incremental e idempotente**, como a customização: até
+ *   `IMAGENS_POR_CHAMADA` novas por chamada (o BFF corta em 180 s), e o que já existe no storage não é gerado
  *   de novo.
  */
 
@@ -50,12 +51,13 @@ export type GeracaoDoBancoPadrao = z.infer<typeof GeracaoDoBancoPadraoSchema>;
 /** Uma geração por processo: dois cliques do admin não pagam a mesma imagem duas vezes. */
 let emCurso: Promise<GeracaoDoBancoPadrao> | null = null;
 
-/** Os projetos do banco com o nome do arquivo de cada um, na ordem do banco. */
-function projetosDoBanco() {
-  return conteudoDoBancoPadrao().projetos.map((p) => ({
-    id: p.id,
-    descricao: p.imagem.descricao,
-    nome: nomeDaImagem(p.imagem.descricao),
+/** Cada lâmina de cada projeto do banco, com a chave da `midia` e o nome do arquivo, na ordem do banco. */
+function itensDoBanco() {
+  return laminasDosProjetos(conteudoDoBancoPadrao().projetos).map(({ projeto, lamina, chave }) => ({
+    chave,
+    lamina,
+    projeto,
+    nome: nomeDaLamina(lamina, projeto),
   }));
 }
 
@@ -67,7 +69,7 @@ export class ImagensDoBancoPadraoService {
   ) {}
 
   /**
-   * As imagens do banco que JÁ existem no storage, por id de projeto — o que o
+   * As imagens do banco que JÁ existem no storage, por chave de lâmina — o que o
    * pacote `padrao` leva na `midia`. Nunca lança: o storage fora do ar deixa o
    * pacote sem imagem (a experiência desenha a arte procedural), e o professor
    * não perde o "Usar Banco Padrão" por isso.
@@ -86,7 +88,7 @@ export class ImagensDoBancoPadraoService {
     return this.lerProgresso();
   }
 
-  /** Gera as próximas que faltam (até quatro) e devolve o progresso. */
+  /** Gera as próximas que faltam (até `IMAGENS_POR_CHAMADA`) e devolve o progresso. */
   async gerar(): Promise<GeracaoDoBancoPadrao> {
     if (emCurso) return emCurso;
     emCurso = this.gerarDeVerdade().finally(() => {
@@ -97,42 +99,55 @@ export class ImagensDoBancoPadraoService {
 
   private async gerarDeVerdade(): Promise<GeracaoDoBancoPadrao> {
     const antes = await this.lerProgresso();
-    const pendentes = projetosDoBanco().filter((p) => antes.faltam.includes(p.id));
+    const pendentes = itensDoBanco()
+      .filter((i) => antes.faltam.includes(i.chave))
+      .slice(0, IMAGENS_POR_CHAMADA);
     const geradas: string[] = [];
     const falharam: string[] = [];
-    for (const projeto of pendentes.slice(0, IMAGENS_POR_CHAMADA)) {
-      try {
-        const bytes = await this.ia.generateImage(promptDaImagem(projeto.descricao), {
-          proporcao: "4:3",
-          atribuicao: ATRIBUICAO_DAS_IMAGENS_DO_BANCO,
-        });
-        await this.assets.salvarMidiaDeExperiencia({
-          expId: EXP_ID,
-          nome: projeto.nome,
-          bytes,
-          contentType: "image/webp",
-          imagem: { ...TAMANHO_DA_IMAGEM },
-        });
-        geradas.push(projeto.id);
-      } catch {
+    for (let inicio = 0; inicio < pendentes.length; inicio += IMAGENS_EM_PARALELO) {
+      const leva = pendentes.slice(inicio, inicio + IMAGENS_EM_PARALELO);
+      const resultados = await Promise.allSettled(
+        leva.map(async (item) => {
+          const bytes = await this.ia.generateImage(promptDeLamina(item.lamina, item.projeto), {
+            proporcao: "4:3",
+            atribuicao: ATRIBUICAO_DAS_IMAGENS_DO_BANCO,
+          });
+          await this.assets.salvarMidiaDeExperiencia({
+            expId: EXP_ID,
+            nome: item.nome,
+            bytes,
+            contentType: "image/webp",
+            imagem: { ...TAMANHO_DA_IMAGEM },
+          });
+        }),
+      );
+      resultados.forEach((r, i) => {
+        const item = leva[i]!;
+        if (r.status === "fulfilled") {
+          geradas.push(item.chave);
+          return;
+        }
         /* Sem `err` no log: a mensagem do provider pode carregar trecho do pedido. */
-        logger.warn({ codigo: "exp06ef1b-banco-imagem-falhou", projeto: projeto.id }, "imagem do banco padrão não gerada");
-        falharam.push(projeto.id);
-      }
+        logger.warn(
+          { codigo: "exp06ef1b-banco-imagem-falhou", projeto: item.projeto.id, lamina: item.lamina },
+          "imagem do banco padrão não gerada",
+        );
+        falharam.push(item.chave);
+      });
     }
     return { ...(await this.lerProgresso()), geradas, falharam };
   }
 
   private async lerProgresso(): Promise<ImagensDoBancoPadrao> {
-    const projetos = projetosDoBanco();
-    const existe = await Promise.all(projetos.map((p) => this.assets.midiaDeExperienciaExiste(EXP_ID, p.nome)));
+    const itens = itensDoBanco();
+    const existe = await Promise.all(itens.map((i) => this.assets.midiaDeExperienciaExiste(EXP_ID, i.nome)));
     const imagens: Record<string, string> = {};
     const faltam: string[] = [];
-    projetos.forEach((p, i) => {
-      if (existe[i]) imagens[p.id] = this.assets.urlDaMidiaDeExperiencia(EXP_ID, p.nome);
-      else faltam.push(p.id);
+    itens.forEach((item, i) => {
+      if (existe[i]) imagens[item.chave] = this.assets.urlDaMidiaDeExperiencia(EXP_ID, item.nome);
+      else faltam.push(item.chave);
     });
-    const prontas = projetos.length - faltam.length;
-    return { total: projetos.length, prontas, faltam, completo: faltam.length === 0, imagens };
+    const prontas = itens.length - faltam.length;
+    return { total: itens.length, prontas, faltam, completo: faltam.length === 0, imagens };
   }
 }

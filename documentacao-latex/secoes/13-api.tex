@@ -279,7 +279,7 @@ nenhuma rota de gestão alcança
   % ---- exp05ef1b
   \node[exprot] at (0.1,-14.05) {\textbf{exp05ef1b}\\Quem mandou\\isso?};
   \node[rt, minimum height=15mm] at (4.5,-14.05)
-    {\texttt{/quem-mandou-isso/*}\desc{estudante --- o Mural, o cartão\\e a regra do tio}};
+    {\texttt{/quem-mandou-isso/*}\desc{estudante --- o Mural, o alerta\\e o robô do grupo}};
   \node[rt, minimum height=15mm] at (9.05,-14.05)
     {\texttt{/quem-mandou-isso/\B{}turmas/*}\desc{prof., gestor --- o pacote\\E o relógio da turma}};
   \node[rt, minimum height=15mm] at (13.6,-14.05)
@@ -288,7 +288,7 @@ nenhuma rota de gestão alcança
   % ---- exp06ef1b
   \node[exprot] at (0.1,-15.85) {\textbf{exp06ef1b}\\Júri Estadual};
   \node[rt, minimum height=15mm] at (4.5,-15.85)
-    {\texttt{/juri-estadual/*}\desc{estudante --- a separação\\e a regra SE \ldots{} ENTÃO}};
+    {\texttt{/juri-estadual/*}\desc{estudante --- as pastas, o voto\\e a regra SE \ldots{} ENTÃO}};
   \node[rt, minimum height=15mm] at (9.05,-15.85)
     {\texttt{/juri-estadual/\B{}turmas/*}\desc{prof., gestor --- a mostra,\\a Galeria Oculta e a lousa}};
   \node[rt, minimum height=15mm] at (13.6,-15.85)
@@ -1173,12 +1173,12 @@ aprovar o pacote curado com o Vertex indisponível.
 % gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer:
 % a tabela da v1 chegou a documentar rotas que nunca existiram.
 
-Vinte rotas em três \emph{controllers} (\adrr{ADR-118}): dez do estudante
+Vinte e uma rotas em três \emph{controllers} (\adrr{ADR-118}): onze do estudante
 (\cd{@Roles("estudante")} na classe, e \cd{exigirMissaoLiberada} no funil de
 TODAS), nove por turma e uma de catálogo. Desde a 2.4.0 do instrumento
 (\adrr{ADR-171}) a missão não tem pergunta de evidência: as três habilidades
-são marcadas aqui, na transação de cada ação (o Mural, o cartão de frases e a
-regra do tio), e \rota{/evidencias/exp05ef1b/perguntas/*}
+são marcadas aqui, na transação de cada ação --- desde a 2.5.0
+(\adrr{ADR-177}), o Mural, o alerta do grupo e o robô do grupo ---, e \rota{/evidencias/exp05ef1b/perguntas/*}
 (Seção~\ref{sec:api-evidencias}) responde 404.
 
 \begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
@@ -1204,58 +1204,68 @@ regra do tio), e \rota{/evidencias/exp05ef1b/perguntas/*}
 \zebra \rota{POST /quem-mandou-isso/enquete} & estudante & \textbf{O latch 2}: o
   motivo. O mesmo voto de novo é idempotente; outro, 409
   \cd{enquete-ja-votada}.\\
-\rota{POST /quem-mandou-isso/operacoes} & estudante & \textbf{O latch 3}: o
-  cartão de frases, as seis respostas Sim/Não de uma vez, com a marca da
-  EF05CO03 na mesma transação. Abre na revelação DO ESTUDANTE (409
-  \cd{cartao-nao-liberado} antes); a mesma resposta de novo é idempotente,
-  outra é 409 \cd{cartao-ja-enviado}. Nada do acerto volta.\\
-\zebra \rota{POST /quem-mandou-isso/regra/teste} & estudante & Um teste da regra
-  do tio: as peças e a \textbf{previsão}, que vem antes do resultado. Só na
-  reflexão, com o cartão enviado (409 \cd{cartao-pendente}); até 5 testes (409
-  \cd{testes-esgotados}); a mesma ação duas vezes é 400 \cd{regra-invalida}.\\
-\rota{POST /quem-mandou-isso/regra} & estudante & \textbf{O latch 4}: a regra
-  enviada, com a marca da EF05CO04 na mesma transação. Enviar sem testar é
-  permitido; a mesma regra de novo é idempotente, outra é 409
-  \cd{regra-ja-enviada}.\\
-\zebra \rota{POST /quem-mandou-isso/concluir} & estudante & O fim, depois da
-  regra --- sem exigir o cartão nem a regra (quem sai antes fica \enquote{Não
-  avaliado}). A experiência o chama sozinha depois do envio da regra.
+\rota{POST /quem-mandou-isso/\B{}alerta/\B{}execucao} & estudante & Um
+  \enquote{Ver resultado} do alerta do grupo: o pedido da vez e o filtro
+  \cd{\{a, op?, b?\}}; o servidor o executa no quadro e devolve quais
+  mensagens passam. Só com o voto, a revelação do estudante aberta e a turma
+  ainda na revelação (409 \cd{alerta-nao-liberado} antes, 409
+  \cd{alerta-fechado} depois da síntese); fora de ordem, 409
+  \cd{alerta-fora-de-ordem}; até 3 por pedido (409 \cd{limite-execucoes}).\\
+\zebra \rota{POST /quem-mandou-isso/\B{}alerta/\B{}envio} & estudante & Envia
+  o alerta do pedido: tem de ser a ÚLTIMA expressão executada (400
+  \cd{execute-antes}). O QUARTO envio é \textbf{o latch 3}, com a marca da
+  EF05CO03 na mesma transação. O mesmo envio de novo é idempotente; outro,
+  409 \cd{alerta-ja-enviado}. Nada do acerto volta.\\
+\rota{POST /quem-mandou-isso/\B{}robo/\B{}ligar} & estudante & Liga o robô do
+  grupo (\cd{laco}, \cd{condicao}, \cd{acoes}): o servidor o executa nas
+  quatro mensagens fixas e grava a ligação. Só na reflexão, SEM exigir o
+  alerta; até 5 (409 \cd{ligacoes-esgotadas}); blocos fora do vocabulário,
+  400 \cd{robo-invalido}.\\
+\zebra \rota{POST /quem-mandou-isso/robo} & estudante & \textbf{O latch 4}: o
+  robô enviado, com a marca da EF05CO04 na mesma transação. Enviar sem ligar
+  é permitido; o mesmo robô de novo é idempotente, outro é 409
+  \cd{robo-ja-enviado}.\\
+\rota{POST /quem-mandou-isso/concluir} & estudante & O fim, depois do robô
+  --- sem exigir o alerta nem o robô (quem sai antes fica \enquote{Não
+  avaliado}). A experiência o chama sozinha depois do envio do robô.
   Idempotente.\\
-\rota{GET /quem-mandou-isso/\B{}turmas/\B{}:id/pacote} & prof., gestor & O ativo, o
+\zebra \rota{GET /quem-mandou-isso/\B{}turmas/\B{}:id/pacote} & prof., gestor & O ativo, o
   rascunho, o banco curado e os componentes curriculares --- \textbf{com} o
   gabarito.\\
-\zebra \rota{POST .../gerar} & \textbf{só professor} & A única chamada de IA da
+\rota{POST .../gerar} & \textbf{só professor} & A única chamada de IA da
   missão, \textbf{pré-aula}, pelo \cd{QuotaService}; grava o rascunho. Sem saldo
   ou com o provedor fora, devolve o banco curado com \cd{usouIa: false} e o
   \cd{motivo} --- nunca falha para fora. A turma é conferida (404) antes de
   gastar \emph{token}.\\
-\rota{POST .../aprovar} & \textbf{só professor} & \enquote{Aprovar Pacote}, com o
+\zebra \rota{POST .../aprovar} & \textbf{só professor} & \enquote{Aprovar Pacote}, com o
   pacote INTEIRO: a régua de \cd{validarPacote} (400 \cd{pacote-invalido} com a
   lista de \cd{erros}). Pacote diferente abre atividade nova; o mesmo é
   idempotente. Leva também as três falas do podcast que o professor revisou
   (\cd{podcast}), gravadas em \cd{podcast\_roteiros} na mesma transação,
   inclusive no segundo clique (\adrr{ADR-150}).\\
-\zebra \rota{POST .../gate} & \textbf{só professor} & Os três botões
+\rota{POST .../gate} & \textbf{só professor} & Os três botões
   (\cd{liberar\_revelacao}, \cd{apresentar\_sintese}, \cd{liberar\_reflexao}).
   Só para a frente: o clique repetido ou fora de ordem não recua a fase.\\
-\rota{GET .../painel} & prof., gestor & O progresso (com quantos responderam o
-  cartão e enviaram a regra), o Termômetro (\cd{null} antes da revelação), a
-  folha por computador --- os acertos do cartão por operador e a regra em
-  palavras --- e o roteiro.\\
-\zebra \rota{POST .../nova-rodada} & \textbf{só professor} & \enquote{Zerar Turma
+\zebra \rota{GET .../painel} & prof., gestor & O progresso (com quantos enviaram
+  os quatro alertas e o robô), o Termômetro (\cd{null} antes da revelação), a
+  folha por computador --- os pontos do alerta (\enquote{\{pontos\}/8 \textperiodcentered{}
+  \{enviados\}/4 enviados}) e o robô em palavras, com o número de ligações
+  --- e o roteiro.\\
+\rota{POST .../nova-rodada} & \textbf{só professor} & \enquote{Zerar Turma
   para Nova Aplicação}: a rodada que o professor VIU no corpo torna o duplo
   clique idempotente; rodada velha é 409 \cd{rodada-desatualizada}. Apaga a
   evidência do pacote (\adrr{ADR-155}).\\
-\rota{GET .../pacotes} e \rota{GET .../pacotes/:pacoteId} & prof., gestor & As
+\zebra \rota{GET .../pacotes} e \rota{GET .../pacotes/:pacoteId} & prof., gestor & As
   atividades da turma (os pacotes aprovados) e uma delas, inteira e com o
   gabarito (\adrr{ADR-130}).\\
-\zebra \rota{POST .../pacotes/:pacoteId/em-andamento} & \textbf{só professor} &
+\rota{POST .../pacotes/:pacoteId/em-andamento} & \textbf{só professor} &
   \enquote{Usar esta atividade agora}: a atividade em andamento da turma, e a
   fase volta à triagem. Idempotente.\\
-\rota{GET /quem-mandou-isso/\B{}professor/\B{}material} & prof., gestor & O guia da aula:
-  o banco curado com gabarito, o roteiro, as falas, um cartão de frases
-  respondido e as peças da regra com o que cada uma faz (o gabarito da regra),
-  e os critérios da ficha. Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
+\zebra \rota{GET /quem-mandou-isso/\B{}professor/\B{}material} & prof., gestor & O guia da aula:
+  o banco curado com gabarito, o roteiro, as falas, os quatro pedidos do
+  alerta com a expressão esperada (e quantas do banco curado passam), os
+  blocos do robô com o tipo de cada ação e as quatro mensagens com os sinais
+  (o gabarito do robô), e os critérios da ficha. Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
 \bottomrule
 \end{tabularx}
 
@@ -1427,6 +1437,10 @@ responde 403 \cd{atividade-nao-preparada}: a plataforma não cria atividade.
 Desde a 0.6.0 (\adrr{ADR-174}) a missão não tem enquetes: as duas marcas da
 ficha (a separação e a regra) são gravadas por este módulo, e
 \rota{POST /juri-estadual/\B{}cadeia} saiu, com o 422 \cd{ordem-incorreta}.
+Desde a 0.7.0 (\adrr{ADR-176}) a separação é feita nas pastas do salvar e
+marcada no voto: saíram \rota{POST /juri-estadual/\B{}classificacao} (com o 409
+\cd{classificacao-ja-enviada}) e \rota{POST /juri-estadual/\B{}cartoes} (o caso
+Mariana), e a regra conclui a missão.
 
 \begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
 \toprule
@@ -1434,17 +1448,21 @@ ficha (a separação e a regra) são gravadas por este módulo, e
 \midrule
 \rota{GET /juri-estadual/\B{}sessao} & estudante & O estado: o passo já
   reconciliado com a etapa, o feed SERVIDO até aqui (nunca o acervo, nem peso
-  ou área líder), o voto e os blocos do fim --- \cd{classificacao} (os
-  estandes vistos, sem área), \cd{cadeia} (as peças da regra, \cd{se} e
-  \cd{entao}, \cd{enviada} e, depois do envio, a \cd{revelacao}) e Mariana
-  ---, cada um só do passo dele, com ids opacos estáveis num F5.\\
+  ou área líder), com as \cd{pastas} e o \cd{semPasta}, o voto e o bloco do
+  fim --- \cd{cadeia} (as peças da regra, \cd{se} e \cd{entao}, \cd{enviada}
+  e, depois do envio, a \cd{revelacao}) ---, só do passo dele, com ids opacos
+  estáveis num F5.\\
 \zebra \rota{GET /juri-estadual/gate} & estudante & O \emph{polling} de 3\,s da
   espera do voto lacrado (\adrr{ADR-93}): etapa,
   rodada e atividade. Sem acervo e sem JOIN.\\
 \rota{POST /juri-estadual/passo} & estudante & Da credencial para o feed, com a
-  ABERTURA: quatro posts, um de cada área.\\
+  ABERTURA: quatro posts, um de cada área; da revisão para a \cd{cadeia}; e,
+  só para a sessão ANTIGA parada na tela da separação da 0.6.0, de
+  \cd{classificacao} para \cd{lacrada}, sem marca (\adrr{ADR-176}).\\
 \zebra \rota{POST /juri-estadual/\B{}feed/\B{}eventos} & estudante & As curtidas e os
-  salvos (estado; salvar não pesa) e as permanências (fato) que a tela mediu e, com \cd{proximo: true}, um post a
+  salvos (estado; salvar não pesa), com a \cd{pasta} de cada salvo --- a área
+  em que a criança o guardou, que MOVE o post se ele já estava em outra
+  (\adrr{ADR-176}) ---, e as permanências (fato) que a tela mediu e, com \cd{proximo: true}, um post a
   mais, até dez ou 8\,min desde a 1ª rolagem (\cd{tempoEsgotado},
   \cd{cedulaLiberada}). O motor escolhe o próximo sem repetir post: só
   apresentações, e projetos NOVOS da área em foco (\adrr{ADR-164}). Post que o feed não serviu, 400 \cd{post-desconhecido}; depois
@@ -1454,43 +1472,40 @@ ficha (a separação e a regra) são gravadas por este módulo, e
   painel. \cd{aberta: false} apaga; fora do feed, 204 sem gravar.\\
 \zebra \rota{POST /juri-estadual/voto} & estudante & \textbf{O latch 1}: projeto e
   certeza (a cédula de quatro elementos, sem justificativa), carimbo e passo
-  \cd{classificacao} juntos. Com menos de dez servidos e o tempo não esgotado, 409
-  \cd{feed-incompleto}; projeto que não apareceu no feed DESTA criança, 409
-  \cd{projeto-fora-do-feed}.\\
-\rota{POST /juri-estadual/\B{}classificacao} & estudante & \textbf{A
-  separação} (EF06CO01): uma área para cada estande visto (ids opacos
-  \cd{cl-}). Uma vez só; o servidor corrige, grava e marca \cd{classificacao}
+  \cd{lacrada} juntos, e no MESMO \emph{update} \textbf{a separação}
+  (EF06CO01): o servidor corrige as pastas, grava e marca \cd{classificacao}
   (90\,\% ou mais = atingiu, 50\,\% ou mais = em processo; menos de quatro
-  vistos, sem marca) e leva à espera (\cd{lacrada}). A resposta é só o estado,
-  nunca o acerto. Reenviar, 409 \cd{classificacao-ja-enviada}; item faltando,
-  repetido ou de outra sessão, 400.\\
-\zebra \rota{GET /juri-estadual/galeria} & estudante & Os estandes do pacote
+  vistos, sem marca, \adrr{ADR-176}). A resposta é só o estado, nunca o
+  acerto. Estande visto sem pasta, 409 \cd{estandes-sem-pasta}; com menos de
+  dez servidos e o tempo não esgotado, 409 \cd{feed-incompleto}; projeto que
+  não apareceu no feed DESTA criança, 409 \cd{projeto-fora-do-feed}.\\
+\rota{GET /juri-estadual/galeria} & estudante & Os estandes do pacote
   (quarenta; dezesseis no pacote antigo), os ocultos primeiro, a
   \cd{invisibilidade} \cd{\{ocultos, total\}}, \cd{porArea}
-  (\cd{\{area, vistos, total\}}), \cd{semCurtidas} (o contrafactual: o feed
+  (\cd{\{area, vistos, total\}}; desde a 0.7.0 só escolhe a área inicial da
+  grade, \adrr{ADR-176}), \cd{semCurtidas} (o contrafactual, fora da tela desde
+  a 0.7.0: o feed
   desta sessão sem curtidas nem permanências, com N = os posts vistos,
   calculado no servidor, \adrr{ADR-164}), \cd{ocultosAbertos} e
   \cd{podeManter}. Antes do voto e da
   etapa, 403 \cd{galeria-nao-liberada}.\\
-\rota{POST /juri-estadual/\B{}galeria/\B{}acoes} & estudante & Abrir um estande ou
+\zebra \rota{POST /juri-estadual/\B{}galeria/\B{}acoes} & estudante & Abrir um estande ou
   buscar --- da busca, só o tipo e a área, nunca o texto. 204 sem corpo.\\
-\zebra \rota{POST /juri-estadual/revisao} & estudante & \textbf{O latch 2}, de dois
+\rota{POST /juri-estadual/revisao} & estudante & \textbf{O latch 2}, de dois
   botões: \cd{manter} (exige um oculto aberto, senão 409
   \cd{galeria-sem-inspecao}) ou \cd{trocar}, e o passo
   \cd{revisada}; não marca habilidade desde a 0.6.0 (\adrr{ADR-174}); a tela pede \rota{POST passo} para a \cd{cadeia}. A segunda, 409 \cd{voto-ja-revisado}; o professor zerou no meio,
   409 \cd{rodada-mudou}.\\
-\rota{POST /juri-estadual/\B{}regra} & estudante & \textbf{A regra SE
+\zebra \rota{POST /juri-estadual/\B{}regra} & estudante & \textbf{A regra SE
   \ldots{} ENTÃO} (EF06CO03), do passo \cd{cadeia}: uma peça de cada lado (ids
   opacos \cd{rg-}). Uma vez só; marca \cd{regra} (as duas certas = atingiu,
-  uma = em processo, nenhuma = não atingiu), leva ao caso Mariana e responde a
+  uma = em processo, nenhuma = não atingiu), \textbf{conclui a missão} (passo
+  \cd{fim} e \cd{concluida\_em} no mesmo \emph{update}, \adrr{ADR-176}) e responde a
   revelação (as peças escolhidas e as certas, e o \cd{motivo} no feed desta
   criança). Enviar de novo devolve a mesma revelação; peça de outra sessão ou
   do lado errado, 400.\\
-\zebra \rota{POST /juri-estadual/cartoes} & estudante & O caso Mariana: um mecanismo e
-  uma atitude. Sem evidência e sem dizer o certo; \textbf{conclui a missão}
-  (passo \cd{fim} e \cd{concluida\_em} no mesmo \emph{update}).\\
 \rota{POST /juri-estadual/\B{}concluir} & estudante & O crachá homologado
-  das sessões ANTIGAS paradas em \cd{enquetes}. Idempotente.\\
+  das sessões ANTIGAS paradas em \cd{mariana} ou \cd{enquetes}. Idempotente.\\
 \zebra \rota{GET /juri-estadual/turmas} & prof., gestor & O seletor, por matrícula
   para o professor.\\
 \rota{GET .../\B{}turmas/\B{}:id/\B{}painel} & prof., gestor & O botão,
@@ -1522,8 +1537,10 @@ ficha (a separação e a regra) são gravadas por este módulo, e
   segue com a arte desenhada). Idempotente. Depois dela, as imagens
   congelam.\\
 \rota{POST .../\B{}pacotes/\B{}:pacoteId/\B{}imagens/\B{}:projetoId/\B{}refazer} &
-  prof., gestor & \enquote{Gerar outra imagem} para UM estande: arquivo NOVO
-  (fora do \emph{hash} da descrição), sempre pago na quota do professor. Com
+  prof., gestor & \enquote{Gerar outra imagem} para UMA lâmina de um estande
+  (\cd{?lamina=} \cd{capa}, \cd{detalhe}, \cd{equipe} ou \cd{bastidor}; sem
+  ela, a capa, \adrr{ADR-178}): arquivo NOVO (fora do \emph{hash} do pedido),
+  sempre pago na quota do professor. Com
   o provedor fora, 503 e o estande fica com a que tinha; depois da aprovação,
   409 \cd{imagens-ja-aprovadas}.\\
 \zebra \rota{POST .../\B{}gerar-conteudo} & prof., gestor & O rascunho da mostra
@@ -1547,21 +1564,23 @@ ficha (a separação e a regra) são gravadas por este módulo, e
   não cria outro, e o segundo clique substitui as falas. Grava
   \cd{aprovado\_em}/\cd{por} e \cd{preparo\_iniciado\_em}; o banco
   padrão intocado não pede falas (roteiro fixo).\\
-\zebra \rota{POST .../gerar-midia} & prof., gestor & Até quatro imagens novas por
-  chamada, de uma atividade pronta ou da em andamento; repetir até
-  \cd{completo}. Depois da aprovação das imagens, 409
+\zebra \rota{POST .../gerar-midia} & prof., gestor & Até oito imagens novas por
+  chamada, quatro em paralelo, de uma atividade pronta ou da em andamento;
+  quatro por estande (\adrr{ADR-178}), e o progresso conta por chave
+  (\cd{proj-a1}, \cd{proj-a1:detalhe}); repetir até \cd{completo}. Depois da aprovação das imagens, 409
   \cd{imagens-ja-aprovadas}.\\
 \rota{GET /juri-estadual/\B{}professor/\B{}material} & prof., gestor & O
-  esqueleto com gabarito: as peças da regra com a certa marcada, o caso Mariana
-  com os cartões certos, as perguntas da plenária e os números do motor
+  esqueleto com gabarito: as peças da regra com a certa marcada, as perguntas
+  da plenária e os números do motor
   (salvar sem peso, o limiar, o feed sem repetição).
   Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
 \zebra \rota{GET /juri-estadual/\B{}banco-padrao/\B{}imagens} & \cd{admin} & Quantas
-  imagens do banco padrão existem, quais faltam e as URLs. O storage é o
-  registro: o nome é determinístico (o \emph{hash} da descrição da imagem),
-  o mesmo da customização (\adrr{ADR-164}).\\
+  imagens do banco padrão existem, quais faltam (por chave de lâmina,
+  quatro por projeto, \adrr{ADR-178}) e as URLs. O storage é o
+  registro: o nome é determinístico (o \emph{hash} do pedido de cada
+  lâmina), o mesmo da customização (\adrr{ADR-164}).\\
 \rota{POST /juri-estadual/\B{}banco-padrao/\B{}imagens} & \cd{admin} &
-  Gera até quatro das que faltam, na ordem do banco; idempotente (a que existe
+  Gera até oito das que faltam, na ordem do banco; idempotente (a que existe
   não se gera de novo; duas chamadas simultâneas recebem o mesmo trabalho).
   Sem quota de professor, \emph{rate limit} de 20 por minuto, e medido no
   painel de custos como \cd{juri-estadual-banco-padrao}, perfil \cd{admin},
@@ -1575,7 +1594,7 @@ Jornal: a missão não tem texto livre de menor. O que separa os dois é a turma
 (\cd{turmaVisivel} devolve 404 para a turma que o professor não leciona), e
 \cd{gestor\_contrato} e \cd{admin} dizem \cd{?escolaId=}. \cd{gerar-conteudo}
 e \cd{regenerar-projeto} têm, além da quota, um teto de requisição por minuto.
-As duas jogadas que MARCAM evidência (a separação e a regra) tomam o
+As duas jogadas que MARCAM evidência (o voto, que corrige a separação, e a regra) tomam o
 \emph{lock} da turma compartilhado e relêem o \emph{gate} depois dele; o botão,
 zerar, homologar e pôr no ar o tomam exclusivo.
 \end{regra}
@@ -1607,8 +1626,9 @@ hub divergiria na primeira revisão de \emph{copy}.
   termômetro do \emph{latch} --- o material vem da API para a lousa e os
   tablets nunca discordarem.\\
 \rota{GET /quem-mandou-isso/\B{}professor/\B{}material} & prof., gestor & O banco curado
-  da exp05ef1b com o gabarito, o roteiro da roda, as falas da Nina, um cartão
-  de frases respondido e as peças da regra do tio com o que cada uma faz.\\
+  da exp05ef1b com o gabarito, o roteiro da roda, as falas da Nina, os pedidos
+  do alerta com a expressão esperada e os blocos do robô com o tipo de cada
+  ação.\\
 \zebra \rota{GET /jornal-escola/\B{}professor/\B{}material} & prof., gestor & O
   banco padrão do Jornal da Escola com o gabarito e a reação de cada notícia,
   os seis blocos da Chave com os pilares marcados, e o roteiro: o gatilho do
@@ -1616,7 +1636,7 @@ hub divergiria na primeira revisão de \emph{copy}.
   \enquote{Usar Banco Padrão} do preparo.\\
 \rota{GET /juri-estadual/\B{}professor/\B{}material} & prof., gestor & O
   esqueleto do Júri Estadual com o gabarito --- as peças da regra SE \ldots{}
-  ENTÃO com a certa marcada, o caso Mariana com os cartões certos ---, as quatro perguntas da
+  ENTÃO com a certa marcada ---, as quatro perguntas da
   plenária e os números do motor do feed. A mostra NÃO está aqui: é da
   atividade.\\
 \bottomrule

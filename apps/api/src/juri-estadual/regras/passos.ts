@@ -13,21 +13,22 @@
  * `passoEfetivo` resolve os dois num só valor e mora aqui — puro e testável —
  * porque a api e a experiência precisam chegar à MESMA resposta num F5.
  *
- * O caminho de uma criança (PRD v2, §6.3, com o Canal A da ADR-174):
+ * O caminho de uma criança (PRD v2, §6.3, com o Canal A da ADR-174 e os
+ * ajustes do time da ADR-176):
  *
- *   credencial → feed ──(voto, LATCH 1)──→ classificacao ──(separou)──→ lacrada
+ *   credencial → feed (salva cada estande numa pasta) ──(voto, LATCH 1, e a
+ *     separação corrigida pelas pastas)──→ lacrada
  *     → [professor libera a auditoria] → galeria
  *     ──(revisão do voto, LATCH 2)──→ revisada
- *     ──("Avançar", POST passo)──→ cadeia (a REGRA SE … ENTÃO) → mariana → fim
+ *     ──("Avançar", POST passo)──→ cadeia (a REGRA SE … ENTÃO) → fim
  *
  * `galeria` nunca é GRAVADO: a etapa da turma o impõe a quem está em `lacrada`.
- * `classificacao` é da criança, não da turma: com a galeria já liberada, ela
- * termina de separar e só então cai na galeria — a medida da EF06CO01 vem
- * ANTES da galeria, que mostra o que ficou fora por área.
  *
  * O passo `cadeia` guarda o nome (CHECKs e F5), mas desde a 0.6.0 é a tela da
- * regra. `enquetes` saiu do caminho (os cartões levam direto a `fim`) e só
- * existe para LER as sessões antigas que pararam ali.
+ * regra, e desde a 0.7.0 ela CONCLUI. Três passos saíram do caminho e ficam
+ * só para LER as sessões antigas que pararam neles: `classificacao` (a tela da
+ * separação da 0.6.0 — a criança pede `lacrada` e segue sem marca), `mariana`
+ * (o caso da transferência — `concluir` a leva a `fim`) e `enquetes` (idem).
  *
  * A RODADA DE DESVIO da 0.3.0 SAIU (melhoria 6 do PRD v2): a etapa `desvio`, o
  * passo `desvio` e as rotas dela. As colunas `desvio_*` ficam no banco, sem uso.
@@ -60,12 +61,13 @@ export const PASSOS_ANTES_DO_VOTO: readonly Passo[] = ["credencial", "feed"];
 
 /**
  * Os passos que a própria criança pede, por `POST passo`: o `feed` (o toque em
- * "Acessar Feed da Mostra") e a `cadeia` (o "avançar" depois da revisão). Os
- * outros nascem das rotas que os carimbam: `classificacao` (o voto), `lacrada`
- * (a separação), `revisada` (a revisão), `mariana` (a regra) e `fim` (os
- * cartões; `concluir` só tira de `enquetes` as sessões antigas).
+ * "Acessar Feed da Mostra"), a `cadeia` (o "avançar" depois da revisão) e a
+ * `lacrada` (só a sessão ANTIGA parada na tela da separação da 0.6.0, que
+ * saiu: ela segue para a espera sem marca da EF06CO01). Os outros nascem das
+ * rotas que os carimbam: `lacrada` (o voto), `revisada` (a revisão) e `fim`
+ * (a regra; `concluir` tira de `mariana` e de `enquetes` as sessões antigas).
  */
-export const PASSOS_PEDIDOS = ["feed", "cadeia"] as const;
+export const PASSOS_PEDIDOS = ["feed", "cadeia", "lacrada"] as const;
 export type PassoPedido = (typeof PASSOS_PEDIDOS)[number];
 
 const ORDEM: Record<Passo, number> = Object.fromEntries(PASSOS.map((p, i) => [p, i])) as Record<Passo, number>;
@@ -156,11 +158,18 @@ export type ResultadoDoPasso = { ok: true; passo: Passo } | { ok: false; codigo:
  *   único, e um F5 não pode reabrir a cédula).
  * - `cadeia`: de `revisada` para a cadeia (o "avançar" do PRD, §6.3). Já na
  *   cadeia ou adiante, devolve o passo dela; antes da revisão, recusado.
+ * - `lacrada`: de `classificacao` (a sessão antiga da 0.6.0) para a espera.
+ *   Já na espera ou adiante, devolve o passo dela; antes do voto, recusado.
  */
 export function pedirPasso(atual: Passo, para: PassoPedido): ResultadoDoPasso {
   if (para === "feed") {
     if (atual === "credencial" || atual === "feed") return { ok: true, passo: "feed" };
     return { ok: true, passo: atual };
+  }
+  if (para === "lacrada") {
+    if (atual === "classificacao") return { ok: true, passo: "lacrada" };
+    if (passoNoMinimo(atual, "lacrada")) return { ok: true, passo: atual };
+    return { ok: false, codigo: "passo-invalido" };
   }
   if (atual === "revisada") return { ok: true, passo: "cadeia" };
   if (passoNoMinimo(atual, "cadeia")) return { ok: true, passo: atual };

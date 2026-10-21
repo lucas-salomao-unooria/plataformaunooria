@@ -33,8 +33,8 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
   \rota{/admin}, \rota{/analise}; \emph{header} de todos os papéis; telas
   \textbf{pós-revelação} do estudante; a redação INTEIRA do Jornal da Escola
   (exp04ef1b), que não é clone de nada; e a tela da escola do Júri Estadual
-  de Projetos (exp06ef1b: a regra SE \ldots{} ENTÃO, \adrr{ADR-174}, o caso
-  Mariana e, numa faixa própria embaixo do fim
+  de Projetos (exp06ef1b: a regra SE \ldots{} ENTÃO, \adrr{ADR-174} --- o caso
+  Mariana saiu com a \adrr{ADR-176} ---, e, numa faixa própria embaixo do fim
   da comissão, o infográfico final, \adrr{ADR-157})\\
 \zebra \cd{instanooria} (21 + 7 extensões) & \cd{/instanooria} & \cd{--insta-*}, \cd{insta-} &
   exp07ef1b; e só o \cd{PostCard} na gaveta do Jornal da Escola
@@ -211,14 +211,14 @@ peça fixa o claro no próprio contêiner (\cd{PostCard theme="light"},
 pacote direto num componente:
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
-\cd{@edu/ui/ds} & \cd{unooria} & plataforma, a tela da escola do Júri Estadual (\cd{RadioGroup}, \cd{Card}, \cd{AlertBox}; o \cd{PuzzleBlock} e o \cd{PuzzleTrack} da cadeia saíram com a \adrr{ADR-174}), e a redação do Jornal da Escola (com as oito peças da 0.2.8: \cd{NewsCard}, \cd{NewsArticle}, \cd{RevealClue}, \cd{BottomSheet}, \cd{NewspaperPage}, \cd{SpeechBubble}, \cd{PuzzleBlock} e \cd{PuzzleTrack}, mais \cd{NEWS\_MEDIUMS} e \cd{NEWSPAPER\_LAYOUTS})\\
+\cd{@edu/ui/ds} & \cd{unooria} & plataforma, o robô do grupo de Quem mandou isso? (\cd{PuzzleBlock} e \cd{PuzzleTrack}, \adrr{ADR-177}), a tela da escola do Júri Estadual (\cd{RadioGroup}, \cd{Card}, \cd{AlertBox}; o \cd{PuzzleBlock} e o \cd{PuzzleTrack} da cadeia saíram com a \adrr{ADR-174}), e a redação do Jornal da Escola (com as oito peças da 0.2.8: \cd{NewsCard}, \cd{NewsArticle}, \cd{RevealClue}, \cd{BottomSheet}, \cd{NewspaperPage}, \cd{SpeechBubble}, \cd{PuzzleBlock} e \cd{PuzzleTrack}, mais \cd{NEWS\_MEDIUMS} e \cd{NEWSPAPER\_LAYOUTS})\\
 \cd{@edu/ui/ds-insta} & \cd{instanooria} & o clone da exp01ef1b (com as extensões da 0.2.5, nascidas para a exp07ef1b antes de ela migrar: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer}; e as da 0.2.7: \cd{InlineHint}, \cd{GestureHint} e o \cd{Snackbar} do clone, como \cd{SnackbarInsta})\\
 \cd{@edu/ui/ds-unoovista} & \cd{unoovista} & exp08ef1b (\adrr{ADR-133}), exp07ef1b (\adrr{ADR-135}), exp06ef1b (\adrr{ADR-137}) e o \cd{PostCard} da gaveta do Jornal (\adrr{ADR-136}); os nomes que colidem com a plataforma saem com o sufixo \cd{Unv} (\cd{ButtonUnv}, \cd{AvatarUnv}, \cd{IconUnv}\ldots)\\
 \cd{@edu/ui/ds-unootube} & \cd{unitube} & backup-exp04ef1b (o UnooTube arquivado, \adrr{ADR-116}: não roda mais)\\
 \cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp08ef4b (a exp02em1b saiu na \adrr{ADR-138})\\
 \cd{@edu/ui/ds-unooriaai} & \cd{unooriaai} & exp02em1b (\adrr{ADR-138}); o \cd{GPTCard} virou \cd{AssistantCard}, e não há \cd{gptGlyphs}\\
 \cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp06ef2b\\
-\cd{@edu/ui/ds-unoochat} & \cd{unoochat} & exp05ef1b (\adrr{ADR-134}), o \cd{MessageBubble} da gaveta e do Desafio Final do Jornal (\adrr{ADR-136}) e o do pedido pelo WhatsApp da Missão Tempestade (\adrr{ADR-173})\\
+\cd{@edu/ui/ds-unoochat} & \cd{unoochat} & exp05ef1b (\adrr{ADR-134}; o \cd{FilterChip} entrou na ponte para o alerta do grupo, \adrr{ADR-177}), o \cd{MessageBubble} da gaveta e do Desafio Final do Jornal (\adrr{ADR-136}) e o do pedido pelo WhatsApp da Missão Tempestade (\adrr{ADR-173})\\
 \end{tabularx}
 \end{regra}
 
@@ -670,8 +670,10 @@ trouxe a segunda leva do \cd{instanooria} e o \cd{AudioPlayer} da plataforma
   da síntese.\\
 \zebra \cd{Poll} & A enquete de motivo (Etapa 3), controlada de ponta a ponta,
   dentro de um \cd{MessageBubble}. Até a 0.4.0 levava também as duas perguntas
-  da Nina, que saíram na 0.5.0 (\adrr{ADR-171}); o cartão de frases, que veio
-  no lugar, usa o \cd{Radio} do Unoochat, um grupo Sim/Não por frase.\\
+  da Nina, que saíram na 0.5.0 (\adrr{ADR-171}). O cartão de frases que veio
+  no lugar (o \cd{Radio} do Unoochat, um grupo Sim/Não por frase) saiu na
+  0.6.0: o alerta do grupo monta o filtro com o \cd{FilterChip} do Unoochat
+  (NÃO, Falsa, Emocional, E, OU) (\adrr{ADR-177}).\\
 \cd{MessageTag} & Os crachás da revelação, pictograma e rótulo, sem variante de
   cor: quem distingue é a palavra e a forma.\\
 \zebra \cd{Toast} & Os avisos rápidos (limite de 3, faltam mensagens, falha de
@@ -871,10 +873,15 @@ nenhuma mistura as duas seções.
 \textbf{Desde a 0.6.0 (\adrr{ADR-174})} a missão não usa mais o
 \cd{StoryPoll} (as enquetes saíram) nem o \cd{PuzzleBlock} e o
 \cd{PuzzleTrack} (a cadeia virou a regra SE \ldots{} ENTÃO, dois
-\cd{RadioGroup} na tela da escola). A separação dos estandes, depois do voto,
-fica no clone, na voz da comissão: \cd{ListItem} com \cd{Chip} em grupo de
-rádio, por toque ou teclado, sem arrastar (\adrr{ADR-162}). O registro abaixo é
-o da 0.1.0.
+\cd{RadioGroup} na tela da escola). \textbf{Desde a 0.7.0
+(\adrr{ADR-176})} a separação dos estandes é feita no próprio feed, nas pastas
+do salvar, na voz da comissão: um \cd{BottomSheetUnv} (\enquote{Salvar em}) com
+um \cd{ListItem} por pasta (\cd{aria-label} e \cd{aria-pressed} na pasta onde o
+post está), o \cd{IconUnv} \cd{bookmark}/\cd{bookmarkFilled}, e o pedido da
+comissão e o \enquote{faltam N} da cédula em \cd{InlineHint}; por toque ou
+teclado, sem arrastar (\adrr{ADR-162}), e sem compensação nova. A tela própria
+da 0.6.0 (\cd{ListItem} com \cd{Chip} em grupo de rádio) saiu, e o caso
+Mariana também. O registro abaixo é o da 0.1.0.
 \end{nota}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}

@@ -212,7 +212,8 @@ A página da atividade é `resultados/resultados-juri-estadual.tsx`; a criação
   banco NÃO entra na curadoria (o `homologar` o gravaria como `ia`).
 - **Duas fases** (PO, 2026-10-06), na grade `resultados/imagens-do-juri.tsx`:
   UM carimbo do pacote, sem exigir imagem em todo estande; aprovada, congela.
-  Quatro imagens por chamada: as 40 levam minutos. Hashtag em `subtags`.
+  Quatro por estande (as lâminas, ADR-178), "Gerar outra" por lâmina; oito
+  por chamada: as 160 levam minutos. Hashtag em `subtags`.
 - **Podcast**: falas na FASE 1; recurso FIXO do fechamento, depois da Etapa 4
   (`avisoDoPodcast`, literal do one-pager).
 - **Um botão só**: "Liberar Auditoria", com a instrução de gatilho acima.

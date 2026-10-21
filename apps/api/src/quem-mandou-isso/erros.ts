@@ -22,12 +22,15 @@ export type CodigoErro =
   | "enquete-ja-votada"
   | "enquete-nao-votada"
   | "reflexao-nao-liberada"
-  | "cartao-nao-liberado"
-  | "cartao-ja-enviado"
-  | "cartao-pendente"
-  | "regra-invalida"
-  | "regra-ja-enviada"
-  | "testes-esgotados"
+  | "alerta-nao-liberado"
+  | "alerta-fechado"
+  | "alerta-fora-de-ordem"
+  | "limite-execucoes"
+  | "execute-antes"
+  | "alerta-ja-enviado"
+  | "robo-invalido"
+  | "robo-ja-enviado"
+  | "ligacoes-esgotadas"
   | "pacote-nao-aprovado"
   | "pacote-invalido"
   | "preparo-invalido"
@@ -48,12 +51,15 @@ export const STATUS: Readonly<Record<CodigoErro, number>> = {
   "enquete-ja-votada": 409,
   "enquete-nao-votada": 409,
   "reflexao-nao-liberada": 409,
-  "cartao-nao-liberado": 409,
-  "cartao-ja-enviado": 409,
-  "cartao-pendente": 409,
-  "regra-invalida": 400,
-  "regra-ja-enviada": 409,
-  "testes-esgotados": 409,
+  "alerta-nao-liberado": 409,
+  "alerta-fechado": 409,
+  "alerta-fora-de-ordem": 409,
+  "limite-execucoes": 409,
+  "execute-antes": 400,
+  "alerta-ja-enviado": 409,
+  "robo-invalido": 400,
+  "robo-ja-enviado": 409,
+  "ligacoes-esgotadas": 409,
   "pacote-nao-aprovado": 409,
   "pacote-invalido": 400,
   "preparo-invalido": 400,
@@ -77,12 +83,16 @@ export const MENSAGENS: Readonly<Record<CodigoErro, string>> = {
   "enquete-nao-votada": "Vote na enquete do Mural primeiro.",
   // O relógio da turma. A criança não fez nada errado.
   "reflexao-nao-liberada": "Aguarde o professor liberar a próxima etapa.",
-  "cartao-nao-liberado": "As frases aparecem depois dos crachás. Aguarde o professor liberar a revelação.",
-  "cartao-ja-enviado": "Suas respostas já foram enviadas.",
-  "cartao-pendente": "Responda as frases sobre as suas mensagens primeiro.",
-  "regra-invalida": "Escolha uma condição e uma ou duas ações diferentes.",
-  "regra-ja-enviada": "Sua regra já foi enviada.",
-  "testes-esgotados": "Você já testou bastante. Envie a sua regra.",
+  "alerta-nao-liberado": "O alerta do grupo aparece depois dos crachás. Aguarde o professor liberar a revelação.",
+  "alerta-fechado": "Os alertas do grupo já fecharam.",
+  "alerta-fora-de-ordem": "Monte um alerta de cada vez, na ordem.",
+  "limite-execucoes": "Você já viu o resultado 3 vezes neste alerta. Envie o alerta ao grupo.",
+  // A copy do Figma (E4-ALU-01 B).
+  "execute-antes": "Toque em Ver resultado antes de enviar o alerta.",
+  "alerta-ja-enviado": "Este alerta já foi enviado ao grupo.",
+  "robo-invalido": "Escolha uma condição e uma ou duas ações diferentes.",
+  "robo-ja-enviado": "Seu robô já foi enviado.",
+  "ligacoes-esgotadas": "Você já ligou o robô 5 vezes. Envie o seu robô.",
   // As de PROFESSOR, lidas no hub.
   "pacote-nao-aprovado": "Aprove um pacote de mensagens para esta turma antes.",
   "pacote-invalido": "O pacote não pôde ser aprovado.",

@@ -685,8 +685,8 @@ export const MISSAO_FOTO_CONTA: Missao = {
  *    síntese (que pode ser pulada) e a reflexão.
  *
  * As habilidades avaliadas são SÓ as de Computação — EF05CO08 pela seleção do
- * Mural, EF05CO03 pelo cartão de frases e EF05CO04 pela regra do tio (a ficha
- * E14 da api, v4: só ações). Os códigos de Língua Portuguesa do one-pager ("a confirmar") não
+ * Mural, EF05CO03 pelo alerta do grupo e EF05CO04 pelo robô do grupo (a ficha
+ * E14 da api, v5: só ações). Os códigos de Língua Portuguesa do one-pager ("a confirmar") não
  * entram como habilidade avaliada.
  */
 export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
@@ -716,7 +716,7 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
     duracao: "1 aula de 50 min (ou 2 sessões de 25 min)",
     formato:
       "Unoochat, o aplicativo de mensagens da Unooria, em tema claro: a conversa com a Nina, o grupo da " +
-      "turma com 8 mensagens, o Mural da Turma, a enquete e o cartão de frases; o desafio final, a regra do tio, é na tela da escola.",
+      "turma com 8 mensagens, o Mural da Turma, a enquete e o alerta do grupo; o desafio final, o robô do grupo, é na tela da escola.",
     atos: [
       {
         rotulo: "1 — Desafiar: o pedido da Nina",
@@ -745,9 +745,10 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
         texto:
           "Você aperta Liberar Revelação: o painel mostra o Termômetro da Turma para projetar, e cada " +
           "aparelho ganha os dois selos sobre as 3 mensagens encaminhadas, com o motivo votado e o " +
-          "lembrete do bimestre — e o cartão de frases: seis frases com E, OU e NÃO sobre as 3 " +
-          "mensagens, que registra a EF05CO03. Quem ainda não tinha confirmado continua, confirma e vê a " +
-          "própria revelação depois.",
+          "lembrete do bimestre — e, logo abaixo, o alerta do grupo: as 8 mensagens com os dois selos e " +
+          "4 pedidos em que a criança monta um filtro com E, OU e NÃO, vê quem passa e envia o alerta ao " +
+          "grupo. É o alerta que registra a EF05CO03, e ele fecha quando você apresenta a síntese. Quem " +
+          "ainda não tinha confirmado continua, confirma e vê a própria revelação depois.",
       },
       {
         rotulo: "5 — Explicar: a síntese e a roda de conversa",
@@ -757,12 +758,12 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
           "minutos. A síntese pode ser pulada.",
       },
       {
-        rotulo: "6 — Refletir: a regra do tio",
+        rotulo: "6 — Refletir: o robô do grupo",
         texto:
-          "Liberar Reflexão leva cada aparelho ao desafio do tio: quem ainda não respondeu o cartão " +
-          "responde primeiro; depois a criança monta uma regra com peças (“SE a mensagem for… ENTÃO " +
-          "eu…”), prevê o que ela faz com o áudio assustado do tio e testa. A regra registra a EF05CO04 " +
-          "no painel de habilidades.",
+          "Liberar Reflexão leva cada aparelho ao desafio do tio: a criança monta com blocos o robô do " +
+          "grupo (“para cada mensagem nova”, “SE a mensagem for…”, “ENTÃO o robô…”), liga e vê o que ele " +
+          "faz com 4 mensagens, a primeira delas o áudio assustado do tio, e envia. O robô registra a " +
+          "EF05CO04 no painel de habilidades.",
       },
     ],
     preparo: [
@@ -920,9 +921,10 @@ export const MISSAO_A_SELECAO: Missao = {
  * curte nada vê as quatro misturadas). Nenhum número cravado na copy, de
  * propósito.
  *
- * As habilidades são as da ficha 5 (ADR-174, o Canal A puro): EF06CO01 (o
- * foco primário), pela separação dos estandes, e EF06CO03, pela regra SE …
- * ENTÃO, com o TEXTO OFICIAL de `apps/api/src/curriculo/dados/
+ * As habilidades são as da ficha 6 (ADR-176, sobre o Canal A puro da ADR-174):
+ * EF06CO01 (o foco primário), pelas PASTAS em que a criança guarda cada
+ * estande no próprio feed, e EF06CO03, pela regra SE … ENTÃO, que encerra a
+ * missão (o caso Mariana saiu na ADR-176), com o TEXTO OFICIAL de `apps/api/src/curriculo/dados/
  * habilidades-computacao.ts`. O PO, revisando com a equipe pedagógica contra o
  * texto oficial, tirou a EF06CO10 (consumo, obsolescência e sustentabilidade
  * não são o que a missão trabalha) e as enquetes; a EF06CO07 saiu antes.
@@ -961,11 +963,11 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
       "na EF06CO01 (classificar informações, agrupando-as em coleções (conjuntos) e associando " +
       "cada coleção a um ‘tipo de dados’) e na EF06CO03 (descrever com precisão a solução de um " +
       "problema, construindo o programa que implementa a solução descrita).",
-    duracao: "1 aula de 50 min, 29 em tela (ou 2 sessões de 25 min)",
+    duracao: "1 aula de 50 min, cerca de 24 em tela (ou 2 sessões de 25 min)",
     formato:
-      "Clone de rede social de fotos (o Unoovista): a credencial de jurado, o feed da mostra, a " +
-      "cédula lacrada, a separação dos estandes e a Galeria Oculta com a busca por hashtag. A " +
-      "regra do feed e o caso Mariana são numa tela da Unooria.",
+      "Clone de rede social de fotos (o Unoovista): a credencial de jurado, o feed da mostra com as " +
+      "pastas dos posts salvos, a cédula lacrada e a Galeria Oculta com a busca por hashtag. A " +
+      "regra do feed é numa tela da Unooria.",
     atos: [
       {
         rotulo: "1 — A credencial de jurado",
@@ -980,7 +982,9 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
           "As quatro primeiras publicações são uma de cada área. Daí em diante, cada curtida e cada " +
           "parada longa num post mudam o que vem a seguir, sem nenhum aviso na tela: quem curte " +
           "duas vezes a mesma área passa a receber só ela — outros projetos da mesma área, nenhum " +
-          "repetido. Depois de dez publicações, ou de 8 minutos, a cédula abre.",
+          "repetido. A comissão pede que ele salve cada estande na pasta da área dele, como as " +
+          "coleções de posts salvos de uma rede social. Depois de dez publicações, ou de 8 minutos, " +
+          "a cédula abre.",
       },
       {
         rotulo: "3 — A cédula lacrada",
@@ -988,17 +992,17 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
           "Quatro elementos: o título, um dos estandes que ele viu, a certeza (as duas opções " +
           "afirmam certeza, de propósito) e o botão de confirmar. O voto é lacrado e não volta. Se a " +
           "cédula ficar parada mais de um minuto, a tela lembra que a comissão aguarda, e o seu " +
-          "painel mostra um alerta ao lado do nome. Logo depois do voto, a comissão pede que ele " +
-          "separe nas quatro áreas os estandes que viu, sem a hashtag — uma vez só.",
+          "painel mostra um alerta ao lado do nome. O voto só fecha com todo estande visto numa " +
+          "pasta: é nesse momento que a separação conta para a habilidade, uma vez só.",
       },
       {
         rotulo: "4 — A lousa e a Galeria Oculta (o seu botão)",
         texto:
           "Com a maioria votada, você projeta o Painel Coletivo de Votos da Turma e conduz as " +
           "perguntas da plenária. Aí você aperta Liberar Auditoria. Cada computador vê os estandes " +
-          "que não chegaram ao feed dele: quantos de cada área ficaram de fora — o total é igual para " +
-          "todos, as áreas não — e o feed que ele teria visto sem as próprias curtidas. Busca por " +
-          "hashtag e decide entre manter o voto inicial ou confirmar um voto revisado. Na lousa, " +
+          "que não chegaram ao feed dele — o total é igual para todos, as áreas não — e abre os de " +
+          "cada área pelas hashtags. Busca e decide entre manter o voto inicial ou confirmar um voto " +
+          "revisado. Na lousa, " +
           "você mostra quanto do feed caiu numa área só para quem curtiu e para quem não curtiu.",
       },
       {
@@ -1006,14 +1010,8 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
         texto:
           "Numa tela da Unooria, o estudante monta a regra que o aplicativo seguiu: a condição (SE) " +
           "e a ação (ENTÃO), entre três peças cada, uma vez só. Depois, a tela mostra a regra certa " +
-          "e o que ela fez no feed dele.",
-      },
-      {
-        rotulo: "6 — Mariana",
-        texto:
-          "O caso da eleição do grêmio da escola de Mariana leva a lição para fora da mostra: " +
-          "um cartão para o que aconteceu com o feed dela e outro para o que fazer, e o crachá " +
-          "homologado. O podcast de recapitulação fecha a aula, depois da Etapa 4.",
+          "e o que ela fez no feed dele, e a missão termina com o crachá homologado. O podcast de " +
+          "recapitulação fecha a aula, depois da Etapa 4.",
       },
     ],
     preparo: [

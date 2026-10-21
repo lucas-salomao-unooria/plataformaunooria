@@ -390,7 +390,7 @@ const BOTOES: ReadonlyArray<Pick<BotaoDaAula, "acao" | "fase" | "rotulo">> = [
  * A fase só anda para a frente (na api, `avancarFase`): o que já passou é
  * `feito`, e não se aperta de novo. A síntese e a reflexão só depois da
  * revelação — a api aceitaria pular direto para a reflexão, mas uma turma que
- * monta a regra sem ter visto os próprios selos faz a Etapa 6 sem a descoberta
+ * monta o robô sem ter visto os próprios selos faz a Etapa 6 sem a descoberta
  * que ela fecha. Pular a SÍNTESE continua possível: depois da revelação, a
  * reflexão está disponível ao lado dela.
  */
@@ -418,9 +418,9 @@ export function deveConsultar(painel: Pick<PainelDaTurma, "atividade" | "progres
 
 /**
  * Mudou algo que a EVIDÊNCIA registra? A EF05CO08 é marcada quando o Mural
- * fecha, a EF05CO03 quando o cartão de frases é enviado e a EF05CO04 quando a
- * regra do tio é enviada — e a atividade troca com um pacote novo ou uma rodada
- * nova. É só nesses casos que vale reler a página inteira para o painel de
+ * fecha, a EF05CO03 quando o quarto alerta do grupo é enviado e a EF05CO04
+ * quando o robô do grupo é enviado — e a atividade troca com um pacote novo ou
+ * uma rodada nova. É só nesses casos que vale reler a página inteira para o painel de
  * habilidades acompanhar.
  */
 export function mudouAEvidencia(
@@ -429,8 +429,8 @@ export function mudouAEvidencia(
 ): boolean {
   return (
     antes.progresso.confirmaram !== depois.progresso.confirmaram ||
-    antes.progresso.responderamCartao !== depois.progresso.responderamCartao ||
-    antes.progresso.enviaramRegra !== depois.progresso.enviaramRegra ||
+    antes.progresso.enviaramAlertas !== depois.progresso.enviaramAlertas ||
+    antes.progresso.enviaramRobo !== depois.progresso.enviaramRobo ||
     antes.progresso.concluiram !== depois.progresso.concluiram ||
     antes.atividade?.pacoteId !== depois.atividade?.pacoteId ||
     antes.atividade?.rodada !== depois.atividade?.rodada
@@ -461,4 +461,22 @@ export function duracaoLegivel(segundos: number | null): string {
 export function rotuloDaOpcao(opcoes: readonly OpcaoDaMissao[], id: string | null): string | null {
   if (!id) return null;
   return opcoes.find((o) => o.id === id)?.rotulo ?? id;
+}
+
+// ─────────────────────────────────────────────── o alerta e o robô
+
+/** O número de pedidos e o teto de pontos do alerta (2 por pedido). */
+export const PEDIDOS_DO_ALERTA = 4;
+export const PONTOS_DO_ALERTA = 2 * PEDIDOS_DO_ALERTA;
+
+/** A coluna "Alertas" da folha: "{pontos}/8 · {enviados}/4 enviados". Sem alerta: "—". */
+export function alertasNaFolha(alertas: { pontos: number; enviados: number } | null): string {
+  if (!alertas) return "—";
+  return `${alertas.pontos}/${PONTOS_DO_ALERTA} · ${alertas.enviados}/${PEDIDOS_DO_ALERTA} enviados`;
+}
+
+/** "liguei 1 vez", "liguei 3 vezes", "enviado sem ligar" — a contagem ao lado da frase do robô. */
+export function ligacoesNaFolha(ligacoes: number): string {
+  if (ligacoes === 0) return "enviado sem ligar";
+  return ligacoes === 1 ? "ligado 1 vez" : `ligado ${ligacoes} vezes`;
 }

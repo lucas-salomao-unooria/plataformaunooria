@@ -4,8 +4,9 @@ import { CAMINHO_DAS_IMAGENS_DO_BANCO, type ImagensDoBancoPadrao } from "@/lib/j
 import { ImagensDoBancoDoJuri } from "./imagens-do-banco";
 
 /**
- * AS IMAGENS DO BANCO PADRÃO DO JÚRI ESTADUAL (exp06ef1b): uma por projeto do
- * banco padrão (quarenta), geradas pela conta da Unooria e usadas por toda
+ * AS IMAGENS DO BANCO PADRÃO DO JÚRI ESTADUAL (exp06ef1b): quatro por projeto
+ * do banco padrão (as lâminas do carrossel, ADR-178: cento e sessenta), geradas
+ * pela conta da Unooria e usadas por toda
  * atividade que nasce do banco — o atalho "Usar Banco Padrão Oficial" e o
  * fallback sem cota de IA. O projeto sem imagem segue com a arte desenhada da
  * missão, então a tela só mostra o que existe e gera o que falta.
@@ -22,8 +23,8 @@ import { ImagensDoBancoDoJuri } from "./imagens-do-banco";
 export default async function ImagensDoJuriPage() {
   const inicial = await apiDoServidor<ImagensDoBancoPadrao>(CAMINHO_DAS_IMAGENS_DO_BANCO);
 
-  /* Sem degradar para "0 de 40": "nenhuma imagem" e "a api não respondeu"
-     seriam a MESMA tela, e a primeira leitura mandaria gerar as quarenta. */
+  /* Sem degradar para "0 de 160": "nenhuma imagem" e "a api não respondeu"
+     seriam a MESMA tela, e a primeira leitura mandaria gerar as cento e sessenta. */
   if (!inicial) {
     return (
       <FeedbackAlert

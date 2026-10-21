@@ -6,8 +6,8 @@ import { TOTAL_DE_PROJETOS, type MaterialDoJuri } from "@/lib/juri-estadual-tipo
  * (professor only). UMA chamada, dois blocos, porque são dois momentos da aula:
  *
  * - `GabaritoDoJuri`, no preparo: a REGRA que o feed executou (os pesos e o
- *   limiar do motor), as peças da regra SE … ENTÃO com a certa marcada
- *   (EF06CO03, ADR-174) e os cartões do caso Mariana COM o certo marcado;
+ *   limiar do motor) e as peças da regra SE … ENTÃO com a certa marcada
+ *   (EF06CO03, ADR-174). O caso Mariana saiu na 0.7.0 (ADR-176);
  * - `PlenariaDoJuri`, no debate: as quatro perguntas da plenária do pico,
  *   verbatim — as mesmas que o painel da aula mostra ao lado do botão.
  *
@@ -37,8 +37,8 @@ export function PlenariaDoJuri({ dados }: { dados: MaterialDoJuri | null }) {
       <Card variant="elevated" title="As quatro perguntas da plenária — entre o voto e a galeria">
         <p className="text-[13px] leading-relaxed text-unooria-neutral-800">
           Com o painel de votação projetado e as telas em espera. Explore a divergência sem dizer ainda que o feed se
-          adaptou; a última leva a conversa para fora da tela. A escada abaixo é para o fechamento, depois do caso
-          Mariana.
+          adaptou; a última leva a conversa para fora da tela. A escada abaixo é para o fechamento, depois da regra
+          do feed.
         </p>
         <ol className="mt-3 flex list-decimal flex-col gap-2 pl-5 text-[14px] leading-relaxed text-unooria-neutral-900" data-plenaria>
           {dados.plenaria.map((pergunta) => (
@@ -58,8 +58,7 @@ export function GabaritoDoJuri({ dados }: { dados: MaterialDoJuri | null }) {
     <div className="guia-bloco guia-bloco--longo">
       <Card variant="elevated" title="A regra do feed e o gabarito — só para você">
         <p className="text-[12px] leading-relaxed text-unooria-neutral-600">
-          <strong>Não projete este bloco</strong>: as peças certas da regra e os cartões certos são a resposta das
-          etapas finais.
+          <strong>Não projete este bloco</strong>: as peças certas da regra são a resposta da etapa final.
         </p>
 
         <p className="mt-4 text-[13px] font-semibold text-unooria-neutral-950">A regra que o feed executou</p>
@@ -115,34 +114,6 @@ export function GabaritoDoJuri({ dados }: { dados: MaterialDoJuri | null }) {
           ))}
         </div>
 
-        <p className="mt-5 text-[13px] font-semibold text-unooria-neutral-950">O caso Mariana</p>
-        <p className="mt-1 text-[13px] leading-relaxed text-unooria-neutral-800">{dados.mariana.caso}</p>
-        <p className="mt-2 text-[12px] leading-relaxed text-unooria-neutral-600">
-          A criança escolhe um cartão de cada grupo. A escolha fica registrada, mas não vira nota nem evidência: a
-          tela não diz qual era o certo.
-        </p>
-        <div className="mt-2 grid gap-3 lg:grid-cols-2">
-          {[
-            { titulo: "O que aconteceu com o feed dela", cartoes: dados.mariana.mecanismos },
-            { titulo: "O que fazer", cartoes: dados.mariana.atitudes },
-          ].map((grupo) => (
-            <div key={grupo.titulo} className="flex flex-col gap-2">
-              <span className="text-[12px] font-semibold text-unooria-neutral-700">{grupo.titulo}</span>
-              <ul className="flex flex-col gap-2">
-                {grupo.cartoes.map((c) => (
-                  <li key={c.id} className="flex flex-col gap-1 rounded-lg border border-unooria-neutral-200 p-3" data-cartao={c.id}>
-                    <span>
-                      <Tag variant={c.certo ? "success" : "neutral"} size="sm">
-                        {c.certo ? "o esperado" : "distrator"}
-                      </Tag>
-                    </span>
-                    <span className="text-[13px] leading-relaxed text-unooria-neutral-800">{c.texto}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
       </Card>
     </div>
   );

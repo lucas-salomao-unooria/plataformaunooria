@@ -6,7 +6,7 @@ import {
   MS_DO_AVISO,
   VISTA_INICIAL,
   alternarSelecao,
-  cartaoCompleto,
+  andamentoDo,
   gateDoPasso,
   gateMudou,
   grupoChegaEmSequencia,
@@ -18,9 +18,9 @@ import {
 } from "../lib/regras";
 import { telemetria, type GateVisto } from "../lib/telemetria";
 import { TEXTOS } from "../lib/textos";
-import type { ClasseDeFalha, Estado, Gate, Regra, Resposta, Sessao } from "../lib/tipos";
+import type { ClasseDeFalha, Estado, Expressao, Gate, Robo, Sessao } from "../lib/tipos";
 import { ChatDoConvite, GrupoDaTurma, ListaDeConversas, MuralDaTurma, type EtapaDoMural } from "./telas-do-clone";
-import { TelaConcluida, TelaDaRegra } from "./telas-da-escola";
+import { TelaConcluida, TelaDoRobo } from "./telas-da-escola";
 
 /**
  * A casca da missão: uma máquina de telas sobre o que o SERVIDOR diz.
@@ -46,10 +46,8 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
   const [bloqueada, setBloqueada] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
-  /** O que a criança marcou no cartão, antes de enviar. Só desta aba: o F5 começa de novo. */
-  const [respostas, setRespostas] = useState<Record<string, Resposta>>({});
-  /** A falha de rede de um envio da casca (a regra): a casca fala por um alerta, não pelo aviso do app. */
-  const [falhaDaRegra, setFalhaDaRegra] = useState<"rede" | null>(null);
+  /** A falha de rede de um envio da casca (o robô): a casca fala por um alerta, não pelo aviso do app. */
+  const [falhaDoRobo, setFalhaDoRobo] = useState<"rede" | null>(null);
   const [tentativa, setTentativa] = useState(0);
 
   /** Para o polling (um `setInterval`) ler a sessão de AGORA, não a da montagem. */
@@ -78,8 +76,8 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
 
   /**
    * Relê a sessão inteira. Atividade NOVA (pacote novo aprovado, ou "Zerar a
-   * turma") zera tudo o que a aba sabia: a vista e as respostas do cartão
-   * eram de outro grupo.
+   * turma") zera tudo o que a aba sabia: a vista era de outro grupo (o filtro
+   * e o robô em montagem vivem nas telas, que remontam com a sessão nova).
    */
   const recarregar = useCallback(async () => {
     try {
@@ -87,7 +85,6 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
       deuCerto();
       if (!mesmaAtividade(atual.current.atividade, nova.atividade)) {
         setVista(VISTA_INICIAL);
-        setRespostas({});
         concluindo.current = false;
         gatesVistos.current.clear();
       }
@@ -289,47 +286,58 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
     [aplicar, tratarFalhaDeAcao],
   );
 
-  // ─────────────────────────────── o cartão de frases (EF05CO03)
-
-  const responderFrase = useCallback((fraseId: string, resposta: Resposta) => {
-    setRespostas((r) => ({ ...r, [fraseId]: resposta }));
-  }, []);
+  // ─────────────────────────────── o alerta do grupo (EF05CO03)
 
   /**
-   * "Enviar respostas" — as seis de uma vez (o latch 3). Nada volta dizendo se
-   * acertou: o estado só traz `cartao.enviado`. Um 409 é o cartão já enviado
-   * em outra aba, ou a turma andando: relê.
+   * "Ver resultado": o servidor executa o filtro e devolve quem passou. Um 409
+   * é a turma andando (a síntese fechou o alerta) ou outra aba: relê.
    */
-  const enviarCartao = useCallback(async () => {
-    const frases = atual.current.cartao?.frases ?? [];
-    if (!cartaoCompleto(frases, respostas)) return;
-    setOcupado(true);
-    try {
-      const estado = await api.post<Estado>("/quem-mandou-isso/operacoes", {
-        respostas: frases.map((f) => ({ fraseId: f.id, resposta: respostas[f.id] })),
-      });
-      aplicar(estado);
-      telemetria.respondeuOCartao();
-    } catch (erro) {
-      tratarFalhaDeAcao(erro, true);
-    } finally {
-      setOcupado(false);
-    }
-  }, [aplicar, respostas, tratarFalhaDeAcao]);
+  const executarAlerta = useCallback(
+    async (pedido: number, expressao: Expressao) => {
+      setOcupado(true);
+      try {
+        const estado = await api.post<Estado>("/quem-mandou-isso/alerta/execucao", { pedido, expressao });
+        aplicar(estado);
+        const { execucoes } = estado.alerta ? andamentoDo(estado.alerta, pedido) : { execucoes: [] };
+        telemetria.executouOAlerta(pedido, execucoes.length, execucoes.at(-1)?.passam.length ?? 0);
+      } catch (erro) {
+        tratarFalhaDeAcao(erro, true);
+      } finally {
+        setOcupado(false);
+      }
+    },
+    [aplicar, tratarFalhaDeAcao],
+  );
 
-  // ─────────────────────────────────── a regra do tio (EF05CO04)
+  /** "Enviar alerta ao grupo": o que está na tela, que é a última execução. */
+  const enviarAlerta = useCallback(
+    async (pedido: number, expressao: Expressao) => {
+      setOcupado(true);
+      try {
+        aplicar(await api.post<Estado>("/quem-mandou-isso/alerta/envio", { pedido, expressao }));
+        telemetria.enviouOAlerta(pedido);
+      } catch (erro) {
+        tratarFalhaDeAcao(erro, true);
+      } finally {
+        setOcupado(false);
+      }
+    },
+    [aplicar, tratarFalhaDeAcao],
+  );
+
+  // ─────────────────────────────────── o robô do grupo (EF05CO04)
 
   /** Uma ação da casca. A rede falha num alerta da própria casca; o resto, como no clone. */
   const acaoDaCasca = useCallback(
     async (caminho: string, corpo: unknown): Promise<Estado | null> => {
       setOcupado(true);
-      setFalhaDaRegra(null);
+      setFalhaDoRobo(null);
       try {
         const estado = await api.post<Estado>(caminho, corpo);
         aplicar(estado);
         return estado;
       } catch (erro) {
-        if (tratarFalhaDeAcao(erro, false) === "rede") setFalhaDaRegra("rede");
+        if (tratarFalhaDeAcao(erro, false) === "rede") setFalhaDoRobo("rede");
         return null;
       } finally {
         setOcupado(false);
@@ -338,32 +346,35 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
     [aplicar, tratarFalhaDeAcao],
   );
 
-  /** "Testar no áudio do tio" — a regra e a PREVISÃO; o resultado volta em `regra.testes`. */
-  const testarRegra = useCallback(
-    async (regra: Regra, previsao: string) => {
-      const estado = await acaoDaCasca("/quem-mandou-isso/regra/teste", { ...regra, previsao });
-      if (estado?.regra) telemetria.testouARegra(estado.regra.testes.length);
+  /** Só os blocos vão ao servidor — nunca a frase nem o resultado de uma ligação. */
+  const corpoDoRobo = (r: Robo) => ({ laco: r.laco, condicao: r.condicao, acoes: [...r.acoes] });
+
+  /** "Ligar o robô": o servidor executa nas quatro mensagens; a tela anima `robo.ligacoes`. */
+  const ligarRobo = useCallback(
+    async (robo: Robo) => {
+      const estado = await acaoDaCasca("/quem-mandou-isso/robo/ligar", corpoDoRobo(robo));
+      if (estado?.robo) telemetria.ligouORobo(estado.robo.ligacoes.length, robo.laco);
     },
     [acaoDaCasca],
   );
 
-  /** "Enviar minha regra" — o latch 4. O fim da missão sai logo depois (o efeito abaixo). */
-  const enviarRegra = useCallback(
-    async (regra: Regra) => {
-      const estado = await acaoDaCasca("/quem-mandou-isso/regra", regra);
-      if (estado?.regra) telemetria.enviouARegra(estado.regra.testes.length);
+  /** "Enviar meu robô" — definitivo. O fim da missão sai logo depois (o efeito abaixo). */
+  const enviarRobo = useCallback(
+    async (robo: Robo) => {
+      const estado = await acaoDaCasca("/quem-mandou-isso/robo", corpoDoRobo(robo));
+      if (estado?.robo) telemetria.enviouORobo(estado.robo.ligacoes.length);
     },
     [acaoDaCasca],
   );
 
   /**
-   * A regra enviada fecha a missão: o `POST /concluir` sai sozinho, e a casca
-   * "Missão Concluída" mostra a regra. Sem rede, tenta de novo no ciclo
+   * O robô enviado fecha a missão: o `POST /concluir` sai sozinho, e a casca
+   * "Missão Concluída" mostra o robô. Sem rede, tenta de novo no ciclo
    * seguinte (o `concluir` é idempotente no servidor).
    */
-  const regraEnviada = Boolean(sessao.regra?.enviada);
+  const roboEnviado = Boolean(sessao.robo?.enviado);
   useEffect(() => {
-    if (!regraEnviada || sessao.passo !== "regra" || concluindo.current) return;
+    if (!roboEnviado || sessao.passo !== "regra" || concluindo.current) return;
     concluindo.current = true;
     void (async () => {
       try {
@@ -378,7 +389,7 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
         }, INTERVALO_DO_GATE_MS);
       }
     })();
-  }, [regraEnviada, sessao.passo, tentativa, aplicar, tratarFalhaDeAcao]);
+  }, [roboEnviado, sessao.passo, tentativa, aplicar, tratarFalhaDeAcao]);
 
   // ─────────────────────────────────────────────────────────── a tela
 
@@ -433,8 +444,7 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
       case "enquete":
       case "espera":
       case "revelacao":
-      case "sintese":
-      case "cartao": {
+      case "sintese": {
         if (!pacote) return null;
         const etapa: EtapaDoMural = tela === "mural" ? "revisao" : tela;
         return (
@@ -445,37 +455,47 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
             motivos={opcoes.motivos}
             motivo={sessao.motivo}
             revelacao={sessao.revelacao}
-            cartao={sessao.cartao}
-            falaDoCartao={textos.nina.cartao}
-            respostas={respostas}
+            alerta={sessao.alerta}
+            limiteDeExecucoes={limites.execucoes}
             conectado={conectado}
             ocupado={ocupado}
             aoRevisar={revisar}
             aoConfirmar={() => void confirmarMural()}
             aoVotar={(m) => void votar(m)}
-            aoResponderFrase={responderFrase}
-            aoEnviarCartao={() => void enviarCartao()}
+            aoExecutarAlerta={(n, e) => void executarAlerta(n, e)}
+            aoEnviarAlerta={(n, e) => void enviarAlerta(n, e)}
           />
         );
       }
 
       case "regra":
         return (
-          <TelaDaRegra
+          <TelaDoRobo
+            /* Atividade nova (outro grupo) remonta o robô em montagem. */
+            key={sessao.atividade ? `${sessao.atividade.pacoteId}:${sessao.atividade.rodada}` : "sem-atividade"}
             tio={textos.nina.tio}
+            laco={opcoes.laco}
             condicoes={opcoes.condicoes}
             acoes={opcoes.acoes}
-            previsoes={opcoes.previsoes}
-            regra={sessao.regra}
-            falha={falhaDaRegra}
-            ocupado={ocupado || regraEnviada}
-            aoTestar={(r, p) => void testarRegra(r, p)}
-            aoEnviar={(r) => void enviarRegra(r)}
+            robo={sessao.robo}
+            limite={limites.ligacoes}
+            falha={falhaDoRobo}
+            ocupado={ocupado || roboEnviado}
+            aoLigar={(r) => void ligarRobo(r)}
+            aoEnviar={(r) => void enviarRobo(r)}
           />
         );
 
       case "concluida":
-        return <TelaConcluida regra={sessao.regra?.enviada?.emPalavras ?? null} encerramento={textos.nina.encerramento} />;
+        return (
+          <TelaConcluida
+            robo={sessao.robo?.enviado ?? null}
+            laco={opcoes.laco}
+            condicoes={opcoes.condicoes}
+            acoes={opcoes.acoes}
+            encerramento={textos.nina.encerramento}
+          />
+        );
     }
   };
 

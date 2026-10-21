@@ -32,7 +32,7 @@ export type CodigoErro =
   | "galeria-nao-liberada"
   | "voto-ja-revisado"
   | "galeria-sem-inspecao"
-  | "classificacao-ja-enviada"
+  | "estandes-sem-pasta"
   | "transicao-de-etapa-invalida"
   | "pacote-invalido"
   | "imagens-nao-aprovadas"
@@ -61,8 +61,8 @@ export const STATUS: Record<CodigoErro, number> = {
   /* "Manter meu voto inicial" só depois de abrir ao menos um estande oculto
      (melhoria 6): o botão fica apagado na tela, e a rota cobra o mesmo. */
   "galeria-sem-inspecao": 409,
-  /* A separação é uma vez só (ADR-174): o nível é o que ela sabia antes da galeria. */
-  "classificacao-ja-enviada": 409,
+  /* A separação é feita nas pastas do feed (ADR-176): a cédula só lacra com todo estande visto numa pasta. */
+  "estandes-sem-pasta": 409,
   "transicao-de-etapa-invalida": 409,
   "pacote-invalido": 400,
   /* A segunda fase da aprovação (como na exp07ef1b, ADR-146): o pacote existe,
@@ -93,7 +93,7 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   // O LATCH 2.
   "voto-ja-revisado": "A revisão do seu voto já foi registrada na ata.",
   "galeria-sem-inspecao": "Inspecione ao menos um projeto que não apareceu no seu feed antes de manter o voto.",
-  "classificacao-ja-enviada": "Sua organização dos estandes já foi registrada na ata do júri.",
+  "estandes-sem-pasta": "Antes de votar, salve cada estande que você viu na pasta da área dele.",
   "transicao-de-etapa-invalida": "A turma avança uma etapa por vez, e nunca volta.",
   "pacote-invalido": "Os estandes gerados não atendem às regras da missão.",
   "imagens-nao-aprovadas":
