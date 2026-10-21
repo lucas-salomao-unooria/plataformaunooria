@@ -95,7 +95,7 @@ const CHAVES = {
   revelacao: { escolha: 1, certa: 1, motivo: 1, area: 1 } satisfies Record<keyof RevelacaoDaRegra, 1>,
   post: {
     id: 1, projetoId: 1, tipo: 1, area: 1, titulo: 1, escola: 1, perfil: 1, texto: 1, legenda: 1, bastidor: 1,
-    hashtags: 1, imagem: 1,
+    hashtags: 1, imagem: 1, laminas: 1,
   } satisfies Record<keyof PostPublico, 1>,
   galeria: {
     invisibilidade: 1, porArea: 1, semCurtidas: 1, projetos: 1, ocultosAbertos: 1, podeManter: 1,
@@ -104,7 +104,7 @@ const CHAVES = {
   porArea: { area: 1, vistos: 1, total: 1 } satisfies Record<keyof VistosPorArea, 1>,
   semCurtidas: { area: 1, posts: 1 } satisfies Record<keyof AreaSemCurtidas, 1>,
   projeto: {
-    id: 1, area: 1, titulo: 1, escola: 1, perfil: 1, legenda: 1, resumo: 1, hashtags: 1, imagem: 1, exibidoNoSeuFeed: 1,
+    id: 1, area: 1, titulo: 1, escola: 1, perfil: 1, legenda: 1, resumo: 1, hashtags: 1, imagem: 1, laminas: 1, exibidoNoSeuFeed: 1,
   } satisfies Record<keyof ProjetoDaGaleria, 1>,
 };
 

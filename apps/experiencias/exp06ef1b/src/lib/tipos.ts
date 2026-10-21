@@ -21,7 +21,7 @@ export const EXP_ID = "exp06ef1b";
  * `public/experiencia.json`. O CI lê a do manifesto, e a divergência já causou
  * bug — o `versao.test.ts` compara os três (ADR-84).
  */
-export const EXP_VERSION = "0.7.0";
+export const EXP_VERSION = "0.8.0";
 
 /** O prefixo das rotas da missão na api. */
 export const ROTA = "/juri-estadual";
@@ -123,6 +123,16 @@ export interface ImagemPublica {
   alt: string;
 }
 
+/**
+ * As fotos 2 e 3 do carrossel e a dos bastidores (0.8.0, ADR-178). `null` é a
+ * lâmina sem imagem: a arte procedural (e, nos bastidores, só o texto).
+ */
+export interface LaminasPublicas {
+  detalhe: string | null;
+  equipe: string | null;
+  bastidor: string | null;
+}
+
 /** `PostPublicoSchema` — a allowlist de um post do feed. */
 export interface PostPublico {
   id: string;
@@ -141,6 +151,7 @@ export interface PostPublico {
   bastidor: string;
   hashtags: string[];
   imagem: ImagemPublica;
+  laminas: LaminasPublicas;
 }
 
 /** `FeedSchema`. */
@@ -236,6 +247,7 @@ export interface ProjetoDaGaleria {
   resumo: string;
   hashtags: string[];
   imagem: ImagemPublica;
+  laminas: LaminasPublicas;
   exibidoNoSeuFeed: boolean;
 }
 

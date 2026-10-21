@@ -328,6 +328,15 @@ body {
   line-height: 1.5;
 }
 
+/* Os bastidores COM foto (0.8.0, ADR-178): a imagem ocupa a lâmina e o texto
+   vem embaixo dela, entre as ações e a legenda — sem o respiro da pílula. */
+.bastidor-do-post {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unv-spacing-3xs, 4px);
+  color: var(--unv-color-text-primary, #22272a);
+}
+
 /* O "...mais" é o `Button` `link` do DS, em linha com a legenda. */
 .unv-post-card__caption > .legenda__mais {
   display: inline;

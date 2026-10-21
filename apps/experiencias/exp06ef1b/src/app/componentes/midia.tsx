@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { dataUriDeSvg, svgDoEstande, type Formato, type Paleta } from "../../lib/arte";
-import type { ImagemPublica } from "../../lib/tipos";
+import type { ImagemPublica, LaminasPublicas } from "../../lib/tipos";
 
 /**
  * A imagem de um estande nos lugares em que ela aparece — o feed, a cédula, a
@@ -60,15 +60,28 @@ export function srcDoEstande(
 }
 
 /**
- * A foto `n` (1 a 3) do carrossel de um post: a 1ª é a do estande; a 2ª e a
- * 3ª, as "fotos técnicas", são a arte procedural com outra semente — o pacote
- * tem UMA fotografia por projeto.
+ * A foto `n` (1 a 3) do carrossel de um post: a 1ª é a do estande; a 2ª (o
+ * projeto de perto) e a 3ª (a equipe no estande) são as fotos geradas dessas
+ * lâminas (0.8.0, ADR-178) e, sem elas, a arte procedural com outra semente.
  */
 export function srcDaFoto(
-  estande: { projetoId: string; titulo: string; imagem: ImagemPublica },
+  estande: { projetoId: string; titulo: string; imagem: ImagemPublica; laminas?: LaminasPublicas },
   n: number,
   paleta: Paleta,
 ): string {
   if (n <= 1) return srcDoEstande(estande, paleta);
-  return dataUriDeSvg(svgDoEstande(`${estande.projetoId}:foto${n}`, estande.titulo, paleta));
+  /* `?.`: o feed gravado de uma sessão antiga não tem `laminas`. */
+  const gerada = n === 2 ? estande.laminas?.detalhe : estande.laminas?.equipe;
+  return gerada ?? dataUriDeSvg(svgDoEstande(`${estande.projetoId}:foto${n}`, estande.titulo, paleta));
+}
+
+/** O `alt` da foto `n` do carrossel: o da api na 1ª; nas geradas, o da lâmina; na arte procedural, o do estande. */
+export function altDaFoto(
+  estande: { titulo: string; imagem: ImagemPublica; laminas?: LaminasPublicas },
+  n: number,
+  altDaLamina: (n: number, titulo: string) => string,
+): string {
+  if (n <= 1) return estande.imagem.alt;
+  const gerada = n === 2 ? estande.laminas?.detalhe : estande.laminas?.equipe;
+  return gerada ? altDaLamina(n, estande.titulo) : estande.imagem.alt;
 }

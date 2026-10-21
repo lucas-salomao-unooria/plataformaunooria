@@ -18,7 +18,7 @@ import {
   ocultosDaArea,
   opcoesDaTroca,
 } from "../../lib/regras";
-import { CONTAS, E4 } from "../../lib/textos";
+import { CONTAS, E2, E4 } from "../../lib/textos";
 import type {
   AcaoDaGaleria,
   Area,
@@ -27,7 +27,7 @@ import type {
   ProjetoDaGaleria,
   Voto,
 } from "../../lib/tipos";
-import { srcDaFoto, srcDoEstande, usePaleta } from "../componentes/midia";
+import { altDaFoto, srcDaFoto, srcDoEstande, usePaleta } from "../componentes/midia";
 import { Cabecalho } from "./cabecalho";
 import { Escolha } from "./escolha";
 
@@ -239,14 +239,20 @@ export function Galeria({
             {/* A faixa rola na horizontal: recebe foco para o teclado alcançar as
                 fotos escondidas (WCAG 2.1.1, ADR-162). */}
             <div className="ficha__fotos" tabIndex={0} role="group" aria-label="Fotos do projeto">
-              {[1, 2, 3].map((n) => (
-                <img
-                  key={n}
-                  className="ficha__imagem"
-                  src={srcDaFoto({ projetoId: ficha.id, titulo: ficha.titulo, imagem: ficha.imagem }, n, paleta)}
-                  alt={n === 1 ? ficha.imagem.alt : ""}
-                />
-              ))}
+              {[1, 2, 3].map((n) => {
+                const estande = { projetoId: ficha.id, titulo: ficha.titulo, imagem: ficha.imagem, laminas: ficha.laminas };
+                return (
+                  <img
+                    key={n}
+                    className="ficha__imagem"
+                    src={srcDaFoto(estande, n, paleta)}
+                    alt={n === 1 || ficha.laminas?.[n === 2 ? "detalhe" : "equipe"] ? altDaFoto(estande, n, E2.altDaFoto) : ""}
+                  />
+                );
+              })}
+              {ficha.laminas?.bastidor && (
+                <img className="ficha__imagem" src={ficha.laminas.bastidor} alt={E2.altDoBastidor(ficha.titulo)} />
+              )}
             </div>
             <p className="ficha__resumo">{ficha.resumo}</p>
             <div className="ficha__hashtags">

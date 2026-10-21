@@ -17,10 +17,13 @@ import { GeracaoDoBancoPadraoSchema, ImagensDoBancoPadraoSchema } from "../src/j
 import { JuriEstadualBancoPadraoController } from "../src/juri-estadual/juri-estadual-banco-padrao.controller";
 import {
   CUSTO_ESTIMADO_POR_IMAGEM,
+  IMAGENS_EM_PARALELO,
   IMAGENS_POR_CHAMADA,
   MidiaDaExp06ef1bService,
   nomeDaImagem,
 } from "../src/juri-estadual/midia.service";
+import { promptDaImagem } from "../src/juri-estadual/prompts";
+import { LAMINAS, chaveDaMidia, nomeDaLamina, promptDeLamina, type Lamina } from "../src/juri-estadual/regras/laminas";
 import { PreparoDaExp06ef1bService } from "../src/juri-estadual/preparo.service";
 import { RECURSOS_DE_IA } from "../src/recursos/custos-de-ia";
 import { AREAS, type Area } from "../src/juri-estadual/vocabulario";
@@ -45,11 +48,19 @@ const PROJETO = CONTEUDO.projetos[0]!;
 function montar({ saldo = true, aprovada = false, falhaNaIa = false, semMidia = false } = {}) {
   const salvos: string[] = [];
   const registradas: Array<[string, string]> = [];
+  const prompts: string[] = [];
   let consumido = 0;
   let geradas = 0;
+  let emVoo = 0;
+  let picoEmVoo = 0;
   const ia = {
-    generateImage: async () => {
+    generateImage: async (prompt: string) => {
       geradas += 1;
+      prompts.push(prompt);
+      emVoo += 1;
+      picoEmVoo = Math.max(picoEmVoo, emVoo);
+      await new Promise((r) => setTimeout(r, 1));
+      emVoo -= 1;
       if (falhaNaIa) throw new Error("provedor fora");
       return Buffer.from("imagem");
     },
@@ -85,13 +96,14 @@ function montar({ saldo = true, aprovada = false, falhaNaIa = false, semMidia = 
       if (aprovada) throw new HttpException({ codigo: "imagens-ja-aprovadas" }, 409);
       return pacote;
     },
-    registrarMidia: async (_e: string, _p: string, projetoId: string, url: string) => {
-      registradas.push([projetoId, url]);
+    registrarMidia: async (_e: string, _p: string, chave: string, url: string) => {
+      registradas.push([chave, url]);
     },
   } as unknown as JuriEstadualService;
   const servico = new MidiaDaExp06ef1bService(ia, assets, quota, juri);
-  const refazer = (projetoId: string) => servico.refazer("escola", "turma", "prof", "prof", "professor", "p1", projetoId);
-  return { servico, refazer, salvos, registradas, estado: () => ({ consumido, geradas }) };
+  const refazer = (projetoId: string, lamina?: Lamina) =>
+    servico.refazer("escola", "turma", "prof", "prof", "professor", "p1", projetoId, lamina);
+  return { servico, refazer, salvos, registradas, prompts, estado: () => ({ consumido, geradas, picoEmVoo }) };
 }
 
 async function codigoDe(p: Promise<unknown>): Promise<string | undefined> {
@@ -114,6 +126,34 @@ describe("o nome do arquivo da imagem do estande", () => {
   });
 });
 
+describe("as quatro lâminas do carrossel (ADR-178)", () => {
+  test("a capa é o arquivo de sempre (as imagens já geradas seguem valendo); as outras três, um arquivo cada", () => {
+    expect(nomeDaLamina("capa", PROJETO)).toBe(nomeDaImagem(PROJETO.imagem.descricao));
+    const nomes = LAMINAS.map((l) => nomeDaLamina(l, PROJETO));
+    expect(new Set(nomes).size).toBe(4);
+    expect(nomeDaLamina("detalhe", PROJETO)).toMatch(/^mostra\/detalhe-[0-9a-f]{32}\.webp$/);
+  });
+
+  test("mudar o texto dos bastidores troca SÓ o arquivo da lâmina dos bastidores", () => {
+    const editado = { ...PROJETO, bastidor: `${PROJETO.bastidor} Testamos de novo.` };
+    expect(nomeDaLamina("bastidor", editado)).not.toBe(nomeDaLamina("bastidor", PROJETO));
+    for (const l of ["capa", "detalhe", "equipe"] as const) expect(nomeDaLamina(l, editado)).toBe(nomeDaLamina(l, PROJETO));
+  });
+
+  test("a chave da capa é o id do projeto (o contrato de antes); as outras levam a lâmina", () => {
+    expect(chaveDaMidia(PROJETO.id, "capa")).toBe(PROJETO.id);
+    expect(chaveDaMidia(PROJETO.id, "bastidor")).toBe(`${PROJETO.id}:bastidor`);
+  });
+
+  test("cada lâmina pede a sua cena: a capa é o pedido de sempre; os bastidores levam o texto do teste", () => {
+    expect(promptDeLamina("capa", PROJETO)).toBe(promptDaImagem(PROJETO.imagem.descricao));
+    const pedidos = LAMINAS.map((l) => promptDeLamina(l, PROJETO));
+    expect(new Set(pedidos).size).toBe(4);
+    expect(promptDeLamina("bastidor", PROJETO)).toContain(PROJETO.bastidor.slice(0, 30));
+    expect(promptDeLamina("equipe", PROJETO)).toMatch(/rosto/i);
+  });
+});
+
 describe("gerar outra imagem de um estande", () => {
   test("gera, grava num arquivo novo, debita a quota e troca a URL do estande", async () => {
     const m = montar();
@@ -123,6 +163,15 @@ describe("gerar outra imagem de um estande", () => {
     expect(m.salvos[0]).not.toBe(nomeDaImagem(PROJETO.imagem.descricao));
     expect(m.registradas).toEqual([[PROJETO.id, r.url]]);
     expect(m.estado().consumido).toBe(CUSTO_ESTIMADO_POR_IMAGEM);
+  });
+
+  test("refazer UMA lâmina grava na chave dela, com o pedido dela, e não toca a capa", async () => {
+    const m = montar();
+    const r = await m.refazer(PROJETO.id, "detalhe");
+    expect(r).toMatchObject({ lamina: "detalhe", chave: `${PROJETO.id}:detalhe` });
+    expect(m.registradas).toEqual([[`${PROJETO.id}:detalhe`, r.url]]);
+    expect(m.prompts).toEqual([promptDeLamina("detalhe", PROJETO)]);
+    expect(m.salvos[0]).not.toBe(nomeDaLamina("detalhe", PROJETO));
   });
 
   test("dois cliques no mesmo estande pagam UMA imagem", async () => {
@@ -154,14 +203,32 @@ describe("gerar outra imagem de um estande", () => {
   });
 });
 
-describe("a geração em lote: quarenta estandes, quatro por chamada", () => {
-  test("cada chamada gera até QUATRO novas; dez chamadas cobrem os quarenta; o que já existe não é gerado de novo", async () => {
-    expect(IMAGENS_POR_CHAMADA).toBe(4);
+describe("a geração em lote: quarenta estandes, quatro lâminas cada, oito por chamada", () => {
+  const gerar = (m: ReturnType<typeof montar>) => m.servico.gerar("escola", "turma", "prof", "prof", "professor", "p1");
+
+  test("cada chamada gera até OITO novas, QUATRO de cada vez; a mostra inteira são 160", async () => {
+    expect(IMAGENS_POR_CHAMADA).toBe(8);
+    expect(IMAGENS_EM_PARALELO).toBe(4);
     const m = montar({ semMidia: true });
-    const primeira = await m.servico.gerar("escola", "turma", "prof", "prof", "professor", "p1");
-    expect(primeira).toMatchObject({ total: 40, prontas: 4, faltam: 36, completo: false });
-    expect(primeira.geradas).toHaveLength(4);
-    expect(m.estado().consumido).toBe(4 * CUSTO_ESTIMADO_POR_IMAGEM);
+    const primeira = await gerar(m);
+    expect(primeira).toMatchObject({ total: 160, prontas: 8, faltam: 152, completo: false });
+    /* Na ordem do carrossel: as quatro do 1º estande, depois as do 2º. */
+    expect(primeira.geradas.slice(0, 4)).toEqual(LAMINAS.map((l) => chaveDaMidia(PROJETO.id, l)));
+    expect(m.estado().consumido).toBe(8 * CUSTO_ESTIMADO_POR_IMAGEM);
+    expect(m.estado().picoEmVoo).toBe(4);
+  });
+
+  test("até completar, nenhuma é gerada duas vezes; o que já está no bucket entra de graça", async () => {
+    const m = montar({ semMidia: true });
+    let ultima = await gerar(m);
+    let idas = 1;
+    while (!ultima.completo) {
+      ultima = await gerar(m);
+      idas += 1;
+    }
+    expect(idas).toBe(20);
+    expect(m.estado().geradas).toBe(160);
+    expect(new Set(m.salvos).size).toBe(160);
   });
 });
 
@@ -211,37 +278,39 @@ describe("PROVA 9: as imagens do banco padrão (admin)", () => {
     }
   });
 
-  test("gera SÓ as que faltam, quatro por chamada, com o nome da customização, e é idempotente", async () => {
+  test("gera SÓ as que faltam, oito por chamada, as quatro lâminas, com o nome da customização, e é idempotente", async () => {
     const jaFeita = nomeDaImagem(banco[1]!.imagem.descricao);
     const m = montarBanco({ jaExistem: new Set([jaFeita]) });
     const antes = await m.servico.progresso();
     expect(ImagensDoBancoPadraoSchema.safeParse(antes).success).toBe(true);
-    expect(antes).toMatchObject({ total: 40, prontas: 1, completo: false });
+    expect(antes).toMatchObject({ total: 160, prontas: 1, completo: false });
     expect(antes.faltam).not.toContain(banco[1]!.id);
+    expect(antes.faltam).toContain(`${banco[1]!.id}:detalhe`);
     expect(antes.imagens[banco[1]!.id]).toBe(`https://cdn/${jaFeita}`);
 
     const r = await m.servico.gerar();
     expect(GeracaoDoBancoPadraoSchema.safeParse(r).success).toBe(true);
-    /* A já existente foi pulada: as quatro novas são as próximas da ordem do banco. */
-    expect(r.geradas).toEqual([banco[0]!.id, banco[2]!.id, banco[3]!.id, banco[4]!.id]);
-    expect(r).toMatchObject({ prontas: 5, completo: false });
-    expect(m.storage.has(nomeDaImagem(banco[0]!.imagem.descricao))).toBe(true);
+    /* A capa já existente foi pulada: as oito novas são as próximas da ordem do banco. */
+    const [a, b, c] = [banco[0]!.id, banco[1]!.id, banco[2]!.id];
+    expect(r.geradas).toEqual([a, `${a}:detalhe`, `${a}:equipe`, `${a}:bastidor`, `${b}:detalhe`, `${b}:equipe`, `${b}:bastidor`, c]);
+    expect(r).toMatchObject({ prontas: 9, completo: false });
+    expect(m.storage.has(nomeDaLamina("bastidor", banco[0]!))).toBe(true);
 
     /* Até completar: nenhuma imagem é gerada duas vezes. */
     let ultima = r;
     while (!ultima.completo) ultima = await m.servico.gerar();
-    expect(ultima).toMatchObject({ total: 40, prontas: 40, faltam: [], completo: true });
-    expect(m.pedidos).toHaveLength(39);
+    expect(ultima).toMatchObject({ total: 160, prontas: 160, faltam: [], completo: true });
+    expect(m.pedidos).toHaveLength(159);
     const denovo = await m.servico.gerar();
     expect(denovo.geradas).toEqual([]);
-    expect(m.pedidos).toHaveLength(39);
+    expect(m.pedidos).toHaveLength(159);
     await m.encerrar();
   });
 
   test("a imagem é medida no painel de custos com ATRIBUIÇÃO explícita: plataforma, admin, recurso do banco padrão", async () => {
     const m = montarBanco();
     await m.servico.gerar();
-    expect(m.consumos).toHaveLength(4);
+    expect(m.consumos).toHaveLength(8);
     for (const uso of m.consumos) {
       expect(uso).toMatchObject({ operacao: "generateImage", modalidade: "imagem", imagens: 1, ok: true });
       expect(uso.atribuicao).toEqual({ escolaId: null, perfil: "admin", recurso: RECURSO_DAS_IMAGENS_DO_BANCO });
@@ -252,12 +321,13 @@ describe("PROVA 9: as imagens do banco padrão (admin)", () => {
   });
 
   test("a que falha volta em `falharam`, é medida (ok: false) e não vai ao storage; a próxima chamada tenta de novo", async () => {
+    /* O título está no pedido das quatro lâminas do 1º estande. */
     const m = montarBanco({ falhaEm: new Set([banco[0]!.titulo]) });
     const r = await m.servico.gerar();
-    expect(r.falharam).toEqual([banco[0]!.id]);
-    expect(r.geradas).toHaveLength(3);
+    expect(r.falharam).toEqual(LAMINAS.map((l) => chaveDaMidia(banco[0]!.id, l)));
+    expect(r.geradas).toHaveLength(4);
     expect(r.faltam).toContain(banco[0]!.id);
-    expect(m.consumos.filter((c) => !c.ok)).toHaveLength(1);
+    expect(m.consumos.filter((c) => !c.ok)).toHaveLength(4);
     await m.encerrar();
   });
 
@@ -265,7 +335,7 @@ describe("PROVA 9: as imagens do banco padrão (admin)", () => {
     const m = montarBanco();
     const [a, b] = await Promise.all([m.servico.gerar(), m.servico.gerar()]);
     expect(a).toEqual(b);
-    expect(m.pedidos).toHaveLength(4);
+    expect(m.pedidos).toHaveLength(8);
     await m.encerrar();
   });
 

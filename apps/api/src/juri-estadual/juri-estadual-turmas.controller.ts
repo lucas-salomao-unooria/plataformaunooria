@@ -19,6 +19,7 @@ import {
   IdDeProjetoSchema,
   ImagemRefeitaSchema,
   ImagensAprovadasSchema,
+  LaminaDoRefazerSchema,
   PacoteDetalheSchema,
   PacoteHomologadoSchema,
   PacotesSchema,
@@ -281,16 +282,16 @@ export class JuriEstadualTurmasController {
   @Post(":turmaId/pacotes/:pacoteId/imagens/:projetoId/refazer")
   @HttpCode(200)
   @Contrato({
-    resumo: '"Gerar outra imagem": uma imagem nova para UM estande, enquanto as imagens estão em validação.',
+    resumo: '"Gerar outra imagem": uma imagem nova para UMA lâmina de um estande, enquanto as imagens estão em validação.',
     descricao:
-      "O professor viu a imagem do estande e ela não serve, ou o estande ficou sem imagem. Gera outra, SEMPRE paga, num arquivo novo — sobrescrever o da descrição trocaria a imagem de todo pacote que a herdou, inclusive o de uma turma em aula.",
+      "O professor viu a imagem e ela não serve, ou a lâmina ficou sem imagem. Gera outra, SEMPRE paga, num arquivo novo — sobrescrever o do pedido trocaria a imagem de todo pacote que a herdou, inclusive o de uma turma em aula. `?lamina=` escolhe qual das quatro (`capa`, `detalhe`, `equipe`, `bastidor`, ADR-178); sem ela, a capa.",
     params: PARAMS_DO_PACOTE.extend({ projetoId: IdDeProjetoSchema }),
-    query: QUERY,
+    query: QUERY.merge(LaminaDoRefazerSchema),
     resposta: ImagemRefeitaSchema,
     notas: [
       "Depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas`: a turma pode estar olhando para elas.",
       "Quota do professor, com o custo estimado de uma imagem. Sem saldo, **429** `sem-saldo-de-ia`; com o provedor fora do ar, **503** `ia-indisponivel` — e o estande fica com a imagem que tinha.",
-      "`projetoId` fora de `proj-a1`…`proj-d10` responde **400** `payload-invalido`.",
+      "`projetoId` fora de `proj-a1`…`proj-d10`, ou `lamina` desconhecida, responde **400** `payload-invalido`.",
     ],
   })
   refazerImagem(
@@ -298,10 +299,13 @@ export class JuriEstadualTurmasController {
     @Param("pacoteId") pacoteId: string,
     @Param("projetoId") projetoId: string,
     @Query("escolaId") escolaIdPedida: string | undefined,
+    @Query("lamina") laminaPedida: string | undefined,
     @Req() req: Autenticado,
   ) {
     const escolaId = escolaAlvo(req.auth, escolaIdPedida);
     if (!IdDeProjetoSchema.safeParse(projetoId).success) throw erroDeJogo("payload-invalido");
+    const lamina = LaminaDoRefazerSchema.safeParse({ lamina: laminaPedida });
+    if (!lamina.success) throw erroDeJogo("payload-invalido");
     limitar(req.auth.usuarioId, "refazer-imagem", 20);
     return this.midia.refazer(
       escolaId,
@@ -311,6 +315,7 @@ export class JuriEstadualTurmasController {
       req.auth.perfil,
       pacoteOpcional(pacoteId) ?? "",
       projetoId,
+      lamina.data.lamina,
     );
   }
 

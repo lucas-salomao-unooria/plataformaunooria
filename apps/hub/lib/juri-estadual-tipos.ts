@@ -288,7 +288,7 @@ export interface PacoteNaTela extends PacoteResumo {
   assuntos: string;
   conteudo: ConteudoDoPacote;
   midia: ResumoDaMidia;
-  /** As URLs já geradas, por id de projeto. */
+  /** As URLs já geradas, pela chave da lâmina (`chaveDaMidia`: `proj-a1`, `proj-a1:detalhe`). */
   imagens: Record<string, string>;
 }
 
@@ -325,10 +325,13 @@ export interface ImagensAprovadas {
   imagensAprovadasEm: string;
 }
 
-/** `POST :turmaId/pacotes/:pacoteId/imagens/:projetoId/refazer` — a imagem nova de UM estande. */
+/** `POST :turmaId/pacotes/:pacoteId/imagens/:projetoId/refazer?lamina=` — a imagem nova de UMA lâmina de um estande. */
 export interface ImagemRefeita {
   pacoteId: string;
   projetoId: string;
+  lamina: Lamina;
+  /** A chave na `imagens` (`chaveDaMidia`). */
+  chave: string;
   url: string;
 }
 
@@ -347,7 +350,7 @@ export interface RascunhoDoPacote {
   origem: OrigemDoPacote;
   motivo: MotivoDoBancoPadrao | null;
   /**
-   * As URLs das imagens que o rascunho JÁ tem, por id de projeto. Só o banco
+   * As URLs das imagens que o rascunho JÁ tem, pela chave da lâmina. Só o banco
    * padrão (o fallback) as traz — as do banco que já existem no storage; o
    * rascunho da IA vem vazio (as imagens dele se geram depois de criar).
    */
@@ -401,7 +404,7 @@ export interface EmAndamento {
   mudou: boolean;
 }
 
-/** `POST gerar-midia?pacoteId=` — o progresso de UMA chamada (até quatro imagens novas). */
+/** `POST gerar-midia?pacoteId=` — o progresso de UMA chamada (até oito imagens novas), contado por lâmina. */
 export interface ProgressoDaMidia {
   pacoteId: string;
   total: number;
@@ -885,8 +888,39 @@ export function normalizarConteudo(c: ConteudoDoPacote): ConteudoDoPacote {
 // ─────────────────────────────────────────────────────────────── as imagens
 
 /**
- * O laço do "Gerar imagens": a api gera ATÉ QUATRO por chamada (o BFF corta a
- * espera; quarenta não cabem numa), e o cliente repete. O mesmo laço serve às
+ * As quatro LÂMINAS do carrossel de um estande (0.8.0, ADR-178) — espelho de
+ * `apps/api/src/juri-estadual/regras/laminas.ts`. A capa é a foto do estande
+ * de sempre; as outras são as fotos 2 e 3 do post e a dos bastidores.
+ */
+export const LAMINAS = ["capa", "detalhe", "equipe", "bastidor"] as const;
+export type Lamina = (typeof LAMINAS)[number];
+
+/** O nome de cada lâmina na grade do professor e do admin. */
+export const ROTULO_DA_LAMINA: Record<Lamina, string> = {
+  capa: "Foto do estande",
+  detalhe: "O projeto de perto",
+  equipe: "A equipe no estande",
+  bastidor: "Bastidores",
+};
+
+/** A chave da imagem na `imagens`: o id do projeto (a capa) ou `proj-a1:detalhe`. */
+export function chaveDaMidia(projetoId: string, lamina: Lamina): string {
+  return lamina === "capa" ? projetoId : `${projetoId}:${lamina}`;
+}
+
+/** O projeto de uma chave da `imagens` (`proj-a1:detalhe` → `proj-a1`). */
+export function projetoDaChave(chave: string): string {
+  return chave.split(":")[0] ?? chave;
+}
+
+/** Quantas das quatro lâminas de um estande estão sem imagem. */
+export function laminasSemImagem(projetoId: string, imagens: Readonly<Record<string, string>>): number {
+  return LAMINAS.filter((l) => !imagens[chaveDaMidia(projetoId, l)]).length;
+}
+
+/**
+ * O laço do "Gerar imagens": a api gera ATÉ OITO por chamada (o BFF corta a
+ * espera; as cento e sessenta não cabem numa), e o cliente repete. O mesmo laço serve às
  * imagens do banco padrão, na área da Unooria. Para quando não falta nada, ou quando a chamada
  * não gerou NENHUMA — repetir aí é pedir de novo as mesmas imagens que o
  * provedor acabou de recusar, cobrando da quota do professor a cada volta. A
@@ -917,7 +951,7 @@ export function estadoDaImagem(e: { temImagem: boolean; gerando: boolean; aprova
   return e.aprovadas ? "aprovada" : "aguardando";
 }
 
-/** "3 de 40 imagens prontas." — o total é o do pacote (16 no legado). */
+/** "3 de 160 imagens prontas." — o total é o do pacote: quatro por estande (64 no legado de 16). */
 export function textoDoProgressoDaMidia(m: ResumoDaMidia): string {
   if (m.total === 0) return "Nenhum estande deste pacote pede imagem.";
   if (m.prontas >= m.total) return m.total === 1 ? "A imagem está pronta." : `As ${m.total} imagens estão prontas.`;
@@ -930,8 +964,9 @@ export function textoDoProgressoDaMidia(m: ResumoDaMidia): string {
 export const CAMINHO_DAS_IMAGENS_DO_BANCO = "/juri-estadual/banco-padrao/imagens";
 
 /**
- * `GET /juri-estadual/banco-padrao/imagens`: uma imagem por projeto do banco
- * padrão (quarenta). O storage é o registro; `faltam` são os IDS sem arquivo.
+ * `GET /juri-estadual/banco-padrao/imagens`: quatro imagens por projeto do
+ * banco padrão (as lâminas; cento e sessenta). O storage é o registro; `faltam`
+ * são as CHAVES sem arquivo (`chaveDaMidia`).
  */
 export interface ImagensDoBancoPadrao {
   total: number;
@@ -950,11 +985,11 @@ export interface GeracaoDoBancoPadrao extends ImagensDoBancoPadrao {
 
 /**
  * Os ids do banco por área, na ordem numérica: os que têm imagem e os que
- * faltam, juntos. A api não manda o título do projeto (o conteúdo do banco
- * mora só nela), então a grade nomeia pelo número dentro da área.
+ * faltam, juntos (de qualquer lâmina). A api não manda o título do projeto (o
+ * conteúdo do banco mora só nela), então a grade nomeia pelo número dentro da área.
  */
 export function idsDoBancoPorArea(b: Pick<ImagensDoBancoPadrao, "faltam" | "imagens">): Array<{ area: Area; ids: string[] }> {
-  const todos = [...new Set([...Object.keys(b.imagens), ...b.faltam])].filter((id) => ID_DE_PROJETO_RE.test(id));
+  const todos = [...new Set([...Object.keys(b.imagens), ...b.faltam].map(projetoDaChave))].filter((id) => ID_DE_PROJETO_RE.test(id));
   return AREAS.map((area) => ({
     area,
     ids: todos.filter((id) => areaDoProjeto(id) === area).sort(compararIdsDeProjeto),

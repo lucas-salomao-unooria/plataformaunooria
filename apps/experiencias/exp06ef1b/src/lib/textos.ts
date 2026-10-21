@@ -126,6 +126,13 @@ export const E2 = {
    * leitor de tela.
    */
   bastidor: "Bastidores do estande",
+  /**
+   * ESCRITA AQUI (0.8.0, ADR-178) — o texto alternativo das fotos geradas das
+   * lâminas 2 a 4 (a 1ª usa o `alt` que a api escreveu para o estande).
+   */
+  altDaFoto: (n: number, titulo: string) =>
+    n === 2 ? `O protótipo ${titulo} de perto, sobre a mesa do estande` : `A equipe apresentando ${titulo} no estande`,
+  altDoBastidor: (titulo: string) => `A bancada de testes de ${titulo}`,
   /** ESCRITA AQUI — as setas do carrossel (o mouse não arrasta como o dedo). */
   fotoAnterior: "Foto anterior",
   proximaFoto: "Próxima foto",

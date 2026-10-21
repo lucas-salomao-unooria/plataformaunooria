@@ -2,6 +2,7 @@ import { z } from "zod";
 import { falasDoTemaSchema } from "../podcast/roteiro";
 import { VAGAS_DO_PODCAST } from "./podcast";
 import { problemasDoPacote } from "./invariantes";
+import { LAMINAS, ehChaveDaMidia } from "./regras/laminas";
 import { ETAPAS, PASSOS, PASSOS_PEDIDOS } from "./regras/passos";
 import { PECAS_DO_ENTAO, PECAS_DO_SE } from "./conteudo";
 import {
@@ -46,6 +47,9 @@ export const PassoSchema = z.enum(PASSOS);
 export const EtapaSchema = z.enum(ETAPAS);
 export const IdDeProjetoSchema = z.string().regex(ID_DE_PROJETO_RE);
 export const IdDePostSchema = z.string().regex(ID_DE_POST_RE);
+/** A chave de uma imagem na `midia` do pacote: `proj-a1` (a capa) ou `proj-a1:detalhe` (ADR-178). */
+export const ChaveDaMidiaSchema = z.string().refine(ehChaveDaMidia, "chave de imagem desconhecida");
+export const LaminaSchema = z.enum(LAMINAS);
 /** Ids opacos por sessão (`cl-` os estandes da separação, só no servidor; `rg-` as peças da regra): não dizem o que o item é. */
 export const IdDeItemSchema = z.string().regex(/^cl-[a-z0-9]{3}$/);
 export const IdDePecaSchema = z.string().regex(/^rg-[a-z0-9]{3}$/);
@@ -133,6 +137,17 @@ const ImagemPublicaSchema = z.object({
 });
 
 /**
+ * As fotos 2 e 3 do carrossel e a dos bastidores (0.8.0, ADR-178). `null` é a
+ * lâmina sem imagem: a tela desenha a arte procedural (e, nos bastidores, só o
+ * texto). O `alt` delas a tela monta do título — não há descrição por lâmina.
+ */
+const LaminasPublicasSchema = z.object({
+  detalhe: z.string().nullable(),
+  equipe: z.string().nullable(),
+  bastidor: z.string().nullable(),
+});
+
+/**
  * Um post do feed — ALLOWLIST. A área é pública (a hashtag está no post).
  *
  * O motor serve só `apresentacao` (instrumento 3.0.0); `bastidor`, `prototipo`
@@ -155,6 +170,7 @@ export const PostPublicoSchema = z.object({
   bastidor: z.string(),
   hashtags: z.array(z.string()),
   imagem: ImagemPublicaSchema,
+  laminas: LaminasPublicasSchema,
 });
 
 export const FeedSchema = z.object({
@@ -187,6 +203,7 @@ export const ProjetoDaGaleriaSchema = z.object({
   resumo: z.string(),
   hashtags: z.array(z.string()),
   imagem: ImagemPublicaSchema,
+  laminas: LaminasPublicasSchema,
   exibidoNoSeuFeed: z.boolean(),
 });
 
@@ -484,10 +501,16 @@ export const ImagensAprovadasSchema = z.object({
   imagensAprovadasEm: z.string(),
 });
 
-/** `POST :turmaId/pacotes/:pacoteId/imagens/:projetoId/refazer` — a imagem nova de UM estande. */
+/** A query do refazer: qual lâmina (sem ela, a capa — o contrato de antes da 0.8.0). */
+export const LaminaDoRefazerSchema = z.object({ lamina: LaminaSchema.default("capa") });
+
+/** `POST :turmaId/pacotes/:pacoteId/imagens/:projetoId/refazer?lamina=` — a imagem nova de UMA lâmina de um estande. */
 export const ImagemRefeitaSchema = z.object({
   pacoteId: z.string().uuid(),
   projetoId: IdDeProjetoSchema,
+  lamina: LaminaSchema,
+  /** A chave na `midia` (`proj-a1`, `proj-a1:detalhe`). */
+  chave: ChaveDaMidiaSchema,
   url: z.string(),
 });
 
@@ -503,9 +526,9 @@ export const ProgressoDaMidiaSchema = z.object({
   total: z.number().int().min(0),
   prontas: z.number().int().min(0),
   faltam: z.number().int().min(0),
-  geradas: z.array(IdDeProjetoSchema),
+  geradas: z.array(ChaveDaMidiaSchema),
   /** As que falharam NESTA chamada — seguem com a arte procedural. */
-  falharam: z.array(IdDeProjetoSchema),
+  falharam: z.array(ChaveDaMidiaSchema),
   completo: z.boolean(),
   imagens: z.record(z.string()),
 });
@@ -615,22 +638,22 @@ export const MaterialSchema = z.object({
 // ───────────────────────────────────── admin: as imagens do banco padrão
 
 /**
- * As imagens do BANCO PADRÃO (`GET /juri-estadual/banco-padrao/imagens`): uma
- * por projeto, com o MESMO nome determinístico da customização (o hash da
- * descrição), então o arquivo que existe no storage serve a todo pacote
- * `padrao`. `faltam` são os ids sem arquivo.
+ * As imagens do BANCO PADRÃO (`GET /juri-estadual/banco-padrao/imagens`): quatro
+ * por projeto (as lâminas, ADR-178), com o MESMO nome determinístico da
+ * customização (o hash do pedido), então o arquivo que existe no storage serve
+ * a todo pacote `padrao`. `faltam` são as chaves sem arquivo.
  */
 export const ImagensDoBancoPadraoSchema = z.object({
   total: z.number().int().min(0),
   prontas: z.number().int().min(0),
-  faltam: z.array(IdDeProjetoSchema),
+  faltam: z.array(ChaveDaMidiaSchema),
   completo: z.boolean(),
   imagens: z.record(z.string()),
 });
 
 /** `POST /juri-estadual/banco-padrao/imagens`: o progresso, e o que ESTA chamada gerou ou não conseguiu. */
 export const GeracaoDoBancoPadraoSchema = ImagensDoBancoPadraoSchema.extend({
-  geradas: z.array(IdDeProjetoSchema),
+  geradas: z.array(ChaveDaMidiaSchema),
   /** As que falharam NESTA chamada — chame de novo. */
-  falharam: z.array(IdDeProjetoSchema),
+  falharam: z.array(ChaveDaMidiaSchema),
 });
