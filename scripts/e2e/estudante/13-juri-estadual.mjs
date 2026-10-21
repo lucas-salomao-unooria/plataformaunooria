@@ -580,6 +580,16 @@ await suite(
       laminasDoCartao.join(",") === "capa,detalhe,equipe,bastidor",
       `cada estande da grade de imagens mostra as quatro lâminas do carrossel, na ordem do post (${laminasDoCartao.join(", ")})`,
     );
+    await gradeDeImagens.locator("[data-imagem-do-estande]").first().scrollIntoViewIfNeeded();
+    await r.registrar(prof, "imagens-quatro-por-estande", {
+      titulo: "Quatro imagens por estande, na aprovação do professor",
+      mostra:
+        "A grade “Imagens dos estandes” da atividade: cada cartão traz a foto do estande, o projeto de perto, a " +
+        "equipe no estande e os bastidores, cada uma com o seu “Gerar outra”.",
+      prova:
+        "Desde a 0.8.0 (ADR-178) as fotos 2 e 3 do carrossel e a dos bastidores também são geradas, cada uma com o " +
+        "seu pedido; o professor confere e troca cada lâmina antes de a turma ver.",
+    });
     /* A foto enquadra a barra de abas (o contêiner é maior que a tela). */
     await estandesDaAtividade.getByRole("tablist").first().evaluate((el) => el.scrollIntoView({ block: "start" }));
     await r.registrar(prof, "estandes-em-abas", {
@@ -820,6 +830,8 @@ await suite(
     const srcDaLamina = async (rotulo) =>
       primeiroPost.locator(`[aria-roledescription="carrossel"][aria-label="${rotulo}"] img`).first().getAttribute("src");
     const fotoCerta = (src, esperada) => (esperada ? src === esperada : Boolean(src?.startsWith("data:image/svg")));
+    /* O aviso da Busca fechada ainda pode estar sobre o feed: a foto espera ele sair. */
+    await aviso(q, COPY.buscaFechada).waitFor({ state: "hidden", timeout: 10_000 }).catch(() => {});
     await arrastarParaAEsquerda();
     await primeiroPost.locator('[aria-label="Foto 2 de 3"]').first().waitFor({ timeout: 10_000 });
     const src2 = await srcDaLamina("Foto 2 de 3");
@@ -827,6 +839,14 @@ await suite(
       fotoCerta(src2, laminasDaApi.detalhe),
       `a foto 2 é ${laminasDaApi.detalhe ? "a imagem gerada do projeto de perto" : "a arte procedural (a api não mandou imagem para a lâmina)"} (${String(src2).slice(0, 50)}…)`,
     );
+    await semAnimacao(q);
+    await r.registrar(p, "carrossel-foto-2", {
+      titulo: "Foto 2 do carrossel: o projeto de perto",
+      mostra: laminasDaApi.detalhe
+        ? "A segunda lâmina do post: a imagem gerada do protótipo de perto, sobre a mesa do estande."
+        : "A segunda lâmina do post: a arte desenhada (esta mostra ainda não tem a imagem gerada da lâmina).",
+      prova: "A foto 2 é a imagem da lâmina “detalhe” que a api mandou; sem ela, a arte desenhada de antes.",
+    });
     await arrastarParaAEsquerda();
     await primeiroPost.locator('[aria-label="Foto 3 de 3"]').first().waitFor({ timeout: 10_000 });
     const src3 = await srcDaLamina("Foto 3 de 3");
@@ -834,6 +854,14 @@ await suite(
       fotoCerta(src3, laminasDaApi.equipe),
       `a foto 3 é ${laminasDaApi.equipe ? "a imagem gerada da equipe no estande" : "a arte procedural (a api não mandou imagem para a lâmina)"} (${String(src3).slice(0, 50)}…)`,
     );
+    await semAnimacao(q);
+    await r.registrar(p, "carrossel-foto-3", {
+      titulo: "Foto 3 do carrossel: a equipe no estande",
+      mostra: laminasDaApi.equipe
+        ? "A terceira lâmina do post: a imagem gerada da equipe apresentando o projeto, sem rosto identificável."
+        : "A terceira lâmina do post: a arte desenhada (esta mostra ainda não tem a imagem gerada da lâmina).",
+      prova: "A foto 3 é a imagem da lâmina “equipe” que a api mandou; sem ela, a arte desenhada de antes.",
+    });
     await arrastarParaAEsquerda();
     const laminaDoBastidor = primeiroPost.locator(`[aria-roledescription="carrossel"][aria-label="${COPY.bastidor}"]`).first();
     await laminaDoBastidor.waitFor({ timeout: 10_000 }).catch(() => {
