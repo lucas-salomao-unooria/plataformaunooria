@@ -48,6 +48,11 @@ por teto compila e sai errado em 30 telas ao mesmo tempo, no meio de uma aula.
   o 6b e o 6c só abrem do `perdidos` em diante COM a revelação terminada. Quem
   não teve feed com lado não recebe tarefa. A situação sai de `GET :id/tarefas`,
   e é ela que decide o desvio por fase no aparelho.
+- **As réguas são as do PO, validadas com a pedagogia (ADR-179)**, e os termos
+  de uso aparecem na ENTRADA (`GET /runs/termos-de-uso`, sem sessão), com as 5
+  cláusulas do 6b enterradas no texto (`TERMOS_DA_ENTRADA`). Mudou uma
+  cláusula? Ela muda nas duas telas, porque o texto da entrada é montado a
+  partir de `CLAUSULAS` — nunca copie a frase para o texto denso.
 - **"Visto" sai dos EVENTOS também, não só do `engine_state`**: o motor só
   processa os eventos quando o aparelho pede o próximo bloco, e os do último
   bloco ficariam fora do Raio-x (a e2e mostrou: `vistosPorPost` vazio com 21

@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{178 decisões}, numeradas até ADR-178: a 178 (as quatro fotos do carrossel do Júri Estadual) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{179 decisões}, numeradas até ADR-179: a 179 (as réguas do PO no Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 178 (as quatro fotos do carrossel do Júri Estadual) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -229,6 +229,7 @@ que a cercam.
 \zebra \adrr{ADR-176} & O Júri Estadual depois da aula de teste: a separação vai para as pastas do feed, o caso Mariana sai e a Galeria Oculta fica enxuta & 2026-10-20 & Aceita; supera em parte a \adrr{ADR-137}, a \adrr{ADR-157}, a \adrr{ADR-164} e a \adrr{ADR-174}\\
 \adrr{ADR-177} & Quem mandou isso? depois do teste do time: o alerta do grupo no lugar do cartão de frases e o robô do grupo no lugar da regra do tio & 2026-10-20 & Aceita; supera em parte a \adrr{ADR-171}\\
 \zebra \adrr{ADR-178} & O carrossel do Júri Estadual com quatro fotos geradas: o projeto de perto, a equipe no estande e os bastidores, cada uma com o seu pedido & 2026-10-20 & Aceita; estende a \adrr{ADR-151} e a \adrr{ADR-164}\\
+\adrr{ADR-179} & O Unoovista adota as réguas do PO validadas com a pedagogia, e os termos de uso voltam para a entrada & 2026-10-21 & Aceita; substitui partes da \adrr{ADR-167}\\
 \bottomrule
 \end{tabularx}
 
@@ -16297,3 +16298,75 @@ continuam valendo, agora com quatro imagens por estande em vez de uma.
 \textbf{Gatilho.} O tempo de gerar as 160 incomodar o professor no preparo
 (aí as lâminas extras passam a ser opcionais), ou o modelo devolver rosto
 identificável na lâmina da equipe com frequência.
+
+\section{ADR-179 --- O Unoovista adota as réguas do PO validadas com a pedagogia, e os termos de uso voltam para a entrada}
+\label{adr:exp08ef1b-reguas-do-po}
+
+\textbf{Data.} 2026-10-21. \textbf{Status.} Aceita. \textbf{Substitui} as
+réguas e o desenho do 6b da \adrr{ADR-167}; o resto do Canal A do Unoovista
+(o Raio-x antes do debate, as tarefas depois do cinza, a leitura da reflexão)
+continua.
+
+\begin{especificacao}{Contexto}
+Em 2026-10-21 o PO validou com o time de pedagogia que a missão do 8º ano
+atende às três habilidades do 1º bimestre (EF08CO09, EF08CO11 e EF08CO07) e
+mandou o critério ternário de cada uma, mais uma mudança no 6b. As réguas da
+\adrr{ADR-167} tinham sido desenhadas por nós e votadas num plenário de
+agentes; a régua que vale é a da pedagogia.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Os termos de uso voltam para a entrada}: depois do cartão da
+    missão, dentro do app, um texto jurídico denso com o botão grande
+    \enquote{Aceitar e continuar}. As 5 cláusulas do 6b estão enterradas nele,
+    com as mesmas palavras (\cd{TERMOS\_DA\_ENTRADA}, servido por
+    \rota{GET /runs/termos-de-uso}, que não depende da sessão). Aceitar não
+    mede nada; a telemetria registra o tempo na tela.
+  \item \textbf{O 6b é só marcar}: \enquote{Esses são os termos de uso que você
+    recebeu no início da experiência. Marque as regras que explicam o que
+    aconteceu no seu feed.} Saem o efeito de cada regra e a pergunta da
+    mudança. Erros = regra que explica sem marca + distração marcada; 0 é
+    atingiu, 1--2 em processo, 3 ou mais não atingiu.
+  \item \textbf{Raio-x (EF08CO11)}: 5--6 acertos atingiu, 3--4 em processo,
+    0--2 não atingiu. O post em que o estudante mais parou continua na
+    composição e na devolutiva, mas não pesa mais no nível.
+  \item \textbf{Envio (EF08CO07)}: três critérios contados --- os dois lados,
+    nada de fofoca ou humor, a mensagem de aviso. 3 é atingiu, 1--2 em
+    processo, 0 não atingiu. Na atividade sem fofoca ou humor nos dois lados,
+    o envio que fecha os três vai a \enquote{em processo} e grava o marcador
+    limitado (\adrr{ADR-166}), como antes.
+  \item A ficha sobe para a versão 3. Experiência 1.5.0.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter as réguas da \adrr{ADR-167}}: eram nossas; a pedagogia
+    validou outras.
+  \item \textbf{Termos só depois da revelação}, como na \adrr{ADR-167}: o PO
+    quer o comportamento real de aceitar sem ler, para a revisita fazer
+    sentido. O risco de contar o segredo antes do feed fica controlado pela
+    densidade do texto.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas (levadas ao PO no card, aguardando
+resposta).}
+
+\begin{itemize}
+  \item \textbf{Chute no Raio-x}: a regra dos 3 garante que marcar a mesma opção
+    nos 6 posts dá no máximo 3 acertos, que agora é \enquote{em processo}.
+  \item \textbf{Ridicularizar no envio}: os dois lados sem fofoca com a mensagem
+    que ridiculariza somam 2 critérios e ficam em \enquote{em processo}.
+  \item \textbf{O 6b deixa de medir o julgamento crítico} (\enquote{analisar
+    criticamente}): só a localização das regras.
+  \item O Raio-x continua não aparecendo para quem viu poucos posts, e a
+    reflexão lida pela IA continua como segundo caminho da EF08CO11; o PO não
+    falou de nenhum dos dois, e a pergunta está no card.
+\end{itemize}
+
+\textbf{Gatilho.} A resposta do PO às quatro perguntas do card: cada \enquote{sim}
+às nossas sugestões é uma mudança pequena nas réguas puras de
+\arq{motor/canal-a/} e uma versão nova da ficha.
+
