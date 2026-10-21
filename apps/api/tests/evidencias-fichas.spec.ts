@@ -91,7 +91,7 @@ test("a ficha da exp05ef1b está no registro: o alerta e o robô do grupo, sem p
 
 test("a ficha da exp08ef1b está no registro: o Canal A em toda habilidade, sem pergunta (ADR-167)", () => {
   const ficha = FICHAS.find((f) => f.expId === "exp08ef1b");
-  expect(ficha?.versao).toBe(2);
+  expect(ficha?.versao).toBe(3); // réguas do PO validadas em 2026-10-21 (ADR-179)
   expect(
     ficha?.habilidades.map((h) => [
       h.codigo,

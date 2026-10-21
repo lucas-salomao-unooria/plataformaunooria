@@ -14,8 +14,10 @@ import {
   RevelacaoConcluidaSchema,
   SituacaoDasTarefasSchema,
   TarefaEnviadaSchema,
+  TermosDaEntradaSchema,
   TermosSchema,
 } from "./contrato-de-rotas";
+import { termosDaEntrada } from "./canal-a/vocabulario";
 import { ehUuid, naoEncontrado } from "./guardas";
 
 type Autenticado = { auth: AuthClaims };
@@ -36,6 +38,22 @@ export class TarefasController {
 
   private exigirId(id: string) {
     if (!ehUuid(id)) naoEncontrado();
+  }
+
+  /**
+   * Os TERMOS DE USO DA ENTRADA (ADR-179): o texto denso, com as 5 cláusulas do
+   * 6b enterradas, que o estudante "aceita" antes do feed. Não depende da
+   * sessão — a tela vem antes de ela existir — e não tem gabarito: as cláusulas
+   * são as mesmas palavras que o 6b mostra depois.
+   */
+  @Get("termos-de-uso")
+  @Contrato({
+    resumo: "Os termos de uso da entrada: o texto denso, com as 5 regras do 6b no meio.",
+    descricao: "Antes do feed, como num app real. O que conta é o 6b, depois da revelação.",
+    resposta: TermosDaEntradaSchema,
+  })
+  termosDaEntrada() {
+    return { paragrafos: termosDaEntrada() };
   }
 
   private corpo<T>(schema: z.ZodType<T>, body: unknown, mensagem: string): T {
@@ -112,7 +130,7 @@ export class TarefasController {
 
   @Get(":id/termos")
   @Contrato({
-    resumo: "O 6b: as 5 cláusulas, os efeitos e as mudanças, sem gabarito.",
+    resumo: "O 6b: as 5 cláusulas dos termos da entrada, sem gabarito.",
     descricao: "Só depois do cinza, para quem teve feed com lado e terminou a revelação.",
     params: Params,
     resposta: TermosSchema,
@@ -126,14 +144,14 @@ export class TarefasController {
   @HttpCode(200)
   @Contrato({
     resumo: "O envio do 6b.",
-    descricao: "As regras marcadas, o efeito de cada uma e a mudança. Vale o primeiro envio.",
+    descricao: "As regras marcadas (nenhuma, algumas ou todas). Vale o primeiro envio.",
     params: Params,
     corpo: RespostaDosTermosSchema,
     resposta: TarefaEnviadaSchema,
   })
   enviarTermos(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     this.exigirId(id);
-    const resposta = this.corpo(RespostaDosTermosSchema, body, "Responde os três passos.");
+    const resposta = this.corpo(RespostaDosTermosSchema, body, "Marca as regras que explicam o seu feed.");
     return this.tarefas.enviarTermos(id, req.auth.usuarioId, req.auth.escolaId, resposta);
   }
 

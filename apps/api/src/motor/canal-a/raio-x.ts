@@ -136,21 +136,21 @@ export function gabaritoDoPost(lado: string): OpcaoDoRaioX {
 }
 
 /**
- * A RÉGUA DO 6a. N é o número de acertos em 6.
- *   - atingiu: 5 ou 6, com o post em que mais parou certo;
- *   - em processo: 4; ou 5 com o post em que mais parou errado;
- *   - não atingiu: 0 a 3.
- * N = 6 inclui esse post e cai só em "atingiu". Todo envio cai em um nível.
+ * A RÉGUA DO 6a — a do PO, validada com a pedagogia em 2026-10-21 (ADR-179).
+ * N é o número de acertos em 6:
+ *   - atingiu: 5 ou 6;
+ *   - em processo: 3 ou 4;
+ *   - não atingiu: 0 a 2.
+ * O post em que mais parou continua entrando na composição (e na devolutiva),
+ * mas não pesa mais no nível. Todo envio cai em um nível.
  */
 export function nivelDoRaioX(entrada: {
   respostas: Readonly<Record<string, OpcaoDoRaioX>>;
   gabarito: Readonly<Record<string, OpcaoDoRaioX>>;
-  maisParou: string;
 }): { nivel: Nivel; acertos: number } {
   const ids = Object.keys(entrada.gabarito);
   const acertos = ids.filter((id) => entrada.respostas[id] === entrada.gabarito[id]).length;
-  const maisParouCerto = entrada.respostas[entrada.maisParou] === entrada.gabarito[entrada.maisParou];
-  if (acertos >= 5 && maisParouCerto) return { nivel: "atingiu", acertos };
-  if (acertos >= 4) return { nivel: "em_processo", acertos };
+  if (acertos >= 5) return { nivel: "atingiu", acertos };
+  if (acertos >= 3) return { nivel: "em_processo", acertos };
   return { nivel: "nao_atingiu", acertos };
 }

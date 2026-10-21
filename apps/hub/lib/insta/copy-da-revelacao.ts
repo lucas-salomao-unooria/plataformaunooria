@@ -81,10 +81,10 @@ export function origemDoPostNaPonte(origem: 'A' | 'B' | 'neutro', rotulos: { A: 
  * estava a regra: daria de graça parte do 6b, que vem logo depois.
  */
 export const TELA_DOS_TERMOS: TelaDaRevelacao = {
-  texto: 'Essas regras de escolha costumam estar escritas.',
-  destaque: 'Nos termos de uso — que quase ninguém lê, nem adulto.',
+  texto: 'Essas regras de escolha estavam escritas.',
+  destaque: 'Nos termos de uso que você aceitou lá na entrada — que quase ninguém lê, nem adulto.',
   complemento:
-    'Eles são escritos para ser aceitos, não para ser lidos. Daqui a pouco você vê como seriam os deste app.',
+    'Eles são escritos para ser aceitos, não para ser lidos. Daqui a pouco você volta a eles.',
 };
 
 export const TELA_DO_REGISTRO: TelaDaRevelacao = {

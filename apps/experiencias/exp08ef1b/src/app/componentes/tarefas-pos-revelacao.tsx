@@ -56,13 +56,9 @@ function Moldura({ children }: { children: React.ReactNode }) {
 
 // ── 6b Os termos ─────────────────────────────────────────────────────────
 
-const PERGUNTA_DO_EFEITO = 'O que essa regra fez no seu feed?';
-
 export function Termos({ runId, aoEnviar }: { runId: string; aoEnviar: () => void }) {
   const [dados, setDados] = useState<TermosDaApi | null>(null);
   const [marcadas, setMarcadas] = useState<string[]>([]);
-  const [efeitos, setEfeitos] = useState<Record<string, string>>({});
-  const [mudanca, setMudanca] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -77,14 +73,11 @@ export function Termos({ runId, aoEnviar }: { runId: string; aoEnviar: () => voi
     };
   }, [runId]);
 
-  const completo = mudanca !== '' && marcadas.every((id) => Boolean(efeitos[id]));
-
   async function enviar() {
     setEnviando(true);
     setErro(null);
     try {
-      const efeitosDasMarcadas = Object.fromEntries(marcadas.map((id) => [id, efeitos[id]!]));
-      await api.post(`/runs/${runId}/termos`, { marcadas, efeitos: efeitosDasMarcadas, mudanca });
+      await api.post(`/runs/${runId}/termos`, { marcadas });
       aoEnviar();
     } catch {
       setErro('Não deu pra enviar agora. Tenta de novo — suas escolhas estão aqui.');
@@ -97,8 +90,10 @@ export function Termos({ runId, aoEnviar }: { runId: string; aoEnviar: () => voi
     <section aria-label="Os termos de uso" className="flex flex-col gap-5">
       <header className="flex flex-col gap-2">
         <p className="text-[12px] uppercase tracking-widest text-white/60">os termos</p>
+        {/* O título é o do PO (2026-10-21, ADR-179): os termos são os que ele
+            aceitou na entrada, e agora ele os lê de verdade. */}
         <h1 className="text-[19px] font-bold leading-snug">
-          Estes seriam os termos de uso de uma plataforma como o Unoovista.
+          Esses são os termos de uso que você recebeu no início da experiência.
         </h1>
         <p className="text-[15px] leading-snug text-white/80">
           Marque as regras que explicam o que aconteceu no seu feed.
@@ -111,7 +106,7 @@ export function Termos({ runId, aoEnviar }: { runId: string; aoEnviar: () => voi
             {dados.clausulas.map((c, indice) => {
               const marcada = marcadas.includes(c.id);
               return (
-                <li key={c.id} className="flex flex-col gap-3 rounded-xl bg-white/5 px-4 py-3">
+                <li key={c.id} className="rounded-xl bg-white/5 px-4 py-3">
                   <Checkbox
                     theme="dark"
                     checked={marcada}
@@ -125,37 +120,10 @@ export function Termos({ runId, aoEnviar }: { runId: string; aoEnviar: () => voi
                       setMarcadas((atual) => (valor ? [...atual, c.id] : atual.filter((id) => id !== c.id)))
                     }
                   />
-                  {marcada ? (
-                    <RadioGroup
-                      theme="dark"
-                      name={`efeito-${c.id}`}
-                      label={<span className="text-[13px] font-semibold text-white/90">{PERGUNTA_DO_EFEITO}</span>}
-                      options={dados.efeitos.map((e) => ({ value: e.id, label: e.texto }))}
-                      value={efeitos[c.id] ?? ''}
-                      disabled={enviando}
-                      onChange={(valor) => setEfeitos((atual) => ({ ...atual, [c.id]: String(valor) }))}
-                    />
-                  ) : null}
                 </li>
               );
             })}
           </ol>
-
-          <div className="rounded-xl bg-white/5 px-4 py-4">
-            <RadioGroup
-              theme="dark"
-              name="mudanca"
-              label={
-                <span className="text-[15px] font-semibold leading-snug text-white">
-                  Que mudança nestas regras daria a você mais controle sobre o seu feed?
-                </span>
-              }
-              options={dados.mudancas.map((m) => ({ value: m.id, label: m.texto }))}
-              value={mudanca}
-              disabled={enviando}
-              onChange={(valor) => setMudanca(String(valor))}
-            />
-          </div>
 
           <Button
             theme="dark"
@@ -163,7 +131,7 @@ export function Termos({ runId, aoEnviar }: { runId: string; aoEnviar: () => voi
             fullWidth
             isLoading={enviando}
             loadingText="Enviando…"
-            disabled={!completo || enviando}
+            disabled={enviando}
             onClick={() => void enviar()}
           >
             Enviar

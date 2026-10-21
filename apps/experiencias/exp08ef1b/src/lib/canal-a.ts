@@ -36,8 +36,11 @@ export interface Opcao {
 export interface TermosDaApi {
   situacao: SituacaoDaTarefa;
   clausulas: Opcao[];
-  efeitos: Opcao[];
-  mudancas: Opcao[];
+}
+
+/** Os termos da ENTRADA (ADR-179): os parágrafos, com as 5 regras do 6b enterradas. */
+export interface TermosDaEntradaDaApi {
+  paragrafos: string[];
 }
 
 export interface EnvioDaApi {
