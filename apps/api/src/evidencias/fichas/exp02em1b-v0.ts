@@ -29,8 +29,8 @@ import type { FichaPedagogica } from "./tipos";
 const OBSERVACAO =
   "Sem a tarefa feita, a habilidade fica \"não avaliado\"; o professor pode ajustar no painel. Só conta depois que a missão é encerrada na Sala de Aula.";
 
-export const FICHA_EXP02EM1B: FichaPedagogica = {
-  expId: "exp02em1b",
+export const FICHA_EXP02EM1B_V0: FichaPedagogica = {
+  expId: "exp02em1b-v0",
   versao: 2,
   contaAoEncerrarAMissao: true,
   habilidades: [

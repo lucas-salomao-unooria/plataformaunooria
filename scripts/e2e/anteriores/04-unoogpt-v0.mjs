@@ -115,7 +115,7 @@ await suite(
     const p = await r.pagina("estudante", { viewport: { width: 1440, height: 1000 } });
     await r.entrar(p, estudante.login);
 
-    await p.goto(`${HUB}/exp/exp02em1b`, { waitUntil: "domcontentloaded" });
+    await p.goto(`${HUB}/exp/exp02em1b-v0`, { waitUntil: "domcontentloaded" });
     const quadro = p.frameLocator('iframe[data-experiencia]');
     await quadro.locator("text=/Não dá para atender todos/i").waitFor({ timeout: 40_000 });
     await r.registrar(p, "a-missao", {
@@ -209,7 +209,7 @@ await suite(
       mostra: "A conversa com a pergunta da criança e a resposta do agente, e o orçamento debitado.",
       prova:
         "O orçamento é debitado NO SERVIDOR: três perguntas por tentativa. E a conversa voltou " +
-        "inteira depois de um F5 — ela está em `exp02em1b_mensagens`, não na memória da aba.",
+        "inteira depois de um F5 — ela está em `exp02em1b_v0_mensagens`, não na memória da aba.",
       detalhe: orcamento.replace(/\s+/g, " ").trim(),
     });
 
@@ -362,7 +362,7 @@ await suite(
     // ═══ ESTUDANTE: o "E se…" nas mesmas tempestades, e nada de Canal B ══
     let pediuPerguntas = false;
     p.on("request", (req) => {
-      if (/\/evidencias\/exp02em1b\/perguntas/.test(req.url())) pediuPerguntas = true;
+      if (/\/evidencias\/exp02em1b-v0\/perguntas/.test(req.url())) pediuPerguntas = true;
     });
     await q4.locator("button", { hasText: /Ver o resultado completo/ }).first().click();
     const comparacoes = q4.locator('[aria-label="Duas outras decisões, nas mesmas 20 tempestades"]');
@@ -487,7 +487,7 @@ await suite(
       prof.evaluate(
         async ({ turmaId, estado }) =>
           (
-            await fetch(`/api/plataforma/salas/turma/${turmaId}/missoes/exp02em1b`, {
+            await fetch(`/api/plataforma/salas/turma/${turmaId}/missoes/exp02em1b-v0`, {
               method: "PUT",
               headers: { "content-type": "application/json" },
               body: JSON.stringify({ estado }),
@@ -570,7 +570,7 @@ await suite(
     await prof.click("text=Dar a largada");
     await prof.waitForSelector("text=Em andamento", { timeout: 20_000 });
 
-    await p.goto(`${HUB}/exp/exp02em1b`, { waitUntil: "domcontentloaded" });
+    await p.goto(`${HUB}/exp/exp02em1b-v0`, { waitUntil: "domcontentloaded" });
     const q9 = p.frameLocator('iframe[data-experiencia]');
     const campoDeNovo = q9.locator("form input").first();
     /* Zerar apagou a partida: a criança volta à ABERTURA, como no começo. */

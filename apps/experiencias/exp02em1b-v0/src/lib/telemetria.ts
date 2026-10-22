@@ -4,7 +4,7 @@ import type { ExperienciaHandle } from "@edu/sdk";
  * Telemetria ANALÍTICA da missão (canal do SDK: batch 50 / flush 10s → Pub/Sub
  * → `telemetria_eventos`).
  *
- * NÃO é a trilha pedagógica: essa é `exp02em1b_marcos`, gravada pela api de forma
+ * NÃO é a trilha pedagógica: essa é `exp02em1b_v0_marcos`, gravada pela api de forma
  * síncrona e transacional, e é ela que o professor lê. Os dois canais existem
  * separados de propósito (ver CLAUDE.md, "Telemetria: dois canais, não um").
  *

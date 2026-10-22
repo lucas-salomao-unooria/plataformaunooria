@@ -1,7 +1,7 @@
 {
-  "id": "exp02em1b",
+  "id": "exp02em1b-v0",
   "nome": "UnooriaAI — Decidir com o que os dados mostram",
-  "versao": "1.5.0",
+  "versao": "1.5.1",
   "produto": "entre-redes",
   "series": ["2EM"],
   "unidade": 1,
@@ -12,6 +12,6 @@
     "interacted": "turno, fontes, alocacao",
     "progressed": "investigacao",
     "scored": "desfecho",
-    "completed": "exp02em1b"
+    "completed": "exp02em1b-v0"
   }
 }

@@ -32,7 +32,7 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  */
 const TURMA = process.env.TURMA_EQUIPES ?? "2EM-B";
 const TURMA_ABERTA = process.env.TURMA_EQUIPES_ABERTA ?? "2EM-A";
-const EXP_ID = "exp02em1b";
+const EXP_ID = "exp02em1b-v0";
 const FICHA = `${HUB}/professor/entre-redes/2-serie/unidade-1`;
 const COMPUTADORES = 10;
 

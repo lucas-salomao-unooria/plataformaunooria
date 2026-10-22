@@ -1,6 +1,17 @@
-# apps/api/src/unoogpt — Missão Tempestade (exp02em1b)
+# apps/api/src/unoogpt — Missão Tempestade (exp02em1b-v0, versão anterior)
 
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
+
+**Desde 2026-10-22 esta é a VERSÃO ANTERIOR (ADR-180).** A missão da 2ª série
+do EM, unidade 1, foi reformulada (O Efeito Amplificador, `src/efeito-amplificador/`)
+e tomou o código `exp02em1b`. Esta virou `exp02em1b-v0` (`regras/defaults.ts#EXP_ID`):
+as tabelas são `exp02em1b_v0_*`, a ficha é `evidencias/fichas/exp02em1b-v0.ts`, e
+a migração `20261022120000_exp02em1b_versao_anterior` levou o id como valor.
+**O módulo continua no `app.module`** — não foi desligado: só saiu do catálogo
+(a grade da sala a mostra só à turma que já a tinha liberado,
+`salas/regras.ts#gradeDaTurma`). As telas do professor dela no hub ficaram sem
+caminho de entrada: a ficha `/professor/entre-redes/2-serie/unidade-1` é da
+missão nova. Onde abaixo se lê `exp02em1b`, leia `exp02em1b-v0`.
 
 ## Missão Tempestade (exp02em1b, `apps/api/src/unoogpt`)
 

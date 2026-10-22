@@ -1,13 +1,23 @@
-# apps/experiencias/exp02em1b — a missão que nunca sai do disfarce
+# apps/experiencias/exp02em1b-v0 — a Missão Tempestade, versão anterior (ADR-180)
+
+**Esta é a VERSÃO ANTERIOR da missão da 2ª série do EM, unidade 1.** Em
+2026-10-22 a missão foi reformulada (O Efeito Amplificador) e a nova tomou o
+código `exp02em1b`; esta ficou com `exp02em1b-v0`. Ela NÃO foi desligada: o
+módulo `unoogpt` continua servido, a disponibilidade, as liberações e os dados
+seguem. Só saiu do catálogo — da trilha do professor, da grade da sala e da lista
+do estudante (`ehVersaoAnterior`, derivado do sufixo). Mexeu aqui? Suba a versão
+nos três lugares, como em qualquer experiência: o bucket é `exp02em1b-v0/<versão>`.
+
+## A missão que nunca sai do disfarce
 
 Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | | |
 |---|---|
-| Manifesto | `exp02em1b` · 2EM (unidade 1) · `telemetria, ia` · `permissoes: ["forms"]` |
-| Dev | `pnpm --filter @edu/exp02em1b dev` → :5178 · hub `/exp/exp02em1b` |
+| Manifesto | `exp02em1b-v0` · 2EM (unidade 1) · `telemetria, ia` · `permissoes: ["forms"]` |
+| Dev | `pnpm --filter @edu/exp02em1b-v0 dev` → :5186 · hub `/exp/exp02em1b-v0` |
 | DS | `@edu/ui/ds-unooriaai` **na experiência inteira** (desde a 1.3.0, ADR-138; até a 1.2.7 era `ds-chatgpt`), e o `MessageBubble` do `unoochat` numa peça só (ADR-173) |
-| api | módulo `unoogpt` — trilha pedagógica em `exp02em1b_marcos`, o Canal A em `exp02em1b_tarefas` |
+| api | módulo `unoogpt` — trilha pedagógica em `exp02em1b_v0_marcos`, o Canal A em `exp02em1b_v0_tarefas` |
 | e2e | `scripts/e2e/estudante/04-unoogpt.mjs` |
 
 **Ela não tem revelação no software.** Por isso nunca troca para a seção da
@@ -83,7 +93,7 @@ ele o estudante vê falha no meio de uma resposta que estava chegando.
 ## Dois canais que não são o mesmo
 
 Telemetria **analítica** (SDK → batch → `telemetria_eventos`) mede o uso.
-A trilha **pedagógica** é `exp02em1b_marcos`, gravada pela api. Não misture: o que
+A trilha **pedagógica** é `exp02em1b_v0_marcos`, gravada pela api. Não misture: o que
 vale nota nunca vem do canal que o cliente preenche.
 
 E o corte de PII é por design: `fontesCarregadas` registra **quantas** fontes,

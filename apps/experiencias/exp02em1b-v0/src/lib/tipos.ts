@@ -12,13 +12,13 @@
  * Molde: `apps/experiencias/exp04ef1b/src/lib/tipos.ts`.
  */
 
-export const EXP_ID = "exp02em1b";
+export const EXP_ID = "exp02em1b-v0";
 // Vai no handshake e em toda linha de telemetria. Divergiu do manifesto por
 // tres publicacoes (1.0.0 aqui contra 1.1.1 la), e o efeito e caro de perceber:
 // o dado de uso fica atribuido a uma versao que nao esta no ar, e a pergunta
 // "esta regressao veio da versao X?" deixa de ter resposta. Sobe JUNTO com o
 // `versao` do `public/experiencia.json`.
-export const EXP_VERSION = "1.5.0";
+export const EXP_VERSION = "1.5.1";
 
 /** Toda grandeza do modelo é FAIXA, nunca número seco. */
 export interface Faixa {

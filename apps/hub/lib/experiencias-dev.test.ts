@@ -9,6 +9,7 @@ describe("baseDevDaExperiencia", () => {
     expect(baseDevDaExperiencia("app-70-vila-do-lume", "x")).toBe("http://localhost:5177");
     expect(baseDevDaExperiencia("app-91-bem-estar", "x")).toBe("http://localhost:5176");
     expect(baseDevDaExperiencia("exp02em1b", "x")).toBe("http://localhost:5178");
+    expect(baseDevDaExperiencia("exp02em1b-v0", "x")).toBe("http://localhost:5186");
     expect(baseDevDaExperiencia("exp05ef1b", "x")).toBe("http://localhost:5184");
     expect(baseDevDaExperiencia("exp06ef1b", "x")).toBe("http://localhost:5185");
   });

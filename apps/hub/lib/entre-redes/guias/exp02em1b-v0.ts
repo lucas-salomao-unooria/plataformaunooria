@@ -1,7 +1,10 @@
 import type { GuiaDaAula } from "./tipos";
 
 /**
- * Guia da aula da **Missão Tempestade** (exp02em1b, 2ª série do EM · Unidade 1).
+ * Guia da aula da **Missão Tempestade** — hoje `exp02em1b-v0`, a VERSÃO ANTERIOR
+ * (ADR-180). Fica como registro, FORA do registro de guias (`index.ts`): a
+ * missão saiu da trilha, e o guia da 2ª série, unidade 1, é o de O Efeito
+ * Amplificador (`exp02em1b.ts`).
  *
  * ESTE GUIA É O INSTRUMENTO. A missão não revela nada por software — é decisão
  * de produto, não lacuna: um estudante que descobre pela tela qual fonte engana
@@ -14,8 +17,8 @@ import type { GuiaDaAula } from "./tipos";
  * Vila — o texto É o instrumento, e uma cópia no hub faria o professor contar à
  * turma um viés que o cenário já não produz.
  */
-export const GUIA_EXP02EM1B: GuiaDaAula = {
-  expId: "exp02em1b",
+export const GUIA_EXP02EM1B_V0: GuiaDaAula = {
+  expId: "exp02em1b-v0",
   chamada:
     "Uma aula de 50 minutos. A missão leva cerca de 16 minutos, com o registro da operação; o debate, 15; o fechamento, 5. É no debate que a lição acontece — a missão não conta a ninguém qual fonte engana em quê.",
 

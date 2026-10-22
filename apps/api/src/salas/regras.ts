@@ -3,6 +3,8 @@
  * teste exercita sem banco.
  */
 
+import { ehVersaoAnterior } from "../comum/codigo-da-experiencia";
+
 /**
  * O que o estudante e o professor veem em cada missão da grade.
  *
@@ -82,6 +84,11 @@ export function gradeDaTurma(
 ): MissaoNaGrade[] {
   return catalogo
     .filter((e) => e.publico === "estudante")
+    /* A VERSÃO ANTERIOR (ADR-180, `exp02em1b-v0`) está fora do catálogo: só fica
+       na grade da turma que já a tinha liberado — para o professor poder
+       encerrá-la e a criança que estava no meio não perder a porta. Turma nova
+       não a vê, e por isso não a escolhe. */
+    .filter((e) => !ehVersaoAnterior(e.expId) || estados.has(e.expId))
     .filter((e) => incluirOutrasSeries || serveASerie(e, serie))
     .map((e): MissaoNaGrade => ({
       expId: e.expId,

@@ -24,7 +24,8 @@
  * `id` do `public/experiencia.json`: divergir faz a missão nunca abrir, com a
  * liberação gravada e visível na tela do professor.
  */
-export const EXP_ID = 'exp02em1b';
+/** A versão anterior (ADR-180): a reformulação tomou `exp02em1b`. */
+export const EXP_ID = 'exp02em1b-v0';
 
 /**
  * Teto de tokens de SAÍDA do Cientista, por chamada.

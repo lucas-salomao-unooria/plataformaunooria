@@ -1,4 +1,4 @@
-# exp02em1b — a Missão Tempestade
+# exp02em1b-v0 — a Missão Tempestade (versão anterior, ADR-180)
 
 Clone de assistente de IA em que o estudante decide, **sob incerteza e com o relógio
 correndo**, onde alocar 2 equipes de resgate entre 4 bairros de Serra do Sauá
@@ -71,7 +71,7 @@ professor, e o defeito existia no projeto de origem (corrigido em
 
 Canal **analítico** (SDK → batch → Pub/Sub). O **texto do estudante nunca entra**:
 a conversa é caixa livre escrita por menor de idade, e o que sobe é contagem.
-A trilha pedagógica é outra coisa — `exp02em1b_marcos`, gravada pela api, lida pelo
+A trilha pedagógica é outra coisa — `exp02em1b_v0_marcos`, gravada pela api, lida pelo
 professor.
 
 | verbo | objeto | resultado |
@@ -114,7 +114,7 @@ desta missão:
 2. **Esperar por texto do assistente é falso positivo.** A fala de abertura dele
    já está na tela desde o começo, e o cliente mostra a fala do ESTUDANTE
    otimistamente antes de a api responder. A asserção honesta é a conversa
-   **sobreviver a um F5**, porque aí ela veio de `exp02em1b_mensagens`.
+   **sobreviver a um F5**, porque aí ela veio de `exp02em1b_v0_mensagens`.
 
 ## Decisões
 
@@ -167,8 +167,8 @@ permitir submit de formulário é capacidade de quem declarou.
 ## Rodar
 
 ```bash
-pnpm --filter @edu/exp02em1b dev     # :5178 → hub /exp/exp02em1b
-pnpm --filter @edu/exp02em1b test    # Vitest da lógica de tela
+pnpm --filter @edu/exp02em1b-v0 dev     # :5186 → hub /exp/exp02em1b-v0
+pnpm --filter @edu/exp02em1b-v0 test    # Vitest da lógica de tela
 ```
 
 Com `AI_PROVIDER=mock` a missão abre e o laço de ferramenta roda, mas o mock não
