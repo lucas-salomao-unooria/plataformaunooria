@@ -6,6 +6,7 @@ import { LinkButton } from "@/components/link-button";
 import { temAtividades } from "@/lib/entre-redes/atividades";
 import {
   MISSAO_A_SELECAO,
+  MISSAO_EFEITO_AMPLIFICADOR,
   MISSAO_FOTO_CONTA,
   MISSAO_JORNAL_DA_ESCOLA,
   MISSAO_JURI_ESTADUAL,
@@ -19,6 +20,7 @@ import {
 import { turmaDaConducao } from "@/lib/turmas";
 
 import { MissaoASelecao } from "./missao-a-selecao";
+import { MissaoEfeitoAmplificador } from "./missao-efeito-amplificador";
 import { MissaoFotoConta } from "./missao-foto-conta";
 import { MissaoInstanooria } from "./missao-instanooria";
 import { MissaoJornalEscola } from "./missao-jornal-escola";
@@ -132,6 +134,9 @@ export default async function MissaoPage({
   }
   if (missao.expId === MISSAO_JURI_ESTADUAL.expId) {
     return corpo(<MissaoJuriEstadual ano={ano} missao={comFicha} turma={turma} />);
+  }
+  if (missao.expId === MISSAO_EFEITO_AMPLIFICADOR.expId) {
+    return corpo(<MissaoEfeitoAmplificador ano={ano} missao={comFicha} turma={turma} />);
   }
   /* FALLBACK = INSTANOORIA, e é por isso que ele é perigoso: uma missão
      publicada sem ramo aqui não quebra — ela mostra a tela de OUTRA missão,

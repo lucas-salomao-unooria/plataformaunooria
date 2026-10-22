@@ -94,11 +94,16 @@ const PREFIXOS_PERMITIDOS = [
      na api (`@Roles("professor")`); isto aqui só decide quais prefixos o BFF
      repassa. */
   "vila",
-  /* exp02em1b: a LARGADA do relógio da turma é client-side — o professor aperta
-     durante a aula e o painel precisa responder na hora, sem recarregar a
-     página. É o único caminho do unooGPT que não passa por `apiDoServidor`.
-     As guardas de papel estão na api (`@Roles("professor")`). */
+  /* exp02em1b-v0 (a Missão Tempestade, versão anterior — ADR-180): a LARGADA
+     do relógio da turma é client-side. Fica: a missão continua no ar para a
+     turma que a tinha liberado. As guardas de papel estão na api. */
   "unoogpt",
+  /* exp02em1b (O Efeito Amplificador, ADR-180): o preparo do pacote (gerar,
+     homologar, banco padrão), os dois botões da condução (Pausar Telas, Liberar
+     Etapa 5) e o "Zerar Turma" são client-side — o professor aperta no meio da
+     aula e as telas andam pelo polling delas. As guardas de papel estão na api
+     (`@Roles("professor")` na escrita). */
+  "efeito-amplificador",
   /* exp06ef2b: o gate da aula (abrir a Aula 2, pausar a simulação) e o "zerar
      turma" são client-side — a professora aperta no meio da aula e as 30 telas
      andam na hora, sem recarregar a página. As guardas de papel estão na api

@@ -364,7 +364,9 @@ export const MISSAO_UNOOGPT: Missao = {
   anoSlug: "2-serie",
   unidadeSlug: "unidade-1",
   unidade: 1,
-  expId: "exp02em1b",
+  /* A VERSÃO ANTERIOR (ADR-180): a reformulação tomou `exp02em1b`. Fora de
+     `MISSOES_PUBLICADAS`, e é isso que a tira da grade — como o UnooTube. */
+  expId: "exp02em1b-v0",
   titulo: "UnooriaAI — Decidir com o que os dados mostram",
   resumo:
     "Uma tempestade chega em uma hora e há 2 equipes para 4 bairros. O estudante conversa com um assistente de IA, pede os dados que quiser e decide — com 3 perguntas e o relógio correndo. Cada fonte mostra um pedaço distorcido da cidade, e é essa distorção que a turma discute depois.",
@@ -1033,6 +1035,91 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
   },
 };
 
+/**
+ * 2ª série · Unidade 1 — O Efeito Amplificador (`exp02em1b`, ADR-180).
+ *
+ * Toma o código e o lugar da Missão Tempestade, que virou `exp02em1b-v0`
+ * (`MISSAO_UNOOGPT`, acima) — no ar, mas fora da trilha. Vem da esteira
+ * (artefatos de 2026-10-22), com as duas orientações do PO: sem a etapa de
+ * transferência e sem o Canal B, e a abertura do chat com a fala dele.
+ */
+export const MISSAO_EFEITO_AMPLIFICADOR: Missao = {
+  anoSlug: "2-serie",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp02em1b",
+  titulo: "O Efeito Amplificador",
+  resumo:
+    "O estudante é o comunicador do grêmio: cria com o UnooriaAI o post da campanha da escola, audita o " +
+    "rascunho — um dado inventado, um trecho copiado sem crédito e um colega exposto — e publica no " +
+    "Unoovista. O relógio corre até as 02h30, a rede pinça um trecho e entrega o post de madrugada para " +
+    "todo mundo, e o feed vira crise. No debate, a turma descobre que o cuidado com o texto não mudou a " +
+    "entrega: a rede otimiza tempo de tela, não verdade nem sono.",
+  status: "disponivel",
+  // Sem spoiler: a missão mede o que o estudante faz quando ninguém avisou que a rede amplifica.
+  estudante: {
+    titulo: "O Efeito Amplificador",
+    chamada:
+      "Você assumiu a comunicação do Grêmio Estudantil: crie com o UnooriaAI a publicação da campanha e publique no Unoovista.",
+  },
+  ficha: {
+    competencia:
+      "Economia da atenção, algoritmos de recomendação, direito digital e impactos das redes na saúde " +
+      "física e mental (EM13CO24, EM13CO14, EM13CO26, EM13CO08).",
+    duracao: "1 aula de 50 min (25 min em tela, 25 min de debate) — ou 2 aulas, com a pausa no Publicar",
+    formato:
+      "Dois aplicativos da Unooria: o UnooriaAI, o assistente de IA, para criar e auditar o post, e o " +
+      "Unoovista, a rede social, para a repercussão de madrugada e os bastidores da entrega.",
+    atos: [
+      {
+        rotulo: "1 — Desafiar: a pauta do grêmio",
+        texto:
+          "A tela da escola entrega a pauta: criar a publicação oficial da campanha. O UnooriaAI abre se " +
+          "apresentando com o tema que você escolheu no preparo — é por isso que a missão só abre com uma " +
+          "atividade sua em andamento.",
+      },
+      {
+        rotulo: "2 — Navegar: o rascunho do UnooriaAI",
+        texto:
+          "O assistente monta o post com três problemas escondidos: uma estatística de um instituto " +
+          "inventado, um trecho de jornal copiado sem crédito e o nome e a turma de um colega com um caso " +
+          "de saúde. O estudante pode perguntar a fonte, pedir o crédito e a anonimização, ou tirar trechos " +
+          "na prévia — até 5 mensagens. Nada avisa que há um problema.",
+      },
+      {
+        rotulo: "3 — Decidir: a manchete e o Publicar",
+        texto:
+          "Três manchetes (neutra, construtiva, sensacionalista) e o botão Publicar no Unoovista, que não " +
+          "volta. É aqui que a EM13CO14 e a EM13CO26 são registradas, pelo que ficou no post.",
+      },
+      {
+        rotulo: "4 — Resultado: a madrugada (o seu primeiro botão)",
+        texto:
+          "O relógio corre até as 02h30. A rede destaca uma frase fora de contexto e o feed enche de " +
+          "comentários: dor de cabeça e insônia, ansiedade, contas invasivas. As ferramentas ficam nos três " +
+          "pontos, sem ninguém pedir — moderar, conta privada, denunciar, Central de Apoio — e registram a " +
+          "EM13CO24 e a EM13CO08. Você aperta Pausar Telas para Debate e conduz a revelação: todos os posts, " +
+          "cuidadosos ou não, foram entregues de madrugada.",
+      },
+      {
+        rotulo: "5 — Explicar: os bastidores (o seu segundo botão)",
+        texto:
+          "Liberar Etapa 5 leva cada aparelho aos bastidores da entrega: o estudante aponta os dois " +
+          "indicadores que comprovam a retenção (o pico das 02h30 e o tempo de tela), e a tela formaliza " +
+          "economia da atenção, metadados e bolhas de filtro, com a fala de Nico do livro. Depois, conclui.",
+      },
+    ],
+    preparo: [
+      "Escolha o recorte: o pacote padrão (Convivência Escolar e Celular, um toque) ou um tema da sua disciplina gerado com IA.",
+      "Se gerar com IA, revise o pacote inteiro antes de homologar: nada da IA chega à turma sem a sua curadoria.",
+      "Coloque a atividade em andamento: sem ela o estudante entra e vê uma tela de espera.",
+      "Não conte que a aula é sobre algoritmo ou economia da atenção: a missão mede o que a turma faz sem esse aviso.",
+      "Deixe o projetor pronto: o painel mostra a curva de entrega da turma, sem nomes, para o debate.",
+      "Toque o podcast de recapitulação só depois da missão: ele conta a virada.",
+    ],
+  },
+};
+
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "1-ano": [MISSAO_FOTO_CONTA],
   "4-ano": [MISSAO_JORNAL_DA_ESCOLA],
@@ -1040,7 +1127,7 @@ const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "6-ano": [MISSAO_JURI_ESTADUAL, MISSAO_RASTRO_BOATO],
   "7-ano": [MISSAO_A_SELECAO],
   "8-ano": [MISSAO_ATUAL, MISSAO_MANIFESTO_IA],
-  "2-serie": [MISSAO_UNOOGPT],
+  "2-serie": [MISSAO_EFEITO_AMPLIFICADOR],
 };
 
 function montarAno(slug: string, rotulo: string, etapa: Etapa): Ano {
