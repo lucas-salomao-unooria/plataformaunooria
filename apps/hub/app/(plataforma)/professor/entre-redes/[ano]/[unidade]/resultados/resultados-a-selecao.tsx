@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Badge, Card, EmptyState, FeedbackAlert } from "@edu/ui/ds";
+import { AbasDaAtividade } from "@/components/atividades/abas-da-atividade";
 import { UsarEstaAtividade } from "@/components/atividades/usar-esta-atividade";
 import { EquipesDaAtividade } from "@/components/equipes/equipes-da-ficha";
 import { PainelDeHabilidades } from "@/components/evidencias/painel-de-habilidades";
@@ -230,53 +231,64 @@ export async function ResultadosASelecao({
             </Card>
           ) : null}
 
-          <EquipesDaAtividade
-            key={`equipes-${detalhe.id}`}
-            turmaId={turma}
-            expId={EXP_ID}
-            atividadeId={detalhe.id}
-            separarAoAbrir={separar}
-          />
-
-          {/* As aprovadas ANTES da ADR-146 podem ter post sem imagem: o laço
-              antigo continua aqui para elas. As novas chegam completas. */}
-          {detalhe.imagensAprovadasEm && detalhe.midia.prontas < detalhe.midia.total ? (
-            <ImagensDaCobertura key={`imagens-${detalhe.id}`} turmaId={turma} coberturaId={detalhe.id} inicial={detalhe.midia} />
-          ) : null}
-
-          {emAndamento && painel ? (
-            <>
-              <PainelDaAulaASelecao
-                key={`aula-${turma}-${detalhe.id}`}
-                turmaId={turma}
-                inicial={painel}
-                gatilhos={material?.gatilhos ?? null}
-                posts={detalhe.posts}
-                membros={membros}
-              />
-              <ZerarTurmaASelecao turmaId={turma} nomeDaTurma={painel.turma.nome} tema={detalhe.tema} />
-            </>
-          ) : null}
-
-          {/* Depois da aula: o podcast da plataforma (ADR-150). */}
-          <CartaoDoPodcast expId={EXP_ID} turmaId={turma} atividadeId={detalhe.id} podcast={podcast} />
-
-          {/* O painel de habilidades (E14) — invisível sem ficha
-              (`temFicha: false`), e só o `professor` confirma e ajusta: a
-              coordenação lê. A `key` é a atividade. */}
-          {habilidades?.temFicha ? (
-            <div className="flex flex-col gap-3" data-habilidades-da-selecao>
-              <PainelDeHabilidades
-                key={detalhe.id}
+          {/* O resto é o template da página da atividade (ADR-182): cinco abas
+              com o mesmo nome em toda missão. */}
+          <AbasDaAtividade
+            estado={emAndamento ? "em-andamento" : detalhe.imagensAprovadasEm ? "pronta" : "em-preparo"}
+            aula={
+              emAndamento && painel ? (
+                <>
+                  <PainelDaAulaASelecao
+                    key={`aula-${turma}-${detalhe.id}`}
+                    turmaId={turma}
+                    inicial={painel}
+                    gatilhos={material?.gatilhos ?? null}
+                    posts={detalhe.posts}
+                    membros={membros}
+                  />
+                  <ZerarTurmaASelecao turmaId={turma} nomeDaTurma={painel.turma.nome} tema={detalhe.tema} />
+                </>
+              ) : null
+            }
+            conteudo={
+              /* As aprovadas ANTES da ADR-146 podem ter post sem imagem: o laço
+                 antigo continua aqui para elas. As novas chegam completas. */
+              detalhe.imagensAprovadasEm && detalhe.midia.prontas < detalhe.midia.total ? (
+                <ImagensDaCobertura key={`imagens-${detalhe.id}`} turmaId={turma} coberturaId={detalhe.id} inicial={detalhe.midia} />
+              ) : null
+            }
+            equipes={
+              <EquipesDaAtividade
+                key={`equipes-${detalhe.id}`}
                 turmaId={turma}
                 expId={EXP_ID}
                 atividadeId={detalhe.id}
-                inicial={habilidades}
-                podeEditar={session?.usuario.papel === "professor"}
-                rodadaEmAndamento={emAndamento ? (detalhe.rodada ?? null) : null}
+                separarAoAbrir={separar}
               />
-            </div>
-          ) : null}
+            }
+            podcast={
+              /* Depois da aula: o podcast da plataforma (ADR-150). */
+              <CartaoDoPodcast expId={EXP_ID} turmaId={turma} atividadeId={detalhe.id} podcast={podcast} />
+            }
+            habilidades={
+              /* O painel de habilidades (E14) — invisível sem ficha
+                 (`temFicha: false`), e só o `professor` confirma e ajusta: a
+                 coordenação lê. A `key` é a atividade. */
+              habilidades?.temFicha ? (
+                <div className="flex flex-col gap-3" data-habilidades-da-selecao>
+                  <PainelDeHabilidades
+                    key={detalhe.id}
+                    turmaId={turma}
+                    expId={EXP_ID}
+                    atividadeId={detalhe.id}
+                    inicial={habilidades}
+                    podeEditar={session?.usuario.papel === "professor"}
+                    rodadaEmAndamento={emAndamento ? (detalhe.rodada ?? null) : null}
+                  />
+                </div>
+              ) : null
+            }
+          />
         </>
       )}
     </div>

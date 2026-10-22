@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { Badge, Card } from "@edu/ui/ds";
+import { AbasDaAtividade } from "@/components/atividades/abas-da-atividade";
 import { EquipesDaAtividade } from "@/components/equipes/equipes-da-ficha";
 import { PainelDeHabilidades } from "@/components/evidencias/painel-de-habilidades";
 import { LinkButton } from "@/components/link-button";
@@ -155,91 +156,97 @@ export default async function AtividadePage({
         />
       ) : null}
 
-      {/*
-        Distribuição da turma (doc 04 §3.1). Aparece a partir de `revisao`: antes
-        disso não existe conteúdo.
-        Em `encerrada` ela CONTINUA aparecendo, em leitura: a partida da Vila
-        pode acontecer depois de a atividade começar (é o que o comentário do
-        `importarDaVila` já previa), e o professor precisa poder conferir de onde
-        veio o lado de cada estudante quando for ler o relatório. O que some ali é a
-        ação — não há o que redistribuir numa atividade encerrada.
-      */}
-      {atividade.status === "revisao" ||
-      atividade.status === "ativa" ||
-      atividade.status === "encerrada" ? (
-        <PainelPerfis
-          activityId={atividade.id}
-          ladoALabel={antagonismo?.ladoA.label ?? "Lado A"}
-          ladoBLabel={antagonismo?.ladoB.label ?? "Lado B"}
-          turma={atividade.turma}
-          somenteLeitura={atividade.status === "encerrada"}
-        />
-      ) : null}
-
-      {/*
-        As EQUIPES desta atividade (ADR-130): a equipe é da atividade, e não da
-        missão. Aparecem a partir de `revisao` — com o conteúdo de pé, antes do
-        "Ativar" — e só na atividade com turma: a antiga, sem turma, vale para a
-        escola inteira e não tem sala para dividir.
-      */}
-      {atividade.turma &&
-      (atividade.status === "revisao" || atividade.status === "ativa" || atividade.status === "encerrada") ? (
-        <EquipesDaAtividade turmaId={atividade.turma.id} expId="exp08ef1b" atividadeId={atividade.id} />
-      ) : null}
-
       {atividade.status === "gerando" ? (
         <PainelProgresso activityId={atividade.id} />
       ) : null}
 
-      {atividade.status === "ativa" || atividade.status === "encerrada" ? (
-        <PainelMonitor
-          activityId={atividade.id}
-          ladoALabel={antagonismo?.ladoA.label ?? "Lado A"}
-          ladoBLabel={antagonismo?.ladoB.label ?? "Lado B"}
-        />
-      ) : null}
-
-      {atividade.status === "revisao" ||
-      atividade.status === "ativa" ||
-      atividade.status === "encerrada" ? (
-        <PainelRevisao
-          activityId={atividade.id}
-          status={atividade.status}
-          qtdPostsTese={atividade.qtdPostsTese}
-          turmaId={atividade.turma?.id ?? null}
-          material={
-            antagonismo
-              ? {
-                  tema: atividade.recorte,
-                  pergunta: atividade.perguntaChave,
-                  ladoA: { rotulo: antagonismo.ladoA.label, tese: antagonismo.ladoA.tese, argumentos: antagonismo.ladoA.argumentos },
-                  ladoB: { rotulo: antagonismo.ladoB.label, tese: antagonismo.ladoB.tese, argumentos: antagonismo.ladoB.argumentos },
-                }
-              : null
+      {/*
+        Da revisão em diante, o template da página da atividade (ADR-182): as
+        mesmas cinco abas de toda missão. Em revisão abre o Conteúdo, onde está a
+        revisão dos posts e o "Ativar"; ativa ou encerrada, a Aula ao vivo.
+      */}
+      {atividade.status === "revisao" || atividade.status === "ativa" || atividade.status === "encerrada" ? (
+        <AbasDaAtividade
+          estado={atividade.status === "revisao" ? "em-preparo" : "em-andamento"}
+          aula={
+            atividade.status === "ativa" || atividade.status === "encerrada" ? (
+              <PainelMonitor
+                activityId={atividade.id}
+                ladoALabel={antagonismo?.ladoA.label ?? "Lado A"}
+                ladoBLabel={antagonismo?.ladoB.label ?? "Lado B"}
+              />
+            ) : null
           }
-        />
-      ) : null}
-
-      {/* Depois da aula: o podcast da plataforma (ADR-150, ADR-156), com as falas
-          que o professor revisou antes de ativar. É do professor, e toca depois
-          da revelação — ele conta a virada. */}
-      {atividade.turma && (atividade.status === "ativa" || atividade.status === "encerrada") ? (
-        <CartaoDoPodcast
-          expId="exp08ef1b"
-          turmaId={atividade.turma.id}
-          atividadeId={atividade.id}
-          podcast={podcast}
-          aviso="Toque o episódio depois da revelação: ele conta à turma por que cada um viu um feed diferente."
-        />
-      ) : null}
-
-      {atividade.turma && expIdDaAtividade && painel?.temFicha ? (
-        <PainelDeHabilidades
-          turmaId={atividade.turma.id}
-          expId={expIdDaAtividade}
-          atividadeId={atividade.id}
-          inicial={painel}
-          podeEditar={session?.usuario.papel === "professor"}
+          conteudo={
+            <PainelRevisao
+              activityId={atividade.id}
+              status={atividade.status}
+              qtdPostsTese={atividade.qtdPostsTese}
+              turmaId={atividade.turma?.id ?? null}
+              material={
+                antagonismo
+                  ? {
+                      tema: atividade.recorte,
+                      pergunta: atividade.perguntaChave,
+                      ladoA: { rotulo: antagonismo.ladoA.label, tese: antagonismo.ladoA.tese, argumentos: antagonismo.ladoA.argumentos },
+                      ladoB: { rotulo: antagonismo.ladoB.label, tese: antagonismo.ladoB.tese, argumentos: antagonismo.ladoB.argumentos },
+                    }
+                  : null
+              }
+            />
+          }
+          equipes={
+            <>
+              {/*
+                Distribuição da turma (doc 04 §3.1): de que lado o feed de cada
+                estudante nasce. Em `encerrada` ela CONTINUA aparecendo, em leitura:
+                a partida da Vila pode acontecer depois de a atividade começar (é o
+                que o comentário do `importarDaVila` já previa), e o professor precisa
+                poder conferir de onde veio o lado de cada estudante quando for ler o
+                relatório. O que some ali é a ação.
+              */}
+              <PainelPerfis
+                activityId={atividade.id}
+                ladoALabel={antagonismo?.ladoA.label ?? "Lado A"}
+                ladoBLabel={antagonismo?.ladoB.label ?? "Lado B"}
+                turma={atividade.turma}
+                somenteLeitura={atividade.status === "encerrada"}
+              />
+              {/*
+                As EQUIPES desta atividade (ADR-130): a equipe é da atividade, e não
+                da missão — e só na atividade com turma: a antiga, sem turma, vale
+                para a escola inteira e não tem sala para dividir.
+              */}
+              {atividade.turma ? (
+                <EquipesDaAtividade turmaId={atividade.turma.id} expId="exp08ef1b" atividadeId={atividade.id} />
+              ) : null}
+            </>
+          }
+          podcast={
+            /* Depois da aula: o podcast da plataforma (ADR-150, ADR-156), com as
+               falas que o professor revisou antes de ativar. É do professor, e
+               toca depois da revelação — ele conta a virada. */
+            atividade.turma && (atividade.status === "ativa" || atividade.status === "encerrada") ? (
+              <CartaoDoPodcast
+                expId="exp08ef1b"
+                turmaId={atividade.turma.id}
+                atividadeId={atividade.id}
+                podcast={podcast}
+                aviso="Toque o episódio depois da revelação: ele conta à turma por que cada um viu um feed diferente."
+              />
+            ) : null
+          }
+          habilidades={
+            atividade.turma && expIdDaAtividade && painel?.temFicha ? (
+              <PainelDeHabilidades
+                turmaId={atividade.turma.id}
+                expId={expIdDaAtividade}
+                atividadeId={atividade.id}
+                inicial={painel}
+                podeEditar={session?.usuario.papel === "professor"}
+              />
+            ) : null
+          }
         />
       ) : null}
 
