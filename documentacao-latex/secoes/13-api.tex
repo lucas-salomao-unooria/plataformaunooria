@@ -453,7 +453,7 @@ papel \cd{estudante}, com duas exceções marcadas.
 \bottomrule
 \end{tabularx}
 
-\subsection{O Canal A da Missão Tempestade (exp02em1b)}
+\subsection{O Canal A da Missão Tempestade (exp02em1b-v0, versão anterior)}
 
 As tarefas por ação da Missão Tempestade (\adrr{ADR-172}), todas de papel
 \cd{estudante}, com a identidade vinda do \emph{token} (não há id de sessão) e
@@ -1278,6 +1278,25 @@ voto e da revelação aberta pela turma. A turma do estudante é
 \cd{users.turma\_id}, a mesma fonte do painel e das equipes --- e não o
 \emph{claim} do \emph{token}.
 \end{regra}
+
+\subsection{O Efeito Amplificador (exp02em1b)}
+\label{sec:api-efeito-amplificador}
+
+Desde 2026-10-22 (\adrr{ADR-181}), no módulo \arq{efeito-amplificador}, no molde
+de Quem mandou isso?: onze rotas do estudante em \rota{/efeito-amplificador/*}
+(\cd{@Roles("estudante")} na classe e \cd{exigirMissaoLiberada} no funil de
+TODAS), onze por turma em \rota{/efeito-amplificador/turmas/:turmaId/*} (o
+pacote, \cd{gerar-conteudo}, \cd{homologar}, \cd{banco-padrao}, \cd{gate},
+\cd{painel}, \cd{zerar}, a lista e o detalhe das atividades e o
+\cd{em-andamento}) e o material do guia. Não há IA em sala: \rota{POST
+/efeito-amplificador/mensagem} classifica o pedido por uma lista fechada de
+intenções, e a única chamada paga é \rota{POST .../gerar-conteudo}, com a quota
+do perfil \cd{professor}. As quatro habilidades são marcadas nas transações dos
+gestos --- o Publicar (EM13CO14 e EM13CO26), as ações do feed e a abertura do
+Explicar (EM13CO24 e EM13CO08) ---, e \rota{/evidencias/exp02em1b/perguntas/*}
+responde 404: não há Canal B. O catálogo completo está no
+Apêndice~\ref{ap:endpoints}. A Missão Tempestade, versão anterior, continua em
+\rota{/unoogpt/*}.
 
 \subsection{Jornal da Escola (exp04ef1b)}
 \label{sec:api-jornal-escola}

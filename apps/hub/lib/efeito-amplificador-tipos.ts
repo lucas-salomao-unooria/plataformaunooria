@@ -1,5 +1,5 @@
 /**
- * O que o hub lê da exp02em1b (O Efeito Amplificador, ADR-180) — espelho do Zod
+ * O que o hub lê da exp02em1b (O Efeito Amplificador, ADR-181) — espelho do Zod
  * de `apps/api/src/efeito-amplificador/contrato-de-rotas.ts`, que é a fonte da
  * verdade, e dos vocabulários de `conteudo.ts` do mesmo módulo.
  *

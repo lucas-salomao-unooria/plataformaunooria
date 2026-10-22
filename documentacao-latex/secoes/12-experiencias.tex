@@ -22,6 +22,8 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 \cd{backup-exp04ef1b} & \cd{4EF} & \textbf{arquivada} &
   telemetria, progresso & \arq{backup-unootube} (sem rotas)\\
 \zebra \cd{exp02em1b} & \cd{2EM} & estudante &
+  telemetria & \arq{efeito-amplificador}, \arq{evidencias}\\
+\cd{exp02em1b-v0} & \cd{2EM} & \textbf{versão anterior} &
   telemetria, ia & \arq{unoogpt}\\
 \cd{exp01ef1b} & \cd{1EF} & estudante &
   telemetria, progresso & \arq{foto-conta}\\
@@ -87,7 +89,7 @@ porta 5179 do Eco no Grupo (\adrr{ADR-113}, \adrr{ADR-115}).
 \cd{app-90-plano-de-aula} & \cd{5175} & \rota{/professor/plano-de-aula}\\
 \zebra \cd{app-91-bem-estar} & \cd{5176} & \rota{/professor/bem-estar}\\
 \cd{app-70-vila-do-lume} & \cd{5177} & \rota{/exp/app-70-vila-do-lume}\\
-\zebra \cd{exp02em1b} & \cd{5178} & \rota{/exp/exp02em1b}\\
+\zebra \cd{exp02em1b} & \cd{5178} & \rota{/exp/exp02em1b} (O Efeito Amplificador; a Tempestade, \cd{exp02em1b-v0}, sobe na \cd{5186} só no \emph{profile} \cd{anteriores})\\
 \cd{exp07ef1b} & \cd{5179} & \rota{/exp/exp07ef1b}\\
 \zebra \cd{exp06ef2b} & \cd{5181} & \rota{/exp/exp06ef2b}\\
 \cd{app-92-plano-de-ensino} & \cd{5180} & \rota{/professor/plano-de-ensino}\\
@@ -771,8 +773,66 @@ e o delta sempre foi derivável de dois quadros seguidos. É o primeiro suspeito
 a distribuição de \cd{fontesConfiaveis} da turma subir de forma anômala.
 \end{regra}
 
-\section{exp02em1b --- UnooriaAI (Missão Tempestade)}
+\section{exp02em1b --- O Efeito Amplificador}
+\label{sec:exp02em1b-efeito-amplificador}
+
+Missão da \textbf{2ª série do Ensino Médio, unidade 1}, desde 2026-10-22
+(\adrr{ADR-181}), vinda da esteira de produto. Tomou o código da Missão
+Tempestade, que virou \cd{exp02em1b-v0} (abaixo). Três seções do design system,
+pela regra de \enquote{quem fala}: a escola (\cd{unooria}) na abertura e na
+conclusão, o \textbf{UnooriaAI} (\cd{unooriaai}) do primeiro pedido ao
+Publicar, e o \textbf{Unoovista} (\cd{unoovista}) no feed da madrugada e nos
+bastidores. Módulo da api: \arq{efeito-amplificador}; experiência 2.0.0.
+
+\begin{destaque}
+O estudante cuida do texto e a rede entrega de madrugada do mesmo jeito: o
+alcance não depende do cuidado, porque a rede otimiza tempo de tela.
+\end{destaque}
+
+\subsection{O UnooriaAI da aula não é IA}
+
+A conversa é a árvore de intenções do servidor (\arq{regras/intencoes.ts}):
+minúsculas, sem acento, sem pontuação, uma lista fechada de gatilhos com
+precedência, mais três que vêm do pacote (o instituto inventado, o primeiro
+nome do colega e o veículo). Até 5 mensagens. Abre com a fala do PO, com o tema
+do pacote: \enquote{Olá, vamos montar seu post para [tema], você pode me pedir
+para montar o post, questionar minhas fontes e perguntar sobre direito
+digital. Vamos começar?}. A IA só entra no preparo do professor, com quota e
+curadoria, e a saída passa pela mesma régua da homologação.
+
+\subsection{O Publicar é o latch, e o algoritmo sempre pinça}
+
+A prévia é feita de parágrafos; três são os nós (alucinação, plágio, LGPD), e
+cada um se resolve pela correção pedida ao assistente ou tirando o parágrafo.
+Não há edição livre de texto: a régua leria texto de menor. O Publicar grava
+manchete, texto e trecho pinçado num UPDATE só e marca a EM13CO14 e a EM13CO26
+na mesma transação. O trecho pinçado é a estatística, se ficou; senão o recorte
+do pacote, que a régua obriga a morar no trecho copiado e na correção; senão a
+manchete. Sempre há um, e a entrega é de madrugada para todos.
+
+\subsection{O feed, a pausa e a Etapa 5}
+
+As ações do feed (abrir um comentário, ver métricas, moderar, conta privada,
+denunciar, Central de Apoio) marcam a EM13CO24 e a EM13CO08 com o que já foi
+alcançado; a abertura do Explicar fecha o feed e marca o \enquote{não atingiu}
+de quem nada fez. A fase da turma é \cd{aberta}, \cd{debate} (as telas
+congelam, e as jogadas respondem 409) e \cd{explicar}, só para a frente. Na
+Etapa 5, dois de quatro indicadores comprovam a retenção; o gabarito não
+desce. Sem etapa de transferência e sem Canal B, por decisão do PO.
+
+A Missão Tempestade, que tinha este código, segue na seção seguinte, como
+versão anterior.
+
+\section{exp02em1b-v0 --- UnooriaAI (Missão Tempestade, versão anterior)}
 \label{sec:exp02em1b}
+
+\begin{atencao}
+Desde 2026-10-22 (\adrr{ADR-181}) esta missão é \cd{exp02em1b-v0}: no ar, fora
+do catálogo. As tabelas são \cd{exp02em1b\_v0\_*}, a ficha é
+\arq{evidencias/fichas/exp02em1b-v0.ts}, o bundle é publicado em
+\cd{exp02em1b-v0/1.5.1}. Onde o texto abaixo diz \cd{exp02em1b}, leia
+\cd{exp02em1b-v0}.
+\end{atencao}
 
 Porte de um projeto autônomo (\arq{gpturia}), publicado na trilha do Entre Redes
 em \textbf{2ª série do Ensino Médio, unidade 1}. Um clone de assistente de IA em

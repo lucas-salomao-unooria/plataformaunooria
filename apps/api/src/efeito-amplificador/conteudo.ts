@@ -1,5 +1,5 @@
 /**
- * O CATÁLOGO da exp02em1b — O Efeito Amplificador (ADR-180): vocabulários, o
+ * O CATÁLOGO da exp02em1b — O Efeito Amplificador (ADR-181): vocabulários, o
  * banco curado padrão e os textos fixos da missão.
  *
  * Fonte: os artefatos da esteira (`artefatos_exp02em1b`, 2026-10-22) — o

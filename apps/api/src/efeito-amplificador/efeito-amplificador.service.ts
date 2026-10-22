@@ -66,7 +66,7 @@ import {
 } from "./regras/previa";
 
 /**
- * Persistência e regras aplicadas da exp02em1b — O Efeito Amplificador (ADR-180).
+ * Persistência e regras aplicadas da exp02em1b — O Efeito Amplificador (ADR-181).
  *
  * Molde: `quem-mandou-isso` (o funil, os locks, o pacote como atividade e a
  * rodada como reaplicação). Toda query leva `escola_id` no `where` ALÉM da RLS

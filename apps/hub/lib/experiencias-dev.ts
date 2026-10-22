@@ -22,10 +22,10 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
   "app-70-vila-do-lume": "http://localhost:5177",
   /** Check-in de bem-estar do professor — embedado em /professor/bem-estar. */
   "app-91-bem-estar": "http://localhost:5176",
-  /** O Efeito Amplificador — 2ª série do EM, unidade 1 (ADR-180). A porta é a
+  /** O Efeito Amplificador — 2ª série do EM, unidade 1 (ADR-181). A porta é a
    *  da Missão Tempestade, que virou `exp02em1b-v0` e foi para a 5186. */
   "exp02em1b": "http://localhost:5178",
-  /** A Missão Tempestade, VERSÃO ANTERIOR (ADR-180): fora do catálogo, mas no ar.
+  /** A Missão Tempestade, VERSÃO ANTERIOR (ADR-181): fora do catálogo, mas no ar.
    *  Sobe só no profile `anteriores` do compose. */
   "exp02em1b-v0": "http://localhost:5186",
   /** A Seleção — 7º ano, unidade 1. A 5179 era do Eco no Grupo, que ela substitui (ADR-113). */

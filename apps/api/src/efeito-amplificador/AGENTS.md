@@ -2,7 +2,7 @@
 
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
-Missão da 2ª série do EM, unidade 1 (ADR-180), vinda da esteira
+Missão da 2ª série do EM, unidade 1 (ADR-181), vinda da esteira
 (`artefatos_exp02em1b`, 2026-10-22). Ela tomou o código `exp02em1b`; a Missão
 Tempestade que o tinha é `exp02em1b-v0` (módulo `unoogpt`, tabelas
 `exp02em1b_v0_*`), no ar e fora do catálogo.

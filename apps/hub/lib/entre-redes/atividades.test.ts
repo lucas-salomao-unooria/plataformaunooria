@@ -22,7 +22,7 @@ import { concluirCriacao, destinoDepoisDeCriar } from "./criar-atividade";
 describe("a lista de atividades", () => {
   test("as seis missões com atividade — o mesmo par da api", () => {
     expect(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b"].every(temAtividades)).toBe(true);
-    /* A Missão Tempestade, versão anterior (ADR-180), segue sem atividade. */
+    /* A Missão Tempestade, versão anterior (ADR-181), segue sem atividade. */
     expect(temAtividades("exp02em1b-v0")).toBe(false);
     expect(temAtividades(undefined)).toBe(false);
   });

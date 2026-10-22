@@ -364,7 +364,7 @@ export const MISSAO_UNOOGPT: Missao = {
   anoSlug: "2-serie",
   unidadeSlug: "unidade-1",
   unidade: 1,
-  /* A VERSÃO ANTERIOR (ADR-180): a reformulação tomou `exp02em1b`. Fora de
+  /* A VERSÃO ANTERIOR (ADR-181): a reformulação tomou `exp02em1b`. Fora de
      `MISSOES_PUBLICADAS`, e é isso que a tira da grade — como o UnooTube. */
   expId: "exp02em1b-v0",
   titulo: "UnooriaAI — Decidir com o que os dados mostram",
@@ -1036,7 +1036,7 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
 };
 
 /**
- * 2ª série · Unidade 1 — O Efeito Amplificador (`exp02em1b`, ADR-180).
+ * 2ª série · Unidade 1 — O Efeito Amplificador (`exp02em1b`, ADR-181).
  *
  * Toma o código e o lugar da Missão Tempestade, que virou `exp02em1b-v0`
  * (`MISSAO_UNOOGPT`, acima) — no ar, mas fora da trilha. Vem da esteira

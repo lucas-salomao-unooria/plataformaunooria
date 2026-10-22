@@ -2,7 +2,7 @@
 
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
-**Desde 2026-10-22 esta é a VERSÃO ANTERIOR (ADR-180).** A missão da 2ª série
+**Desde 2026-10-22 esta é a VERSÃO ANTERIOR (ADR-181).** A missão da 2ª série
 do EM, unidade 1, foi reformulada (O Efeito Amplificador, `src/efeito-amplificador/`)
 e tomou o código `exp02em1b`. Esta virou `exp02em1b-v0` (`regras/defaults.ts#EXP_ID`):
 as tabelas são `exp02em1b_v0_*`, a ficha é `evidencias/fichas/exp02em1b-v0.ts`, e

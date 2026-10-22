@@ -38,7 +38,7 @@ const EXP_ID = "exp02em1b";
 const ROTULO_DA_ORIGEM = { ia: "Gerado com IA e homologado por você", padrao: "Banco Curado Padrão da Unooria" } as const;
 
 /**
- * A PÁGINA DE UMA ATIVIDADE de O EFEITO AMPLIFICADOR (ADR-180, ADR-130) — o
+ * A PÁGINA DE UMA ATIVIDADE de O EFEITO AMPLIFICADOR (ADR-181, ADR-130) — o
  * pacote homologado, com tudo o que se faz com ele: pô-lo no ar (se está
  * pronto), o pacote com o gabarito e a liberação na sala, as equipes, a
  * condução ao vivo (Pausar Telas, Liberar Etapa 5) só no em andamento, o

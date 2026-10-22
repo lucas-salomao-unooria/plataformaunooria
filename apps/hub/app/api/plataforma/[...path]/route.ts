@@ -94,11 +94,11 @@ const PREFIXOS_PERMITIDOS = [
      na api (`@Roles("professor")`); isto aqui só decide quais prefixos o BFF
      repassa. */
   "vila",
-  /* exp02em1b-v0 (a Missão Tempestade, versão anterior — ADR-180): a LARGADA
+  /* exp02em1b-v0 (a Missão Tempestade, versão anterior — ADR-181): a LARGADA
      do relógio da turma é client-side. Fica: a missão continua no ar para a
      turma que a tinha liberado. As guardas de papel estão na api. */
   "unoogpt",
-  /* exp02em1b (O Efeito Amplificador, ADR-180): o preparo do pacote (gerar,
+  /* exp02em1b (O Efeito Amplificador, ADR-181): o preparo do pacote (gerar,
      homologar, banco padrão), os dois botões da condução (Pausar Telas, Liberar
      Etapa 5) e o "Zerar Turma" são client-side — o professor aperta no meio da
      aula e as telas andam pelo polling delas. As guardas de papel estão na api

@@ -21,7 +21,7 @@
 
 /**
  * Missão da trilha: `exp01ef1b` a `exp09ef4b`, `exp01em1b` a `exp03em4b` — e a
- * VERSÃO ANTERIOR de uma delas, `exp02em1b-v0` (ADR-180): a missão que perdeu o
+ * VERSÃO ANTERIOR de uma delas, `exp02em1b-v0` (ADR-181): a missão que perdeu o
  * código para uma reformulação e continua no ar, fora do catálogo.
  */
 export const CODIGO_DE_MISSAO_RE = /^exp(0[1-9]ef|0[1-3]em)[1-4]b(-v\d+)?$/;
@@ -55,7 +55,7 @@ export function codigoDaMissao(serie: string, unidade: number): string {
 export const SUFIXO_DE_VERSAO_ANTERIOR_RE = /-v\d+$/;
 
 /**
- * A missão que perdeu o código para uma reformulação (ADR-180) — `exp02em1b-v0`.
+ * A missão que perdeu o código para uma reformulação (ADR-181) — `exp02em1b-v0`.
  * Continua LIGADA (disponibilidade, liberações, dados e módulo seguem), mas não
  * entra em catálogo nenhum: nem na trilha do professor, nem na grade da sala.
  * Derivado do id, como o arquivamento (`backup-`): não há campo para ficar

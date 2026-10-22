@@ -2,7 +2,7 @@ import type { GuiaDaAula } from "./tipos";
 
 /**
  * O guia da aula de O EFEITO AMPLIFICADOR (exp02em1b, 2ª série do EM, unidade
- * 1, ADR-180). Escrito a partir do one-pager aprovado v1.2 (§1, §4, §7, §9, §10,
+ * 1, ADR-181). Escrito a partir do one-pager aprovado v1.2 (§1, §4, §7, §9, §10,
  * §13 e §17), com as duas orientações do PO de 2026-10-22: sem a etapa de
  * transferência e sem as perguntas finais (Canal B).
  *

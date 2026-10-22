@@ -2,7 +2,7 @@ import type { GuiaDaAula } from "./tipos";
 
 /**
  * Guia da aula da **Missão Tempestade** — hoje `exp02em1b-v0`, a VERSÃO ANTERIOR
- * (ADR-180). Fica como registro, FORA do registro de guias (`index.ts`): a
+ * (ADR-181). Fica como registro, FORA do registro de guias (`index.ts`): a
  * missão saiu da trilha, e o guia da 2ª série, unidade 1, é o de O Efeito
  * Amplificador (`exp02em1b.ts`).
  *

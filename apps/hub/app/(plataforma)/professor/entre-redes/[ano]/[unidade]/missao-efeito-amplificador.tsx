@@ -7,7 +7,7 @@ import type { TurmaDoProfessor } from "@/lib/turmas";
 import { AtividadesDaMissao } from "./atividades-da-missao";
 
 /**
- * Corpo de O EFEITO AMPLIFICADOR (2ª série · Unidade 1, ADR-180).
+ * Corpo de O EFEITO AMPLIFICADOR (2ª série · Unidade 1, ADR-181).
  *
  * **Existe porque a ausência dele é MUDA**: sem ramo no despachante de
  * `page.tsx`, a missão cairia no corpo do Instanooria. O

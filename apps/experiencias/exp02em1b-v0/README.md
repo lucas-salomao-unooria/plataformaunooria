@@ -1,4 +1,4 @@
-# exp02em1b-v0 — a Missão Tempestade (versão anterior, ADR-180)
+# exp02em1b-v0 — a Missão Tempestade (versão anterior, ADR-181)
 
 Clone de assistente de IA em que o estudante decide, **sob incerteza e com o relógio
 correndo**, onde alocar 2 equipes de resgate entre 4 bairros de Serra do Sauá

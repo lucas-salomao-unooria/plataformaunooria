@@ -24,7 +24,7 @@
  * `id` do `public/experiencia.json`: divergir faz a missão nunca abrir, com a
  * liberação gravada e visível na tela do professor.
  */
-/** A versão anterior (ADR-180): a reformulação tomou `exp02em1b`. */
+/** A versão anterior (ADR-181): a reformulação tomou `exp02em1b`. */
 export const EXP_ID = 'exp02em1b-v0';
 
 /**

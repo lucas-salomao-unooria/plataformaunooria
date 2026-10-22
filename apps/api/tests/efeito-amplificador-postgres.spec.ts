@@ -23,7 +23,7 @@ import { criarRoleDeRuntime, urlDeRuntime } from "./role-de-runtime";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * O Efeito Amplificador (exp02em1b, ADR-180) no Postgres: o que só o banco
+ * O Efeito Amplificador (exp02em1b, ADR-181) no Postgres: o que só o banco
  * responde.
  *
  * A porta da sala em TODA rota de estudante, a missão que nasce vazia, o

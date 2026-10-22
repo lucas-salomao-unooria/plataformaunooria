@@ -89,7 +89,7 @@ const FONTES: Record<ExperienciaComAtividade, FonteDeAtividades> = {
       );
     },
   },
-  /* O Efeito Amplificador (ADR-180): o pacote homologado, como na exp05ef1b. */
+  /* O Efeito Amplificador (ADR-181): o pacote homologado, como na exp05ef1b. */
   exp02em1b: {
     async emAndamento(tx, escolaId, turmaId) {
       const ativo = await tx.exp02em1bPacote.findFirst({

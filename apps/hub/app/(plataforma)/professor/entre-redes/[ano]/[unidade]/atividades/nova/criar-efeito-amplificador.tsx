@@ -60,7 +60,7 @@ const recorteDoPacote = (p: { disciplina: string; tema: string; assuntos: string
 });
 
 /**
- * NOVA ATIVIDADE de O EFEITO AMPLIFICADOR (ADR-180, ADR-130). O PACOTE — o
+ * NOVA ATIVIDADE de O EFEITO AMPLIFICADOR (ADR-181, ADR-130). O PACOTE — o
  * rascunho do UnooriaAI com os três nós, as manchetes e os comentários da
  * madrugada — é a atividade que a turma vive, e nasce do professor: o Banco
  * Curado Padrão (Convivência Escolar e Celular) ou um tema da disciplina dele

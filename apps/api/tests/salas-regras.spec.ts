@@ -51,7 +51,7 @@ describe("série e transversal", () => {
 });
 
 describe("a grade da turma", () => {
-  test("a VERSÃO ANTERIOR (ADR-180) sai da grade — salvo na turma que já a liberou", () => {
+  test("a VERSÃO ANTERIOR (ADR-181) sai da grade — salvo na turma que já a liberou", () => {
     const comAnterior = [...CATALOGO, exp("exp02em1b-v0", ["2EM"], "estudante", 1)];
     expect(gradeDaTurma("2EM", comAnterior, semLiberacao).map((m) => m.expId)).toEqual([
       "app-70-vila-do-lume",

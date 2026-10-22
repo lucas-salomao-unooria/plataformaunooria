@@ -1,4 +1,4 @@
--- A MISSÃO TEMPESTADE VIRA A VERSÃO ANTERIOR `exp02em1b-v0` (ADR-180).
+-- A MISSÃO TEMPESTADE VIRA A VERSÃO ANTERIOR `exp02em1b-v0` (ADR-181).
 --
 -- A missão da 2ª série do EM, unidade 1, foi reformulada por inteiro (O Efeito
 -- Amplificador), e o código é derivado da série e da unidade (ADR-110): a nova é

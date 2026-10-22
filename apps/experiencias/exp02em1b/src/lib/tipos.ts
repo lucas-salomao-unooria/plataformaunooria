@@ -11,7 +11,7 @@ export const EXP_ID = "exp02em1b";
 /**
  * A versão vive em TRÊS lugares: aqui, no `package.json` e no
  * `public/experiencia.json` (`versao.test.ts`). A 2.0.0 é a primeira do Efeito
- * Amplificador: a Missão Tempestade (1.x) mora em `exp02em1b-v0` (ADR-180), e o
+ * Amplificador: a Missão Tempestade (1.x) mora em `exp02em1b-v0` (ADR-181), e o
  * caminho do bucket da 2.x nunca encosta no dela.
  */
 export const EXP_VERSION = "2.0.0";

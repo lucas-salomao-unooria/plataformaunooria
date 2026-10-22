@@ -75,7 +75,7 @@ describe("o formato", () => {
     expect(codigoDeOrigem("exp04ef1b")).toBeNull();
   });
 
-  it("a VERSÃO ANTERIOR é o código de missão + -vN, e passa no EXP_ID_RE (ADR-180)", () => {
+  it("a VERSÃO ANTERIOR é o código de missão + -vN, e passa no EXP_ID_RE (ADR-181)", () => {
     for (const ok of ["exp02em1b-v0", "exp08ef1b-v1", "exp02em1b-v12"]) {
       expect(EXP_ID_RE.test(ok)).toBe(true);
       expect(ehVersaoAnterior(ok)).toBe(true);
@@ -159,7 +159,7 @@ describe("todo manifesto tem o código certo", () => {
     if (manifesto.unidade !== undefined) {
       test("missão: UMA série, e o id é derivado dela e da unidade", () => {
         expect(manifesto.series).toHaveLength(1);
-        /* A VERSÃO ANTERIOR (ADR-180) é o código derivado + `-vN`: a missão que
+        /* A VERSÃO ANTERIOR (ADR-181) é o código derivado + `-vN`: a missão que
            perdeu o código para uma reformulação continua no mesmo lugar da grade. */
         expect(codigoAtualDe(manifesto.id)).toBe(codigoDaMissao(manifesto.series?.[0] ?? "", manifesto.unidade ?? 0));
       });

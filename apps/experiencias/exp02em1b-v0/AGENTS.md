@@ -1,4 +1,4 @@
-# apps/experiencias/exp02em1b-v0 — a Missão Tempestade, versão anterior (ADR-180)
+# apps/experiencias/exp02em1b-v0 — a Missão Tempestade, versão anterior (ADR-181)
 
 **Esta é a VERSÃO ANTERIOR da missão da 2ª série do EM, unidade 1.** Em
 2026-10-22 a missão foi reformulada (O Efeito Amplificador) e a nova tomou o

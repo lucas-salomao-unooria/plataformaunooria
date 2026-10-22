@@ -68,7 +68,7 @@ const ORIGEM = { ia: "gerada com IA", padrao: "conteúdo da Unooria" } as const;
  * filtro das turmas que podem fazer a missão — a do 7º ano não roda no 8º.
  */
 export function serieDaMissao(expId: string): string | null {
-  /* `-vN` é a versão anterior (ADR-180): mora na mesma série. */
+  /* `-vN` é a versão anterior (ADR-181): mora na mesma série. */
   const m = /^exp(\d{2})(ef|em)\d+b(-v\d+)?$/.exec(expId);
   if (!m) return null;
   return `${Number(m[1])}${(m[2] as string).toUpperCase()}`;
@@ -210,7 +210,7 @@ export function atividadesDoJuri(p: PacotesDoJuri, rotuloDaDisciplina: (slug: st
   }));
 }
 
-/** O Efeito Amplificador (ADR-180): o pacote homologado é a atividade, sem segunda fase de aprovação. */
+/** O Efeito Amplificador (ADR-181): o pacote homologado é a atividade, sem segunda fase de aprovação. */
 export function atividadesDoEfeito(p: PacotesDaTurmaEfeito, rotuloDaDisciplina: (slug: string) => string): AtividadeNaLista[] {
   return p.historico.map((h) => ({
     id: h.id,

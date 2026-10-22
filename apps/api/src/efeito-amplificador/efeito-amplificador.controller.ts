@@ -37,7 +37,7 @@ const NOTA_SEM_PACOTE = "Sem pacote no ar responde **409** `campanha-em-preparo`
 const NOTA_DA_PAUSA = "Com as telas pausadas pelo professor: **409** `telas-pausadas`.";
 
 /**
- * Rotas do ESTUDANTE da exp02em1b — O Efeito Amplificador (ADR-180).
+ * Rotas do ESTUDANTE da exp02em1b — O Efeito Amplificador (ADR-181).
  *
  * O gabarito fica no servidor: o cliente manda o que o estudante escreveu,
  * tirou, escolheu ou tocou, e é o servidor que decide o que aquilo mediu

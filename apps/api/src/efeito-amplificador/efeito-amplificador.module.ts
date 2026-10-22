@@ -9,7 +9,7 @@ import { PodcastDaExp02em1b } from "./podcast-fonte";
 import { PreparoDaExp02em1bService } from "./preparo.service";
 
 /**
- * Lado server da exp02em1b — O Efeito Amplificador (ADR-180). Prisma e Auth são
+ * Lado server da exp02em1b — O Efeito Amplificador (ADR-181). Prisma e Auth são
  * globais; `PodcastService` também (ADR-150).
  *
  * **`EvidenciasModule`**: a missão tem ficha (E14) e marca as quatro

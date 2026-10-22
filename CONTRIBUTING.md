@@ -199,7 +199,7 @@ a rota do hub e a experiência, juntos.
 
 | Frente | Fatia |
 |---|---|
-| A | `apps/api/src/unoogpt/` + a rota do hub + `apps/experiencias/exp02em1b/` |
+| A | `apps/api/src/efeito-amplificador/` + a rota do hub + `apps/experiencias/exp02em1b/` |
 | B | `apps/api/src/bemestar/` + `/professor/bem-estar` + `app-91-bem-estar/` |
 | C | `apps/api/src/salas/` + `/professor/turmas` |
 

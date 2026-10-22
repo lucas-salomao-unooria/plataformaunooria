@@ -38,7 +38,7 @@ import {
 import { FICHA_EXP02EM1B } from "../src/evidencias/fichas/exp02em1b";
 
 /**
- * O Efeito Amplificador (exp02em1b, ADR-180) — as regras PURAS, sem banco: a
+ * O Efeito Amplificador (exp02em1b, ADR-181) — as regras PURAS, sem banco: a
  * régua do pacote, a árvore de intenções do UnooriaAI, a prévia, o trecho que
  * o algoritmo pinça e as réguas das quatro habilidades (tabelas-verdade
  * completas).

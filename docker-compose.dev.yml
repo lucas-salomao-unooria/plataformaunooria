@@ -26,7 +26,7 @@
 #   exp05ef1b  Vite de Quem mandou isso?, o clone do mensageiro (5184)
 #   exp06ef1b  Vite de O Júri Estadual de Projetos, o clone de rede social de fotos (5185)
 #   exp02em1b-v0  Vite da Missão Tempestade, a VERSÃO ANTERIOR da 2ª série EM (5186,
-#              ADR-180) — só no profile `anteriores`: `docker compose --profile anteriores …`
+#              ADR-181) — só no profile `anteriores`: `docker compose --profile anteriores …`
 #
 # As experiências ENTRAM aqui — ao contrário do compose de produção, onde elas
 # não existem porque em produção são bundles estáticos num bucket, não serviços.
@@ -395,7 +395,7 @@ services:
       deps:
         condition: service_completed_successfully
 
-  # A Missão Tempestade, versão anterior (ADR-180): fora do catálogo, mas no ar.
+  # A Missão Tempestade, versão anterior (ADR-181): fora do catálogo, mas no ar.
   # Fica num profile para não pesar na VM do Docker quando ninguém a usa.
   exp02em1b-v0:
     <<: *dev

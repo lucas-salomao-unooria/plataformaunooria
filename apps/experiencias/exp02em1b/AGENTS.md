@@ -8,7 +8,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | Dev | `pnpm --filter @edu/exp02em1b dev` → :5178 · hub `/exp/exp02em1b` |
 | DS | três seções: `unooria` (`@edu/ui/ds`), `unooriaai` (`@edu/ui/ds-unooriaai`), `unoovista` (`@edu/ui/ds-unoovista`) |
 | api | módulo `efeito-amplificador` (`apps/api/src/efeito-amplificador/AGENTS.md`) |
-| Versões | 2.x é esta missão (ADR-180); a Missão Tempestade (1.x) é `exp02em1b-v0` |
+| Versões | 2.x é esta missão (ADR-181); a Missão Tempestade (1.x) é `exp02em1b-v0` |
 
 O estudante pede o post ao UnooriaAI, audita o rascunho, publica no Unoovista
 (o latch), vive a madrugada no feed e, depois do debate, aponta nos bastidores

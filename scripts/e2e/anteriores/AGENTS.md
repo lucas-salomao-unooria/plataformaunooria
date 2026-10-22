@@ -1,4 +1,4 @@
-# scripts/e2e/anteriores — suítes das VERSÕES ANTERIORES (ADR-180)
+# scripts/e2e/anteriores — suítes das VERSÕES ANTERIORES (ADR-181)
 
 Complementa o `AGENTS.md` de `scripts/e2e`, que vence em conflito.
 

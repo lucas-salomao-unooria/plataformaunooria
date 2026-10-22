@@ -66,7 +66,7 @@ o que decide se você precisa abri-lo.
 - **`arquivados/` não é papel, e o runner não a percorre.** Guarda as suítes das
   experiências arquivadas (ADR-116), fora da execução; a doutrina dela está em
   `arquivados/AGENTS.md`.
-- **`anteriores/` também não é papel** (ADR-180): as suítes de uma missão que virou
+- **`anteriores/` também não é papel** (ADR-181): as suítes de uma missão que virou
   versão anterior (`exp02em1b-v0`) — no ar, mas sem a ficha do catálogo por onde
   elas entravam. Ver `anteriores/AGENTS.md`.
 - **Erro provocado de propósito se declara** (`r.provocado(...)`), senão a

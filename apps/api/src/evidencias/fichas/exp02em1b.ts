@@ -1,7 +1,7 @@
 import type { FichaPedagogica } from "./tipos";
 
 /**
- * A FICHA de O EFEITO AMPLIFICADOR (exp02em1b, 2ª série do EM, unidade 1, ADR-180)
+ * A FICHA de O EFEITO AMPLIFICADOR (exp02em1b, 2ª série do EM, unidade 1, ADR-181)
  * — versão 1, de 2026-10-22: só o Canal A. O one-pager aprovado previa um
  * Canal B (quatro enquetes) e uma etapa de transferência; o PO tirou os dois
  * (2026-10-22), e toda habilidade é medida pelo que o estudante FAZ:
