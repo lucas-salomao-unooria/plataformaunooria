@@ -53,7 +53,7 @@ const equipes = new EquipesService(prisma);
 const salas = new SalasService(prisma);
 
 const INSTA = "exp08ef1b";
-const TEMPESTADE = "exp02em1b";
+const TEMPESTADE = "exp02em1b-v0";
 /** Missão real, do mesmo 8º ano da turma, que NÃO aceita equipe. */
 const MANIFESTO = "exp08ef4b";
 

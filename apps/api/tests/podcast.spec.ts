@@ -679,7 +679,7 @@ describe("o podcast FIXO da Missão Tempestade (2ª série do EM)", () => {
 
   test("toda turma ouve o MESMO episódio: sem tabela, sem 409, atividade `turma`", async () => {
     const { prisma } = prismaDasFontes(null);
-    const r = await motorDe(fonteDoPodcastDaExp02em1b(prisma), prisma).estado("exp02em1b", "escola", "turma", undefined, "turma");
+    const r = await motorDe(fonteDoPodcastDaExp02em1b(prisma), prisma).estado("exp02em1b-v0", "escola", "turma", undefined, "turma");
     expect(r).toMatchObject({
       atividadeId: "turma",
       titulo: "Missão Tempestade — a cidade que ninguém viu inteira",
@@ -693,7 +693,7 @@ describe("o podcast FIXO da Missão Tempestade (2ª série do EM)", () => {
     const quota = {} as QuotaService;
     const podcast = motorDe(fonteDoPodcastDaExp02em1b(prisma), prisma);
     const erro = await new EscritaDasFalasService({} as AiProvider, quota, podcast)
-      .escrever("exp02em1b", "escola", "turma", undefined, "prof", "professor", {})
+      .escrever("exp02em1b-v0", "escola", "turma", undefined, "prof", "professor", {})
       .catch((e: unknown) => e);
     expect((erro as HttpException).getStatus()).toBe(404);
   });

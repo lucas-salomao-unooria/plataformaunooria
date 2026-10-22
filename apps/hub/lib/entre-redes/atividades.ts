@@ -1,4 +1,5 @@
 import type { CoberturasDaTurma } from "../a-selecao-tipos";
+import type { PacotesDaTurmaEfeito } from "../efeito-amplificador-tipos";
 import type { PacotesDaTurma } from "../jornal-escola-tipos";
 import type { PacotesDoJuri } from "../juri-estadual-tipos";
 import type { PacotesDaTurmaQuemMandou } from "../quem-mandou-tipos";
@@ -18,7 +19,7 @@ import type { PacotesDaTurmaQuemMandou } from "../quem-mandou-tipos";
  */
 
 /** As missões com atividade — o mesmo par de `equipes/regras.ts#EXPERIENCIAS_COM_ATIVIDADE` na api. */
-export const MISSOES_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b"] as const;
+export const MISSOES_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b"] as const;
 export type MissaoComAtividade = (typeof MISSOES_COM_ATIVIDADE)[number];
 
 export function temAtividades(expId: string | null | undefined): expId is MissaoComAtividade {
@@ -67,7 +68,8 @@ const ORIGEM = { ia: "gerada com IA", padrao: "conteúdo da Unooria" } as const;
  * filtro das turmas que podem fazer a missão — a do 7º ano não roda no 8º.
  */
 export function serieDaMissao(expId: string): string | null {
-  const m = /^exp(\d{2})(ef|em)\d+b$/.exec(expId);
+  /* `-vN` é a versão anterior (ADR-181): mora na mesma série. */
+  const m = /^exp(\d{2})(ef|em)\d+b(-v\d+)?$/.exec(expId);
   if (!m) return null;
   return `${Number(m[1])}${(m[2] as string).toUpperCase()}`;
 }
@@ -111,6 +113,8 @@ export function caminhoDoEmAndamento(expId: MissaoComAtividade, turmaId: string,
       return `/quem-mandou-isso/turmas/${t}/pacotes/${a}/em-andamento`;
     case "exp06ef1b":
       return `/juri-estadual/turmas/${t}/pacotes/${a}/em-andamento`;
+    case "exp02em1b":
+      return `/efeito-amplificador/turmas/${t}/pacotes/${a}/em-andamento`;
   }
 }
 
@@ -202,6 +206,18 @@ export function atividadesDoJuri(p: PacotesDoJuri, rotuloDaDisciplina: (slug: st
        com 409 `imagens-nao-aprovadas`. A que já está no ar continua no ar. */
     estado: h.ativo ? "em-andamento" : h.imagensAprovadas ? "pronta" : "em-preparo",
     criadaEm: h.criadoEm,
+    rodadas: h.rodadas,
+  }));
+}
+
+/** O Efeito Amplificador (ADR-181): o pacote homologado é a atividade, sem segunda fase de aprovação. */
+export function atividadesDoEfeito(p: PacotesDaTurmaEfeito, rotuloDaDisciplina: (slug: string) => string): AtividadeNaLista[] {
+  return p.historico.map((h) => ({
+    id: h.id,
+    titulo: h.tema,
+    detalhe: [rotuloDaDisciplina(h.disciplina), ORIGEM[h.origem]].join(" · "),
+    estado: h.ativo ? "em-andamento" : "pronta",
+    criadaEm: h.aprovadoEm,
     rodadas: h.rodadas,
   }));
 }

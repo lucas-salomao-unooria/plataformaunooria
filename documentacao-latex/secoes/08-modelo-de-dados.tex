@@ -2414,6 +2414,20 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   sem cartões seria recusada. \cd{classificacao} e \cd{mariana} ficam no
   \emph{CHECK} de passo, pelas sessões paradas ali. Nenhuma coluna sai, a RLS
   não muda.\\
+\zebra \arq{20261022120000\_\B{}exp02em1b\_\B{}versao\_\B{}anterior} & A Missão
+  Tempestade vira a versão anterior \cd{exp02em1b-v0} (\adrr{ADR-181}): o id como
+  VALOR em catálogo, versões, liberações, progresso, equipes, evidência, podcast,
+  disponibilidade e auditoria (FORCE RLS e trigger afrouxados só na transação, com
+  asserção no fim), e as sete tabelas renomeadas para \cd{exp02em1b\_\B{}v0\_*} com
+  \emph{constraints}, índices, políticas e as duas sequências. O \emph{CHECK}
+  \cd{podcast\_\B{}roteiros\_\B{}exp\_\B{}id\_\B{}formato} aceita o sufixo
+  \cd{-vN}. A telemetria fica.\\
+\arq{20261022130000\_\B{}exp02em1b\_\B{}efeito\_\B{}amplificador} & As quatro tabelas
+  de O Efeito Amplificador: \cd{exp02em1b\_pacotes} (com um em andamento e um
+  rascunho por turma, índices únicos parciais), \cd{\_gates\_turma}
+  (\cd{aberta} $|$ \cd{debate} $|$ \cd{explicar}), \cd{\_gates\_historico} e
+  \cd{\_sessoes} (o latch do Publicar com os quatro campos juntos), com RLS
+  forçada e \emph{CHECKs} espelhando \arq{conteudo.ts}.\\
 \bottomrule
 \end{tabularx}
 

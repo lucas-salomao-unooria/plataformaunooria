@@ -107,8 +107,8 @@ test("a ficha da exp08ef1b está no registro: o Canal A em toda habilidade, sem 
   expect(ficha?.habilidades.flatMap((h) => h.marcadores).every((m) => Boolean(m.rotulo))).toBe(true);
 });
 
-test("a ficha da exp02em1b está no registro: o Canal A em toda habilidade, sem pergunta (ADR-172)", () => {
-  const ficha = FICHAS.find((f) => f.expId === "exp02em1b");
+test("a ficha da exp02em1b-v0 (Tempestade) está no registro: o Canal A em toda habilidade, sem pergunta (ADR-172)", () => {
+  const ficha = FICHAS.find((f) => f.expId === "exp02em1b-v0");
   expect(ficha?.versao).toBe(2);
   expect(ficha?.respostas).toBeUndefined();
   expect(ficha?.contaAoEncerrarAMissao).toBe(true);

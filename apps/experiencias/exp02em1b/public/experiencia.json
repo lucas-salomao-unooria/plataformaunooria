@@ -1,17 +1,28 @@
 {
   "id": "exp02em1b",
-  "nome": "UnooriaAI — Decidir com o que os dados mostram",
-  "versao": "1.5.0",
+  "nome": "O Efeito Amplificador",
+  "versao": "2.0.0",
   "produto": "entre-redes",
-  "series": ["2EM"],
+  "series": [
+    "2EM"
+  ],
   "unidade": 1,
-  "capabilities": ["telemetria", "ia"],
-  "permissoes": ["forms"],
+  "publico": "estudante",
+  "viewport": {
+    "largura": 375,
+    "altura": 812
+  },
+  "capabilities": [
+    "telemetria",
+    "ia"
+  ],
+  "permissoes": [
+    "forms"
+  ],
   "verbos": {
-    "attempted": "briefing, recomeco",
-    "interacted": "turno, fontes, alocacao",
-    "progressed": "investigacao",
-    "scored": "desfecho",
-    "completed": "exp02em1b"
+    "attempted": "entrou na missão",
+    "interacted": "conversou com o UnooriaAI, publicou e agiu no feed",
+    "progressed": "entrou numa etapa",
+    "completed": "concluiu a missão"
   }
 }

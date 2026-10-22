@@ -1,116 +1,98 @@
 /**
- * Os textos e rótulos da tela, e as regras que só servem para HABILITAR botão.
+ * Só o que a TELA escreve — a copy revisada da esteira (`06-copy-strings-revisada`),
+ * literal, em pt-BR. O conteúdo que muda com a turma (o rascunho, as manchetes,
+ * os comentários, as falas do UnooriaAI) vem da api, do pacote que o professor
+ * homologou: corrigir uma palavra dele não pode exigir republicar o bundle.
  *
- * A fronteira que este arquivo respeita: aqui entra o que o estudante JÁ LÊ na tela
- * — nome de bairro, rótulo de fonte, aviso de portão. O que fica de fora é todo
- * o resto do catálogo de fontes da api (`modelo/conjuntos.ts`): `instrucao` (a
- * instrução de VIÉS que cada fonte injeta no Cientista), `vies` (o multiplicador
- * por bairro) e `cobertura`. Esses três são o instrumento, e são o material do
- * debate do professor — se algum deles aparecer aqui, a missão perdeu o ponto.
- *
- * Por isso este arquivo tem os 8 rótulos e NÃO importa o catálogo: um `import`
- * do objeto inteiro traria os campos secretos para o bundle mesmo que nenhuma
- * linha os usasse.
+ * Três vozes, e cada tela usa a sua (D0-6, teste do "quem fala"): a escola
+ * (abertura e conclusão), o UnooriaAI (polido) e o Unoovista (seco, de app).
  */
-
-/** Os 4 bairros. Nome público — o estudante lê em toda tela. */
-export const NOMES_DOS_BAIRROS: Record<string, string> = {
-  ribeirinha: "Ribeirinha",
-  valeverde: "Vale Verde",
-  morroalto: "Morro Alto",
-  industrial: "Industrial",
-};
-
-export function nomeDoBairro(slug: string | null | undefined): string {
-  if (!slug) return "—";
-  return NOMES_DOS_BAIRROS[slug] ?? slug;
-}
-
-/**
- * As 8 fontes, pelo rótulo curto — o mesmo que a api usa em `rotuloCurto`.
- *
- * É duplicação deliberada e mínima: são as palavras que o estudante vê no cartão
- * ("Depois de somar cadastro de moradores:"), e trazê-las pelo payload
- * obrigaria a api a mandar o catálogo em toda resposta de turno.
- */
-export const ROTULO_DA_FONTE: Record<string, string> = {
-  ocorrencias: "registros dos bombeiros",
-  sensores: "medições do rio",
-  censo: "cadastro de moradores",
-  previsao: "previsão do tempo",
-  satelite: "imagens de satélite",
-  telefonia: "sinal de celular",
-  viaria: "mapa de estradas",
-  estudo: "estudo de campo",
-};
-
-export function rotuloDaFonte(slug: string | null | undefined): string {
-  if (!slug) return "—";
-  return ROTULO_DA_FONTE[slug] ?? slug;
-}
-
-/**
- * Ponte de compatibilidade com o código portado, que chamava
- * `CONJUNTO_POR_SLUG.get(f)?.rotuloCurto`. Só o rótulo — nada mais do conjunto
- * existe deste lado.
- */
-export const CONJUNTO_POR_SLUG = {
-  get(slug: string): { rotuloCurto: string } | undefined {
-    const rotulo = ROTULO_DA_FONTE[slug];
-    return rotulo ? { rotuloCurto: rotulo } : undefined;
+export const TEXTOS = {
+  // ── a escola (seção unooria)
+  abertura: {
+    titulo: "O Efeito Amplificador",
+    gremio:
+      "Você assumiu a comunicação do Grêmio Estudantil. Sua missão é criar a publicação oficial da escola sobre uso consciente do celular e convivência.",
+    instrucao: "O UnooriaAI gerará a base da campanha. Examine cada frase antes de decidir o que vai para a rede.",
+    iniciar: "Iniciar Campanha",
+    preparo: "Aguardando a liberação do orientador do grêmio para começar...",
   },
-};
+  conclusao: {
+    titulo: "Missão Concluída",
+    mensagem:
+      "Você investigou os bastidores da criação com IA e da entrega algorítmica. O podcast de recapitulação sintetiza as aprendizagens da turma.",
+  },
 
-/** Espelho de `regras/orcamento.ts`. Quem DEBITA é a api; aqui é só o contador. */
-export const TETO_DE_PERGUNTAS = 3;
+  // ── o UnooriaAI (seção unooriaai)
+  chat: {
+    topo: "Campanha Grêmio 2026",
+    placeholder: "Pergunte ao UnooriaAI...",
+    enviar: "Enviar",
+    revisar: "Revisar Publicação",
+    nudge: "Dica: use uma das sugestões acima para começar seu rascunho.",
+    escrevendo: "Escrevendo…",
+    restantes: (n: number) => (n === 1 ? "1 mensagem restante" : `${n} mensagens restantes`),
+  },
+  previa: {
+    titulo: "Prévia da Publicação",
+    instrucao: "Verifique dados factuais, créditos de autoria e privacidade antes de enviar ao feed da escola.",
+    vazia: "O rascunho aparece aqui quando o UnooriaAI montar o post.",
+    remover: "Remover trecho",
+    devolver: "Devolver trecho",
+    removido: "Trecho removido da publicação.",
+    exportar: "Exportar para o Unoovista",
+    voltar: "Voltar ao chat",
+  },
+  manchete: {
+    titulo: "Escolha a Manchete de Capa",
+    declaracao: "Sua publicação será entregue no feed da comunidade escolar. Selecione o tom editorial da postagem:",
+    audiencia: "Divulgar para a turma com foco informativo",
+    publicar: "Publicar no Unoovista",
+  },
 
-export function perguntasRestantes(gastas: number): number {
-  return Math.max(0, TETO_DE_PERGUNTAS - gastas);
-}
+  // ── o Unoovista (seção unoovista)
+  relogio: [
+    "Publicado · Hoje, 16h00",
+    "Notificações disparadas · Hoje, 23h45",
+    "Pico de entrega algorítmica · Madrugada, 02h30",
+  ],
+  feed: {
+    autor: "Grêmio Estudantil · há 10h",
+    gremio: "gremio_estudantil",
+    alertaMetadados: "Seus dados de localização aproximada e metadados de atividade foram vinculados a este tópico quente.",
+    emAlta: "Em alta agora",
+    verMetricas: "Ver Métricas da Publicação",
+    comentarios: "Comentários",
+    verMais: "ver mais",
+    maisOpcoes: "Mais opções",
+    menuPost: "Opções da publicação",
+    menuComentario: "Opções do comentário",
+    restringir: "Restringir Comentários",
+    aviso: "Fixar aviso de cuidado",
+    arquivar: "Arquivar publicação",
+    arquivarBloqueado: "Veja as métricas da publicação antes de arquivá-la.",
+    privacidade: "Configurações de Privacidade",
+    denunciar: "Denunciar",
+    ajuda: "Central de Apoio / Ajuda e Segurança",
+    feitos: {
+      restringir: "Comentários restritos nesta publicação.",
+      aviso: "Aviso de cuidado fixado na publicação.",
+      arquivar: "Publicação arquivada.",
+      privacidade: "Conta alternada para privada com sucesso.",
+      denunciar: "Denúncia enviada para análise da moderação.",
+      ajuda: "Central de Apoio aberta: você pode conversar com alguém de confiança e com a equipe de segurança.",
+    },
+    metricasTitulo: "Métricas da Publicação",
+    entrega: "Entrega por faixa de horário",
+    abas: { inicio: "Início", buscar: "Buscar", publicar: "Publicar", atividade: "Atividade", perfil: "Perfil" },
+  },
+  explicar: {
+    concluir: "Concluir missão",
+    grafico: "Entrega por faixa de horário",
+  },
 
-export function rotuloDoOrcamento(gastas: number): string {
-  const faltam = perguntasRestantes(gastas);
-  if (faltam === 0) return "Perguntas: acabaram";
-  return `Perguntas: ${faltam} de ${TETO_DE_PERGUNTAS}`;
-}
-
-/**
- * O campo NÃO fecha quando as perguntas acabam: o estudante ainda precisa dizer
- * para onde vai cada equipe, e fechar a conversa aqui o deixaria com uma
- * decisão para tomar e nenhuma forma de tomá-la. O que acabou é a investigação.
- */
-export const AVISO_SEM_PERGUNTAS =
-  "Suas 3 perguntas acabaram. Você ainda pode mandar as equipes — diga para onde vai cada uma, ou escolha no mapa.";
-
-/** Espelho de `regras/justificativa.ts`. */
-export const INTUICAO = "intuicao";
-export const ROTULO_INTUICAO = "Foi intuição, não olhei dado";
-export const AVISO_FALTA_JUSTIFICAR = "Falta dizer por que cada equipe vai para lá.";
-
-/**
- * Quais equipes têm destino e ainda não têm por quê.
- *
- * Isto existe no cliente para HABILITAR o botão, e no servidor para DECIDIR: o
- * portão de verdade é `POST /unoogpt/simular`, que recusa com
- * `falta-justificar`. Um cliente adulterado não passa por aqui — passa pelo
- * servidor, e lá não passa.
- *
- * Equipe que fica na base não precisa justificar: não há escolha de lugar para
- * explicar.
- */
-export function faltaJustificar(
-  alocacao: { alfa: string | null; bravo: string | null },
-  justificativas: { alfa: string | null; bravo: string | null },
-): ("alfa" | "bravo")[] {
-  return (["alfa", "bravo"] as const).filter(
-    (equipe) => alocacao[equipe] !== null && !justificativas[equipe],
-  );
-}
-
-/** Espelho de `regras/passos.ts`. */
-export const ROTULO_PASSO: Record<string, string> = {
-  abertura: "A missão",
-  orientacao: "Orientação",
-  investigacao: "Investigação",
-  resultado: "Resultado",
-};
+  // ── as esperas e falhas, na voz da ficção (D0-1, D0-2)
+  pausa: "Aguardando a liberação do orientador do grêmio para avançar...",
+  rede: "Rede oscilando. Tentando reconectar ao UnooriaAI / Unoovista...",
+  erroDeAbertura: "Não deu para abrir agora. Tente de novo em instantes.",
+} as const;

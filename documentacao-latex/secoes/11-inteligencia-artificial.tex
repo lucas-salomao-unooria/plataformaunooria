@@ -55,6 +55,18 @@ Preparo do pacote & exp04ef1b, \arq{src/jornal-escola/} &
   \emph{enum} de três layouts, e nenhum texto. Não escolhe notícia, não
   reordena as vagas, não vê o gabarito. Qualquer falha cai no modelo
   automático (\adrr{ADR-117}).\\
+Preparo do pacote & exp02em1b, \arq{src/efeito-amplificador/} &
+  O rascunho do post com os três problemas (o dado inventado, o trecho copiado,
+  o colega exposto), a correção de cada um, o recorte, as manchetes e os
+  comentários da madrugada, sobre o tema do professor, com a quota dele. A
+  saída passa pela MESMA régua da homologação; sem saldo ou sem provedor, o
+  banco curado (\adrr{ADR-181}).\\
+\zebra Conversa do UnooriaAI & exp02em1b, \arq{src/efeito-amplificador/} &
+  \textbf{Em sala}, com a quota do \emph{estudante}: a INTENÇÃO do pedido livre
+  (lista fechada de nove) e o texto da resposta. Quem muda a prévia é o
+  servidor, pela intenção, e os guardrails sobre a saída são dele (a IA não
+  admite o problema sem ser questionada). Corrida de 12\,s, uma tentativa;
+  qualquer falha, a árvore de intenções responde (\adrr{ADR-181}).\\
 Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
   As quatro áreas e os quarenta estandes da mostra científica sobre o tema e
   os assuntos do professor (cinco chamadas: as categorias e as quatro áreas em
@@ -352,7 +364,7 @@ Uma linha por (escola, usuário, dia), com incremento atômico, resolve os dois.
 
 \begin{decisao}
 \textbf{O limite depende do PERFIL.} O estudante interage com o tutor da exp08ef1b
-e com os turnos da exp02em1b (Missão Tempestade), onde uma partida completa gasta
+e com os turnos da exp02em1b-v0 (Missão Tempestade), onde uma partida completa gasta
 cerca de \num{77000} \emph{tokens} medidos: o teto de estudante é calibrado em
 \num{300000} \emph{tokens}/dia, o que cabe três partidas completas. O valor
 inicial de \num{20000} estourava no quarto turno com erro de sala fechada. O

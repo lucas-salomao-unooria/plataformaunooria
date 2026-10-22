@@ -37,6 +37,7 @@ export const RECURSOS_DE_IA: Record<string, { chave: string; nome: string }> = {
   "agente-professor": { chave: "agente-professor", nome: "Agente de IA do professor" },
   ajuda: { chave: "ajuda", nome: "Ajuda (mascote e avatar)" },
   bemestar: { chave: "bemestar", nome: "Acompanhamento de bem-estar" },
+  "efeito-amplificador": { chave: "efeito-amplificador", nome: "O Efeito Amplificador" },
   "foto-conta": { chave: "foto-conta", nome: "O Que a Foto Conta" },
   "jornal-escola": { chave: "jornal-escola", nome: "Jornal da Escola" },
   "juri-estadual": { chave: "juri-estadual", nome: "O Júri Estadual de Projetos" },
@@ -49,7 +50,7 @@ export const RECURSOS_DE_IA: Record<string, { chave: string; nome: string }> = {
   planos: { chave: "planos", nome: "Plano de aula" },
   podcast: { chave: "podcast", nome: "Podcast da missão" },
   "quem-mandou-isso": { chave: "quem-mandou-isso", nome: "Quem Mandou Isso?" },
-  unoogpt: { chave: "unoogpt", nome: "Missão Tempestade" },
+  unoogpt: { chave: "unoogpt", nome: "Missão Tempestade (versão anterior)" },
   [RECURSO_SEM_ROTA]: { chave: RECURSO_SEM_ROTA, nome: "Tarefas fora de uma requisição" },
 };
 

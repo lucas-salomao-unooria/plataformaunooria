@@ -98,9 +98,9 @@ beforeAll(async () => {
   /* A PORTA DA SALA: sem estas linhas `garantirSessao` recusa com 403
      `missao-nao-liberada` e a suíte inteira falha. */
   for (const t of [turmaId, turmaBId]) {
-    await liberarParaTeste(prisma, ESCOLA, t, "exp02em1b", ana);
+    await liberarParaTeste(prisma, ESCOLA, t, "exp02em1b-v0", ana);
   }
-  await liberarParaTeste(prisma, OUTRA_ESCOLA, outraTurmaId, "exp02em1b", deOutraEscola);
+  await liberarParaTeste(prisma, OUTRA_ESCOLA, outraTurmaId, "exp02em1b-v0", deOutraEscola);
 });
 
 afterAll(async () => {
@@ -613,7 +613,7 @@ describe("a folha conta por COMPUTADOR quando a turma tem equipes", () => {
   });
 
   it("equipe de 3 com 1 login: UMA linha, a de quem entrou, e o retrato conta computadores", async () => {
-    const equipeId = await montarEquipe("exp02em1b", "Equipe 1", [alunos.caio, alunos.duda, alunos.enzo]);
+    const equipeId = await montarEquipe("exp02em1b-v0", "Equipe 1", [alunos.caio, alunos.duda, alunos.enzo]);
     const folha = await service.turmaDoProfessor(ESCOLA, turma2C);
 
     expect(folha.linhas).toHaveLength(2);
@@ -684,7 +684,7 @@ describe("as brechas da Tempestade", () => {
         })
       ).id;
     }
-    await liberarParaTeste(prisma, ESCOLA, turma2D, "exp02em1b", quem.gil);
+    await liberarParaTeste(prisma, ESCOLA, turma2D, "exp02em1b-v0", quem.gil);
     /* A sessão nasce no bootstrap da tela, como na aula. */
     for (const id of Object.values(quem)) await service.sessao(ESCOLA, id);
   });

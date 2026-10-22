@@ -18,13 +18,15 @@
 #   app-92  Vite do planejamento de ensino, ferramenta do professor (5180)
 #   app-70  Vite da Vila do Lume, transversal (5177 — a 5176 é da app-91)
 #   app-91  Vite do check-in de bem-estar, ferramenta do professor (5176)
-#   exp02em1b  Vite do unooGPT, a Missão Tempestade (5178)
+#   exp02em1b  Vite de O Efeito Amplificador, UnooriaAI + Unoovista (5178)
 #   exp07ef1b  Vite de A Seleção, o clone de rede social de fotos (5179)
 #   exp06ef2b  Vite de O Rastro do Boato, o clone de mensageiro (5181)
 #   exp08ef4b  Vite de O Manifesto da IA, o clone do assistente (5182)
 #   exp01ef1b  Vite de O Que a Foto Conta, o clone do mural (5183)
 #   exp05ef1b  Vite de Quem mandou isso?, o clone do mensageiro (5184)
 #   exp06ef1b  Vite de O Júri Estadual de Projetos, o clone de rede social de fotos (5185)
+#   exp02em1b-v0  Vite da Missão Tempestade, a VERSÃO ANTERIOR da 2ª série EM (5186,
+#              ADR-181) — só no profile `anteriores`: `docker compose --profile anteriores …`
 #
 # As experiências ENTRAM aqui — ao contrário do compose de produção, onde elas
 # não existem porque em produção são bundles estáticos num bucket, não serviços.
@@ -64,6 +66,7 @@ x-fonte: &fonte
   - nm-app70:/repo/apps/experiencias/app-70-vila-do-lume/node_modules
   - nm-app91:/repo/apps/experiencias/app-91-bem-estar/node_modules
   - nm-exp02em1b:/repo/apps/experiencias/exp02em1b/node_modules
+  - nm-exp02em1b-v0:/repo/apps/experiencias/exp02em1b-v0/node_modules
   - nm-exp07ef1b:/repo/apps/experiencias/exp07ef1b/node_modules
   - nm-exp06ef2b:/repo/apps/experiencias/exp06ef2b/node_modules
   - nm-exp05ef1b:/repo/apps/experiencias/exp05ef1b/node_modules
@@ -226,7 +229,7 @@ services:
       # Toda porta de exp entra no CORS: sem a :5175 o plano de aula embedado
       # morre com "Failed to fetch", sem a :5176 o check-in de bem-estar e sem
       # a :5177 a Vila do Lume não abre nem conclui a partida.
-      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180,http://localhost:5181,http://localhost:5182,http://localhost:5183,http://localhost:5184,http://localhost:5185
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180,http://localhost:5181,http://localhost:5182,http://localhost:5183,http://localhost:5184,http://localhost:5185,http://localhost:5186
       # O FUSO da plataforma inteira (ADR-99). Ausente = America/Sao_Paulo.
       # O MESMO valor vai para o hub abaixo: 1 contrato = 1 stack, e api e hub
       # que discordem do fuso devolvem o defeito da ADR-98 — entre as 21h e a
@@ -392,6 +395,19 @@ services:
       deps:
         condition: service_completed_successfully
 
+  # A Missão Tempestade, versão anterior (ADR-181): fora do catálogo, mas no ar.
+  # Fica num profile para não pesar na VM do Docker quando ninguém a usa.
+  exp02em1b-v0:
+    <<: *dev
+    profiles: ["anteriores"]
+    working_dir: /repo/apps/experiencias/exp02em1b-v0
+    command: pnpm exec vite --host 0.0.0.0 --port 5186 --strictPort
+    ports:
+      - "5186:5186"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
   exp07ef1b:
     <<: *dev
     working_dir: /repo/apps/experiencias/exp07ef1b
@@ -474,6 +490,7 @@ volumes:
   nm-app70:
   nm-app91:
   nm-exp02em1b:
+  nm-exp02em1b-v0:
   nm-exp07ef1b:
   nm-exp06ef2b:
   nm-exp05ef1b:
