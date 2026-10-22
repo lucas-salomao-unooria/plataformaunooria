@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{179 decisões}, numeradas até ADR-179: a 179 (as réguas do PO no Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 178 (as quatro fotos do carrossel do Júri Estadual) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{180 decisões}, numeradas até ADR-180: a 180 (as respostas do PO sobre o Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 179 (as réguas do PO no Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 178 (as quatro fotos do carrossel do Júri Estadual) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -229,7 +229,8 @@ que a cercam.
 \zebra \adrr{ADR-176} & O Júri Estadual depois da aula de teste: a separação vai para as pastas do feed, o caso Mariana sai e a Galeria Oculta fica enxuta & 2026-10-20 & Aceita; supera em parte a \adrr{ADR-137}, a \adrr{ADR-157}, a \adrr{ADR-164} e a \adrr{ADR-174}\\
 \adrr{ADR-177} & Quem mandou isso? depois do teste do time: o alerta do grupo no lugar do cartão de frases e o robô do grupo no lugar da regra do tio & 2026-10-20 & Aceita; supera em parte a \adrr{ADR-171}\\
 \zebra \adrr{ADR-178} & O carrossel do Júri Estadual com quatro fotos geradas: o projeto de perto, a equipe no estande e os bastidores, cada uma com o seu pedido & 2026-10-20 & Aceita; estende a \adrr{ADR-151} e a \adrr{ADR-164}\\
-\adrr{ADR-179} & O Unoovista adota as réguas do PO validadas com a pedagogia, e os termos de uso voltam para a entrada & 2026-10-21 & Aceita; substitui partes da \adrr{ADR-167}\\
+\adrr{ADR-179} & O Unoovista adota as réguas do PO validadas com a pedagogia, e os termos de uso voltam para a entrada & 2026-10-21 & Aceita; substitui partes da \adrr{ADR-167}; ajustada pela \adrr{ADR-180}\\
+\adrr{ADR-180} & As respostas do PO no Unoovista: a EF08CO11 só pelo Raio-x, o chute fora de \enquote{em processo} e ridicularizar não atinge & 2026-10-22 & Aceita; ajusta a \adrr{ADR-179}\\
 \bottomrule
 \end{tabularx}
 
@@ -16376,4 +16377,84 @@ resposta).}
 \textbf{Gatilho.} A resposta do PO às quatro perguntas do card: cada \enquote{sim}
 às nossas sugestões é uma mudança pequena nas réguas puras de
 \arq{motor/canal-a/} e uma versão nova da ficha.
+
+\section{ADR-180 --- As respostas do PO no Unoovista: a EF08CO11 só pelo Raio-x, o chute fora de \enquote{em processo} e ridicularizar não atinge}
+\label{adr:exp08ef1b-respostas-do-po}
+
+\textbf{Data.} 2026-10-22. \textbf{Status.} Aceita. \textbf{Ajusta} a
+\adrr{ADR-179}, respondendo às perguntas que ela deixou no card da missão.
+
+\textbf{Contexto.} A \adrr{ADR-179} implementou as réguas do PO como ele as
+escreveu e levou ao card quatro consequências que mudavam o nível de algum
+estudante. O PO respondeu: (1) aceita a régua do Raio-x sem o chute em
+\enquote{em processo}; (2) aceita que a mensagem que ridiculariza sempre dê
+\enquote{não atingiu}; (3) o Raio-x completado com posts não vistos (já
+feito); (4) a EF08CO11 fica \textbf{só} com o Raio-x. E pediu um ajuste de
+tom: os textos que o estudante lê tinham \enquote{cara de texto de IA}.
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Raio-x}: 5--6 acertos atingiu, \textbf{4} em processo,
+    \textbf{0--3} não atingiu. A regra dos 3 deixa quem marca a mesma opção
+    nos 6 posts, sem ler, acertar até 3; com 3 em \enquote{em processo}, o
+    chute subia de nível.
+  \item \textbf{Envio}: a mensagem que ridiculariza o outro lado dá
+    \enquote{não atingiu} qualquer que seja a contagem dos outros critérios.
+    O resto segue a contagem (3 / 1--2 / 0).
+  \item \textbf{A reflexão sai da evidência e da IA}: o marcador
+    \cd{reflexao} sai da ficha (versão 4), o serviço que a lia e o prompt
+    saem do código, e a tela da reflexão diz só \enquote{Seu professor lê
+    este texto.} (experiência 1.5.1). A cópia do primeiro texto, que existia
+    para o professor conferir a leitura, deixa de ser gravada: dado de menor
+    sem uso não se guarda. A página de privacidade deixa de dizer que a
+    reflexão do Unoovista vai para a IA.
+  \item \textbf{O tom dos textos do estudante}: a revelação, a reflexão, as
+    quatro mensagens do envio, o relatório e os avisos do feed foram
+    reescritos sem os vícios de texto gerado --- o travessão em toda frase, o
+    \enquote{não é X, é Y}, a frase de efeito em três batidas --- e no
+    registro de quem fala com um estudante de 13 anos. As cinco regras dos
+    termos e o texto jurídico da entrada ficam como estão: são do PO,
+    validados com a pedagogia, e o jurídico é denso de propósito. A cópia
+    gêmea do hub (o guia do professor) muda junto.
+  \item A tabela \cd{exp08ef1b\_leituras\_da\_reflexao} e a coluna
+    \cd{primeiro\_texto} ficam no esquema, sem escrita nova. As marcas
+    \cd{reflexao} já gravadas ficam no banco e não contam: o encerramento só
+    transforma em nível a marca de marcador que está na ficha vigente.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter a leitura da IA só como apoio ao professor}, sem nível:
+    custo de IA e dado de menor no \emph{provider} para uma sugestão que não
+    conta. O professor lê a reflexão inteira na janela do estudante.
+  \item \textbf{Deixar o tom para uma versão seguinte}, como o PO sugeriu no
+    card: o dono do produto preferiu não deixar pendência, e a troca é só de
+    texto.
+  \item \textbf{Apagar a tabela das leituras numa migração}: ela tem
+    \cd{escola\_id} e RLS, e apagar dado com tenancy por migração não cabe
+    nesta frente; fica sem escrita até uma limpeza decidida à parte.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Quem não fez o Raio-x fica \enquote{Não avaliado} na
+    EF08CO11}, sem o segundo caminho que a reflexão dava. Com o Raio-x
+    aparecendo sempre (\adrr{ADR-179}), isso só atinge quem faltou ou não
+    chegou à tarefa; o professor ajusta à mão.
+  \item \textbf{O mecanismo e a abrangência} (o que ficou de fora), que a
+    leitura da reflexão media, deixam de ser medidos: o Raio-x mede os vieses
+    das fontes.
+  \item \textbf{O 6b continua sem o julgamento crítico} que a EF08CO09 pede
+    (\enquote{analisar criticamente}): a observação foi ao card e o PO não
+    a contestou.
+  \item Atividades abertas no dia da troca podem ter marcas \cd{reflexao} que
+    passam a não contar: a EF08CO11 desses estudantes fica com o Raio-x, ou
+    \enquote{Não avaliado}.
+\end{itemize}
+
+\textbf{Gatilho.} A pedagogia pedir de novo o mecanismo e a abrangência na
+EF08CO11, ou o PO pedir a reflexão como apoio ao professor.
 

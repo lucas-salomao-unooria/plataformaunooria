@@ -72,7 +72,7 @@ export function Reflexao({ runId, aoReverRelatorio }: { runId: string; aoReverRe
       await api.post(`/runs/${runId}/reflexao`, { texto: texto.trim() });
       setSalvo(true);
     } catch {
-      setErro('Não deu pra salvar agora. Tenta de novo — seu texto está aqui.');
+      setErro('Não deu pra salvar agora. Tenta de novo, seu texto continua aqui.');
     } finally {
       setSalvando(false);
     }
@@ -84,16 +84,13 @@ export function Reflexao({ runId, aoReverRelatorio }: { runId: string; aoReverRe
         <header className="flex flex-col gap-3">
           <p className="text-[12px] uppercase tracking-widest text-white/60">última coisa</p>
           <h1 className="text-[21px] font-bold leading-tight">
-            Você viu o que seu feed te mostrou — e o que ele deixou de fora.
+            Você viu o que o seu feed mostrou e o que ele deixou de fora.
           </h1>
           <p className="text-[17px] font-semibold leading-snug text-brand-coral">
             O que isso te faz pensar?
           </p>
-          {/* A transparência da leitura pela IA (ADR-167): quem lê, o quê, e quem decide. */}
-          <p className="text-[13px] leading-relaxed text-white/70">
-            Seu professor lê este texto. Um programa de IA lê o primeiro texto que você salvar e sugere a ele
-            um nível; quem decide é ele.
-          </p>
+          {/* Quem lê o texto: só o professor. A leitura pela IA saiu na ADR-180. */}
+          <p className="text-[13px] leading-relaxed text-white/70">Seu professor lê este texto.</p>
         </header>
 
         {/*
@@ -107,14 +104,14 @@ export function Reflexao({ runId, aoReverRelatorio }: { runId: string; aoReverRe
           <ul className="mt-2 flex list-disc flex-col gap-1.5 pl-4 text-[13px] leading-relaxed text-white/70">
             <li>O que te fez salvar justamente os posts que você salvou?</li>
             <li>Por que o feed de quem senta do seu lado era diferente do seu?</li>
-            <li>Onde mais na sua vida isso acontece — e o que você faz com isso?</li>
+            <li>Onde mais isso acontece na sua vida? O que você faz quando percebe?</li>
           </ul>
         </details>
 
         <label className="flex flex-col gap-1.5">
           <textarea
             className="min-h-[220px] w-full rounded-xl border border-white/20 bg-white/5 p-3 text-[15px] leading-relaxed text-white placeholder:text-white/60 focus:border-brand-coral"
-            placeholder="Escreve com suas palavras — umas duas linhas já bastam."
+            placeholder="Escreve do seu jeito. Duas linhas já bastam."
             value={texto}
             disabled={!carregado}
             onChange={(evento) => {
@@ -125,7 +122,7 @@ export function Reflexao({ runId, aoReverRelatorio }: { runId: string; aoReverRe
           <span className="flex justify-between text-[12px] text-white/50">
             <span>
               {faltam > 0
-                ? `escreve mais um pouco — faltam ${faltam} caracteres`
+                ? `escreve mais um pouco: faltam ${faltam} caracteres`
                 : `${texto.trim().length} caracteres · escreve o quanto quiser`}
             </span>
             {salvo ? <span className="text-brand-coral">salvo</span> : null}

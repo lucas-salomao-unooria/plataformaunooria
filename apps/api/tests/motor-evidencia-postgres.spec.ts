@@ -1,13 +1,10 @@
 import { HttpException } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
 
-import type { AiJsonRequest, AiProvider, AiResult } from "../src/ai/provider";
-import { QuotaService, perfilDaQuota } from "../src/ai/quota.service";
 import { MockProvider } from "../src/ai/mock.provider";
 import { limparDadosDosEstudantes } from "../src/atividades/manutencao";
 import { EquipesService } from "../src/equipes/equipes.service";
 import { EvidenciasService } from "../src/evidencias/evidencias.service";
-import { LeituraDaReflexaoService } from "../src/motor/canal-a/leitura-da-reflexao.service";
 import { TarefasDoUnoovista } from "../src/motor/canal-a/tarefas.service";
 import { TAREFAS } from "../src/motor/canal-a/vocabulario";
 import { RODADA_DO_UNOOVISTA } from "../src/motor/contexto-da-evidencia";
@@ -19,12 +16,13 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
  * O CANAL A DO UNOOVISTA (exp08ef1b, ADR-167) no Postgres: a FICHA REAL do
- * registro, as tarefas 6a, 6b e 6c pelo serviço real, a leitura da reflexão
- * com uma IA falsa, e o ciclo de vida do reinício e do "Apagar as sessões".
+ * registro, as tarefas 6a, 6b e 6c pelo serviço real, a reflexão (guardada,
+ * sem leitura da IA desde a ADR-180), e o ciclo de vida do reinício e do
+ * "Apagar as sessões".
  *
  * O que só o banco responde: as travas por fase e pelo fim da revelação, o
  * "vale o primeiro envio" mesmo depois do reinício (as marcas não saem), a
- * unicidade da leitura, a cascata, os CHECKs contra o vocabulário do código e
+ * cascata, os CHECKs contra o vocabulário do código e
  * a RLS das duas tabelas novas.
  *
  * UMA ESCOLA POR SUÍTE: o Jest paraleliza, e limpeza compartilhada corromperia
@@ -37,51 +35,10 @@ const UNOOVISTA = "exp08ef1b";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
 
-/** A IA da leitura, controlada pela suíte. Por padrão ela FALHA, como o mock. */
-class IaControlada implements AiProvider {
-  resposta: unknown = null;
-  /** Uma resposta por chamada, na ordem; `null` = a chamada falha. Vazia, vale `resposta`. */
-  fila: unknown[] = [];
-  chamadas = 0;
-  prompts: string[] = [];
-  async generateJson<T>(req: AiJsonRequest<T>): Promise<T> {
-    this.chamadas += 1;
-    this.prompts.push(req.prompt);
-    req.aoUsarTokens?.(40);
-    const resposta = this.fila.length > 0 ? this.fila.shift() : this.resposta;
-    if (resposta === null) throw new Error("IA de teste desligada");
-    return req.validar(resposta);
-  }
-  generate(): Promise<AiResult> {
-    throw new Error("não usado");
-  }
-  generateImage(): Promise<Buffer> {
-    throw new Error("não usado");
-  }
-  generateSpeech(): Promise<Buffer> {
-    throw new Error("não usado");
-  }
-  conversarEmFluxo(): never {
-    throw new Error("não usado");
-  }
-  conversar(): Promise<AiResult> {
-    throw new Error("não usado");
-  }
-}
-
-class QuotaZeradaDoEstudante extends QuotaService {
-  override async limite(perfil: string): Promise<number> {
-    return perfilDaQuota(perfil) === "estudante" ? 0 : super.limite(perfil);
-  }
-}
-
-const ia = new IaControlada();
-const quota = new QuotaService(prisma);
 const evidencias = new EvidenciasService(prisma, new EquipesService(prisma));
 evidencias.onModuleInit();
 const tarefas = new TarefasDoUnoovista(prisma, evidencias);
-const leitura = new LeituraDaReflexaoService(prisma, ia, quota, evidencias, 300, 10);
-const runsController = new RunsController(prisma, new MockProvider(), tarefas, leitura);
+const runsController = new RunsController(prisma, new MockProvider(), tarefas);
 
 let turmaId = "";
 let professorId = "";
@@ -465,143 +422,35 @@ function pegarDoisLados(ids: string[]): string[] {
   return [a!, b!];
 }
 
-describe("a reflexão lida pela IA", () => {
+describe("a reflexão: guardada, e sem leitura da IA (ADR-180)", () => {
   const salvar = (nome: string, texto: string) =>
     noContexto(() => runsController.salvarReflexao(runs[nome]!, { texto }, req(nome)));
-  const leituraDe = (nome: string, atividade = atividadeId) =>
-    prisma.leituraDaReflexao.findUnique({
-      where: { activityId_estudanteId: { activityId: atividade, estudanteId: estudantes[nome]! } },
-    });
-  const esperarLeitura = async (nome: string) => {
-    for (let i = 0; i < 60; i++) {
-      const l = await leituraDe(nome);
-      if (l?.lidaEm) return l;
-      await new Promise((r) => setTimeout(r, 50));
-    }
-    throw new Error("a leitura não terminou");
-  };
 
-  test("o primeiro salvamento guarda o primeiro texto e cria a leitura; a IA marca a EF08CO11 como sugestão", async () => {
-    ia.resposta = { resultado: "em_processo", motivo: "mecanismo-sem-gesto-proprio" };
+  test("o salvamento guarda o texto, sem cópia do primeiro; nenhuma leitura nasce e a EF08CO11 não recebe marca", async () => {
     await fase(runs.caio!, "reflexao");
     const primeiro = "O feed escolhia os posts pelo que eu curtia e salvava, e foi mostrando mais do mesmo.";
     await salvar("caio", primeiro);
-    const lida = await esperarLeitura("caio");
-    expect(lida).toMatchObject({ resultado: "nivel", nivel: "em_processo", motivo: "mecanismo-sem-gesto-proprio" });
-    expect(JSON.stringify(lida)).not.toContain("curtia");
-    expect(await evidenciaDe(estudantes.caio!, "EF08CO11")).toMatchObject({ status: "em_processo", marcador: "reflexao" });
-    expect((await prisma.reflexao.findUniqueOrThrow({ where: { runId: runs.caio! } })).primeiroTexto).toBe(primeiro);
+    expect(await prisma.reflexao.findUniqueOrThrow({ where: { runId: runs.caio! } })).toMatchObject({ texto: primeiro, primeiroTexto: null });
+    expect(await leituraDe2("caio")).toBeNull();
+    expect((await evidenciaDe(estudantes.caio!, "EF08CO11"))?.marcador).not.toBe("reflexao");
   });
 
-  test("o segundo salvamento troca o texto, mas não o primeiro, e a IA não lê de novo", async () => {
-    const chamadas = ia.chamadas;
+  test("o segundo salvamento troca o texto", async () => {
     await salvar("caio", "Agora escrevo outra coisa bem diferente, e bem mais longa do que antes, com outro assunto.");
-    await new Promise((r) => setTimeout(r, 150));
-    expect(ia.chamadas).toBe(chamadas);
     const reflexao = await prisma.reflexao.findUniqueOrThrow({ where: { runId: runs.caio! } });
+    expect(reflexao).toMatchObject({ primeiroTexto: null });
     expect(reflexao.texto).toMatch(/^Agora/);
-    expect(reflexao.primeiroTexto).toMatch(/^O feed/);
-  });
-
-  test("falha da IA também encerra a leitura (depois das 3 tentativas): sem marca, e nada é lido de novo", async () => {
-    ia.resposta = null;
-    await fase(runs.bia!, "reflexao");
-    await salvar("bia", "Eu achei muito legal a aula de hoje e gostei bastante de usar o aplicativo do feed.");
-    expect(await esperarLeitura("bia")).toMatchObject({ resultado: "falha", nivel: null, tentativas: 3 });
-    expect(await evidenciaDe(estudantes.bia!, "EF08CO11")).toBeNull();
-  });
-
-  /** Uma leitura agendada à mão, como o primeiro salvamento a criaria. */
-  async function agendar(nome: string, runId: string, activityId: string, turma: string | null, texto: string) {
-    await prisma.reflexao.create({ data: { runId, escolaId: ESCOLA, texto: `${texto} (editado depois)`, primeiroTexto: texto } });
-    const l = await prisma.leituraDaReflexao.create({
-      data: { escolaId: ESCOLA, activityId, estudanteId: estudantes[nome]!, runId },
-      select: { id: true },
-    });
-    return { leituraId: l.id, escolaId: ESCOLA, estudanteId: estudantes[nome]!, activityId, turmaId: turma };
-  }
-
-  test("falha técnica 2 vezes e acerta na 3ª: a marca é gravada, e as 3 leram o MESMO primeiro texto", async () => {
-    ia.fila = [null, { resultado: "nivel_invalido", motivo: "x" }, { resultado: "em_processo", motivo: "mecanismo-sem-gesto-proprio" }];
-    const antes = ia.prompts.length;
-    await leitura.ler(await agendar("dani", runs.dani!, atividadeLimitadaId, turmaId, "O feed escolhia pelo que eu curtia."));
-    const lida = await prisma.leituraDaReflexao.findUniqueOrThrow({
-      where: { activityId_estudanteId: { activityId: atividadeLimitadaId, estudanteId: estudantes.dani! } },
-    });
-    expect(lida).toMatchObject({ resultado: "nivel", nivel: "em_processo", tentativas: 3 });
-    const lidos = ia.prompts.slice(antes);
-    expect(lidos).toHaveLength(3);
-    expect(lidos.every((p) => p.includes("O feed escolhia pelo que eu curtia.") && !p.includes("editado depois"))).toBe(true);
-    expect(await evidenciaDe(estudantes.dani!, "EF08CO11", atividadeLimitadaId)).toMatchObject({ status: "em_processo", marcador: "reflexao" });
-  });
-
-  test("falha técnica 3 vezes: a leitura fica \"falha\" e encerra", async () => {
-    ia.fila = [null, null, null];
-    const antes = ia.chamadas;
-    const gil = await criarRun("gil", atividadeSemTurmaId, [], "reflexao");
-    await leitura.ler(await agendar("gil", gil, atividadeSemTurmaId, null, "Um texto qualquer sobre o feed."));
-    expect(ia.chamadas - antes).toBe(3);
-    expect(
-      await prisma.leituraDaReflexao.findUniqueOrThrow({
-        where: { activityId_estudanteId: { activityId: atividadeSemTurmaId, estudanteId: estudantes.gil! } },
-      }),
-    ).toMatchObject({ resultado: "falha", tentativas: 3, nivel: null });
-  });
-
-  test("\"sem marca\" de primeira encerra na hora, sem nova tentativa", async () => {
-    ia.fila = [{ resultado: "sem_marca", motivo: "outro-texto" }];
-    const antes = ia.chamadas;
-    await leitura.ler(await agendar("fabi", runs.fabi!, atividadeSemTurmaId, null, "Gostei da aula."));
-    expect(ia.chamadas - antes).toBe(1);
-    expect(
-      await prisma.leituraDaReflexao.findUniqueOrThrow({
-        where: { activityId_estudanteId: { activityId: atividadeSemTurmaId, estudanteId: estudantes.fabi! } },
-      }),
-    ).toMatchObject({ resultado: "sem_marca", tentativas: 1 });
-  });
-
-  test("sem saldo não é falha técnica: encerra sem tentar de novo", async () => {
-    const semSaldo = new LeituraDaReflexaoService(prisma, ia, new QuotaZeradaDoEstudante(prisma), evidencias, 300, 10);
-    const antes = ia.chamadas;
-    const ana2 = await criarRun("ana", atividadeSemTurmaId, [], "reflexao");
-    await semSaldo.ler(await agendar("ana", ana2, atividadeSemTurmaId, null, "Texto."));
-    expect(ia.chamadas).toBe(antes);
-    expect(
-      await prisma.leituraDaReflexao.findUniqueOrThrow({
-        where: { activityId_estudanteId: { activityId: atividadeSemTurmaId, estudanteId: estudantes.ana! } },
-      }),
-    ).toMatchObject({ resultado: "falha", motivo: "sem-saldo", tentativas: 1 });
-  });
-
-  test("sem saldo: a IA nem é chamada, e a leitura encerra como falha", async () => {
-    const semSaldo = new LeituraDaReflexaoService(prisma, ia, new QuotaZeradaDoEstudante(prisma), evidencias, 300);
-    ia.resposta = { resultado: "atingiu", motivo: "mecanismo-e-gesto-proprio" };
-    const antes = ia.chamadas;
-    expect(await semSaldo.classificar(ESCOLA, estudantes.ana!, "texto")).toEqual({ ok: false, codigo: "sem-saldo" });
-    expect(ia.chamadas).toBe(antes);
-  });
-
-  test("motivo incoerente com o resultado: saída inválida", async () => {
-    ia.resposta = { resultado: "atingiu", motivo: "outro-texto" };
-    expect(await leitura.classificar(ESCOLA, estudantes.eli!, "texto")).toEqual({ ok: false, codigo: "saida-invalida" });
-  });
-
-  test("quem não terminou a revelação não tem a reflexão lida", async () => {
-    await fase(runs.eli!, "reflexao");
-    await salvar("eli", "Escrevi a minha reflexão sobre o feed, que mostrava posts de um lado só para mim.");
-    expect(await leituraDe("eli")).toBeNull();
   });
 });
 
 describe("o reinício e o \"Apagar as sessões\"", () => {
-  test("o reinício apaga as tarefas, o fim da revelação e a reflexão — e a leitura e a marca ficam", async () => {
+  test("o reinício apaga as tarefas, o fim da revelação e a reflexão — e a marca fica", async () => {
     const prof = { auth: { usuarioId: professorId, escolaId: ESCOLA, perfil: "professor" as const } } as never;
     await noContexto(() => runsController.reset(runs.caio!, prof));
     const run = await prisma.run.findUniqueOrThrow({ where: { id: runs.caio! } });
     expect(run.revelacaoConcluidaEm).toBeNull();
     expect(await prisma.tarefaDaSessao.count({ where: { runId: runs.caio! } })).toBe(0);
     expect(await prisma.reflexao.findUnique({ where: { runId: runs.caio! } })).toBeNull();
-    expect(await leituraDe2("caio")).not.toBeNull();
     expect(await evidenciaDe(estudantes.caio!, "EF08CO09")).toMatchObject({ status: "atingiu" });
   });
 
@@ -624,20 +473,9 @@ describe("o reinício e o \"Apagar as sessões\"", () => {
     expect(linha.refeita).toBe(true);
   });
 
-  test("a leitura é única por atividade e estudante: depois do reinício, a reflexão nova não é lida", async () => {
-    const chamadas = ia.chamadas;
-    await fase(runs.caio!, "reflexao");
-    await noContexto(() =>
-      runsController.salvarReflexao(runs.caio!, { texto: "Um texto novo depois do reinício, falando do feed e do que ficou de fora." }, req("caio")),
-    );
-    await new Promise((r) => setTimeout(r, 150));
-    expect(ia.chamadas).toBe(chamadas);
-  });
-
-  test("\"Apagar as sessões\" leva a leitura e as tarefas em cascata, e a marca junto (ADR-155)", async () => {
+  test("\"Apagar as sessões\" leva as tarefas em cascata, e a marca junto (ADR-155)", async () => {
     const atividade = await prisma.activity.findUniqueOrThrow({ where: { id: atividadeId } });
     await prisma.comTenancy((tx) => limparDadosDosEstudantes(tx, atividade), ESCOLA);
-    expect(await prisma.leituraDaReflexao.count({ where: { activityId: atividadeId } })).toBe(0);
     expect(await prisma.tarefaDaSessao.count({ where: { escolaId: ESCOLA, run: { activityId: atividadeId } } })).toBe(0);
     expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, atividadeId } })).toBe(0);
   });

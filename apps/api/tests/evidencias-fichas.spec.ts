@@ -91,14 +91,14 @@ test("a ficha da exp05ef1b está no registro: o alerta e o robô do grupo, sem p
 
 test("a ficha da exp08ef1b está no registro: o Canal A em toda habilidade, sem pergunta (ADR-167)", () => {
   const ficha = FICHAS.find((f) => f.expId === "exp08ef1b");
-  expect(ficha?.versao).toBe(3); // réguas do PO validadas em 2026-10-21 (ADR-179)
+  expect(ficha?.versao).toBe(4); // as respostas do PO em 2026-10-22 (ADR-180)
   expect(
     ficha?.habilidades.map((h) => [
       h.codigo,
       h.marcadores.map((m) => [m.id, m.tipo, m.limitadoPelaAtividade ?? false]),
     ]),
   ).toEqual([
-    ["EF08CO11", [["raio-x", "acao", false], ["reflexao", "acao", false]]],
+    ["EF08CO11", [["raio-x", "acao", false]]],
     ["EF08CO09", [["termos", "acao", false]]],
     ["EF08CO07", [["envio", "acao", false], ["envio-sem-confiabilidade", "acao", true]]],
   ]);

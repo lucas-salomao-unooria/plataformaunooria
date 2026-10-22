@@ -778,14 +778,10 @@ export class AtividadesController {
           engineState: true,
           estudante: { select: { username: true, displayName: true } },
           conclusao: { select: { inclinacao: true } },
-          reflexao: { select: { texto: true, primeiroTexto: true, createdAt: true } },
+          reflexao: { select: { texto: true } },
           studentPosts: { select: { texto: true, ladoInferido: true, createdAt: true } },
           revelacaoConcluidaEm: true,
           tarefas: { select: { tarefa: true, enviadaEm: true, refeita: true, frase: true } },
-          leiturasDaReflexao: {
-            where: { activityId: id },
-            select: { resultado: true, nivel: true, motivo: true, tentativas: true, criadaEm: true, lidaEm: true },
-          },
         },
       });
       if (!run) naoEncontrado();
@@ -968,28 +964,11 @@ function resumoDoCanalA(r: { fase: string; revelacaoConcluidaEm: Date | null; ta
 }
 
 /**
- * O Canal A no detalhe do estudante — só o professor lê esta rota.
- *
- * O "texto lido" só é o primeiro texto da reflexão de AGORA quando ela é
- * anterior à leitura (decisão 7a de 2026-10-16): a reflexão mais nova que a
- * leitura nasceu depois de um reinício, e o texto que a IA leu saiu com a
- * reflexão antiga. Aí o professor vê o nível e o motivo, e não o texto.
+ * O Canal A no detalhe do estudante — só o professor lê esta rota. A leitura
+ * da reflexão pela IA saiu (ADR-180): a reflexão aparece inteira no detalhe,
+ * fora do Canal A.
  */
-function canalADoEstudante(run: {
-  revelacaoConcluidaEm: Date | null;
-  tarefas: TarefaDaRun[];
-  reflexao: { primeiroTexto: string | null; createdAt: Date } | null;
-  leiturasDaReflexao: {
-    resultado: string | null;
-    nivel: string | null;
-    motivo: string | null;
-    tentativas: number;
-    criadaEm: Date;
-    lidaEm: Date | null;
-  }[];
-}) {
-  const leitura = run.leiturasDaReflexao[0] ?? null;
-  const reflexaoLida = Boolean(leitura && run.reflexao && run.reflexao.createdAt.getTime() <= leitura.criadaEm.getTime());
+function canalADoEstudante(run: { revelacaoConcluidaEm: Date | null; tarefas: TarefaDaRun[] }) {
   return {
     revelacaoConcluida: run.revelacaoConcluidaEm !== null,
     raioX: enviada(run.tarefas, "raio-x"),
@@ -997,16 +976,5 @@ function canalADoEstudante(run: {
     envio: enviada(run.tarefas, "envio"),
     refeita: run.tarefas.some((x) => x.refeita),
     fraseDoEnvio: run.tarefas.find((x) => x.tarefa === "envio")?.frase ?? null,
-    leitura: leitura
-      ? {
-          resultado: leitura.resultado as "nivel" | "sem_marca" | "falha" | null,
-          nivel: leitura.nivel as "atingiu" | "em_processo" | "nao_atingiu" | null,
-          motivo: leitura.motivo,
-          tentativas: leitura.tentativas,
-          lidaEm: leitura.lidaEm?.toISOString() ?? null,
-        }
-      : null,
-    textoLido: reflexaoLida ? (run.reflexao?.primeiroTexto ?? null) : null,
-    textoLidoApagado: leitura !== null && !reflexaoLida,
   };
 }

@@ -667,7 +667,7 @@ export function InstanooriaApp({
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-8 text-center">
         <LogoUnv height={30} title="Unoovista" />
-        <p className="text-[15px] leading-relaxed text-ink/70">Já vem — deixa essa tela aberta.</p>
+        <p className="text-[15px] leading-relaxed text-ink/70">Já vai começar. Deixa essa tela aberta.</p>
       </main>
     );
   }
