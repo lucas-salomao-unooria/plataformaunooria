@@ -138,7 +138,7 @@ export function Onboarding({
         <LogoUnv height={36} title="Unoovista" />
         <p className="text-[17px] font-semibold text-ink">Nada rolando por aqui agora</p>
         <p className="text-[15px] leading-relaxed text-ink/70">
-          Volta em alguns minutos — a gente avisa quando tiver algo novo.
+          Volta daqui a alguns minutos. A gente avisa quando tiver algo novo.
         </p>
         <ButtonUnv variant="secondary" size="lg" className="mt-2" onClick={() => window.location.reload()}>
           Atualizar
@@ -171,7 +171,7 @@ export function Onboarding({
             dele no fim. Precisa estar dito com essas palavras, e antes do feed.
           */}
           <p className="rounded-cartao bg-canvasAlt px-4 py-3 text-[15px] font-semibold leading-snug text-ink">
-            Salva os posts que te ajudarem a responder — no fim você vai usar eles.
+            Salva os posts que te ajudarem a responder. No fim você vai usar eles.
           </p>
         </div>
 

@@ -1278,10 +1278,10 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
   do vocabulário (\cd{raio-x}, \cd{termos}, \cd{envio}), de respondida com
   data, e da frase só no envio, até 140 caracteres.\\
 \zebra \cd{exp08ef1b\_leituras\_da\_reflexao} e \cd{reflexoes.primeiro\_texto} &
-  A leitura da reflexão pela IA é UMA só por (atividade, estudante): a
-  unicidade impede a segunda, inclusive depois de um reinício, que não apaga a
-  sessão. A linha não guarda texto; o texto lido fica em \cd{primeiro\_texto},
-  gravado só na criação da reflexão, e sai com ela. \cd{run\_id} e
+  A leitura da reflexão pela IA, que era UMA só por (atividade, estudante),
+  \textbf{saiu na \adrr{ADR-180}}: as duas ficam no esquema, SEM escrita nova,
+  com o que já foi gravado (a linha não guarda texto; o texto lido ficava em
+  \cd{primeiro\_texto}, que sai com a reflexão). \cd{run\_id} e
   \cd{estudante\_id} em cascata: \enquote{Apagar as sessões} e a exclusão da
   conta levam a leitura. As duas tabelas com \cd{escola\_id NOT NULL} e RLS
   forçada.\\

@@ -106,7 +106,7 @@ export function Conclusao({
           <div className="flex flex-col gap-2 rounded-cartao bg-surface px-4 py-3">
             <p className="text-[14px] font-semibold text-ink">Resposta registrada.</p>
             <p className="text-[13px] leading-snug text-ink/70">
-              Pode trocar de ideia enquanto espera — vale a última.
+              Pode mudar de ideia enquanto espera. Vale a última resposta.
             </p>
           </div>
         ) : (

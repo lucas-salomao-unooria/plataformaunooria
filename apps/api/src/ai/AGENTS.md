@@ -30,8 +30,7 @@ em hora diferente. Todo perfil que não é `estudante` cai em `professor`
   `USUARIO_DA_AVALIACAO` (`temSaldoDaAvaliacao`/`consumirDaAvaliacao`), e o
   débito que cruza 80% loga `ia-quota-avaliacao-80`. `perfilDaQuota` nunca a
   devolve: a escada dos perfis de token continua `estudante`/`professor`. Outra
-  leitura de avaliação (a reflexão da exp08ef1b ainda usa a do estudante) entra
-  por aqui, não pela quota do perfil.
+  leitura de avaliação entra por aqui, não pela quota do perfil.
 - **Perfil novo com IA** (gestor, admin) entra em TRÊS lugares no mesmo commit:
   a tupla, o CHECK da migration e a semente. Um só é o modo de falhar mudo.
 - Continuam FORA do funil, e são cartão à parte: o motor da exp08ef1b (`geracao/`)

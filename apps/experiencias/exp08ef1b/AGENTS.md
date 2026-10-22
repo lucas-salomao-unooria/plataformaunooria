@@ -11,6 +11,14 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | e2e | `scripts/e2e/estudante/02-instanooria.mjs` (sobe DOIS contextos: o docente conduz) |
 | Copy da revelação | `src/lib/copy-da-revelacao.ts` — **cópia gêmea** de `apps/hub/lib/insta/copy-da-revelacao.ts`, que o guia do professor lê. Mexeu numa, mexa na outra: nada no build cobra isso |
 
+## O tom do texto que o estudante lê (ADR-180)
+
+Depois da 1.5.0, o PO pediu menos "cara de texto de IA". Texto novo para o estudante:
+sem travessão no meio da frase, sem "não é X, é Y" nem "X, não Y", sem frase de
+efeito em três batidas ("Cada curtida. Cada comentário."). Frase curta, na voz
+de quem fala com um estudante de 13 anos. Mexeu na revelação? A cópia gêmea do
+hub muda junto, e a e2e casa por texto exato.
+
 ## Duas armadilhas que fizeram o post do estudante sumir (corrigidas na 1.3.0)
 
 - **`permissoes: ["forms"]` no manifesto.** O compositor do post é o

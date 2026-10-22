@@ -84,7 +84,9 @@ export function montarEnvio(posts: readonly PostDoEnvio[], semente: string): str
  * OS TRÊS CRITÉRIOS do envio — a régua do PO, validada com a pedagogia em
  * 2026-10-21 (ADR-179): (1) os posts cobrem os dois lados; (2) nenhum é de
  * página de fofoca ou de humor; (3) a mensagem é a que avisa que aquilo é só
- * um pedaço. 3 de 3, atingiu; 1 ou 2, em processo; nenhum, não atingiu.
+ * uma parte. 3 de 3, atingiu; 1 ou 2, em processo; nenhum, não atingiu.
+ * A mensagem que ridiculariza o outro lado dá "não atingiu" qualquer que seja
+ * a contagem (ADR-180, o PO em 2026-10-22).
  */
 export function criteriosDoEnvio(selecao: readonly PostDoEnvio[], mensagem: TipoDeMensagem) {
   return {
@@ -109,6 +111,9 @@ export function nivelDoEnvio(entrada: {
 }): { nivel: Nivel; marcador: string; criterios: number } {
   const c = criteriosDoEnvio(entrada.selecao, entrada.mensagem);
   const criterios = [c.doisLados, c.semFofoca, c.aviso].filter(Boolean).length;
+  if (entrada.mensagem === "ridiculariza") {
+    return { nivel: "nao_atingiu", marcador: MARCADOR_DA_TAREFA.envio, criterios };
+  }
   if (criterios === 3 && !entrada.medeConfiabilidade) {
     return { nivel: "em_processo", marcador: MARCADOR_DO_ENVIO_LIMITADO, criterios };
   }

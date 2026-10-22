@@ -205,17 +205,6 @@ export class TarefasDoUnoovista {
     }, escolaId);
   }
 
-  /**
-   * A reflexão desta sessão PODE ser lida pela IA? Só a de quem teve feed com
-   * lado e chegou à última tela da revelação — a mesma condição das tarefas.
-   * Chamada DENTRO da transação do primeiro salvamento.
-   */
-  async podeLerAReflexao(tx: Tx, runId: string, estudanteId: string, escolaId: string): Promise<boolean> {
-    const run = await runDoEstudante(tx, runId, estudanteId, escolaId);
-    if (!run || run.revelacaoConcluidaEm === null) return false;
-    return (await this.acervo(tx, run)).ladoDele !== null;
-  }
-
   // ── a marca ─────────────────────────────────────────────────────────────
 
   /**
