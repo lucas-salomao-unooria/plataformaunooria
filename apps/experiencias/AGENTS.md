@@ -102,7 +102,7 @@ decisão, está em "O idioma da interface" no `AGENTS.md` da raiz — ADR-91).
 Duas armadilhas de experiência, das quais uma já cobrou:
 
 - **Rótulo visível que tem espelho na api muda nos DOIS.** `ROTULO_PASSO` de
-  `exp02em1b/src/lib/textos.ts` espelha `apps/api/src/unoogpt/regras/passos.ts`.
+  `exp02em1b-v0/src/lib/textos.ts` espelha `apps/api/src/unoogpt/regras/passos.ts`.
   Quando o `Briefing` virou `A missão`, mudar só a experiência faria a trilha do
   estudante divergir do que a api devolve — e o typecheck não vê.
 - **A versão vive em TRÊS lugares, não dois.** Mudou texto visível? Sobe

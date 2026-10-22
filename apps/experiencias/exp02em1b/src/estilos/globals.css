@@ -1,0 +1,461 @@
+/**
+ * Estilos locais — só o que o design system não dá: layout da página e as
+ * compensações MARCADAS (medida, espaçamento, grade). Botão, campo, diálogo,
+ * aba, etiqueta: vêm do pacote pela ponte, nunca daqui.
+ *
+ * Cor NUNCA se escreve à mão: sai dos tokens da seção que está falando
+ * (`--unooria-*` para a plataforma; `--insta-*`, `--uni-*`, `--gpt-*`, `--wa-*`
+ * para os clones). Um hexadecimal literal aqui é uma cor que não acompanha o
+ * pacote quando ele mudar. Os `var(--x, fallback)` abaixo existem só para a
+ * tela não ficar transparente antes de a folha do DS carregar.
+ *
+ * Quando a missão tiver um clone, separe as duas famílias por SEÇÃO deste
+ * arquivo, como a exp08ef4b faz — a fronteira é "quem está falando", e ela cai na
+ * revelação, não no arquivo.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--unooria-color-surface-base, #fff);
+  color: var(--unooria-color-text-primary, #22272a);
+  font-family: var(--unooria-font-sans, system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* `100%` e não `100dvh`: dentro do iframe, `dvh` se refere à janela do
+   navegador, não ao recorte que o hub reservou. */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.app--centrado {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.esqueleto__topo {
+  height: 56px;
+  border-bottom: 1px solid var(--unooria-color-border-default, #cbd4d6);
+}
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.cartao__titulo {
+  margin: 0;
+  font-size: 24px;
+}
+
+.cartao__texto {
+  margin: 0;
+  font-size: 15px;
+  color: var(--unooria-color-text-secondary, #536167);
+}
+
+.cartao__acoes {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.aviso {
+  margin: 0;
+  font-size: 14px;
+  color: var(--unooria-color-text-secondary, #536167);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * O Efeito Amplificador (exp02em1b 2.x). Três famílias, separadas por quem fala:
+ * `.escola` (seção unooria), `.uai-*` (UnooriaAI) e `.unv-*` (Unoovista). Cor só
+ * de token da seção que fala; os `var(--x, fallback)` existem só para a tela
+ * não ficar transparente antes de a folha do DS carregar.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* As esperas e falhas, na voz da ficção (D0-1, D0-2). */
+.faixa-rede {
+  margin: 0;
+  padding: 8px 16px;
+  font-size: 13px;
+  text-align: center;
+  background: var(--uai-fill-warning, #fff4d6);
+  color: var(--uai-text-primary, #1f1f1f);
+}
+
+.pausa {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--unv-color-overlay-scrim, rgb(0 0 0 / 60%));
+}
+
+.pausa__texto {
+  margin: 0;
+  max-width: 320px;
+  padding: 20px;
+  border-radius: var(--unv-radius-l, 16px);
+  background: var(--unv-color-background-elevated, #fff);
+  color: var(--unv-color-text-primary, #111);
+  font-size: 16px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* ── UnooriaAI ─────────────────────────────────────────────────────────── */
+
+.uai-tela {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--uai-bg-primary, #fff);
+  color: var(--uai-text-primary, #111);
+  font-family: var(--uai-font-sans, system-ui, sans-serif);
+}
+
+.uai-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--uai-border-default, #e5e5e5);
+}
+
+.uai-topo__titulo {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.uai-topo__meta {
+  font-size: 12px;
+  color: var(--uai-text-secondary, #555);
+}
+
+.uai-conversa,
+.uai-previa {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.uai-rodape {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--uai-border-default, #e5e5e5);
+}
+
+.uai-pilulas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.uai-nudge {
+  margin: 0;
+  font-size: 13px;
+  color: var(--uai-text-secondary, #555);
+}
+
+.uai-previa__instrucao,
+.uai-previa__vazia {
+  margin: 0;
+  font-size: 14px;
+  color: var(--uai-text-secondary, #555);
+}
+
+.uai-paragrafo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--uai-border-default, #e5e5e5);
+  border-radius: var(--uai-radius-lg, 12px);
+}
+
+.uai-paragrafo--removido {
+  border-style: dashed;
+}
+
+.uai-paragrafo__texto,
+.uai-paragrafo__removido {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.uai-paragrafo__removido {
+  color: var(--uai-text-tertiary, #888);
+  font-style: italic;
+}
+
+.uai-manchete__declaracao,
+.uai-manchete__audiencia {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--uai-text-secondary, #555);
+}
+
+.uai-manchete__opcoes {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* ── Unoovista ─────────────────────────────────────────────────────────── */
+
+.unv-tela {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--unv-color-background-primary, #000);
+  color: var(--unv-color-text-primary, #fff);
+  font-family: var(--unv-font-sans, system-ui, sans-serif);
+}
+
+.unv-rolagem {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 16px;
+}
+
+/* O banner do trecho pinçado: o algoritmo pôs a frase em destaque, fora de contexto. */
+.unv-recorte {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+  background: var(--unv-gradient-story, var(--unv-color-background-secondary, #222));
+  color: var(--unv-color-text-on-media, #fff);
+}
+
+.unv-recorte__selo {
+  align-self: flex-start;
+  padding: 2px 10px;
+  border-radius: var(--unv-radius-full, 999px);
+  background: var(--unv-color-brand-notification, #e11);
+  color: var(--unv-color-text-on-notification, #fff);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.unv-recorte__frase {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.unv-acoes-do-post,
+.unv-comentarios {
+  padding: 0 var(--unv-gutter, 16px);
+}
+
+.unv-comentarios__titulo {
+  margin: 4px 0;
+  font-size: 15px;
+}
+
+.unv-comentarios__aviso,
+.unv-comentario__hora {
+  font-size: 12px;
+  color: var(--unv-color-text-secondary, #aaa);
+}
+
+/* "ver mais": o comentário fechado mostra duas linhas; abrir é o gesto que a EM13CO24 lê. */
+.unv-comentario__texto--curto {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.unv-tres-pontos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--unv-touch-target, 44px);
+  min-height: var(--unv-touch-target, 44px);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.unv-explicar {
+  padding: 16px var(--unv-gutter, 16px);
+}
+
+.unv-explicar__instrucao,
+.unv-explicar__espera {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.unv-explicar__espera {
+  color: var(--unv-color-text-secondary, #555);
+  font-size: 13px;
+}
+
+.unv-explicar__indicadores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.unv-explicar__conceitos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.unv-explicar__citacao {
+  margin: 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--unv-color-action-primary, #7c3aed);
+  font-style: italic;
+}
+
+.unv-explicar__conceito {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* O relógio acelerado (E4-ALU-01). */
+.relogio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100%;
+  background: var(--unv-color-background-primary, #000);
+  color: var(--unv-color-text-primary, #fff);
+  font-family: var(--unv-font-sans, system-ui, sans-serif);
+  transition: background var(--unv-transition-base, 300ms);
+}
+
+.relogio__marco {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* A curva de entrega: compensação declarada — o Unoovista do DS não publica gráfico. */
+.grafico {
+  margin: 0;
+  padding: 0 var(--unv-gutter, 16px);
+}
+
+.grafico__titulo {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.grafico__barras {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.grafico__linha {
+  display: grid;
+  grid-template-columns: 76px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.grafico__trilho {
+  height: 10px;
+  border-radius: var(--unv-radius-full, 999px);
+  background: var(--unv-color-background-tertiary, #333);
+  overflow: hidden;
+}
+
+.grafico__barra {
+  display: block;
+  height: 100%;
+  background: var(--unv-color-icon-secondary, #888);
+}
+
+.grafico__linha--pico .grafico__barra {
+  background: var(--unv-color-brand-notification, #e11);
+}
+
+.grafico__valor {
+  text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .relogio {
+    transition: none;
+  }
+}
+
+.unv-comentario {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+/* "ver mais" com a cara do app imitado: texto secundário, sem caixa. */
+.unv-ver-mais {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--unv-color-text-secondary, #aaa);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
