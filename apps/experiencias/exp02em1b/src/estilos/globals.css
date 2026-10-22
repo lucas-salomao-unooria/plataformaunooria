@@ -1,153 +1,461 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /**
- * ZERO HEXADECIMAL neste arquivo. Cor vem de token do design system, sempre —
- * e classe de cor que não existe no `tailwind.config.ts` não é erro em lugar
- * nenhum: em texto ela herda a cor e passa desapercebida, em FUNDO o elemento
- * fica branco no branco. Foi o que aconteceu com `bg-unooria-neutral-900` na
- * app-70 (letra da bolha invisível), e é por isso que o smoke visual checa cor
- * COMPUTADA em vez de `toBeVisible()`.
+ * Estilos locais — só o que o design system não dá: layout da página e as
+ * compensações MARCADAS (medida, espaçamento, grade). Botão, campo, diálogo,
+ * aba, etiqueta: vêm do pacote pela ponte, nunca daqui.
  *
- * Três blocos, como na exp04ef1b:
- *   (a) ESQUELETO    — o que é do documento, não da marca
- *   (b) COMPENSAÇÃO  — o que falta no pacote e vira pedido ao storybook-unooria
- *   (c) LIGAÇÃO      — o que costura o clone à moldura do iframe
+ * Cor NUNCA se escreve à mão: sai dos tokens da seção que está falando
+ * (`--unooria-*` para a plataforma; `--insta-*`, `--uni-*`, `--gpt-*`, `--wa-*`
+ * para os clones). Um hexadecimal literal aqui é uma cor que não acompanha o
+ * pacote quando ele mudar. Os `var(--x, fallback)` abaixo existem só para a
+ * tela não ficar transparente antes de a folha do DS carregar.
+ *
+ * Quando a missão tiver um clone, separe as duas famílias por SEÇÃO deste
+ * arquivo, como a exp08ef4b faz — a fronteira é "quem está falando", e ela cai na
+ * revelação, não no arquivo.
  */
 
-/* ─────────────────────────────────────────────────────────────────────────
-   (a) ESQUELETO
-   ───────────────────────────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
 
 html,
 body,
 #root {
   height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  /* A família vem do token do pacote — `fonts/unooriaai.css` declara o
-     @font-face da Open Sans com os .woff2 do próprio pacote. A pilha do
-     sistema é fallback para o primeiro quadro. */
-  font-family: var(--uai-font-sans), 'Open Sans', system-ui, sans-serif;
-  background: var(--uai-web-canvas);
-  color: var(--uai-text-primary);
-  /* O iframe tem o tamanho que o hub der: nada de rolagem horizontal por
-     conta de uma tela que assume largura de desktop. */
-  overflow-x: hidden;
+  background: var(--unooria-color-surface-base, #fff);
+  color: var(--unooria-color-text-primary, #22272a);
+  font-family: var(--unooria-font-sans, system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* O estudante pode estar num laboratório com o sistema em "reduzir movimento". A
-   chuva do briefing é cenário, e cenário não é informação: ela some inteira. */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-  }
+/* `100%` e não `100dvh`: dentro do iframe, `dvh` se refere à janela do
+   navegador, não ao recorte que o hub reservou. */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
-   (b) COMPENSAÇÃO — falta no pacote; cada uma é um pedido ao storybook-unooria
-   ───────────────────────────────────────────────────────────────────────── */
+.app--centrado {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
 
-/*
- * Nenhuma hoje. As duas que existiam na seção `chatgpt` eram CSS morto quando
- * a missão foi para a `unooriaai` (ADR-138), e saíram com ela: o indicador de
- * carregamento (`.gpt-pensando`) já tinha virado os três pontos do
- * `Consultando`, em `painel-cientista.tsx`, e o anexo abaixo da fala
- * (`.gpt-fala > .gpt-anexo`) não tinha consumidor no JSX. Compensação nova
- * entra aqui, marcada, com o pedido ao storybook-unooria.
- */
+.esqueleto__topo {
+  height: 56px;
+  border-bottom: 1px solid var(--unooria-color-border-default, #cbd4d6);
+}
 
-/* ─────────────────────────────────────────────────────────────────────────
-   (c) LIGAÇÃO — o clone dentro do iframe
-   ───────────────────────────────────────────────────────────────────────── */
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 560px;
+}
 
-/**
- * A experiência preenche o iframe: não há casca de aparelho aqui (o manifesto
- * não declara `viewport`, porque a missão é de laboratório, desktop, com a
- * conversa em 2/3 e o mapa em 1/3). Quem desenha aparelho, quando é o caso, é o
- * hub em `components/DispositivoFrame.tsx`.
- */
-.tela-da-missao {
+.cartao__titulo {
+  margin: 0;
+  font-size: 24px;
+}
+
+.cartao__texto {
+  margin: 0;
+  font-size: 15px;
+  color: var(--unooria-color-text-secondary, #536167);
+}
+
+.cartao__acoes {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.aviso {
+  margin: 0;
+  font-size: 14px;
+  color: var(--unooria-color-text-secondary, #536167);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * O Efeito Amplificador (exp02em1b 2.x). Três famílias, separadas por quem fala:
+ * `.escola` (seção unooria), `.uai-*` (UnooriaAI) e `.unv-*` (Unoovista). Cor só
+ * de token da seção que fala; os `var(--x, fallback)` existem só para a tela
+ * não ficar transparente antes de a folha do DS carregar.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* As esperas e falhas, na voz da ficção (D0-1, D0-2). */
+.faixa-rede {
+  margin: 0;
+  padding: 8px 16px;
+  font-size: 13px;
+  text-align: center;
+  background: var(--uai-fill-warning, #fff4d6);
+  color: var(--uai-text-primary, #1f1f1f);
+}
+
+.pausa {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--unv-color-overlay-scrim, rgb(0 0 0 / 60%));
+}
+
+.pausa__texto {
+  margin: 0;
+  max-width: 320px;
+  padding: 20px;
+  border-radius: var(--unv-radius-l, 16px);
+  background: var(--unv-color-background-elevated, #fff);
+  color: var(--unv-color-text-primary, #111);
+  font-size: 16px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* ── UnooriaAI ─────────────────────────────────────────────────────────── */
+
+.uai-tela {
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  background: var(--uai-bg-primary, #fff);
+  color: var(--uai-text-primary, #111);
+  font-family: var(--uai-font-sans, system-ui, sans-serif);
 }
 
-/* O `Composer.Dock` é fixo no rodapé da COLUNA da conversa, não da janela: com
-   o mapa ao lado, ancorar na janela punha o campo por cima do mapa. */
-.coluna-da-conversa {
+.uai-topo {
   display: flex;
-  flex-direction: column;
-  min-height: 0;
-  flex: 1;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--uai-border-default, #e5e5e5);
 }
 
-.rolagem-da-conversa {
+.uai-topo__titulo {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.uai-topo__meta {
+  font-size: 12px;
+  color: var(--uai-text-secondary, #555);
+}
+
+.uai-conversa,
+.uai-previa {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-/* ═══════════════════ o pedido pelo WhatsApp (unoochat, SÓ a peça — ADR-173) */
-
-/* O contêiner do balão: o recebido é branco e foi calibrado para o fundo do
-   mensageiro, e sobre o branco do UnooriaAI ele some. É o retângulo do tamanho
-   da peça, pintado com o `--unc-color-surface-base` — não o `ChatWallpaper`
-   (o FUNDO do app, que a peça não traz). Molde: o `.peca-unoochat` da
-   exp04ef1b. */
-.peca-unoochat {
   display: flex;
   flex-direction: column;
-  gap: var(--unc-spacing-xxs, 6px);
-  padding: var(--unc-spacing-m, 12px) var(--unc-spacing-l, 16px);
-  border-radius: 12px;
-  background: var(--unc-color-surface-base, #efeef5);
+  gap: 12px;
+  padding: 16px;
 }
 
-/* ═════════════ o "E se…": a faixa de 20 tempestades (compensação declarada) */
+.uai-rodape {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--uai-border-default, #e5e5e5);
+}
 
-/* LACUNA DO DS: a seção `unooriaai` não publica uma faixa de células
-   categóricas (nem `Heatmap`, nem `Sparkline` de categoria). Esta é a
-   compensação local, SÓ com token `--uai-*`, e a leitura para leitor de tela
-   vai numa lista ao lado (`componentes/e-se.tsx`). Morre quando o pacote
-   publicar a peça. */
-.faixa-de-tempestades {
+.uai-pilulas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.uai-nudge {
+  margin: 0;
+  font-size: 13px;
+  color: var(--uai-text-secondary, #555);
+}
+
+.uai-previa__instrucao,
+.uai-previa__vazia {
+  margin: 0;
+  font-size: 14px;
+  color: var(--uai-text-secondary, #555);
+}
+
+.uai-paragrafo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--uai-border-default, #e5e5e5);
+  border-radius: var(--uai-radius-lg, 12px);
+}
+
+.uai-paragrafo--removido {
+  border-style: dashed;
+}
+
+.uai-paragrafo__texto,
+.uai-paragrafo__removido {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.uai-paragrafo__removido {
+  color: var(--uai-text-tertiary, #888);
+  font-style: italic;
+}
+
+.uai-manchete__declaracao,
+.uai-manchete__audiencia {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--uai-text-secondary, #555);
+}
+
+.uai-manchete__opcoes {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* ── Unoovista ─────────────────────────────────────────────────────────── */
+
+.unv-tela {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--unv-color-background-primary, #000);
+  color: var(--unv-color-text-primary, #fff);
+  font-family: var(--unv-font-sans, system-ui, sans-serif);
+}
+
+.unv-rolagem {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 16px;
+}
+
+/* O banner do trecho pinçado: o algoritmo pôs a frase em destaque, fora de contexto. */
+.unv-recorte {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+  background: var(--unv-gradient-story, var(--unv-color-background-secondary, #222));
+  color: var(--unv-color-text-on-media, #fff);
+}
+
+.unv-recorte__selo {
+  align-self: flex-start;
+  padding: 2px 10px;
+  border-radius: var(--unv-radius-full, 999px);
+  background: var(--unv-color-brand-notification, #e11);
+  color: var(--unv-color-text-on-notification, #fff);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.unv-recorte__frase {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.unv-acoes-do-post,
+.unv-comentarios {
+  padding: 0 var(--unv-gutter, 16px);
+}
+
+.unv-comentarios__titulo {
+  margin: 4px 0;
+  font-size: 15px;
+}
+
+.unv-comentarios__aviso,
+.unv-comentario__hora {
+  font-size: 12px;
+  color: var(--unv-color-text-secondary, #aaa);
+}
+
+/* "ver mais": o comentário fechado mostra duas linhas; abrir é o gesto que a EM13CO24 lê. */
+.unv-comentario__texto--curto {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.unv-tres-pontos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--unv-touch-target, 44px);
+  min-height: var(--unv-touch-target, 44px);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.unv-explicar {
+  padding: 16px var(--unv-gutter, 16px);
+}
+
+.unv-explicar__instrucao,
+.unv-explicar__espera {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.unv-explicar__espera {
+  color: var(--unv-color-text-secondary, #555);
+  font-size: 13px;
+}
+
+.unv-explicar__indicadores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.unv-explicar__conceitos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.unv-explicar__citacao {
+  margin: 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--unv-color-action-primary, #7c3aed);
+  font-style: italic;
+}
+
+.unv-explicar__conceito {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* O relógio acelerado (E4-ALU-01). */
+.relogio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100%;
+  background: var(--unv-color-background-primary, #000);
+  color: var(--unv-color-text-primary, #fff);
+  font-family: var(--unv-font-sans, system-ui, sans-serif);
+  transition: background var(--unv-transition-base, 300ms);
+}
+
+.relogio__marco {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* A curva de entrega: compensação declarada — o Unoovista do DS não publica gráfico. */
+.grafico {
+  margin: 0;
+  padding: 0 var(--unv-gutter, 16px);
+}
+
+.grafico__titulo {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.grafico__barras {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.grafico__linha {
   display: grid;
-  grid-template-columns: repeat(20, minmax(0, 1fr));
-  gap: 3px;
+  grid-template-columns: 76px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
 }
-.faixa-de-tempestades > span {
-  aspect-ratio: 1;
-  border-radius: 3px;
-  background: var(--uai-fill-2);
+
+.grafico__trilho {
+  height: 10px;
+  border-radius: var(--unv-radius-full, 999px);
+  background: var(--unv-color-background-tertiary, #333);
+  overflow: hidden;
 }
-/* Cores fora do par das Equipes (azul e roxo), para o quadradinho não ser lido
-   como "a Alfa" ou "a Bravo": a outra decisão é a superfície invertida, e a
-   de referência, o contorno; o empate fica no fundo translúcido. */
-.faixa-de-tempestades > span,
-.faixa-legenda {
-  display: inline-block;
+
+.grafico__barra {
+  display: block;
+  height: 100%;
+  background: var(--unv-color-icon-secondary, #888);
 }
-.faixa-legenda {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  vertical-align: middle;
+
+.grafico__linha--pico .grafico__barra {
+  background: var(--unv-color-brand-notification, #e11);
 }
-.faixa-de-tempestades > span[data-quem="outra"],
-.faixa-legenda[data-quem="outra"] {
-  background: var(--uai-bg-inverse);
+
+.grafico__valor {
+  text-align: right;
 }
-.faixa-de-tempestades > span[data-quem="referencia"],
-.faixa-legenda[data-quem="referencia"] {
-  background: var(--uai-bg-primary);
-  box-shadow: inset 0 0 0 2px var(--uai-border-strong);
+
+@media (prefers-reduced-motion: reduce) {
+  .relogio {
+    transition: none;
+  }
+}
+
+.unv-comentario {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+/* "ver mais" com a cara do app imitado: texto secundário, sem caixa. */
+.unv-ver-mais {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--unv-color-text-secondary, #aaa);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
 }

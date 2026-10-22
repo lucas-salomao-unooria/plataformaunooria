@@ -59,7 +59,7 @@ await suite(
     const OPCIONAIS = ["allow-pointer-lock", "allow-forms"];
     /* Da 2ª série do EM: não pertence à grade do 8º. Não é "bloqueada" — é de outra
        série, e nem aparece. São coisas diferentes, e a tela precisa distingui-las. */
-    const DE_OUTRA_SERIE = { texto: "UnooriaAI", expId: "exp02em1b" };
+    const DE_OUTRA_SERIE = { texto: "O Efeito Amplificador", expId: "exp02em1b" };
 
     /* O 404 é PROVOCADO: esta suíte digita de propósito a URL de uma missão que
        não é desta turma, e é o servidor recusando que ela existe para provar. */

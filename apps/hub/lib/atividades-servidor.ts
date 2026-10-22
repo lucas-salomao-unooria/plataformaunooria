@@ -5,6 +5,7 @@ import {
   atividadesDaSelecao,
   atividadesDoInstanooria,
   atividadesDoJornal,
+  atividadesDoEfeito,
   atividadesDoJuri,
   atividadesDoQuemMandou,
   ordenarAtividades,
@@ -12,6 +13,7 @@ import {
   type AtividadeNaLista,
   type MissaoComAtividade,
 } from "./entre-redes/atividades";
+import { caminhoDaTurma as caminhoDoEfeito, rotuloDaDisciplina as rotuloDoEfeito, type PacotesDaTurmaEfeito } from "./efeito-amplificador-tipos";
 import type { PacotesDaTurma } from "./jornal-escola-tipos";
 import { caminhoDaTurma, rotuloDaDisciplina, type PacotesDoJuri } from "./juri-estadual-tipos";
 import type { PacoteDaTurma, PacotesDaTurmaQuemMandou } from "./quem-mandou-tipos";
@@ -56,6 +58,10 @@ export async function atividadesDaMissao(
          sai do espelho do hub (`juri-estadual-tipos.ts`), com teste. */
       const r = await apiDoServidor<PacotesDoJuri>(`${caminhoDaTurma(turmaId)}/pacotes`);
       return r ? ordenarAtividades(atividadesDoJuri(r, rotuloDaDisciplina)) : null;
+    }
+    case "exp02em1b": {
+      const r = await apiDoServidor<PacotesDaTurmaEfeito>(`${caminhoDoEfeito(turmaId)}/pacotes`);
+      return r ? ordenarAtividades(atividadesDoEfeito(r, rotuloDoEfeito)) : null;
     }
   }
 }

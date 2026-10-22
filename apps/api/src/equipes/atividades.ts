@@ -89,6 +89,24 @@ const FONTES: Record<ExperienciaComAtividade, FonteDeAtividades> = {
       );
     },
   },
+  /* O Efeito Amplificador (ADR-181): o pacote homologado, como na exp05ef1b. */
+  exp02em1b: {
+    async emAndamento(tx, escolaId, turmaId) {
+      const ativo = await tx.exp02em1bPacote.findFirst({
+        where: { escolaId, turmaId, ativo: true },
+        select: { id: true },
+      });
+      return ativo?.id ?? null;
+    },
+    async daTurma(tx, escolaId, turmaId, atividadeId) {
+      if (!UUID_RE.test(atividadeId)) return false;
+      return (
+        (await tx.exp02em1bPacote.count({
+          where: { id: atividadeId, escolaId, turmaId, aprovadoEm: { not: null } },
+        })) > 0
+      );
+    },
+  },
   /* O Instanooria escolhe a atividade da criança pela regra do motor — a mesma
      de `POST /runs` e do `boot`. A atividade antiga SEM turma vale para a escola
      inteira, e por isso é "desta turma" também: a montagem dela é por turma. */

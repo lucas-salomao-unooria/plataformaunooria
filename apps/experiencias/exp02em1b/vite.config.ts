@@ -1,4 +1,3 @@
-/// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 export default defineConfig({
@@ -11,12 +10,6 @@ export default defineConfig({
     // objeto é público, e o mapa é o fonte (na exp08ef1b, a revelação). Nunca
     // `true`; nunca `inline`.
     sourcemap: "hidden",
-  },
-  test: {
-    // A peça do `unoochat` (ADR-173) é testada renderizada: o DS importa as
-    // folhas `.css` dos componentes, que o Node não carrega — inline, o Vite
-    // as resolve (e as descarta) como no build.
-    server: { deps: { inline: [/@unooria\/design-system/] } },
   },
   server: {
     // A porta é contrato com o hub (`apps/hub/lib/experiencias-dev.ts`): sem

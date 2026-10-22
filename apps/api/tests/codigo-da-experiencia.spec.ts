@@ -6,7 +6,9 @@ import {
   CODIGO_DE_MISSAO_RE,
   EXP_ID_RE,
   FORMATO_DO_EXP_ID,
+  codigoAtualDe,
   codigoDaMissao,
+  ehVersaoAnterior,
 } from "../src/comum/codigo-da-experiencia";
 import { CODIGO_ARQUIVADO_RE, codigoDeOrigem, ehArquivada } from "../src/comum/arquivadas";
 
@@ -71,6 +73,18 @@ describe("o formato", () => {
     }
     expect(codigoDeOrigem("backup-exp04ef1b")).toBe("exp04ef1b");
     expect(codigoDeOrigem("exp04ef1b")).toBeNull();
+  });
+
+  it("a VERSÃO ANTERIOR é o código de missão + -vN, e passa no EXP_ID_RE (ADR-181)", () => {
+    for (const ok of ["exp02em1b-v0", "exp08ef1b-v1", "exp02em1b-v12"]) {
+      expect(EXP_ID_RE.test(ok)).toBe(true);
+      expect(ehVersaoAnterior(ok)).toBe(true);
+    }
+    for (const nao of ["exp02em1b", "app-70-vila-do-lume", "app-70-vila-v0", "exp02em1bv0", "exp02em1b-v", "exp02em1b-V0"]) {
+      expect(ehVersaoAnterior(nao)).toBe(false);
+    }
+    expect(codigoAtualDe("exp02em1b-v0")).toBe("exp02em1b");
+    expect(ehArquivada("backup-exp02em1b-v0")).toBe(true);
   });
 
   it("codigoDaMissao monta pela série e pela unidade", () => {
@@ -145,7 +159,9 @@ describe("todo manifesto tem o código certo", () => {
     if (manifesto.unidade !== undefined) {
       test("missão: UMA série, e o id é derivado dela e da unidade", () => {
         expect(manifesto.series).toHaveLength(1);
-        expect(manifesto.id).toBe(codigoDaMissao(manifesto.series?.[0] ?? "", manifesto.unidade ?? 0));
+        /* A VERSÃO ANTERIOR (ADR-181) é o código derivado + `-vN`: a missão que
+           perdeu o código para uma reformulação continua no mesmo lugar da grade. */
+        expect(codigoAtualDe(manifesto.id)).toBe(codigoDaMissao(manifesto.series?.[0] ?? "", manifesto.unidade ?? 0));
       });
     } else {
       test("sem unidade não é missão: o id é app-NN-nome", () => {

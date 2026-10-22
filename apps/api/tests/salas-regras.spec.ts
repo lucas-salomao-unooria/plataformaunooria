@@ -51,6 +51,19 @@ describe("série e transversal", () => {
 });
 
 describe("a grade da turma", () => {
+  test("a VERSÃO ANTERIOR (ADR-181) sai da grade — salvo na turma que já a liberou", () => {
+    const comAnterior = [...CATALOGO, exp("exp02em1b-v0", ["2EM"], "estudante", 1)];
+    expect(gradeDaTurma("2EM", comAnterior, semLiberacao).map((m) => m.expId)).toEqual([
+      "app-70-vila-do-lume",
+      "exp02em1b",
+    ]);
+    const liberada = new Map<string, EstadoGravado>([["exp02em1b-v0", "liberada"]]);
+    const grade = gradeDaTurma("2EM", comAnterior, liberada);
+    expect(grade.find((m) => m.expId === "exp02em1b-v0")?.estado).toBe("liberada");
+    /* "ver outras séries" também não a ressuscita para quem não a tinha. */
+    expect(gradeDaTurma("8EF", comAnterior, semLiberacao, true).map((m) => m.expId)).not.toContain("exp02em1b-v0");
+  });
+
   test("traz a missão da série e as transversais, e nada de outro ano", () => {
     const grade = gradeDaTurma("8EF", CATALOGO, semLiberacao);
     expect(grade.map((m) => m.expId)).toEqual(["app-70-vila-do-lume", "exp08ef1b"]);

@@ -19,17 +19,21 @@
  * lê o arquivo do SDK e reprova se as duas cópias divergirem.
  */
 
-/** Missão da trilha: `exp01ef1b` a `exp09ef4b`, `exp01em1b` a `exp03em4b`. */
-export const CODIGO_DE_MISSAO_RE = /^exp(0[1-9]ef|0[1-3]em)[1-4]b$/;
+/**
+ * Missão da trilha: `exp01ef1b` a `exp09ef4b`, `exp01em1b` a `exp03em4b` — e a
+ * VERSÃO ANTERIOR de uma delas, `exp02em1b-v0` (ADR-181): a missão que perdeu o
+ * código para uma reformulação e continua no ar, fora do catálogo.
+ */
+export const CODIGO_DE_MISSAO_RE = /^exp(0[1-9]ef|0[1-3]em)[1-4]b(-v\d+)?$/;
 
 /** O que não é missão: `app-NN-nome`. */
 export const CODIGO_DE_APP_RE = /^app-\d{2}-[a-z0-9]+(-[a-z0-9]+)*$/;
 
 /** Qualquer experiência — o que rota, catálogo e painel aceitam como `expId`. */
-export const EXP_ID_RE = /^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$/;
+export const EXP_ID_RE = /^(exp(0[1-9]ef|0[1-3]em)[1-4]b(-v\d+)?|app-\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$/;
 
 /** A mensagem de erro do Zod, num lugar só. */
-export const FORMATO_DO_EXP_ID = "expId no formato expNNefUb (missão) ou app-NN-nome";
+export const FORMATO_DO_EXP_ID = "expId no formato expNNefUb (missão), expNNefUb-vN (versão anterior) ou app-NN-nome";
 
 /**
  * O código de uma missão a partir da série canônica (`8EF`, `2EM`) e da
@@ -45,4 +49,23 @@ export function codigoDaMissao(serie: string, unidade: number): string {
     throw new Error(`unidade fora da grade: ${unidade}`);
   }
   return `exp0${ano}${etapa.toLowerCase()}${unidade}b`;
+}
+
+/** O sufixo da versão anterior: `-v0`, `-v1`… */
+export const SUFIXO_DE_VERSAO_ANTERIOR_RE = /-v\d+$/;
+
+/**
+ * A missão que perdeu o código para uma reformulação (ADR-181) — `exp02em1b-v0`.
+ * Continua LIGADA (disponibilidade, liberações, dados e módulo seguem), mas não
+ * entra em catálogo nenhum: nem na trilha do professor, nem na grade da sala.
+ * Derivado do id, como o arquivamento (`backup-`): não há campo para ficar
+ * dessincronizado do nome da pasta.
+ */
+export function ehVersaoAnterior(expId: string): boolean {
+  return CODIGO_DE_MISSAO_RE.test(expId) && SUFIXO_DE_VERSAO_ANTERIOR_RE.test(expId);
+}
+
+/** O código vivo de que a versão anterior saiu: `exp02em1b-v0` → `exp02em1b`. */
+export function codigoAtualDe(expId: string): string {
+  return expId.replace(SUFIXO_DE_VERSAO_ANTERIOR_RE, "");
 }
