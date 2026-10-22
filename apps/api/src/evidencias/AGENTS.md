@@ -41,7 +41,7 @@ registrado: as tarefas marcam da run do próprio estudante
 (`motor/contexto-da-evidencia.ts#contextoDaRun`, `null` em atividade sem turma)
 e a **rodada é sempre 1**. Vale o PRIMEIRO envio: o reinício reabre a tarefa e
 não apaga a marca, e a missão confere `jaMarcou` antes de marcar.
-**A sexta é a Missão Tempestade (`exp02em1b`)**: `fichas/exp02em1b.ts` v2
+**A sétima é O Efeito Amplificador (`exp02em1b`, ADR-180)**: `fichas/exp02em1b.ts` v1, só Canal A (sem perguntas, decisão do PO) — EM13CO14 e EM13CO26 marcadas no Publicar, EM13CO24 e EM13CO08 no feed (a melhor) e no "não atingiu" da abertura do Explicar; atividade = o pacote, como a exp05ef1b. **A sexta é a Missão Tempestade (hoje `exp02em1b-v0`, a versão anterior)**: `fichas/exp02em1b-v0.ts` v2
 (ADR-172, que tirou as quatro perguntas da ADR-154): toda habilidade por AÇÃO
 — `leitura`, `fontes`, `e-se`, `whatsapp`, `alerta`, `saude` e `moradora`,
 todos com `rotulo` —, marcadas pelas tarefas de `unoogpt/canal-a.service.ts`

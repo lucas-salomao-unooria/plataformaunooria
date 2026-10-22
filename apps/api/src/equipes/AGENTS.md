@@ -47,9 +47,10 @@ com `escola_id` + RLS forçada:
 
 ## As regras
 
-- **Só seis missões aceitam equipe**: `EXPERIENCIAS_COM_EQUIPE` em `regras.ts`
-  (e as cinco com atividade são `EXPERIENCIAS_COM_ATIVIDADE`, o unooGPT fora)
-  (exp08ef1b, exp02em1b, exp05ef1b, exp07ef1b, exp04ef1b e exp06ef1b — Quem
+- **Só sete missões aceitam equipe**: `EXPERIENCIAS_COM_EQUIPE` em `regras.ts`
+  (e as seis com atividade são `EXPERIENCIAS_COM_ATIVIDADE`, a Tempestade fora)
+  (exp08ef1b, exp02em1b-v0, exp05ef1b, exp07ef1b, exp04ef1b, exp06ef1b e exp02em1b
+  — O Efeito Amplificador, ADR-180, com o pacote como atividade —; Quem
   Mandou Isso? v2.2, A Seleção, o Jornal da Escola e o Júri Estadual, as quatro
   nascidas com equipe). O
   exp04ef1b saiu com o UnooTube ARQUIVADO (ADR-116) e VOLTOU com o Jornal, que
