@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Badge, Card, EmptyState, FeedbackAlert, Tag } from "@edu/ui/ds";
+import { AbasDaAtividade } from "@/components/atividades/abas-da-atividade";
 import { UsarEstaAtividade } from "@/components/atividades/usar-esta-atividade";
 import { EquipesDaAtividade } from "@/components/equipes/equipes-da-ficha";
 import { PainelDeHabilidades } from "@/components/evidencias/painel-de-habilidades";
@@ -46,7 +47,8 @@ import { ZerarTurmaJuriEstadual } from "./zerar-turma-juri-estadual";
  * ordem: pô-lo no ar (se está pronto), as equipes, as imagens, os estandes, a
  * aula ao vivo com o botão único e a lousa do pico, a folha por computador, o
  * zerar (só o em andamento), o podcast de recapitulação e o painel de
- * habilidades. Molde:
+ * habilidades — do painel ao vivo em diante, nas cinco abas do template
+ * `AbasDaAtividade` (ADR-182). Molde:
  * `resultados-jornal-escola.tsx` (exp04ef1b).
  *
  * A atividade vem de `?pacote=` — o card da lista de atividades da ficha —, e
@@ -242,7 +244,7 @@ export async function ResultadosJuriEstadual({
               <div className="flex flex-col gap-3" data-atividade-em-preparo>
                 <FeedbackAlert
                   type="info"
-                  description="As imagens dos estandes são geradas por inteligência artificial. Em “Imagens dos estandes”, logo abaixo, gere as que faltam, confira cada uma junto do estande, gere outra para a que não servir e aprove: só então a atividade pode ir ao ar."
+                  description="As imagens dos estandes são geradas por inteligência artificial. Na aba Conteúdo, em “Imagens dos estandes”, gere as que faltam, confira cada uma junto do estande, gere outra para a que não servir e aprove: só então a atividade pode ir ao ar."
                 />
               </div>
             </Card>
@@ -272,66 +274,75 @@ export async function ResultadosJuriEstadual({
             </Card>
           ) : null}
 
-          {/* Em preparo, as imagens vêm ANTES das equipes: é o passo que falta. */}
-          {!emAndamento && !prontaParaAula ? imagensDoJuri : null}
-
-          <EquipesDaAtividade
-            key={`equipes-${detalhe.id}`}
-            turmaId={turma}
-            expId={EXP_ID}
-            atividadeId={detalhe.id}
-            separarAoAbrir={separar}
-          />
-
-          {/* A `key` é a atividade: o laço das imagens vive em `useState`. */}
-          {emAndamento || prontaParaAula ? imagensDoJuri : null}
-
-          <EstandesDaAtividade detalhe={detalhe} />
-
-          {emAndamento && painel ? (
-            <>
-              <PainelDaAulaJuriEstadual
-                key={`aula-${turma}-${detalhe.id}`}
-                turmaId={turma}
-                inicial={painel}
-                plenaria={material?.plenaria ?? null}
-                membros={membros}
-              />
-              <ZerarTurmaJuriEstadual turmaId={turma} nomeDaTurma={painel.turma.nome} tema={detalhe.tema} />
-            </>
-          ) : null}
-
-          {/* Depois da aula: o podcast da plataforma (ADR-150), com as falas que o
-              professor revisou na criação. O podcast é do professor e é
-              OPCIONAL (decisão do Lucas, 2026-10-07): ele toca na tela dele,
-              para a sala, se e quando quiser. O episódio conta a virada da
-              missão, então o aviso no topo RECOMENDA a hora — o fechamento,
-              depois da Galeria Oculta —, sem travar. A etapa é a do painel (a
-              mais fresca), e sem ele a gravada no pacote. */}
-          <CartaoDoPodcast
-            expId={EXP_ID}
-            turmaId={turma}
-            atividadeId={detalhe.id}
-            podcast={podcast}
-            aviso={avisoDoPodcast(emAndamento, painel?.etapa ?? detalhe.etapa)}
-          />
-
-          {/* O painel de habilidades (E14) — invisível sem ficha
-              (`temFicha: false`), e só o `professor` confirma e ajusta: a
-              coordenação lê. A `key` é a atividade. */}
-          {habilidades?.temFicha ? (
-            <div className="flex flex-col gap-3" data-habilidades-do-juri>
-              <PainelDeHabilidades
-                key={detalhe.id}
+          {/* O resto é o template da página da atividade (ADR-182): cinco abas
+              com o mesmo nome em toda missão. A `key` das imagens é a
+              atividade: o laço delas vive em `useState`. */}
+          <AbasDaAtividade
+            estado={chaveDoEstado}
+            aula={
+              emAndamento && painel ? (
+                <>
+                  <PainelDaAulaJuriEstadual
+                    key={`aula-${turma}-${detalhe.id}`}
+                    turmaId={turma}
+                    inicial={painel}
+                    plenaria={material?.plenaria ?? null}
+                    membros={membros}
+                  />
+                  <ZerarTurmaJuriEstadual turmaId={turma} nomeDaTurma={painel.turma.nome} tema={detalhe.tema} />
+                </>
+              ) : null
+            }
+            conteudo={
+              <>
+                {imagensDoJuri}
+                <EstandesDaAtividade detalhe={detalhe} />
+              </>
+            }
+            equipes={
+              <EquipesDaAtividade
+                key={`equipes-${detalhe.id}`}
                 turmaId={turma}
                 expId={EXP_ID}
                 atividadeId={detalhe.id}
-                inicial={habilidades}
-                podeEditar={session?.usuario.papel === "professor"}
-                rodadaEmAndamento={emAndamento ? (detalhe.rodada ?? null) : null}
+                separarAoAbrir={separar}
               />
-            </div>
-          ) : null}
+            }
+            podcast={
+              /* Depois da aula: o podcast da plataforma (ADR-150), com as falas que o
+                 professor revisou na criação. O podcast é do professor e é
+                 OPCIONAL (decisão do Lucas, 2026-10-07): ele toca na tela dele,
+                 para a sala, se e quando quiser. O episódio conta a virada da
+                 missão, então o aviso no topo RECOMENDA a hora — o fechamento,
+                 depois da Galeria Oculta —, sem travar. A etapa é a do painel (a
+                 mais fresca), e sem ele a gravada no pacote. */
+              <CartaoDoPodcast
+                expId={EXP_ID}
+                turmaId={turma}
+                atividadeId={detalhe.id}
+                podcast={podcast}
+                aviso={avisoDoPodcast(emAndamento, painel?.etapa ?? detalhe.etapa)}
+              />
+            }
+            habilidades={
+              /* O painel de habilidades (E14) — invisível sem ficha
+                 (`temFicha: false`), e só o `professor` confirma e ajusta: a
+                 coordenação lê. A `key` é a atividade. */
+              habilidades?.temFicha ? (
+                <div className="flex flex-col gap-3" data-habilidades-do-juri>
+                  <PainelDeHabilidades
+                    key={detalhe.id}
+                    turmaId={turma}
+                    expId={EXP_ID}
+                    atividadeId={detalhe.id}
+                    inicial={habilidades}
+                    podeEditar={session?.usuario.papel === "professor"}
+                    rodadaEmAndamento={emAndamento ? (detalhe.rodada ?? null) : null}
+                  />
+                </div>
+              ) : null
+            }
+          />
         </>
       )}
     </div>

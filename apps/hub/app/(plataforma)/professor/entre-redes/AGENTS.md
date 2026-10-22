@@ -142,9 +142,10 @@ conferido contra a régua) e em `estudante/11-a-selecao`.
 
 ## A Seleção (exp07ef1b)
 
-A página de UMA atividade mora em `[ano]/[unidade]/resultados/resultados-a-selecao.tsx`,
-na ordem da aula: pô-la no ar (se pronta), equipes, imagens, painel ao vivo com a
-folha por computador, zerar, podcast e habilidades. A criação é
+A página de UMA atividade mora em `[ano]/[unidade]/resultados/resultados-a-selecao.tsx`:
+pô-la no ar (se pronta) e as cinco abas do template (ADR-182, no `AGENTS.md` de
+`professor/`): o painel ao vivo com a folha e o zerar, as imagens, as equipes, o
+podcast e as habilidades. A criação é
 `atividades/nova/criar-a-selecao.tsx`.
 
 - **Criar é aprovar em DUAS fases, na mesma grade** (ADR-146,

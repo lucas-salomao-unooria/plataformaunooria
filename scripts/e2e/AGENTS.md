@@ -52,6 +52,12 @@ o que decide se você precisa abri-lo.
   seção fechada, o Playwright o considera visível e o clique morre interceptado
   pelo contêiner. Abra os collapses antes de procurar (`role="button"` +
   `aria-expanded` no cabeçalho).
+- **Aba fechada das telas de condução é invisível e fica fora do `innerText`**
+  (ADR-182): o guia, a ficha e a página da atividade montam as abas com
+  `hidden`. Antes de clicar ou esperar algo de outra aba, `revelar(p, alvo)`;
+  para ler a página inteira, `textoDeTodasAsAbas(p, "guia" | "ficha" |
+  "atividade")` — os dois em `lib/abas.mjs`. Sem isso o timeout acusa o
+  seletor, e a seção parece ter SUMIDO quando só mudou de aba.
 - **Rádio do DS se clica pelo PAPEL, nunca pelo texto do rótulo.** O `<input>`
   do `RadioGroup` é transparente e cobre o `<label>` inteiro: `getByText(rótulo)`
   resolve no `<span>`, e o clique morre em "<input> intercepts pointer events"

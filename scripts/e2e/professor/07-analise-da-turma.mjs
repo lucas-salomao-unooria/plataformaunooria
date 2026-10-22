@@ -1,5 +1,6 @@
 import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
+import { revelar } from "../lib/abas.mjs";
 
 /**
  * A análise pedagógica da turma — a tela do DEPOIS da aula.
@@ -52,6 +53,8 @@ await suite(
     await p.goto(`${HUB}/professor/atividades/${atividade.id}`, { waitUntil: "domcontentloaded" });
     const botaoDaVila = p.locator("button", { hasText: "Trazer perfis da Vila do Lume" }).first();
     if (await botaoDaVila.count()) {
+      /* A distribuição dos lados mora na aba Equipes da atividade (ADR-182). */
+      await revelar(p, botaoDaVila);
       await botaoDaVila.scrollIntoViewIfNeeded();
       await botaoDaVila.click();
       await p.locator("text=/perfil importado|perfis importados/").first().waitFor({ timeout: 30_000 });

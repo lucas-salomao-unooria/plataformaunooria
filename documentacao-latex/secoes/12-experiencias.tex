@@ -221,6 +221,26 @@ campo que falta: o tipo cobra de quem escreve um guia, e
 nenhum. Ver \adrr{ADR-65}.
 \end{decisao}
 
+\subsection{Os quatro tempos do guia, e as telas de condução em abas}
+
+O guia é lido em quatro TEMPOS, cada um numa aba presa no topo:
+\emph{Preparar} (objetivos e BNCC, antes da aula, cuidados), \emph{Conduzir}
+(roteiro, debate, mediação), \emph{Fechar} (depois da aula) e \emph{Consultar}
+(adaptações, dúvidas). Os tempos são dado (\cd{TEMPOS\_DO\_GUIA}), cada seção
+mora em um só, e o papel imprime os quatro na ordem. A forma segue o conteúdo:
+o roteiro é uma linha do tempo com o botão do painel em etiqueta, a pergunta do
+debate vai numa lousa, mediação e adaptações viram grades, e o topo resume a
+aula em números contados do próprio guia.
+
+O mesmo vale para as duas telas de condução. A \textbf{ficha} da missão
+(\arq{components/ficha/ficha-de-conducao.tsx}) põe a condução --- as atividades
+da turma, ou o caminho para a aula --- logo depois de um aviso, e o
+\enquote{Conhecer a missão} em abas. A \textbf{página da atividade}
+(\arq{components/atividades/abas-da-atividade.tsx}) põe, depois do estado da
+atividade, cinco abas fixas: Aula ao vivo, Conteúdo, Equipes, Podcast e
+Habilidades. Missão nova monta as duas telas por esses templates e ganha a
+mesma disposição das outras. Ver \adrr{ADR-182}.
+
 \subsection{Blocos vivos: o que não vira texto}
 
 O que tem fonte de verdade em outro lugar \textbf{não} é copiado para o guia. O

@@ -2,6 +2,7 @@ import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta, contasDe } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp, vigiarFalhasDaApi } from "../lib/smoke.mjs";
 import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from "../lib/podcast.mjs";
+import { abrirAba, revelar, textoDeTodasAsAbas } from "../lib/abas.mjs";
 
 /**
  * Jornal da Escola: A Edição de Bento (exp04ef1b 3.0.0, "Canal A puro",
@@ -528,7 +529,10 @@ await suite(
     const atividadeId = new URL(prof.url()).searchParams.get("pacote");
     if (!r.exigir(Boolean(atividadeId), `a página da atividade leva o id dela na URL (${prof.url()})`)) return;
     await prof.locator(`[data-pacote="${atividadeId}"]`).waitFor({ timeout: 20_000 });
+    /* As imagens moram na aba Conteúdo e o painel, na Aula ao vivo (ADR-182). */
+    await revelar(prof, prof.locator('[data-imagens-do-pacote][data-imagens-aprovadas="sim"]'));
     await prof.locator('[data-imagens-do-pacote][data-imagens-aprovadas="sim"]').waitFor({ timeout: 20_000 });
+    await revelar(prof, prof.locator("[data-etapa]"));
     await prof.locator("[data-etapa]").waitFor({ timeout: 20_000 });
     const pacotesDepois = (await lerApi(prof, `/jornal-escola/turmas/${turmaId}/pacotes`)).corpo;
     r.exigir(
@@ -608,6 +612,7 @@ await suite(
     if (noArAntes?.id === atividadeId) {
       const rodada = noArAntes.rodada;
       const zerar = prof.locator("[data-zerar-turma]");
+      await revelar(prof, zerar);
       await hidratado(prof, zerar);
       await zerar.click();
       await prof.getByRole("dialog").getByRole("button", { name: /Zerar a turma/ }).click();
@@ -628,8 +633,9 @@ await suite(
     await r.registrar(prof, "atividade-em-andamento", {
       titulo: "A atividade em andamento e o botão que move a sala",
       mostra:
-        "A página da atividade criada: em andamento, as equipes (um aluno por computador), as imagens " +
-        "aprovadas, as duas matérias da simulação e o painel da aula com o botão único na exploração.",
+        "A página da atividade criada, em andamento, com as cinco abas do template e a Aula ao vivo aberta: " +
+        "o painel da aula com o botão único na exploração. As equipes, as imagens aprovadas e as duas " +
+        "matérias da simulação estão nas abas Equipes e Conteúdo.",
       prova:
         "Criar com “Pôr no ar agora” abriu uma rodada nova desta atividade — o que só é possível com as " +
         "imagens aprovadas na criação (ADR-147). Trocar uma imagem aqui a tira da turma até o novo OK. As " +
@@ -1427,8 +1433,11 @@ await suite(
 
     // ═══ PROFESSORA: a folha, o roteiro da Chave e as habilidades ═════════
     await prof.reload({ waitUntil: "domcontentloaded" });
+    /* As habilidades moram na aba Habilidades e a folha, na Aula ao vivo (ADR-182). */
+    await revelar(prof, prof.locator("[data-habilidades-do-jornal]"));
     await prof.getByText("EF15CO04").first().waitFor({ timeout: 30_000 });
-    const folha = await prof.locator("main").innerText();
+    const folha = await textoDeTodasAsAbas(prof, "atividade");
+    await abrirAba(prof, "Aula ao vivo");
     /* Pelos CABEÇALHOS das colunas, não pelo texto da página: o painel explica
        à professora que o número "não é nota", e a frase que nega a nota não
        pode reprovar a suíte que prova a ausência dela. */

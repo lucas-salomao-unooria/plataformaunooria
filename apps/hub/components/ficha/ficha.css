@@ -1,0 +1,111 @@
+/*
+ * A FICHA DA MISSÃO (template, ADR-182). Só compensação de LAYOUT — a
+ * sequência dos atos, a lista do preparo, a prosa do segredo —; abas,
+ * etiquetas, avisos e botões são do DS. Cor só por token `--unooria-*`.
+ */
+
+.ficha {
+  --ficha-linha: var(--unooria-color-neutral-200, #d9dee3);
+  --ficha-navy: var(--unooria-color-brandnavy-900, #2f4470);
+  --ficha-navy-claro: var(--unooria-color-brandnavy-800, #49699f);
+}
+
+/* Os atos: um círculo numerado ligado ao próximo por uma régua. */
+.ficha-atos {
+  display: flex;
+  flex-direction: column;
+}
+
+.ficha-atos__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 14px;
+  padding-bottom: 18px;
+}
+
+.ficha-atos__item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 28px;
+  bottom: 0;
+  left: 13px;
+  width: 2px;
+  background: var(--ficha-linha);
+}
+
+.ficha-atos__numero {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ficha-navy-claro);
+  background: var(--unooria-color-neutral-50, #ffffff);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ficha-navy);
+  font-variant-numeric: tabular-nums;
+}
+
+.ficha-preparo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ficha-preparo > li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--unooria-color-neutral-800, #2c3a47);
+}
+
+.ficha-segredo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 76ch;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--unooria-color-neutral-800, #2c3a47);
+}
+
+.ficha-sobre {
+  display: grid;
+  gap: 18px;
+  max-width: 80ch;
+}
+
+.ficha-sobre dt {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--unooria-color-neutral-500, #6b7785);
+}
+
+.ficha-sobre dd {
+  margin-top: 4px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--unooria-color-neutral-800, #2c3a47);
+}
+
+/* A turma da condução: uma linha, sem fundo de alerta. */
+.ficha-turma {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--unooria-color-neutral-200, #d9dee3);
+  border-radius: 10px;
+  background: var(--unooria-color-neutral-50, #ffffff);
+}
+
+.ficha-turma__descricao {
+  color: var(--unooria-color-neutral-500, #6b7785);
+}

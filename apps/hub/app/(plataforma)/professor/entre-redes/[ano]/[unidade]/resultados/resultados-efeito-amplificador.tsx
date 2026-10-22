@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { dataHora } from "@edu/sdk";
 import { Badge, Card, EmptyState, FeedbackAlert, SectionHeader, Tag } from "@edu/ui/ds";
+import { AbasDaAtividade } from "@/components/atividades/abas-da-atividade";
 import { UsarEstaAtividade } from "@/components/atividades/usar-esta-atividade";
 import { EquipesDaAtividade } from "@/components/equipes/equipes-da-ficha";
 import { PainelDeHabilidades } from "@/components/evidencias/painel-de-habilidades";
@@ -219,98 +220,113 @@ export async function ResultadosEfeitoAmplificador({
             </Card>
           ) : null}
 
-          {/* O pacote, com o gabarito (só o professor e a coordenação chegam
-              aqui), e a outra porta da aula: a liberação na sala. */}
-          <Card variant="elevated">
-            <div className="flex flex-col gap-4" data-pacote-da-atividade={detalhe.id}>
-              <SectionHeader title="O pacote da campanha" description={`Tema: ${detalhe.tema}`} />
-              <dl className="grid gap-x-6 gap-y-1 text-[13px] text-unooria-neutral-700 sm:grid-cols-[max-content_1fr]">
-                <dt className="font-semibold text-unooria-neutral-500">Componente</dt>
-                <dd>{disciplina}</dd>
-                <dt className="font-semibold text-unooria-neutral-500">Origem</dt>
-                <dd>{ROTULO_DA_ORIGEM[detalhe.origem]}</dd>
-                <dt className="font-semibold text-unooria-neutral-500">Criada em</dt>
-                <dd>{detalhe.aprovadoEm ? dataHora(detalhe.aprovadoEm) : "—"}</dd>
-              </dl>
-
-              {naSala?.estado === "liberada" ? (
-                <p className="text-[13px] text-unooria-neutral-700" data-liberacao-na-sala="liberada">
-                  <Tag variant="success" size="sm">
-                    Liberada na sala
-                  </Tag>{" "}
-                  {liberadaEm ? `desde ${dataHora(liberadaEm)}. ` : ""}
-                  {emAndamento
-                    ? "A turma já pode entrar na campanha."
-                    : "Quando esta atividade estiver em andamento, a turma já entra nela."}
-                </p>
-              ) : naSala ? (
-                <div data-liberacao-na-sala={naSala.estado}>
-                  <FeedbackAlert
-                    type="warning"
-                    title={
-                      naSala.estado === "encerrada"
-                        ? "A missão está encerrada na sala desta turma"
-                        : "A missão ainda não está liberada para esta turma"
-                    }
-                    description="Sem a liberação na sala de aula, o cartão fica com cadeado para as crianças — a atividade em andamento não basta."
-                    action={
-                      <LinkButton href={rotaDaSala} size="sm">
-                        Liberar Missão para a Turma
-                      </LinkButton>
-                    }
-                  />
-                </div>
-              ) : null}
-
-              <PacoteDaCampanha pacote={detalhe} />
-            </div>
-          </Card>
-
-          <EquipesDaAtividade
-            key={`equipes-${detalhe.id}`}
-            turmaId={turma}
-            expId={EXP_ID}
-            atividadeId={detalhe.id}
-            separarAoAbrir={separar}
-          />
-
-          {/* As `key` NÃO são otimização: o painel guarda estado em
-              `useState(inicial)`, e trocar de turma ou de atividade pela URL sem
-              remontar mostraria a aula de uma na outra. */}
-          {emAndamento && painel ? (
-            <>
-              <PainelDaAulaEfeitoAmplificador key={`aula-${turma}-${detalhe.id}`} turmaId={turma} inicial={painel} podeConduzir={podeConduzir} />
-              {podeConduzir && atividadeDoPainel ? (
-                <ZerarTurmaEfeitoAmplificador
-                  key={`zerar-${turma}-${atividadeDoPainel.pacoteId}-${atividadeDoPainel.rodada}`}
-                  turmaId={turma}
-                  nomeDaTurma={painel.turma.nome}
-                  rodada={atividadeDoPainel.rodada}
-                />
-              ) : null}
-            </>
-          ) : null}
-
-          {/* Depois da aula: o podcast da plataforma (ADR-150) — fixo, o roteiro do one-pager. */}
-          <CartaoDoPodcast expId={EXP_ID} turmaId={turma} atividadeId={detalhe.id} podcast={podcast} />
-
-          {/* EVIDÊNCIA (E14): a atividade é o PACOTE (`atividadeId = pacoteId`);
-              a rodada é a reaplicação, e o próprio painel mostra as rodadas e o
-              resultado. Invisível sem ficha (`temFicha: false`), e só o
-              `professor` confirma e ajusta: a coordenação lê. */}
-          {habilidades?.temFicha ? (
-            <div className="flex flex-col gap-3" data-habilidades-efeito-amplificador>
-              <PainelDeHabilidades
-                key={`habilidades-${turma}-${detalhe.id}`}
-                turmaId={turma}
-                expId={EXP_ID}
-                atividadeId={detalhe.id}
-                inicial={habilidades}
-                podeEditar={podeConduzir}
-                rodadaEmAndamento={emAndamento ? detalhe.rodadaAtual : null}
+          {/* A outra porta da aula, a liberação na sala, fica FORA das abas: sem
+              ela o cartão tem cadeado para as crianças, e o aviso não pode
+              depender de abrir a aba do conteúdo. */}
+          {naSala && naSala.estado !== "liberada" ? (
+            <div data-liberacao-na-sala={naSala.estado}>
+              <FeedbackAlert
+                type="warning"
+                title={
+                  naSala.estado === "encerrada"
+                    ? "A missão está encerrada na sala desta turma"
+                    : "A missão ainda não está liberada para esta turma"
+                }
+                description="Sem a liberação na sala de aula, o cartão fica com cadeado para as crianças — a atividade em andamento não basta."
+                action={
+                  <LinkButton href={rotaDaSala} size="sm">
+                    Liberar Missão para a Turma
+                  </LinkButton>
+                }
               />
             </div>
           ) : null}
+
+          {/* O resto é o template da página da atividade (ADR-182): cinco abas
+              com o mesmo nome em toda missão. */}
+          <AbasDaAtividade
+            estado={emAndamento ? "em-andamento" : "pronta"}
+            aula={
+              /* As `key` NÃO são otimização: o painel guarda estado em
+                 `useState(inicial)`, e trocar de turma ou de atividade pela URL sem
+                 remontar mostraria a aula de uma na outra. */
+              emAndamento && painel ? (
+                <>
+                  <PainelDaAulaEfeitoAmplificador key={`aula-${turma}-${detalhe.id}`} turmaId={turma} inicial={painel} podeConduzir={podeConduzir} />
+                  {podeConduzir && atividadeDoPainel ? (
+                    <ZerarTurmaEfeitoAmplificador
+                      key={`zerar-${turma}-${atividadeDoPainel.pacoteId}-${atividadeDoPainel.rodada}`}
+                      turmaId={turma}
+                      nomeDaTurma={painel.turma.nome}
+                      rodada={atividadeDoPainel.rodada}
+                    />
+                  ) : null}
+                </>
+              ) : null
+            }
+            conteudo={
+              /* O pacote, com o gabarito (só o professor e a coordenação chegam aqui). */
+              <Card variant="elevated">
+                <div className="flex flex-col gap-4" data-pacote-da-atividade={detalhe.id}>
+                  <SectionHeader title="O pacote da campanha" description={`Tema: ${detalhe.tema}`} />
+                  <dl className="grid gap-x-6 gap-y-1 text-[13px] text-unooria-neutral-700 sm:grid-cols-[max-content_1fr]">
+                    <dt className="font-semibold text-unooria-neutral-500">Componente</dt>
+                    <dd>{disciplina}</dd>
+                    <dt className="font-semibold text-unooria-neutral-500">Origem</dt>
+                    <dd>{ROTULO_DA_ORIGEM[detalhe.origem]}</dd>
+                    <dt className="font-semibold text-unooria-neutral-500">Criada em</dt>
+                    <dd>{detalhe.aprovadoEm ? dataHora(detalhe.aprovadoEm) : "—"}</dd>
+                  </dl>
+
+                  {naSala?.estado === "liberada" ? (
+                    <p className="text-[13px] text-unooria-neutral-700" data-liberacao-na-sala="liberada">
+                      <Tag variant="success" size="sm">
+                        Liberada na sala
+                      </Tag>{" "}
+                      {liberadaEm ? `desde ${dataHora(liberadaEm)}. ` : ""}
+                      {emAndamento
+                        ? "A turma já pode entrar na campanha."
+                        : "Quando esta atividade estiver em andamento, a turma já entra nela."}
+                    </p>
+                  ) : null}
+
+                  <PacoteDaCampanha pacote={detalhe} />
+                </div>
+              </Card>
+            }
+            equipes={
+              <EquipesDaAtividade
+                key={`equipes-${detalhe.id}`}
+                turmaId={turma}
+                expId={EXP_ID}
+                atividadeId={detalhe.id}
+                separarAoAbrir={separar}
+              />
+            }
+            podcast={
+              /* Depois da aula: o podcast da plataforma (ADR-150) — fixo, o roteiro do one-pager. */
+              <CartaoDoPodcast expId={EXP_ID} turmaId={turma} atividadeId={detalhe.id} podcast={podcast} />
+            }
+            habilidades={
+              /* EVIDÊNCIA (E14): a atividade é o PACOTE (`atividadeId = pacoteId`);
+                 a rodada é a reaplicação, e o próprio painel mostra as rodadas e o
+                 resultado. Invisível sem ficha (`temFicha: false`), e só o
+                 `professor` confirma e ajusta: a coordenação lê. */
+              habilidades?.temFicha ? (
+                <div className="flex flex-col gap-3" data-habilidades-efeito-amplificador>
+                  <PainelDeHabilidades
+                    key={`habilidades-${turma}-${detalhe.id}`}
+                    turmaId={turma}
+                    expId={EXP_ID}
+                    atividadeId={detalhe.id}
+                    inicial={habilidades}
+                    podeEditar={podeConduzir}
+                    rodadaEmAndamento={emAndamento ? detalhe.rodadaAtual : null}
+                  />
+                </div>
+              ) : null
+            }
+          />
         </>
       )}
     </div>

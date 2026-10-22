@@ -219,7 +219,7 @@ export function PainelDaAulaEfeitoAmplificador({
         <div className="flex flex-col gap-3" data-folha>
           <SectionHeader
             title="Folha da turma"
-            description="Para a sua tela, não para o projetor. O nível de cada habilidade fica no painel de habilidades, abaixo; o que cada estudante escreveu ao UnooriaAI não sai do aparelho dele."
+            description="Para a sua tela, não para o projetor. O nível de cada habilidade fica na aba Habilidades; o que cada estudante escreveu ao UnooriaAI não sai do aparelho dele."
           />
           {painel.porComputador ? <FeedbackAlert type="info" description={AVISO_POR_COMPUTADOR} /> : null}
           <ScrollBar orientation="both" autoHide className="tabela-rolavel">

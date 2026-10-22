@@ -1,6 +1,7 @@
 import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
 import { vigiarFalhasDaApi } from "../lib/smoke.mjs";
+import { textoDeTodasAsAbas } from "../lib/abas.mjs";
 
 /**
  * A MISSÃO INTEIRA do Unoovista (exp08ef1b), ponta a ponta, com as duas pessoas que a
@@ -808,7 +809,8 @@ await suite(
     await moverEtapa(prof, atividade.id, "fim");
     await prof.reload({ waitUntil: "domcontentloaded" });
     await prof.waitForTimeout(3000);
-    const paginaDoProfessor = await prof.locator("main").innerText();
+    /* As habilidades moram na aba Habilidades da atividade (ADR-182). */
+    const paginaDoProfessor = await textoDeTodasAsAbas(prof, "atividade");
     r.exigir(
       ["EF08CO11", "EF08CO09", "EF08CO07"].every((c) => paginaDoProfessor.includes(c)),
       "o painel \"Habilidades da BNCC\" da atividade mostra as três habilidades do Unoovista",

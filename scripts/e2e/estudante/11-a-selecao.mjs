@@ -1,5 +1,6 @@
 import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta, contasDe } from "../lib/credenciais.mjs";
+import { revelar, textoDeTodasAsAbas } from "../lib/abas.mjs";
 
 /**
  * A Seleção (exp07ef1b), nas três pontas da sala: a professora e dois
@@ -537,7 +538,9 @@ await suite(
     // ═══ PROFESSORA: a folha da turma e as habilidades ═══════════════════
     await prof.reload({ waitUntil: "domcontentloaded" });
     await prof.waitForSelector("[data-envio]", { timeout: 20_000 });
-    const folha = await prof.locator("main").innerText();
+    /* A folha é da aba Aula ao vivo e as habilidades, da aba Habilidades
+       (ADR-182): o texto da página é o das abas todas. */
+    const folha = await textoDeTodasAsAbas(prof, "atividade");
     /* Pelos CABEÇALHOS das colunas, não pelo texto da página: a folha mostra a
        seleção e a legenda de cada estudante, e o lote da IA escreve o que quiser
        ("Usuários pedem mais pontos de água potável…" reprovou a corrida de
@@ -578,6 +581,7 @@ await suite(
 
     // ═══ PROFESSORA: o podcast de recapitulação ══════════════════════════
     const cartao = prof.locator("[data-podcast-da-aula]");
+    await revelar(prof, cartao, { timeout: 20_000 });
     await cartao.waitFor({ timeout: 20_000 });
     await prof.click('[data-acao="ler-transcricao"]');
     const transcricao = prof.locator("[data-transcricao-podcast]");

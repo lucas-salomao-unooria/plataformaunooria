@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{181 decisões}, numeradas até ADR-181: a 181 (O Efeito Amplificador e a versão anterior da 2ª série) foi escrita depois de conferir \cd{origin/dev-local}, \cd{origin/dev} e as branches, a 180 (as respostas do PO sobre o Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 179 (as réguas do PO no Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 178 (as quatro fotos do carrossel do Júri Estadual) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{182 decisões}, numeradas até ADR-182: a 182 (os tempos do guia da aula e as abas das telas de condução) foi escrita depois de conferir \cd{origin/dev-local}, \cd{origin/dev} e as branches, a 181 (O Efeito Amplificador e a versão anterior da 2ª série) foi escrita depois de conferir \cd{origin/dev-local}, \cd{origin/dev} e as branches, a 180 (as respostas do PO sobre o Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 179 (as réguas do PO no Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 178 (as quatro fotos do carrossel do Júri Estadual) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -232,6 +232,7 @@ que a cercam.
 \adrr{ADR-179} & O Unoovista adota as réguas do PO validadas com a pedagogia, e os termos de uso voltam para a entrada & 2026-10-21 & Aceita; substitui partes da \adrr{ADR-167}; ajustada pela \adrr{ADR-180}\\
 \zebra \adrr{ADR-180} & As respostas do PO no Unoovista: a EF08CO11 só pelo Raio-x, o chute fora de \enquote{em processo} e ridicularizar não atinge & 2026-10-22 & Aceita; ajusta a \adrr{ADR-179}\\
 \adrr{ADR-181} & O Efeito Amplificador toma o código da 2ª série, unidade 1, e a Missão Tempestade vira a versão anterior \cd{exp02em1b-v0}: no ar, fora do catálogo & 2026-10-22 & Aceita; estende a \adrr{ADR-110} e a \adrr{ADR-116}\\
+\zebra \adrr{ADR-182} & O guia da aula em quatro tempos e as telas de condução em abas: um template para a ficha e para a página da atividade, sem tirar texto & 2026-10-22 & Aceita; estende a \adrr{ADR-65} e a \adrr{ADR-100}\\
 \bottomrule
 \end{tabularx}
 
@@ -16563,3 +16564,116 @@ e a abertura do chat com uma fala literal dele.
 \cd{-v1}, e a pergunta de quantas versões ficam no ar), ou o pedido de conduzir
 uma aula nova da Tempestade --- que pediria uma rota de entrada própria para a
 versão anterior.
+
+\section{ADR-182 --- O guia da aula em quatro tempos e as telas de condução em abas}
+\label{adr:tempos-do-guia-e-abas-da-conducao}
+
+\textbf{Data.} 2026-10-22. \textbf{Status.} Aceita. \textbf{Estende} a
+\adrr{ADR-65} (o guia é dado, e a ordem é do renderizador) com os TEMPOS da
+aula, e a \adrr{ADR-100} (a sala leva à ficha) com a ordem da ficha e o
+template da página da atividade.
+
+\begin{especificacao}{Contexto}
+A queixa constante dos professores sobre o guia da aula e as telas de condução
+era \enquote{tem muita informação, está muito denso} --- e o dono do produto
+fixou a restrição: os textos e as informações são todos importantes, nada sai.
+Medido nas dez missões publicadas, logado como professor e com a turma na URL
+(como a sala abre): o guia tinha de 8.224 a 17.276 pixels de altura e de 2.502 a
+6.486 palavras numa coluna só, com três alertas coloridos de largura cheia antes
+do primeiro conteúdo; a ficha (a tela de \enquote{Conduzir com esta turma})
+abria com resumo, formato, competência, os atos, o preparo e \enquote{o que a
+missão não conta} --- 900 a 1.500 palavras --- antes de chegar às atividades da
+turma, que é o que o professor veio fazer; e a página da atividade empilhava
+equipes, de 40 a 160 imagens já aprovadas, os estandes ou o pacote, e só então o
+painel da aula, a única peça usada NA FRENTE da turma (o Júri chegava a 11.298
+pixels; o Unoovista, a 9.426).
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O guia ganha quatro tempos} (\cd{TEMPOS\_DO\_GUIA}, em
+    \arq{lib/entre-redes/guias/tipos.ts}): \emph{Preparar} (na véspera:
+    objetivos e BNCC, antes da aula, cuidados), \emph{Conduzir} (na frente da
+    turma: roteiro, debate, mediação), \emph{Fechar} (depois da aula) e
+    \emph{Consultar} (adaptações, dúvidas). Cada tempo é uma aba do \cd{Tabs}
+    do DS, presa no topo ao rolar; o índice lateral mostra as seções do tempo
+    aberto, e a âncora de uma seção (\cd{\#roteiro}) abre o tempo dela. Toda
+    seção mora em exatamente um tempo, na ordem do guia --- o teste do
+    registro cobra. \cd{cuidados} subiu para o Preparar: tem o selo
+    \enquote{leia antes} e ficava depois da rubrica.
+  \item \textbf{Cada seção ganha a forma do que ela é}: o topo resume a aula em
+    números CONTADOS do guia (duração, momentos do roteiro, os botões do
+    professor, a habilidade principal); os avisos viram um bloco só, com o tom
+    no ícone; o roteiro é uma linha do tempo, com o botão do painel como
+    etiqueta (era a última coluna de uma tabela larga); a pergunta do debate
+    vai numa lousa; a escada de perguntas fica em duas colunas; mediação e
+    adaptações viram grades de itens; os dois preparos ficam lado a lado.
+    Cartão só onde há item, não em volta de toda seção.
+  \item \textbf{A ficha é um template}
+    (\arq{components/ficha/ficha-de-conducao.tsx}), na ordem do trabalho: o
+    cabeçalho curto com o guia a um clique, UM aviso que decide a aula, a
+    CONDUÇÃO (as atividades da turma, ou o caminho para a aula) e
+    \enquote{Conhecer a missão} em abas --- como funciona, antes de rodar, o
+    que ela não conta, competência e formato, e as abas próprias da missão (a
+    Vila: para que serve, as três bolhas). O corpo de cada missão passa só o
+    que é dele. A faixa da turma, que é do despachante, virou uma linha.
+  \item \textbf{A página da atividade é um template}
+    (\arq{components/atividades/abas-da-atividade.tsx}) nas seis missões com
+    atividade: depois do estado (pronta, em preparo, \enquote{Usar esta
+    atividade agora}), cinco abas com o mesmo nome e na mesma ordem em toda
+    missão --- Aula ao vivo, Conteúdo, Equipes, Podcast, Habilidades. Abre a
+    Aula com a atividade em andamento, o Conteúdo em preparo e as Equipes
+    quando pronta. O aviso de liberação na sala fica FORA das abas. As missões
+    sem atividade (Foto Conta, Rastro, Manifesto, Vila) já abriam com a aula
+    no topo e ficam em coluna única.
+  \item \textbf{As abas fechadas ficam montadas, com \cd{hidden}}
+    (\arq{components/abas-da-pagina.tsx}, \arq{components/guia/tempos-do-guia.tsx}):
+    o papel imprime os quatro tempos; a âncora precisa existir antes de a aba
+    abrir; e o painel da aula segue consultando a api, e chamando
+    \cd{router.refresh()} quando a evidência muda, com a aba de habilidades
+    aberta. \cd{hidden} é \cd{display: none}: nada fica focável sem ser visto.
+    O clique na aba da página não grava o endereço: o F5 no meio da aula volta
+    à aba que o estado escolhe.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Cortar ou resumir o texto}: era a saída óbvia e foi vetada pelo
+    dono do produto --- o texto de cada seção é o que já foi validado com a
+    pedagogia e o PO.
+  \item \textbf{\cd{Collapse} por seção}: deixaria a página tão longa quanto
+    antes ao abrir tudo, e o fechado leva botões focáveis para dentro de
+    \cd{aria-hidden} (o defeito já medido na app-92 e nas equipes).
+  \item \textbf{Só o \cd{TabPanel} do DS}: ele desmonta a aba fechada --- o
+    papel sairia com um tempo só e o painel da aula pararia de acompanhar a
+    turma ao abrir outra aba.
+  \item \textbf{Uma página por tempo} (\rota{.../guia/conduzir}): quatro rotas,
+    quatro trilhas e o papel dividido em quatro impressões.
+  \item \textbf{Aplicar as abas também às páginas sem atividade}: ganhariam
+    uma barra com uma ou duas abas e nenhum ganho --- a aula já está no topo.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item O que está numa aba fechada não aparece no \enquote{Ctrl+F} do
+    navegador; o professor que procurava uma palavra no guia inteiro precisa
+    imprimir ou trocar de aba.
+  \item As suítes e2e que liam a página inteira (\cd{innerText} do
+    \cd{main}) passaram a ler aba por aba, e as que clicam em algo de outra
+    aba abrem a aba antes (\arq{scripts/e2e/lib/abas.mjs}): é um passo a mais
+    em toda suíte nova destas telas.
+  \item Nas missões sem atividade a página da aula não segue o template; uma
+    missão nova sem atividade escolhe se o usa.
+\end{itemize}
+
+\textbf{Gatilho.} Um tempo do guia que passe dos 10 mil pixels --- hoje o
+mais longo é o Conduzir de Quem mandou isso?, com 8.125, quase todo de blocos
+vivos (o pacote com o gabarito, o alerta e o robô do grupo), que são material
+da condução e ficam ---, o que pediria uma forma própria para o bloco vivo, e
+não mais uma aba; ou o pedido de uma
+página da aula que precise de duas abas abertas ao mesmo tempo (o painel e as
+habilidades lado a lado, num projetor largo).
+

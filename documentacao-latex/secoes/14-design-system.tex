@@ -1443,13 +1443,36 @@ não elementos: sem o \emph{reset}, todo \cd{<a>} volta a ser sublinhado e todo
 \emph{cards} de produto.
 \end{nota}
 
+\section{Abas que não desmontam: o guia e as telas de condução (\adrr{ADR-182})}
+\label{ds:abas-montadas}
+
+O guia da aula (os quatro tempos), o \enquote{Conhecer a missão} da ficha e a
+página da atividade dividem a tela com o \cd{Tabs} do DS. O \cd{TabPanel} do
+pacote \textbf{desmonta} a aba fechada, e nessas três telas isso não serve: o
+papel imprime os quatro tempos do guia, a âncora de uma seção precisa existir
+antes de a aba dela abrir, e o painel da aula consulta a api e chama
+\cd{router.refresh()} mesmo com a aba de habilidades aberta. A composição é o
+\cd{Tabs} (os botões, com \cd{role="tab"} e \cd{id="tab-<valor>"}) mais um
+\cd{div} \cd{role="tabpanel"} com \cd{id="tabpanel-<valor>"},
+\cd{aria-labelledby} na aba e \cd{hidden} quando fechado --- \arq{components/abas-da-pagina.tsx} e
+\arq{components/guia/tempos-do-guia.tsx}. Não é o defeito do \cd{Collapse}
+fechado: \cd{hidden} é \cd{display: none}, e nada fica focável sem ser visto.
+A folha de impressão do guia devolve os painéis escondidos ao papel.
+
+\textbf{Lacunas a pedir no \cd{storybook-unooria}}: um \cd{keepMounted} no
+\cd{Tabs}, que dispense o painel composto; e o \cd{aria-controls} do \cd{Tab}
+montado por \cd{items}, que sai sem ele (medido na 0.2.19) --- a aba não
+aponta o painel, só o painel aponta a aba. Com ele, as duas peças passam a usar
+o \cd{TabPanel} do pacote.
+
 \section{Rolagem: o \cd{ScrollBar} do DS, em toda área rolável do hub}
 \label{ds:rolagem}
 
 \textbf{Nenhuma tela do hub declara \cd{overflow} para rolar.} Área que rola é um
 \cd{<ScrollBar>} do \cd{@edu/ui/ds}: as 24 tabelas de \rota{/admin},
 \rota{/analise} e \rota{/professor}, o sumário de \rota{/privacidade} e
-\rota{/termos}, e as 5 tabelas largas do guia da aula. Dele vêm o \cd{overflow},
+\rota{/termos}, e a rubrica do guia da aula (as outras quatro tabelas largas do
+guia viraram lista, linha do tempo e grade com a \adrr{ADR-182}). Dele vêm o \cd{overflow},
 a barra, o \cd{autoHide} e o \emph{fade} (\adrr{ADR-75}).
 
 Até 2026-09-07 nada disso usava o componente: as tabelas rolavam em \cd{<div>}
