@@ -72,7 +72,7 @@ describe('a revelação', () => {
   });
 
   test('a primeira tela não promete mais do que é verdade, e o lado de partida não cita o menu', () => {
-    expect(REVELACAO_FIXA[0]!.complemento).toBe('Nenhum dado seu foi para rede social nenhuma.');
+    expect(REVELACAO_FIXA[0]!.complemento).toBe('Nada do que você fez aqui foi parar em outra rede social.');
     expect(JSON.stringify(telasDaRevelacao('perfil'))).not.toContain('Por que estou vendo isto');
   });
 

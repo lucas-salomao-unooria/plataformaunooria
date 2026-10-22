@@ -29,7 +29,7 @@ E os módulos de experiência, um por missão:
 
 | Módulo | Experiência |
 |---|---|
-| [`src/comum/insta/`](src/comum/insta/AGENTS.md) | exp08ef1b Unoovista — o relógio da aula (ADR-92); com ficha (E14) e o Canal A (ADR-167): as tarefas e a leitura da reflexão em `src/motor/canal-a/` |
+| [`src/comum/insta/`](src/comum/insta/AGENTS.md) | exp08ef1b Unoovista — o relógio da aula (ADR-92); com ficha (E14) e o Canal A (ADR-167): as tarefas em `src/motor/canal-a/` (a reflexão não passa pela IA desde a ADR-180) |
 | [`src/efeito-amplificador/`](src/efeito-amplificador/AGENTS.md) | exp02em1b O Efeito Amplificador (ADR-181): o UnooriaAI por intenções (sem IA na aula), o latch do Publicar, o feed da madrugada e a Etapa 5; ficha só Canal A (sem transferência nem Canal B, decisão do PO), equipe (E13) e podcast fixo |
 | [`src/unoogpt/`](src/unoogpt/AGENTS.md) | exp02em1b-v0 — a Missão Tempestade, VERSÃO ANTERIOR (ADR-181): no ar e fora do catálogo; tabelas `exp02em1b_v0_*` — com ficha (E14: atividade "turma", conta ao encerrar) e o Canal A (ADR-172): as sete tarefas em `canal-a.service.ts`; e equipe (E13) |
 | [`src/a-selecao/`](src/a-selecao/AGENTS.md) | exp07ef1b A Seleção — com ficha (E14) e o Mural pareado por computador (E13) |

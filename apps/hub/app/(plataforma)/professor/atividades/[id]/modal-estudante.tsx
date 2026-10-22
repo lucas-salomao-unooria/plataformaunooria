@@ -89,15 +89,6 @@ interface Dados {
       envio: boolean;
       refeita: boolean;
       fraseDoEnvio: string | null;
-      leitura: {
-        resultado: "nivel" | "sem_marca" | "falha" | null;
-        nivel: "atingiu" | "em_processo" | "nao_atingiu" | null;
-        motivo: string | null;
-        tentativas?: number;
-        lidaEm: string | null;
-      } | null;
-      textoLido: string | null;
-      textoLidoApagado: boolean;
     };
   };
   resumo: {
@@ -359,7 +350,7 @@ export function ModalEstudante({
               ) : null}
             </section>
 
-            {dados.sessao.canalA ? <SecaoDasTarefas canalA={dados.sessao.canalA} reflexaoAtual={dados.sessao.reflexao} /> : null}
+            {dados.sessao.canalA ? <SecaoDasTarefas canalA={dados.sessao.canalA} /> : null}
           </div>
         )}
       </ModalBody>
@@ -557,33 +548,13 @@ function PainelDoRelatorio({ relatorio }: { relatorio: Relatorio }) {
   );
 }
 
-/** O que a leitura da IA disse da reflexão, em texto para o professor. */
-const RESULTADO_DA_LEITURA: Record<string, string> = {
-  atingiu: "Atingiu",
-  em_processo: "Em processo",
-  nao_atingiu: "Não atingiu",
-  sem_marca: "sem marca (o texto não fala do mecanismo do feed)",
-  falha: "sem leitura (a IA não respondeu depois de três tentativas, ou ficou sem saldo)",
-};
-
 /**
- * AS TAREFAS DO CANAL A (ADR-167), no popup de um estudante: o que ele fez,
- * a frase própria do envio e a leitura que a IA fez da reflexão.
- *
- * O "texto lido" é o PRIMEIRO texto que ele salvou; quando difere do texto de
- * agora, os dois aparecem — é assim que o professor confere a sugestão da IA.
- * Depois de um reinício o texto lido saiu com a reflexão antiga, e só o nível
- * e o motivo ficam. Só o professor lê esta janela.
+ * AS TAREFAS DO CANAL A (ADR-167), no popup de um estudante: o que ele fez e
+ * a frase própria do envio. A reflexão aparece acima, inteira; ela não é mais
+ * lida pela IA nem conta para a evidência (ADR-180). Só o professor lê esta
+ * janela.
  */
-function SecaoDasTarefas({
-  canalA,
-  reflexaoAtual,
-}: {
-  canalA: NonNullable<Dados["sessao"]["canalA"]>;
-  reflexaoAtual: string | null;
-}) {
-  const leitura = canalA.leitura;
-  const resultado = leitura?.resultado === "nivel" ? leitura.nivel : leitura?.resultado;
+function SecaoDasTarefas({ canalA }: { canalA: NonNullable<Dados["sessao"]["canalA"]> }) {
   const feitas = [canalA.raioX ? "Raio-x" : null, canalA.termos ? "termos" : null, canalA.envio ? "envio" : null].filter(Boolean);
   return (
     <section className="flex flex-col gap-1.5 rounded-lg bg-unooria-neutral-50 p-3">
@@ -596,20 +567,6 @@ function SecaoDasTarefas({
       {canalA.fraseDoEnvio ? (
         <p className="text-[12px] leading-relaxed text-unooria-neutral-700">
           frase do estudante no envio: “{canalA.fraseDoEnvio}”
-        </p>
-      ) : null}
-      {leitura ? (
-        <p className="text-[12px] leading-relaxed text-unooria-neutral-700">
-          leitura da reflexão pela IA (sugestão):{" "}
-          <strong>{resultado ? RESULTADO_DA_LEITURA[resultado] ?? resultado : "aguardando"}</strong>
-        </p>
-      ) : null}
-      {canalA.textoLido && canalA.textoLido !== reflexaoAtual ? (
-        <p className="text-[12px] leading-relaxed text-unooria-neutral-700">texto lido pela IA: “{canalA.textoLido}”</p>
-      ) : null}
-      {canalA.textoLidoApagado ? (
-        <p className="text-[12px] leading-relaxed text-unooria-neutral-500">
-          O texto lido foi apagado no reinício; ficaram o nível e o motivo.
         </p>
       ) : null}
     </section>

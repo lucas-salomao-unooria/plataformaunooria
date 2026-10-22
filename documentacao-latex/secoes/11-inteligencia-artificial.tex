@@ -36,14 +36,11 @@ Preparo da cobertura & exp07ef1b, \arq{src/a-selecao/} &
   Um nível de EF07CO11 para a legenda dos Stories (o Canal A), que só o
   professor vê e corrige. Falha, timeout ou saldo zerado não marcam nada
   (\adrr{ADR-115}).\\
-\zebra Leitura da reflexão & exp08ef1b, \arq{src/motor/canal-a/} &
-  Um nível de EF08CO11 para o PRIMEIRO texto salvo da reflexão, uma vez só por
-  estudante na atividade, depois da resposta e sem a criança esperar. A IA
-  recebe só o texto e uma descrição neutra da missão. O painel mostra
-  \enquote{Reflexão --- sugestão da IA} e o professor confere contra o texto
-  lido. A falha técnica (tempo, \emph{provider}, saída incoerente) tenta de
-  novo, até 3 vezes, com o mesmo texto; sem saldo, ou depois da 3ª falha, a
-  leitura encerra sem marca (\adrr{ADR-167}).\\
+\zebra Leitura da reflexão & exp08ef1b (saiu) &
+  \textbf{Desligada na \adrr{ADR-180}}: a EF08CO11 passou a ser medida só
+  pelo Raio-x, e a reflexão do Unoovista não vai mais para o \emph{provider}.
+  Ela sugeria um nível para o PRIMEIRO texto salvo, uma vez só por estudante
+  (\adrr{ADR-167}).\\
 Preparo do pacote & exp04ef1b, \arq{src/jornal-escola/} &
   O texto das oito notícias sobre o tema do professor, num \textbf{molde
   sorteado no servidor} (que notícia é de que meio e que papel tem no

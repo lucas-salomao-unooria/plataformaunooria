@@ -425,9 +425,8 @@ papel \cd{estudante}, com duas exceções marcadas.
   o relógio coletivo da turma.\\
 \rota{POST /runs/:id/conclusao} & estudante & Inclinação escolhida (A, B ou dúvida).\\
 \zebra \rota{POST /runs/:id/reflexao}, \rota{GET .../reflexao} & estudante &
-  Texto livre de fechamento, sem limite de caracteres. O PRIMEIRO salvamento
-  guarda o texto lido e cria a leitura da IA, que roda depois da resposta
-  (\adrr{ADR-167}).\\
+  Texto livre de fechamento, sem limite de caracteres, que só o professor lê.
+  Não passa pela IA nem vale nível (\adrr{ADR-180}).\\
 \rota{GET /runs/:id/tarefas} & estudante & A situação das três tarefas do
   Canal A e do fim da revelação: é por ela que a experiência decide o desvio
   por fase (\adrr{ADR-167}).\\
