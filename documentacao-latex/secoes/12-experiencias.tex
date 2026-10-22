@@ -791,16 +791,32 @@ O estudante cuida do texto e a rede entrega de madrugada do mesmo jeito: o
 alcance não depende do cuidado, porque a rede otimiza tempo de tela.
 \end{destaque}
 
-\subsection{O UnooriaAI da aula não é IA}
+\subsection{O UnooriaAI da aula é híbrido: a IA entende, o servidor decide}
 
-A conversa é a árvore de intenções do servidor (\arq{regras/intencoes.ts}):
-minúsculas, sem acento, sem pontuação, uma lista fechada de gatilhos com
-precedência, mais três que vêm do pacote (o instituto inventado, o primeiro
-nome do colega e o veículo). Até 5 mensagens. Abre com a fala do PO, com o tema
-do pacote: \enquote{Olá, vamos montar seu post para [tema], você pode me pedir
-para montar o post, questionar minhas fontes e perguntar sobre direito
-digital. Vamos começar?}. A IA só entra no preparo do professor, com quota e
-curadoria, e a saída passa pela mesma régua da homologação.
+O estudante escreve o que quiser, e o UnooriaAI responde com IA real
+(\arq{conversa.service.ts}, quota do perfil estudante): o modelo devolve a
+INTENÇÃO, de uma lista fechada de nove (gerar o rascunho, questionar a fonte,
+aceitar a troca do dado, proteger o colega, creditar o trecho copiado, revisar
+tudo, ver a prévia, dúvida de conceito, fora do tema), e o TEXTO da resposta.
+Quem muda a prévia é o servidor, pela intenção --- nunca pelo texto ---, e por
+isso a régua das habilidades continua exata. Os guardrails são do servidor
+(\arq{prompts-da-conversa.ts}): intenção fora da lista, resposta longa, com
+link ou com palavra que quebra o disfarce é recusada; ao entregar o rascunho a
+IA não pode admitir o problema nem nomear o colega (a regra de ouro: o
+problema só aparece quando o estudante questiona); e a resposta à fonte não
+pode dizer que já trocou o dado.
+
+A chamada fica FORA da transação, em corrida de 12\,s, com uma tentativa só.
+Sem saldo, com o vendor fora, no prazo estourado, com a saída recusada ou com
+a sessão que andou no meio, a \textbf{árvore de intenções} responde
+(\arq{regras/intencoes.ts}: minúsculas, sem acento, sem pontuação, gatilhos
+com precedência, mais três que vêm do pacote), com falas que levam o tema do
+professor. Cada fala do assistente grava a \cd{origem} (\cd{ia} ou
+\cd{regras}). Até 5 mensagens. Abre com a fala do PO, com o tema do pacote:
+\enquote{Olá, vamos montar seu post para [tema], você pode me pedir para
+montar o post, questionar minhas fontes e perguntar sobre direito digital.
+Vamos começar?}. A outra IA é a do preparo do professor, com a quota dele e
+curadoria.
 
 \subsection{O Publicar é o latch, e o algoritmo sempre pinça}
 

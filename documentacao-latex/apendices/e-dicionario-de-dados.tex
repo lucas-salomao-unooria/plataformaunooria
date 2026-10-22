@@ -1794,8 +1794,10 @@ Desde 2026-10-22 (\adrr{ADR-181}). Quatro tabelas, todas com \cd{escola\_id}
   \item \cd{exp02em1b\_gates\_turma}: a \cd{fase}, só para a frente.
   \item \cd{exp02em1b\_gates\_historico}: cada mudança de fase, com o pacote,
     a rodada e quem apertou.
-  \item \cd{exp02em1b\_sessoes}: \cd{conversa} (texto de menor: não vai a
-    painel, telemetria nem log), \cd{mensagens\_enviadas} (até 5),
+  \item \cd{exp02em1b\_sessoes}: \cd{conversa} (as falas, em JSONB; o texto
+    do estudante é de menor: vai ao modelo cercado como dado e não vai a
+    painel, telemetria nem log; cada fala do assistente grava a \cd{origem},
+    \cd{ia} ou \cd{regras}, \adrr{ADR-181}), \cd{mensagens\_enviadas} (até 5),
     \cd{previa}, o latch (\cd{manchete}, \cd{texto\_publicado},
     \cd{trecho\_pincado}, \cd{publicada\_em}, juntos), \cd{feed},
     \cd{explicar\_em}, \cd{indicadores} (só os que comprovam) e

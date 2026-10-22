@@ -71453,6 +71453,13 @@
                               },
                               "texto": {
                                 "type": "string"
+                              },
+                              "origem": {
+                                "type": "string",
+                                "enum": [
+                                  "ia",
+                                  "regras"
+                                ]
                               }
                             },
                             "required": [
@@ -71995,6 +72002,13 @@
                               },
                               "texto": {
                                 "type": "string"
+                              },
+                              "origem": {
+                                "type": "string",
+                                "enum": [
+                                  "ia",
+                                  "regras"
+                                ]
                               }
                             },
                             "required": [
@@ -72374,6 +72388,13 @@
                               },
                               "texto": {
                                 "type": "string"
+                              },
+                              "origem": {
+                                "type": "string",
+                                "enum": [
+                                  "ia",
+                                  "regras"
+                                ]
                               }
                             },
                             "required": [
@@ -72670,7 +72691,7 @@
           "efeito-amplificador"
         ],
         "summary": "Uma mensagem ao UnooriaAI (até 5).",
-        "description": "A intenção é classificada no servidor por uma lista fechada de gatilhos (sem acento, sem caixa, sem pontuação) — a conversa é determinística, sem modelo de linguagem na aula. O pedido da fonte, da correção do dado, do crédito e da anonimização muda a prévia; é o que a EM13CO14 e a EM13CO26 medem no Publicar.\n\nO texto do estudante é texto livre de menor: fica na sessão para o F5 e não vai a painel, telemetria nem log.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Sem pacote no ar responde **409** `campanha-em-preparo` — espera, não bloqueio.\n- Com as telas pausadas pelo professor: **409** `telas-pausadas`.\n- Depois da 5ª: **409** `limite-do-chat`. Depois do Publicar: **409** `ja-publicado`.",
+        "description": "A conversa é HÍBRIDA (ADR-181): a IA (quota do perfil `estudante`, até 12 s) classifica o pedido numa lista FECHADA de intenções e redige a resposta; o servidor aplica a intenção à prévia — nunca o texto do modelo — e cobra os guardrails sobre a saída. Sem saldo, com o vendor fora, no prazo estourado ou com a saída recusada, a árvore de intenções responde (lista fechada de gatilhos, sem acento, sem caixa, sem pontuação). Cada fala do assistente traz `origem` (`ia` | `regras`). O pedido da fonte, da correção do dado, do crédito e da anonimização muda a prévia; é o que a EM13CO14 e a EM13CO26 medem no Publicar.\n\nO texto do estudante é texto livre de menor: fica na sessão para o F5, vai ao modelo cercado como dado e não vai a painel, telemetria nem log.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Sem pacote no ar responde **409** `campanha-em-preparo` — espera, não bloqueio.\n- Com as telas pausadas pelo professor: **409** `telas-pausadas`.\n- Depois da 5ª: **409** `limite-do-chat`. Depois do Publicar: **409** `ja-publicado`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -72774,6 +72795,13 @@
                               },
                               "texto": {
                                 "type": "string"
+                              },
+                              "origem": {
+                                "type": "string",
+                                "enum": [
+                                  "ia",
+                                  "regras"
+                                ]
                               }
                             },
                             "required": [
@@ -73177,6 +73205,13 @@
                               },
                               "texto": {
                                 "type": "string"
+                              },
+                              "origem": {
+                                "type": "string",
+                                "enum": [
+                                  "ia",
+                                  "regras"
+                                ]
                               }
                             },
                             "required": [
@@ -73580,6 +73615,13 @@
                               },
                               "texto": {
                                 "type": "string"
+                              },
+                              "origem": {
+                                "type": "string",
+                                "enum": [
+                                  "ia",
+                                  "regras"
+                                ]
                               }
                             },
                             "required": [
@@ -74079,6 +74121,13 @@
                               },
                               "texto": {
                                 "type": "string"
+                              },
+                              "origem": {
+                                "type": "string",
+                                "enum": [
+                                  "ia",
+                                  "regras"
+                                ]
                               }
                             },
                             "required": [
@@ -74458,6 +74507,13 @@
                               },
                               "texto": {
                                 "type": "string"
+                              },
+                              "origem": {
+                                "type": "string",
+                                "enum": [
+                                  "ia",
+                                  "regras"
+                                ]
                               }
                             },
                             "required": [
@@ -74856,6 +74912,13 @@
                               },
                               "texto": {
                                 "type": "string"
+                              },
+                              "origem": {
+                                "type": "string",
+                                "enum": [
+                                  "ia",
+                                  "regras"
+                                ]
                               }
                             },
                             "required": [
@@ -76147,7 +76210,7 @@
           "efeito-amplificador"
         ],
         "summary": "Gera com IA o RASCUNHO do pacote (pré-aula).",
-        "description": "A única chamada de IA desta missão, e ela roda **antes** da aula. Quota do PERFIL (regra 5): `temSaldo` ANTES e o que o vendor cobrou debitado depois. A saída passa pela mesma régua da homologação. Sem saldo ou com o vendor fora, o rascunho sai do BANCO CURADO (`usouIa: false`, `motivo`). **Não homologa.**\n\n**Papéis:** professor.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe. A turma é conferida ANTES de gastar token.\n- Recorte fora da régua: **400** `preparo-invalido` com `erros`.",
+        "description": "A chamada de IA do PREPARO, que roda **antes** da aula (a da sala é a conversa híbrida, com a quota do estudante). Quota do PERFIL (regra 5): `temSaldo` ANTES e o que o vendor cobrou debitado depois. A saída passa pela mesma régua da homologação. Sem saldo ou com o vendor fora, o rascunho sai do BANCO CURADO (`usouIa: false`, `motivo`). **Não homologa.**\n\n**Papéis:** professor.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe. A turma é conferida ANTES de gastar token.\n- Recorte fora da régua: **400** `preparo-invalido` com `erros`.",
         "security": [
           {
             "token-da-plataforma": []

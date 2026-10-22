@@ -16504,8 +16504,12 @@ e a abertura do chat com uma fala literal dele.
     como na \adrr{ADR-116}: \cd{exp\_version} separa 1.x de 2.x.
   \item \textbf{O Efeito Amplificador} é o módulo \arq{efeito-amplificador} e
     a experiência \cd{exp02em1b} 2.0.0 (UnooriaAI, Unoovista e a escola). O
-    UnooriaAI da aula é uma árvore de intenções no servidor --- sem modelo de
-    linguagem em sala; a IA só gera o pacote no preparo, com quota e curadoria.
+    UnooriaAI da aula é \textbf{híbrido} (decisão do Lucas, 2026-10-22): a IA
+    real, com a quota do estudante, classifica o pedido livre numa lista
+    FECHADA de intenções e redige a resposta; o servidor aplica a intenção à
+    prévia e cobra os guardrails sobre a saída; a árvore de intenções do banco
+    de conteúdo (01e) responde quando a IA falha. A outra IA gera o pacote no
+    preparo, com a quota do professor e curadoria.
     A ficha mede as quatro habilidades pelo Canal A: EM13CO14 e EM13CO26 no
     Publicar, EM13CO24 e EM13CO08 no feed da madrugada.
 \end{itemize}
@@ -16526,6 +16530,17 @@ e a abertura do chat com uma fala literal dele.
     interruptor tira da grade, mas também BLOQUEIA a missão --- é desligar.
   \item \textbf{O Canal B do one-pager} (quatro enquetes no \cd{StoryPoll}) e a
     etapa de transferência: retirados pelo PO.
+  \item \textbf{Só a árvore de intenções na aula} (o desenho do 01e, a primeira
+    implementação): zero token em sala e a conversa igual para a turma
+    inteira, mas o estudante é livre para escrever qualquer coisa, e a árvore
+    só entende os gatilhos previstos --- fora deles, respondia \enquote{fora do
+    tema}, e as falas fixas falavam do tema do banco padrão em qualquer pacote.
+    Uma missão sobre questionar a IA não pode ter um assistente que não
+    responde à altura. Ficou como a reserva.
+  \item \textbf{A IA livre, decidindo também a prévia}: a resposta seria a
+    mais natural, mas a régua passaria a depender do texto de um modelo, e um
+    modelo prestativo corrige o rascunho sozinho --- e a descoberta do
+    estudante, que é o que a missão mede, some.
 \end{itemize}
 
 \textbf{Consequências ruins, declaradas.}
