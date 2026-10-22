@@ -256,6 +256,12 @@ model Turma {
   quemMandouPacotes  Exp05ef1bPacote[]
   quemMandouGates    Exp05ef1bGateTurma[]
   quemMandouSessoes  Exp05ef1bSessao[]
+  /// O Efeito Amplificador (exp02em1b, ADR-181): o pacote homologado é POR
+  /// TURMA (e é a atividade da evidência), a fase é da turma, e a sessão carrega a turma.
+  efeitoPacotes      Exp02em1bPacote[]
+  efeitoGates        Exp02em1bGateTurma[]
+  efeitoHistorico    Exp02em1bGateHistorico[]
+  efeitoSessoes      Exp02em1bSessao[]
   /// O Jornal da Escola (exp04ef1b): o pacote homologado é POR TURMA (e é a
   /// atividade da evidência), o relógio é da turma, e a sessão carrega a turma.
   jornalPacotes      Exp04ef1bPacote[]
@@ -481,6 +487,10 @@ model User {
   evidenciasEventos          EvidenciaEvento[]           @relation("EvidenciaEventoEstudante")
   /// Lista: a sessão da exp05ef1b é por (pacote, rodada), não por estudante.
   quemMandouSessoes          Exp05ef1bSessao[]           @relation("Exp05ef1bEstudante")
+  /// Lista: a sessão da exp02em1b é por (pacote, rodada), não por estudante.
+  efeitoSessoes              Exp02em1bSessao[]           @relation("Exp02em1bEstudante")
+  /// Os botões do professor na condução de O Efeito Amplificador (o histórico).
+  efeitoGatesApertados       Exp02em1bGateHistorico[]    @relation("Exp02em1bGateProfessor")
   /// As conversas deste professor com o agente de IA — a POSSE da sessão do
   /// Agent Engine mora aqui, não no engine.
   agenteProfessorConversas   AgenteProfessorConversa[]   @relation("AgenteProfessorConversaUsuario")
@@ -1399,7 +1409,8 @@ model BemEstarCheckin {
 }
 
 // ---------------------------------------------------------------------------
-// exp02em1b — a Missão Tempestade (Serra do Sauá)
+// exp02em1b-v0 — a Missão Tempestade (Serra do Sauá), VERSÃO ANTERIOR (ADR-181):
+// a reformulação tomou o código `exp02em1b`, e as tabelas daqui ganharam `_v0_`.
 //
 // Porte do projeto `gpturia`. Cinco tabelas, e NENHUMA coluna de prazo: houve
 // um `expires_at` de 30 dias no origem com uma rota de cron para cumpri-lo;
@@ -1486,7 +1497,7 @@ model UnoogptSessao {
   @@id([escolaId, estudanteId])
   @@index([escolaId])
   @@index([escolaId, turmaId])
-  @@map("exp02em1b_sessoes")
+  @@map("exp02em1b_v0_sessoes")
 }
 
 /// A Transcrição: a conversa entre o estudante e o Cientista.
@@ -1517,7 +1528,7 @@ model UnoogptMensagem {
 
   /// Paginação por id é estável; por timestamp não.
   @@index([escolaId, estudanteId, id])
-  @@map("exp02em1b_mensagens")
+  @@map("exp02em1b_v0_mensagens")
 }
 
 /// A trilha da decisão: o que o estudante fez, em que minuto da cidade.
@@ -1552,7 +1563,7 @@ model UnoogptMarco {
 
   @@unique([escolaId, estudanteId, tentativa, ordem])
   @@index([escolaId, estudanteId])
-  @@map("exp02em1b_marcos")
+  @@map("exp02em1b_v0_marcos")
 }
 
 /// O desfecho de cada tentativa — o AGREGADO, que sobrevive ao "zerar a turma"
@@ -1585,7 +1596,7 @@ model UnoogptSimulacao {
 
   @@unique([escolaId, estudanteId, ordem])
   @@index([escolaId, estudanteId])
-  @@map("exp02em1b_simulacoes")
+  @@map("exp02em1b_v0_simulacoes")
 }
 
 /// O Relógio da AULA — por TURMA, não por estudante.
@@ -1622,7 +1633,7 @@ model UnoogptRelogioTurma {
 
   @@id([escolaId, turmaId])
   @@index([escolaId])
-  @@map("exp02em1b_relogio_turma")
+  @@map("exp02em1b_v0_relogio_turma")
 }
 
 // ═══════════════════════════════════════════════ exp06ef2b — o rastro do boato
@@ -3591,7 +3602,7 @@ model UnoogptGateTurma {
   turma Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
 
   @@id([escolaId, turmaId])
-  @@map("exp02em1b_gate_turma")
+  @@map("exp02em1b_v0_gate_turma")
 }
 
 /// O HISTÓRICO do relógio da turma do Júri Estadual (exp06ef1b, PRD v2 §13,
@@ -3784,7 +3795,151 @@ model UnoogptTarefa {
 
   sessao UnoogptSessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
 
-  @@unique([escolaId, estudanteId, rodada, tentativa, tarefa], map: "exp02em1b_tarefas_unica")
+  @@unique([escolaId, estudanteId, rodada, tentativa, tarefa], map: "exp02em1b_v0_tarefas_unica")
   @@index([escolaId])
-  @@map("exp02em1b_tarefas")
+  @@map("exp02em1b_v0_tarefas")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// exp02em1b — O Efeito Amplificador (ADR-181). A missão da 2ª série do EM,
+// unidade 1, depois da reformulação: o UnooriaAI (produção do post) e o
+// Unoovista (a amplificação de madrugada). A Missão Tempestade, que tinha este
+// código, é `exp02em1b-v0` (tabelas `exp02em1b_v0_*`, acima).
+// CHECKs, índices parciais, RLS e GRANT na migration `20261022130000_exp02em1b_efeito_amplificador`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// O pacote da campanha — a ATIVIDADE da evidência. Rascunho (`aprovado_em`
+/// nulo, um por turma) ou homologado; o em andamento (`ativo`) é um por turma.
+model Exp02em1bPacote {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  /// O componente curricular do recorte (CHECK, `conteudo.ts#DISCIPLINAS`).
+  disciplina String
+  /// O tema da campanha — entra na fala de abertura do UnooriaAI.
+  tema       String
+  assuntos   String[]
+  contexto   String?
+
+  /// O rascunho com os três nós (e a correção de cada um), o recorte, as três
+  /// manchetes e os seis comentários. `Json` e não tabela-filha: o pacote é
+  /// lido e homologado SEMPRE inteiro. O schema real é o Zod de
+  /// `contrato-de-rotas.ts#ConteudoDoPacoteSchema`.
+  conteudoJson Json @map("conteudo_json")
+
+  /// ia | padrao (CHECK).
+  origem String
+
+  ativo       Boolean   @default(false)
+  /// A reaplicação: "Zerar a turma" soma 1, e as rodadas anteriores ficam.
+  rodadaAtual Int       @default(1) @map("rodada_atual") @db.SmallInt
+  /// `null` = rascunho. Carimbo e autor andam juntos (CHECK).
+  aprovadoEm  DateTime? @map("aprovado_em") @db.Timestamptz(6)
+  /// Carimbo, sem FK: a saída de um professor da rede não trava o pacote.
+  aprovadoPor String?   @map("aprovado_por") @db.Uuid
+
+  /// Quantas gerações por IA este rascunho custou, e quantos tokens (EVT-P02).
+  iaGeracoes Int @default(0) @map("ia_geracoes")
+  iaTokens   Int @default(0) @map("ia_tokens")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma   Turma             @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  sessoes Exp02em1bSessao[]
+
+  /// O alvo da FK composta das sessões: a sessão de uma escola não aponta para o pacote de outra.
+  @@unique([escolaId, id])
+  @@index([escolaId, turmaId])
+  @@map("exp02em1b_pacotes")
+}
+
+/// A fase da TURMA, que o professor move: aberta → debate (Pausar Telas) →
+/// explicar (Liberar Etapa 5). Só para a frente. É a linha do polling de 3 s.
+model Exp02em1bGateTurma {
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  /// aberta | debate | explicar (CHECK).
+  fase String @default("aberta")
+
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, turmaId])
+  @@map("exp02em1b_gates_turma")
+}
+
+/// O histórico append-only de cada botão do professor (EVT-P05): quando a
+/// turma pausou e quando a Etapa 5 abriu.
+model Exp02em1bGateHistorico {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String   @map("escola_id")
+  turmaId     String   @map("turma_id") @db.Uuid
+  pacoteId    String   @map("pacote_id") @db.Uuid
+  rodada      Int      @db.SmallInt
+  fase        String
+  /// Quem apertou. Nulo se o professor saiu da rede (SET NULL): o histórico fica.
+  professorId String?  @map("professor_id") @db.Uuid
+  em          DateTime @default(now()) @db.Timestamptz(6)
+
+  turma     Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  professor User? @relation("Exp02em1bGateProfessor", fields: [professorId], references: [id], onDelete: SetNull)
+
+  @@index([escolaId, turmaId])
+  @@map("exp02em1b_gates_historico")
+}
+
+/// A sessão do estudante por (pacote, rodada). O PASSO não é coluna: sai dos
+/// carimbos e da fase (`regras/passos.ts`).
+model Exp02em1bSessao {
+  escolaId    String @map("escola_id")
+  estudanteId String @map("estudante_id") @db.Uuid
+  pacoteId    String @map("pacote_id") @db.Uuid
+  rodada      Int    @db.SmallInt
+  /// Denormalizada do pacote: o painel lê por turma o tempo todo.
+  turmaId     String @map("turma_id") @db.Uuid
+
+  entrouEm DateTime @default(now()) @map("entrou_em") @db.Timestamptz(6)
+
+  /// O chat com o UnooriaAI: [{papel, texto, intencao?, em}]. O texto do
+  /// estudante é TEXTO LIVRE DE MENOR: fica aqui para o F5, e não vai a painel,
+  /// telemetria nem log.
+  conversa          Json @default("[]")
+  /// As mensagens que o estudante enviou (teto de 5, CHECK).
+  mensagensEnviadas Int  @default(0) @map("mensagens_enviadas") @db.SmallInt
+  /// A prévia: {gerada, pediuFonte, ofertaDeSubstituicao, paragrafos: {p1: {corrigido, removido}}}.
+  previa            Json @default("{}")
+
+  /// O LATCH: a manchete e o texto como foram publicados, e o trecho que o
+  /// algoritmo pinçou. Os quatro andam juntos (CHECK).
+  manchete       String?
+  textoPublicado String?   @map("texto_publicado")
+  trechoPincado  String?   @map("trecho_pincado")
+  publicadaEm    DateTime? @map("publicada_em") @db.Timestamptz(6)
+
+  /// O feed da madrugada: {inspecionados, metricas, moderacoes, privacidade, denuncias, ajuda}.
+  feed Json @default("{}")
+
+  /// A abertura do Explicar — o momento em que o feed fecha para o estudante.
+  explicarEm        DateTime? @map("explicar_em") @db.Timestamptz(6)
+  /// Os indicadores que COMPROVAM, já confirmados (ids).
+  indicadores       String[]  @default([])
+  ultimoNaoComprova Boolean   @default(false) @map("ultimo_nao_comprova")
+  concluidoEm       DateTime? @map("concluido_em") @db.Timestamptz(6)
+
+  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  estudante User            @relation("Exp02em1bEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  turma     Turma           @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  pacote    Exp02em1bPacote @relation(fields: [escolaId, pacoteId], references: [escolaId, id], onDelete: Cascade)
+
+  @@id([escolaId, estudanteId, pacoteId, rodada])
+  @@index([escolaId, turmaId, pacoteId, rodada])
+  @@map("exp02em1b_sessoes")
 }
