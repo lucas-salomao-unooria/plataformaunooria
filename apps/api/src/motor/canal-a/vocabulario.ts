@@ -21,9 +21,6 @@ export const MARCADOR_DA_TAREFA = {
 /** O envio numa atividade sem fofoca ou humor nos dois lados, só na casa que a trava muda. */
 export const MARCADOR_DO_ENVIO_LIMITADO = "envio-sem-confiabilidade";
 
-/** A reflexão lida pela IA. */
-export const MARCADOR_DA_REFLEXAO = "reflexao";
-
 // ── 6a Raio-x ────────────────────────────────────────────────────────────
 
 /** O que o estudante diz de cada post: puxa para A, para B, ou informa. */

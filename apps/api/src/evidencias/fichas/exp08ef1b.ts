@@ -2,16 +2,19 @@ import type { FichaPedagogica } from "./tipos";
 
 /**
  * A FICHA de "O Conteúdo que não chegou" (exp08ef1b, Unoovista, 8º ano EF,
- * unidade 1) — versão 3, de 2026-10-21 (ADR-179: as réguas do PO, validadas
- * com a pedagogia; a versão 2 é de 2026-10-16, ADR-167).
+ * unidade 1) — versão 4, de 2026-10-22 (ADR-180: as respostas do PO às
+ * perguntas da versão 3 — a EF08CO11 só pelo Raio-x, a régua dele 5–6/4/0–3,
+ * e ridicularizar no envio dá "não atingiu"). A versão 3 é de 2026-10-21
+ * (ADR-179, as réguas do PO validadas com a pedagogia); a 2, de 2026-10-16
+ * (ADR-167).
  *
  * Toda habilidade é medida por AÇÃO (o Canal A); as três perguntas de
  * múltipla escolha da versão 1 (ADR-153) saíram. Os níveis que elas deram em
  * atividades encerradas ficam no histórico.
  *
- *   - **EF08CO11** (vieses e abrangência de fontes eletrônicas) pelo 6a Raio-x
- *     do feed (vieses) e pela reflexão lida pela IA (mecanismo e abrangência).
- *     Vale a melhor das duas; o painel diz de qual veio (ADR-166).
+ *   - **EF08CO11** (vieses e abrangência de fontes eletrônicas) só pelo 6a
+ *     Raio-x do feed. A reflexão lida pela IA saiu na versão 4: as marcas
+ *     `reflexao` já gravadas ficam no banco e não contam.
  *   - **EF08CO09** (termos de uso) pelo 6b: os termos aceitos na entrada,
  *     revisitados depois da revelação — marcar as regras que explicam o feed.
  *   - **EF08CO07** (compartilhar com responsabilidade) pelo 6c, o envio. Na
@@ -26,23 +29,20 @@ import type { FichaPedagogica } from "./tipos";
  */
 export const FICHA_EXP08EF1B: FichaPedagogica = {
   expId: "exp08ef1b",
-  versao: 3,
+  versao: 4,
   habilidades: [
     {
       codigo: "EF08CO11",
       marcadores: [
         { id: "raio-x", tipo: "acao", rotulo: "Raio-x do feed" },
-        { id: "reflexao", tipo: "acao", rotulo: "Reflexão — sugestão da IA" },
       ],
       criterios: {
         atingiu:
-          "No Raio-x, classifica certo 5 ou 6 dos 6 posts. Ou, na reflexão, explica como o feed escolheu os posts e diz o que ficou de fora por causa de algo que ele mesmo fez.",
-        em_processo:
-          "No Raio-x, classifica certo 3 ou 4 posts. Ou, na reflexão, explica como o feed escolheu os posts, sem dizer o que ficou de fora por causa de algo que ele fez.",
-        nao_atingiu:
-          "No Raio-x, classifica certo 2 posts ou menos. Ou, na reflexão, atribui o feed inteiro ao acaso ou nega que houve escolha.",
+          "No Raio-x, classifica certo 5 ou 6 dos 6 posts.",
+        em_processo: "No Raio-x, classifica certo 4 posts.",
+        nao_atingiu: "No Raio-x, classifica certo 3 posts ou menos.",
         observacao:
-          "Vale o melhor entre o Raio-x e a reflexão. O Raio-x mede os vieses das fontes; a reflexão mede o mecanismo e a abrangência (o que ficou de fora). Precisão e relevância das fontes não são medidas nesta missão. O nível da reflexão é uma sugestão da IA: confira e ajuste se discordar. Sem nenhuma das duas, a habilidade fica \"Não avaliado\", e você pode ajustar.",
+          "Medida só pelo Raio-x, que mede os vieses das fontes. Os 3 acertos ficam em \"Não atingiu\" porque nenhuma resposta certa aparece mais de 3 vezes nos 6 posts: quem marca a mesma opção em todos, sem ler, acerta até 3. A reflexão continua na missão, para você ler, mas não conta para o nível. Precisão e relevância das fontes não são medidas nesta missão. Sem o Raio-x feito, a habilidade fica \"Não avaliado\", e você pode ajustar.",
       },
     },
     {
@@ -71,8 +71,8 @@ export const FICHA_EXP08EF1B: FichaPedagogica = {
       criterios: {
         atingiu:
           "Cumpre os 3 critérios: os posts cobrem os dois lados, nenhum é de página de fofoca ou de humor, e a mensagem é a que avisa que aquilo é só um pedaço.",
-        em_processo: "Cumpre 1 ou 2 dos 3 critérios.",
-        nao_atingiu: "Não cumpre nenhum dos 3 critérios.",
+        em_processo: "Cumpre 1 ou 2 dos 3 critérios, sem escolher a mensagem que ridiculariza o outro lado.",
+        nao_atingiu: "Não cumpre nenhum dos 3 critérios, ou escolhe a mensagem que ridiculariza o outro lado (mesmo cumprindo os outros dois).",
         observacao:
           "Medida no 6c, depois da revelação: até 3 de 9 posts, 1 de 4 mensagens e uma frase opcional. Numa atividade sem página de fofoca ou de humor nos dois lados, o 2º critério não tem como falhar, então o envio vai no máximo a \"Em processo\" — a célula diz isso. Para medir, crie uma atividade nova com a mesma pergunta. Sem a tarefa feita, a habilidade fica \"Não avaliado\", e você pode ajustar.",
       },

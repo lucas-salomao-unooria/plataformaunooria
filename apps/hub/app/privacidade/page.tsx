@@ -447,10 +447,7 @@ const SECOES: SecaoLegal[] = [
               um telefone, o nome de um colega ou um assunto muito pessoal. A
               plataforma não tem um filtro que detecte isso e apague sozinho. Se
               você escreveu algo que não queria, avise o seu professor: ele
-              consegue apagar os registros da atividade. Na missão do Unoovista,
-              a primeira versão da sua reflexão fica guardada para o professor
-              conferir a leitura da IA, até ele apagar os registros da
-              atividade.
+              consegue apagar os registros da atividade.
             </p>
           </div>
         </div>
@@ -576,8 +573,7 @@ const SECOES: SecaoLegal[] = [
         <p>
           Para gerar as respostas dos personagens, as reações às suas
           publicações, a devolutiva formativa e os planos de aula do professor,
-          para ler a legenda dos Stories na missão A Seleção e para ler a
-          primeira reflexão escrita na missão do Unoovista, enviamos ao
+          e para ler a legenda dos Stories na missão A Seleção, enviamos ao
           provedor de IA <strong>o texto escrito</strong> na missão:
           a sua conversa, a sua publicação, o seu comentário, a sua
           justificativa. Enviamos também o material curricular da rede, quando o
@@ -595,9 +591,8 @@ const SECOES: SecaoLegal[] = [
           por regra fixa no servidor, e a devolutiva escrita pela IA é
           declaradamente formativa, não pontuação. Na missão A Seleção, a IA lê a
           legenda dos seus Stories e sugere ao professor um nível da habilidade
-          que a missão trabalha; na missão do Unoovista, ela lê uma vez só o
-          primeiro texto que você salva na reflexão e faz o mesmo. Você não vê
-          essas sugestões, e é o professor quem confere e decide. O professor aprova o material antes da aula, pode
+          que a missão trabalha. Você não vê essa sugestão, e é o professor quem
+          confere e decide. O professor aprova o material antes da aula, pode
           desligar a IA no meio da aula e é sempre ele quem avalia. A IA erra, e você deve tratá-la como um texto de computador,
           não como uma verdade.
         </p>

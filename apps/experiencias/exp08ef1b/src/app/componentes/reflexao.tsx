@@ -89,11 +89,8 @@ export function Reflexao({ runId, aoReverRelatorio }: { runId: string; aoReverRe
           <p className="text-[17px] font-semibold leading-snug text-brand-coral">
             O que isso te faz pensar?
           </p>
-          {/* A transparência da leitura pela IA (ADR-167): quem lê, o quê, e quem decide. */}
-          <p className="text-[13px] leading-relaxed text-white/70">
-            Seu professor lê este texto. Um programa de IA lê o primeiro texto que você salvar e sugere a ele
-            um nível; quem decide é ele.
-          </p>
+          {/* Quem lê o texto: só o professor. A leitura pela IA saiu na ADR-180. */}
+          <p className="text-[13px] leading-relaxed text-white/70">Seu professor lê este texto.</p>
         </header>
 
         {/*

@@ -45,7 +45,7 @@ await suite(
       "O Raio-x (6a) vem logo depois da resposta, ainda no disfarce, sem devolutiva no envio",
       "A revelação tem dez telas, com a ponte do Raio-x, os termos e o registro",
       "Depois do cinza, os termos (6b) e o envio (6c), sem o lado nas miniaturas",
-      "A reflexão escrita é gravada, sobrevive à recarga e é lida pela IA real, uma vez só",
+      "A reflexão escrita é gravada, sobrevive à recarga e só o professor a lê (sem IA, ADR-180)",
       "As três perguntas do fim não aparecem mais (o Canal B saiu)",
       "O painel do professor diz de qual tarefa veio cada nível",
       "O que ela fez virou medida: o dossiê é computado dos eventos da sessão",
@@ -601,6 +601,10 @@ await suite(
       return (vermelho + verde + azul) / 3 > 200;
     })();
     r.exigir(claro, `o relatório é de tema CLARO (backgroundColor computado: ${fundo})`);
+    /* Os gráficos carregam sob demanda ("montando o gráfico…"): no Vite de dev
+       a primeira compilação da biblioteca leva segundos. Espera o desfecho,
+       não o relógio. */
+    await frame.locator("svg[role=img]").nth(1).waitFor({ timeout: 30_000 }).catch(() => undefined);
     const graficos = await frame.evaluate(() => document.querySelectorAll("svg[role=img]").length);
     r.exigir(graficos >= 2, `os gráficos que não cabiam no aparelho apareceram (${graficos} svg)`);
 
@@ -724,12 +728,9 @@ await suite(
     const TEXTO_REFLEXAO =
       "Como eu parava e salvava os posts de um lado, o feed foi me mostrando cada vez mais deles e os do outro lado quase não chegaram. Eu nem percebi que era sempre o mesmo lado.";
     await escrita.pressSequentially(TEXTO_REFLEXAO, { delay: 8 });
-    const aviso = await tela
-      .getByText("Um programa de IA lê o primeiro texto que você salvar e sugere a ele um nível; quem decide é ele.", {
-        exact: false,
-      })
-      .count();
-    r.exigir(aviso > 0, "a tela avisa que o professor lê e que a IA lê o primeiro texto salvo");
+    const aviso = await tela.getByText("Seu professor lê este texto.", { exact: true }).count();
+    const falaDeIa = await tela.getByText(/programa de IA/).count();
+    r.exigir(aviso > 0 && falaDeIa === 0, "a tela avisa que o professor lê, e não fala mais de IA");
     await r.registrar(p, "reflexao-escrita", {
       titulo: "A reflexão final",
       mostra: "Campo de escrita livre, com o aviso de quem lê o texto e andaimes opcionais para quem travou.",
@@ -792,23 +793,6 @@ await suite(
         `o relatório sabe de onde veio o lado do feed dela (origem: ${explicacao?.origem})`,
       );
 
-      /* A LEITURA DA REFLEXÃO pela IA REAL (Vertex): ela roda depois da resposta
-         ao estudante. A espera corre contra o erro: a leitura que ENCERROU como
-         falha (sem saldo, tempo, saída inválida) reprova na hora, com o motivo —
-         nunca um timeout cego. */
-      let leitura = null;
-      const limite = Date.now() + 90_000;
-      while (Date.now() < limite) {
-        const det = await prof.request.get(`${BFF}/atividades/${atividade.id}/estudantes/${linha.runId}`);
-        leitura = (await det.json())?.sessao?.canalA?.leitura ?? null;
-        if (leitura?.lidaEm) break;
-        await p.waitForTimeout(2000);
-      }
-      r.exigir(Boolean(leitura?.lidaEm), "a IA leu a reflexão (a leitura encerrou)");
-      r.exigir(
-        leitura?.resultado === "nivel",
-        `a leitura da IA real deu um nível (resultado: ${leitura?.resultado}, nível: ${leitura?.nivel}, motivo: ${leitura?.motivo})`,
-      );
       const detalhe = await (await prof.request.get(`${BFF}/atividades/${atividade.id}/estudantes/${linha.runId}`)).json();
       const canalA = detalhe?.sessao?.canalA;
       r.exigir(
@@ -816,7 +800,8 @@ await suite(
         "o professor vê que ela terminou a revelação e fez o Raio-x, os termos e o envio",
       );
       r.exigir(canalA?.fraseDoEnvio === "Olha os dois lados antes de decidir.", "e lê a frase própria do envio");
-      r.exigir(String(canalA?.textoLido ?? "").startsWith("Como eu parava"), "e o texto que a IA leu");
+      r.exigir(String(detalhe?.sessao?.reflexao ?? "").startsWith("Como eu parava"), "e lê a reflexão dela, que não passa pela IA (ADR-180)");
+      r.exigir(!("leitura" in (canalA ?? {})), "o detalhe não traz mais leitura da reflexão pela IA");
     }
 
     // ═══ FIM: o professor encerra e vê a turma ═══════════════════════════
@@ -829,7 +814,7 @@ await suite(
       "o painel \"Habilidades da BNCC\" da atividade mostra as três habilidades do Unoovista",
     );
     r.exigir(
-      /Os termos de uso/.test(paginaDoProfessor) && /Envio/.test(paginaDoProfessor) && /Raio-x do feed|Reflexão — sugestão da IA/.test(paginaDoProfessor),
+      /Os termos de uso/.test(paginaDoProfessor) && /Envio/.test(paginaDoProfessor) && /Raio-x do feed/.test(paginaDoProfessor),
       "cada nível diz de qual tarefa veio (o \"de onde veio\" do painel, ADR-166)",
     );
     await r.registrar(prof, "professor-ao-fim", {

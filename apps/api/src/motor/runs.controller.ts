@@ -28,7 +28,6 @@ import { arteFallback } from "../geracao/arte-fallback";
 import { gerarReacoes } from "../geracao/prompts/reacoes";
 import { resolverLargada } from "../perfis/largada";
 import { PrismaService } from "../prisma/prisma.service";
-import { LeituraDaReflexaoService, type LeituraAgendada } from "./canal-a/leitura-da-reflexao.service";
 import { TarefasDoUnoovista } from "./canal-a/tarefas.service";
 import { deveEncerrar } from "./curadoria";
 import { estadoInicial, normalizarEstado, semearEstado } from "./estado";
@@ -87,7 +86,6 @@ export class RunsController {
     private readonly prisma: PrismaService,
     @Inject(AI_PROVIDER) private readonly ia: AiProvider,
     private readonly tarefas: TarefasDoUnoovista,
-    private readonly leitura: LeituraDaReflexaoService,
   ) {}
 
   /** POST /runs — inicia ou retoma a sessão do estudante na atividade ativa. */
@@ -865,7 +863,7 @@ export class RunsController {
     const gravada = await this.prisma.comTenancy(async (tx) => {
       const run = await tx.run.findFirst({
         where: { id, estudanteId: usuarioId, escolaId },
-        select: { id: true, fase: true, activityId: true, activity: { select: { turmaId: true } } },
+        select: { id: true, fase: true },
       });
       if (!run) naoEncontrado();
       if (run.fase !== "reflexao" && run.fase !== "fim") {
@@ -875,45 +873,20 @@ export class RunsController {
       if (!parsed.success) {
         throw new BadRequestException({ mensagem: "Escreve um pouco mais — vale contar o que você percebeu." });
       }
-      /* O PRIMEIRO texto fica guardado para o professor conferir a leitura da
-         IA (ADR-167): gravado só na criação da linha, nunca no update. */
+      /* A reflexão não é mais lida pela IA nem conta para a evidência
+         (ADR-180): o professor a lê no detalhe do estudante. A cópia do
+         primeiro texto, que existia para ele conferir a leitura, deixou de ser
+         gravada — dado de menor sem uso não se guarda. */
       const criada = await tx.reflexao.createMany({
-        data: [{ runId: id, escolaId, texto: parsed.data.texto, primeiroTexto: parsed.data.texto }],
+        data: [{ runId: id, escolaId, texto: parsed.data.texto }],
         skipDuplicates: true,
       });
       if (criada.count === 0) {
         await tx.reflexao.update({ where: { runId: id }, data: { texto: parsed.data.texto } });
       }
-      /* A LEITURA nasce na mesma transação do primeiro salvamento, e só para
-         quem teve feed com lado e terminou a revelação. A unicidade por
-         atividade e estudante impede a segunda — inclusive depois de um
-         reinício, que não a apaga. */
-      let agendada: LeituraAgendada | null = null;
-      if (criada.count === 1 && (await this.tarefas.podeLerAReflexao(tx, id, usuarioId, escolaId))) {
-        const leitura = await tx.leituraDaReflexao.createMany({
-          data: [{ escolaId, activityId: run.activityId, estudanteId: usuarioId, runId: id }],
-          skipDuplicates: true,
-        });
-        if (leitura.count === 1) {
-          const linha = await tx.leituraDaReflexao.findUniqueOrThrow({
-            where: { activityId_estudanteId: { activityId: run.activityId, estudanteId: usuarioId } },
-            select: { id: true },
-          });
-          agendada = {
-            leituraId: linha.id,
-            escolaId,
-            estudanteId: usuarioId,
-            activityId: run.activityId,
-            turmaId: run.activity.turmaId,
-          };
-        }
-      }
-      return { caracteres: parsed.data.texto.length, agendada };
+      return parsed.data.texto.length;
     });
-    /* A IA lê DEPOIS da transação e sem a criança esperar: a resposta não
-       depende da leitura, e a leitura nunca lança. */
-    if (gravada.agendada) void this.leitura.ler(gravada.agendada);
-    return { ok: true, caracteres: gravada.caracteres };
+    return { ok: true, caracteres: gravada };
   }
 
   /** O que ele já escreveu — para reabrir a tela sem perder o texto. */

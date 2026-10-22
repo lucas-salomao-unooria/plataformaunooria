@@ -142,11 +142,14 @@ export function gabaritoDoPost(lado: string): OpcaoDoRaioX {
 }
 
 /**
- * A RÉGUA DO 6a — a do PO, validada com a pedagogia em 2026-10-21 (ADR-179).
- * N é o número de acertos em 6:
+ * A RÉGUA DO 6a — a do PO, validada com a pedagogia em 2026-10-21 (ADR-179)
+ * e ajustada por ele em 2026-10-22 (ADR-180). N é o número de acertos em 6:
  *   - atingiu: 5 ou 6;
- *   - em processo: 3 ou 4;
- *   - não atingiu: 0 a 2.
+ *   - em processo: 4;
+ *   - não atingiu: 0 a 3.
+ * Os 3 acertos ficam abaixo de "em processo" pela regra dos 3: nenhuma
+ * resposta certa aparece mais de 3 vezes, então quem marca a mesma opção nos
+ * 6 posts, sem ler nenhum, acerta até 3.
  * O post em que mais parou continua entrando na composição (e na devolutiva),
  * mas não pesa mais no nível. Todo envio cai em um nível.
  */
@@ -157,6 +160,6 @@ export function nivelDoRaioX(entrada: {
   const ids = Object.keys(entrada.gabarito);
   const acertos = ids.filter((id) => entrada.respostas[id] === entrada.gabarito[id]).length;
   if (acertos >= 5) return { nivel: "atingiu", acertos };
-  if (acertos >= 3) return { nivel: "em_processo", acertos };
+  if (acertos === 4) return { nivel: "em_processo", acertos };
   return { nivel: "nao_atingiu", acertos };
 }
