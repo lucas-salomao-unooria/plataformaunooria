@@ -2,10 +2,11 @@ import type { ConteudoDoPacote, Intencao } from "../conteudo";
 
 /**
  * O que o estudante pediu ao UnooriaAI — a ÁRVORE DE INTENÇÕES do banco de
- * conteúdo (01e), no SERVIDOR. Não há modelo de linguagem na aula: a conversa é
- * determinística, a mesma para a turma inteira às oito da manhã, e o que a
- * EM13CO14 e a EM13CO26 medem é o PEDIDO do estudante, não a criatividade de um
- * modelo.
+ * conteúdo (01e), no SERVIDOR. É a RESERVA da conversa híbrida (ADR-181): quem
+ * classifica primeiro é a IA (`prompts-da-conversa.ts`), na mesma lista
+ * fechada; a árvore responde quando ela falha (sem saldo, vendor fora, prazo,
+ * saída recusada). Nos dois caminhos o que a EM13CO14 e a EM13CO26 medem é o
+ * PEDIDO do estudante, convertido em intenção — nunca o texto de um modelo.
  *
  * A entrada passa pelo pré-processamento do 01e: minúsculas, sem acento, sem
  * pontuação. Os gatilhos são uma lista FECHADA, mais três que vêm do pacote (o

@@ -83,7 +83,7 @@ export class EfeitoAmplificadorTurmasController {
   @Contrato({
     resumo: "Gera com IA o RASCUNHO do pacote (pré-aula).",
     descricao:
-      "A única chamada de IA desta missão, e ela roda **antes** da aula. Quota do PERFIL (regra 5): `temSaldo` ANTES e o que o vendor cobrou debitado depois. A saída passa pela mesma régua da homologação. Sem saldo ou com o vendor fora, o rascunho sai do BANCO CURADO (`usouIa: false`, `motivo`). **Não homologa.**",
+      "A chamada de IA do PREPARO, que roda **antes** da aula (a da sala é a conversa híbrida, com a quota do estudante). Quota do PERFIL (regra 5): `temSaldo` ANTES e o que o vendor cobrou debitado depois. A saída passa pela mesma régua da homologação. Sem saldo ou com o vendor fora, o rascunho sai do BANCO CURADO (`usouIa: false`, `motivo`). **Não homologa.**",
     params: ParamsDaTurmaSchema,
     query: QueryDaEscolaSchema,
     corpo: GerarSchema,

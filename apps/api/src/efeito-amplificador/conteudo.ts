@@ -238,7 +238,14 @@ export function falaDeAbertura(tema: string): string {
   return `Olá, vamos montar seu post para ${tema}, você pode me pedir para montar o post, questionar minhas fontes e perguntar sobre direito digital. Vamos começar?`;
 }
 
-/** As intenções que o servidor reconhece no chat (`regras/intencoes.ts`). */
+/**
+ * As intenções do chat — a lista FECHADA que decide o que muda na prévia. Quem
+ * classifica é a IA (`prompts-da-conversa.ts`) e, na falta dela, a árvore
+ * (`regras/intencoes.ts`). `duvida_conceitual` ("o que é a LGPD?") só a IA
+ * reconhece: responde ao conceito sem mexer no post — a árvore leva a mesma
+ * frase ao ajuste, e a resposta à dúvida não é o pedido de correção que a
+ * EM13CO26 mede.
+ */
 export const INTENCOES = [
   "gerar_rascunho",
   "auditar_fonte",
@@ -247,6 +254,7 @@ export const INTENCOES = [
   "auditar_autoral",
   "revisao_geral",
   "confirmar_previa",
+  "duvida_conceitual",
   "fora_do_tema",
 ] as const;
 export type Intencao = (typeof INTENCOES)[number];
@@ -255,17 +263,21 @@ export type Intencao = (typeof INTENCOES)[number];
 export type FalaDeEstado = "sem_rascunho" | "ja_corrigido" | "limite";
 
 /**
- * O que o UnooriaAI responde a cada intenção — o 01e, com o nome do pacote no
- * lugar do do banco padrão. A resposta à fonte é a da copy revisada
- * (`e2.narrativa.ia_resposta_fonte`), que oferece a substituição.
+ * A RESERVA do UnooriaAI — a fala de cada intenção quando a IA não responde
+ * (sem saldo, vendor fora, prazo estourado ou saída recusada pelos guardrails).
+ * É o 01e, com o nome do pacote e o TEMA do professor no lugar dos do banco
+ * padrão: a fala que dizia "celular e convivência" mentia em qualquer outro
+ * tema. A resposta à fonte é a da copy revisada (`e2.narrativa.ia_resposta_fonte`),
+ * que oferece a substituição.
  */
 export function falaDoAssistente(
   fala: Intencao | FalaDeEstado,
   c: Pick<ConteudoDoPacote, "fonteInventada" | "colega" | "veiculo">,
+  tema: string,
 ): string {
   switch (fala) {
     case "gerar_rascunho":
-      return "Redigi uma proposta completa para o Grêmio Estudantil, abordando impactos no aprendizado e regras de convivência. O texto integral foi enviado para a Prévia da Publicação. Deseja verificar informações específicas ou ajustar o tom antes de publicarmos?";
+      return `Redigi uma proposta completa para o Grêmio Estudantil sobre ${tema}. O texto integral foi enviado para a Prévia da Publicação. Deseja verificar informações específicas ou ajustar o tom antes de publicarmos?`;
     case "auditar_fonte":
       return `Consultei bases gerais, mas não possuo registros de verificação do ${c.fonteInventada}. Deseja substituir por uma recomendação contextualizada da comunidade escolar?`;
     case "substituir_dado":
@@ -278,8 +290,10 @@ export function falaDoAssistente(
       return "Rascunho reestruturado com sucesso. Eliminei a estatística sem comprovação, formatei a citação jornalística entre aspas com atribuição e removi todos os dados pessoais sensíveis de colegas. A versão segura e equilibrada já está consolidada na Prévia da Publicação.";
     case "confirmar_previa":
       return 'Sua prévia foi estruturada e está disponível para conferência. Quando estiver satisfeito com a integridade das informações, clique em "Exportar para o Unoovista" para avançarmos à seleção de manchete e postagem na rede.';
+    case "duvida_conceitual":
+      return "Boa pergunta. A Lei Geral de Proteção de Dados protege informações pessoais, sobretudo as sensíveis, como as de saúde; o direito autoral garante crédito a quem escreveu um texto. Quer que eu revise algum ponto do rascunho com esse olhar?";
     case "fora_do_tema":
-      return "Compreendo sua pergunta, mas meu módulo atual está dedicado exclusivamente à elaboração da campanha escolar do Grêmio Estudantil sobre convivência e tecnologia. Podemos retornar à análise do rascunho da nossa postagem?";
+      return `Compreendo sua pergunta, mas meu módulo atual está dedicado exclusivamente à elaboração da campanha do Grêmio Estudantil sobre ${tema}. Podemos retornar à análise do rascunho da nossa postagem?`;
     case "sem_rascunho":
       return "Ainda não montei o post. Peça para eu montar o rascunho e começamos por ele.";
     case "ja_corrigido":
@@ -290,12 +304,14 @@ export function falaDoAssistente(
   }
 }
 
-/** As três pílulas da copy revisada (`e2.rotulo.pilula_prompt_1..3`). */
-export const PILULAS = [
-  "Gerar rascunho de post sobre celular na escola",
-  "Qual a fonte dessa pesquisa?",
-  "Reescrever protegendo dados de terceiros",
-] as const;
+/**
+ * As três pílulas da copy revisada (`e2.rotulo.pilula_prompt_1..3`). A primeira
+ * leva o TEMA do professor: a da copy ("sobre celular na escola") só servia ao
+ * banco padrão, e num pacote de Biologia sugeria um post que não existe.
+ */
+export function pilulasDoTema(tema: string): string[] {
+  return [`Gerar rascunho do post: ${tema}`, "Qual a fonte dessa pesquisa?", "Reescrever protegendo dados de terceiros"];
+}
 
 // ──────────────────────────────────────────── o Explicar (Etapa 5)
 

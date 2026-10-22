@@ -15,10 +15,9 @@ import { problemasDoConteudo } from "./regras/pacote";
  * O contrato com o gerador do PREPARO DOCENTE — a única superfície de IA da
  * exp02em1b, antes da aula e com o professor olhando (one-pager §9a, §14).
  *
- * O prompt de sistema NUNCA vai ao bundle (regra 2). **Zero tokens em sala**:
- * o "UnooriaAI" que o estudante usa é a árvore de intenções do servidor
- * (`regras/intencoes.ts`) sobre o pacote homologado — determinístico, o mesmo
- * para a turma inteira às oito da manhã.
+ * O prompt de sistema NUNCA vai ao bundle (regra 2). A IA da SALA é outra, com
+ * a quota do estudante: a conversa híbrida (`prompts-da-conversa.ts`), que
+ * redige sobre o pacote que este preparo escreveu e o professor homologou.
  *
  * O modelo escreve o RECHEIO da camada customizável (o tema da campanha); a
  * camada fixa — os três nós, a correção de cada um, o recorte, as manchetes e

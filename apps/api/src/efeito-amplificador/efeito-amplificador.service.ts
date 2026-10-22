@@ -23,7 +23,6 @@ import {
   MENSAGENS_NO_CHAT,
   MAX_CARACTERES_DA_MENSAGEM,
   PACOTE_PADRAO,
-  PILULAS,
   ROTEIRO_DO_DEBATE,
   ROTULO_DA_DISCIPLINA,
   TEXTOS_DO_EXPLICAR,
@@ -31,6 +30,7 @@ import {
   conteudoDoPadrao,
   falaDeAbertura,
   falaDoAssistente,
+  pilulasDoTema,
   type ConteudoDoPacote,
   type Disciplina,
   type Fase,
@@ -39,6 +39,7 @@ import {
   type Origem,
 } from "./conteudo";
 import { ConteudoBaseSchema, type EstadoSchema, type HomologarSchema } from "./contrato-de-rotas";
+import { ConversaDaExp02em1bService } from "./conversa.service";
 import { erroDeJogo } from "./erros";
 import { PreparoDaExp02em1bService, type MotivoDoPadrao } from "./preparo.service";
 import {
@@ -72,8 +73,10 @@ import {
  * rodada como reaplicação). Toda query leva `escola_id` no `where` ALÉM da RLS
  * que o `comTenancy` arma (regra 1, defesa em profundidade).
  *
- * **A aula é determinística.** O UnooriaAI da aula é a árvore de intenções do
- * servidor sobre o pacote homologado; a única IA é o preparo do professor.
+ * **A conversa é híbrida.** O UnooriaAI da aula é a IA real (quota do
+ * estudante) que classifica o pedido numa lista FECHADA de intenções e redige a
+ * resposta; quem muda a prévia é este serviço, pela intenção. Sem a IA, a
+ * árvore de intenções responde. O preparo do professor é a outra IA.
  *
  * **O gabarito não desce.** O comentário vai sem a categoria de saúde, o
  * indicador sem o `comprova`, o parágrafo sem o nó: quem diz o que um gesto
@@ -118,11 +121,16 @@ function marcosDe(s: LinhaDaSessao | null | undefined): MarcosDaSessao | null {
   return { publicou: s.publicadaEm !== null, concluiu: s.concluidoEm !== null };
 }
 
-/** Uma fala gravada no chat. O texto do estudante é de menor: só a sessão o guarda. */
+/**
+ * Uma fala gravada no chat. O texto do estudante é de menor: só a sessão o
+ * guarda. `origem` diz quem redigiu a fala do assistente — a IA ou a árvore
+ * (a reserva) —; não é gabarito, e a e2e com IA real a confere.
+ */
 interface FalaGravada {
   papel: "estudante" | "assistente";
   texto: string;
   intencao?: Intencao;
+  origem?: "ia" | "regras";
   em: string;
 }
 
@@ -132,9 +140,13 @@ function lerConversa(bruto: Prisma.JsonValue): FalaGravada[] {
     if (typeof f !== "object" || f === null || Array.isArray(f)) return [];
     const o = f as Record<string, unknown>;
     if ((o.papel !== "estudante" && o.papel !== "assistente") || typeof o.texto !== "string") return [];
-    return [{ papel: o.papel, texto: o.texto, em: typeof o.em === "string" ? o.em : "" }];
+    const origem = o.origem === "ia" || o.origem === "regras" ? o.origem : undefined;
+    return [{ papel: o.papel, texto: o.texto, ...(origem ? { origem } : {}), em: typeof o.em === "string" ? o.em : "" }];
   });
 }
+
+/** As intenções que só RESPONDEM: não mexem na prévia, e cabem antes do rascunho. */
+const SEM_EFEITO_NA_PREVIA: ReadonlySet<Intencao> = new Set(["fora_do_tema", "confirmar_previa", "duvida_conceitual"]);
 
 /** O conteúdo do `Json` da linha, ou `null` se a forma não bate (linha de outra versão). */
 function lerConteudo(bruto: Prisma.JsonValue): ConteudoDoPacote | null {
@@ -192,6 +204,7 @@ export class EfeitoAmplificadorService {
     private readonly prisma: PrismaService,
     private readonly evidencias: EvidenciasService,
     private readonly preparo: PreparoDaExp02em1bService,
+    private readonly conversa: ConversaDaExp02em1bService,
   ) {}
 
   // ─────────────────────────────────────────────────────────── leituras
@@ -210,7 +223,7 @@ export class EfeitoAmplificadorService {
         tema: ctx.pacote?.tema ?? null,
         textos: {
           abertura: ctx.pacote ? falaDeAbertura(ctx.pacote.tema) : null,
-          pilulas: [...PILULAS],
+          pilulas: ctx.pacote ? pilulasDoTema(ctx.pacote.tema) : [],
           explicar: {
             titulo: TEXTOS_DO_EXPLICAR.titulo,
             instrucao: TEXTOS_DO_EXPLICAR.instrucao,
@@ -265,36 +278,79 @@ export class EfeitoAmplificadorService {
   }
 
   /**
-   * Uma mensagem ao UnooriaAI. A intenção é classificada AQUI (lista fechada,
-   * `regras/intencoes.ts`), a prévia muda pelo que ela pede, e a fala volta do
-   * catálogo com os nomes do pacote. Até `MENSAGENS_NO_CHAT`; a quinta leva o
-   * aviso do limite junto.
+   * Uma mensagem ao UnooriaAI — a conversa HÍBRIDA (ADR-181). A IA entende e
+   * redige (`conversa.service.ts`); o servidor decide: a prévia muda pela
+   * INTENÇÃO, da lista fechada, nunca pelo texto. Até `MENSAGENS_NO_CHAT`; a
+   * quinta leva o aviso do limite junto.
+   *
+   * Três tempos, para a IA não segurar transação nem lock durante segundos:
+   * a LEITURA (funil, porta e limite, sem gravar), a IA fora da transação, e a
+   * GRAVAÇÃO no funil de sempre. Se a sessão andou no meio (outra mensagem, um
+   * parágrafo tirado, o professor zerou), a resposta da IA descreve um estado
+   * velho — e a árvore responde sobre o estado de agora.
    */
-  mensagem(escolaId: string, estudanteId: string, texto: string) {
+  async mensagem(escolaId: string, estudanteId: string, texto: string) {
+    const antes = await this.prisma.comTenancy(async (tx) => {
+      const { turmaId } = await this.estudanteDaEscola(tx, escolaId, estudanteId);
+      const ctx = await this.contextoDaTurma(tx, escolaId, turmaId);
+      if (!ctx.pacote) throw erroDeJogo("campanha-em-preparo");
+      const s = this.exigirConversaAberta(await this.sessaoDe(tx, escolaId, estudanteId, ctx.pacote), ctx.fase);
+      if (s.mensagensEnviadas >= MENSAGENS_NO_CHAT) throw erroDeJogo("limite-do-chat");
+      return { pacote: ctx.pacote, sessao: s };
+    }, escolaId);
+
+    const previaLida = lerPrevia(antes.sessao.previa, antes.pacote.conteudo.rascunho);
+    const rascunho = antes.pacote.conteudo.rascunho;
+    const ia = await this.conversa.responder(escolaId, estudanteId, {
+      tema: antes.pacote.tema,
+      conteudo: antes.pacote.conteudo,
+      gerada: previaLida.gerada,
+      resolvidos: {
+        alucinacao: noResolvido(previaLida, rascunho, "alucinacao"),
+        plagio: noResolvido(previaLida, rascunho, "plagio"),
+        lgpd: noResolvido(previaLida, rascunho, "lgpd"),
+      },
+      pediuFonte: previaLida.pediuFonte,
+      historico: lerConversa(antes.sessao.conversa),
+      mensagem: texto,
+    });
+
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
       const s = this.exigirConversaAberta(sessao, fase);
       if (s.mensagensEnviadas >= MENSAGENS_NO_CHAT) throw erroDeJogo("limite-do-chat");
+      const daIa =
+        ia !== null &&
+        pacote.id === antes.pacote.id &&
+        pacote.rodada === antes.pacote.rodada &&
+        s.atualizadoEm.getTime() === antes.sessao.atualizadoEm.getTime()
+          ? ia
+          : null;
       const previa = lerPrevia(s.previa, pacote.conteudo.rascunho);
-      const intencao = classificar(texto, pacote.conteudo, previa.ofertaDeSubstituicao);
+      const intencao = daIa ? daIa.intencao : classificar(texto, pacote.conteudo, previa.ofertaDeSubstituicao);
 
       let nova: Previa = previa;
       let fala: Parameters<typeof falaDoAssistente>[0] = intencao;
-      if (!previa.gerada && intencao !== "gerar_rascunho" && intencao !== "fora_do_tema") {
+      if (!previa.gerada && !SEM_EFEITO_NA_PREVIA.has(intencao) && intencao !== "gerar_rascunho") {
         fala = "sem_rascunho";
-      } else if (intencao !== "fora_do_tema" && intencao !== "confirmar_previa") {
+      } else if (!SEM_EFEITO_NA_PREVIA.has(intencao)) {
         const efeito = aplicarIntencao(previa, pacote.conteudo.rascunho, intencao);
         nova = efeito.previa;
         if (efeito.jaCorrigido) fala = "ja_corrigido";
       }
+      /* Sem rascunho, a fala é a do servidor: a da IA poderia descrever um post que não existe. */
+      const resposta: FalaGravada =
+        daIa && fala !== "sem_rascunho"
+          ? { papel: "assistente", texto: daIa.resposta, origem: "ia", em: "" }
+          : { papel: "assistente", texto: falaDoAssistente(fala, pacote.conteudo, pacote.tema), origem: "regras", em: "" };
 
       const agora = new Date().toISOString();
       const enviadas = s.mensagensEnviadas + 1;
       const conversa: FalaGravada[] = [
         ...lerConversa(s.conversa),
         { papel: "estudante", texto: texto.slice(0, MAX_CARACTERES_DA_MENSAGEM), intencao, em: agora },
-        { papel: "assistente", texto: falaDoAssistente(fala, pacote.conteudo), em: agora },
+        { ...resposta, em: agora },
         ...(enviadas >= MENSAGENS_NO_CHAT
-          ? [{ papel: "assistente" as const, texto: falaDoAssistente("limite", pacote.conteudo), em: agora }]
+          ? [{ papel: "assistente" as const, texto: falaDoAssistente("limite", pacote.conteudo, pacote.tema), origem: "regras" as const, em: agora }]
           : []),
       ];
       await tx.exp02em1bSessao.update({
@@ -721,7 +777,9 @@ export class EfeitoAmplificadorService {
       preparada: pacote !== null,
       atividade: pacote ? { pacoteId: pacote.id, rodada: pacote.rodada } : null,
       conversa: {
-        mensagens: sessao ? lerConversa(sessao.conversa).map((f) => ({ papel: f.papel, texto: f.texto })) : [],
+        mensagens: sessao
+          ? lerConversa(sessao.conversa).map((f) => ({ papel: f.papel, texto: f.texto, ...(f.origem ? { origem: f.origem } : {}) }))
+          : [],
         restantes: Math.max(0, MENSAGENS_NO_CHAT - (sessao?.mensagensEnviadas ?? 0)),
       },
       previa:

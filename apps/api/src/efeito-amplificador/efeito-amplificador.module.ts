@@ -6,6 +6,7 @@ import { EfeitoAmplificadorTurmasController } from "./efeito-amplificador-turmas
 import { EfeitoAmplificadorController } from "./efeito-amplificador.controller";
 import { EfeitoAmplificadorService } from "./efeito-amplificador.service";
 import { PodcastDaExp02em1b } from "./podcast-fonte";
+import { ConversaDaExp02em1bService } from "./conversa.service";
 import { PreparoDaExp02em1bService } from "./preparo.service";
 
 /**
@@ -13,14 +14,15 @@ import { PreparoDaExp02em1bService } from "./preparo.service";
  * globais; `PodcastService` também (ADR-150).
  *
  * **`EvidenciasModule`**: a missão tem ficha (E14) e marca as quatro
- * habilidades dentro das transações dos gestos. **`AiModule`** entra numa
- * superfície só, e nenhuma durante a aula: o rascunho do pacote no preparo do
- * professor (`preparo.service.ts`).
+ * habilidades dentro das transações dos gestos. **`AiModule`** entra em duas
+ * superfícies: o rascunho do pacote no preparo do professor (`preparo.service.ts`,
+ * quota do professor) e a conversa da aula (`conversa.service.ts`, quota do
+ * estudante, com a árvore de intenções como reserva).
  */
 @Module({
   imports: [AiModule, EvidenciasModule],
   controllers: [EfeitoAmplificadorController, EfeitoAmplificadorTurmasController, EfeitoAmplificadorProfessorController],
-  providers: [EfeitoAmplificadorService, PreparoDaExp02em1bService, PodcastDaExp02em1b],
+  providers: [EfeitoAmplificadorService, PreparoDaExp02em1bService, ConversaDaExp02em1bService, PodcastDaExp02em1b],
   exports: [EfeitoAmplificadorService],
 })
 export class EfeitoAmplificadorModule {}

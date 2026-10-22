@@ -13,8 +13,10 @@ import {
   SessaoSchema,
 } from "../src/efeito-amplificador/contrato-de-rotas";
 import { EfeitoAmplificadorTurmasController } from "../src/efeito-amplificador/efeito-amplificador-turmas.controller";
+import { ConversaDaExp02em1bService } from "../src/efeito-amplificador/conversa.service";
 import { EfeitoAmplificadorService } from "../src/efeito-amplificador/efeito-amplificador.service";
 import { PreparoDaExp02em1bService } from "../src/efeito-amplificador/preparo.service";
+import { SYSTEM_DA_CONVERSA } from "../src/efeito-amplificador/prompts-da-conversa";
 import { EquipesService } from "../src/equipes/equipes.service";
 import { EvidenciasService } from "../src/evidencias/evidencias.service";
 import { PrismaService } from "../src/prisma/prisma.service";
@@ -45,11 +47,27 @@ const ESCOLAS = [ESCOLA, OUTRA_ESCOLA];
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
 const runtime = new PrismaService({ datasources: { db: { url: urlDeRuntime(URL) } } }) as PrismaService & PrismaClient;
 
-/** A IA de mentira: escreve o banco padrão no formato do modelo, ou falha. */
+/**
+ * A IA de mentira. No PREPARO, escreve o banco padrão no formato do modelo, ou
+ * falha. Na CONVERSA da aula, devolve `respostaDaConversa` pelo `validar` de
+ * verdade (os guardrails correm), demora, ou está fora — o padrão, para os
+ * testes da aula provarem a RESERVA (a árvore de intenções).
+ */
 let modoDaIa: "escreve" | "falha" = "escreve";
 let chamadasDaIa = 0;
+let respostaDaConversa: { intencao: string; resposta: string } | "fora" | "lenta" = "fora";
+let chamadasDaConversa = 0;
+let ultimoPromptDaConversa = "";
 const ia = {
   async generateJson<T>(req: AiJsonRequest<T>): Promise<T> {
+    if (req.system === SYSTEM_DA_CONVERSA) {
+      chamadasDaConversa += 1;
+      ultimoPromptDaConversa = req.prompt;
+      if (respostaDaConversa === "fora") throw new Error("vendor fora do ar");
+      if (respostaDaConversa === "lenta") await new Promise((r) => setTimeout(r, 300));
+      req.aoUsarTokens?.(120);
+      return req.validar(respostaDaConversa === "lenta" ? { intencao: "fora_do_tema", resposta: "Tarde demais." } : respostaDaConversa);
+    }
     chamadasDaIa += 1;
     if (modoDaIa === "falha") throw new Error("vendor fora do ar");
     req.aoUsarTokens?.(900);
@@ -62,11 +80,15 @@ const equipes = new EquipesService(prisma);
 const evidencias = new EvidenciasService(prisma, equipes);
 const quota = new QuotaService(prisma);
 const preparo = new PreparoDaExp02em1bService(ia, quota);
-const service = new EfeitoAmplificadorService(prisma, evidencias, preparo);
+const service = new EfeitoAmplificadorService(prisma, evidencias, preparo, new ConversaDaExp02em1bService(ia, quota));
+/* Dois serviços de reserva: sem saldo (a IA nem é chamada) e com prazo de 30 ms (a IA lenta perde). */
+const semSaldo = { temSaldo: async () => false, consumir: async () => undefined } as unknown as QuotaService;
+const servicoSemSaldo = new EfeitoAmplificadorService(prisma, evidencias, preparo, new ConversaDaExp02em1bService(ia, semSaldo));
+const servicoComPrazoCurto = new EfeitoAmplificadorService(prisma, evidencias, preparo, new ConversaDaExp02em1bService(ia, quota, 30));
 const controller = new EfeitoAmplificadorTurmasController(service);
 evidencias.onModuleInit();
 
-const ids = { turmaA: "", turmaB: "", turmaC: "", turmaVizinha: "", prof: "", profB: "", ana: "", bia: "", caio: "", fabi: "", vizinho: "" };
+const ids = { turmaA: "", turmaB: "", turmaC: "", turmaVizinha: "", prof: "", profB: "", ana: "", bia: "", caio: "", duda: "", eva: "", fe: "", fabi: "", vizinho: "" };
 const TEXTO_DE_MENOR = "isso é plágio do jornal? coloca aspas e dá crédito";
 
 async function limpar() {
@@ -130,6 +152,9 @@ beforeAll(async () => {
   ids.ana = await pessoa(ESCOLA, ids.turmaA, "ea.ana", "Ana Teste");
   ids.bia = await pessoa(ESCOLA, ids.turmaA, "ea.bia", "Bia Teste");
   ids.caio = await pessoa(ESCOLA, ids.turmaB, "ea.caio", "Caio Teste");
+  ids.duda = await pessoa(ESCOLA, ids.turmaB, "ea.duda", "Duda Teste");
+  ids.eva = await pessoa(ESCOLA, ids.turmaB, "ea.eva", "Eva Teste");
+  ids.fe = await pessoa(ESCOLA, ids.turmaB, "ea.fe", "Fe Teste");
   ids.fabi = await pessoa(ESCOLA, ids.turmaC, "ea.fabi", "Fabi Teste");
   ids.vizinho = await pessoa(OUTRA_ESCOLA, ids.turmaVizinha, "ea.vizinho", "Vizinho Teste");
   ids.prof = await pessoa(ESCOLA, null, "ea.marta", "Marta Teste", "professor");
@@ -301,6 +326,78 @@ describe("a aula: o UnooriaAI e o latch", () => {
     expect(e.publicacao?.trechoPincado).toContain("DataBrasil 2026");
     expect(await nivel(ids.bia, "auditoria-da-fonte")).toBe("nao_atingiu");
     expect(await nivel(ids.bia, "direito-digital-no-post")).toBe("nao_atingiu");
+  });
+});
+
+describe("a conversa HÍBRIDA: a IA entende e redige, o servidor decide (ADR-181)", () => {
+  const ultima = (e: { conversa: { mensagens: Array<{ texto: string; origem?: string }> } }) => e.conversa.mensagens.at(-1)!;
+  const lgpd = conteudoDoPadrao().rascunho.find((p) => p.no === "lgpd")!;
+  afterAll(() => {
+    respostaDaConversa = "fora";
+  });
+
+  test("a intenção da IA move a prévia, o texto dela chega à tela, e a quota é a do ESTUDANTE", async () => {
+    await service.entrar(ESCOLA, ids.caio);
+    respostaDaConversa = {
+      intencao: "gerar_rascunho",
+      resposta: "Redigi a proposta da campanha e enviei o texto para a Prévia da Publicação. Quer verificar algum ponto ou ajustar o tom?",
+    };
+    const gerado = EstadoSchema.parse(await service.mensagem(ESCOLA, ids.caio, "bora fazer esse negócio aí"));
+    expect(gerado.previa?.gerada).toBe(true);
+    expect(ultima(gerado)).toMatchObject({ origem: "ia", texto: respostaDaConversa.resposta });
+
+    /* "a doença do menino" não está em gatilho nenhum da árvore — que diria "fora do tema". */
+    respostaDaConversa = {
+      intencao: "auditar_lgpd",
+      resposta: "Você tem razão: expor um caso de saúde sem autorização viola a Lei Geral de Proteção de Dados. Removi a identificação na prévia e tratei o tema de forma anônima.",
+    };
+    const e = EstadoSchema.parse(await service.mensagem(ESCOLA, ids.caio, "acho errado falar da doença do menino"));
+    expect(e.previa?.paragrafos.find((p) => p.id === lgpd.id)?.corrigido).toBe(true);
+    expect(ultima(e).origem).toBe("ia");
+    /* O texto do menor vai CERCADO, como dado; o bastidor vai junto para a IA ser honesta quando questionada. */
+    expect(ultimoPromptDaConversa).toContain("<<<acho errado falar da doença do menino>>>");
+    expect(ultimoPromptDaConversa).toContain("Colega exposto: Lucas Mendonça");
+    const uso = await prisma.iaUsoDiario.findFirst({ where: { escolaId: ESCOLA, usuarioId: ids.caio } });
+    expect(uso?.tokensUsados).toBe(240);
+  });
+
+  test("a dúvida conceitual RESPONDE sem mexer no post — a árvore teria anonimizado ao ler \"LGPD\"", async () => {
+    const antes = EstadoSchema.parse(await service.sessao(ESCOLA, ids.caio)).previa;
+    respostaDaConversa = {
+      intencao: "duvida_conceitual",
+      resposta: "A Lei Geral de Proteção de Dados protege informações pessoais, sobretudo as sensíveis, como as de saúde. Quer que eu revise o rascunho com esse olhar?",
+    };
+    const e = EstadoSchema.parse(await service.mensagem(ESCOLA, ids.caio, "o que é LGPD?"));
+    expect(e.previa).toEqual(antes);
+    expect(ultima(e).origem).toBe("ia");
+  });
+
+  test("guardrail: a IA que entrega o rascunho ADMITINDO o problema é recusada, e a árvore responde com o tema", async () => {
+    await service.entrar(ESCOLA, ids.duda);
+    respostaDaConversa = { intencao: "gerar_rascunho", resposta: "Redigi o post, mas a estatística do DataBrasil 2026 foi inventada por mim." };
+    const e = EstadoSchema.parse(await service.mensagem(ESCOLA, ids.duda, "monte o post"));
+    expect(e.previa?.gerada).toBe(true);
+    expect(ultima(e).origem).toBe("regras");
+    expect(ultima(e).texto).toContain(PACOTE_PADRAO.tema);
+    expect(ultima(e).texto).not.toMatch(/inventad/);
+  });
+
+  test("sem saldo de IA, a árvore responde e o modelo nem é chamado", async () => {
+    await service.entrar(ESCOLA, ids.eva);
+    respostaDaConversa = { intencao: "gerar_rascunho", resposta: "Redigi a proposta." };
+    const antes = chamadasDaConversa;
+    const e = EstadoSchema.parse(await servicoSemSaldo.mensagem(ESCOLA, ids.eva, "monte o post"));
+    expect(chamadasDaConversa).toBe(antes);
+    expect(ultima(e).origem).toBe("regras");
+    expect(e.previa?.gerada).toBe(true);
+  });
+
+  test("a IA lenta perde a corrida do prazo: a árvore responde, e o estudante não espera", async () => {
+    await service.entrar(ESCOLA, ids.fe);
+    respostaDaConversa = "lenta";
+    const e = EstadoSchema.parse(await servicoComPrazoCurto.mensagem(ESCOLA, ids.fe, "monte o post"));
+    expect(ultima(e).origem).toBe("regras");
+    expect(e.previa?.gerada).toBe(true);
   });
 });
 

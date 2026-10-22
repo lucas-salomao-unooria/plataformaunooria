@@ -28,14 +28,35 @@ retenção, e conclui. Quatro tabelas: `exp02em1b_pacotes`, `_gates_turma`,
 
 ## O que não é óbvio
 
-- **O UnooriaAI da aula NÃO é IA.** É a árvore de intenções do 01e
-  (`regras/intencoes.ts`), no servidor, sobre o pacote homologado: minúsculas,
-  sem acento, sem pontuação, lista fechada e PRECEDÊNCIA (a revisão geral antes
-  da LGPD). Mais três gatilhos vêm do pacote (cada palavra distintiva do
-  instituto inventado, o primeiro nome do colega e o veículo inteiro), porque o
-  pacote que a IA escreve para Biologia não tem "DataBrasil" nem "Lucas". O
-  "sim" só aceita a substituição logo depois da fala da fonte, que a oferece.
-  Até 5 mensagens (CHECK); a quinta leva o aviso do limite junto.
+- **O UnooriaAI da aula é HÍBRIDO** (decisão do Lucas, 2026-10-22, ADR-181):
+  a IA ENTENDE e REDIGE, o servidor DECIDE. `conversa.service.ts` pede ao
+  modelo `{intencao, resposta}` — a intenção da lista FECHADA (`INTENCOES`) —,
+  e quem muda a prévia é `aplicarIntencao`, pela intenção, nunca pelo texto:
+  a régua das habilidades continua exata. Quota do perfil `estudante`
+  (`temSaldo` antes, débito por tentativa), uma tentativa, corrida de 12 s, e
+  a chamada FORA da transação (`mensagem` lê, chama a IA e grava; se a sessão
+  andou no meio, a árvore responde sobre o estado de agora). Até 5 mensagens
+  (CHECK); a quinta leva o aviso do limite junto.
+- **Os guardrails são do SERVIDOR** (`prompts-da-conversa.ts#validarSaidaDaConversa`),
+  não só do prompt: intenção fora da lista, resposta vazia, longa, com link
+  ou com palavra que quebra o disfarce é recusada; ao ENTREGAR ou CONFIRMAR o
+  rascunho (e fora do tema) a IA não pode admitir o problema nem nomear o
+  colega — a REGRA DE OURO: o problema só aparece quando o estudante questiona;
+  e a resposta à fonte não pode dizer que já substituiu (só a substituição
+  substitui). Recusou? A árvore responde.
+- **A árvore de intenções é a RESERVA** (`regras/intencoes.ts`, o 01e):
+  minúsculas, sem acento, sem pontuação, lista fechada e PRECEDÊNCIA (a
+  revisão geral antes da LGPD), mais três gatilhos do pacote (cada palavra
+  distintiva do instituto, o primeiro nome do colega e o veículo inteiro). O
+  "sim" só aceita a substituição logo depois da fala da fonte. As falas dela
+  (`falaDoAssistente`) levam o TEMA do professor — as do 01e diziam "celular e
+  convivência" e mentiam em qualquer outro tema.
+- **`duvida_conceitual` só a IA reconhece.** "O que é a LGPD?" RESPONDE ao
+  conceito sem mexer no post; a árvore leva a mesma frase ao ajuste. Sem
+  rascunho, a fala é sempre a do servidor ("ainda não montei o post"): a da
+  IA poderia descrever um post que não existe.
+- **`origem` em cada fala do assistente** (`ia` | `regras`) desce no estado:
+  não é gabarito, e a e2e com IA real cobra `ia`.
 - **Perguntar a fonte não corrige.** A EM13CO14 separa as duas coisas: o
   pedido (`pediuFonte`) e a correção (a substituição, a revisão geral ou tirar
   o parágrafo). Atingiu = as duas.
@@ -71,12 +92,13 @@ retenção, e conclui. Quatro tabelas: `exp02em1b_pacotes`, `_gates_turma`,
   `banco-padrao` faz os dois num toque (o caminho curto do one-pager);
   `zerar` apaga a evidência do pacote e guarda as sessões.
 - **O texto do estudante no chat é texto livre de menor**: fica em
-  `_sessoes.conversa` para o F5 e não vai a painel, telemetria nem log. O painel
+  `_sessoes.conversa` para o F5, vai ao modelo CERCADO (`<<< >>>`, como dado) e
+  não vai a painel, telemetria nem log. O painel
   diz passo e manchete por computador; a lousa (`resumo`) é só agregada.
 - **O podcast é FIXO** (`podcast.ts`): o roteiro do one-pager §11, literal,
   com as rubricas de trilha que o PO corrigiu; a trilha vai na direção de
   atuação, não no roteiro. A atividade é o pacote; sem vaga, `padrao` sempre.
-- **A IA só no preparo** (`preparo.service.ts`): quota do perfil `professor`,
+- **A IA do preparo** (`preparo.service.ts`): quota do perfil `professor`,
   `temSaldo` antes e o pago debitado depois (ADR-74); sem saldo ou com o vendor
   fora, o rascunho sai do banco curado. A saída passa pela MESMA régua da
   homologação (`regras/pacote.ts#problemasDoConteudo`).

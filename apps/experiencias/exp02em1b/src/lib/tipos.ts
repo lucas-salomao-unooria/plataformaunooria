@@ -27,7 +27,7 @@ export interface Estado {
   pausada: boolean;
   preparada: boolean;
   atividade: { pacoteId: string; rodada: number } | null;
-  conversa: { mensagens: { papel: "estudante" | "assistente"; texto: string }[]; restantes: number };
+  conversa: { mensagens: { papel: "estudante" | "assistente"; texto: string; origem?: "ia" | "regras" }[]; restantes: number };
   previa: { gerada: boolean; paragrafos: { id: string; texto: string; corrigido: boolean; removido: boolean }[] } | null;
   manchetes: { id: Manchete; texto: string }[] | null;
   publicacao: { manchete: { id: Manchete; texto: string }; texto: string; trechoPincado: string; publicadaEm: string } | null;

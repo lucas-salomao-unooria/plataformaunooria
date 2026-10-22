@@ -30,6 +30,7 @@ export const TEXTOS = {
     enviar: "Enviar",
     revisar: "Revisar Publicação",
     nudge: "Dica: use uma das sugestões acima para começar seu rascunho.",
+    escrevendo: "Escrevendo…",
     restantes: (n: number) => (n === 1 ? "1 mensagem restante" : `${n} mensagens restantes`),
   },
   previa: {

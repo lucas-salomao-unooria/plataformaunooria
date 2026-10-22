@@ -134,7 +134,9 @@ export const EstadoSchema = z.object({
   preparada: z.boolean(),
   atividade: AtividadeSchema.nullable(),
   conversa: z.object({
-    mensagens: z.array(z.object({ papel: z.enum(["estudante", "assistente"]), texto: z.string() })),
+    mensagens: z.array(
+      z.object({ papel: z.enum(["estudante", "assistente"]), texto: z.string(), origem: z.enum(["ia", "regras"]).optional() }),
+    ),
     restantes: z.number().int(),
   }),
   previa: z

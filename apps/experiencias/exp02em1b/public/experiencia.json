@@ -13,7 +13,8 @@
     "altura": 812
   },
   "capabilities": [
-    "telemetria"
+    "telemetria",
+    "ia"
   ],
   "permissoes": [
     "forms"

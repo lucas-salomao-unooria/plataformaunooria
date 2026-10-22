@@ -87,7 +87,7 @@ export class EfeitoAmplificadorController {
   @Contrato({
     resumo: "Uma mensagem ao UnooriaAI (até 5).",
     descricao:
-      "A intenção é classificada no servidor por uma lista fechada de gatilhos (sem acento, sem caixa, sem pontuação) — a conversa é determinística, sem modelo de linguagem na aula. O pedido da fonte, da correção do dado, do crédito e da anonimização muda a prévia; é o que a EM13CO14 e a EM13CO26 medem no Publicar.\n\nO texto do estudante é texto livre de menor: fica na sessão para o F5 e não vai a painel, telemetria nem log.",
+      "A conversa é HÍBRIDA (ADR-181): a IA (quota do perfil `estudante`, até 12 s) classifica o pedido numa lista FECHADA de intenções e redige a resposta; o servidor aplica a intenção à prévia — nunca o texto do modelo — e cobra os guardrails sobre a saída. Sem saldo, com o vendor fora, no prazo estourado ou com a saída recusada, a árvore de intenções responde (lista fechada de gatilhos, sem acento, sem caixa, sem pontuação). Cada fala do assistente traz `origem` (`ia` | `regras`). O pedido da fonte, da correção do dado, do crédito e da anonimização muda a prévia; é o que a EM13CO14 e a EM13CO26 medem no Publicar.\n\nO texto do estudante é texto livre de menor: fica na sessão para o F5, vai ao modelo cercado como dado e não vai a painel, telemetria nem log.",
     corpo: MensagemSchema,
     resposta: EstadoSchema,
     notas: [NOTA_DA_PORTA, NOTA_SEM_PACOTE, NOTA_DA_PAUSA, "Depois da 5ª: **409** `limite-do-chat`. Depois do Publicar: **409** `ja-publicado`."],

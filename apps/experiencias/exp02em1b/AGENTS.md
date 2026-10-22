@@ -4,7 +4,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | | |
 |---|---|
-| Manifesto | `exp02em1b` · 2EM (unidade 1) · `telemetria` · `permissoes: ["forms"]` · 375×812 |
+| Manifesto | `exp02em1b` · 2EM (unidade 1) · `telemetria, ia` · `permissoes: ["forms"]` · 375×812 |
 | Dev | `pnpm --filter @edu/exp02em1b dev` → :5178 · hub `/exp/exp02em1b` |
 | DS | três seções: `unooria` (`@edu/ui/ds`), `unooriaai` (`@edu/ui/ds-unooriaai`), `unoovista` (`@edu/ui/ds-unoovista`) |
 | api | módulo `efeito-amplificador` (`apps/api/src/efeito-amplificador/AGENTS.md`) |
@@ -27,8 +27,13 @@ os dois indicadores da retenção. **Sem etapa de transferência e sem Canal B**
 
 ## O que não é óbvio
 
-- **O UnooriaAI não é IA aqui.** A tela manda o texto e desenha o que volta: a
-  árvore de intenções mora na api. Não reescreva a resposta no cliente.
+- **O UnooriaAI é a conversa HÍBRIDA da api (ADR-181).** A IA entende e
+  redige, o servidor decide o que muda no post, e a árvore de intenções
+  responde quando a IA falha. A tela manda o texto e desenha o que volta: não
+  reescreva a resposta no cliente. `api.mensagem` tem teto de 45 s (o padrão
+  do SDK, 10 s, cortaria a resposta que vinha), e o balão do estudante entra
+  na hora com o "Escrevendo…" do UnooriaAI — um `ChatBubble` do DS, sem
+  componente novo.
 - **O gabarito não desce, e o teste cobra.** O comentário vem sem a categoria
   de saúde, o indicador sem `comprova`, o parágrafo sem o nó; o conteúdo do
   banco (instituto, colega) também não pode aparecer no código.

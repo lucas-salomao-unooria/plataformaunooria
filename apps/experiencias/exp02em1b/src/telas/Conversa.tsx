@@ -16,8 +16,13 @@ type Vista = "chat" | "previa";
  *
  * O chat abre com a fala do PO (`textos.abertura`, com o tema do pacote) e
  * mostra as três pílulas da copy. O UnooriaAI RESPONDE do servidor: a tela só
- * manda o texto e desenha o que voltar — quem decide se o pedido foi "a fonte",
- * "o crédito" ou "o colega" é a árvore de intenções da api.
+ * manda o texto e desenha o que voltar — a IA entende e redige, e quem decide
+ * o que muda no post é a api (a conversa híbrida, ADR-181).
+ *
+ * A resposta leva alguns segundos: o balão do estudante entra NA HORA, com o
+ * "Escrevendo…" do UnooriaAI embaixo (um `ChatBubble` do DS, sem componente
+ * novo). O campo limpa no envio e o rascunho VOLTA se não entrou — só se o
+ * campo continuar vazio (a lição da v0).
  *
  * Em 375 px não cabe painel lateral: a Prévia da Publicação é a OUTRA vista,
  * aberta por "Revisar Publicação". Lá o estudante tira ou devolve um parágrafo
@@ -27,6 +32,7 @@ export function Conversa({ estado, sessao, executar }: { estado: Estado; sessao:
   const [vista, setVista] = useState<Vista>("chat");
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [pendente, setPendente] = useState<string | null>(null);
   const [nudge, setNudge] = useState(false);
   const [escolhendo, setEscolhendo] = useState(false);
   const [manchete, setManchete] = useState<Manchete | null>(null);
@@ -38,7 +44,7 @@ export function Conversa({ estado, sessao, executar }: { estado: Estado; sessao:
 
   useEffect(() => {
     fim.current?.scrollIntoView({ block: "end" });
-  }, [mensagens.length]);
+  }, [mensagens.length, pendente]);
 
   useEffect(() => {
     if (mensagens.length > 0) return;
@@ -55,8 +61,11 @@ export function Conversa({ estado, sessao, executar }: { estado: Estado; sessao:
     setEnviando(true);
     setNudge(false);
     telemetria.mensagem(t.length);
+    setPendente(t);
+    setTexto("");
     const novo = await executar(() => api.mensagem(t));
-    if (novo) setTexto("");
+    if (!novo) setTexto((atual) => (atual ? atual : t));
+    setPendente(null);
     setEnviando(false);
   }
 
@@ -131,6 +140,12 @@ export function Conversa({ estado, sessao, executar }: { estado: Estado; sessao:
             {m.texto}
           </ChatBubble>
         ))}
+        {pendente && (
+          <>
+            <ChatBubble role="user">{pendente}</ChatBubble>
+            <ChatBubble role="assistant">{TEXTOS.chat.escrevendo}</ChatBubble>
+          </>
+        )}
         <div ref={fim} />
       </section>
       <footer className="uai-rodape uai-rodape--chat">
