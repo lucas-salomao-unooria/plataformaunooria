@@ -112,6 +112,8 @@ Três coisas que custaram tempo e não se descobrem por typecheck:
   `PERMISSION_DENIED`, com uma mensagem que não fala de voz. O provider manda
   `x-goog-user-project: $VERTEX_PROJECT_ID` para resolver sem mexer no ADC de
   ninguém; em Cloud Run a SA já traz o projeto.
+- **`speakerAlias` com acento dá 400** ("Téo" calava o podcast do Unoovista):
+  use `apelidosDosFalantes`.
 - **Os tetos são em BYTES** (4.000 para o texto, 4.000 para a direção de
   atuação): em pt-BR cada acento conta 2, e medir por `length` deixa passar um
   roteiro que a API recusa com 400. `generateSpeech` valida antes de chamar.
