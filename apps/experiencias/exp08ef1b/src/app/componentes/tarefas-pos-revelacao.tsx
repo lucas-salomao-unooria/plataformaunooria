@@ -80,7 +80,7 @@ export function Termos({ runId, aoEnviar }: { runId: string; aoEnviar: () => voi
       await api.post(`/runs/${runId}/termos`, { marcadas });
       aoEnviar();
     } catch {
-      setErro('Não deu pra enviar agora. Tenta de novo — suas escolhas estão aqui.');
+      setErro('Não deu pra enviar agora. Tenta de novo, suas escolhas continuam aqui.');
     } finally {
       setEnviando(false);
     }
@@ -186,7 +186,7 @@ export function Envio({ runId, aoEnviar }: { runId: string; aoEnviar: () => void
       });
       aoEnviar();
     } catch {
-      setErro('Não deu pra enviar agora. Tenta de novo — suas escolhas estão aqui.');
+      setErro('Não deu pra enviar agora. Tenta de novo, suas escolhas continuam aqui.');
     } finally {
       setEnviando(false);
     }

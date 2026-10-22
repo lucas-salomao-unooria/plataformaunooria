@@ -503,7 +503,7 @@ await suite(
     // ═══ EXPLICAÇÃO: a revelação e o relatório ═══════════════════════════
     await moverEtapa(prof, atividade.id, "explicabilidade");
     await tela
-      .locator("text=O Unoovista não é uma rede social de verdade")
+      .locator("text=O Unoovista foi feito para esta aula")
       .waitFor({ timeout: 40_000 });
     await r.registrar(p, "revelacao", {
       titulo: "A revelação",
@@ -529,7 +529,7 @@ await suite(
     let viuOsTermos = false;
     let viuORegistro = false;
     for (let i = 0; i < 14; i += 1) {
-      if (!viuAPonte && (await tela.getByText("Os 6 posts do Raio-x, antes do debate:").count())) {
+      if (!viuAPonte && (await tela.getByText("Lembra dos 6 posts que você analisou antes do debate?").count())) {
         viuAPonte = true;
         const ponte = tela.getByRole("list", { name: "De onde veio cada post" });
         await ponte.waitFor({ timeout: 10_000 });
@@ -548,8 +548,8 @@ await suite(
             "existe da revelação em diante, e só para quem enviou o Raio-x.",
         });
       }
-      if (await tela.getByText("Nos termos de uso que você aceitou lá na entrada — que quase ninguém lê, nem adulto.").count()) viuOsTermos = true;
-      if (await tela.getByText("O registro, não.").count()) viuORegistro = true;
+      if (await tela.getByText("que você aceitou quando entrou no app.").count()) viuOsTermos = true;
+      if (await tela.getByText("o registro do que você fez é real.").count()) viuORegistro = true;
       const continuar = tela.locator("button", { hasText: "Continuar" });
       if (!(await continuar.count())) break;
       await continuar.click();

@@ -98,22 +98,22 @@ export const MENSAGENS = [
   {
     id: "m1",
     tipo: "aviso",
-    texto: "Isso é só um pedaço: aqui cada um recebe coisas diferentes. Vale procurar mais antes de decidir.",
+    texto: "Isso é só uma parte. Aqui cada um vê coisas diferentes, então procura mais antes de decidir.",
   },
   {
     id: "m2",
     tipo: "neutra",
-    texto: "Separei uns posts sobre o assunto. Dá uma olhada quando puder e depois me conta o que achou.",
+    texto: "Separei uns posts sobre o assunto. Dá uma olhada e depois me fala o que achou.",
   },
   {
     id: "m3",
     tipo: "encerra",
-    texto: "Esses posts resolvem a questão. Com eles você já sabe quem tem razão, nem precisa ver mais.",
+    texto: "Com esses posts dá pra ver quem tem razão. Nem precisa procurar mais.",
   },
   {
     id: "m4",
     tipo: "ridiculariza",
-    texto: "Separei uns posts. Repara no tamanho da bobagem que o outro lado anda espalhando por aí.",
+    texto: "Separei uns posts. Olha só a bobagem que o outro lado anda espalhando.",
   },
 ] as const;
 export type MensagemId = (typeof MENSAGENS)[number]["id"];

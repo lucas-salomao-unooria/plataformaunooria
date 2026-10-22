@@ -70,7 +70,7 @@ export const FICHA_EXP08EF1B: FichaPedagogica = {
       ],
       criterios: {
         atingiu:
-          "Cumpre os 3 critérios: os posts cobrem os dois lados, nenhum é de página de fofoca ou de humor, e a mensagem é a que avisa que aquilo é só um pedaço.",
+          "Cumpre os 3 critérios: os posts cobrem os dois lados, nenhum é de página de fofoca ou de humor, e a mensagem é a que avisa que aquilo é só uma parte.",
         em_processo: "Cumpre 1 ou 2 dos 3 critérios, sem escolher a mensagem que ridiculariza o outro lado.",
         nao_atingiu: "Não cumpre nenhum dos 3 critérios, ou escolhe a mensagem que ridiculariza o outro lado (mesmo cumprindo os outros dois).",
         observacao:

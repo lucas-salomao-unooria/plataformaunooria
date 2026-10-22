@@ -109,7 +109,7 @@ export function Perdidos({ runId, saida }: { runId: string; saida?: SaidaDoCinza
           </span>
         </p>
         <p className="mt-1.5 text-[12px] leading-snug text-ink/70">
-          Todos de <strong>{dados.rotuloDoLadoPerdido}</strong> — o lado que seu feed quase não
+          Todos de <strong>{dados.rotuloDoLadoPerdido}</strong>, o lado que seu feed quase não
           mostrou. Você viu {dados.contagem.vistos} de {dados.contagem.totalNoAcervo}.
         </p>
       </header>
