@@ -504,6 +504,11 @@ outro serviço, que precisa estar \textbf{habilitado} no projeto.
 \cd{multiSpeakerMarkup} para diálogo & Duas vozes numa chamada só, cada turno
   com seu \cd{speakerId}. Monólogo usa \cd{voice.name}; diálogo usa
   \cd{multiSpeakerVoiceConfig}. \textbf{Mandar os dois} devolve 400.\\
+\zebra \cd{speakerAlias} só com letras e números & O apelido do falante no
+  pedido não aceita acento nem espaço: \enquote{Téo} devolvia 400 em todo
+  trecho do podcast do Unoovista. O provedor manda a forma ASCII
+  (\cd{apelidosDosFalantes}: \enquote{Teo}); o nome do roteiro e da
+  transcrição não muda.\\
 \bottomrule
 \end{tabularx}
 

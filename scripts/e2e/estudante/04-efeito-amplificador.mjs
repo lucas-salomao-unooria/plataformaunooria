@@ -1,6 +1,7 @@
 import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta, contasDe, senhaDemo } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../lib/smoke.mjs";
+import { revelar } from "../lib/abas.mjs";
 
 /**
  * O EFEITO AMPLIFICADOR (exp02em1b, 2ª série do EM, unidade 1 — ADR-181), das
@@ -401,6 +402,8 @@ await suite(
       r.exigir(texto.includes(codigo), `o painel de habilidades traz ${codigo}`);
     }
     await prof.reload({ waitUntil: "domcontentloaded" });
+    /* O painel de habilidades mora na aba Habilidades da atividade (ADR-182). */
+    await revelar(prof, prof.locator("[data-habilidades-efeito-amplificador]"));
     await prof.locator("[data-habilidades-efeito-amplificador]").waitFor({ timeout: 30_000 });
     await prof.locator("[data-habilidades-efeito-amplificador]").scrollIntoViewIfNeeded();
     await r.registrar(prof, "habilidades-da-bncc", {

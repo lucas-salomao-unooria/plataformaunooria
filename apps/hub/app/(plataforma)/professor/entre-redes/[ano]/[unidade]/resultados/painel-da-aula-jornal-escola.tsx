@@ -299,8 +299,8 @@ export function PainelDaAulaJornalEscola({
           <p>
             Esta folha é para a <strong>sua</strong> tela, não para o projetor: ela tem nomes. Não há coluna de
             nível nem de acerto — quantas notícias cada um verificou fica só no gráfico, sem nome. O nível de cada
-            um, inclusive de quem repassou a mensagem nova sem abrir nenhuma pista, fica no painel de habilidades,
-            lá embaixo, só para você: se precisar conversar, converse com a criança em particular.
+            um, inclusive de quem repassou a mensagem nova sem abrir nenhuma pista, fica na aba Habilidades,
+            só para você: se precisar conversar, converse com a criança em particular.
           </p>
           <p>
             “Pistas abertas” conta quantas vezes o computador abriu de onde veio, quando aconteceu ou quem assina.

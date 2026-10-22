@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Badge, Card, EmptyState, FeedbackAlert } from "@edu/ui/ds";
+import { AbasDaAtividade } from "@/components/atividades/abas-da-atividade";
 import { UsarEstaAtividade } from "@/components/atividades/usar-esta-atividade";
 import { EquipesDaAtividade } from "@/components/equipes/equipes-da-ficha";
 import { PainelDeHabilidades } from "@/components/evidencias/painel-de-habilidades";
@@ -242,7 +243,7 @@ export async function ResultadosJornalEscola({
               <div className="flex flex-col gap-3" data-atividade-em-preparo>
                 <FeedbackAlert
                   type="info"
-                  description="As imagens das notícias são geradas por IA. Em “Imagens das notícias”, logo abaixo, gere as que faltam, confira cada uma junto da manchete, gere outra para a que não servir e aprove: só então a atividade pode ir ao ar."
+                  description="As imagens das notícias são geradas por IA. Na aba Conteúdo, em “Imagens das notícias”, gere as que faltam, confira cada uma junto da manchete, gere outra para a que não servir e aprove: só então a atividade pode ir ao ar."
                 />
               </div>
             </Card>
@@ -272,58 +273,66 @@ export async function ResultadosJornalEscola({
             </Card>
           ) : null}
 
-          {/* Em preparo, as imagens vêm ANTES das equipes: é o passo que falta.
-              A `key` é a atividade: o laço das imagens vive em `useState`. */}
-          {!emAndamento && !prontaParaAula ? imagensDoPacote : null}
-
-          <EquipesDaAtividade
-            key={`equipes-${detalhe.id}`}
-            turmaId={turma}
-            expId={EXP_ID}
-            atividadeId={detalhe.id}
-            separarAoAbrir={separar}
-          />
-
-          {emAndamento || prontaParaAula ? imagensDoPacote : null}
-
-          {/* As duas matérias em que a turma testa a Chave (3.0.0): sem imagem,
-              e por isso fora da grade de aprovação. */}
-          {detalhe.simulacao?.length ? <SimulacaoDoPacote simulacao={detalhe.simulacao} /> : null}
-
-          {emAndamento && painel ? (
-            <>
-              <PainelDaAulaJornalEscola
-                key={`aula-${turma}-${detalhe.id}`}
-                turmaId={turma}
-                inicial={painel}
-                roteiro={material?.roteiro ?? null}
-                membros={membros}
-              />
-              <ZerarTurmaJornalEscola turmaId={turma} nomeDaTurma={painel.turma.nome} tema={detalhe.tema} />
-            </>
-          ) : null}
-
-          {/* Depois da aula: o podcast da plataforma (ADR-150), com as falas
-              que o professor revisou na criação desta atividade. */}
-          <CartaoDoPodcast expId={EXP_ID} turmaId={turma} atividadeId={detalhe.id} podcast={podcast} />
-
-          {/* O painel de habilidades (E14) — invisível sem ficha
-              (`temFicha: false`), e só o `professor` confirma e ajusta: a
-              coordenação lê. A `key` é a atividade: trocar de pacote recomeça o
-              recorte e a seleção dele. */}
-          {habilidades?.temFicha ? (
-            <div className="flex flex-col gap-3" data-habilidades-do-jornal>
-              <PainelDeHabilidades
-                key={detalhe.id}
+          {/* O resto é o template da página da atividade (ADR-182): cinco abas
+              com o mesmo nome em toda missão. */}
+          <AbasDaAtividade
+            estado={chaveDoEstado}
+            aula={
+              emAndamento && painel ? (
+                <>
+                  <PainelDaAulaJornalEscola
+                    key={`aula-${turma}-${detalhe.id}`}
+                    turmaId={turma}
+                    inicial={painel}
+                    roteiro={material?.roteiro ?? null}
+                    membros={membros}
+                  />
+                  <ZerarTurmaJornalEscola turmaId={turma} nomeDaTurma={painel.turma.nome} tema={detalhe.tema} />
+                </>
+              ) : null
+            }
+            conteudo={
+              /* A `key` das imagens é a atividade: o laço delas vive em `useState`.
+                 As duas matérias em que a turma testa a Chave (3.0.0) vêm sem
+                 imagem, e por isso fora da grade de aprovação. */
+              <>
+                {imagensDoPacote}
+                {detalhe.simulacao?.length ? <SimulacaoDoPacote simulacao={detalhe.simulacao} /> : null}
+              </>
+            }
+            equipes={
+              <EquipesDaAtividade
+                key={`equipes-${detalhe.id}`}
                 turmaId={turma}
                 expId={EXP_ID}
                 atividadeId={detalhe.id}
-                inicial={habilidades}
-                podeEditar={session?.usuario.papel === "professor"}
-                rodadaEmAndamento={emAndamento ? (detalhe.rodada ?? null) : null}
+                separarAoAbrir={separar}
               />
-            </div>
-          ) : null}
+            }
+            podcast={
+              /* Depois da aula: o podcast da plataforma (ADR-150), com as falas que o professor revisou na criação desta atividade. */
+              <CartaoDoPodcast expId={EXP_ID} turmaId={turma} atividadeId={detalhe.id} podcast={podcast} />
+            }
+            habilidades={
+              /* O painel de habilidades (E14) — invisível sem ficha
+                 (`temFicha: false`), e só o `professor` confirma e ajusta: a
+                 coordenação lê. A `key` é a atividade: trocar de pacote recomeça o
+                 recorte e a seleção dele. */
+              habilidades?.temFicha ? (
+                <div className="flex flex-col gap-3" data-habilidades-do-jornal>
+                  <PainelDeHabilidades
+                    key={detalhe.id}
+                    turmaId={turma}
+                    expId={EXP_ID}
+                    atividadeId={detalhe.id}
+                    inicial={habilidades}
+                    podeEditar={session?.usuario.papel === "professor"}
+                    rodadaEmAndamento={emAndamento ? (detalhe.rodada ?? null) : null}
+                  />
+                </div>
+              ) : null
+            }
+          />
         </>
       )}
     </div>

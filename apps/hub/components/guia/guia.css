@@ -20,32 +20,547 @@
 /* ---- tela ---------------------------------------------------------------- */
 
 /*
- * O índice acompanha a rolagem porque o guia é longo e o professor volta a ele
- * no meio da aula.
+ * Os QUATRO TEMPOS (ADR-182). O que mora aqui é compensação de LAYOUT — grade,
+ * espaçamento, a régua da linha do tempo, a lousa —, nunca controle: as abas,
+ * as etiquetas, os ícones e a tabela de rolagem são do DS.
+ *
+ * Cor só por token `--unooria-*`, com o valor de fallback do próprio DS.
  */
+
+.guia {
+  --guia-linha: var(--unooria-color-neutral-200, #d9dee3);
+  --guia-tinta: var(--unooria-color-neutral-950, #0f1419);
+  --guia-navy: var(--unooria-color-brandnavy-900, #2f4470);
+  --guia-navy-claro: var(--unooria-color-brandnavy-800, #49699f);
+  --guia-fundo: var(--unooria-color-neutral-100, #f5f5f5);
+  /* A altura da barra dos tempos presa no topo: o índice e as âncoras param abaixo dela. */
+  --guia-barra: 76px;
+}
+
+/*
+ * A barra dos tempos acompanha a rolagem: um tempo tem 2 a 5 mil pixels, e a
+ * troca de aba não pode exigir voltar ao topo. O fundo é o da página, para o
+ * texto não aparecer por baixo.
+ */
+.guia-tempos__abas {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding-top: 6px;
+  background: var(--guia-fundo);
+  box-shadow: 0 1px 0 var(--guia-linha);
+}
+
+/* O rótulo da aba em duas linhas: o tempo e a hora em que ele se usa. */
+.guia-tempos__rotulo {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.guia-tempos__quando {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--unooria-color-neutral-500, #6b7785);
+}
+
+/* Na tela quem diz o tempo é a aba; o rótulo do painel só existe no papel. */
+.guia-tempo__no-papel {
+  display: none;
+}
+
+/* O resumo do topo: etiquetas do DS numa linha que quebra. */
+.guia-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---- índice: os tempos, com as seções do aberto ---- */
+
 .guia-indice {
   position: sticky;
-  top: 1.5rem;
+  top: calc(var(--guia-barra) + 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.guia-indice__titulo {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0 0.35rem 0.75rem;
+  border-left: 2px solid var(--guia-linha);
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--unooria-color-neutral-700, #45525f);
+  cursor: pointer;
+}
+
+.guia-indice__tempo[data-aberto] .guia-indice__titulo {
+  border-left-color: var(--guia-navy);
+  color: var(--guia-navy);
+}
+
+.guia-indice__titulo:focus-visible,
+.guia-indice__link:focus-visible {
+  outline: 2px solid var(--guia-navy-claro);
+  outline-offset: 2px;
 }
 
 .guia-indice__link {
   display: block;
-  padding: 0.3rem 0 0.3rem 0.75rem;
+  padding: 0.25rem 0 0.25rem 1.5rem;
   font-size: 13px;
   line-height: 1.35;
   color: var(--unooria-color-neutral-700, #45525f);
   text-decoration: none;
-  border-left: 2px solid var(--unooria-color-neutral-200, #d9dee3);
+  border-left: 2px solid var(--guia-navy);
 }
 
 .guia-indice__link:hover {
-  color: var(--unooria-color-brandnavy-900, #2f4470);
-  border-left-color: var(--unooria-color-brandnavy-800, #49699f);
+  color: var(--guia-navy);
 }
 
 /* A âncora não pode parar colada no topo da janela. */
 .guia-secao {
-  scroll-margin-top: 1.5rem;
+  scroll-margin-top: calc(var(--guia-barra) + 1rem);
+}
+
+/* ---- tipografia das peças ---- */
+
+.guia-h3 {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--guia-tinta);
+}
+
+.guia-nota {
+  max-width: 72ch;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--unooria-color-neutral-700, #45525f);
+}
+
+/* ---- os avisos: um bloco, o tom no ícone ---- */
+
+.guia-avisos {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid var(--guia-linha);
+  border-radius: 12px;
+  background: var(--unooria-color-neutral-50, #f7f8fa);
+}
+
+.guia-avisos__lista {
+  display: grid;
+  gap: 18px 28px;
+}
+
+@media (min-width: 1100px) {
+  .guia-avisos__lista[data-avisos="2"],
+  .guia-avisos__lista[data-avisos="3"] {
+    grid-template-columns: repeat(var(--colunas, 2), minmax(0, 1fr));
+  }
+  .guia-avisos__lista[data-avisos="3"] {
+    --colunas: 3;
+  }
+}
+
+.guia-avisos__item {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+/* ---- Preparar ---- */
+
+.guia-objetivos {
+  display: grid;
+  gap: 10px 28px;
+}
+
+@media (min-width: 900px) {
+  .guia-objetivos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.guia-objetivos > li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 8px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--unooria-color-neutral-800, #2c3a47);
+}
+
+.guia-bncc {
+  display: flex;
+  flex-direction: column;
+}
+
+.guia-bncc__item {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--guia-linha);
+}
+
+.guia-bncc__codigo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.guia-bncc__oficial {
+  max-width: 80ch;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--unooria-color-neutral-500, #6b7785);
+}
+
+.guia-passos {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.guia-passos > li {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.guia-passos__numero {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1.5px solid var(--guia-navy-claro);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--guia-navy);
+  font-variant-numeric: tabular-nums;
+}
+
+.guia-nao-diga {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px;
+  border-left: 3px solid var(--unooria-color-danger-600, #c62828);
+  background: var(--unooria-color-opacity-danger-100, rgba(198, 40, 40, 0.06));
+  border-radius: 0 10px 10px 0;
+}
+
+.guia-nao-diga__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guia-nao-diga__lista > li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--unooria-color-neutral-800, #2c3a47);
+}
+
+.guia-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-left: 1.25rem;
+  list-style: disc;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--unooria-color-neutral-800, #2c3a47);
+}
+
+.guia-lista--numerada {
+  list-style: decimal;
+}
+
+/* ---- Conduzir: a linha do tempo ---- */
+
+.guia-linha-do-tempo {
+  display: flex;
+  flex-direction: column;
+}
+
+.guia-linha-do-tempo__item {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 0 20px;
+}
+
+.guia-linha-do-tempo__tempo {
+  padding-top: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--guia-navy);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.guia-linha-do-tempo__tempo span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--unooria-color-neutral-500, #6b7785);
+}
+
+/* A régua: a borda é a linha, o marcador é o ponto em que o momento começa. */
+.guia-linha-do-tempo__corpo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 0 16px 22px;
+  border-left: 2px solid var(--guia-linha);
+}
+
+.guia-linha-do-tempo__corpo::before {
+  content: "";
+  position: absolute;
+  top: 19px;
+  left: -7px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 2px solid var(--guia-navy-claro);
+  background: var(--guia-fundo);
+}
+
+.guia-linha-do-tempo__botao {
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .guia-linha-do-tempo__item {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 0 12px;
+  }
+}
+
+/* ---- Conduzir: a lousa — o único elemento forte do guia ---- */
+
+.guia-lousa {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 26px 30px;
+  border-radius: 14px;
+  background: var(--guia-navy);
+  color: #fff;
+}
+
+.guia-lousa__rotulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.guia-lousa__pergunta {
+  max-width: 34ch;
+  font-size: clamp(22px, 2.6vw, 30px);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.guia-lousa__tempo {
+  max-width: 72ch;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* ---- Conduzir: a escada de perguntas ---- */
+
+.guia-escada {
+  display: grid;
+  gap: 22px 32px;
+}
+
+@media (min-width: 1100px) {
+  .guia-escada {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.guia-escada__degrau {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.guia-escada__nivel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--guia-navy);
+}
+
+.guia-escada__pergunta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 32px;
+}
+
+.guia-marcas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+}
+
+.guia-marcas > li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--unooria-color-neutral-800, #2c3a47);
+}
+
+.guia-marcas__letra {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--guia-navy-claro);
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ---- grades de itens (mediação, adaptações) ---- */
+
+.guia-grade {
+  display: grid;
+  gap: 14px;
+}
+
+@media (min-width: 900px) {
+  .guia-grade {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.guia-cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--guia-linha);
+  border-radius: 10px;
+  background: var(--unooria-color-neutral-50, #ffffff);
+}
+
+/* ---- Fechar ---- */
+
+.guia-sintese {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 22px;
+  border-left: 3px solid var(--guia-navy);
+  background: var(--unooria-color-opacity-brandnavy-100, rgba(73, 105, 159, 0.08));
+  border-radius: 0 12px 12px 0;
+}
+
+.guia-sintese__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-left: 1.25rem;
+  list-style: decimal;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--guia-tinta);
+}
+
+.guia-rubrica {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.guia-rubrica th,
+.guia-rubrica td {
+  padding: 10px 12px 10px 0;
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.guia-rubrica thead th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--unooria-color-neutral-500, #6b7785);
+}
+
+.guia-rubrica tbody tr {
+  border-top: 1px solid var(--guia-linha);
+}
+
+.guia-rubrica tbody th {
+  font-weight: 600;
+  color: var(--guia-tinta);
+}
+
+.guia-rubrica td {
+  color: var(--unooria-color-neutral-800, #2c3a47);
+}
+
+/* ---- Consultar ---- */
+
+.guia-duvidas {
+  display: grid;
+  gap: 18px 32px;
+}
+
+@media (min-width: 1100px) {
+  .guia-duvidas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.guia-duvidas dt {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--guia-tinta);
+}
+
+.guia-duvidas dd {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--unooria-color-neutral-800, #2c3a47);
 }
 
 /* ---- papel --------------------------------------------------------------- */
@@ -80,6 +595,51 @@
   /* O grid de duas colunas (índice + conteúdo) vira uma coluna só. */
   .guia__corpo {
     display: block !important;
+  }
+
+  /*
+   * Os QUATRO tempos vão para o papel, na ordem (ADR-182): na tela só o aberto
+   * aparece, e é por isso que os painéis fechados ficam montados com `hidden`
+   * — `tempos-do-guia.tsx`. Cada tempo começa com o nome dele, que na tela é a
+   * aba.
+   */
+  .guia-tempo[hidden] {
+    display: block !important;
+  }
+
+  .guia-tempo + .guia-tempo {
+    margin-top: 1.25rem;
+  }
+
+  .guia-tempo__no-papel {
+    display: block;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1.5pt solid #000;
+    font-size: 14pt;
+    font-weight: 700;
+    break-after: avoid;
+  }
+
+  /* A lousa e a síntese dependem de FUNDO na tela; no papel, borda e peso. */
+  .guia .guia-lousa {
+    background: none !important;
+    color: #000 !important;
+    border: 2pt solid #000 !important;
+  }
+
+  .guia .guia-lousa * {
+    color: #000 !important;
+  }
+
+  .guia .guia-nao-diga,
+  .guia .guia-sintese,
+  .guia .guia-avisos {
+    background: none !important;
+  }
+
+  .guia .guia-cartao {
+    break-inside: avoid;
   }
 
   /*

@@ -1,6 +1,7 @@
 import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
+import { abrirAba, textoDeTodasAsAbas } from "../lib/abas.mjs";
 
 /**
  * O guia da aula de cada missão publicada (ADR-65).
@@ -35,11 +36,13 @@ const GUIAS = [
   },
   {
     rota: "/professor/entre-redes/2-serie/unidade-1/guia",
-    missao: "UnooriaAI · 2ª série EM",
-    /* A tabela dos 8 vieses vem de `GET /unoogpt/professor/fontes`. É a única
-       superfície em que o viés é dito, e o hub não guarda cópia dela. */
-    vivo: [/As 8 fontes e o viés de cada uma/i, /Em que ela engana/i, /Histórico de ocorrências/i],
-    bncc: "EM13CO12",
+    missao: "O Efeito Amplificador · 2ª série EM",
+    /* Desde a ADR-181 a unidade é O Efeito Amplificador (a Tempestade virou
+       versão anterior, fora do catálogo). Os dois blocos vivos vêm de
+       `GET /efeito-amplificador/professor/material`: o pacote padrão com o
+       gabarito, para ler antes, e o critério de cada nível, para o depois. */
+    vivo: [/O pacote padrão — “/, /O critério de cada nível/],
+    bncc: "EM13CO24",
   },
   {
     rota: "/professor/entre-redes/7-ano/unidade-1/guia",
@@ -105,13 +108,21 @@ const GUIAS = [
 const SECOES = [
   "O que a turma aprende",
   "Antes da aula",
+  "Cuidados",
   "Roteiro",
   "Perguntas para o debate",
   "Mediação",
   "Depois da aula",
-  "Cuidados",
   "Adaptações",
   "Dúvidas frequentes",
+];
+
+/** Os quatro tempos — as abas do guia (ADR-182), e a seção que prova cada um. */
+const TEMPOS = [
+  { aba: "Preparar", secao: "O que a turma aprende" },
+  { aba: "Conduzir", secao: "Roteiro da aula" },
+  { aba: "Fechar", secao: "Depois da aula" },
+  { aba: "Consultar", secao: "Dúvidas frequentes" },
 ];
 
 await suite(
@@ -125,7 +136,8 @@ await suite(
       "documento em toda missão — mudam o conteúdo e os blocos que vêm de fonte viva.",
     prova: [
       "As seis missões publicadas têm guia, e nenhuma cai em 404",
-      "As nove seções aparecem na mesma ordem em todas",
+      "As nove seções aparecem na mesma ordem em todas, divididas em quatro tempos (abas)",
+      "Cada tempo mostra só as seções dele",
       "Cada guia traz a habilidade da BNCC Computação com o código",
       "Todo guia tem bloco vivo, e todos chegam preenchidos da fonte de verdade",
       "O conteúdo que a turma lê aparece com as PALAVRAS dela, não descrito",
@@ -149,7 +161,9 @@ await suite(
       );
       await p.waitForTimeout(400);
 
-      const texto = await p.locator("main").innerText();
+      /* O guia é dividido em quatro tempos (ADR-182), e a aba fechada não entra
+         no `innerText`: o texto do guia inteiro é o das quatro abas. */
+      const texto = await textoDeTodasAsAbas(p, "guia");
 
       const faltando = SECOES.filter((secao) => !texto.includes(secao));
       r.exigir(
@@ -167,6 +181,34 @@ await suite(
         `${guia.missao}: dá para imprimir`,
       );
     }
+
+    /* Os quatro tempos: cada aba mostra só o seu pedaço, e o que ela mostra é
+       o que o professor procura naquela hora. A aba fechada continua no DOM
+       (o papel imprime as quatro), mas fica fora da tela. */
+    for (const tempo of TEMPOS) {
+      await abrirAba(p, tempo.aba);
+      const secao = p.getByRole("heading", { name: tempo.secao, level: 2 });
+      r.exigir(await secao.isVisible(), `a aba ${tempo.aba} mostra "${tempo.secao}"`);
+      const outras = TEMPOS.filter((t) => t !== tempo);
+      for (const outra of outras) {
+        r.exigir(
+          !(await p.getByRole("heading", { name: outra.secao, level: 2 }).isVisible()),
+          `e a aba ${tempo.aba} não mostra "${outra.secao}", que é de ${outra.aba}`,
+        );
+      }
+    }
+    await abrirAba(p, "Conduzir");
+    await r.registrar(p, "guia-tempo-conduzir", {
+      titulo: "O guia em quatro tempos: Conduzir",
+      mostra:
+        "A barra dos tempos (Preparar, Conduzir, Fechar, Consultar) presa no topo, o resumo da aula em " +
+        "números, os avisos num bloco só e o roteiro como linha do tempo, com o botão de cada momento.",
+      prova:
+        "Na frente da turma o professor vê só o roteiro, o debate e a mediação — o guia corrido tinha 8 a " +
+        "17 mil pixels. Nada saiu: cada seção mora num tempo, e a impressão leva os quatro.",
+      inteira: false,
+    });
+    await abrirAba(p, "Preparar");
 
     await r.registrar(p, "guia-de-uma-missao", {
       titulo: "O guia, por dentro",

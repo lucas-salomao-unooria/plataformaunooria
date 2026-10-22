@@ -1,6 +1,7 @@
 import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
+import { abrirAba, textoDeTodasAsAbas } from "../lib/abas.mjs";
 
 /**
  * A Vila do Lume pelo lado do professor: ficha, guia do debate, resultados da
@@ -61,7 +62,9 @@ await suite(
     // ── a ficha ─────────────────────────────────────────────────────────
     await p.goto(`${HUB}/professor/entre-redes/vila-do-lume`, { waitUntil: "domcontentloaded" });
     await p.waitForTimeout(2000);
-    const ficha = await p.locator("main").innerText();
+    /* As bolhas e o "para que serve" moram nas abas de "Conhecer a missão"
+       (ADR-182): o texto da ficha é o de todas elas. */
+    const ficha = await textoDeTodasAsAbas(p, "ficha");
     for (const trecho of ["golpe grosseiro", "autoridade e urgência", "o colega, e o momento exato"]) {
       r.exigir(ficha.includes(trecho), `a ficha explica a bolha "${trecho}"`);
     }
@@ -70,7 +73,9 @@ await suite(
     r.exigir(/Unoovista/.test(ficha), "a ficha diz qual missão consome o perfil medido aqui");
     await r.registrar(p, "ficha-da-missao", {
       titulo: "A ficha da missão",
-      mostra: "As três bolhas explicadas, o aviso de sigilo e o passo a passo da condução.",
+      mostra:
+        "O aviso de sigilo, o passo a passo da condução logo em seguida, e as três bolhas e o para que " +
+        "serve nas abas de Conhecer a missão.",
       prova:
         "Cada criança recebe UMA das três bolhas. O professor precisa saber disso antes, senão " +
         "conduz o debate como se todos tivessem visto a mesma coisa.",
@@ -80,9 +85,11 @@ await suite(
     // ── o guia do debate ────────────────────────────────────────────────
     await p.locator("a", { hasText: "Abrir guia da aula" }).first().click();
     await p.waitForURL("**/vila-do-lume/guia", { timeout: 20_000 });
+    /* A revelação é bloco vivo do debate, que mora no tempo Conduzir (ADR-182). */
+    await abrirAba(p, "Conduzir");
     await p.locator("text=Em quem dava pra confiar?").first().waitFor({ timeout: 20_000 });
     await p.waitForTimeout(800);
-    const guia = await p.locator("main").innerText();
+    const guia = await textoDeTodasAsAbas(p, "guia");
 
     /* Case-insensitive: o nome do remetente é renderizado com `uppercase` no
        CSS, e `innerText` devolve o texto TRANSFORMADO. */

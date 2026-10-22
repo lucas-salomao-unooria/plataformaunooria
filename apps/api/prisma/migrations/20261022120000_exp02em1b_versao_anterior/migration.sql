@@ -117,7 +117,17 @@ ALTER TABLE "evidencias"         NO FORCE ROW LEVEL SECURITY;
 ALTER TABLE "evidencias_eventos" NO FORCE ROW LEVEL SECURITY;
 ALTER TABLE "podcast_roteiros"   NO FORCE ROW LEVEL SECURITY;
 ALTER TABLE "recursos_auditoria" DISABLE TRIGGER "recursos_auditoria_sem_update";
+-- `evidencias_eventos` também é append-only (trigger desde a
+-- 20260925150000_evidencia_pedagogica): sem desligá-lo aqui, o UPDATE abaixo
+-- aborta a migration inteira em todo banco que já tenha evidência da Tempestade.
+ALTER TABLE "evidencias_eventos" DISABLE TRIGGER "evidencias_eventos_sem_update";
 
+-- Banco em que o manifesto da versão anterior já foi publicado ANTES desta
+-- migration (o CI ou um `publicar-manifesto` local) tem as DUAS linhas no
+-- catálogo, e o rename abaixo bateria na chave primária. A linha
+-- `exp02em1b-v0` é a da publicação mais nova: fica ela, e sai a antiga.
+DELETE FROM "experiencias" WHERE "exp_id" = 'exp02em1b'
+  AND EXISTS (SELECT 1 FROM "experiencias" WHERE "exp_id" = 'exp02em1b-v0');
 UPDATE "experiencias"         SET "exp_id" = 'exp02em1b-v0' WHERE "exp_id" = 'exp02em1b';
 UPDATE "experiencias_versoes" SET "exp_id" = 'exp02em1b-v0' WHERE "exp_id" = 'exp02em1b';
 UPDATE "liberacoes"           SET "exp_id" = 'exp02em1b-v0' WHERE "exp_id" = 'exp02em1b';
@@ -160,6 +170,7 @@ BEGIN
 END $$;
 
 ALTER TABLE "recursos_auditoria" ENABLE TRIGGER "recursos_auditoria_sem_update";
+ALTER TABLE "evidencias_eventos" ENABLE TRIGGER "evidencias_eventos_sem_update";
 ALTER TABLE "liberacoes"         FORCE ROW LEVEL SECURITY;
 ALTER TABLE "progresso"          FORCE ROW LEVEL SECURITY;
 ALTER TABLE "equipes_montagens"  FORCE ROW LEVEL SECURITY;

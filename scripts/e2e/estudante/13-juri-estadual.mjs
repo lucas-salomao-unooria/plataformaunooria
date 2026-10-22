@@ -2,6 +2,7 @@ import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta, contasDe } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
 import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from "../lib/podcast.mjs";
+import { revelar } from "../lib/abas.mjs";
 
 /**
  * O Júri Estadual de Projetos (exp06ef1b 0.5.0, PRD v2 com os 40 projetos de
@@ -532,6 +533,7 @@ await suite(
     if (noArAntes?.id === atividadeId) {
       const rodada = noArAntes.rodada;
       const zerar = prof.locator("[data-zerar-turma]");
+      await revelar(prof, zerar);
       await hidratado(prof, zerar);
       await zerar.click();
       await prof.getByRole("dialog").getByRole("button", { name: "Iniciar Nova Rodada" }).click();
@@ -546,8 +548,8 @@ await suite(
     await r.registrar(prof, "atividade-em-andamento", {
       titulo: "A atividade em andamento, e o botão da aula",
       mostra:
-        "A página da atividade do banco padrão: em andamento, as imagens e os 40 estandes em abas por área, e o " +
-        "painel da aula com Liberar Auditoria.",
+        "A página da atividade do banco padrão, em andamento, com as cinco abas do template e a Aula ao vivo " +
+        "aberta: o painel da aula com Liberar Auditoria. As imagens e os 40 estandes estão na aba Conteúdo.",
       prova: "Um botão só (PRD v2): Liberar Auditoria abre a Galeria Oculta para a turma inteira, e não volta.",
       inteira: true,
     });
@@ -556,6 +558,8 @@ await suite(
        leitura) e as imagens. Só a aba aberta é desenhada, então a prova anda
        pelas quatro. */
     const estandesDaAtividade = prof.locator("[data-estandes-da-atividade]");
+    /* As imagens e os estandes moram na aba Conteúdo da atividade (ADR-182). */
+    await revelar(prof, estandesDaAtividade);
     await estandesDaAtividade.waitFor({ timeout: 20_000 });
     r.exigir(
       (await estandesDaAtividade.getAttribute("data-total-de-estandes")) === "40",
@@ -1578,6 +1582,7 @@ await suite(
     );
     r.exigir((await linhaDoPrimeiro.innerText()).includes("separou"), "na linha do primeiro, a separação aparece como feita");
     const habilidades = prof.locator("[data-habilidades-do-juri]");
+    await revelar(prof, habilidades);
     await habilidades.waitFor({ timeout: 30_000 });
     await habilidades.getByText("EF06CO01").first().waitFor({ timeout: 30_000 });
     const textoDasHabilidades = await habilidades.innerText();
@@ -1605,10 +1610,12 @@ await suite(
     for (const [quem, [veio, regua]] of Object.entries(esperado)) {
       r.exigir(veio === regua, `${quem}: o painel registra “${veio}”, e a régua dá “${regua}”`);
     }
+    /* A folha é da aba Aula ao vivo; as habilidades, lidas acima, da aba Habilidades. */
+    await revelar(prof, prof.locator("[data-revisao-da-turma]"));
     await linhaDoPrimeiro.scrollIntoViewIfNeeded();
     await r.registrar(prof, "resultados-e-habilidades", {
       titulo: "A folha da turma, a separação e as habilidades",
-      mostra: "Onde cada um está, a coluna “Separação” (as pastas) e o painel de habilidades da BNCC com a EF06CO01 e a EF06CO03.",
+      mostra: "Na aba Aula ao vivo, onde cada um está e a coluna “Separação” (as pastas); o painel de habilidades da BNCC, com a EF06CO01 e a EF06CO03, fica na aba Habilidades.",
       prova: "A folha diz só o progresso — nunca voto, taxa, concentração, acerto ou nível ligados a nome. A concentração mora só na lousa, agregada; o nível (a separação e a regra), no painel de habilidades.",
       inteira: true,
     });

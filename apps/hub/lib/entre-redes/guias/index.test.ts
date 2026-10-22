@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import { MISSOES_DISPONIVEIS } from "../catalogo";
 import { buscarGuia, MISSOES_SEM_GUIA, todosOsGuias } from "./index";
-import { SECOES_DO_GUIA } from "./tipos";
+import { SECOES_DO_GUIA, TEMPOS_DO_GUIA } from "./tipos";
 
 /**
  * O que estes testes seguram é uma coisa só: **missão publicada sem guia**.
@@ -93,13 +93,22 @@ describe("guias da aula", () => {
     expect([...SECOES_DO_GUIA]).toEqual([
       "objetivos",
       "antes",
+      "cuidados",
       "roteiro",
       "debate",
       "mediacao",
       "depois",
-      "cuidados",
       "adaptacoes",
       "duvidas",
     ]);
+  });
+
+  /* As abas do guia (ADR-182) são os tempos. Seção fora de todo tempo some da
+     tela sem erro nenhum — o renderizador só desenha o que algum tempo lista —,
+     e seção em dois tempos aparece duas vezes, com a mesma âncora. A ordem dos
+     tempos lida em sequência tem de ser a ordem das seções: é a do papel. */
+  test("toda seção mora em exatamente um tempo, na ordem do guia", () => {
+    const nosTempos = TEMPOS_DO_GUIA.flatMap((tempo) => [...tempo.secoes]);
+    expect(nosTempos).toEqual([...SECOES_DO_GUIA]);
   });
 });
