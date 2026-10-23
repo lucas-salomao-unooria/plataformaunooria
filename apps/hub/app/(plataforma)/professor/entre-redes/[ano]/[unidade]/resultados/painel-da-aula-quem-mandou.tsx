@@ -477,7 +477,7 @@ function FolhaDaTurma({
       <div className="flex flex-col gap-3" data-folha>
         <SectionHeader
           title="Diário de Bordo — Relatório Formativo da Turma"
-          description="Para a sua tela, não para o projetor: aqui estão os nomes e o que cada um encaminhou. O nível de cada habilidade fica no painel de habilidades, abaixo."
+          description="Para a sua tela, não para o projetor: aqui estão os nomes e o que cada um encaminhou. O nível de cada habilidade fica na aba Habilidades."
         />
         <ScrollBar orientation="both" autoHide className="tabela-rolavel">
           <Table<LinhaDoPainel>

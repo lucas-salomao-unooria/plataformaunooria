@@ -1,4 +1,5 @@
 import { FICHA_EXP02EM1B } from "./exp02em1b";
+import { FICHA_EXP02EM1B_V0 } from "./exp02em1b-v0";
 import { FICHA_EXP04EF1B } from "./exp04ef1b";
 import { FICHA_EXP05EF1B } from "./exp05ef1b";
 import { FICHA_EXP06EF1B } from "./exp06ef1b";
@@ -13,7 +14,7 @@ export type { FichaPedagogica, HabilidadeDaFicha, MarcadorDaFicha, PerguntaDaFic
  *
  * A plataforma da evidência entrou antes de qualquer missão medir alguma coisa;
  * a primeira foi Quem Mandou Isso? v2.2 (exp05ef1b), a segunda A Seleção
- * (exp07ef1b), a terceira o Jornal da Escola (exp04ef1b), a quarta O Júri Estadual de Projetos (exp06ef1b) a quinta O Conteúdo que não chegou (exp08ef1b) e a sexta a Missão Tempestade (exp02em1b), a primeira do EM e a única que só conta ao encerrar (ADR-154). Cada missão que for adaptada acrescenta a ficha dela aqui (um
+ * (exp07ef1b), a terceira o Jornal da Escola (exp04ef1b), a quarta O Júri Estadual de Projetos (exp06ef1b) a quinta O Conteúdo que não chegou (exp08ef1b) e a sexta a Missão Tempestade (hoje `exp02em1b-v0`, a versão anterior da ADR-181), e a sétima O Efeito Amplificador (`exp02em1b`, ADR-181), só Canal A, a primeira do EM e a única que só conta ao encerrar (ADR-154). Cada missão que for adaptada acrescenta a ficha dela aqui (um
  * arquivo `fichas/<expId>.ts`), no MESMO trabalho que faz a missão chamar
  * `EvidenciasService.marcar` e `registrarContexto`.
  *
@@ -32,5 +33,6 @@ export const FICHAS: readonly FichaPedagogica[] = [
   FICHA_EXP04EF1B,
   FICHA_EXP06EF1B,
   FICHA_EXP08EF1B,
+  FICHA_EXP02EM1B_V0,
   FICHA_EXP02EM1B,
 ];

@@ -8,6 +8,7 @@ import { minhasTurmas } from "@/lib/turmas";
 import type { TurmaDoAssistente } from "@/components/atividades/assistente-de-atividade";
 
 import { CriarASelecao } from "./criar-a-selecao";
+import { CriarEfeitoAmplificador } from "./criar-efeito-amplificador";
 import { CriarJornalEscola } from "./criar-jornal-escola";
 import { CriarJuriEstadual } from "./criar-juri-estadual";
 import { CriarQuemMandou } from "./criar-quem-mandou";
@@ -73,6 +74,8 @@ export default async function NovaAtividadePage({
         <CriarJornalEscola {...props} />
       ) : expId === "exp06ef1b" ? (
         <CriarJuriEstadual {...props} />
+      ) : expId === "exp02em1b" ? (
+        <CriarEfeitoAmplificador {...props} />
       ) : (
         <CriarQuemMandou {...props} />
       )}

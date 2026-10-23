@@ -80,54 +80,43 @@ export function montarEnvio(posts: readonly PostDoEnvio[], semente: string): str
   return embaralhar([...deTese, ...neutros], aleatorio).map((p) => p.id);
 }
 
-/** A linha da régua: o que a SELEÇÃO tem. */
-export type LinhaDoEnvio = "dois-lados" | "dois-lados-com-fofoca" | "um-lado" | "so-neutros";
-
-export function linhaDaSelecao(selecao: readonly PostDoEnvio[]): LinhaDoEnvio {
-  const temA = selecao.some((p) => p.lado === "A");
-  const temB = selecao.some((p) => p.lado === "B");
-  if (temA && temB) {
-    return selecao.some((p) => ehFofocaOuHumor(p.tipoDoAutor)) ? "dois-lados-com-fofoca" : "dois-lados";
-  }
-  return temA || temB ? "um-lado" : "so-neutros";
-}
-
 /**
- * A RÉGUA 4×4: a seleção nas linhas, a mensagem nas colunas. "Os dois lados" =
- * pelo menos um post de cada lado. O "atingiu" pede as três coisas da
- * habilidade: o quadro completo, a dinâmica da rede (o aviso) e a
- * confiabilidade (nada de fofoca ou humor mandado como informação).
+ * OS TRÊS CRITÉRIOS do envio — a régua do PO, validada com a pedagogia em
+ * 2026-10-21 (ADR-179): (1) os posts cobrem os dois lados; (2) nenhum é de
+ * página de fofoca ou de humor; (3) a mensagem é a que avisa que aquilo é só
+ * uma parte. 3 de 3, atingiu; 1 ou 2, em processo; nenhum, não atingiu.
+ * A mensagem que ridiculariza o outro lado dá "não atingiu" qualquer que seja
+ * a contagem (ADR-180, o PO em 2026-10-22).
  */
-const REGUA: Record<LinhaDoEnvio, Record<TipoDeMensagem, Nivel>> = {
-  "dois-lados": { aviso: "atingiu", neutra: "em_processo", encerra: "em_processo", ridiculariza: "nao_atingiu" },
-  "dois-lados-com-fofoca": {
-    aviso: "em_processo",
-    neutra: "em_processo",
-    encerra: "em_processo",
-    ridiculariza: "nao_atingiu",
-  },
-  "um-lado": { aviso: "em_processo", neutra: "nao_atingiu", encerra: "nao_atingiu", ridiculariza: "nao_atingiu" },
-  "so-neutros": { aviso: "em_processo", neutra: "em_processo", encerra: "nao_atingiu", ridiculariza: "nao_atingiu" },
-};
+export function criteriosDoEnvio(selecao: readonly PostDoEnvio[], mensagem: TipoDeMensagem) {
+  return {
+    doisLados: selecao.some((p) => p.lado === "A") && selecao.some((p) => p.lado === "B"),
+    semFofoca: !selecao.some((p) => ehFofocaOuHumor(p.tipoDoAutor)),
+    aviso: mensagem === "aviso",
+  };
+}
 
 /**
  * O NÍVEL DO ENVIO e o MARCADOR que ele grava.
  *
- * Na atividade que não mede a confiabilidade, só UMA casa muda — "os dois
- * lados, nenhum de fofoca ou humor × Aviso" vai de "atingiu" a "em processo" —
- * e só ela grava o marcador limitado (`envio-sem-confiabilidade`, que o
- * consolidado conta à parte). As outras 15 casas gravam o envio comum.
+ * Na atividade que não mede a confiabilidade (sem fofoca ou humor nos dois
+ * lados), o critério 2 não tem como falhar: o envio que fecha os três vai a
+ * "em processo" e grava o marcador limitado (`envio-sem-confiabilidade`, que o
+ * consolidado conta à parte). Os outros gravam o envio comum.
  */
 export function nivelDoEnvio(entrada: {
-  linha: LinhaDoEnvio;
+  selecao: readonly PostDoEnvio[];
   mensagem: TipoDeMensagem;
   medeConfiabilidade: boolean;
-}): { nivel: Nivel; marcador: string } {
-  const nivel = REGUA[entrada.linha][entrada.mensagem];
-  if (!entrada.medeConfiabilidade && entrada.linha === "dois-lados" && entrada.mensagem === "aviso") {
-    return { nivel: "em_processo", marcador: MARCADOR_DO_ENVIO_LIMITADO };
+}): { nivel: Nivel; marcador: string; criterios: number } {
+  const c = criteriosDoEnvio(entrada.selecao, entrada.mensagem);
+  const criterios = [c.doisLados, c.semFofoca, c.aviso].filter(Boolean).length;
+  if (entrada.mensagem === "ridiculariza") {
+    return { nivel: "nao_atingiu", marcador: MARCADOR_DA_TAREFA.envio, criterios };
   }
-  return { nivel, marcador: MARCADOR_DA_TAREFA.envio };
+  if (criterios === 3 && !entrada.medeConfiabilidade) {
+    return { nivel: "em_processo", marcador: MARCADOR_DO_ENVIO_LIMITADO, criterios };
+  }
+  const nivel: Nivel = criterios === 3 ? "atingiu" : criterios > 0 ? "em_processo" : "nao_atingiu";
+  return { nivel, marcador: MARCADOR_DA_TAREFA.envio, criterios };
 }
-
-export const REGUA_DO_ENVIO = REGUA;

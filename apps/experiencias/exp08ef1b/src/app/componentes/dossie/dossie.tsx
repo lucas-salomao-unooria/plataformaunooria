@@ -201,7 +201,7 @@ export function Dossie({ runId }: { runId: string }) {
                   <p>
                     Neste debate, o lado que fala essa língua é{' '}
                     <strong>{dossie.explicacaoDoLado.ladoRotulo}</strong>
-                    {dossie.explicacaoDoLado.porQue ? ` — ${dossie.explicacaoDoLado.porQue}` : ''}.
+                    {dossie.explicacaoDoLado.porQue ? `: ${dossie.explicacaoDoLado.porQue}` : ''}.
                   </p>
                 </>
               ) : dossie.explicacaoDoLado.origem === 'redistribuido' ? (
@@ -234,7 +234,7 @@ export function Dossie({ runId }: { runId: string }) {
             <p className="mt-3 text-[15px] leading-relaxed">
               {dossie.bolha.inverteu ? (
                 <>
-                  <strong>Você virou o jogo no meio do caminho</strong> — e isso é mais raro do que parece.
+                  <strong>Você virou o jogo no meio do caminho.</strong> Pouca gente consegue.
                 </>
               ) : semBolha ? (
                 <>Você distribuiu sua atenção entre os dois lados.</>
@@ -341,14 +341,14 @@ export function Dossie({ runId }: { runId: string }) {
               <p className="mt-3 text-[14px] leading-relaxed">
                 {dossie.perfilObservado.veredito === 'reforcou' ? (
                   <>
-                    O jeito que mais te segurou foi <strong>o mesmo</strong> que o jogo apontou. É uma pista de
-                    que a mira acertou — não uma definição de quem você é.
+                    O jeito que mais te segurou foi <strong>o mesmo</strong> que o jogo apontou. Isso é uma pista
+                    sobre aquele dia. Não diz quem você é.
                   </>
                 ) : (
                   <>
-                    O jeito que mais te segurou foi <strong>outro</strong>, e isso é interessante — não errado.
-                    Ninguém muda de valores em 15 minutos: o que muda é o que prende a atenção em cada
-                    situação.
+                    O jeito que mais te segurou foi <strong>outro</strong>. Não tem nada de errado nisso:
+                    ninguém muda de valores em 15 minutos, mas o que prende a nossa atenção muda de uma
+                    situação para outra.
                   </>
                 )}
               </p>
@@ -423,8 +423,8 @@ export function Dossie({ runId }: { runId: string }) {
         </div>
 
         <footer className="sticky bottom-0 -mx-6 border-t border-black/10 bg-surface/95 px-6 py-4 text-[11px] leading-relaxed text-muted backdrop-blur md:-mx-10 md:px-10 md:text-center">
-          Simulação educacional. Perfis e posts gerados por IA. O perfil do jogo é uma pista sobre aquele
-          dia, não uma definição de quem você é.
+          Simulação feita para a aula. Os perfis e os posts foram criados por IA. O perfil do jogo é uma
+          pista sobre aquele dia e não diz quem você é.
         </footer>
       </div>
 

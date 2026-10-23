@@ -40,7 +40,7 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
 
 const URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
 const ESCOLA = "teste-unoogpt-evidencia";
-const TEMPESTADE = "exp02em1b";
+const TEMPESTADE = "exp02em1b-v0";
 const TURMA = "turma";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
@@ -218,14 +218,14 @@ afterAll(async () => {
 describe("a tabela das tarefas", () => {
   test("o vocabulário do CHECK é o do código, e a tabela tem RLS forçada", async () => {
     const [check] = await prisma.$queryRaw<{ def: string }[]>`
-      SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conname = 'exp02em1b_tarefas_tarefa_check'`;
+      SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conname = 'exp02em1b_v0_tarefas_tarefa_check'`;
     for (const t of TAREFAS) expect(check!.def).toContain(`'${t}'`);
     expect((check!.def.match(/'[a-z-]+'/g) ?? []).length).toBe(TAREFAS.length);
     const [rls] = await prisma.$queryRaw<{ rls: boolean; forcada: boolean }[]>`
-      SELECT relrowsecurity AS rls, relforcerowsecurity AS forcada FROM pg_class WHERE relname = 'exp02em1b_tarefas'`;
+      SELECT relrowsecurity AS rls, relforcerowsecurity AS forcada FROM pg_class WHERE relname = 'exp02em1b_v0_tarefas'`;
     expect(rls).toEqual({ rls: true, forcada: true });
     const politicas = await prisma.$queryRaw<{ n: bigint }[]>`
-      SELECT count(*) AS n FROM pg_policies WHERE tablename = 'exp02em1b_tarefas'`;
+      SELECT count(*) AS n FROM pg_policies WHERE tablename = 'exp02em1b_v0_tarefas'`;
     expect(Number(politicas[0]!.n)).toBe(1);
   });
 });

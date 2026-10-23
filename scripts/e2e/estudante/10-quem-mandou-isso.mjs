@@ -2,6 +2,7 @@ import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta, contasDe, senhaDemo } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../lib/smoke.mjs";
 import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from "../lib/podcast.mjs";
+import { revelar } from "../lib/abas.mjs";
 
 /**
  * Quem mandou isso? v2.2 (exp05ef1b, 0.6.0 — só o Canal A), nas duas pontas da sala: a professora
@@ -520,6 +521,8 @@ await suite(
     }
 
     const pacoteNaPagina = prof.locator(`[data-pacote-da-atividade="${atividadeId}"]`);
+    /* O pacote mora na aba Conteúdo da atividade (ADR-182); a que abre, em andamento, é a Aula ao vivo. */
+    await revelar(prof, pacoteNaPagina);
     await pacoteNaPagina.waitFor({ timeout: 20_000 });
     r.exigir(
       (await prof.locator('[data-liberacao-na-sala="liberada"]').count()) === 1,
@@ -556,6 +559,7 @@ await suite(
     if (turmaAndou) {
       const rodada = painel.atividade.rodada;
       const zerar = prof.locator("[data-zerar-turma]").getByRole("button", { name: "Zerar Turma para Nova Aplicação" });
+      await revelar(prof, prof.locator("[data-zerar-turma]"));
       await hidratado(prof, zerar);
       await zerar.click();
       const janela = prof.getByRole("dialog", { name: `Zerar ${painel.turma.nome} para nova aplicação?` });
@@ -573,6 +577,7 @@ await suite(
       );
       /* A aba da rodada nova aparece na hora, sem recarregar (o PO, 2026-10-05):
          antes ela só existia depois da primeira evidência e de um F5. */
+      await revelar(prof, prof.locator("[data-habilidades-quem-mandou]"));
       await esperarOuFalharCedo(
         prof.locator("[data-habilidades-quem-mandou]").getByText(`A rodada ${rodada + 1} começou`),
         prof.locator(ALERTA_DE_ERRO),
@@ -585,6 +590,7 @@ await suite(
         painel.atividade.pacoteId === ativo.id && painel.fase === "triagem",
         `zerar abre a ${rodada + 1}ª rodada do MESMO pacote e volta a aula à triagem (fase=${painel.fase})`,
       );
+      await revelar(prof, prof.locator("[data-zerar-turma]"));
       await prof.locator("[data-zerar-turma]").scrollIntoViewIfNeeded();
       await r.registrar(prof, "turma-zerada", {
         titulo: "Zerar abre uma rodada nova, e as habilidades recomeçam do zero",
@@ -601,6 +607,7 @@ await suite(
     }
     const atividade = painel.atividade;
 
+    await revelar(prof, prof.locator("[data-painel-da-aula]"));
     await prof.locator("[data-painel-da-aula]").scrollIntoViewIfNeeded();
     /* Depois de "Zerar" o painel se relê: contar na hora pegava a lista a meio
        caminho e reprovava com os três botões na tela (2026-09-26). Espera o
@@ -880,6 +887,7 @@ await suite(
     });
     r.exigir(painel.termometro === null, "antes da revelação o painel não tem Termômetro: só o progresso");
     await prof.reload({ waitUntil: "domcontentloaded" });
+    await revelar(prof, prof.locator("[data-painel-da-aula]"));
     await prof.locator("[data-painel-da-aula]").waitFor({ timeout: 30_000 });
     r.exigir(
       (await prof.locator("[data-termometro]").count()) === 0,
@@ -1195,6 +1203,7 @@ await suite(
       (painel.linhas ?? []).flatMap((l) => [l.nome, ...(l.equipe?.membros ?? []).map((m) => m.nome)]).filter(Boolean),
     );
     const termometro = prof.locator("[data-painel-da-aula] [data-termometro]").first();
+    await revelar(prof, termometro, { timeout: 20_000 });
     await termometro.waitFor({ timeout: 20_000 });
     const textoDoTermometro = await termometro.innerText();
     const nomeNoTermometro = [...nomes].find((n) => textoDoTermometro.includes(n));
@@ -1476,6 +1485,7 @@ await suite(
 
     await prof.reload({ waitUntil: "domcontentloaded" });
     const blocoDeHabilidades = prof.locator("section", { has: prof.getByText("Habilidades da BNCC", { exact: true }) }).last();
+    await revelar(prof, blocoDeHabilidades);
     await blocoDeHabilidades.waitFor({ timeout: 30_000 });
     const textoDoBloco = await blocoDeHabilidades.innerText();
     r.exigir(
@@ -1506,6 +1516,7 @@ await suite(
 
     const folhaDaTurma = prof.locator("[data-folha]");
     const linhaNaFolha = folhaDaTurma.locator("tr", { hasText: estudante.nome });
+    await revelar(prof, folhaDaTurma, { timeout: 20_000 });
     await linhaNaFolha.first().waitFor({ timeout: 20_000 });
     const cabecalhos = (await folhaDaTurma.locator("thead th").allInnerTexts()).map(normalizar);
     r.exigir(

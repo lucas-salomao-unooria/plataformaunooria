@@ -226,7 +226,7 @@ export function PainelDaAulaJuriEstadual({
               A auditoria está liberada. Quem ainda está no feed guarda os estandes nas pastas, vota e entra na
               galeria em seguida. Cada computador segue no próprio ritmo pela Galeria Oculta e pela regra do feed,
               que encerra a missão. Depois que a turma concluir a Etapa 4 e o debate da virada, toque o podcast de recapitulação,
-              mais abaixo. Para aplicar de novo, use Reiniciar Missão, mais abaixo.
+              na aba Podcast. Para aplicar de novo, use Reiniciar Missão, mais abaixo.
             </p>
           )}
 
@@ -264,7 +264,7 @@ export function PainelDaAulaJuriEstadual({
           <p>
             Esta folha é para a <strong>sua</strong> tela, não para o projetor: ela tem nomes. Não há coluna de voto,
             de taxa, de concentração nem de nível — os votos e a concentração ficam só no cartão de cima, sem nome, e
-            o nível das habilidades fica no painel de habilidades, lá embaixo, com a sua confirmação.
+            o nível das habilidades fica na aba Habilidades, com a sua confirmação.
           </p>
           <p>
             O ícone de alerta ao lado do nome marca quem está com a cédula aberta e parada há mais de 1 minuto: é a

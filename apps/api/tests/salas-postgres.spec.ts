@@ -186,9 +186,9 @@ describe("a porta da sala", () => {
  * Sem este teste, apagar a guarda de `POST /runs` não quebraria nada.
  */
 describe("a porta da exp08ef1b, pelo controller", () => {
-  /* As tarefas do Canal A e a leitura da reflexão (ADR-167) não entram nesta
-     porta: só a guarda da entrada é exercitada aqui. */
-  const runs = new RunsController(prisma, new MockProvider(), {} as never, {} as never);
+  /* As tarefas do Canal A (ADR-167) não entram nesta porta: só a guarda da
+     entrada é exercitada aqui. */
+  const runs = new RunsController(prisma, new MockProvider(), {} as never);
   const req = (usuarioId: string) =>
     ({ auth: { usuarioId, escolaId: ESCOLA, perfil: "estudante" as const } }) as never;
 

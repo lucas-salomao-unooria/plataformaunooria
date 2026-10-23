@@ -139,6 +139,33 @@ nunca as do `@unooria/design-system`: nome interno de componente muda por versã
 e ninguém imprime para conferir depois de subir o DS. Bloco novo no guia entra
 com `guia-bloco` (e `guia-bloco--longo` se puder quebrar entre folhas).
 
+## As telas de condução são TEMPLATES, e a densidade se resolve na forma (ADR-182)
+
+A queixa constante era "muita informação", e nada podia sair. Três peças, e
+missão nova monta as suas por elas:
+
+- **O guia em quatro tempos** (`TEMPOS_DO_GUIA`): Preparar, Conduzir, Fechar,
+  Consultar, cada um numa aba presa no topo (`components/guia/tempos-do-guia.tsx`).
+  Seção nova entra em UM tempo — `guias/index.test.ts` cobra — e a forma dela
+  segue o que ela é (linha do tempo, lousa, grade), nunca mais um cartão.
+- **A ficha** é `components/ficha/ficha-de-conducao.tsx`: aviso, CONDUÇÃO (as
+  atividades ou o caminho para a aula) e "Conhecer a missão" em abas. O corpo
+  `missao-<slug>.tsx` só passa o que é dele; a faixa da turma (`FaixaDaTurma`)
+  continua do despachante.
+- **A página da atividade** é `components/atividades/abas-da-atividade.tsx`:
+  Aula ao vivo, Conteúdo, Equipes, Podcast, Habilidades — mesmo nome e ordem
+  em toda missão com atividade. Abre a Aula em andamento, o Conteúdo em
+  preparo, as Equipes pronta. Aviso que trava a turma (a liberação na sala)
+  fica FORA das abas.
+
+**A aba fechada fica MONTADA, com `hidden`** (`components/abas-da-pagina.tsx`) —
+o contrário do `AbasDasAreas`: o papel imprime os quatro tempos, a âncora
+`#roteiro` precisa existir antes de a aba abrir, e o painel da aula segue no
+polling (e no `router.refresh()` da evidência) com outra aba aberta. **O clique
+não grava a aba no endereço**: o F5 no meio da aula volta à que o estado
+escolhe. Na e2e, aba fechada é invisível e fora do `innerText`: use
+`scripts/e2e/lib/abas.mjs` (`revelar`, `textoDeTodasAsAbas`).
+
 **BNCC Computação: o texto da habilidade é verbatim do MEC**, e os códigos são
 **por ano** (`EF04CO08`, `EF08CO11`) mais `EF15CO*` (1º–5º), `EF69CO*` (6º–9º) e
 `EM13CO*`. `EF67CO`/`EF89CO` **não existem** — a analogia com as outras áreas já

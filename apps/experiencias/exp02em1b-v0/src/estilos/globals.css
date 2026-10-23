@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * ZERO HEXADECIMAL neste arquivo. Cor vem de token do design system, sempre —
+ * e classe de cor que não existe no `tailwind.config.ts` não é erro em lugar
+ * nenhum: em texto ela herda a cor e passa desapercebida, em FUNDO o elemento
+ * fica branco no branco. Foi o que aconteceu com `bg-unooria-neutral-900` na
+ * app-70 (letra da bolha invisível), e é por isso que o smoke visual checa cor
+ * COMPUTADA em vez de `toBeVisible()`.
+ *
+ * Três blocos, como na exp04ef1b:
+ *   (a) ESQUELETO    — o que é do documento, não da marca
+ *   (b) COMPENSAÇÃO  — o que falta no pacote e vira pedido ao storybook-unooria
+ *   (c) LIGAÇÃO      — o que costura o clone à moldura do iframe
+ */
+
+/* ─────────────────────────────────────────────────────────────────────────
+   (a) ESQUELETO
+   ───────────────────────────────────────────────────────────────────────── */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  /* A família vem do token do pacote — `fonts/unooriaai.css` declara o
+     @font-face da Open Sans com os .woff2 do próprio pacote. A pilha do
+     sistema é fallback para o primeiro quadro. */
+  font-family: var(--uai-font-sans), 'Open Sans', system-ui, sans-serif;
+  background: var(--uai-web-canvas);
+  color: var(--uai-text-primary);
+  /* O iframe tem o tamanho que o hub der: nada de rolagem horizontal por
+     conta de uma tela que assume largura de desktop. */
+  overflow-x: hidden;
+}
+
+/* O estudante pode estar num laboratório com o sistema em "reduzir movimento". A
+   chuva do briefing é cenário, e cenário não é informação: ela some inteira. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   (b) COMPENSAÇÃO — falta no pacote; cada uma é um pedido ao storybook-unooria
+   ───────────────────────────────────────────────────────────────────────── */
+
+/*
+ * Nenhuma hoje. As duas que existiam na seção `chatgpt` eram CSS morto quando
+ * a missão foi para a `unooriaai` (ADR-138), e saíram com ela: o indicador de
+ * carregamento (`.gpt-pensando`) já tinha virado os três pontos do
+ * `Consultando`, em `painel-cientista.tsx`, e o anexo abaixo da fala
+ * (`.gpt-fala > .gpt-anexo`) não tinha consumidor no JSX. Compensação nova
+ * entra aqui, marcada, com o pedido ao storybook-unooria.
+ */
+
+/* ─────────────────────────────────────────────────────────────────────────
+   (c) LIGAÇÃO — o clone dentro do iframe
+   ───────────────────────────────────────────────────────────────────────── */
+
+/**
+ * A experiência preenche o iframe: não há casca de aparelho aqui (o manifesto
+ * não declara `viewport`, porque a missão é de laboratório, desktop, com a
+ * conversa em 2/3 e o mapa em 1/3). Quem desenha aparelho, quando é o caso, é o
+ * hub em `components/DispositivoFrame.tsx`.
+ */
+.tela-da-missao {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* O `Composer.Dock` é fixo no rodapé da COLUNA da conversa, não da janela: com
+   o mapa ao lado, ancorar na janela punha o campo por cima do mapa. */
+.coluna-da-conversa {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.rolagem-da-conversa {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ═══════════════════ o pedido pelo WhatsApp (unoochat, SÓ a peça — ADR-173) */
+
+/* O contêiner do balão: o recebido é branco e foi calibrado para o fundo do
+   mensageiro, e sobre o branco do UnooriaAI ele some. É o retângulo do tamanho
+   da peça, pintado com o `--unc-color-surface-base` — não o `ChatWallpaper`
+   (o FUNDO do app, que a peça não traz). Molde: o `.peca-unoochat` da
+   exp04ef1b. */
+.peca-unoochat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unc-spacing-xxs, 6px);
+  padding: var(--unc-spacing-m, 12px) var(--unc-spacing-l, 16px);
+  border-radius: 12px;
+  background: var(--unc-color-surface-base, #efeef5);
+}
+
+/* ═════════════ o "E se…": a faixa de 20 tempestades (compensação declarada) */
+
+/* LACUNA DO DS: a seção `unooriaai` não publica uma faixa de células
+   categóricas (nem `Heatmap`, nem `Sparkline` de categoria). Esta é a
+   compensação local, SÓ com token `--uai-*`, e a leitura para leitor de tela
+   vai numa lista ao lado (`componentes/e-se.tsx`). Morre quando o pacote
+   publicar a peça. */
+.faixa-de-tempestades {
+  display: grid;
+  grid-template-columns: repeat(20, minmax(0, 1fr));
+  gap: 3px;
+}
+.faixa-de-tempestades > span {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: var(--uai-fill-2);
+}
+/* Cores fora do par das Equipes (azul e roxo), para o quadradinho não ser lido
+   como "a Alfa" ou "a Bravo": a outra decisão é a superfície invertida, e a
+   de referência, o contorno; o empate fica no fundo translúcido. */
+.faixa-de-tempestades > span,
+.faixa-legenda {
+  display: inline-block;
+}
+.faixa-legenda {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+.faixa-de-tempestades > span[data-quem="outra"],
+.faixa-legenda[data-quem="outra"] {
+  background: var(--uai-bg-inverse);
+}
+.faixa-de-tempestades > span[data-quem="referencia"],
+.faixa-legenda[data-quem="referencia"] {
+  background: var(--uai-bg-primary);
+  box-shadow: inset 0 0 0 2px var(--uai-border-strong);
+}

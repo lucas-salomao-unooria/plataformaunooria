@@ -11,6 +11,8 @@
  * pelo relógio; e a falha reprova, porque a IA é a real.
  */
 
+import { revelar } from "./abas.mjs";
+
 /** A promessa da resposta das falas: crie ANTES do clique que traz o conteúdo. */
 export function esperarFalasDoTema(pagina, expId) {
   const rota = new RegExp(`/podcast/${expId}/turmas/[^/]+/falas-do-tema$`);
@@ -48,6 +50,8 @@ export async function provarFalasNaCriacao(r, pagina, resposta, { comIa, vagas =
  */
 export async function provarPodcastNaAula(r, pagina, { blocos, vozes, trechos, passo, descricao }) {
   const cartao = pagina.locator("[data-podcast-da-aula]");
+  /* Na página da atividade o podcast mora na aba Podcast (ADR-182). */
+  await revelar(pagina, cartao, { timeout: 20_000 });
   await cartao.waitFor({ timeout: 20_000 });
   await pagina.click('[data-acao="ler-transcricao"]');
   const transcricao = pagina.locator("[data-transcricao-podcast]");

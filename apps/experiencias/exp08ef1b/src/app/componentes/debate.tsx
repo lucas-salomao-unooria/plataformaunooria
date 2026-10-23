@@ -116,7 +116,7 @@ export function Debate({ runId }: { runId: string }) {
         <p className="mt-1 text-[13px] leading-snug text-ink/70">
           {dados.posts.length > 0
             ? 'Estes são os posts que você salvou. Abra um e conte por que ele te convenceu.'
-            : 'Você não salvou nenhum post. Escuta o que os outros salvaram — e por quê.'}
+            : 'Você não salvou nenhum post. Escuta o que os colegas salvaram e por quê.'}
         </p>
       </header>
 

@@ -34,7 +34,7 @@ por teto compila e sai errado em 30 telas ao mesmo tempo, no meio de uma aula.
   `tests/insta-etapas.spec.ts`. Não "conserte" um dos dois sem ler a ADR-92.
 - **Voltar não é `reset`.** `POST /runs/:id/reset` apaga eventos, posts salvos,
   comentários, conclusão, reflexão, as tarefas do Canal A e o fim da revelação
-  (a marca de evidência e a leitura da reflexão ficam: vale o primeiro envio, ADR-167); `moverEtapa` não apaga nada disso. Corrigir
+  (a marca de evidência fica: vale o primeiro envio, ADR-167); `moverEtapa` não apaga nada disso. Corrigir
   um clique do adulto destruindo a produção de trinta crianças é desproporcional
   — e era a única saída que o produto oferecia.
 - **Fase legada NUNCA vira `onboarding` por fallback** (`normalizarFase`): uma
@@ -48,16 +48,24 @@ por teto compila e sai errado em 30 telas ao mesmo tempo, no meio de uma aula.
   o 6b e o 6c só abrem do `perdidos` em diante COM a revelação terminada. Quem
   não teve feed com lado não recebe tarefa. A situação sai de `GET :id/tarefas`,
   e é ela que decide o desvio por fase no aparelho.
+- **As réguas são as do PO, validadas com a pedagogia (ADR-179) e ajustadas por
+  ele (ADR-180)**: a EF08CO11 é SÓ o Raio-x (5–6 / 4 / 0–3: os 3 acertos ficam
+  em "não atingiu" porque a regra dos 3 deixa o chute acertar 3), e a mensagem
+  que ridiculariza dá "não atingiu" no envio. Os termos
+  de uso aparecem na ENTRADA (`GET /runs/termos-de-uso`, sem sessão), com as 5
+  cláusulas do 6b enterradas no texto (`TERMOS_DA_ENTRADA`). Mudou uma
+  cláusula? Ela muda nas duas telas, porque o texto da entrada é montado a
+  partir de `CLAUSULAS` — nunca copie a frase para o texto denso.
 - **"Visto" sai dos EVENTOS também, não só do `engine_state`**: o motor só
   processa os eventos quando o aparelho pede o próximo bloco, e os do último
   bloco ficariam fora do Raio-x (a e2e mostrou: `vistosPorPost` vazio com 21
   eventos `visto` gravados).
-- **A leitura da reflexão é UMA, com até 3 tentativas** (`motor/canal-a/leitura-da-reflexao.service.ts`):
-  só a falha técnica tenta de novo, sempre o mesmo `primeiro_texto`, com teto
-  de 60 s por tentativa. Ela é disparada sem `await` depois da transação do
-  salvamento (`void this.leitura.ler(...)`): a criança não espera, e nada dela
-  passa pelo teto de 30 s do BFF. Reiniciar a api no meio perde a leitura em
-  andamento (a linha fica sem `lida_em`).
+- **A reflexão NÃO passa pela IA (ADR-180)**: a leitura que sugeria um nível
+  da EF08CO11 saiu, com o serviço e o prompt. A tabela
+  `exp08ef1b_leituras_da_reflexao` e a coluna `primeiro_texto` ficam, sem
+  escrita, com o que já foi gravado; as marcas `reflexao` antigas não contam
+  (o marcador saiu da ficha). Não religue a leitura sem decisão do PO: a
+  página de privacidade deixou de dizer que a reflexão vai para a IA.
 - **O relatório do estudante esconde lado, intensidade e categoria do
   `topDwell` enquanto o Raio-x está pendente** — o post do lado dele em que mais
   parou entra sempre no Raio-x.

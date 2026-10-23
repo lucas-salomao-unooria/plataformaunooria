@@ -1,15 +1,13 @@
 import type { ExperienciaHandle } from "@edu/sdk";
 
 /**
- * Telemetria ANALÍTICA da missão (canal do SDK: batch 50 / flush 10s → Pub/Sub
- * → `telemetria_eventos`).
+ * Telemetria ANALÍTICA da missão — `verbo:objeto`, e nada além disso. O que a
+ * evidência mede (a fonte pedida, o post publicado, a moderação) é gravado pela
+ * api, na rota de cada gesto: aqui ficam só os sinais de produto.
  *
- * NÃO é a trilha pedagógica: essa é `exp02em1b_marcos`, gravada pela api de forma
- * síncrona e transacional, e é ela que o professor lê. Os dois canais existem
- * separados de propósito (ver CLAUDE.md, "Telemetria: dois canais, não um").
- *
- * O TEXTO DO ESTUDANTE NUNCA ENTRA AQUI. A conversa é caixa livre escrita por menor
- * de idade; o que a telemetria carrega é contagem e nome de etapa.
+ * O que NUNCA sai daqui: o texto que o estudante escreveu no chat (texto livre
+ * de menor — dele sai o TAMANHO, e só), o nível, a categoria de saúde de um
+ * comentário (é gabarito). Contrato: `track(verbo, objeto, { resultado?, contexto? })`.
  */
 let exp: ExperienciaHandle | null = null;
 
@@ -17,31 +15,27 @@ export function ligarTelemetria(handle: ExperienciaHandle) {
   exp = handle;
 }
 
-type Dados = Record<string, string | number | boolean>;
-
-function track(verbo: string, objeto: string, resultado?: Dados) {
-  exp?.track(verbo, objeto, resultado ? { resultado } : undefined);
+function track(verbo: string, objeto: string, dados?: { resultado?: Record<string, unknown>; contexto?: Record<string, unknown> }) {
+  exp?.track(verbo, objeto, dados);
 }
 
-/** O estudante abriu o briefing. */
-export const briefingAberto = () => track("attempted", "briefing");
-
-/** Entrou na investigação — a conversa começa aqui. */
-export const investigacaoAberta = (tentativa: number) =>
-  track("progressed", "investigacao", { tentativa });
-
-/** Um turno com o Cientista. Sem o texto: só o que ele produziu. */
-export const turnoFeito = (dados: { debitou: boolean; comCartao: boolean; perguntasGastas: number }) =>
-  track("interacted", "turno", dados);
-
-/** Fontes carregadas — quantas, não quais palavras o estudante usou para pedir. */
-export const fontesCarregadas = (quantas: number) =>
-  track("interacted", "fontes", { carregadas: quantas });
-
-export const equipeAlocada = (equipe: string, comJustificativa: boolean) =>
-  track("interacted", "alocacao", { equipe, comJustificativa });
-
-export const tempestadeEnfrentada = (dados: { salvas: number; fontesUsadas: number }) =>
-  track("scored", "desfecho", dados);
-
-export const recomecou = (tentativa: number) => track("attempted", "recomeco", { tentativa });
+export const telemetria = {
+  /** EVT-U01 — a primeira tela, depois do handshake. */
+  entrou: (retomada: boolean) => track("attempted", "missao:iniciar", { resultado: { retomada } }),
+  /** EVT-U02 — a entrada em cada passo. */
+  etapa: (passo: string) => track("progressed", "etapa:entrar", { contexto: { passo } }),
+  /** Uma mensagem ao UnooriaAI: só o tamanho. */
+  mensagem: (caracteres: number) => track("interacted", "chat:enviar", { resultado: { caracteres } }),
+  /** EVT-U04 — o lembrete de 90 s sem ação no chat (D0-5). */
+  inatividade: () => track("interacted", "aviso:inatividade", { resultado: { segundos_sem_acao: 90 } }),
+  /** O latch, do lado do produto (a manchete é vocabulário fechado). */
+  publicou: (manchete: string) => track("interacted", "post:publicar", { resultado: { manchete } }),
+  /** EVT-005 — uma ferramenta do feed (o nome da ação, nunca o nível). */
+  feed: (acao: string) => track("interacted", "ferramenta:feed", { resultado: { acao } }),
+  /** EVT-007 — um indicador apontado no Explicar. */
+  indicador: (indicador: string) => track("interacted", "evidencia:apontar", { resultado: { indicador } }),
+  /** EVT-U05 — o banner de rede instável. */
+  rede: () => track("attempted", "erro:exibir", { resultado: { codigo: "rede-instavel" } }),
+  /** EVT-U03. */
+  concluiu: () => track("completed", "missao:concluida"),
+};

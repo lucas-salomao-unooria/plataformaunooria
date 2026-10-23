@@ -46,8 +46,9 @@ export const POSTS_DO_RAIO_X = 6;
 /**
  * A COMPOSIÇÃO DO RAIO-X — os 6 posts, ou `null` quando ela não fecha.
  *
- * Só entra post que chegou até ele e ficou na tela dele; nenhum da tela cinza
- * (que só mostra os do outro lado, e entregaria o gabarito):
+ * Entram primeiro os posts que chegaram até ele e ficaram na tela dele;
+ * nenhum da tela cinza (que só mostra os do outro lado, e entregaria o
+ * gabarito):
  *   - 2 do lado dele: o post desse lado em que mais parou, e outro qualquer;
  *   - 2 do outro lado: os mais sutis (menor intensidade) entre os que ele viu;
  *   - 2 neutros SOBRE o tema que ele viu (fora do tema nunca entram).
@@ -59,8 +60,14 @@ export const POSTS_DO_RAIO_X = 6;
  *     faltar, com o lado dele até 3;
  *   - viu menos de 2 do outro lado: completa com neutros até 3; se faltar, com
  *     o lado dele até 3.
- * Sem lado definido, sem post do lado dele visto, ou sem fechar 6: `null` — o
- * Raio-x não aparece, e a habilidade fica com a reflexão.
+ *
+ * QUEM VIU POUCO (ADR-179): o PO testou a missão rolando rápido e não achou o
+ * Raio-x. Quando os vistos não fecham a composição, ela COMPLETA com posts
+ * aprovados que ele NÃO viu — do lado dele e neutros sobre o tema, nunca do
+ * outro lado (um post do lado escondido, antes da revelação, mostraria que
+ * havia outro feed). Os vistos vêm sempre antes. O "post em que mais parou"
+ * é o do lado dele com mais tempo de tela, e entre não vistos, o primeiro.
+ * Sem lado definido, ou sem fechar 6 nem completando: `null`.
  */
 export function comporRaioX(e: EntradaDaComposicao): ComposicaoDoRaioX | null {
   if (!e.ladoDele) return null;
@@ -70,10 +77,12 @@ export function comporRaioX(e: EntradaDaComposicao): ComposicaoDoRaioX | null {
   const viu = (p: PostDoAcervo) => p.aprovado && (e.vistosPorPost[p.id] ?? 0) > 0;
   const dwell = (id: string) => e.dwellPorPost[id] ?? 0;
 
-  const doLadoDele = embaralhar(
-    e.posts.filter((p) => viu(p) && p.lado === ladoDele),
-    aleatorio,
-  );
+  /* Os vistos primeiro; depois, para completar, os aprovados que ele não viu. */
+  const vistosAntes = (lista: PostDoAcervo[]) => [
+    ...embaralhar(lista.filter(viu), aleatorio),
+    ...embaralhar(lista.filter((p) => p.aprovado && !viu(p)), aleatorio),
+  ];
+  const doLadoDele = vistosAntes(e.posts.filter((p) => p.aprovado && p.lado === ladoDele));
   if (doLadoDele.length === 0) return null;
   /* O de maior tempo de tela; empate, o primeiro do embaralhamento (estável). */
   const maisParou = doLadoDele.reduce((a, b) => (dwell(b.id) > dwell(a.id) ? b : a));
@@ -89,10 +98,7 @@ export function comporRaioX(e: EntradaDaComposicao): ComposicaoDoRaioX | null {
     (p) => p.aprovado && p.lado === "neutro" && p.categoria === CATEGORIA_DO_NEUTRO_NO_TEMA,
   );
   const neutros = temNeutroNoTema
-    ? embaralhar(
-        e.posts.filter((p) => viu(p) && p.lado === "neutro" && p.categoria === CATEGORIA_DO_NEUTRO_NO_TEMA),
-        aleatorio,
-      )
+    ? vistosAntes(e.posts.filter((p) => p.aprovado && p.lado === "neutro" && p.categoria === CATEGORIA_DO_NEUTRO_NO_TEMA))
     : [];
 
   /* As metas de partida, e quanto cada grupo tem para dar. */
@@ -136,21 +142,24 @@ export function gabaritoDoPost(lado: string): OpcaoDoRaioX {
 }
 
 /**
- * A RÉGUA DO 6a. N é o número de acertos em 6.
- *   - atingiu: 5 ou 6, com o post em que mais parou certo;
- *   - em processo: 4; ou 5 com o post em que mais parou errado;
+ * A RÉGUA DO 6a — a do PO, validada com a pedagogia em 2026-10-21 (ADR-179)
+ * e ajustada por ele em 2026-10-22 (ADR-180). N é o número de acertos em 6:
+ *   - atingiu: 5 ou 6;
+ *   - em processo: 4;
  *   - não atingiu: 0 a 3.
- * N = 6 inclui esse post e cai só em "atingiu". Todo envio cai em um nível.
+ * Os 3 acertos ficam abaixo de "em processo" pela regra dos 3: nenhuma
+ * resposta certa aparece mais de 3 vezes, então quem marca a mesma opção nos
+ * 6 posts, sem ler nenhum, acerta até 3.
+ * O post em que mais parou continua entrando na composição (e na devolutiva),
+ * mas não pesa mais no nível. Todo envio cai em um nível.
  */
 export function nivelDoRaioX(entrada: {
   respostas: Readonly<Record<string, OpcaoDoRaioX>>;
   gabarito: Readonly<Record<string, OpcaoDoRaioX>>;
-  maisParou: string;
 }): { nivel: Nivel; acertos: number } {
   const ids = Object.keys(entrada.gabarito);
   const acertos = ids.filter((id) => entrada.respostas[id] === entrada.gabarito[id]).length;
-  const maisParouCerto = entrada.respostas[entrada.maisParou] === entrada.gabarito[entrada.maisParou];
-  if (acertos >= 5 && maisParouCerto) return { nivel: "atingiu", acertos };
-  if (acertos >= 4) return { nivel: "em_processo", acertos };
+  if (acertos >= 5) return { nivel: "atingiu", acertos };
+  if (acertos === 4) return { nivel: "em_processo", acertos };
   return { nivel: "nao_atingiu", acertos };
 }

@@ -58,9 +58,10 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
   \cd{data-gpt-theme} & a conversa da \textbf{exp08ef4b}. A exp02em1b saiu
   dela na 1.3.0 (\adrr{ADR-138})\\
 \zebra \cd{unooriaai} (25, 0.2.11) & \cd{/unooriaai} & \cd{--uai-*},
-  \cd{data-uai-theme} --- claro e escuro & \textbf{exp02em1b inteira}
-  (\adrr{ADR-138}) --- ela não tem revelação no software, então nunca troca para
-  a seção da plataforma. Cópia estrutural da \cd{chatgpt} com a identidade da
+  \cd{data-uai-theme} --- claro e escuro & a \textbf{exp02em1b-v0} inteira
+  (\adrr{ADR-138}, a Missão Tempestade, versão anterior) e o chat de O Efeito
+  Amplificador (\cd{exp02em1b}, \adrr{ADR-181}), que divide a missão com o
+  \cd{unoovista} e a escola. Cópia estrutural da \cd{chatgpt} com a identidade da
   Unooria; sem cor primitiva, e ícone por ligadura\\
 \cd{tiktooria} (35) & \cd{/tiktooria} & \cd{--tik-*} &
   --- (dois \emph{contextos} de superfície: cromo claro de lista e perfil,
@@ -213,10 +214,10 @@ pacote direto num componente:
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
 \cd{@edu/ui/ds} & \cd{unooria} & plataforma, o robô do grupo de Quem mandou isso? (\cd{PuzzleBlock} e \cd{PuzzleTrack}, \adrr{ADR-177}), a tela da escola do Júri Estadual (\cd{RadioGroup}, \cd{Card}, \cd{AlertBox}; o \cd{PuzzleBlock} e o \cd{PuzzleTrack} da cadeia saíram com a \adrr{ADR-174}), e a redação do Jornal da Escola (com as oito peças da 0.2.8: \cd{NewsCard}, \cd{NewsArticle}, \cd{RevealClue}, \cd{BottomSheet}, \cd{NewspaperPage}, \cd{SpeechBubble}, \cd{PuzzleBlock} e \cd{PuzzleTrack}, mais \cd{NEWS\_MEDIUMS} e \cd{NEWSPAPER\_LAYOUTS})\\
 \cd{@edu/ui/ds-insta} & \cd{instanooria} & o clone da exp01ef1b (com as extensões da 0.2.5, nascidas para a exp07ef1b antes de ela migrar: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer}; e as da 0.2.7: \cd{InlineHint}, \cd{GestureHint} e o \cd{Snackbar} do clone, como \cd{SnackbarInsta})\\
-\cd{@edu/ui/ds-unoovista} & \cd{unoovista} & exp08ef1b (\adrr{ADR-133}), exp07ef1b (\adrr{ADR-135}), exp06ef1b (\adrr{ADR-137}) e o \cd{PostCard} da gaveta do Jornal (\adrr{ADR-136}); os nomes que colidem com a plataforma saem com o sufixo \cd{Unv} (\cd{ButtonUnv}, \cd{AvatarUnv}, \cd{IconUnv}\ldots)\\
+\cd{@edu/ui/ds-unoovista} & \cd{unoovista} & exp08ef1b (\adrr{ADR-133}), exp07ef1b (\adrr{ADR-135}), exp06ef1b (\adrr{ADR-137}), o feed e os bastidores de O Efeito Amplificador (exp02em1b, \adrr{ADR-181}) e o \cd{PostCard} da gaveta do Jornal (\adrr{ADR-136}); os nomes que colidem com a plataforma saem com o sufixo \cd{Unv} (\cd{ButtonUnv}, \cd{AvatarUnv}, \cd{IconUnv}\ldots)\\
 \cd{@edu/ui/ds-unootube} & \cd{unitube} & backup-exp04ef1b (o UnooTube arquivado, \adrr{ADR-116}: não roda mais)\\
 \cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp08ef4b (a exp02em1b saiu na \adrr{ADR-138})\\
-\cd{@edu/ui/ds-unooriaai} & \cd{unooriaai} & exp02em1b (\adrr{ADR-138}); o \cd{GPTCard} virou \cd{AssistantCard}, e não há \cd{gptGlyphs}\\
+\cd{@edu/ui/ds-unooriaai} & \cd{unooriaai} & exp02em1b-v0 (\adrr{ADR-138}) e o chat da exp02em1b (\adrr{ADR-181}); o \cd{GPTCard} virou \cd{AssistantCard}, e não há \cd{gptGlyphs}\\
 \cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp06ef2b\\
 \cd{@edu/ui/ds-unoochat} & \cd{unoochat} & exp05ef1b (\adrr{ADR-134}; o \cd{FilterChip} entrou na ponte para o alerta do grupo, \adrr{ADR-177}), o \cd{MessageBubble} da gaveta e do Desafio Final do Jornal (\adrr{ADR-136}) e o do pedido pelo WhatsApp da Missão Tempestade (\adrr{ADR-173})\\
 \end{tabularx}
@@ -1442,13 +1443,36 @@ não elementos: sem o \emph{reset}, todo \cd{<a>} volta a ser sublinhado e todo
 \emph{cards} de produto.
 \end{nota}
 
+\section{Abas que não desmontam: o guia e as telas de condução (\adrr{ADR-182})}
+\label{ds:abas-montadas}
+
+O guia da aula (os quatro tempos), o \enquote{Conhecer a missão} da ficha e a
+página da atividade dividem a tela com o \cd{Tabs} do DS. O \cd{TabPanel} do
+pacote \textbf{desmonta} a aba fechada, e nessas três telas isso não serve: o
+papel imprime os quatro tempos do guia, a âncora de uma seção precisa existir
+antes de a aba dela abrir, e o painel da aula consulta a api e chama
+\cd{router.refresh()} mesmo com a aba de habilidades aberta. A composição é o
+\cd{Tabs} (os botões, com \cd{role="tab"} e \cd{id="tab-<valor>"}) mais um
+\cd{div} \cd{role="tabpanel"} com \cd{id="tabpanel-<valor>"},
+\cd{aria-labelledby} na aba e \cd{hidden} quando fechado --- \arq{components/abas-da-pagina.tsx} e
+\arq{components/guia/tempos-do-guia.tsx}. Não é o defeito do \cd{Collapse}
+fechado: \cd{hidden} é \cd{display: none}, e nada fica focável sem ser visto.
+A folha de impressão do guia devolve os painéis escondidos ao papel.
+
+\textbf{Lacunas a pedir no \cd{storybook-unooria}}: um \cd{keepMounted} no
+\cd{Tabs}, que dispense o painel composto; e o \cd{aria-controls} do \cd{Tab}
+montado por \cd{items}, que sai sem ele (medido na 0.2.19) --- a aba não
+aponta o painel, só o painel aponta a aba. Com ele, as duas peças passam a usar
+o \cd{TabPanel} do pacote.
+
 \section{Rolagem: o \cd{ScrollBar} do DS, em toda área rolável do hub}
 \label{ds:rolagem}
 
 \textbf{Nenhuma tela do hub declara \cd{overflow} para rolar.} Área que rola é um
 \cd{<ScrollBar>} do \cd{@edu/ui/ds}: as 24 tabelas de \rota{/admin},
 \rota{/analise} e \rota{/professor}, o sumário de \rota{/privacidade} e
-\rota{/termos}, e as 5 tabelas largas do guia da aula. Dele vêm o \cd{overflow},
+\rota{/termos}, e a rubrica do guia da aula (as outras quatro tabelas largas do
+guia viraram lista, linha do tempo e grade com a \adrr{ADR-182}). Dele vêm o \cd{overflow},
 a barra, o \cd{autoHide} e o \emph{fade} (\adrr{ADR-75}).
 
 Até 2026-09-07 nada disso usava o componente: as tabelas rolavam em \cd{<div>}

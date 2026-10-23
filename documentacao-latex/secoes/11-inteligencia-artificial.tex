@@ -36,14 +36,11 @@ Preparo da cobertura & exp07ef1b, \arq{src/a-selecao/} &
   Um nível de EF07CO11 para a legenda dos Stories (o Canal A), que só o
   professor vê e corrige. Falha, timeout ou saldo zerado não marcam nada
   (\adrr{ADR-115}).\\
-\zebra Leitura da reflexão & exp08ef1b, \arq{src/motor/canal-a/} &
-  Um nível de EF08CO11 para o PRIMEIRO texto salvo da reflexão, uma vez só por
-  estudante na atividade, depois da resposta e sem a criança esperar. A IA
-  recebe só o texto e uma descrição neutra da missão. O painel mostra
-  \enquote{Reflexão --- sugestão da IA} e o professor confere contra o texto
-  lido. A falha técnica (tempo, \emph{provider}, saída incoerente) tenta de
-  novo, até 3 vezes, com o mesmo texto; sem saldo, ou depois da 3ª falha, a
-  leitura encerra sem marca (\adrr{ADR-167}).\\
+\zebra Leitura da reflexão & exp08ef1b (saiu) &
+  \textbf{Desligada na \adrr{ADR-180}}: a EF08CO11 passou a ser medida só
+  pelo Raio-x, e a reflexão do Unoovista não vai mais para o \emph{provider}.
+  Ela sugeria um nível para o PRIMEIRO texto salvo, uma vez só por estudante
+  (\adrr{ADR-167}).\\
 Preparo do pacote & exp04ef1b, \arq{src/jornal-escola/} &
   O texto das oito notícias sobre o tema do professor, num \textbf{molde
   sorteado no servidor} (que notícia é de que meio e que papel tem no
@@ -58,6 +55,18 @@ Preparo do pacote & exp04ef1b, \arq{src/jornal-escola/} &
   \emph{enum} de três layouts, e nenhum texto. Não escolhe notícia, não
   reordena as vagas, não vê o gabarito. Qualquer falha cai no modelo
   automático (\adrr{ADR-117}).\\
+Preparo do pacote & exp02em1b, \arq{src/efeito-amplificador/} &
+  O rascunho do post com os três problemas (o dado inventado, o trecho copiado,
+  o colega exposto), a correção de cada um, o recorte, as manchetes e os
+  comentários da madrugada, sobre o tema do professor, com a quota dele. A
+  saída passa pela MESMA régua da homologação; sem saldo ou sem provedor, o
+  banco curado (\adrr{ADR-181}).\\
+\zebra Conversa do UnooriaAI & exp02em1b, \arq{src/efeito-amplificador/} &
+  \textbf{Em sala}, com a quota do \emph{estudante}: a INTENÇÃO do pedido livre
+  (lista fechada de nove) e o texto da resposta. Quem muda a prévia é o
+  servidor, pela intenção, e os guardrails sobre a saída são dele (a IA não
+  admite o problema sem ser questionada). Corrida de 12\,s, uma tentativa;
+  qualquer falha, a árvore de intenções responde (\adrr{ADR-181}).\\
 Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
   As quatro áreas e os quarenta estandes da mostra científica sobre o tema e
   os assuntos do professor (cinco chamadas: as categorias e as quatro áreas em
@@ -355,7 +364,7 @@ Uma linha por (escola, usuário, dia), com incremento atômico, resolve os dois.
 
 \begin{decisao}
 \textbf{O limite depende do PERFIL.} O estudante interage com o tutor da exp08ef1b
-e com os turnos da exp02em1b (Missão Tempestade), onde uma partida completa gasta
+e com os turnos da exp02em1b-v0 (Missão Tempestade), onde uma partida completa gasta
 cerca de \num{77000} \emph{tokens} medidos: o teto de estudante é calibrado em
 \num{300000} \emph{tokens}/dia, o que cabe três partidas completas. O valor
 inicial de \num{20000} estourava no quarto turno com erro de sala fechada. O
@@ -495,6 +504,11 @@ outro serviço, que precisa estar \textbf{habilitado} no projeto.
 \cd{multiSpeakerMarkup} para diálogo & Duas vozes numa chamada só, cada turno
   com seu \cd{speakerId}. Monólogo usa \cd{voice.name}; diálogo usa
   \cd{multiSpeakerVoiceConfig}. \textbf{Mandar os dois} devolve 400.\\
+\zebra \cd{speakerAlias} só com letras e números & O apelido do falante no
+  pedido não aceita acento nem espaço: \enquote{Téo} devolvia 400 em todo
+  trecho do podcast do Unoovista. O provedor manda a forma ASCII
+  (\cd{apelidosDosFalantes}: \enquote{Teo}); o nome do roteiro e da
+  transcrição não muda.\\
 \bottomrule
 \end{tabularx}
 

@@ -30,8 +30,7 @@ em hora diferente. Todo perfil que não é `estudante` cai em `professor`
   `USUARIO_DA_AVALIACAO` (`temSaldoDaAvaliacao`/`consumirDaAvaliacao`), e o
   débito que cruza 80% loga `ia-quota-avaliacao-80`. `perfilDaQuota` nunca a
   devolve: a escada dos perfis de token continua `estudante`/`professor`. Outra
-  leitura de avaliação (a reflexão da exp08ef1b ainda usa a do estudante) entra
-  por aqui, não pela quota do perfil.
+  leitura de avaliação entra por aqui, não pela quota do perfil.
 - **Perfil novo com IA** (gestor, admin) entra em TRÊS lugares no mesmo commit:
   a tupla, o CHECK da migration e a semente. Um só é o modo de falhar mudo.
 - Continuam FORA do funil, e são cartão à parte: o motor da exp08ef1b (`geracao/`)
@@ -113,6 +112,8 @@ Três coisas que custaram tempo e não se descobrem por typecheck:
   `PERMISSION_DENIED`, com uma mensagem que não fala de voz. O provider manda
   `x-goog-user-project: $VERTEX_PROJECT_ID` para resolver sem mexer no ADC de
   ninguém; em Cloud Run a SA já traz o projeto.
+- **`speakerAlias` com acento dá 400** ("Téo" calava o podcast do Unoovista):
+  use `apelidosDosFalantes`.
 - **Os tetos são em BYTES** (4.000 para o texto, 4.000 para a direção de
   atuação): em pt-BR cada acento conta 2, e medir por `length` deixa passar um
   roteiro que a API recusa com 400. `generateSpeech` valida antes de chamar.

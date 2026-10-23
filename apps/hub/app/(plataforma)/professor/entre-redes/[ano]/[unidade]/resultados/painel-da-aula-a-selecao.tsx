@@ -264,8 +264,8 @@ export function PainelDaAulaASelecao({
         <div className="mb-3 flex flex-col gap-1 text-[12px] leading-snug text-unooria-neutral-600">
           <p>
             Esta folha é para a <strong>sua</strong> tela, não para o projetor: ela tem nome, legenda
-            e reflexão. Não há coluna de nível nem de acerto — o nível da EF07CO11 fica no painel de
-            habilidades, lá embaixo, com a sua confirmação.
+            e reflexão. Não há coluna de nível nem de acerto — o nível da EF07CO11 fica na aba
+            Habilidades, com a sua confirmação.
           </p>
           <p>
             <strong>Oficial</strong> é a @folhaoficial_, <strong>Comunitária</strong> a @voz_coletiva e{" "}

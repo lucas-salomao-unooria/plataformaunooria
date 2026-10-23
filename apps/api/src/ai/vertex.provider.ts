@@ -119,6 +119,35 @@ const VOZ_DO_TIMBRE: Record<AiTimbre, string> = {
  * default: o gemini-3.6-flash não existe em nenhuma região testada. Pôr uma
  * região na env volta ao host com prefixo. Exportado para teste.
  */
+/**
+ * O apelido de cada falante NO PEDIDO à Cloud TTS — nunca o nome do roteiro.
+ *
+ * A síntese de diálogo recusa com 400 ("Speaker aliases cannot contain
+ * whitespace or non-alphanumeric characters") apelido com acento ou espaço: o
+ * "Téo" do podcast do Unoovista derrubava TODOS os trechos, enquanto Bia/Rafa e
+ * Lucas/Clara passavam. O nome segue intacto no roteiro e na transcrição; só o
+ * pedido usa a forma ASCII, e a voz de cada um continua vindo do timbre.
+ * Dois nomes que viram o mesmo apelido ganham sufixo; nome sem letra nenhuma
+ * vira `Falante<N>`.
+ */
+export function apelidosDosFalantes(nomes: readonly string[]): Map<string, string> {
+  const apelidos = new Map<string, string>();
+  const usados = new Set<string>();
+  nomes.forEach((nome, i) => {
+    if (apelidos.has(nome)) return;
+    const base =
+      nome
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^A-Za-z0-9]/g, "") || `Falante${i + 1}`;
+    let apelido = base;
+    for (let n = 2; usados.has(apelido); n += 1) apelido = `${base}${n}`;
+    usados.add(apelido);
+    apelidos.set(nome, apelido);
+  });
+  return apelidos;
+}
+
 export function endpointVertex(alvo: { project?: string; location: string; model: string }): string {
   const host =
     alvo.location === "global" ? "aiplatform.googleapis.com" : `${alvo.location}-aiplatform.googleapis.com`;
@@ -699,8 +728,13 @@ export class VertexProvider implements AiProvider {
       throw new ErroDeGeracao("A direção de atuação é longa demais.");
     }
 
+    const apelido = apelidosDosFalantes(req.falantes.map((f) => f.nome));
     const input: Record<string, unknown> = req.turnos
-      ? { multiSpeakerMarkup: { turns: req.turnos.map((t) => ({ speaker: t.falante, text: t.texto })) } }
+      ? {
+          multiSpeakerMarkup: {
+            turns: req.turnos.map((t) => ({ speaker: apelido.get(t.falante) ?? t.falante, text: t.texto })),
+          },
+        }
       : { text: req.texto };
     if (req.direcao) input.prompt = req.direcao;
 
@@ -710,7 +744,7 @@ export class VertexProvider implements AiProvider {
     if (req.turnos) {
       voice.multiSpeakerVoiceConfig = {
         speakerVoiceConfigs: req.falantes.map((f) => ({
-          speakerAlias: f.nome,
+          speakerAlias: apelido.get(f.nome)!,
           speakerId: VOZ_DO_TIMBRE[f.timbre],
         })),
       };

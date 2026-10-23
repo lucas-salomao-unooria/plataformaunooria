@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{178 decisões}, numeradas até ADR-178: a 178 (as quatro fotos do carrossel do Júri Estadual) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{182 decisões}, numeradas até ADR-182: a 182 (os tempos do guia da aula e as abas das telas de condução) foi escrita depois de conferir \cd{origin/dev-local}, \cd{origin/dev} e as branches, a 181 (O Efeito Amplificador e a versão anterior da 2ª série) foi escrita depois de conferir \cd{origin/dev-local}, \cd{origin/dev} e as branches, a 180 (as respostas do PO sobre o Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 179 (as réguas do PO no Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 178 (as quatro fotos do carrossel do Júri Estadual) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -229,6 +229,10 @@ que a cercam.
 \zebra \adrr{ADR-176} & O Júri Estadual depois da aula de teste: a separação vai para as pastas do feed, o caso Mariana sai e a Galeria Oculta fica enxuta & 2026-10-20 & Aceita; supera em parte a \adrr{ADR-137}, a \adrr{ADR-157}, a \adrr{ADR-164} e a \adrr{ADR-174}\\
 \adrr{ADR-177} & Quem mandou isso? depois do teste do time: o alerta do grupo no lugar do cartão de frases e o robô do grupo no lugar da regra do tio & 2026-10-20 & Aceita; supera em parte a \adrr{ADR-171}\\
 \zebra \adrr{ADR-178} & O carrossel do Júri Estadual com quatro fotos geradas: o projeto de perto, a equipe no estande e os bastidores, cada uma com o seu pedido & 2026-10-20 & Aceita; estende a \adrr{ADR-151} e a \adrr{ADR-164}\\
+\adrr{ADR-179} & O Unoovista adota as réguas do PO validadas com a pedagogia, e os termos de uso voltam para a entrada & 2026-10-21 & Aceita; substitui partes da \adrr{ADR-167}; ajustada pela \adrr{ADR-180}\\
+\zebra \adrr{ADR-180} & As respostas do PO no Unoovista: a EF08CO11 só pelo Raio-x, o chute fora de \enquote{em processo} e ridicularizar não atinge & 2026-10-22 & Aceita; ajusta a \adrr{ADR-179}\\
+\adrr{ADR-181} & O Efeito Amplificador toma o código da 2ª série, unidade 1, e a Missão Tempestade vira a versão anterior \cd{exp02em1b-v0}: no ar, fora do catálogo & 2026-10-22 & Aceita; estende a \adrr{ADR-110} e a \adrr{ADR-116}\\
+\zebra \adrr{ADR-182} & O guia da aula em quatro tempos e as telas de condução em abas: um template para a ficha e para a página da atividade, sem tirar texto & 2026-10-22 & Aceita; estende a \adrr{ADR-65} e a \adrr{ADR-100}\\
 \bottomrule
 \end{tabularx}
 
@@ -16297,3 +16301,379 @@ continuam valendo, agora com quatro imagens por estande em vez de uma.
 \textbf{Gatilho.} O tempo de gerar as 160 incomodar o professor no preparo
 (aí as lâminas extras passam a ser opcionais), ou o modelo devolver rosto
 identificável na lâmina da equipe com frequência.
+
+\section{ADR-179 --- O Unoovista adota as réguas do PO validadas com a pedagogia, e os termos de uso voltam para a entrada}
+\label{adr:exp08ef1b-reguas-do-po}
+
+\textbf{Data.} 2026-10-21. \textbf{Status.} Aceita. \textbf{Substitui} as
+réguas e o desenho do 6b da \adrr{ADR-167}; o resto do Canal A do Unoovista
+(o Raio-x antes do debate, as tarefas depois do cinza, a leitura da reflexão)
+continua.
+
+\begin{especificacao}{Contexto}
+Em 2026-10-21 o PO validou com o time de pedagogia que a missão do 8º ano
+atende às três habilidades do 1º bimestre (EF08CO09, EF08CO11 e EF08CO07) e
+mandou o critério ternário de cada uma, mais uma mudança no 6b. As réguas da
+\adrr{ADR-167} tinham sido desenhadas por nós e votadas num plenário de
+agentes; a régua que vale é a da pedagogia.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Os termos de uso voltam para a entrada}: depois do cartão da
+    missão, dentro do app, um texto jurídico denso com o botão grande
+    \enquote{Aceitar e continuar}. As 5 cláusulas do 6b estão enterradas nele,
+    com as mesmas palavras (\cd{TERMOS\_DA\_ENTRADA}, servido por
+    \rota{GET /runs/termos-de-uso}, que não depende da sessão). Aceitar não
+    mede nada; a telemetria registra o tempo na tela.
+  \item \textbf{O 6b é só marcar}: \enquote{Esses são os termos de uso que você
+    recebeu no início da experiência. Marque as regras que explicam o que
+    aconteceu no seu feed.} Saem o efeito de cada regra e a pergunta da
+    mudança. Erros = regra que explica sem marca + distração marcada; 0 é
+    atingiu, 1--2 em processo, 3 ou mais não atingiu.
+  \item \textbf{Raio-x (EF08CO11)}: 5--6 acertos atingiu, 3--4 em processo,
+    0--2 não atingiu. O post em que o estudante mais parou continua na
+    composição e na devolutiva, mas não pesa mais no nível.
+  \item \textbf{Envio (EF08CO07)}: três critérios contados --- os dois lados,
+    nada de fofoca ou humor, a mensagem de aviso. 3 é atingiu, 1--2 em
+    processo, 0 não atingiu. Na atividade sem fofoca ou humor nos dois lados,
+    o envio que fecha os três vai a \enquote{em processo} e grava o marcador
+    limitado (\adrr{ADR-166}), como antes.
+  \item A ficha sobe para a versão 3. Experiência 1.5.0.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter as réguas da \adrr{ADR-167}}: eram nossas; a pedagogia
+    validou outras.
+  \item \textbf{Termos só depois da revelação}, como na \adrr{ADR-167}: o PO
+    quer o comportamento real de aceitar sem ler, para a revisita fazer
+    sentido. O risco de contar o segredo antes do feed fica controlado pela
+    densidade do texto.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas (levadas ao PO no card, aguardando
+resposta).}
+
+\begin{itemize}
+  \item \textbf{Chute no Raio-x}: a regra dos 3 garante que marcar a mesma opção
+    nos 6 posts dá no máximo 3 acertos, que agora é \enquote{em processo}.
+  \item \textbf{Ridicularizar no envio}: os dois lados sem fofoca com a mensagem
+    que ridiculariza somam 2 critérios e ficam em \enquote{em processo}.
+  \item \textbf{O 6b deixa de medir o julgamento crítico} (\enquote{analisar
+    criticamente}): só a localização das regras.
+  \item A reflexão lida pela IA continua como segundo caminho da EF08CO11; o
+    PO não falou dela, e a pergunta está no card.
+  \item \textbf{O Raio-x passa a aparecer para quem viu poucos posts}
+    (correção posterior, na mesma ADR: era o \enquote{não encontrei esta
+    tela} do PO). Os vistos vêm primeiro; quando não fecham os 6, a
+    composição completa com posts aprovados que o estudante NÃO viu, do lado
+    dele e neutros sobre o tema --- nunca do outro lado, que antes da
+    revelação mostraria que havia outro feed. O custo: o Raio-x de quem
+    rolou pouco mede o viés de posts que ele não leu no feed (lê ali, na
+    tarefa), e não o que ele percebeu enquanto rolava.
+\end{itemize}
+
+\textbf{Gatilho.} A resposta do PO às quatro perguntas do card: cada \enquote{sim}
+às nossas sugestões é uma mudança pequena nas réguas puras de
+\arq{motor/canal-a/} e uma versão nova da ficha.
+
+\section{ADR-180 --- As respostas do PO no Unoovista: a EF08CO11 só pelo Raio-x, o chute fora de \enquote{em processo} e ridicularizar não atinge}
+\label{adr:exp08ef1b-respostas-do-po}
+
+\textbf{Data.} 2026-10-22. \textbf{Status.} Aceita. \textbf{Ajusta} a
+\adrr{ADR-179}, respondendo às perguntas que ela deixou no card da missão.
+
+\textbf{Contexto.} A \adrr{ADR-179} implementou as réguas do PO como ele as
+escreveu e levou ao card quatro consequências que mudavam o nível de algum
+estudante. O PO respondeu: (1) aceita a régua do Raio-x sem o chute em
+\enquote{em processo}; (2) aceita que a mensagem que ridiculariza sempre dê
+\enquote{não atingiu}; (3) o Raio-x completado com posts não vistos (já
+feito); (4) a EF08CO11 fica \textbf{só} com o Raio-x. E pediu um ajuste de
+tom: os textos que o estudante lê tinham \enquote{cara de texto de IA}.
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Raio-x}: 5--6 acertos atingiu, \textbf{4} em processo,
+    \textbf{0--3} não atingiu. A regra dos 3 deixa quem marca a mesma opção
+    nos 6 posts, sem ler, acertar até 3; com 3 em \enquote{em processo}, o
+    chute subia de nível.
+  \item \textbf{Envio}: a mensagem que ridiculariza o outro lado dá
+    \enquote{não atingiu} qualquer que seja a contagem dos outros critérios.
+    O resto segue a contagem (3 / 1--2 / 0).
+  \item \textbf{A reflexão sai da evidência e da IA}: o marcador
+    \cd{reflexao} sai da ficha (versão 4), o serviço que a lia e o prompt
+    saem do código, e a tela da reflexão diz só \enquote{Seu professor lê
+    este texto.} (experiência 1.5.1). A cópia do primeiro texto, que existia
+    para o professor conferir a leitura, deixa de ser gravada: dado de menor
+    sem uso não se guarda. A página de privacidade deixa de dizer que a
+    reflexão do Unoovista vai para a IA.
+  \item \textbf{O tom dos textos do estudante}: a revelação, a reflexão, as
+    quatro mensagens do envio, o relatório e os avisos do feed foram
+    reescritos sem os vícios de texto gerado --- o travessão em toda frase, o
+    \enquote{não é X, é Y}, a frase de efeito em três batidas --- e no
+    registro de quem fala com um estudante de 13 anos. As cinco regras dos
+    termos e o texto jurídico da entrada ficam como estão: são do PO,
+    validados com a pedagogia, e o jurídico é denso de propósito. A cópia
+    gêmea do hub (o guia do professor) muda junto.
+  \item A tabela \cd{exp08ef1b\_leituras\_da\_reflexao} e a coluna
+    \cd{primeiro\_texto} ficam no esquema, sem escrita nova. As marcas
+    \cd{reflexao} já gravadas ficam no banco e não contam: o encerramento só
+    transforma em nível a marca de marcador que está na ficha vigente.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter a leitura da IA só como apoio ao professor}, sem nível:
+    custo de IA e dado de menor no \emph{provider} para uma sugestão que não
+    conta. O professor lê a reflexão inteira na janela do estudante.
+  \item \textbf{Deixar o tom para uma versão seguinte}, como o PO sugeriu no
+    card: o dono do produto preferiu não deixar pendência, e a troca é só de
+    texto.
+  \item \textbf{Apagar a tabela das leituras numa migração}: ela tem
+    \cd{escola\_id} e RLS, e apagar dado com tenancy por migração não cabe
+    nesta frente; fica sem escrita até uma limpeza decidida à parte.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Quem não fez o Raio-x fica \enquote{Não avaliado} na
+    EF08CO11}, sem o segundo caminho que a reflexão dava. Com o Raio-x
+    aparecendo sempre (\adrr{ADR-179}), isso só atinge quem faltou ou não
+    chegou à tarefa; o professor ajusta à mão.
+  \item \textbf{O mecanismo e a abrangência} (o que ficou de fora), que a
+    leitura da reflexão media, deixam de ser medidos: o Raio-x mede os vieses
+    das fontes.
+  \item \textbf{O 6b continua sem o julgamento crítico} que a EF08CO09 pede
+    (\enquote{analisar criticamente}): a observação foi ao card e o PO não
+    a contestou.
+  \item Atividades abertas no dia da troca podem ter marcas \cd{reflexao} que
+    passam a não contar: a EF08CO11 desses estudantes fica com o Raio-x, ou
+    \enquote{Não avaliado}.
+\end{itemize}
+
+\textbf{Gatilho.} A pedagogia pedir de novo o mecanismo e a abrangência na
+EF08CO11, ou o PO pedir a reflexão como apoio ao professor.
+
+% ---------------------------------------------------------------------------
+\section{ADR-181 --- O Efeito Amplificador toma o código da 2ª série, unidade 1, e a Missão Tempestade vira a versão anterior}
+\label{adr:exp02em1b-efeito-amplificador}
+
+\textbf{Data.} 2026-10-22. \textbf{Status.} Aceita. \textbf{Estende} a
+\adrr{ADR-110} (o código derivado da série e da unidade) com um terceiro
+formato, a versão anterior, e a \adrr{ADR-116} (o arquivamento) com um
+caminho que não tira a missão do ar.
+
+\begin{especificacao}{Contexto}
+A missão da 2ª série do Ensino Médio, unidade 1, foi reformulada por inteiro
+pela esteira de produto (artefatos de 2026-10-22): \emph{O Efeito
+Amplificador}, em que o estudante cria com o UnooriaAI o post da campanha do
+grêmio, audita o rascunho e publica no Unoovista, onde o algoritmo pinça uma
+frase e entrega o post de madrugada para todos. O código é derivado da série e
+da unidade, então a missão nova é \cd{exp02em1b} --- o código da Missão
+Tempestade. O dono do produto decidiu: a Tempestade \textbf{não} é desativada;
+passa para \cd{exp02em1b-v0} e deixa de aparecer no catálogo. Junto, duas
+orientações sobre a missão nova: sem a etapa de transferência e sem o Canal B,
+e a abertura do chat com uma fala literal dele.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A versão anterior é um formato de código}: \cd{expNNefUb-vN}.
+    \cd{EXP\_ID\_RE} aceita o sufixo nas duas cópias (api e SDK), e a
+    \cd{ehVersaoAnterior} o reconhece. Como o arquivamento, é DERIVADO do id:
+    não há campo para ficar dessincronizado da pasta.
+  \item \textbf{A Tempestade continua no ar}: o módulo \arq{unoogpt} segue no
+    \cd{app.module}, a disponibilidade, as liberações e os dados seguem, e o
+    bundle passa a ser publicado em \cd{exp02em1b-v0/1.5.1}. Sai da trilha do
+    professor e da lista do estudante (o hub a tira de
+    \cd{MISSOES\_PUBLICADAS}) e da grade da sala --- salvo na turma que já a
+    tinha liberado, para o professor poder encerrá-la e a criança no meio não
+    perder a porta.
+  \item \textbf{A migração \cd{20261022120000\_exp02em1b\_versao\_anterior}}
+    leva o id como VALOR para \cd{exp02em1b-v0} em catálogo, versões,
+    liberações, progresso, equipes, evidência, podcast e disponibilidade
+    (com as travas de RLS e o trigger afrouxados só na transação, e a asserção
+    no fim), e renomeia as sete tabelas para \cd{exp02em1b\_v0\_*}, com
+    constraints, índices, políticas e as duas sequências. A telemetria fica,
+    como na \adrr{ADR-116}: \cd{exp\_version} separa 1.x de 2.x.
+  \item \textbf{O Efeito Amplificador} é o módulo \arq{efeito-amplificador} e
+    a experiência \cd{exp02em1b} 2.0.0 (UnooriaAI, Unoovista e a escola). O
+    UnooriaAI da aula é \textbf{híbrido} (decisão do Lucas, 2026-10-22): a IA
+    real, com a quota do estudante, classifica o pedido livre numa lista
+    FECHADA de intenções e redige a resposta; o servidor aplica a intenção à
+    prévia e cobra os guardrails sobre a saída; a árvore de intenções do banco
+    de conteúdo (01e) responde quando a IA falha. A outra IA gera o pacote no
+    preparo, com a quota do professor e curadoria.
+    A ficha mede as quatro habilidades pelo Canal A: EM13CO14 e EM13CO26 no
+    Publicar, EM13CO24 e EM13CO08 no feed da madrugada.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Arquivar a Tempestade} (\cd{backup-exp02em1b}, a
+    \adrr{ADR-116}): tiraria a missão do ar, e o dono do produto pediu o
+    contrário.
+  \item \textbf{Um código sem separador} (\cd{exp02em1bv0}): a mesma mudança
+    na regex, e mais difícil de ler; o hífen segue o \cd{app-} e o
+    \cd{backup-}.
+  \item \textbf{Manter a Tempestade em \cd{exp02em1b} e dar outro código à
+    nova}: quebraria a derivação da \adrr{ADR-110} justamente para a missão
+    viva.
+  \item \textbf{Esconder a Tempestade pelo interruptor de disponibilidade}: o
+    interruptor tira da grade, mas também BLOQUEIA a missão --- é desligar.
+  \item \textbf{O Canal B do one-pager} (quatro enquetes no \cd{StoryPoll}) e a
+    etapa de transferência: retirados pelo PO.
+  \item \textbf{Só a árvore de intenções na aula} (o desenho do 01e, a primeira
+    implementação): zero token em sala e a conversa igual para a turma
+    inteira, mas o estudante é livre para escrever qualquer coisa, e a árvore
+    só entende os gatilhos previstos --- fora deles, respondia \enquote{fora do
+    tema}, e as falas fixas falavam do tema do banco padrão em qualquer pacote.
+    Uma missão sobre questionar a IA não pode ter um assistente que não
+    responde à altura. Ficou como a reserva.
+  \item \textbf{A IA livre, decidindo também a prévia}: a resposta seria a
+    mais natural, mas a régua passaria a depender do texto de um modelo, e um
+    modelo prestativo corrige o rascunho sozinho --- e a descoberta do
+    estudante, que é o que a missão mede, some.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item As telas do professor da Tempestade ficam sem caminho de entrada: a
+    ficha da 2ª série, unidade 1, é da missão nova. Quem a tinha liberada
+    encerra pela sala; não há ficha nem guia para conduzir uma aula nova dela,
+    e as duas suítes e2e que entravam pela ficha foram para
+    \arq{scripts/e2e/anteriores/}, fora da execução.
+  \item Os 4 indicadores do Explicar têm 2 distratores escritos por nós
+    (curtidas e alcance da tarde): sem eles, apontar os dois certos seria um
+    clique trivial.
+  \item O estudante não edita o texto livremente: tira ou devolve parágrafos e
+    pede correções ao UnooriaAI. Com edição livre, a régua dependeria de uma
+    heurística sobre texto de menor.
+\end{itemize}
+
+\textbf{Gatilho.} Uma terceira reformulação da mesma unidade (que pediria
+\cd{-v1}, e a pergunta de quantas versões ficam no ar), ou o pedido de conduzir
+uma aula nova da Tempestade --- que pediria uma rota de entrada própria para a
+versão anterior.
+
+\section{ADR-182 --- O guia da aula em quatro tempos e as telas de condução em abas}
+\label{adr:tempos-do-guia-e-abas-da-conducao}
+
+\textbf{Data.} 2026-10-22. \textbf{Status.} Aceita. \textbf{Estende} a
+\adrr{ADR-65} (o guia é dado, e a ordem é do renderizador) com os TEMPOS da
+aula, e a \adrr{ADR-100} (a sala leva à ficha) com a ordem da ficha e o
+template da página da atividade.
+
+\begin{especificacao}{Contexto}
+A queixa constante dos professores sobre o guia da aula e as telas de condução
+era \enquote{tem muita informação, está muito denso} --- e o dono do produto
+fixou a restrição: os textos e as informações são todos importantes, nada sai.
+Medido nas dez missões publicadas, logado como professor e com a turma na URL
+(como a sala abre): o guia tinha de 8.224 a 17.276 pixels de altura e de 2.502 a
+6.486 palavras numa coluna só, com três alertas coloridos de largura cheia antes
+do primeiro conteúdo; a ficha (a tela de \enquote{Conduzir com esta turma})
+abria com resumo, formato, competência, os atos, o preparo e \enquote{o que a
+missão não conta} --- 900 a 1.500 palavras --- antes de chegar às atividades da
+turma, que é o que o professor veio fazer; e a página da atividade empilhava
+equipes, de 40 a 160 imagens já aprovadas, os estandes ou o pacote, e só então o
+painel da aula, a única peça usada NA FRENTE da turma (o Júri chegava a 11.298
+pixels; o Unoovista, a 9.426).
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O guia ganha quatro tempos} (\cd{TEMPOS\_DO\_GUIA}, em
+    \arq{lib/entre-redes/guias/tipos.ts}): \emph{Preparar} (na véspera:
+    objetivos e BNCC, antes da aula, cuidados), \emph{Conduzir} (na frente da
+    turma: roteiro, debate, mediação), \emph{Fechar} (depois da aula) e
+    \emph{Consultar} (adaptações, dúvidas). Cada tempo é uma aba do \cd{Tabs}
+    do DS, presa no topo ao rolar; o índice lateral mostra as seções do tempo
+    aberto, e a âncora de uma seção (\cd{\#roteiro}) abre o tempo dela. Toda
+    seção mora em exatamente um tempo, na ordem do guia --- o teste do
+    registro cobra. \cd{cuidados} subiu para o Preparar: tem o selo
+    \enquote{leia antes} e ficava depois da rubrica.
+  \item \textbf{Cada seção ganha a forma do que ela é}: o topo resume a aula em
+    números CONTADOS do guia (duração, momentos do roteiro, os botões do
+    professor, a habilidade principal); os avisos viram um bloco só, com o tom
+    no ícone; o roteiro é uma linha do tempo, com o botão do painel como
+    etiqueta (era a última coluna de uma tabela larga); a pergunta do debate
+    vai numa lousa; a escada de perguntas fica em duas colunas; mediação e
+    adaptações viram grades de itens; os dois preparos ficam lado a lado.
+    Cartão só onde há item, não em volta de toda seção.
+  \item \textbf{A ficha é um template}
+    (\arq{components/ficha/ficha-de-conducao.tsx}), na ordem do trabalho: o
+    cabeçalho curto com o guia a um clique, UM aviso que decide a aula, a
+    CONDUÇÃO (as atividades da turma, ou o caminho para a aula) e
+    \enquote{Conhecer a missão} em abas --- como funciona, antes de rodar, o
+    que ela não conta, competência e formato, e as abas próprias da missão (a
+    Vila: para que serve, as três bolhas). O corpo de cada missão passa só o
+    que é dele. A faixa da turma, que é do despachante, virou uma linha.
+  \item \textbf{A página da atividade é um template}
+    (\arq{components/atividades/abas-da-atividade.tsx}) nas seis missões com
+    atividade: depois do estado (pronta, em preparo, \enquote{Usar esta
+    atividade agora}), cinco abas com o mesmo nome e na mesma ordem em toda
+    missão --- Aula ao vivo, Conteúdo, Equipes, Podcast, Habilidades. Abre a
+    Aula com a atividade em andamento, o Conteúdo em preparo e as Equipes
+    quando pronta. O aviso de liberação na sala fica FORA das abas. As missões
+    sem atividade (Foto Conta, Rastro, Manifesto, Vila) já abriam com a aula
+    no topo e ficam em coluna única.
+  \item \textbf{As abas fechadas ficam montadas, com \cd{hidden}}
+    (\arq{components/abas-da-pagina.tsx}, \arq{components/guia/tempos-do-guia.tsx}):
+    o papel imprime os quatro tempos; a âncora precisa existir antes de a aba
+    abrir; e o painel da aula segue consultando a api, e chamando
+    \cd{router.refresh()} quando a evidência muda, com a aba de habilidades
+    aberta. \cd{hidden} é \cd{display: none}: nada fica focável sem ser visto.
+    O clique na aba da página não grava o endereço: o F5 no meio da aula volta
+    à aba que o estado escolhe.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Cortar ou resumir o texto}: era a saída óbvia e foi vetada pelo
+    dono do produto --- o texto de cada seção é o que já foi validado com a
+    pedagogia e o PO.
+  \item \textbf{\cd{Collapse} por seção}: deixaria a página tão longa quanto
+    antes ao abrir tudo, e o fechado leva botões focáveis para dentro de
+    \cd{aria-hidden} (o defeito já medido na app-92 e nas equipes).
+  \item \textbf{Só o \cd{TabPanel} do DS}: ele desmonta a aba fechada --- o
+    papel sairia com um tempo só e o painel da aula pararia de acompanhar a
+    turma ao abrir outra aba.
+  \item \textbf{Uma página por tempo} (\rota{.../guia/conduzir}): quatro rotas,
+    quatro trilhas e o papel dividido em quatro impressões.
+  \item \textbf{Aplicar as abas também às páginas sem atividade}: ganhariam
+    uma barra com uma ou duas abas e nenhum ganho --- a aula já está no topo.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item O que está numa aba fechada não aparece no \enquote{Ctrl+F} do
+    navegador; o professor que procurava uma palavra no guia inteiro precisa
+    imprimir ou trocar de aba.
+  \item As suítes e2e que liam a página inteira (\cd{innerText} do
+    \cd{main}) passaram a ler aba por aba, e as que clicam em algo de outra
+    aba abrem a aba antes (\arq{scripts/e2e/lib/abas.mjs}): é um passo a mais
+    em toda suíte nova destas telas.
+  \item Nas missões sem atividade a página da aula não segue o template; uma
+    missão nova sem atividade escolhe se o usa.
+\end{itemize}
+
+\textbf{Gatilho.} Um tempo do guia que passe dos 10 mil pixels --- hoje o
+mais longo é o Conduzir de Quem mandou isso?, com 8.125, quase todo de blocos
+vivos (o pacote com o gabarito, o alerta e o robô do grupo), que são material
+da condução e ficam ---, o que pediria uma forma própria para o bloco vivo, e
+não mais uma aba; ou o pedido de uma
+página da aula que precise de duas abas abertas ao mesmo tempo (o painel e as
+habilidades lado a lado, num projetor largo).
+

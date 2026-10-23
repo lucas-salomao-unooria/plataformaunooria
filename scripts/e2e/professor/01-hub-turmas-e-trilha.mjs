@@ -1,5 +1,6 @@
 import { HUB, suite, estadoDosIcones } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
+import { textoDeTodasAsAbas } from "../lib/abas.mjs";
 
 /**
  * O chão do professor: o hub, as turmas dele e a trilha do Entre Redes.
@@ -154,11 +155,12 @@ await suite(
     // ── o guia da aula ──────────────────────────────────────────────────
     await p.goto(`${HUB}/professor/entre-redes/8-ano/unidade-1/guia`, { waitUntil: "domcontentloaded" });
     await p.waitForTimeout(2000);
-    const guia = await p.locator("main").innerText();
+    /* O guia é dividido em quatro tempos (ADR-182): o texto inteiro é o das quatro abas. */
+    const guia = await textoDeTodasAsAbas(p, "guia");
     r.exigir(/os 7 momentos/.test(guia), "o guia fala nos sete momentos da aula");
     r.exigir(/Encerrar atividade/.test(guia), "o sétimo momento está na tabela do guia");
     r.exigir(
-      /O Unoovista não é uma rede social de verdade/.test(guia),
+      /O Unoovista foi feito para esta aula/.test(guia),
       "o professor lê a revelação palavra por palavra, ANTES da aula",
     );
     await r.registrar(p, "guia-da-aula", {

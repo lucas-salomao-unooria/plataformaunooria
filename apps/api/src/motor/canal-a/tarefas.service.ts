@@ -10,20 +10,16 @@ import { contextoDaRun } from "../contexto-da-evidencia";
 import { normalizarEstado } from "../estado";
 import { naoEncontrado, runDoEstudante } from "../guardas";
 import { paraFeedPost } from "../sanitizador";
-import { linhaDaSelecao, medeConfiabilidade, montarEnvio, nivelDoEnvio, type PostDoEnvio } from "./envio";
+import { medeConfiabilidade, montarEnvio, nivelDoEnvio, type PostDoEnvio } from "./envio";
 import { comporRaioX, gabaritoDoPost, nivelDoRaioX, type ComposicaoDoRaioX } from "./raio-x";
-import { efeitosCoerentes, nivelDosTermos } from "./termos";
+import { marcadasSemRepeticao, nivelDosTermos } from "./termos";
 import {
   CLAUSULAS,
-  EFEITOS,
   MARCADOR_DA_TAREFA,
   MARCADOR_DO_ENVIO_LIMITADO,
   MENSAGENS,
-  MUDANCAS,
   type ClausulaId,
-  type EfeitoId,
   type MensagemId,
-  type MudancaId,
   type OpcaoDoRaioX,
   type Tarefa,
 } from "./vocabulario";
@@ -209,17 +205,6 @@ export class TarefasDoUnoovista {
     }, escolaId);
   }
 
-  /**
-   * A reflexão desta sessão PODE ser lida pela IA? Só a de quem teve feed com
-   * lado e chegou à última tela da revelação — a mesma condição das tarefas.
-   * Chamada DENTRO da transação do primeiro salvamento.
-   */
-  async podeLerAReflexao(tx: Tx, runId: string, estudanteId: string, escolaId: string): Promise<boolean> {
-    const run = await runDoEstudante(tx, runId, estudanteId, escolaId);
-    if (!run || run.revelacaoConcluidaEm === null) return false;
-    return (await this.acervo(tx, run)).ladoDele !== null;
-  }
-
   // ── a marca ─────────────────────────────────────────────────────────────
 
   /**
@@ -291,14 +276,14 @@ export class TarefasDoUnoovista {
       if (situacao !== "pendente") this.indisponivel();
       const linha = await this.linhaDaTarefa(tx, run.id, "raio-x");
       if (!linha) this.indisponivel();
-      const { postIds, maisParou } = linha.composicao as { postIds: string[]; maisParou: string };
+      const { postIds } = linha.composicao as { postIds: string[] };
       const ids = Object.keys(respostas);
       if (ids.length !== postIds.length || !postIds.every((id) => id in respostas)) {
         throw new BadRequestException({ codigo: "resposta-incompleta", mensagem: "Escolhe uma opção em cada post." });
       }
       const posts = await tx.post.findMany({ where: { id: { in: postIds } }, select: { id: true, lado: true } });
       const gabarito = Object.fromEntries(posts.map((p) => [p.id, gabaritoDoPost(p.lado)]));
-      const { nivel } = nivelDoRaioX({ respostas, gabarito, maisParou });
+      const { nivel } = nivelDoRaioX({ respostas, gabarito });
 
       const refeita = await this.marcarPrimeiro(tx, run, await this.turmaDaAtividade(tx, run.activityId), [MARCADOR_DA_TAREFA["raio-x"]], {
         marcador: MARCADOR_DA_TAREFA["raio-x"],
@@ -360,21 +345,14 @@ export class TarefasDoUnoovista {
       const run = await this.run(tx, runId, estudanteId, escolaId);
       const situacao = (await this.situacaoNaTransacao(tx, run)).termos;
       if (situacao !== "pendente" && situacao !== "enviada") {
-        return { situacao, clausulas: [], efeitos: [], mudancas: [] };
+        return { situacao, clausulas: [] };
       }
-      const aleatorio = aleatorioDe(`termos:${run.id}`);
-      const linha = await this.linhaOuCriar(tx, run, "termos", () => ({
-        efeitos: embaralhar(EFEITOS.map((e) => e.id), aleatorio),
-        mudancas: embaralhar(MUDANCAS.map((m) => m.id), aleatorio),
-      }));
-      const { efeitos, mudancas } = linha.composicao as { efeitos: EfeitoId[]; mudancas: MudancaId[] };
-      return {
-        situacao,
-        /* As cláusulas na ordem fixa; as opções na ordem sorteada para esta sessão. Sem gabarito. */
-        clausulas: CLAUSULAS.map((c) => ({ id: c.id, texto: c.texto })),
-        efeitos: efeitos.map((id) => ({ id, texto: EFEITOS.find((e) => e.id === id)!.texto })),
-        mudancas: mudancas.map((id) => ({ id, texto: MUDANCAS.find((m) => m.id === id)!.texto })),
-      };
+      /* A linha da tarefa nasce aqui, sem composição: desde a ADR-179 o 6b é só
+         marcar, e não há opção a sortear. A composição antiga, das sessões que
+         já a tinham, é só ignorada. */
+      await this.linhaOuCriar(tx, run, "termos", () => ({}));
+      /* As cláusulas na ordem fixa, a mesma em que aparecem nos termos da entrada. Sem gabarito. */
+      return { situacao, clausulas: CLAUSULAS.map((c) => ({ id: c.id, texto: c.texto })) };
     }, escolaId);
   }
 
@@ -382,13 +360,10 @@ export class TarefasDoUnoovista {
     runId: string,
     estudanteId: string,
     escolaId: string,
-    resposta: { marcadas: ClausulaId[]; efeitos: Partial<Record<ClausulaId, EfeitoId>>; mudanca: MudancaId },
+    resposta: { marcadas: ClausulaId[] },
   ) {
-    if (!efeitosCoerentes(resposta)) {
-      throw new BadRequestException({
-        codigo: "resposta-incompleta",
-        mensagem: "Diz o que cada regra marcada fez no seu feed.",
-      });
+    if (!marcadasSemRepeticao(resposta)) {
+      throw new BadRequestException({ codigo: "resposta-invalida", mensagem: "Marca cada regra uma vez só." });
     }
     return this.prisma.comTenancy(async (tx) => {
       const run = await this.run(tx, runId, estudanteId, escolaId);
@@ -470,7 +445,7 @@ export class TarefasDoUnoovista {
       const selecao = acervo.filter((p) => resposta.posts.includes(p.id));
       const mensagem = MENSAGENS.find((m) => m.id === resposta.mensagem)!;
       const { nivel, marcador } = nivelDoEnvio({
-        linha: linhaDaSelecao(selecao),
+        selecao,
         mensagem: mensagem.tipo,
         medeConfiabilidade: medeConfiabilidade(acervo),
       });

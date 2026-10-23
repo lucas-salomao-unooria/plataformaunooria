@@ -1,6 +1,7 @@
 import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
 import { vigiarFalhasDaApi } from "../lib/smoke.mjs";
+import { textoDeTodasAsAbas } from "../lib/abas.mjs";
 
 /**
  * A MISSÃO INTEIRA do Unoovista (exp08ef1b), ponta a ponta, com as duas pessoas que a
@@ -45,7 +46,7 @@ await suite(
       "O Raio-x (6a) vem logo depois da resposta, ainda no disfarce, sem devolutiva no envio",
       "A revelação tem dez telas, com a ponte do Raio-x, os termos e o registro",
       "Depois do cinza, os termos (6b) e o envio (6c), sem o lado nas miniaturas",
-      "A reflexão escrita é gravada, sobrevive à recarga e é lida pela IA real, uma vez só",
+      "A reflexão escrita é gravada, sobrevive à recarga e só o professor a lê (sem IA, ADR-180)",
       "As três perguntas do fim não aparecem mais (o Canal B saiu)",
       "O painel do professor diz de qual tarefa veio cada nível",
       "O que ela fez virou medida: o dossiê é computado dos eventos da sessão",
@@ -153,6 +154,31 @@ await suite(
         "qualquer pista contaminaria a medida.",
     });
     await entrarNoApp.click();
+
+    /* Os termos de uso da ENTRADA (ADR-179): texto denso, com as 5 regras do 6b
+       enterradas, e o botão grande. O caminho esperado é aceitar sem ler. */
+    const aceitar = tela.getByRole("button", { name: "Aceitar e continuar" });
+    await aceitar.waitFor({ timeout: 20_000 });
+    /* O texto chega da api depois do botão: espera a cláusula, não o "carregando". */
+    await tela.getByText(/Usamos o seu histórico de interações/).waitFor({ timeout: 20_000 });
+    const termosDaEntrada = await tela.getByRole("region", { name: "Termos de uso do Unoovista" }).innerText();
+    const caixaDoBotao = await aceitar.boundingBox();
+    r.exigir(
+      Boolean(caixaDoBotao) && caixaDoBotao.y + caixaDoBotao.height <= 812 + (await tela.locator("body").boundingBox()).y,
+      "o botão \"Aceitar e continuar\" fica à vista, sem rolar a tela: quem rola é o texto",
+    );
+    r.exigir(
+      termosDaEntrada.includes("Usamos o seu histórico de interações para escolher quais publicações você vê"),
+      "os termos da entrada trazem as regras do 6b, enterradas no texto",
+    );
+    await r.registrar(p, "termos-da-entrada", {
+      titulo: "Os termos de uso, na entrada",
+      mostra: "Texto jurídico denso e miúdo, com o botão grande \"Aceitar e continuar\".",
+      prova:
+        "Como num app real, o caminho mais fácil é aceitar sem ler. As 5 regras que o 6b cobra estão no meio " +
+        "do texto, com as mesmas palavras — e só depois da revelação a criança volta a elas.",
+    });
+    await aceitar.click();
 
     const figurinhas = tela.locator('[aria-label="Escolha sua figurinha"] button');
     await figurinhas.first().waitFor({ timeout: 10_000 });
@@ -478,7 +504,7 @@ await suite(
     // ═══ EXPLICAÇÃO: a revelação e o relatório ═══════════════════════════
     await moverEtapa(prof, atividade.id, "explicabilidade");
     await tela
-      .locator("text=O Unoovista não é uma rede social de verdade")
+      .locator("text=O Unoovista foi feito para esta aula")
       .waitFor({ timeout: 40_000 });
     await r.registrar(p, "revelacao", {
       titulo: "A revelação",
@@ -504,7 +530,7 @@ await suite(
     let viuOsTermos = false;
     let viuORegistro = false;
     for (let i = 0; i < 14; i += 1) {
-      if (!viuAPonte && (await tela.getByText("Os 6 posts do Raio-x, antes do debate:").count())) {
+      if (!viuAPonte && (await tela.getByText("Lembra dos 6 posts que você analisou antes do debate?").count())) {
         viuAPonte = true;
         const ponte = tela.getByRole("list", { name: "De onde veio cada post" });
         await ponte.waitFor({ timeout: 10_000 });
@@ -523,8 +549,8 @@ await suite(
             "existe da revelação em diante, e só para quem enviou o Raio-x.",
         });
       }
-      if (await tela.getByText("Nos termos de uso — que quase ninguém lê, nem adulto.").count()) viuOsTermos = true;
-      if (await tela.getByText("O registro, não.").count()) viuORegistro = true;
+      if (await tela.getByText("que você aceitou quando entrou no app.").count()) viuOsTermos = true;
+      if (await tela.getByText("o registro do que você fez é real.").count()) viuORegistro = true;
       const continuar = tela.locator("button", { hasText: "Continuar" });
       if (!(await continuar.count())) break;
       await continuar.click();
@@ -576,6 +602,10 @@ await suite(
       return (vermelho + verde + azul) / 3 > 200;
     })();
     r.exigir(claro, `o relatório é de tema CLARO (backgroundColor computado: ${fundo})`);
+    /* Os gráficos carregam sob demanda ("montando o gráfico…"): no Vite de dev
+       a primeira compilação da biblioteca leva segundos. Espera o desfecho,
+       não o relógio. */
+    await frame.locator("svg[role=img]").nth(1).waitFor({ timeout: 30_000 }).catch(() => undefined);
     const graficos = await frame.evaluate(() => document.querySelectorAll("svg[role=img]").length);
     r.exigir(graficos >= 2, `os gráficos que não cabiam no aparelho apareceram (${graficos} svg)`);
 
@@ -619,32 +649,29 @@ await suite(
     // ═══ AS TAREFAS DEPOIS DO CINZA: 6b os termos, 6c o envio ════════════
     await tela.getByRole("button", { name: "Continuar" }).click();
     await tela
-      .getByText("Estes seriam os termos de uso de uma plataforma como o Unoovista.")
+      .getByText("Esses são os termos de uso que você recebeu no início da experiência.")
       .waitFor({ timeout: 30_000 })
       .catch(() => {
         throw new Error(`os termos (6b) não abriram${falhasDaApi.length ? ` — falhas da api: ${falhasDaApi.join(" | ")}` : ""}`);
       });
     await r.registrar(p, "termos", {
       titulo: "Os termos (6b)",
-      mostra: "As 5 regras, fictícias: marcar as que explicam o feed, dizer o efeito de cada uma e escolher a mudança.",
+      mostra: "Os termos que ele aceitou na entrada, de volta: marcar as regras que explicam o feed.",
       prova:
-        "Os termos aparecem pela primeira vez aqui, depois da revelação. Marcar todas dá \"não atingiu\": " +
-        "a régua cobra localizar, explicar o efeito e julgar — e o gabarito fica na api.",
+        "A régua do PO conta os erros (regra que explica sem marca + regra que não explica marcada): " +
+        "0 é atingiu, 1–2 em processo, 3 ou mais não atingiu. Marcar todas dá 2 erros. O gabarito fica na api.",
     });
-    /* As três que explicam, cada uma com o seu efeito, e a mudança que dá controle. */
-    for (const [clausula, efeito] of [
-      ["Registramos suas curtidas", "e1"],
-      ["Usamos o seu histórico de interações", "e2"],
-      ["Guardamos o histórico das suas interações", "e3"],
+    /* As três que explicam. */
+    for (const clausula of [
+      "Registramos suas curtidas",
+      "Usamos o seu histórico de interações",
+      "Guardamos o histórico das suas interações",
     ]) {
       /* O `<input>` do `Checkbox` do DS é só para leitor de tela (sr-only, fora da
          área visível): quem marca é o toque no RÓTULO, como o dedo da criança. */
       await tela.getByText(new RegExp(clausula)).click();
       r.exigir(await tela.getByRole("checkbox", { name: new RegExp(clausula) }).isChecked(), `a regra "${clausula}…" ficou marcada`);
-      const grupo = clausula === "Registramos suas curtidas" ? "c1" : clausula.startsWith("Usamos") ? "c3" : "c5";
-      await tela.locator(`input[type="radio"][name="efeito-${grupo}"][value="${efeito}"]`).check({ force: true });
     }
-    await tela.locator('input[type="radio"][name="mudanca"][value="controle"]').check({ force: true });
     await tela.getByRole("button", { name: "Enviar" }).click();
 
     await tela
@@ -702,12 +729,9 @@ await suite(
     const TEXTO_REFLEXAO =
       "Como eu parava e salvava os posts de um lado, o feed foi me mostrando cada vez mais deles e os do outro lado quase não chegaram. Eu nem percebi que era sempre o mesmo lado.";
     await escrita.pressSequentially(TEXTO_REFLEXAO, { delay: 8 });
-    const aviso = await tela
-      .getByText("Um programa de IA lê o primeiro texto que você salvar e sugere a ele um nível; quem decide é ele.", {
-        exact: false,
-      })
-      .count();
-    r.exigir(aviso > 0, "a tela avisa que o professor lê e que a IA lê o primeiro texto salvo");
+    const aviso = await tela.getByText("Seu professor lê este texto.", { exact: true }).count();
+    const falaDeIa = await tela.getByText(/programa de IA/).count();
+    r.exigir(aviso > 0 && falaDeIa === 0, "a tela avisa que o professor lê, e não fala mais de IA");
     await r.registrar(p, "reflexao-escrita", {
       titulo: "A reflexão final",
       mostra: "Campo de escrita livre, com o aviso de quem lê o texto e andaimes opcionais para quem travou.",
@@ -770,23 +794,6 @@ await suite(
         `o relatório sabe de onde veio o lado do feed dela (origem: ${explicacao?.origem})`,
       );
 
-      /* A LEITURA DA REFLEXÃO pela IA REAL (Vertex): ela roda depois da resposta
-         ao estudante. A espera corre contra o erro: a leitura que ENCERROU como
-         falha (sem saldo, tempo, saída inválida) reprova na hora, com o motivo —
-         nunca um timeout cego. */
-      let leitura = null;
-      const limite = Date.now() + 90_000;
-      while (Date.now() < limite) {
-        const det = await prof.request.get(`${BFF}/atividades/${atividade.id}/estudantes/${linha.runId}`);
-        leitura = (await det.json())?.sessao?.canalA?.leitura ?? null;
-        if (leitura?.lidaEm) break;
-        await p.waitForTimeout(2000);
-      }
-      r.exigir(Boolean(leitura?.lidaEm), "a IA leu a reflexão (a leitura encerrou)");
-      r.exigir(
-        leitura?.resultado === "nivel",
-        `a leitura da IA real deu um nível (resultado: ${leitura?.resultado}, nível: ${leitura?.nivel}, motivo: ${leitura?.motivo})`,
-      );
       const detalhe = await (await prof.request.get(`${BFF}/atividades/${atividade.id}/estudantes/${linha.runId}`)).json();
       const canalA = detalhe?.sessao?.canalA;
       r.exigir(
@@ -794,20 +801,22 @@ await suite(
         "o professor vê que ela terminou a revelação e fez o Raio-x, os termos e o envio",
       );
       r.exigir(canalA?.fraseDoEnvio === "Olha os dois lados antes de decidir.", "e lê a frase própria do envio");
-      r.exigir(String(canalA?.textoLido ?? "").startsWith("Como eu parava"), "e o texto que a IA leu");
+      r.exigir(String(detalhe?.sessao?.reflexao ?? "").startsWith("Como eu parava"), "e lê a reflexão dela, que não passa pela IA (ADR-180)");
+      r.exigir(!("leitura" in (canalA ?? {})), "o detalhe não traz mais leitura da reflexão pela IA");
     }
 
     // ═══ FIM: o professor encerra e vê a turma ═══════════════════════════
     await moverEtapa(prof, atividade.id, "fim");
     await prof.reload({ waitUntil: "domcontentloaded" });
     await prof.waitForTimeout(3000);
-    const paginaDoProfessor = await prof.locator("main").innerText();
+    /* As habilidades moram na aba Habilidades da atividade (ADR-182). */
+    const paginaDoProfessor = await textoDeTodasAsAbas(prof, "atividade");
     r.exigir(
       ["EF08CO11", "EF08CO09", "EF08CO07"].every((c) => paginaDoProfessor.includes(c)),
       "o painel \"Habilidades da BNCC\" da atividade mostra as três habilidades do Unoovista",
     );
     r.exigir(
-      /Os termos de uso/.test(paginaDoProfessor) && /Envio/.test(paginaDoProfessor) && /Raio-x do feed|Reflexão — sugestão da IA/.test(paginaDoProfessor),
+      /Os termos de uso/.test(paginaDoProfessor) && /Envio/.test(paginaDoProfessor) && /Raio-x do feed/.test(paginaDoProfessor),
       "cada nível diz de qual tarefa veio (o \"de onde veio\" do painel, ADR-166)",
     );
     await r.registrar(prof, "professor-ao-fim", {

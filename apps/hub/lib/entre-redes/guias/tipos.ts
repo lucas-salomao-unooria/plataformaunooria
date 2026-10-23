@@ -17,6 +17,16 @@
  * fechamento — é a mesma em toda missão, que é o que faz o professor achar a
  * informação no mesmo lugar na segunda missão que ele rodar.
  *
+ * ## Os TEMPOS da aula (ADR-182)
+ *
+ * As nove seções se agrupam em quatro tempos — Preparar, Conduzir, Fechar,
+ * Consultar —, e cada tempo é uma aba do guia (`TEMPOS_DO_GUIA`). O guia
+ * corrido tinha 8 a 17 mil pixels de altura e 2,5 a 6,5 mil palavras numa
+ * página só, e a queixa constante dos professores era "muita informação". Nada
+ * saiu: o que mudou é que, na véspera, ele vê só o preparo, e na frente da
+ * turma, só o roteiro, o debate e a mediação. O papel continua imprimindo os
+ * quatro tempos, na ordem.
+ *
  * ## O que NÃO vira dado
  *
  * O que tem fonte viva em outro lugar. A tabela dos momentos do Instanooria sai
@@ -172,20 +182,74 @@ export interface DuvidaFrequente {
   resposta: string;
 }
 
-/** As seções do guia, na ordem em que são renderizadas. É a chave das âncoras e dos blocos vivos. */
+/**
+ * As seções do guia, na ordem em que são renderizadas. É a chave das âncoras e dos blocos vivos.
+ *
+ * `cuidados` vem logo depois do preparo, e não no fim: é o que se lê ANTES da
+ * aula (a seção leva o selo "leia antes"), e no fim do documento ela ficava
+ * depois da rubrica, onde ninguém chega na véspera.
+ */
 export const SECOES_DO_GUIA = [
   "objetivos",
   "antes",
+  "cuidados",
   "roteiro",
   "debate",
   "mediacao",
   "depois",
-  "cuidados",
   "adaptacoes",
   "duvidas",
 ] as const;
 
 export type SecaoDoGuia = (typeof SECOES_DO_GUIA)[number];
+
+/**
+ * Os quatro TEMPOS da aula — as abas do guia, na ordem em que o professor os
+ * vive. Cada seção mora em exatamente um tempo (`guias/index.test.ts` cobra).
+ *
+ * O tempo é a pergunta que o professor traz quando abre o guia: "o que eu
+ * preparo?", "o que eu faço agora, na frente da turma?", "como eu fecho?". Um
+ * documento corrido obrigava a achar a resposta rolando por todas as outras.
+ */
+export const TEMPOS_DO_GUIA = [
+  {
+    id: "preparar",
+    rotulo: "Preparar",
+    quando: "Na véspera",
+    icone: "checklist",
+    secoes: ["objetivos", "antes", "cuidados"],
+  },
+  {
+    id: "conduzir",
+    rotulo: "Conduzir",
+    quando: "Na frente da turma",
+    icone: "co_present",
+    secoes: ["roteiro", "debate", "mediacao"],
+  },
+  {
+    id: "fechar",
+    rotulo: "Fechar",
+    quando: "No fim e depois",
+    icone: "flag",
+    secoes: ["depois"],
+  },
+  {
+    id: "consultar",
+    rotulo: "Consultar",
+    quando: "Quando precisar",
+    icone: "help",
+    secoes: ["adaptacoes", "duvidas"],
+  },
+] as const satisfies ReadonlyArray<{
+  id: string;
+  rotulo: string;
+  quando: string;
+  /** Glifo do Material Symbols — identificador, não texto (ADR-91). */
+  icone: string;
+  secoes: readonly SecaoDoGuia[];
+}>;
+
+export type TempoDoGuia = (typeof TEMPOS_DO_GUIA)[number]["id"];
 
 /**
  * Um bloco que o guia NÃO guarda como texto: ele é montado pela página da

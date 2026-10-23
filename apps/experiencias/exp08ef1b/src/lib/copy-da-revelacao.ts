@@ -47,16 +47,16 @@ export type OrigemDoLado = 'perfil' | 'redistribuido' | 'sorteio';
  */
 export const REVELACAO_FIXA: TelaDaRevelacao[] = [
   {
-    texto: 'O Unoovista não é uma rede social de verdade. É uma simulação.',
-    complemento: 'Nenhum dado seu foi para rede social nenhuma.',
+    texto: 'O Unoovista foi feito para esta aula. Ele não é uma rede social de verdade.',
+    complemento: 'Nada do que você fez aqui foi parar em outra rede social.',
   },
-  { texto: 'Mas uma coisa aqui era 100% real:', destaque: 'o algoritmo.' },
+  { texto: 'Mas uma parte funcionou de verdade:', destaque: 'o algoritmo.' },
   {
-    texto: 'Enquanto você navegava, ele aprendia',
-    destaque: 'cada segundo',
-    complemento: 'que você parava em cada post. Cada curtida. Cada comentário aberto.',
+    texto: 'Enquanto você usava o app, ele anotava',
+    destaque: 'quanto tempo você parava em cada post,',
+    complemento: 'o que você curtia e quais comentários você abria.',
   },
-  { texto: 'E com isso, ele escolheu', destaque: 'o que você viu — e o que você nunca viu.' },
+  { texto: 'Com essas anotações, ele escolheu', destaque: 'o que aparecia no seu feed e o que ficava de fora.' },
 ];
 
 /**
@@ -66,8 +66,8 @@ export const REVELACAO_FIXA: TelaDaRevelacao[] = [
  * errado, nenhuma contagem: a devolutiva fala do post, nunca do estudante.
  */
 export const PONTE_DO_RAIO_X: TelaDaRevelacao = {
-  texto: 'Os 6 posts do Raio-x, antes do debate:',
-  destaque: 'de onde cada um veio.',
+  texto: 'Lembra dos 6 posts que você analisou antes do debate?',
+  destaque: 'Veja de onde cada um veio.',
   ponte: true,
 };
 
@@ -81,17 +81,16 @@ export function origemDoPostNaPonte(origem: 'A' | 'B' | 'neutro', rotulos: { A: 
  * estava a regra: daria de graça parte do 6b, que vem logo depois.
  */
 export const TELA_DOS_TERMOS: TelaDaRevelacao = {
-  texto: 'Essas regras de escolha costumam estar escritas.',
-  destaque: 'Nos termos de uso — que quase ninguém lê, nem adulto.',
-  complemento:
-    'Eles são escritos para ser aceitos, não para ser lidos. Daqui a pouco você vê como seriam os deste app.',
+  texto: 'Tudo isso estava escrito nos termos de uso',
+  destaque: 'que você aceitou quando entrou no app.',
+  complemento: 'Quase ninguém lê esses textos, nem os adultos. Daqui a pouco você vai voltar a eles.',
 };
 
 export const TELA_DO_REGISTRO: TelaDaRevelacao = {
-  texto: 'O Unoovista era uma simulação.',
-  destaque: 'O registro, não.',
+  texto: 'O app foi feito para a aula, mas',
+  destaque: 'o registro do que você fez é real.',
   complemento:
-    'As curtidas, os salvamentos e o tempo em cada post foram registrados de verdade e usados para escolher os próximos posts. Só você e o seu professor veem esses dados.',
+    'As curtidas, os posts salvos e o tempo em cada post foram guardados e usados para escolher os próximos posts. Só você e o seu professor veem esses dados.',
 };
 
 /**
@@ -105,7 +104,7 @@ export function telaDoLadoSemeado(origem: string): TelaDaRevelacao {
       texto: 'Tem mais: seu feed',
       destaque: 'já começou puxado para um dos dois lados.',
       complemento:
-        'E não foi sorteio — foi escolhido a partir de como você jogou, antes de você abrir o Unoovista.',
+        'Esse lado foi escolhido pelo jeito como você jogou, antes de você abrir o Unoovista.',
     };
   }
 
@@ -114,7 +113,7 @@ export function telaDoLadoSemeado(origem: string): TelaDaRevelacao {
       texto: 'Tem mais: seu feed',
       destaque: 'já começou puxado para um dos dois lados.',
       complemento:
-        'O seu foi ajustado para a turma não ficar toda do mesmo lado — mas ninguém te avisou disso.',
+        'O seu lado foi trocado para a turma não ficar toda do mesmo lado. Ninguém te avisou disso.',
     };
   }
 
@@ -134,13 +133,13 @@ export const TELA_DA_LINGUAGEM: TelaDaRevelacao = {
   texto: 'E ele também escolheu',
   destaque: 'como falar com você.',
   complemento:
-    'O mesmo argumento foi escrito de quatro jeitos diferentes; você recebeu mais o jeito que combina com o que te move.',
+    'Cada ideia foi escrita de quatro jeitos diferentes, e você recebeu mais vezes o jeito que tem mais a ver com você.',
 };
 
 /** A última fecha sempre igual: o problema é do sistema, não do estudante. */
 export const TELA_FINAL: TelaDaRevelacao = {
-  texto: 'Isso acontece com todo mundo — inclusive com adultos.',
-  complemento: 'É assim que as redes que você usa funcionam.',
+  texto: 'Isso acontece com todo mundo, inclusive com os adultos.',
+  complemento: 'As redes sociais que você usa funcionam desse jeito.',
 };
 
 /**

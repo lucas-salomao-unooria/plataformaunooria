@@ -44,7 +44,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
       eixo: "Cultura Digital",
       principal: true,
       ondeAcontece:
-        "O estudante vê a própria coleção ao lado da do colega e descobre que a abrangência do que ele leu foi decidida por outra pessoa. Medida em duas tarefas, e vale a melhor: o Raio-x do feed, logo depois da resposta (de 6 posts que ele viu, o que cada um faz — mede os vieses), e a reflexão escrita, lida pela IA uma vez só (mede o mecanismo e o que ficou de fora; o nível é sugestão, e você confere). Precisão e relevância das fontes não são medidas nesta missão.",
+        "O estudante vê a própria coleção ao lado da do colega e descobre que a abrangência do que ele leu foi decidida por outra pessoa. Medida pelo Raio-x do feed, logo depois da resposta (de 6 posts, primeiro os que ele viu, o que cada um faz — mede os vieses): 5 ou 6 acertos atingiu, 4 em processo, 3 ou menos não atingiu. A reflexão escrita fica para você ler e não conta para o nível. Precisão e relevância das fontes não são medidas nesta missão.",
     },
     {
       codigo: "EF08CO07",
@@ -60,7 +60,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
         "Analisar criticamente as políticas de termos de uso das redes sociais e demais plataformas.",
       eixo: "Cultura Digital",
       ondeAcontece:
-        "Medida nos termos, depois do feed em cinza: de 5 regras (fictícias), o estudante marca as que explicam o que aconteceu no feed, diz o efeito de cada uma e escolhe a mudança que daria mais controle. Desdobramento para a aula seguinte: ler nos termos de uso de uma rede real o trecho que descreve a personalização do feed.",
+        "Os termos de uso aparecem na entrada, como num app real: texto longo e o botão \u201cAceitar e continuar\u201d. Depois do feed em cinza, o estudante volta a eles e marca, das 5 regras, as que explicam o que aconteceu no feed (0 erros, atingiu; 1 ou 2, em processo; 3 ou mais, não atingiu). Desdobramento para a aula seguinte: ler nos termos de uso de uma rede real o trecho que descreve a personalização do feed.",
     },
   ],
 
@@ -167,7 +167,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
       {
         tempo: "25–33",
         momento:
-          "A resposta e o Raio-x. Cada estudante escolhe um dos três lados e, na mesma tela, diz de 6 posts que ele viu o que cada um faz: puxa para um lado, puxa para o outro, ou informa sem tomar lado. Ninguém escreve nada ainda.",
+          "A resposta e o Raio-x. Cada estudante escolhe um dos três lados e, na mesma tela, diz de 6 posts o que cada um faz: puxa para um lado, puxa para o outro, ou informa sem tomar lado. Os posts são os que ele viu; quem rolou pouco recebe, para completar, posts do lado dele e neutros que não chegou a ver. Ninguém escreve nada ainda.",
         professor:
           "Encerre quando o monitor mostrar a maioria com coleção formada — não espere o último. Não explique o Raio-x além do que a tela diz: falar de lado, de bolha ou de algoritmo aqui entrega a revelação. Quem não terminar o Raio-x antes do debate faz na entrada da explicação.",
         botao: "Encerrar investigação",
@@ -199,13 +199,13 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
         momento:
           "Os termos de uso, lidos em voz alta. Projete as 5 regras e leia para todos, sem comentar: (1) “Registramos suas curtidas, salvamentos, comentários e o tempo que você passa em cada publicação.” (2) “Você pode desligar os avisos de novas curtidas e comentários a qualquer momento.” (3) “Usamos o seu histórico de interações para escolher quais publicações você vê e em que ordem.” (4) “Um algoritmo confere se cada perfil com selo de verificado pertence mesmo a quem diz ser.” (5) “Guardamos o histórico das suas interações no app enquanto a sua conta existir.”",
         professor:
-          "Diga que os termos são fictícios — seriam os de uma plataforma como o Unoovista. Deixe as 5 regras projetadas durante todo o bloco seguinte: são iguais para todos e não entregam a resposta de ninguém.",
+          "Diga que os termos são fictícios — são os que a turma aceitou na entrada do Unoovista, quase sempre sem ler. Deixe as 5 regras projetadas durante todo o bloco seguinte: são iguais para todos e não entregam a resposta de ninguém.",
         botao: "Mostrar o que perderam",
       },
       {
         tempo: "63–72",
         momento:
-          "O que eles perderam, e duas tarefas. O feed volta em cinza, só com o que nunca chegou; depois, no ritmo de cada um, os termos (que regras explicam o feed, o efeito de cada uma, a mudança que daria controle) e o envio (de 9 posts, até 3 e uma mensagem para um colega que não viu nada).",
+          "O que eles perderam, e duas tarefas. O feed volta em cinza, só com o que nunca chegou; depois, no ritmo de cada um, os termos que aceitaram na entrada (que regras explicam o feed) e o envio (de 9 posts, até 3 e uma mensagem para um colega que não viu nada).",
         professor:
           "Um a dois minutos de silêncio olhando o número vale mais que qualquer explicação sua. Quem ainda está na revelação vê a revelação antes das tarefas — ninguém perde nada pelo relógio da turma.",
       },
@@ -225,7 +225,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
         tempo: "87–100",
         momento: "Reflexão escrita individual e combinados para furar a bolha.",
         professor:
-          "Escrita livre, sem limite de caracteres. Quem ainda tem tarefa pendente faz antes de escrever. A tela avisa que você lê o texto e que a IA lê o primeiro texto salvo e sugere um nível; quem decide é você. Recolha dois combinados da turma inteira e escreva-os na lousa — eles voltam na próxima aula.",
+          "Escrita livre, sem limite de caracteres. Quem ainda tem tarefa pendente faz antes de escrever. A tela avisa que só você lê o texto. Recolha dois combinados da turma inteira e escreva-os na lousa — eles voltam na próxima aula.",
         botao: "Abrir reflexão",
       },
     ],
@@ -359,7 +359,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
       "“Ninguém escapa por ser inteligente. Escapa quem procura de propósito o que não chegou.”",
     ],
     registro:
-      "A reflexão escrita individual (últimos 13 min, sem limite de caracteres) fecha a missão dentro do app, e o texto fica no relatório do estudante. O nível de cada habilidade sai das tarefas — o Raio-x, os termos, o envio e a leitura da reflexão pela IA — e aparece em “Habilidades da BNCC”, na página da atividade, dizendo de qual tarefa veio; você pode ajustá-lo. Quem não fez uma tarefa (faltou, atrasou, não terminou) fica “Não avaliado” naquela habilidade, e você ajusta à mão se tiver como avaliar. Recolha da turma inteira dois combinados para furar a bolha, escreva-os na lousa e retome-os na aula seguinte: sem essa retomada, a aula vira um evento isolado e a semana engole o combinado.",
+      "A reflexão escrita individual (últimos 13 min, sem limite de caracteres) fecha a missão dentro do app, e o texto fica no relatório do estudante. O nível de cada habilidade sai das tarefas — o Raio-x, os termos e o envio — e aparece em “Habilidades da BNCC”, na página da atividade, dizendo de qual tarefa veio; você pode ajustá-lo. Quem não fez uma tarefa (faltou, atrasou, não terminou) fica “Não avaliado” naquela habilidade, e você ajusta à mão se tiver como avaliar. Recolha da turma inteira dois combinados para furar a bolha, escreva-os na lousa e retome-os na aula seguinte: sem essa retomada, a aula vira um evento isolado e a semana engole o combinado.",
     produto: {
       titulo: "Relatório comparativo (entregável, em duplas de bolhas opostas)",
       itens: [
@@ -425,7 +425,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
     "Reforçar: todos caem em bolhas, inclusive adultos — o exercício mede o poder do sistema, não a inteligência de ninguém.",
     "Deixar explícito que perfis e posts foram gerados por IA para a atividade.",
     "No Raio-x, quem aderiu mais ao próprio lado tende a ver o post neutro como do outro lado. É um efeito conhecido, não descuido: o nível mede se o estudante enxerga o viés da fonte, não em que lado ele está.",
-    "O nível da reflexão é uma sugestão da IA, que lê uma vez só o primeiro texto salvo. Confira na janela do estudante (o texto lido aparece lá) e ajuste se discordar.",
+    "A reflexão não vale nível: ela é para você ler, na janela do estudante. Quem escolhe a mensagem que ridiculariza o outro lado no envio fica em “Não atingiu” na EF08CO07, mesmo cumprindo os outros critérios.",
     "Se a turma perguntar por que ninguém avisou: é exatamente a pergunta certa. Nenhuma rede social avisa.",
     "Se alguém disser “então eu sou o tipo que cai nisso”: corte na hora. O perfil não é defeito nem destino — e a prova está na própria sala, nos colegas que viraram de lado.",
     "Não peça que ninguém leia a própria reflexão em voz alta. Ela é escrita para o estudante e para você; lida para a turma, ela vira redação para agradar.",
@@ -435,7 +435,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
     {
       contexto: "As duas aulas de 50 minutos são separadas (até em dias diferentes).",
       comoAdaptar:
-        "Aula 1, até a revelação: entrada 4 min, investigação 11 (acima do piso de 8 do feed), resposta 3, Raio-x 3, debate 15 (os 15 inteiros), espelho 2, revelação e relatório 11, fechamento 1. No fechamento, você diz a frase da última tela da revelação (“Isso acontece com todo mundo — inclusive com adultos”); a turma não repete em coro. Aula 2: retomada 3 (a pergunta-chave e o resultado do espelho na lousa; a turma entra de novo no app), leitura das 5 regras 1, cinza e as duas tarefas 9, duplas 10 (cada um com o relatório aberto de novo, pelo botão “Rever meu relatório”), socialização 5, reflexão 17 e combinados 5. A atividade continua no ar entre as duas aulas: ela só sai quando você põe outra na mesma turma. Não dá para fazer a missão numa aula só: o debate e o espelho não se cortam.",
+        "Aula 1, até a revelação: entrada 4 min, investigação 11 (acima do piso de 8 do feed), resposta 3, Raio-x 3, debate 15 (os 15 inteiros), espelho 2, revelação e relatório 11, fechamento 1. No fechamento, você diz a frase da última tela da revelação (“Isso acontece com todo mundo, inclusive com os adultos”); a turma não repete em coro. Aula 2: retomada 3 (a pergunta-chave e o resultado do espelho na lousa; a turma entra de novo no app), leitura das 5 regras 1, cinza e as duas tarefas 9, duplas 10 (cada um com o relatório aberto de novo, pelo botão “Rever meu relatório”), socialização 5, reflexão 17 e combinados 5. A atividade continua no ar entre as duas aulas: ela só sai quando você põe outra na mesma turma. Não dá para fazer a missão numa aula só: o debate e o espelho não se cortam.",
     },
     {
       contexto: "A turma não jogou a Vila do Lume.",
@@ -465,7 +465,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
     {
       contexto: "Um estudante não chegou à reflexão no fim da aula.",
       comoAdaptar:
-        "Quem gastou o fim da aula numa tarefa pendente escreve a reflexão no começo da aula seguinte. A atividade continua no ar, e a IA lê o primeiro texto quando ele vier.",
+        "Quem gastou o fim da aula numa tarefa pendente escreve a reflexão no começo da aula seguinte. A atividade continua no ar, e o texto aparece na janela dele quando vier.",
     },
   ],
 

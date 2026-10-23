@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { ButtonUnv, LogoUnv, TextFieldUnv } from '@edu/ui/ds-unoovista';
 
-import { experiencia } from '../../lib/api';
+import { api, experiencia } from '../../lib/api';
+import type { TermosDaEntradaDaApi } from '../../lib/canal-a';
 import { AVATARES } from '../../lib/avatares';
 
 import { AvatarPerfil } from './avatar-perfil';
@@ -28,7 +29,7 @@ export function Onboarding({
   perguntaChave: string;
   aoEntrar: (avatar: string, nome: string) => Promise<void>;
 }) {
-  const [etapa, setEtapa] = useState<'boas-vindas' | 'avatar' | 'entrando'>('boas-vindas');
+  const [etapa, setEtapa] = useState<'boas-vindas' | 'termos' | 'avatar' | 'entrando'>('boas-vindas');
   const [avatar, setAvatar] = useState(AVATARES[0]!.id);
   /**
    * O nome que aparece no aparelho. Pode ser apelido — o que importa é ele se
@@ -44,6 +45,10 @@ export function Onboarding({
         <p className="text-[13px] text-muted">entrando…</p>
       </main>
     );
+  }
+
+  if (etapa === 'termos') {
+    return <TermosDeUso aoAceitar={() => setEtapa('avatar')} />;
   }
 
   if (etapa === 'avatar') {
@@ -133,7 +138,7 @@ export function Onboarding({
         <LogoUnv height={36} title="Unoovista" />
         <p className="text-[17px] font-semibold text-ink">Nada rolando por aqui agora</p>
         <p className="text-[15px] leading-relaxed text-ink/70">
-          Volta em alguns minutos — a gente avisa quando tiver algo novo.
+          Volta daqui a alguns minutos. A gente avisa quando tiver algo novo.
         </p>
         <ButtonUnv variant="secondary" size="lg" className="mt-2" onClick={() => window.location.reload()}>
           Atualizar
@@ -166,11 +171,11 @@ export function Onboarding({
             dele no fim. Precisa estar dito com essas palavras, e antes do feed.
           */}
           <p className="rounded-cartao bg-canvasAlt px-4 py-3 text-[15px] font-semibold leading-snug text-ink">
-            Salva os posts que te ajudarem a responder — no fim você vai usar eles.
+            Salva os posts que te ajudarem a responder. No fim você vai usar eles.
           </p>
         </div>
 
-        <ButtonUnv block size="lg" className="mt-2 max-w-[300px]" onClick={() => setEtapa('avatar')}>
+        <ButtonUnv block size="lg" className="mt-2 max-w-[300px]" onClick={() => setEtapa('termos')}>
           Entrar no Unoovista
         </ButtonUnv>
 
@@ -205,3 +210,75 @@ export function Onboarding({
     </main>
   );
 }
+
+/**
+ * OS TERMOS DE USO NA ENTRADA (EF08CO09, ADR-179) — o pedido do PO validado com
+ * a pedagogia em 2026-10-21. É o que um app real mostra no cadastro: texto
+ * jurídico denso, sem resumo nem destaque, e um botão grande "Aceitar e
+ * continuar". O caminho mais fácil é pular, e é esse o comportamento
+ * esperado: as 5 regras do 6b estão enterradas no texto, e só depois da
+ * revelação o estudante volta a elas (`tarefas-pos-revelacao.tsx`).
+ *
+ * O texto vem da api (`GET /runs/termos-de-uso`), a mesma fonte das cláusulas
+ * do 6b — as palavras são as mesmas nas duas telas. Não mede nada aqui: só a
+ * telemetria registra quanto tempo a tela ficou aberta. Se a api falhar, o
+ * botão continua: a entrada nunca fica presa nos termos.
+ */
+function TermosDeUso({ aoAceitar }: { aoAceitar: () => void }) {
+  const [paragrafos, setParagrafos] = useState<string[] | null>(null);
+  const abertaEm = useRef(Date.now());
+
+  useEffect(() => {
+    let ativo = true;
+    api
+      .get<TermosDaEntradaDaApi>('/runs/termos-de-uso')
+      .then((corpo) => ativo && setParagrafos(corpo.paragrafos))
+      .catch(() => ativo && setParagrafos([]));
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  return (
+    /* Altura FIXA da tela (não `min-h`): o texto rola dentro da caixa dele, e o
+       botão fica sempre à vista, grande — é ele que o PO quer que puxe o clique. */
+    <main className="flex h-dvh flex-col px-5 py-6">
+      <div className="flex shrink-0 flex-col items-center gap-2 pb-3">
+        <LogoUnv height={26} title="Unoovista" />
+        <h1 className="text-[15px] font-semibold text-ink">Termos de Uso e Política de Privacidade</h1>
+      </div>
+
+      {/* Texto corrido e miúdo, como nos termos de verdade: a densidade é o
+          ponto. Rolagem do sistema, sem `ScrollBar` — estamos dentro do clone. */}
+      <section
+        aria-label="Termos de uso do Unoovista"
+        className="min-h-0 flex-1 overflow-y-auto rounded-cartao bg-surface px-4 py-3 text-justify text-[11px] leading-[1.45] text-ink/70"
+      >
+        {paragrafos === null ? (
+          <p className="text-muted">carregando…</p>
+        ) : (
+          paragrafos.map((p, i) => (
+            <p key={i} className="mb-2">
+              {p}
+            </p>
+          ))
+        )}
+      </section>
+
+      <ButtonUnv
+        block
+        size="lg"
+        className="mt-4 shrink-0"
+        onClick={() => {
+          experiencia().track('interacted', 'termos-de-uso', {
+            resultado: { segundosNaTela: Math.round((Date.now() - abertaEm.current) / 1000) },
+          });
+          aoAceitar();
+        }}
+      >
+        Aceitar e continuar
+      </ButtonUnv>
+    </main>
+  );
+}
+

@@ -40,7 +40,7 @@ describe('o balão do pedido pelo WhatsApp (clone dentro de clone, ADR-173)', ()
 describe('o Canal B saiu (ADR-172)', () => {
   it('nenhuma tela pede as perguntas de múltipla escolha da ficha', () => {
     for (const f of arquivos(join(__dirname))) {
-      expect(readFileSync(f, 'utf8')).not.toMatch(/\/evidencias\/\$\{EXP_ID\}\/perguntas|\/evidencias\/exp02em1b\/perguntas/);
+      expect(readFileSync(f, 'utf8')).not.toMatch(/\/evidencias\/\$\{EXP_ID\}\/perguntas|\/evidencias\/exp02em1b-v0\/perguntas/);
     }
   });
 });

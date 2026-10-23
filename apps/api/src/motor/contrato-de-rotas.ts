@@ -414,22 +414,21 @@ export const DevolutivaDoRaioXSchema = z.object({
 });
 
 const ClausulaIdSchema = z.enum(["c1", "c2", "c3", "c4", "c5"]);
-const EfeitoIdSchema = z.enum(["e1", "e2", "e3"]);
 const Opcao = z.object({ id: z.string(), texto: z.string() });
+
+/** Os termos da ENTRADA (ADR-179): os parágrafos, com as 5 cláusulas enterradas. */
+export const TermosDaEntradaSchema = z.object({
+  paragrafos: z.array(z.string()),
+});
 
 export const TermosSchema = z.object({
   situacao: SituacaoDaTarefaSchema,
   clausulas: z.array(Opcao),
-  efeitos: z.array(Opcao),
-  mudancas: z.array(Opcao),
 });
 
 export const RespostaDosTermosSchema = z.object({
   /** Pode ser nenhuma, algumas ou todas. */
   marcadas: z.array(ClausulaIdSchema).max(5),
-  /** O efeito de cada cláusula marcada — e só delas (o serviço confere). */
-  efeitos: z.record(ClausulaIdSchema, EfeitoIdSchema),
-  mudanca: z.enum(["controle", "forma", "aceitacao"]),
 });
 
 export const EnvioSchema = z.object({

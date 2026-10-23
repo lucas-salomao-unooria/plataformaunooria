@@ -3,6 +3,7 @@ import {
   PROPORCAO_IMAGEM,
   TTS_LIMITE_TEXTO,
   VertexProvider,
+  apelidosDosFalantes,
   endpointVertex,
   thinkingConfig,
 } from "../src/ai/vertex.provider";
@@ -94,5 +95,28 @@ describe("portões da síntese de voz", () => {
     await expect(provider.generateSpeech({ texto: "oi", falantes: [] })).rejects.toThrow(
       /sem nenhum falante/i,
     );
+  });
+});
+
+/*
+ * A Cloud TTS recusa com 400 o diálogo cujo apelido de falante tem acento ou
+ * espaço. Foi o que deixou o podcast do Unoovista sem áudio: "Téo" derrubava
+ * todos os trechos, e a e2e só via "o episódio não ficou pronto".
+ */
+describe("apelidos dos falantes na síntese de diálogo", () => {
+  test("acento e espaço saem do apelido; o nome do roteiro não muda", () => {
+    const apelidos = apelidosDosFalantes(["Duda", "Téo", "Ana Clara", "Íris"]);
+    expect([...apelidos.values()]).toEqual(["Duda", "Teo", "AnaClara", "Iris"]);
+    for (const apelido of apelidos.values()) expect(apelido).toMatch(/^[A-Za-z0-9]+$/);
+  });
+
+  test("dois nomes que viram o mesmo apelido não colidem", () => {
+    const apelidos = apelidosDosFalantes(["Téo", "Teo"]);
+    expect(apelidos.get("Téo")).toBe("Teo");
+    expect(apelidos.get("Teo")).toBe("Teo2");
+  });
+
+  test("nome sem letra vira Falante<N>", () => {
+    expect(apelidosDosFalantes(["—"]).get("—")).toBe("Falante1");
   });
 });

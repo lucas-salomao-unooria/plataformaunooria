@@ -425,14 +425,13 @@ papel \cd{estudante}, com duas exceções marcadas.
   o relógio coletivo da turma.\\
 \rota{POST /runs/:id/conclusao} & estudante & Inclinação escolhida (A, B ou dúvida).\\
 \zebra \rota{POST /runs/:id/reflexao}, \rota{GET .../reflexao} & estudante &
-  Texto livre de fechamento, sem limite de caracteres. O PRIMEIRO salvamento
-  guarda o texto lido e cria a leitura da IA, que roda depois da resposta
-  (\adrr{ADR-167}).\\
+  Texto livre de fechamento, sem limite de caracteres, que só o professor lê.
+  Não passa pela IA nem vale nível (\adrr{ADR-180}).\\
 \rota{GET /runs/:id/tarefas} & estudante & A situação das três tarefas do
   Canal A e do fim da revelação: é por ela que a experiência decide o desvio
   por fase (\adrr{ADR-167}).\\
 \zebra \rota{GET|POST /runs/:id/raio-x}, \rota{GET .../raio-x/devolutiva} &
-  estudante & O 6a: os 6 posts que ele viu, sem lado; o envio corrigido no
+  estudante & O 6a: os 6 posts (os que ele viu, completados com não vistos do lado dele e neutros), sem lado; o envio corrigido no
   servidor; a devolutiva só da explicabilidade em diante. Envio repetido é
   \textbf{409} \cd{tarefa-ja-enviada}; fora da hora, \cd{tarefa-indisponivel}.\\
 \rota{POST /runs/:id/revelacao/concluida} & estudante & O \enquote{Ver meu
@@ -453,7 +452,7 @@ papel \cd{estudante}, com duas exceções marcadas.
 \bottomrule
 \end{tabularx}
 
-\subsection{O Canal A da Missão Tempestade (exp02em1b)}
+\subsection{O Canal A da Missão Tempestade (exp02em1b-v0, versão anterior)}
 
 As tarefas por ação da Missão Tempestade (\adrr{ADR-172}), todas de papel
 \cd{estudante}, com a identidade vinda do \emph{token} (não há id de sessão) e
@@ -1278,6 +1277,28 @@ voto e da revelação aberta pela turma. A turma do estudante é
 \cd{users.turma\_id}, a mesma fonte do painel e das equipes --- e não o
 \emph{claim} do \emph{token}.
 \end{regra}
+
+\subsection{O Efeito Amplificador (exp02em1b)}
+\label{sec:api-efeito-amplificador}
+
+Desde 2026-10-22 (\adrr{ADR-181}), no módulo \arq{efeito-amplificador}, no molde
+de Quem mandou isso?: onze rotas do estudante em \rota{/efeito-amplificador/*}
+(\cd{@Roles("estudante")} na classe e \cd{exigirMissaoLiberada} no funil de
+TODAS), onze por turma em \rota{/efeito-amplificador/turmas/:turmaId/*} (o
+pacote, \cd{gerar-conteudo}, \cd{homologar}, \cd{banco-padrao}, \cd{gate},
+\cd{painel}, \cd{zerar}, a lista e o detalhe das atividades e o
+\cd{em-andamento}) e o material do guia. Duas chamadas pagas: \rota{POST
+/efeito-amplificador/mensagem} é a conversa HÍBRIDA (\adrr{ADR-181}) --- a IA,
+com a quota do perfil \cd{estudante}, classifica o pedido numa lista fechada
+de intenções e redige a resposta, o servidor aplica a intenção à prévia, e a
+árvore de intenções responde quando a IA falha; cada fala do assistente traz
+\cd{origem} (\cd{ia} ou \cd{regras}) ---, e \rota{POST .../gerar-conteudo},
+o preparo, com a quota do perfil \cd{professor}. As quatro habilidades são marcadas nas transações dos
+gestos --- o Publicar (EM13CO14 e EM13CO26), as ações do feed e a abertura do
+Explicar (EM13CO24 e EM13CO08) ---, e \rota{/evidencias/exp02em1b/perguntas/*}
+responde 404: não há Canal B. O catálogo completo está no
+Apêndice~\ref{ap:endpoints}. A Missão Tempestade, versão anterior, continua em
+\rota{/unoogpt/*}.
 
 \subsection{Jornal da Escola (exp04ef1b)}
 \label{sec:api-jornal-escola}

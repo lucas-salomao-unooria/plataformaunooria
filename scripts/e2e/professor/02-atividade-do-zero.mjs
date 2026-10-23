@@ -2,6 +2,7 @@ import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../lib/smoke.mjs";
 import { conta } from "../lib/credenciais.mjs";
 import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from "../lib/podcast.mjs";
+import { abrirAba, revelar } from "../lib/abas.mjs";
 
 /**
  * Uma atividade do Instanooria criada DO ZERO, pela tela, até ficar ativa.
@@ -265,6 +266,8 @@ await suite(
     // ── passo 6: a distribuição da turma ────────────────────────────────
     const painelPerfis = p.locator("text=Quem começa de cada lado");
     if (await painelPerfis.count()) {
+      /* A distribuição da turma mora na aba Equipes da atividade (ADR-182). */
+      await revelar(p, painelPerfis);
       await painelPerfis.scrollIntoViewIfNeeded();
       await p.waitForTimeout(1200);
       await r.registrar(p, "distribuicao-da-turma", {
@@ -279,6 +282,10 @@ await suite(
     // ── passo 7: ativar ─────────────────────────────────────────────────
     p.on("dialog", (d) => void d.accept());
     const ativar = p.getByRole("button", { name: "Ativar atividade" });
+    /* O Ativar fica no fim da revisão dos posts, na aba Conteúdo — e a suíte
+       acabou de abrir a de Equipes. Pelo nome da aba: o botão, achado por papel,
+       não existe para o Playwright enquanto está escondido. */
+    await abrirAba(p, "Conteúdo");
     await ativar.scrollIntoViewIfNeeded();
     await ativar.click();
     await p.waitForTimeout(4000);

@@ -31,7 +31,7 @@ export function dossieEmTexto(dados: RespostaDossie): string {
     '',
     'POR QUE MEU FEED COMEÇOU DESSE LADO',
     dossie.explicacaoDoLado.origem === 'perfil'
-      ? `- no jogo, o que mais me move é ${dossie.explicacaoDoLado.perfilRotulo}; o lado que fala essa língua é ${semeado}${dossie.explicacaoDoLado.porQue ? ` — ${dossie.explicacaoDoLado.porQue}` : ''}`
+      ? `- no jogo, o que mais me move é ${dossie.explicacaoDoLado.perfilRotulo}; o lado que fala essa língua é ${semeado}${dossie.explicacaoDoLado.porQue ? `: ${dossie.explicacaoDoLado.porQue}` : ''}`
       : dossie.explicacaoDoLado.origem === 'redistribuido'
         ? `- comecei em ${semeado}: o lado foi ajustado para a turma não ficar toda do mesmo lado`
         : `- comecei em ${semeado}: sem o resultado do jogo, o lado foi sorteado`,
@@ -87,7 +87,7 @@ export function dossieEmTexto(dados: RespostaDossie): string {
     dossie.perfilObservado.veredito === 'reforcou'
       ? '- aqui dentro, o jeito que mais me segurou foi o mesmo que o jogo apontou'
       : dossie.perfilObservado.veredito === 'divergiu'
-        ? '- aqui dentro, o jeito que mais me segurou foi outro — interessante, não errado'
+        ? '- aqui dentro, o jeito que mais me segurou foi outro, e não tem nada de errado nisso'
         : '- nesta sessão não deu para dizer qual jeito me segurou mais',
   ];
 
@@ -107,8 +107,8 @@ export function dossieEmTexto(dados: RespostaDossie): string {
 
   linhas.push(
     '',
-    'Simulação educacional. Perfis e posts gerados por IA.',
-    'O perfil do jogo é uma pista sobre aquele dia, não uma definição de quem eu sou.',
+    'Simulação feita para a aula. Os perfis e os posts foram criados por IA.',
+    'O perfil do jogo é uma pista sobre aquele dia e não diz quem eu sou.',
     'Meus dados ficam com meu professor e não vão para nenhuma rede real.',
   );
 
