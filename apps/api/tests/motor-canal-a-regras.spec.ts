@@ -124,7 +124,7 @@ describe("o Raio-x: quais posts entram", () => {
     expect(contar(d.postIds, poucos)).toEqual({ A: 3, B: 1, neutro: 2 });
   });
 
-  test("a regra dos 3 vale em toda composição: nenhuma resposta certa mais de 3 vezes", () => {
+  test("a regra dos 3 vale sempre que o acervo deixa; quando não deixa, só o lado dele passa de 3 (ADR-183)", () => {
     for (let a = 0; a <= 6; a++)
       for (let b = 0; b <= 6; b++)
         for (let ne = 0; ne <= 6; ne++) {
@@ -134,7 +134,8 @@ describe("o Raio-x: quais posts entram", () => {
           const conta = contar(c.postIds, posts);
           expect(c.postIds).toHaveLength(6);
           expect(new Set(c.postIds).size).toBe(6);
-          expect(Math.max(conta.A, conta.B, conta.neutro)).toBeLessThanOrEqual(3);
+          expect(Math.max(conta.B, conta.neutro)).toBeLessThanOrEqual(3);
+          if (conta.A > 3) expect({ B: conta.B, neutro: conta.neutro }).toEqual({ B: Math.min(b, 3), neutro: Math.min(ne, 3) });
           expect(c.postIds).toContain(c.maisParou);
           expect(posts.find((p) => p.id === c.maisParou)!.lado).toBe("A");
         }
@@ -167,6 +168,24 @@ describe("o Raio-x: quais posts entram", () => {
     );
     const c = comporRaioX({ posts, vistosPorPost: vistos, dwellPorPost: {}, ladoDele: "A", semente: "s" })!;
     expect(c.postIds.every((id) => vistos[id])).toBe(true);
+  });
+
+  test("sem neutro sobre o tema e viu pouco do outro lado: entram os neutros FORA do tema (ADR-183)", () => {
+    const posts = acervo({ A: 6, B: 6, neutro: 0, foraDoTema: 4 });
+    const outro = posts.find((p) => p.lado === "B")!.id;
+    const c = comporRaioX({ posts, vistosPorPost: { [outro]: 1 }, dwellPorPost: {}, ladoDele: "A", semente: "s" })!;
+    expect(c.postIds).toHaveLength(6);
+    const foraDoTema = posts.filter((p) => p.categoria === "lanche").map((p) => p.id);
+    expect(c.postIds.filter((id) => foraDoTema.includes(id)).length).toBeGreaterThan(0);
+    expect(c.postIds.filter((id) => posts.find((p) => p.id === id)!.lado === "B")).toEqual([outro]);
+    expect(Math.max(...Object.values(contar(c.postIds, posts)))).toBeLessThanOrEqual(3);
+  });
+
+  test("sem neutro nenhum e sem ver o outro lado: 6 do lado dele, e a tela aparece mesmo assim (ADR-183)", () => {
+    const posts = acervo({ A: 8, B: 8, neutro: 0 });
+    const c = comporRaioX({ posts, vistosPorPost: {}, dwellPorPost: {}, ladoDele: "B", semente: "s" })!;
+    expect(c.postIds).toHaveLength(6);
+    expect(contar(c.postIds, posts)).toEqual({ A: 0, B: 6, neutro: 0 });
   });
 
   test("não fecha 6 nem completando, sem lado, ou sem post nenhum do lado dele: o Raio-x não aparece", () => {
