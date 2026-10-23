@@ -333,6 +333,17 @@ describe("o 6a Raio-x", () => {
   });
 });
 
+describe("o 6a para quem mal rolou o feed (ADR-183)", () => {
+  test("nenhum post de tese servido: vale o lado em que o feed começou, e o Raio-x aparece", async () => {
+    const semFeed = await criarRun("gil", atividadeId, [], "conclusao");
+    const situacao = await tarefas.situacao(semFeed, estudantes.gil!, ESCOLA);
+    expect(situacao.raioX).toBe("pendente");
+    const r = await tarefas.lerRaioX(semFeed, estudantes.gil!, ESCOLA);
+    expect(r.posts).toHaveLength(6);
+    await prisma.run.delete({ where: { id: semFeed } });
+  });
+});
+
 describe("a revelação e as tarefas 6b e 6c", () => {
   test("antes do fim da revelação, o 6b e o 6c esperam; a revelação só conclui da explicabilidade em diante", async () => {
     await fase(runs.caio!, "conclusao");
@@ -409,9 +420,16 @@ describe("a revelação e as tarefas 6b e 6c", () => {
   });
 
   test("atividade sem turma: a tarefa é aceita, mas não há evidência", async () => {
+    /* Sem post de tese servido, vale o lado em que o feed começou (ADR-183):
+       os termos abrem para ela também. */
     await fase(runs.fabi!, "explicabilidade");
     await tarefas.concluirRevelacao(runs.fabi!, estudantes.fabi!, ESCOLA);
-    expect((await st("fabi")).termos).toBe("indisponivel");
+    await fase(runs.fabi!, "perdidos");
+    expect((await st("fabi")).termos).toBe("pendente");
+    await tarefas.lerTermos(runs.fabi!, estudantes.fabi!, ESCOLA);
+    await tarefas.enviarTermos(runs.fabi!, estudantes.fabi!, ESCOLA, { marcadas: ["c1", "c3", "c5"] });
+    expect((await st("fabi")).termos).toBe("enviada");
+    expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, estudanteId: estudantes.fabi! } })).toBe(0);
   });
 });
 

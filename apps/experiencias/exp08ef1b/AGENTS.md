@@ -86,8 +86,9 @@ A URL sai de `import.meta.env.BASE_URL`, **não** de `/`: o bundle é servido de
 de `GET /runs/:id/tarefas`: o Raio-x pendente antes da revelação (quem não o
 fez antes do debate faz na entrada da explicação), a revelação antes do cinza
 e das tarefas (quem foi puxado adiante vê a revelação e o relatório com
-"Continuar"), e tarefa pendente antes da reflexão. Quem não teve feed com lado
-não recebe tarefa. **O aparelho não sabe o lado de nenhum post**: a
+"Continuar"), e tarefa pendente antes da reflexão. A api devolve
+`indisponivel` só quando a atividade não tem acervo para montar a tarefa (desde a
+ADR-183, quem mal rolou o feed recebe as tarefas). **O aparelho não sabe o lado de nenhum post**: a
 composição do Raio-x e do envio, os gabaritos e as réguas são da api
 (`apps/api/src/motor/canal-a/`), e todo envio responde `{ enviada: true }`.
 

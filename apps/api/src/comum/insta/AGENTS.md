@@ -45,8 +45,9 @@ por teto compila e sai errado em 30 telas ao mesmo tempo, no meio de uma aula.
 
 - **O 6a Raio-x abre da resposta em diante e FECHA no fim da revelação**
   (`runs.revelacao_concluida_em`, gravado pelo `POST :id/revelacao/concluida`);
-  o 6b e o 6c só abrem do `perdidos` em diante COM a revelação terminada. Quem
-  não teve feed com lado não recebe tarefa. A situação sai de `GET :id/tarefas`,
+  o 6b e o 6c só abrem do `perdidos` em diante COM a revelação terminada. Sem
+  post de tese servido, o "lado dele" é o `lado_inicial` da sessão (ADR-183):
+  todo estudante recebe as tarefas. A situação sai de `GET :id/tarefas`,
   e é ela que decide o desvio por fase no aparelho.
 - **As réguas são as do PO, validadas com a pedagogia (ADR-179) e ajustadas por
   ele (ADR-180)**: a EF08CO11 é SÓ o Raio-x (5–6 / 4 / 0–3: os 3 acertos ficam
