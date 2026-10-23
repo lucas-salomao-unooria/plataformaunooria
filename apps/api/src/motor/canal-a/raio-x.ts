@@ -51,7 +51,8 @@ export const POSTS_DO_RAIO_X = 6;
  * gabarito):
  *   - 2 do lado dele: o post desse lado em que mais parou, e outro qualquer;
  *   - 2 do outro lado: os mais sutis (menor intensidade) entre os que ele viu;
- *   - 2 neutros SOBRE o tema que ele viu (fora do tema nunca entram).
+ *   - 2 neutros SOBRE o tema que ele viu (fora do tema, só no último caso
+ *     abaixo).
  *
  * A REGRA DOS 3: no máximo 3 de cada resposta certa, então marcar sempre a
  * mesma opção dá no máximo 3 acertos ("não atingiu"). Os casos de falta:
@@ -67,7 +68,11 @@ export const POSTS_DO_RAIO_X = 6;
  * outro lado (um post do lado escondido, antes da revelação, mostraria que
  * havia outro feed). Os vistos vêm sempre antes. O "post em que mais parou"
  * é o do lado dele com mais tempo de tela, e entre não vistos, o primeiro.
- * Sem lado definido, ou sem fechar 6 nem completando: `null`.
+ *
+ * SEMPRE (ADR-183): o PO voltou a não achar a tela. Sem 6 assim, entram os
+ * neutros FORA do tema e, sem neutro nenhum, o lado dele passa de 3 (ver o
+ * comentário das três tentativas). `null` só sem lado ou com o acervo
+ * aprovado menor que 6 — atividade que nem o feed teria como mostrar.
  */
 export function comporRaioX(e: EntradaDaComposicao): ComposicaoDoRaioX | null {
   if (!e.ladoDele) return null;
@@ -94,39 +99,27 @@ export function comporRaioX(e: EntradaDaComposicao): ComposicaoDoRaioX | null {
     aleatorio,
   ).sort((a, b) => a.intensidade - b.intensidade);
 
-  const temNeutroNoTema = e.posts.some(
-    (p) => p.aprovado && p.lado === "neutro" && p.categoria === CATEGORIA_DO_NEUTRO_NO_TEMA,
-  );
-  const neutros = temNeutroNoTema
-    ? vistosAntes(e.posts.filter((p) => p.aprovado && p.lado === "neutro" && p.categoria === CATEGORIA_DO_NEUTRO_NO_TEMA))
-    : [];
+  const neutroDoTema = (p: PostDoAcervo) => p.aprovado && p.lado === "neutro" && p.categoria === CATEGORIA_DO_NEUTRO_NO_TEMA;
+  const neutrosNoTema = vistosAntes(e.posts.filter(neutroDoTema));
+  const neutrosForaDoTema = vistosAntes(e.posts.filter((p) => p.aprovado && p.lado === "neutro" && !neutroDoTema(p)));
 
-  /* As metas de partida, e quanto cada grupo tem para dar. */
-  const meta = temNeutroNoTema ? { dele: 2, outro: 2, neutro: 2 } : { dele: 3, outro: 3, neutro: 0 };
-  const disponivel = { dele: doLadoDele.length, outro: doOutroLado.length, neutro: neutros.length };
-  const conta = {
-    dele: Math.min(meta.dele, disponivel.dele),
-    outro: Math.min(meta.outro, disponivel.outro),
-    neutro: Math.min(meta.neutro, disponivel.neutro),
-  };
-  const completar = (grupo: keyof typeof conta, falta: number): number => {
-    const cabe = Math.min(MAXIMO_POR_RESPOSTA, disponivel[grupo]) - conta[grupo];
-    const leva = Math.max(0, Math.min(falta, cabe));
-    conta[grupo] += leva;
-    return falta - leva;
-  };
-  /* A falta de neutro sai do outro lado, e depois do lado dele. */
-  let falta = meta.neutro - conta.neutro;
-  if (falta > 0) completar("dele", completar("outro", falta));
-  /* A falta do outro lado sai dos neutros (sobre o tema), e depois do lado dele. */
-  falta = meta.outro - conta.outro;
-  if (falta > 0) completar("dele", temNeutroNoTema ? completar("neutro", falta) : falta);
-  /* E, sem neutro na atividade, o lado dele cobre o que ainda faltar. */
-  const total = conta.dele + conta.outro + conta.neutro;
-  if (total < POSTS_DO_RAIO_X) completar("dele", POSTS_DO_RAIO_X - total);
+  /*
+   * Três tentativas, da mais fiel à mais larga, e a primeira que fecha vale
+   * (ADR-183 — "a tela aparece sempre", independente de quanto ele rolou):
+   *   1. só neutros SOBRE o tema, regra dos 3;
+   *   2. sem 6 assim, os neutros FORA do tema entram depois dos do tema — o
+   *      gabarito deles continua "informa sem tomar lado";
+   *   3. sem 6 ainda (atividade sem neutro nenhum, e ele viu pouco do outro
+   *      lado), o lado dele passa de 3. É a única que afrouxa a regra dos 3,
+   *      e só existe porque o outro lado não visto não entra nunca.
+   */
+  const conta =
+    fecharComposicao(doLadoDele.length, doOutroLado.length, neutrosNoTema.length, MAXIMO_POR_RESPOSTA) ??
+    fecharComposicao(doLadoDele.length, doOutroLado.length, neutrosNoTema.length + neutrosForaDoTema.length, MAXIMO_POR_RESPOSTA) ??
+    fecharComposicao(doLadoDele.length, doOutroLado.length, neutrosNoTema.length + neutrosForaDoTema.length, POSTS_DO_RAIO_X);
+  if (!conta) return null;
 
-  if (conta.dele + conta.outro + conta.neutro !== POSTS_DO_RAIO_X) return null;
-
+  const neutros = [...neutrosNoTema, ...neutrosForaDoTema];
   const escolhidos = [
     maisParou,
     ...restoDoLadoDele.slice(0, conta.dele - 1),
@@ -134,6 +127,43 @@ export function comporRaioX(e: EntradaDaComposicao): ComposicaoDoRaioX | null {
     ...neutros.slice(0, conta.neutro),
   ];
   return { postIds: embaralhar(escolhidos, aleatorio).map((p) => p.id), maisParou: maisParou.id };
+}
+
+/**
+ * Quantos posts de cada grupo fecham os 6, ou `null`. `tetoDoLadoDele` é o
+ * máximo do lado dele: a regra dos 3, ou 6 na última tentativa. O outro lado e
+ * os neutros ficam sempre em 3. As metas partem de
+ * 2/2/2 (3/3/0 sem neutro) e a falta se cobre na ordem de sempre: a de neutro
+ * pelo outro lado e depois pelo lado dele; a do outro lado pelos neutros e
+ * depois pelo lado dele; o que ainda faltar, pelo lado dele.
+ */
+function fecharComposicao(
+  dele: number,
+  outro: number,
+  neutro: number,
+  tetoDoLadoDele: number,
+): { dele: number; outro: number; neutro: number } | null {
+  const meta = neutro > 0 ? { dele: 2, outro: 2, neutro: 2 } : { dele: 3, outro: 3, neutro: 0 };
+  const disponivel = { dele, outro, neutro };
+  const conta = {
+    dele: Math.min(meta.dele, dele),
+    outro: Math.min(meta.outro, outro),
+    neutro: Math.min(meta.neutro, neutro),
+  };
+  const completar = (grupo: keyof typeof conta, falta: number): number => {
+    const teto = grupo === "dele" ? tetoDoLadoDele : MAXIMO_POR_RESPOSTA;
+    const cabe = Math.min(teto, disponivel[grupo]) - conta[grupo];
+    const leva = Math.max(0, Math.min(falta, cabe));
+    conta[grupo] += leva;
+    return falta - leva;
+  };
+  let falta = meta.neutro - conta.neutro;
+  if (falta > 0) completar("dele", completar("outro", falta));
+  falta = meta.outro - conta.outro;
+  if (falta > 0) completar("dele", neutro > 0 ? completar("neutro", falta) : falta);
+  const total = conta.dele + conta.outro + conta.neutro;
+  if (total < POSTS_DO_RAIO_X) completar("neutro", completar("dele", POSTS_DO_RAIO_X - total));
+  return conta.dele + conta.outro + conta.neutro === POSTS_DO_RAIO_X ? conta : null;
 }
 
 /** O gabarito de um post: o lado em que ele foi escrito, ou "neutro". */

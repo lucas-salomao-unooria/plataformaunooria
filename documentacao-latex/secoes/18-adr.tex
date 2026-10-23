@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{182 decisões}, numeradas até ADR-182: a 182 (os tempos do guia da aula e as abas das telas de condução) foi escrita depois de conferir \cd{origin/dev-local}, \cd{origin/dev} e as branches, a 181 (O Efeito Amplificador e a versão anterior da 2ª série) foi escrita depois de conferir \cd{origin/dev-local}, \cd{origin/dev} e as branches, a 180 (as respostas do PO sobre o Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 179 (as réguas do PO no Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 178 (as quatro fotos do carrossel do Júri Estadual) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{183 decisões}, numeradas até ADR-183: a 183 (o Raio-x do Unoovista para todo estudante) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 182 (os tempos do guia da aula e as abas das telas de condução) foi escrita depois de conferir \cd{origin/dev-local}, \cd{origin/dev} e as branches, a 181 (O Efeito Amplificador e a versão anterior da 2ª série) foi escrita depois de conferir \cd{origin/dev-local}, \cd{origin/dev} e as branches, a 180 (as respostas do PO sobre o Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 179 (as réguas do PO no Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 178 (as quatro fotos do carrossel do Júri Estadual) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -233,6 +233,7 @@ que a cercam.
 \zebra \adrr{ADR-180} & As respostas do PO no Unoovista: a EF08CO11 só pelo Raio-x, o chute fora de \enquote{em processo} e ridicularizar não atinge & 2026-10-22 & Aceita; ajusta a \adrr{ADR-179}\\
 \adrr{ADR-181} & O Efeito Amplificador toma o código da 2ª série, unidade 1, e a Missão Tempestade vira a versão anterior \cd{exp02em1b-v0}: no ar, fora do catálogo & 2026-10-22 & Aceita; estende a \adrr{ADR-110} e a \adrr{ADR-116}\\
 \zebra \adrr{ADR-182} & O guia da aula em quatro tempos e as telas de condução em abas: um template para a ficha e para a página da atividade, sem tirar texto & 2026-10-22 & Aceita; estende a \adrr{ADR-65} e a \adrr{ADR-100}\\
+\adrr{ADR-183} & O Raio-x do Unoovista aparece para todo estudante: neutros fora do tema, o lado dele acima de 3 no último caso, e o lado do início para quem mal rolou & 2026-10-23 & Aceita; estende a \adrr{ADR-179}\\
 \bottomrule
 \end{tabularx}
 
@@ -16677,3 +16678,67 @@ não mais uma aba; ou o pedido de uma
 página da aula que precise de duas abas abertas ao mesmo tempo (o painel e as
 habilidades lado a lado, num projetor largo).
 
+\section{ADR-183 --- O Raio-x do Unoovista aparece para todo estudante, qualquer que seja o tempo no feed}
+\label{adr:exp08ef1b-raio-x-para-todos}
+
+\textbf{Data.} 2026-10-23. \textbf{Status.} Aceita. \textbf{Estende} a
+\adrr{ADR-179}, que completou o Raio-x com posts não vistos do lado do
+estudante e neutros sobre o tema.
+
+\textbf{Contexto.} O PO voltou a pedir que a tela do Raio-x (EF08CO11)
+apareça \enquote{para todos os alunos, independente do tempo que ele ficou
+navegando}. A correção da \adrr{ADR-179} estava em \cd{dev}; o deploy de
+\cd{hml} de 2026-10-23 não subiu (o runner do CI caiu no meio do build), então
+\cd{hml} seguia com a versão anterior. Mesmo com ela no ar, a composição ainda
+devolvia \enquote{sem Raio-x} em dois casos: (1) atividade sem neutro sobre o
+tema e estudante que viu menos de 3 posts do outro lado --- o lado dele para em
+3 pela regra dos 3, e o outro lado só entra se foi visto; (2) estudante a quem
+o feed não serviu nenhum post de tese --- sem \enquote{lado dele}, nenhuma das
+três tarefas abria.
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item A composição tenta três vezes, da mais fiel à mais larga, e vale a
+    primeira que fecha os 6: (1) a de sempre, só com neutros sobre o tema e a
+    regra dos 3; (2) com os neutros \textbf{fora} do tema depois dos do tema,
+    ainda com a regra dos 3 --- o gabarito deles continua \enquote{informa sem
+    tomar lado}; (3) o lado dele acima de 3, só quando a atividade não tem
+    neutro bastante e ele viu pouco do outro lado. O outro lado não visto não
+    entra nunca, e o outro lado e os neutros nunca passam de 3.
+  \item Sem nenhum post de tese servido, o \enquote{lado dele} é o lado em
+    que o feed começou (\cd{runs.lado\_inicial}). Vale para as três tarefas:
+    quem mal rolou também recebe os termos e o envio.
+  \item O Raio-x só não aparece com o acervo aprovado menor que 6 ou sem post
+    nenhum do lado dele --- atividade que nem o feed teria como mostrar.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Completar com o outro lado não visto}: o PO vetou na
+    \adrr{ADR-179}; antes da revelação, um post do lado escondido mostraria
+    que havia outro feed.
+  \item \textbf{Raio-x com menos de 6 posts}: a régua do PO é sobre 6
+    (5--6 / 4 / 0--3), e uma régua por tamanho viraria três réguas.
+  \item \textbf{Esconder a tela e avisar o professor}: era a saída (b) da
+    \adrr{ADR-179}, e o PO escolheu a (a).
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{No último caso, o chute volta a valer mais}: com o lado dele
+    acima de 3, quem marca a mesma opção em todos pode passar de 3 acertos.
+    Só acontece em atividade sem neutro bastante e com estudante que viu
+    pouco do outro lado.
+  \item \textbf{Um neutro fora do tema é fácil de classificar}: ele
+    \enquote{informa sem tomar lado} por não falar do assunto, e o acerto ali
+    mede menos o olhar sobre viés.
+  \item O Raio-x de quem mal rolou mede o viés de posts que ele leu na
+    própria tarefa, não no feed (já declarado na \adrr{ADR-179}).
+\end{itemize}
+
+\textbf{Gatilho.} O painel mostrar muitos Raio-x montados no último caso
+(sinal de que a geração deixou de criar neutros sobre o tema), ou o PO pedir
+uma régua para Raio-x incompleto.

@@ -91,14 +91,19 @@ export class TarefasDoUnoovista {
     return run;
   }
 
-  /** O acervo aprovado e o lado do feed DELE (o que mais serviu, ADR-42). */
+  /**
+   * O acervo aprovado e o lado do feed DELE (o que mais serviu, ADR-42). Sem
+   * nenhum post de tese servido, vale o lado em que o feed começou: quem mal
+   * rolou também recebe as tarefas (ADR-183).
+   */
   private async acervo(tx: Tx, run: RunDoEstudante) {
     const posts = await tx.post.findMany({
       where: { activityId: run.activityId, aprovado: true },
       select: { id: true, lado: true, intensidade: true, categoria: true, aprovado: true, author: { select: { tipo: true } } },
     });
     const estado = normalizarEstado(run.engineState);
-    const { ladoDele } = calcularExposicao(estado.servedPostIds, posts);
+    const doInicio = run.ladoInicial === "A" || run.ladoInicial === "B" ? run.ladoInicial : null;
+    const ladoDele = calcularExposicao(estado.servedPostIds, posts).ladoDele ?? doInicio;
     return { posts, estado, ladoDele };
   }
 
