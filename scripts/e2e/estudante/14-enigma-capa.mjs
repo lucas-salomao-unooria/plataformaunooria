@@ -1,8 +1,9 @@
-import { BFF, HUB, suite } from "../lib/roteiro.mjs";
+import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta, contasDe, senhaDemo } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../lib/smoke.mjs";
 import { revelar, textoDeTodasAsAbas } from "../lib/abas.mjs";
 import { provarPodcastNaAula } from "../lib/podcast.mjs";
+import { arrastar, comResposta, esperarNaApi, hidratado, idDaTurma, lerApi, pontoEm, primeiroQueAparecer, tocarNoMeio } from "../lib/enigma-capa.mjs";
 
 /**
  * O ENIGMA DA CAPA DA RÁDIO (exp02ef1b, 2º ano EF, unidade 1 — ADR-184), das
@@ -47,84 +48,6 @@ const TOQUES_DA_PROFESSORA = [
   { x: 44, y: 25 },
   { x: 58, y: 25 },
 ];
-
-async function lerApi(p, caminho) {
-  const resposta = await p.request.get(`${BFF}${caminho}`);
-  return { status: resposta.status(), corpo: await resposta.json().catch(() => null) };
-}
-
-/** Polling curto até a api mostrar `pronto(corpo)` — a espera é pelo dado, nunca pelo relógio. */
-async function esperarNaApi(p, caminho, pronto, { timeout = 30_000, oQue = caminho } = {}) {
-  const fim = Date.now() + timeout;
-  let ultimo = null;
-  while (Date.now() < fim) {
-    ultimo = await lerApi(p, caminho);
-    if (ultimo.status === 200 && pronto(ultimo.corpo)) return ultimo.corpo;
-    await p.waitForTimeout(800);
-  }
-  throw new Error(`${oQue}: a api não chegou ao estado esperado em ${timeout / 1000}s (último HTTP ${ultimo?.status})`);
-}
-
-/** PORTÃO DE HIDRATAÇÃO: em dev o SSR chega antes do bundle, e um clique nesse intervalo não chama handler nenhum. */
-async function hidratado(p, locator) {
-  const alvo = locator.first();
-  await alvo.waitFor({ timeout: 30_000 });
-  await p.waitForFunction((el) => Object.keys(el).some((k) => k.startsWith("__react")), await alvo.elementHandle(), {
-    timeout: 20_000,
-  });
-}
-
-/** A UNIÃO de desfechos legítimos: devolve o NOME do que apareceu primeiro. */
-async function primeiroQueAparecer(desfechos, { timeout, oQue }) {
-  const nomes = Object.keys(desfechos);
-  try {
-    return await Promise.any(nomes.map((nome) => desfechos[nome].first().waitFor({ timeout }).then(() => nome)));
-  } catch {
-    throw new Error(`${oQue}: nenhum desfecho em ${timeout / 1000}s (${nomes.join(", ")})`);
-  }
-}
-
-/**
- * O ponto da PÁGINA que corresponde à fração (fx, fy) da caixa de um elemento.
- * Pela caixa na página, e não por `position`: o aparelho do hub ESCALA o
- * iframe, e a caixa já vem escalada.
- */
-async function pontoEm(locator, fx, fy) {
-  const caixa = await locator.boundingBox();
-  if (!caixa) throw new Error("o elemento não tem caixa na tela");
-  return { x: caixa.x + fx * caixa.width, y: caixa.y + fy * caixa.height, caixa };
-}
-
-/** Arrasta com o mouse de `de` até `ate`, em passos (o gesto de verdade, não um salto). */
-async function arrastar(p, de, ate, passos = 12) {
-  await p.mouse.move(de.x, de.y);
-  await p.mouse.down();
-  await p.mouse.move(ate.x, ate.y, { steps: passos });
-  await p.mouse.up();
-}
-
-/**
- * Dispara `acao` e devolve o JSON da resposta da rota — os dois juntos
- * (`Promise.all`), para a espera nunca ficar órfã se a ação quebrar antes.
- */
-async function comResposta(p, rota, acao, filtro = () => true) {
-  const [resposta] = await Promise.all([
-    p.waitForResponse((x) => rota.test(new URL(x.url()).pathname) && x.request().method() === "POST" && filtro(x.request()), { timeout: 30_000 }),
-    acao(),
-  ]);
-  return { status: resposta.status(), corpo: await resposta.json().catch(() => null) };
-}
-
-/** Toque de verdade no meio do botão, pela caixa — o AVANÇAR esmaecido tem `aria-disabled`, e o `click` do Playwright esperaria ele "habilitar". */
-async function tocarNoMeio(p, locator) {
-  const ponto = await pontoEm(locator, 0.5, 0.5);
-  await p.mouse.click(ponto.x, ponto.y);
-}
-
-async function idDaTurma(p, nome) {
-  const { status, corpo } = await lerApi(p, "/turmas/minhas");
-  return status === 200 && Array.isArray(corpo) ? (corpo.find((t) => t.nome === nome)?.id ?? null) : null;
-}
 
 await suite(
   {
@@ -580,7 +503,7 @@ await suite(
     acertos.push(await tocarNa("foto-1", alvos["inv-1"]));
     acertos.push(await tocarNa("foto-2", alvos["inv-1"]));
     r.exigir(
-      acertos.every((a, i) => a?.toque?.acerto === "inv-1") && acertos[1]?.toque?.encontrados?.length === 2,
+      acertos.every((a) => a?.toque?.acerto === "inv-1") && acertos[1]?.toque?.encontrados?.length === 2,
       `${k.invariantes[0].nome} achado nas duas fotos (${acertos.map((a) => a?.toque?.acerto).join(", ")})`,
     );
     /* `attached`: a linha dourada de dois pontos na mesma altura tem caixa de altura zero, e o Playwright a julga invisível. */
