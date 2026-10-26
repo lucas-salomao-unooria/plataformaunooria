@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
 import { atividadesDaMissao } from "@/lib/atividades-servidor";
+import { baseDoBundleDaExperiencia } from "@/lib/bundle-da-experiencia";
 import { rotaDaNovaAtividade, serieDaMissao, temAtividades } from "@/lib/entre-redes/atividades";
 import { buscarMissao, rotaDaMissao } from "@/lib/entre-redes/catalogo";
 import { normalizarSerie } from "@/lib/series";
@@ -9,6 +10,7 @@ import type { TurmaDoAssistente } from "@/components/atividades/assistente-de-at
 
 import { CriarASelecao } from "./criar-a-selecao";
 import { CriarEfeitoAmplificador } from "./criar-efeito-amplificador";
+import { CriarEnigmaCapa } from "./criar-enigma-capa";
 import { CriarJornalEscola } from "./criar-jornal-escola";
 import { CriarJuriEstadual } from "./criar-juri-estadual";
 import { CriarQuemMandou } from "./criar-quem-mandou";
@@ -76,6 +78,9 @@ export default async function NovaAtividadePage({
         <CriarJuriEstadual {...props} />
       ) : expId === "exp02em1b" ? (
         <CriarEfeitoAmplificador {...props} />
+      ) : expId === "exp02ef1b" ? (
+        /* As cenas prontas são arquivos do bundle da experiência: a base sai do servidor (env de runtime). */
+        <CriarEnigmaCapa {...props} baseDoBundle={await baseDoBundleDaExperiencia(expId)} />
       ) : (
         <CriarQuemMandou {...props} />
       )}
