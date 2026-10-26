@@ -27,6 +27,7 @@ await suite(
       "A tela sem turma escolhida ensina o que fazer, em vez de mostrar tabela vazia",
       "A aula da A Seleção (o botão único e a etapa) mora na mesma tela dos resultados, sem coluna de pontos",
       "A aula do Júri Estadual mora na página da atividade: os 40 estandes, a lousa anônima dos votos por área e — depois da auditoria — da concentração do feed, a folha sem coluna de voto, taxa, concentração nem nível, e com as categorias buscadas e os parados na cédula",
+      "A aula do Enigma da Capa da Rádio mora na página da atividade: quem aguarda a virada, o botão único LIBERAR VIRADA, os cartões da conversa e a folha por criança sem coluna de nível, nota ou ranking",
     ],
     comando: "node scripts/e2e/professor/06-resultados-das-missoes.mjs",
   },
@@ -204,6 +205,59 @@ await suite(
         "A lousa vai para o projetor e não tem nome; a folha tem nome e por isso não liga ninguém a um voto, a uma " +
         "taxa ou à concentração do feed. O nível de cada habilidade fica no painel de habilidades, com a " +
         "confirmação da professora.",
+      inteira: true,
+    });
+
+    // ── O Enigma da Capa da Rádio (2º ano, unidade 1) ───────────────────
+    /* A suíte do estudante (estudante/14-enigma-capa.mjs) corre ANTES: cria a
+       atividade com IA na 2A, põe no ar, libera a virada e um estudante conclui.
+       É a página DESSA atividade que este passo lê; rodando sozinha, a turma
+       pode estar sem atividade — os dois ramos são legítimos e cada um é provado. */
+    const professorSegundo = conta("professor", { serie: "2EF" });
+    await r.entrar(p, professorSegundo.login);
+    const turmasDoEnigma = (await (await p.request.get(`${BFF}/enigma-capa/turmas`)).json().catch(() => null))?.turmas ?? [];
+    const turmaDoEnigma = turmasDoEnigma.find((t) => t.nome === "2A") ?? turmasDoEnigma[0];
+    if (!r.exigir(Boolean(turmaDoEnigma), `${professorSegundo.login} tem turma no seletor do Enigma da Capa da Rádio`)) return;
+    await p.goto(`${HUB}/professor/entre-redes/2-ano/unidade-1/resultados?turmaId=${turmaDoEnigma.id}`, {
+      waitUntil: "domcontentloaded",
+    });
+    await p.locator("[data-painel-da-aula], [data-sem-atividade], [data-atividade-pronta]").first().waitFor({ timeout: 30_000 });
+    if ((await p.locator("[data-painel-da-aula]").count()) === 0) {
+      r.ressalva("a 2A não tem atividade do Enigma em andamento: rode antes a estudante/14-enigma-capa, que a cria");
+      r.exigir(
+        /Nenhuma atividade em andamento nesta turma|Esta atividade está pronta/.test(await p.locator("main").innerText()),
+        "sem atividade em andamento, a página do Enigma diz que a turma vê a missão fechada",
+      );
+    } else {
+      const lousa = (await p.locator("[data-lousa]").innerText()).replace(/\s+/g, " ");
+      r.exigir(
+        /Entraram/.test(lousa) && /Publicaram a capa/.test(lousa) && /Aguardam a virada/.test(lousa) && /Concluíram/.test(lousa),
+        "a lousa do Enigma conta quem entrou, publicou, aguarda a virada e concluiu",
+      );
+      r.exigir(
+        (await p.locator('[data-acao="liberar-virada"]').count()) === 1,
+        "o botão único da aula (LIBERAR VIRADA, ou “Virada liberada” depois) fica na mesma tela da atividade",
+      );
+      r.exigir(
+        /ENQUADRAMENTO/.test(await p.locator("[data-cartoes]").innerText()),
+        "os cartões da nomeação (ENQUADRAMENTO, AUTORIA, O QUE FICOU DE FORA) estão à mão na aula",
+      );
+      const colunasDoEnigma = await p.locator("[data-folha]").getByRole("columnheader").allInnerTexts();
+      r.exigir(
+        colunasDoEnigma.length > 0 && !colunasDoEnigma.some((c) => /\b(n[íi]vel|pontos|nota|ranking)\b/i.test(c)),
+        `a folha do Enigma não tem coluna de nível, nota nem ranking (colunas: ${colunasDoEnigma.join(", ")})`,
+      );
+      await p.locator("[data-folha]").scrollIntoViewIfNeeded();
+    }
+    await r.registrar(p, "resultados-enigma-capa", {
+      titulo: "A atividade do Enigma da Capa da Rádio: a aula e os resultados",
+      mostra:
+        "A atividade em andamento: a lousa (entraram, publicaram, aguardam a virada, concluíram), o botão único " +
+        "LIBERAR VIRADA, a conversa individual com os três cartões e a folha por criança — crachá, lupa, capa, busca, " +
+        "o que ficou fora, o par, a segunda foto e o voto da horta.",
+      prova:
+        "A virada é um botão só, para a turma toda (decisão do Lucas). A folha é para a tela da professora: o que " +
+        "cada criança fez, para a conversa; o nível de cada habilidade fica na aba Habilidades.",
       inteira: true,
     });
   },
