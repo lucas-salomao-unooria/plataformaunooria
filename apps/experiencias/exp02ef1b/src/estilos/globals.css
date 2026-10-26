@@ -1,0 +1,945 @@
+/**
+ * Estilos locais — só o que o design system não dá: layout da página e as
+ * compensações MARCADAS (medida, espaçamento, posicionamento). Botão, chip,
+ * enquete, avatar, post, faixa de dica: vêm do pacote pela ponte
+ * (`@edu/ui/ds-unoovista`), nunca daqui.
+ *
+ * UMA família: a missão inteira é o Unoovista (`.unv-*` do pacote, tokens
+ * `--unv-*`). Nenhum `--unooria-*` aqui: token da plataforma no clone é
+ * vazamento (e some, porque a folha dela nem é carregada). Os
+ * `var(--x, fallback)` existem só para a tela não ficar transparente antes de a
+ * folha do DS carregar.
+ *
+ * O leitor tem 7 a 8 anos: alvo de toque ≥ 56 px onde o pacote deixa
+ * (`--unv-touch-target`), foco visível em tudo que é tocável, e nenhuma
+ * animação com `prefers-reduced-motion: reduce`.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--unv-color-background-secondary, #f7f6fa);
+  color: var(--unv-color-text-primary, #22272a);
+  font-family: var(--unv-font-sans, "Open Sans", system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* `100%` e não `100dvh`: dentro do iframe, `dvh` se refere à janela do
+   navegador, não ao recorte que o hub reservou. */
+.app {
+  /* (b) COMPENSAÇÃO de MEDIDA — anos iniciais: o alvo de toque do pacote é
+     44 px; a faixa de 7–8 anos pede 56. Os componentes do DS leem o token,
+     então redefini-lo na raiz da missão alarga a área tocável de todos sem
+     tocar no desenho deles. */
+  --unv-touch-target: 56px;
+  /* (b) COMPENSAÇÃO de COR — pedido aberto no storybook-unooria: a seção
+     `unoovista` não publica cor de CELEBRAÇÃO (o dourado das linhas que unem
+     os objetos iguais, one-pager §4) nem de AJUDA (o pulso amarelo depois de
+     3 erros, §7). As duas moram AQUI, e só aqui, até o token chegar; o azul
+     da dica (o pulso do fundo, a moldura da foto escolhida) é o
+     `--unv-color-brand-verified`, que existe. */
+  --exp-dourado: #d99a00;
+  --exp-amarelo: #f5c518;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--unv-color-background-secondary, #f7f6fa);
+}
+
+.app--centrado {
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  text-align: center;
+}
+
+.esqueleto {
+  opacity: 0.6;
+}
+
+.so-leitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Foco visível em tudo que a criança toca e não é peça do DS (o DS traz o dele). */
+.lupa:focus-visible,
+.moldura:focus-visible,
+.carta:focus-visible,
+.pino:focus-visible,
+.decidir__miniatura:focus-visible,
+.revelar__controle:focus-visible {
+  outline: 3px solid var(--unv-color-action-primary, #716c98);
+  outline-offset: 3px;
+}
+
+/* ─────────────────────────────────────────── a casca (TopBar + conteúdo) */
+
+.casca {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.casca__cracha {
+  white-space: nowrap;
+}
+
+.casca__sem-sinal {
+  margin: 0 16px 8px;
+}
+
+.casca__conteudo {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.app__tela {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.titulo-da-tela {
+  margin: 8px 0 4px;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.instrucao {
+  margin: 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.assinatura {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--unv-color-text-secondary, #475157);
+  text-align: center;
+}
+
+.botao-esmaecido {
+  opacity: 0.45;
+}
+
+/* ─────────────────────────────────────────── Bento e Iara (compensação: sem arte) */
+
+.personagem {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.personagem__fala {
+  font-weight: 700;
+}
+
+.dupla {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.dupla__retratos {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dupla__fones {
+  font-size: 28px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .personagem--animado {
+    animation: aceno 1.6s ease-in-out 2;
+  }
+
+  .dupla--animada .dupla__fones {
+    animation: fones 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes aceno {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes fones {
+  0%,
+  100% {
+    transform: rotate(-12deg);
+  }
+  50% {
+    transform: rotate(12deg);
+  }
+}
+
+/* ─────────────────────────────────────────── a janela (recorte por CSS) */
+
+.janela {
+  position: relative;
+  overflow: hidden;
+  background: var(--unv-color-background-tertiary, #efeef5);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.janela__imagem {
+  position: absolute;
+  max-width: none;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+/* "CARREGANDO CAPA..." (one-pager §8): o card de rascunho com a câmera e TENTAR DE NOVO. */
+.janela__erro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+  border: 2px dashed var(--unv-color-border-default, #ccc9de);
+  background: var(--unv-color-background-primary, #fff);
+  text-align: center;
+}
+
+.janela__erro-texto {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* ─────────────────────────────────────────── E1 — o mural e os crachás */
+
+.espera,
+.mural {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+}
+
+.espera {
+  justify-content: center;
+  flex: 1;
+}
+
+.espera__titulo {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.mural__perfil {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  align-self: stretch;
+}
+
+.mural__usuario {
+  margin: 0;
+  font-weight: 700;
+}
+
+.mural__nome {
+  margin: 0;
+  font-size: 13px;
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+.crachas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: 100%;
+  max-width: 360px;
+}
+
+.crachas__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.crachas__avatar {
+  font-size: 36px;
+}
+
+.crachas--travados .crachas__avatar {
+  opacity: 0.55;
+}
+
+.crachas__avatar--escolhido {
+  outline: 3px solid var(--unv-color-brand-verified, #6487c2);
+  outline-offset: 4px;
+  border-radius: var(--unv-radius-full, 999px);
+}
+
+.crachas__rotulo {
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.mural__rascunho {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-self: stretch;
+}
+
+/* ─────────────────────────────────────────── E2 — a bancada e a lupa */
+
+.bancada {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 560px;
+  gap: 8px;
+  padding: 8px 16px 16px;
+}
+
+.bancada__area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bancada__rotulo {
+  position: absolute;
+  margin: 0;
+  height: 28px;
+  line-height: 28px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bancada__foto {
+  position: absolute;
+  border-radius: var(--unv-radius-m, 12px);
+}
+
+.bancada__mao {
+  position: absolute;
+  width: 0;
+  height: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.bancada__acoes,
+.decidir__acoes,
+.virada__acoes,
+.explicar__acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+/* (b) COMPENSAÇÃO — a lupa (pedido aberto no storybook-unooria). Medida, borda e sombra por token. */
+.lupa {
+  position: absolute;
+  z-index: 3;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 4px solid var(--unv-color-background-primary, #fff);
+  box-shadow: var(--unv-elevation-overlay, 0 0 10px rgb(14 16 57 / 30%));
+  background: var(--unv-color-overlay-onmedia, rgb(255 255 255 / 40%));
+  cursor: grab;
+}
+
+.lupa__imagem {
+  position: absolute;
+  max-width: none;
+  pointer-events: none;
+}
+
+/* O pulso azul DISCRETO sobre a parede do fundo (one-pager §4, E2). */
+.pulso-do-fundo {
+  position: absolute;
+  border-radius: var(--unv-radius-s, 8px);
+  border: 2px solid var(--unv-color-brand-verified, #6487c2);
+  background: color-mix(in srgb, var(--unv-color-brand-verified, #6487c2) 18%, transparent);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pulso-do-fundo {
+    animation: pulso 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes pulso {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ─────────────────────────────────────────── E3 — decidir */
+
+.decidir {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  gap: 8px;
+  padding: 8px 16px 16px;
+}
+
+.decidir__fotos {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.decidir__miniatura {
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: var(--unv-radius-m, 12px);
+  overflow: hidden;
+  background: none;
+  cursor: pointer;
+}
+
+/* "A foto escolhida ganha uma moldura azul e a outra fica esmaecida." */
+.decidir__miniatura--escolhida {
+  border-color: var(--unv-color-brand-verified, #6487c2);
+}
+
+.decidir__miniatura--esmaecida {
+  opacity: 0.4;
+}
+
+.decidir__moldura {
+  border-radius: var(--unv-radius-m, 12px);
+}
+
+.decidir__moldura--alvo {
+  outline: 3px dashed var(--unv-color-brand-verified, #6487c2);
+  outline-offset: 2px;
+}
+
+.decidir__selos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.decidir__acoes {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* O selo segue o dedo; o DS desenha o chip, aqui só a POSIÇÃO e a pilha. */
+.selo {
+  touch-action: none;
+  position: relative;
+}
+
+.selo--arrastando {
+  z-index: 10;
+  box-shadow: var(--unv-elevation-overlay, 0 0 10px rgb(14 16 57 / 30%));
+}
+
+/* (b) COMPENSAÇÃO — a moldura de tamanho fixo (pedido aberto no storybook-unooria). */
+.moldura {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--unv-radius-m, 12px);
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.moldura__janela {
+  position: absolute;
+  inset: 0;
+}
+
+.moldura__selo {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.moldura__soltar {
+  padding: 8px 12px;
+  border: 2px dashed var(--unv-color-text-on-media, #fff);
+  border-radius: var(--unv-radius-m, 12px);
+  color: var(--unv-color-text-on-media, #fff);
+  background: var(--unv-color-overlay-scrim, rgb(14 16 57 / 50%));
+  font-weight: 700;
+}
+
+.carimbo {
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .carimbo {
+    animation: carimbo 0.25s ease-out;
+  }
+}
+
+@keyframes carimbo {
+  from {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ─────────────────────────────────────────── E4 — o feed e o cadeado */
+
+.feed {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 12px;
+  padding: 8px 0 16px;
+}
+
+.feed__capa {
+  position: absolute;
+  inset: 0;
+}
+
+.feed__resposta {
+  padding: 0 16px;
+}
+
+/* O cadeado AGUARDE O PROFESSOR: uma camada SEM botão — a criança não fura o bloqueio. */
+.cadeado {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--unv-color-overlay-scrim, rgb(14 16 57 / 50%));
+}
+
+.cadeado__cartao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 320px;
+  padding: 24px 20px;
+  border-radius: var(--unv-radius-xl, 24px);
+  background: var(--unv-color-background-elevated, #fff);
+  box-shadow: var(--unv-elevation-overlay, 0 0 10px rgb(14 16 57 / 30%));
+  text-align: center;
+}
+
+.cadeado__titulo {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* ─────────────────────────────────────────── E4 — a virada, a busca, o slider, a cena inteira */
+
+.virada {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 12px;
+  padding: 8px 0 16px;
+}
+
+.virada > .personagem,
+.virada > .instrucao,
+.virada > [class*="unv-inline-hint"] {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+.virada__rotulos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 0;
+}
+
+.virada__rotulo {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.virada__medida {
+  width: 100%;
+}
+
+/* (b) COMPENSAÇÃO — a tela dividida com revelação (pedido aberto no storybook-unooria). */
+.dividida {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.dividida__foto {
+  position: absolute;
+  top: 0;
+}
+
+.dividida__foto > .janela {
+  width: 100%;
+  height: 100%;
+}
+
+.dividida__foto--tocavel {
+  cursor: pointer;
+}
+
+.dividida__linha {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 4px;
+  margin-left: -2px;
+  background: var(--unv-color-background-primary, #fff);
+  pointer-events: none;
+}
+
+.dividida__marcas {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.linha-dourada {
+  stroke: var(--exp-dourado);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.achado {
+  fill: none;
+  stroke: var(--exp-dourado);
+  stroke-width: 4;
+}
+
+.pulso-amarelo {
+  fill: color-mix(in srgb, var(--exp-amarelo) 25%, transparent);
+  stroke: var(--exp-amarelo);
+  stroke-width: 3;
+}
+
+/* A ondulação do toque fora: cinza NEUTRA, sem vermelho, sem penalidade (one-pager §7). */
+.onda-neutra {
+  fill: none;
+  stroke: var(--unv-color-icon-secondary, #617379);
+  stroke-width: 3;
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pulso-amarelo {
+    animation: pulso 1.2s ease-in-out infinite;
+  }
+
+  .onda-neutra {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: onda 0.7s ease-out forwards;
+  }
+
+  .linha-dourada {
+    stroke-dasharray: 600;
+    stroke-dashoffset: 600;
+    animation: traco 0.6s ease-out forwards;
+  }
+}
+
+@keyframes onda {
+  from {
+    transform: scale(0.4);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+@keyframes traco {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* O contorno do que a capa mostrou: tracejado, sem cor de acerto ou erro. */
+.contorno-da-capa {
+  position: absolute;
+  border: 3px dashed var(--unv-color-text-on-media, #fff);
+  box-shadow: 0 0 0 1px var(--unv-color-overlay-scrim, rgb(14 16 57 / 50%));
+  pointer-events: none;
+}
+
+.contorno-da-capa__rotulo {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 2px 6px;
+  border-radius: var(--unv-radius-xs, 4px);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--unv-color-text-on-media, #fff);
+  background: var(--unv-color-overlay-scrim, rgb(14 16 57 / 50%));
+}
+
+.virada__achados {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 16px;
+  list-style: none;
+}
+
+/* O slider: o `<input type="range">` nativo, com medida e cor por token. */
+.revelar {
+  padding: 8px 16px;
+}
+
+.revelar__controle {
+  width: 100%;
+  height: var(--unv-touch-target, 56px);
+  margin: 0;
+  accent-color: var(--unv-color-action-primary, #716c98);
+  cursor: pointer;
+}
+
+.cena-inteira {
+  position: relative;
+  width: 100%;
+  touch-action: manipulation;
+  cursor: crosshair;
+}
+
+.cena-inteira__imagem {
+  position: absolute;
+  inset: 0;
+}
+
+/* A marca do "o que ficou fora": alvo de toque de 48 px, ponto visível de 20 px. */
+.pino {
+  position: absolute;
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.pino__ponto {
+  display: block;
+  width: 20px;
+  height: 20px;
+  margin: auto;
+  border-radius: 50%;
+  border: 3px solid var(--unv-color-text-on-media, #fff);
+  background: var(--unv-color-action-primary, #716c98);
+  box-shadow: var(--unv-elevation-overlay, 0 0 10px rgb(14 16 57 / 30%));
+}
+
+.virada__acoes {
+  padding: 8px 16px 0;
+}
+
+/* ─────────────────────────────────────────── E5 — pares e segunda foto */
+
+.explicar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  gap: 12px;
+  padding: 8px 16px 16px;
+}
+
+.cartas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cartas__par,
+.cartas__resto {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* O par agrupado: um contorno em volta das duas, sem mudar o tamanho delas. */
+.cartas__par {
+  padding: 6px;
+  border: 2px dashed transparent;
+  border-radius: var(--unv-radius-l, 16px);
+}
+
+.cartas__par--completo {
+  border-color: var(--unv-color-brand-verified, #6487c2);
+}
+
+/* (b) COMPENSAÇÃO — a carta de tamanho fixo arrastável (pedido aberto no storybook-unooria). */
+.carta {
+  position: relative;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: var(--unv-radius-m, 12px);
+  overflow: hidden;
+  background: var(--unv-color-background-tertiary, #efeef5);
+  touch-action: none;
+  cursor: grab;
+}
+
+.carta--no-par {
+  border-color: var(--unv-color-brand-verified, #6487c2);
+}
+
+.carta--arrastando {
+  z-index: 10;
+  box-shadow: var(--unv-elevation-overlay, 0 0 10px rgb(14 16 57 / 30%));
+}
+
+.carta__imagem {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.opcao {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.opcao__apoio {
+  font-size: 28px;
+  line-height: 1;
+}
+
+/* As opções pictográficas GRANDES (E5, E6): o pacote dá 44 px; a faixa pede 56+. */
+.opcoes-grandes {
+  width: 100%;
+  max-width: 420px;
+}
+
+.elementos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.explicar__acoes {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* ─────────────────────────────────────────── E6 — a horta e o fim */
+
+.transferencia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0 24px;
+}
+
+.transferencia > .opcoes-grandes {
+  padding: 0 16px;
+}
+
+.celebracao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+}
+
+.celebracao__titulo {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  text-align: center;
+}
