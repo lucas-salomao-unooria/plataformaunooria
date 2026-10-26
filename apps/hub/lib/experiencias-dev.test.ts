@@ -12,6 +12,7 @@ describe("baseDevDaExperiencia", () => {
     expect(baseDevDaExperiencia("exp02em1b-v0", "x")).toBe("http://localhost:5186");
     expect(baseDevDaExperiencia("exp05ef1b", "x")).toBe("http://localhost:5184");
     expect(baseDevDaExperiencia("exp06ef1b", "x")).toBe("http://localhost:5185");
+    expect(baseDevDaExperiencia("exp02ef1b", "x")).toBe("http://localhost:5187");
   });
 
   test("experiência desconhecida cai no fallback (NEXT_PUBLIC_CDN_EXP_URL)", () => {
