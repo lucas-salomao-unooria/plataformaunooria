@@ -1506,6 +1506,23 @@ cores de celebração e de ajuda, e o alvo de toque de 56\,px. Três desvios de
 outra; PUBLICAR CAPA é o botão primário do Unoovista (roxo), não verde; e o
 avanço da E2 se chama AVANÇAR (o PO não nomeou o botão).
 
+\subsection*{As duas suítes de ponta a ponta}
+
+\arq{scripts/e2e/estudante/\B{}14-enigma-capa.mjs} é o caminho inteiro com IA
+real: a professora gera a cena por tema, marca os dois objetos e põe a
+atividade no ar; o estudante faz E1 a E6 (com um erro na busca e um F5 que
+redesenha os achados); a professora libera a virada e lê as duas habilidades.
+\arq{scripts/e2e/estudante/\B{}15-enigma-capa-caminhos.mjs} cobre o que a
+primeira não percorre, com o banco padrão da Biblioteca em um toque e duas
+crianças: a inatividade de 45\,s (o Bento, sem avançar sozinho), o balão
+\enquote{O PROFESSOR JÁ VEM!} depois de 3\,min com a virada fechada, a queda de
+rede no PUBLICAR CAPA (a faixa SEM SINAL NA RÁDIO e a jogada entregue quando a
+rede volta), a ajuda no 3º erro com os alvos e mais três erros depois dela, o
+voto MOSTRA TUDO travado e o \enquote{não atingiu} das duas habilidades ao lado
+do \enquote{atingiu} da outra criança, e o zerar (a rodada sobe, a evidência da
+atividade some, a virada fecha e a criança volta ao crachá). Os auxiliares das
+duas moram em \arq{scripts/e2e/lib/\B{}enigma-capa.mjs}.
+
 % ---------------------------------------------------------------------------
 \section{exp08ef4b --- O Manifesto da IA}
 \label{sec:exp08ef4b}
