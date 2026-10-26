@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{183 decisões}, numeradas até ADR-183: a 183 (o Raio-x do Unoovista para todo estudante) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 182 (os tempos do guia da aula e as abas das telas de condução) foi escrita depois de conferir \cd{origin/dev-local}, \cd{origin/dev} e as branches, a 181 (O Efeito Amplificador e a versão anterior da 2ª série) foi escrita depois de conferir \cd{origin/dev-local}, \cd{origin/dev} e as branches, a 180 (as respostas do PO sobre o Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 179 (as réguas do PO no Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 178 (as quatro fotos do carrossel do Júri Estadual) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{184 decisões}, numeradas até ADR-184: a 184 (O Enigma da Capa da Rádio, a missão do 2º ano) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, a 183 (o Raio-x do Unoovista para todo estudante) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 182 (os tempos do guia da aula e as abas das telas de condução) foi escrita depois de conferir \cd{origin/dev-local}, \cd{origin/dev} e as branches, a 181 (O Efeito Amplificador e a versão anterior da 2ª série) foi escrita depois de conferir \cd{origin/dev-local}, \cd{origin/dev} e as branches, a 180 (as respostas do PO sobre o Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 179 (as réguas do PO no Unoovista) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 178 (as quatro fotos do carrossel do Júri Estadual) foi escrita depois de conferir \cd{origin/dev-local} e as branches, a 177 (o alerta e o robô de Quem mandou isso?) foi escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees, e a 176 (os ajustes do Júri Estadual) é de uma frente paralela, que entrou no merge. Até a 175, a 169 (a quota de avaliação) e a 170 (o Canal A de A Seleção) nasceram numa frente paralela aberta no mesmo dia, que as reservou, a 171 é a de Quem mandou isso?, e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -234,6 +234,7 @@ que a cercam.
 \adrr{ADR-181} & O Efeito Amplificador toma o código da 2ª série, unidade 1, e a Missão Tempestade vira a versão anterior \cd{exp02em1b-v0}: no ar, fora do catálogo & 2026-10-22 & Aceita; estende a \adrr{ADR-110} e a \adrr{ADR-116}\\
 \zebra \adrr{ADR-182} & O guia da aula em quatro tempos e as telas de condução em abas: um template para a ficha e para a página da atividade, sem tirar texto & 2026-10-22 & Aceita; estende a \adrr{ADR-65} e a \adrr{ADR-100}\\
 \adrr{ADR-183} & O Raio-x do Unoovista aparece para todo estudante: neutros fora do tema, o lado dele acima de 3 no último caso, e o lado do início para quem mal rolou & 2026-10-23 & Aceita; estende a \adrr{ADR-179}\\
+\zebra \adrr{ADR-184} & O Enigma da Capa da Rádio toma o código do 2º ano, unidade 1: duas fotos que são recortes de uma panorâmica, a virada geral da turma e a IA só no preparo, com o professor marcando os objetos & 2026-10-26 & Aceita; estende a \adrr{ADR-110} e a \adrr{ADR-155}\\
 \bottomrule
 \end{tabularx}
 
@@ -16742,3 +16743,151 @@ três tarefas abria.
 \textbf{Gatilho.} O painel mostrar muitos Raio-x montados no último caso
 (sinal de que a geração deixou de criar neutros sobre o tema), ou o PO pedir
 uma régua para Raio-x incompleto.
+
+\section{ADR-184 --- O Enigma da Capa da Rádio: duas fotos recortadas de uma panorâmica, a virada geral da turma e a IA só no preparo}
+\label{adr:exp02ef1b-enigma-capa}
+
+\textbf{Data.} 2026-10-26. \textbf{Status.} Aceita. \textbf{Estende} a
+\adrr{ADR-110} (o código derivado da série e da unidade: a missão é a
+\cd{exp02ef1b}, a primeira do 2º ano) e a \adrr{ADR-155} (o
+\enquote{Zerar} apaga a evidência do pacote), no molde de O Efeito
+Amplificador (\adrr{ADR-181}): o pacote é a atividade, a fase da turma só
+anda para a frente, a sessão é por rodada e a ficha é só Canal A.
+
+\begin{especificacao}{Contexto}
+A esteira de produto entregou o one-pager v1.1 do PO para o 2º ano do Ensino
+Fundamental, unidade 1 (\enquote{Toda imagem tem um autor}): \emph{O Enigma
+da Capa da Rádio}. A criança de 7 a 8 anos é repórter mirim da Rádio Escola,
+investiga duas fotos tiradas no mesmo minuto na biblioteca, publica UMA como
+capa, numa moldura de tamanho fixo e com um selo, ouve o que a visitante
+entendeu do recorte e, depois da conversa com o professor, descobre que as
+duas fotos eram o MESMO lugar: os dois objetos iguais do fundo, o
+\emph{slider} que revela a panorâmica e o que ficou de fora. Fecham a missão
+os pares e a segunda foto (E5) e a transferência da horta, com a lagarta na
+alface (E6). Foco EF02CO05, associada EF02CO01, 100\% Canal A (no 2º ano é
+proibido questionário com alternativas textuais). O one-pager pede o clone
+\cd{instanooria}, a liberação da virada por estudante e a IA só como opção
+futura; o Lucas decidiu as divergências em 2026-10-26, e a régua do PO tem
+dois pontos que, lidos ao pé da letra, não medem o que ele quer.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O clone é o Unoovista} (\cd{@edu/ui/ds-unoovista}, uma seção
+    só), não o \cd{instanooria} que o PO pediu: o Unoovista é a rede social de
+    fotos das outras missões em produção (\adrr{ADR-133}, \adrr{ADR-135},
+    \adrr{ADR-137}), e o \cd{instanooria} ficou só na exp01ef1b. O roteiro do
+    podcast, literal do PO, troca \enquote{no Instanooria} por \enquote{no
+    Unoovista} --- a única troca no texto dele.
+  \item \textbf{As duas fotos são RECORTES de uma panorâmica 16:9.} Tudo é
+    coordenada 0--100 da panorâmica: \cd{foto-1} $= \{x{:}0, w{:}68\}$ e
+    \cd{foto-2} $= \{x{:}32, w{:}68\}$, a altura inteira. A faixa comum
+    $x \in [32, 68]$ aparece nas duas fotos, e é nela que moram os dois
+    objetos iguais (a régua do pacote exige $x - r \geq 32$ e $x + r \leq 68$).
+    Uma imagem serve as duas fotos, a capa, a tela dividida e a revelação do
+    \emph{slider}, e por isso a costura é garantida por construção. A moldura
+    da capa é fixa (80\% $\times$ 80\% da foto); a criança só a desloca, e o
+    servidor deriva o retângulo visível --- de onde saem a fala da visitante,
+    o \enquote{o que ficou fora} e a coerência do selo.
+  \item \textbf{A virada é GERAL da turma}: um botão, LIBERAR VIRADA, que
+    passa a fase de \cd{aberta} para \cd{virada}, só para a frente, com
+    histórico. Quem publica depois da virada vê a visitante e passa direto à
+    busca dos objetos.
+  \item \textbf{A IA entra desde o lançamento, só no PREPARO, por três
+    caminhos}: o banco padrão (a Biblioteca do PO) em um toque; dois pacotes
+    prontos (Horta e Museu), com as imagens revisadas dentro do \emph{bundle};
+    e a cena gerada por tema, em que a IA escreve o texto e desenha a
+    panorâmica 16:9 com o \emph{layout} que a geometria supõe (atividade 1 à
+    esquerda, atividade 2 à direita, os dois objetos no centro da parede), e
+    o \textbf{professor marca os dois objetos} tocando na imagem antes de
+    aprovar. O banco não aprova pacote sem os dois alvos (o \emph{CHECK}
+    \cd{exp02ef1b\_pacotes\_alvos\_check}). Quota do perfil professor; sem
+    saldo ou com o \emph{vendor} fora, o rascunho é o pacote pronto da
+    disciplina. Na aula não há IA.
+  \item \textbf{A régua é a do PO, com dois ajustes declarados.} A EF02CO05
+    junta quatro indicadores (a lupa, o selo, a busca e o voto da horta);
+    \enquote{atingiu} pede os quatro plenos, \textbf{\enquote{não atingiu}
+    pede MOSTRA TUDO e MAIS UM ausente} (lupa com dois alertas ou mais, selo
+    incoerente ou busca sem acerto mesmo com a ajuda) e o resto é \enquote{em
+    processo}. A EF02CO01 mede a busca: sem a ajuda (menos de 3 erros) é
+    \enquote{atingiu}, com a ajuda e menos de 3 erros depois dela é
+    \enquote{em processo}, e \textbf{3 erros ou mais depois da ajuda é
+    \enquote{não atingiu}} --- o \enquote{precisou do apontamento do
+    professor} do PO, medido.
+  \item \textbf{100\% Canal A}, sem pergunta e sem resolvedor de contexto. A
+    marcação do que ficou fora, os pares, o motivo e a segunda foto (E5) vão
+    só ao painel do professor: o PO só os registra. Falha técnica é ausência
+    de marca (\enquote{Não avaliado}).
+  \item \textbf{Sessão individual}, como pede o PO; o aparelho compartilhado
+    entra pelo mecanismo de equipes da plataforma (\adrr{ADR-111},
+    \adrr{ADR-130}), com \cd{individual} como padrão. Sem texto livre de
+    estudante, sem áudio de tela, sem Canal B.
+  \item O módulo é \arq{enigma-capa} (prefixo \rota{/enigma-capa}, tabelas
+    \cd{exp02ef1b\_*}) e a experiência nasce na 1.0.0, na porta 5187.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{O \cd{instanooria} do one-pager}: seria a segunda missão num
+    clone que as outras deixaram (\adrr{ADR-133}), com peças que o Unoovista
+    já tem em versão mais nova --- e o DS numa versão só (\adrr{ADR-139})
+    cobra manter as duas.
+  \item \textbf{Três imagens separadas} (a foto 1, a foto 2 e a panorâmica):
+    é o que o PO descreve, mas nada garante que as três se costurem --- a
+    panorâmica gerada à parte não teria o relógio no mesmo lugar das fotos, e
+    o \emph{slider} mostraria uma emenda justo no momento em que a criança
+    deveria ver que era o mesmo lugar. E os objetos iguais teriam de ser
+    anotados três vezes.
+  \item \textbf{A virada por estudante} (o PO pedia liberar o Aha
+    \enquote{apenas para essa sessão}): decisão do Lucas. Trinta botões numa
+    tela, um por criança, durante a conversa individual, são o professor
+    olhando para a tela em vez de para a criança; e a missão não depende da
+    ação dos outros para o contraste (a outra foto já está no pacote).
+  \item \textbf{A IA localizar os dois objetos na imagem que ela mesma gerou}:
+    o porte de IA da plataforma não lê imagem (não há visão no
+    \cd{AiProvider}), e um alvo devolvido pelo modelo seria um gabarito sem
+    revisão humana --- se errasse, a criança tocaria no relógio e ouviria
+    \enquote{errado}. O toque do professor custa dez segundos e é a revisão.
+  \item \textbf{O \enquote{não atingiu} literal da EF02CO05} (as quatro
+    faltas ligadas por \enquote{e}): seria inalcançável na prática, e a
+    criança que PERSISTE na crença de entrada --- MOSTRA TUDO, o descritor
+    central do PO --- cairia em \enquote{em processo} mesmo com outro sinal
+    ausente. MOSTRA TUDO sozinho, com o resto pleno, continua \enquote{em
+    processo}.
+  \item \textbf{O \enquote{não atingiu} da EF02CO01 como observação do
+    professor}: o PO o descreve como \enquote{precisou de apontamento direto
+    na tela}, o que o sistema não vê; os erros depois da ajuda são o sinal
+    medível disso, e o fluxo não trava --- com o pulso amarelo, o professor
+    aponta e a criança acha.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A geometria é ANOTAÇÃO das imagens}: trocar a imagem de um
+    pacote pronto pede reanotar os núcleos, os alvos, o fundo e os marcáveis.
+    No Museu o objeto é a PLACA DOURADA, e não a \enquote{placa 1952} do PO:
+    a imagem não tem texto escrito.
+  \item \textbf{A cena gerada pela IA tem geometria suposta}: os núcleos, o
+    fundo e os dois marcáveis são um gabarito de \emph{layout}
+    (\cd{GEOMETRIA\_DA\_CENA\_GERADA}); se a imagem não respeitar o pedido, a
+    fala da visitante pode errar. O professor vê a panorâmica com as duas
+    molduras antes de aprovar, e pode gerar de novo.
+  \item \textbf{A virada geral faz quem publica tarde pular a pausa}: a
+    criança que publica depois do botão vê a visitante e vai direto à busca,
+    sem a conversa antes da comparação. Ela só conversa na roda individual
+    depois da virada, e o guia não tem um passo próprio para esse caso.
+  \item \textbf{A lupa é relato da tela}: o servidor só limita a
+    plausibilidade (o máximo, nunca mais que o tempo desde a entrada). Uma
+    tela adulterada poderia relatar o piso sem a lupa ter passado pelo fundo.
+  \item \textbf{Os pares, o motivo e a segunda foto não entram na régua}: o
+    professor vê o que a criança fez, mas nenhum nível sai deles.
+\end{itemize}
+
+\textbf{Gatilho.} O PO pedir a virada por estudante de volta, ou o
+\cd{AiProvider} ganhar leitura de imagem (o que permitiria a IA propor os
+alvos para o professor só confirmar), ou a aula real mostrar muitas cenas da
+IA com a fala da visitante errada --- sinal de que a imagem não respeita o
+\emph{layout} pedido.

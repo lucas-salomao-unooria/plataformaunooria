@@ -67,6 +67,13 @@ Preparo do pacote & exp02em1b, \arq{src/efeito-amplificador/} &
   servidor, pela intenção, e os guardrails sobre a saída são dele (a IA não
   admite o problema sem ser questionada). Corrida de 12\,s, uma tentativa;
   qualquer falha, a árvore de intenções responde (\adrr{ADR-181}).\\
+Preparo da cena & exp02ef1b, \arq{src/enigma-capa/} &
+  O texto da cena (o lugar, as duas ações opostas no mesmo minuto, os dois
+  objetos fixos da parede, os selos e as falas da visitante) e a panorâmica
+  16:9, sobre o tema do professor, com a quota dele. A IA não dá coordenada:
+  o \textbf{professor marca os dois objetos} tocando na imagem antes de
+  aprovar. Sem saldo ou sem provedor, o pacote pronto da disciplina; em sala,
+  nada (\adrr{ADR-184}, Seção~\ref{sec:ia-preparo-exp02ef1b}).\\
 Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
   As quatro áreas e os quarenta estandes da mostra científica sobre o tema e
   os assuntos do professor (cinco chamadas: as categorias e as quatro áreas em
@@ -232,6 +239,58 @@ Com \env{AI\_PROVIDER}\cd{=mock}, o \cd{generateJson} sempre falha, e o
 preparo cai no banco padrão (\adrr{ADR-157}). A suíte de ponta a ponta
 (\arq{13-juri-estadual.mjs}) exerce a geração com IA real, nunca o mock.
 \end{atencao}
+
+\subsection{O preparo do Enigma da Capa da Rádio: texto, panorâmica e os alvos do professor}
+\label{sec:ia-preparo-exp02ef1b}
+
+A única superfície de IA da exp02ef1b é o \enquote{Gerar com IA} do
+professor, antes da aula (\arq{enigma-capa/\B{}preparo.\B{}service.ts},
+\adrr{ADR-184}). O professor dá a disciplina, o tema (até 60 caracteres), de 3
+a 6 palavras e uma nota opcional (até 200), e \rota{POST
+/enigma-capa/\B{}turmas/\B{}:turmaId/\B{}gerar-\B{}conteudo} faz DUAS chamadas pagas,
+as duas na quota do perfil \cd{professor} (regra 5: \cd{temSaldo} ANTES,
+\cd{consumir} depois):
+
+\begin{enumerate}
+  \item \cd{generateJson} (\arq{prompts.ts}, teto de 8.000 \emph{tokens} de
+    saída, \adrr{ADR-148}): o lugar, as duas ações opostas e simultâneas no
+    mesmo ambiente, os dois objetos FIXOS da parede do meio, os selos em CAIXA
+    ALTA de até três palavras, as falas da visitante (\enquote{Na foto,
+    vi\ldots!}) e o texto alternativo. A saída passa pela MESMA régua da
+    aprovação (\cd{regras/\B{}pacote.ts\#\B{}problemas\B{}Do\B{}Conteudo}, com os alvos ainda
+    opcionais).
+  \item \cd{generateImage} com \cd{proporcao: "16:9"}: a panorâmica, a partir
+    do JSON, pedida como \enquote{ilustração}, nunca \enquote{foto}
+    (\adrr{ADR-178}), com a atividade 1 na metade esquerda, a 2 na direita, os
+    dois objetos exatamente no centro da parede, sem texto escrito, sem logos e
+    com crianças genéricas. A imagem vai ao \emph{bucket} de mídia da
+    experiência (\cd{Assets\B{}Service.\B{}salvar\B{}Midia\B{}De\B{}Experiencia}, 1920$\times$1080
+    em \cd{webp}) e o pacote guarda a URL absoluta.
+\end{enumerate}
+
+\textbf{A IA não devolve coordenada.} A geometria da cena gerada é um gabarito
+de \emph{layout} (\cd{GEOMETRIA\_\B{}DA\_\B{}CENA\_\B{}GERADA}: os núcleos à esquerda e à
+direita, o fundo no meio, os dois marcáveis que são as próprias ações), e os
+dois alvos nascem \cd{null}. Na curadoria, o professor vê a panorâmica com as
+duas molduras, os selos e as falas, toca em cada objeto (\enquote{Toque no
+\{NOME\}}, \rota{POST .../\B{}rascunho/\B{}invariantes}) e aprova; o banco
+recusa aprovar pacote sem os dois alvos
+(\cd{exp02ef1b\_\B{}pacotes\_\B{}alvos\_\B{}check}). A alternativa --- a IA localizar os
+objetos --- foi descartada: a camada única não lê imagem, e o alvo seria um
+gabarito sem revisão.
+
+\textbf{A cobrança} é o que o \emph{vendor} disse que cobrou, nas duas
+chamadas (\cd{aoUsarTokens}); a imagem sem contagem vale
+\cd{CUSTO\_\B{}ESTIMADO\_\B{}DA\_\B{}IMAGEM} (2.000 \emph{tokens}), como no Júri, porque
+debitar zero faria a quota mentir. Na falha, cobra-se o que já foi pago
+(\adrr{ADR-74}), inclusive o texto de uma geração cuja imagem falhou. Sem saldo
+(\cd{motivo: "sem-saldo"}) ou com o \emph{vendor} fora (\cd{"indisponivel"}),
+o rascunho é o \textbf{pacote pronto da disciplina} (Língua Portuguesa e
+\enquote{outra} \seta{} Biblioteca, Ciências \seta{} Horta, História \seta{}
+Museu), com \cd{usouIa: false}: a aula acontece. O pacote conta
+\cd{ia\_geracoes} e \cd{ia\_tokens}. No painel de custos (\adrr{ADR-161}) a
+chamada aparece como \cd{enigma-capa} (\enquote{O Enigma da Capa da Rádio}, em
+\cd{RECURSOS\_\B{}DE\_\B{}IA}). Na aula não há chamada de IA nenhuma.
 
 \section{A camada única}
 

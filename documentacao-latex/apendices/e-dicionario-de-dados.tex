@@ -97,6 +97,10 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp02em1b\_gates\_turma} & Tenant & A fase da turma (\cd{aberta}, \cd{debate}, \cd{explicar})\\
 \cd{exp02em1b\_gates\_historico} & Tenant & Os botões do professor, em ordem (append-only)\\
 \zebra \cd{exp02em1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o chat (texto de menor, só para o F5), a prévia, o latch do Publicar, o feed e a Etapa 5\\
+\cd{exp02ef1b\_pacotes} & Tenant & O Enigma da Capa da Rádio: a cena (a panorâmica, as duas fotos com núcleo e fala da visitante, os selos, os dois objetos com o alvo, o fundo e os marcáveis); é a atividade da evidência\\
+\zebra \cd{exp02ef1b\_gates\_turma} & Tenant & A fase da turma (\cd{aberta}, \cd{virada})\\
+\cd{exp02ef1b\_gates\_historico} & Tenant & Cada LIBERAR VIRADA, com o pacote, a rodada e o professor\\
+\zebra \cd{exp02ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o crachá, a lupa, a capa (latch 1), a busca dos objetos, o que ficou fora, os pares, a segunda foto e o voto (latch 2) --- sem texto livre\\
 \cd{exp02em1b\_v0\_sessoes} & Tenant & Versão anterior (\adrr{ADR-181}): estado da partida da Missão Tempestade\\
 \zebra \cd{exp02em1b\_v0\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
 \cd{exp02em1b\_v0\_marcos} & Tenant & Trilha da decisão\\
@@ -1803,6 +1807,92 @@ Desde 2026-10-22 (\adrr{ADR-181}). Quatro tabelas, todas com \cd{escola\_id}
     \cd{explicar\_em}, \cd{indicadores} (só os que comprovam) e
     \cd{concluido\_em}.
 \end{itemize}
+
+\section{Tabelas de O Enigma da Capa da Rádio (exp02ef1b)}
+\label{sec:dicionario-exp02ef1b}
+
+Desde 2026-10-26 (\adrr{ADR-184}), migração
+\arq{20261026120000\_\B{}exp02ef1b\_\B{}enigma\_\B{}capa}. Quatro tabelas, todas
+com \cd{escola\_id} \cd{NOT NULL}, RLS forçada e política por escola; as
+regras estão no \arq{AGENTS.md} do módulo \arq{enigma-capa}. Nenhuma coluna
+guarda texto escrito pela criança.
+
+\begin{itemize}
+  \item \cd{exp02ef1b\_pacotes}: \cd{id}, \cd{turma\_id} (FK, cascata),
+    \cd{disciplina} (\cd{lingua-portuguesa} $|$ \cd{ciencias} $|$
+    \cd{historia} $|$ \cd{outra}), \cd{tema}, \cd{palavras} (\cd{TEXT[]}),
+    \cd{nota}, \cd{chave\_cena} (\cd{biblioteca} $|$ \cd{horta} $|$
+    \cd{museu} $|$ \cd{ia}), \cd{conteudo\_json} (a cena inteira, validada
+    pelo Zod; objeto), \cd{origem} (\cd{padrao} $|$ \cd{ia}), \cd{ativo},
+    \cd{rodada\_atual} ($\geq 1$), \cd{aprovado\_em}/\cd{aprovado\_por}
+    (juntos; \cd{ativo} só aprovado; aprovado só com os dois alvos em
+    \cd{conteudo\_json}, o \emph{CHECK} \cd{exp02ef1b\_\B{}pacotes\_\B{}alvos\_\B{}check}),
+    \cd{ia\_geracoes}, \cd{ia\_tokens}. Um em andamento e um rascunho por
+    turma (índices únicos parciais). Único (\cd{escola\_id}, \cd{id}): é o
+    alvo da FK composta das sessões.
+  \item \cd{exp02ef1b\_gates\_turma}: PK (\cd{escola\_id}, \cd{turma\_id}),
+    \cd{fase} (\cd{aberta} $|$ \cd{virada}, padrão \cd{aberta}),
+    \cd{atualizado\_em}.
+  \item \cd{exp02ef1b\_gates\_historico}: \cd{pacote\_id}, \cd{rodada},
+    \cd{fase} (só \cd{virada}), \cd{professor\_id} (FK para \cd{users},
+    \cd{SET NULL}) e \cd{em}.
+\end{itemize}
+
+\subsection{\cd{exp02ef1b\_sessoes}}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, estudante\_id, pacote\_id, rodada)} & PK composta & Uma
+  sessão por estudante, atividade e rodada. \cd{estudante\_id} com FK para
+  \cd{users} (cascata); (\cd{escola\_id}, \cd{pacote\_id}) com FK composta
+  para o pacote.\\
+\zebra \cd{turma\_id} & \cd{UUID} & FK para \cd{turmas}; o painel lê por
+  turma, pacote e rodada (índice).\\
+\cd{entrou\_em} & \cd{TIMESTAMPTZ} & O crachá: o teto de plausibilidade da
+  lupa é o tempo desde aqui.\\
+\zebra \cd{cracha} & \cd{TEXT} & \emph{CHECK}: \cd{fone-azul} $|$
+  \cd{fone-amarelo} $|$ \cd{microfone-verde} $|$ \cd{gravador-laranja}.\\
+\cd{lupa\_foto1\_ms}, \cd{lupa\_foto2\_ms} & \cd{INTEGER} & O tempo de lupa
+  sobre cada foto, o máximo relatado ($\geq 0$).\\
+\zebra \cd{lupa\_fundo1}, \cd{lupa\_fundo2} & \cd{BOOLEAN} & A lente passou
+  pelo fundo de cada foto; uma vez visto, fica visto.\\
+\cd{lupa\_alertas} & \cd{SMALLINT} & Os avanços antes do piso --- o indicador
+  da lupa na régua.\\
+\zebra \cd{lupa\_\B{}liberada\_\B{}em} & \cd{TIMESTAMPTZ?} & O piso cumprido.\\
+\cd{capa\_foto\_id}, \cd{capa\_selo\_id}, \cd{capa\_\B{}deslocamento} (\cd{JSONB}),
+  \cd{capa\_\B{}selo\_\B{}coerente}, \cd{visitante\_fala}, \cd{capa\_\B{}nucleo\_\B{}visivel},
+  \cd{capa\_publicada\_em} & vários & O \textbf{LATCH 1}: os sete campos
+  juntos (\emph{CHECK} \enquote{todos ou nenhum}), só depois da lupa
+  liberada. A coerência do selo e a fala vêm do servidor, nunca do cliente.\\
+\zebra \cd{invariantes\_\B{}encontrados} & \cd{JSONB} & Os achados
+  (\cd{"inv-1:foto-1"}\ldots), \emph{array}; quatro completam.\\
+\cd{invariantes\_erros} & \cd{SMALLINT} & De 0 a 3; a ajuda
+  (\cd{invariantes\_ajuda\_em}) existe se, e só se, chegou a 3.\\
+\zebra \cd{invariantes\_\B{}erros\_\B{}pos\_\B{}ajuda} & \cd{SMALLINT} & Os erros com a
+  ajuda acesa (0 sem ela): o \enquote{não atingiu} da EF02CO01 é 3 ou mais.\\
+\cd{invariantes\_\B{}concluido\_\B{}em} & \cd{TIMESTAMPTZ?} & Os quatro achados; só
+  depois da capa.\\
+\zebra \cd{panoramica\_\B{}aberta\_\B{}em} & \cd{TIMESTAMPTZ?} & O \emph{slider};
+  só depois da busca.\\
+\cd{fora\_toques} (\cd{JSONB}), \cd{fora\_itens} (\cd{TEXT[]}),
+  \cd{fora\_em} & vários & Os toques e os marcáveis que ficaram fora da capa;
+  toques e carimbo juntos, só depois da panorâmica.\\
+\zebra \cd{par\_cartas} (\cd{TEXT[]}), \cd{par\_motivo}, \cd{par\_correto},
+  \cd{par\_em} & vários & E5: duas cartas de \cd{carta-a} a \cd{carta-d},
+  o motivo (\cd{atividade} $|$ \cd{roupa}) e o acerto, juntos; só depois do
+  \enquote{fora}.\\
+\cd{segunda\_elemento}, \cd{segunda\_\B{}deslocamento} (\cd{JSONB}),
+  \cd{segunda\_\B{}essencial\_\B{}visivel}, \cd{segunda\_em} & vários & E5: o
+  elemento (\cd{mochila} $|$ \cd{parede} $|$ \cd{crianca-lendo}), a posição
+  e se a criança lendo ficou visível, juntos; só depois dos pares.\\
+\zebra \cd{transferencia\_\B{}voto}, \cd{concluido\_em} & \cd{TEXT},
+  \cd{TIMESTAMPTZ} & O \textbf{LATCH 2}: o voto (\cd{so-um-pedaco} $|$
+  \cd{mostra-tudo}) e a conclusão juntos, só depois da segunda foto.\\
+\cd{versao\_\B{}instrumento} & \cd{TEXT} & \cd{1.0.0} por padrão.\\
+\bottomrule
+\end{tabularx}
 
 \section{Tabelas da exp02em1b-v0 (Missão Tempestade, versão anterior)}
 
