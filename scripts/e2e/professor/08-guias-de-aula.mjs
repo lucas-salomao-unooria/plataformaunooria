@@ -1,7 +1,7 @@
 import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
-import { abrirAba, textoDeTodasAsAbas } from "../lib/abas.mjs";
+import { abrirAba, revelar, textoDeTodasAsAbas } from "../lib/abas.mjs";
 
 /**
  * O guia da aula de cada missão publicada (ADR-65).
@@ -97,6 +97,23 @@ const GUIAS = [
     bncc: "EF06CO01",
   },
   {
+    rota: "/professor/entre-redes/2-ano/unidade-1/guia",
+    missao: "O Enigma da Capa da Rádio · 2º ano",
+    /* Os três blocos vivos vêm de `GET /enigma-capa/professor/material`: as
+       cenas prontas COM o gabarito (os dois objetos iguais de cada uma), o
+       roteiro da conversa individual (a frase do arraste é conferida pelo
+       texto exato: o professor a repete em todo arraste) e o critério de cada
+       nível da régua. */
+    vivo: [
+      /As cenas prontas, com o gabarito — só para você/,
+      /Biblioteca Escolar — /,
+      /A conversa individual: a pausa, os três cartões e as perguntas/,
+      /Você pode mover a foto, mas não mudar o tamanho\./,
+      /O critério de cada nível \(registrado pelo que a criança faz\)/,
+    ],
+    bncc: "EF02CO05",
+  },
+  {
     rota: "/professor/entre-redes/vila-do-lume/guia",
     missao: "Vila do Lume · transversal",
     vivo: [/não foi um colega de verdade/i],
@@ -135,7 +152,7 @@ await suite(
       "O professor abre o guia na véspera para preparar e na hora para conduzir. Ele é o mesmo " +
       "documento em toda missão — mudam o conteúdo e os blocos que vêm de fonte viva.",
     prova: [
-      "As seis missões publicadas têm guia, e nenhuma cai em 404",
+      "As sete missões desta lista têm guia, e nenhuma cai em 404",
       "As nove seções aparecem na mesma ordem em todas, divididas em quatro tempos (abas)",
       "Cada tempo mostra só as seções dele",
       "Cada guia traz a habilidade da BNCC Computação com o código",
@@ -197,6 +214,26 @@ await suite(
         );
       }
     }
+    /* A missão nova (exp02ef1b, ADR-184) — tela nova, passo novo: as cenas
+       prontas com os dois objetos marcados, que o professor lê ANTES da aula. */
+    await p.goto(`${HUB}/professor/entre-redes/2-ano/unidade-1/guia`, { waitUntil: "domcontentloaded" });
+    await esperarOuFalharCedo(p.locator("h1", { hasText: "Guia da aula" }), p.locator(ALERTA_DE_ERRO), {
+      oQue: "o guia do Enigma da Capa da Rádio",
+      timeout: 30_000,
+    });
+    const cenasProntas = p.locator(":text('As cenas prontas, com o gabarito')").first();
+    await revelar(p, cenasProntas);
+    await cenasProntas.scrollIntoViewIfNeeded();
+    r.exigir(
+      (await p.locator("[data-cena-do-enigma] [data-alvo]").count()) >= 6,
+      "o guia do Enigma mostra as três cenas prontas com os dois objetos marcados em cada uma",
+    );
+    await r.registrar(p, "guia-do-enigma-cenas-prontas", {
+      titulo: "O Enigma da Capa da Rádio: as cenas prontas, com o gabarito",
+      mostra: "A Biblioteca, a Horta e o Museu, cada uma com as duas molduras das fotos e os círculos dos dois objetos iguais do fundo.",
+      prova: "O bloco é vivo (GET /enigma-capa/professor/material): o professor lê a cena que a turma vai ver, com os alvos que a api usa — e não projeta.",
+    });
+
     await abrirAba(p, "Conduzir");
     await r.registrar(p, "guia-tempo-conduzir", {
       titulo: "O guia em quatro tempos: Conduzir",

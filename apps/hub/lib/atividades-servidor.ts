@@ -6,6 +6,7 @@ import {
   atividadesDoInstanooria,
   atividadesDoJornal,
   atividadesDoEfeito,
+  atividadesDoEnigma,
   atividadesDoJuri,
   atividadesDoQuemMandou,
   ordenarAtividades,
@@ -14,6 +15,7 @@ import {
   type MissaoComAtividade,
 } from "./entre-redes/atividades";
 import { caminhoDaTurma as caminhoDoEfeito, rotuloDaDisciplina as rotuloDoEfeito, type PacotesDaTurmaEfeito } from "./efeito-amplificador-tipos";
+import { caminhoDaTurma as caminhoDoEnigma, rotuloDaDisciplina as rotuloDoEnigma, type PacotesDaTurmaEnigma } from "./enigma-capa-tipos";
 import type { PacotesDaTurma } from "./jornal-escola-tipos";
 import { caminhoDaTurma, rotuloDaDisciplina, type PacotesDoJuri } from "./juri-estadual-tipos";
 import type { PacoteDaTurma, PacotesDaTurmaQuemMandou } from "./quem-mandou-tipos";
@@ -62,6 +64,10 @@ export async function atividadesDaMissao(
     case "exp02em1b": {
       const r = await apiDoServidor<PacotesDaTurmaEfeito>(`${caminhoDoEfeito(turmaId)}/pacotes`);
       return r ? ordenarAtividades(atividadesDoEfeito(r, rotuloDoEfeito)) : null;
+    }
+    case "exp02ef1b": {
+      const r = await apiDoServidor<PacotesDaTurmaEnigma>(`${caminhoDoEnigma(turmaId)}/pacotes`);
+      return r ? ordenarAtividades(atividadesDoEnigma(r, rotuloDoEnigma)) : null;
     }
   }
 }

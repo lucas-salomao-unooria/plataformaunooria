@@ -1,0 +1,28 @@
+{
+  "id": "exp02ef1b",
+  "nome": "O Enigma da Capa da Rádio",
+  "versao": "1.0.0",
+  "produto": "entre-redes",
+  "series": [
+    "2EF"
+  ],
+  "unidade": 1,
+  "publico": "estudante",
+  "viewport": {
+    "largura": 375,
+    "altura": 812
+  },
+  "capabilities": [
+    "telemetria",
+    "progresso"
+  ],
+  "permissoes": [
+    "forms"
+  ],
+  "verbos": {
+    "attempted": "entrou na missão",
+    "progressed": "entrou numa etapa",
+    "interacted": "investigou com a lupa, publicou a capa, achou os objetos iguais e montou o álbum",
+    "completed": "concluiu a missão"
+  }
+}

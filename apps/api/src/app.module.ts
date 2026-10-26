@@ -30,6 +30,7 @@ import { JornalEscolaModule } from "./jornal-escola/jornal-escola.module";
 import { PodcastModule } from "./podcast/podcast.module";
 import { JuriEstadualModule } from "./juri-estadual/juri-estadual.module";
 import { EfeitoAmplificadorModule } from "./efeito-amplificador/efeito-amplificador.module";
+import { EnigmaCapaModule } from "./enigma-capa/enigma-capa.module";
 import { SalasModule } from "./salas/salas.module";
 import { EquipesModule } from "./equipes/equipes.module";
 import { EvidenciasModule } from "./evidencias/evidencias.module";
@@ -90,6 +91,7 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     JornalEscolaModule,
     JuriEstadualModule,
     EfeitoAmplificadorModule,
+    EnigmaCapaModule,
     FotoContaModule,
     // O ÚLTIMO, de propósito: é global (`podcast/podcast.module.ts`).
     PodcastModule,

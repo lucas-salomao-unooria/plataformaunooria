@@ -104,6 +104,13 @@ const PREFIXOS_PERMITIDOS = [
      aula e as telas andam pelo polling delas. As guardas de papel estão na api
      (`@Roles("professor")` na escrita). */
   "efeito-amplificador",
+  /* exp02ef1b (O Enigma da Capa da Rádio, ADR-184): o preparo (banco padrão,
+     pacotes prontos, gerar com IA, marcar os dois objetos iguais na curadoria,
+     homologar), o "Usar esta atividade agora", o botão ÚNICO da aula (LIBERAR
+     VIRADA), o painel relido a cada 5 s e o "Zerar Turma" são client-side — o
+     professor toca na frente da sala e os aparelhos andam pelo polling do gate
+     (3 s). As guardas de papel estão na api (`@Roles("professor")` na escrita). */
+  "enigma-capa",
   /* exp06ef2b: o gate da aula (abrir a Aula 2, pausar a simulação) e o "zerar
      turma" são client-side — a professora aperta no meio da aula e as 30 telas
      andam na hora, sem recarregar a página. As guardas de papel estão na api

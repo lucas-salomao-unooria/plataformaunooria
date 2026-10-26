@@ -115,6 +115,11 @@ describe("da sala para a missão", () => {
     );
   });
 
+  test("o 2º ano (O Enigma da Capa da Rádio) abre a ficha da unidade 1, com guia", () => {
+    expect(rotaDeConducao("exp02ef1b", TURMA)).toBe(`/professor/entre-redes/2-ano/unidade-1?turmaId=${TURMA}`);
+    expect(rotasDaMissao("exp02ef1b")?.guia).toBe("/professor/entre-redes/2-ano/unidade-1/guia");
+  });
+
   test("missão que o hub não conhece não ganha link", () => {
     expect(rotaDeConducao("exp09ef4b", TURMA)).toBeNull();
   });

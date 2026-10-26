@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import {
   MISSAO_A_SELECAO,
   MISSAO_EFEITO_AMPLIFICADOR,
+  MISSAO_ENIGMA_CAPA,
   MISSAO_MANIFESTO_IA,
   MISSAO_FOTO_CONTA,
   MISSAO_JORNAL_DA_ESCOLA,
@@ -15,6 +16,7 @@ import {
 
 import { ResultadosASelecao } from "./resultados-a-selecao";
 import { ResultadosEfeitoAmplificador } from "./resultados-efeito-amplificador";
+import { ResultadosEnigmaCapa } from "./resultados-enigma-capa";
 import { ResultadosManifestoIa } from "./resultados-manifesto-ia";
 import { ResultadosFotoConta } from "./resultados-foto-conta";
 import { ResultadosJornalEscola } from "./resultados-jornal-escola";
@@ -82,6 +84,9 @@ export default async function ResultadosPage({
   }
   if (missao.expId === MISSAO_EFEITO_AMPLIFICADOR.expId) {
     return <ResultadosEfeitoAmplificador missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} separar={separar} />;
+  }
+  if (missao.expId === MISSAO_ENIGMA_CAPA.expId) {
+    return <ResultadosEnigmaCapa missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} separar={separar} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();
