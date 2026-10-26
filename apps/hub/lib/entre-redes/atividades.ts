@@ -1,5 +1,6 @@
 import type { CoberturasDaTurma } from "../a-selecao-tipos";
 import type { PacotesDaTurmaEfeito } from "../efeito-amplificador-tipos";
+import type { PacotesDaTurmaEnigma } from "../enigma-capa-tipos";
 import type { PacotesDaTurma } from "../jornal-escola-tipos";
 import type { PacotesDoJuri } from "../juri-estadual-tipos";
 import type { PacotesDaTurmaQuemMandou } from "../quem-mandou-tipos";
@@ -19,7 +20,7 @@ import type { PacotesDaTurmaQuemMandou } from "../quem-mandou-tipos";
  */
 
 /** As missões com atividade — o mesmo par de `equipes/regras.ts#EXPERIENCIAS_COM_ATIVIDADE` na api. */
-export const MISSOES_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b"] as const;
+export const MISSOES_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b"] as const;
 export type MissaoComAtividade = (typeof MISSOES_COM_ATIVIDADE)[number];
 
 export function temAtividades(expId: string | null | undefined): expId is MissaoComAtividade {
@@ -115,6 +116,8 @@ export function caminhoDoEmAndamento(expId: MissaoComAtividade, turmaId: string,
       return `/juri-estadual/turmas/${t}/pacotes/${a}/em-andamento`;
     case "exp02em1b":
       return `/efeito-amplificador/turmas/${t}/pacotes/${a}/em-andamento`;
+    case "exp02ef1b":
+      return `/enigma-capa/turmas/${t}/pacotes/${a}/em-andamento`;
   }
 }
 
@@ -212,6 +215,22 @@ export function atividadesDoJuri(p: PacotesDoJuri, rotuloDaDisciplina: (slug: st
 
 /** O Efeito Amplificador (ADR-181): o pacote homologado é a atividade, sem segunda fase de aprovação. */
 export function atividadesDoEfeito(p: PacotesDaTurmaEfeito, rotuloDaDisciplina: (slug: string) => string): AtividadeNaLista[] {
+  return p.historico.map((h) => ({
+    id: h.id,
+    titulo: h.tema,
+    detalhe: [rotuloDaDisciplina(h.disciplina), ORIGEM[h.origem]].join(" · "),
+    estado: h.ativo ? "em-andamento" : "pronta",
+    criadaEm: h.aprovadoEm,
+    rodadas: h.rodadas,
+  }));
+}
+
+/**
+ * O Enigma da Capa da Rádio (ADR-184): o pacote aprovado é a atividade, sem
+ * segunda fase. O título é o tema; a linha de baixo diz a disciplina e a origem
+ * (pacote pronto ou gerado com IA).
+ */
+export function atividadesDoEnigma(p: PacotesDaTurmaEnigma, rotuloDaDisciplina: (slug: string) => string): AtividadeNaLista[] {
   return p.historico.map((h) => ({
     id: h.id,
     titulo: h.tema,

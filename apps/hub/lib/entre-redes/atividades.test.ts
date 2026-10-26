@@ -20,8 +20,8 @@ import { concluirCriacao, destinoDepoisDeCriar } from "./criar-atividade";
  * leva, e o fim da criação — pôr no ar e montar as equipes, na ordem certa.
  */
 describe("a lista de atividades", () => {
-  test("as seis missões com atividade — o mesmo par da api", () => {
-    expect(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b"].every(temAtividades)).toBe(true);
+  test("as sete missões com atividade — o mesmo par da api", () => {
+    expect(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b"].every(temAtividades)).toBe(true);
     /* A Missão Tempestade, versão anterior (ADR-181), segue sem atividade. */
     expect(temAtividades("exp02em1b-v0")).toBe(false);
     expect(temAtividades(undefined)).toBe(false);
@@ -32,6 +32,7 @@ describe("a lista de atividades", () => {
     expect(serieDaMissao("exp04ef1b")).toBe("4EF");
     expect(serieDaMissao("exp06ef1b")).toBe("6EF");
     expect(serieDaMissao("exp02em1b")).toBe("2EM");
+    expect(serieDaMissao("exp02ef1b")).toBe("2EF");
     expect(serieDaMissao("app-90-plano-de-aula")).toBeNull();
   });
 

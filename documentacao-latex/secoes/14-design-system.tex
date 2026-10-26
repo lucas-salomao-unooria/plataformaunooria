@@ -214,7 +214,7 @@ pacote direto num componente:
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
 \cd{@edu/ui/ds} & \cd{unooria} & plataforma, o robô do grupo de Quem mandou isso? (\cd{PuzzleBlock} e \cd{PuzzleTrack}, \adrr{ADR-177}), a tela da escola do Júri Estadual (\cd{RadioGroup}, \cd{Card}, \cd{AlertBox}; o \cd{PuzzleBlock} e o \cd{PuzzleTrack} da cadeia saíram com a \adrr{ADR-174}), e a redação do Jornal da Escola (com as oito peças da 0.2.8: \cd{NewsCard}, \cd{NewsArticle}, \cd{RevealClue}, \cd{BottomSheet}, \cd{NewspaperPage}, \cd{SpeechBubble}, \cd{PuzzleBlock} e \cd{PuzzleTrack}, mais \cd{NEWS\_MEDIUMS} e \cd{NEWSPAPER\_LAYOUTS})\\
 \cd{@edu/ui/ds-insta} & \cd{instanooria} & o clone da exp01ef1b (com as extensões da 0.2.5, nascidas para a exp07ef1b antes de ela migrar: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer}; e as da 0.2.7: \cd{InlineHint}, \cd{GestureHint} e o \cd{Snackbar} do clone, como \cd{SnackbarInsta})\\
-\cd{@edu/ui/ds-unoovista} & \cd{unoovista} & exp08ef1b (\adrr{ADR-133}), exp07ef1b (\adrr{ADR-135}), exp06ef1b (\adrr{ADR-137}), o feed e os bastidores de O Efeito Amplificador (exp02em1b, \adrr{ADR-181}) e o \cd{PostCard} da gaveta do Jornal (\adrr{ADR-136}); os nomes que colidem com a plataforma saem com o sufixo \cd{Unv} (\cd{ButtonUnv}, \cd{AvatarUnv}, \cd{IconUnv}\ldots)\\
+\cd{@edu/ui/ds-unoovista} & \cd{unoovista} & exp08ef1b (\adrr{ADR-133}), exp07ef1b (\adrr{ADR-135}), exp06ef1b (\adrr{ADR-137}), o feed e os bastidores de O Efeito Amplificador (exp02em1b, \adrr{ADR-181}), O Enigma da Capa da Rádio inteiro (exp02ef1b, \adrr{ADR-184}) e o \cd{PostCard} da gaveta do Jornal (\adrr{ADR-136}); os nomes que colidem com a plataforma saem com o sufixo \cd{Unv} (\cd{ButtonUnv}, \cd{AvatarUnv}, \cd{IconUnv}\ldots)\\
 \cd{@edu/ui/ds-unootube} & \cd{unitube} & backup-exp04ef1b (o UnooTube arquivado, \adrr{ADR-116}: não roda mais)\\
 \cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp08ef4b (a exp02em1b saiu na \adrr{ADR-138})\\
 \cd{@edu/ui/ds-unooriaai} & \cd{unooriaai} & exp02em1b-v0 (\adrr{ADR-138}) e o chat da exp02em1b (\adrr{ADR-181}); o \cd{GPTCard} virou \cd{AssistantCard}, e não há \cd{gptGlyphs}\\
@@ -1076,6 +1076,46 @@ campo de seleção (a Decisão usa o \cd{<select>} nativo com os \emph{tokens}
 de foco, então os \emph{handlers} de fechar continuam estáveis
 (\cd{useCallback}). As duas compensações de CSS da seção antiga eram código
 morto e saíram.
+
+\subsection{Lacunas abertas em \cd{unoovista} (exp02ef1b 1.0.0)}
+\label{sec:ds-lacunas-exp02ef1b}
+
+O Enigma da Capa da Rádio (\adrr{ADR-184}) é a primeira missão dos anos
+iniciais inteira no Unoovista, e a mecânica dela --- recortar, enquadrar,
+comparar --- pede peças que a seção não tem. Cada uma está compensada no
+código da experiência, marcada \enquote{(b) COMPENSAÇÃO local --- pedido
+aberto no storybook-unooria}, e sai quando o pacote publicar a peça.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{34mm}X@{}}
+\toprule
+\headrow \thd{Peça} & \thd{Onde} & \thd{A lacuna}\\
+\midrule
+Janela (recorte por CSS, CARREGANDO CAPA\ldots{} e TENTAR DE NOVO) &
+  \arq{componentes/\B{}Janela.tsx} & o \cd{PostCard.Media} só trata a imagem
+  INTEIRA\\
+\zebra Moldura de tamanho fixo (só desloca, sem zoom) &
+  \arq{componentes/\B{}MolduraFixa.tsx} & não há enquadramento na seção\\
+Lupa circular 2$\times$, com o pulso azul do fundo & \arq{telas/\B{}Bancada.tsx}
+  & não existe em seção alguma\\
+\zebra Tela dividida, \emph{slider} de revelação, linhas douradas e marcas &
+  \arq{telas/\B{}Virada.tsx} & idem; o \emph{slider} é o
+  \cd{<input type="range">} nativo\\
+Cartas de tamanho fixo arrastáveis & \arq{telas/\B{}Explicar.tsx} & não há
+  carta arrastável\\
+\zebra Bento e Iara & \arq{componentes/\B{}Personagem.tsx} & não há arte dos
+  dois; \cd{AvatarUnv} com iniciais e \cd{MessageBubble}\\
+Cor de celebração (dourado) e de ajuda (amarelo) &
+  \arq{estilos/\B{}globals.css} & a seção não publica essas cores
+  (\cd{--exp-dourado}, \cd{--exp-amarelo})\\
+\zebra Alvo de toque de 56\,px (anos iniciais) & \arq{estilos/\B{}globals.css}
+  & o \emph{token} do pacote é 44\,px (\cd{--unv-touch-target})\\
+\bottomrule
+\end{tabularx}
+
+A nomeação da missão (ENQUADRAMENTO, AUTORIA, O QUE FICOU DE FORA) é ORAL, do
+professor: não há tela da escola, e por isso a seção \cd{unooria} não entra no
+\emph{bundle}. E PUBLICAR CAPA é o botão primário do Unoovista (roxo), não o
+verde do one-pager: cor de ação é do DS.
 
 \subsection{Avisos que ficaram obsoletos}
 

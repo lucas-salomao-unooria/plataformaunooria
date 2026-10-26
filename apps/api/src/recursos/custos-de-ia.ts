@@ -38,6 +38,7 @@ export const RECURSOS_DE_IA: Record<string, { chave: string; nome: string }> = {
   ajuda: { chave: "ajuda", nome: "Ajuda (mascote e avatar)" },
   bemestar: { chave: "bemestar", nome: "Acompanhamento de bem-estar" },
   "efeito-amplificador": { chave: "efeito-amplificador", nome: "O Efeito Amplificador" },
+  "enigma-capa": { chave: "enigma-capa", nome: "O Enigma da Capa da Rádio" },
   "foto-conta": { chave: "foto-conta", nome: "O Que a Foto Conta" },
   "jornal-escola": { chave: "jornal-escola", nome: "Jornal da Escola" },
   "juri-estadual": { chave: "juri-estadual", nome: "O Júri Estadual de Projetos" },

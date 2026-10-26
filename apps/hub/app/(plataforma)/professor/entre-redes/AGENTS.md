@@ -228,3 +228,11 @@ A página da atividade é `resultados/resultados-juri-estadual.tsx`; a criação
   cravado na copy nem no guia.
 - **O gráfico de votos usa "Área A"… no eixo** (o `BarChart` corta acima de ~8
   caracteres) e o nome na legenda; as barras em % dos votos.
+
+## O Enigma da Capa da Rádio (exp02ef1b)
+
+Página `resultados/resultados-enigma-capa.tsx`, criação `atividades/nova/criar-enigma-capa.tsx`,
+espelho `lib/enigma-capa-tipos.ts`. O `banco-padrao` (Biblioteca, Horta, Museu) **aprova E põe no
+ar** num toque. Na cena da IA o professor marca os dois objetos iguais TOCANDO na imagem (a IA não
+devolve coordenada): os dois toques vão juntos em `rascunho/invariantes`. A cena pronta é arquivo do
+bundle: a base vem de `lib/bundle-da-experiencia.ts`, no servidor. LIBERAR VIRADA é um botão só, da turma.

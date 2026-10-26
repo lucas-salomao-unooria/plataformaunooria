@@ -75,6 +75,14 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
    * boot da missão morre com "Failed to fetch" e o erro não diz por quê.
    */
   "exp06ef1b": "http://localhost:5185",
+  /**
+   * O Enigma da Capa da Rádio — 2º ano EF, unidade 1 (ADR-184).
+   *
+   * 5187, a próxima livre depois da 5186 (a exp02em1b-v0). A porta entra também
+   * no CORS_ORIGINS da api — sem ela o boot da missão morre com "Failed to
+   * fetch" e o erro não diz por quê.
+   */
+  "exp02ef1b": "http://localhost:5187",
 };
 
 export function baseDevDaExperiencia(expId: string, fallback: string): string {
