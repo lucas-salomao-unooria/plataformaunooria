@@ -107,6 +107,24 @@ const FONTES: Record<ExperienciaComAtividade, FonteDeAtividades> = {
       );
     },
   },
+  /* O Enigma da Capa da Rádio (ADR-184): o pacote homologado, como na exp02em1b. */
+  exp02ef1b: {
+    async emAndamento(tx, escolaId, turmaId) {
+      const ativo = await tx.exp02ef1bPacote.findFirst({
+        where: { escolaId, turmaId, ativo: true },
+        select: { id: true },
+      });
+      return ativo?.id ?? null;
+    },
+    async daTurma(tx, escolaId, turmaId, atividadeId) {
+      if (!UUID_RE.test(atividadeId)) return false;
+      return (
+        (await tx.exp02ef1bPacote.count({
+          where: { id: atividadeId, escolaId, turmaId, aprovadoEm: { not: null } },
+        })) > 0
+      );
+    },
+  },
   /* O Instanooria escolhe a atividade da criança pela regra do motor — a mesma
      de `POST /runs` e do `boot`. A atividade antiga SEM turma vale para a escola
      inteira, e por isso é "desta turma" também: a montagem dela é por turma. */

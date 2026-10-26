@@ -176,6 +176,8 @@ export const LIBERACOES_DE_DEMO: Array<{ turma: string; expIds: string[] }> = [
   // suíte `estudante/05-vila-do-lume` + `estudante/02-instanooria` percorre.
   { turma: "8A", expIds: ["app-70-vila-do-lume", "exp08ef1b", "exp08ef4b"] },
   { turma: "1A", expIds: ["exp01ef1b"] },
+  // O 2º ano: O Enigma da Capa da Rádio (ADR-184).
+  { turma: "2A", expIds: ["exp02ef1b"] },
   // O 4º ano ficou sem missão liberada entre o arquivamento do UnooTube
   // (ADR-116) e a chegada do Jornal da Escola, que herdou o código exp04ef1b.
   // É a turma da suíte `estudante/12-jornal-da-escola`.
