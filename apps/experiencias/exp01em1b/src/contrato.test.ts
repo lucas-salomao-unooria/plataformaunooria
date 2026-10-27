@@ -13,7 +13,7 @@ import { describe, expect, test } from "vitest";
  *   (`OPCAO_CERTA_DO_BLOCO`) — nem pelo nome, nem pelos pares escritos à mão.
  * - Persistência no navegador: a fila de envio é em MEMÓRIA, e token só em
  *   memória (regra 4).
- * - IA, Canal B e texto livre (decisões fechadas: as conversas são
+ * - IA e texto livre (decisões fechadas: as conversas são
  *   roteirizadas do pacote).
  * - A seção do DS por tela: a escola é `unooria`, o assistente é `unooriaai`,
  *   e cada arquivo importa UMA ponte só.
@@ -51,7 +51,7 @@ describe("nada persiste no navegador", () => {
   });
 });
 
-describe("sem IA, sem Canal B e sem texto livre", () => {
+describe("sem IA e sem texto livre", () => {
   test("nenhuma chamada de IA, pergunta de avaliação ou campo de texto", () => {
     for (const [arquivo, texto] of fonte) {
       expect({ arquivo, casou: /\.ai\.gerar|\/ai\/|\/perguntas|ChoicePoll|StoryPoll|TextField|TextArea|<textarea|<input/.test(texto) }).toEqual({
