@@ -1,3 +1,4 @@
+import { FICHA_EXP01EM1B } from "./exp01em1b";
 import { FICHA_EXP02EF1B } from "./exp02ef1b";
 import { FICHA_EXP02EM1B } from "./exp02em1b";
 import { FICHA_EXP02EM1B_V0 } from "./exp02em1b-v0";
@@ -15,7 +16,7 @@ export type { FichaPedagogica, HabilidadeDaFicha, MarcadorDaFicha, PerguntaDaFic
  *
  * A plataforma da evidência entrou antes de qualquer missão medir alguma coisa;
  * a primeira foi Quem Mandou Isso? v2.2 (exp05ef1b), a segunda A Seleção
- * (exp07ef1b), a terceira o Jornal da Escola (exp04ef1b), a quarta O Júri Estadual de Projetos (exp06ef1b) a quinta O Conteúdo que não chegou (exp08ef1b) e a sexta a Missão Tempestade (hoje `exp02em1b-v0`, a versão anterior da ADR-181), e a sétima O Efeito Amplificador (`exp02em1b`, ADR-181), só Canal A, a primeira do EM e a única que só conta ao encerrar (ADR-154), e a oitava O Enigma da Capa da Rádio (`exp02ef1b`, ADR-184), 100% Canal A, a primeira do 2º ano. Cada missão que for adaptada acrescenta a ficha dela aqui (um
+ * (exp07ef1b), a terceira o Jornal da Escola (exp04ef1b), a quarta O Júri Estadual de Projetos (exp06ef1b) a quinta O Conteúdo que não chegou (exp08ef1b) e a sexta a Missão Tempestade (hoje `exp02em1b-v0`, a versão anterior da ADR-181), e a sétima O Efeito Amplificador (`exp02em1b`, ADR-181), só Canal A, a primeira do EM e a única que só conta ao encerrar (ADR-154), e a oitava O Enigma da Capa da Rádio (`exp02ef1b`, ADR-184), 100% Canal A, a primeira do 2º ano, e a nona O Assistente Invisível (`exp01em1b`, ADR-185), 100% Canal A, as quatro marcas no latch do Publicar. Cada missão que for adaptada acrescenta a ficha dela aqui (um
  * arquivo `fichas/<expId>.ts`), no MESMO trabalho que faz a missão chamar
  * `EvidenciasService.marcar` e `registrarContexto`.
  *
@@ -37,4 +38,5 @@ export const FICHAS: readonly FichaPedagogica[] = [
   FICHA_EXP02EM1B_V0,
   FICHA_EXP02EM1B,
   FICHA_EXP02EF1B,
+  FICHA_EXP01EM1B,
 ];

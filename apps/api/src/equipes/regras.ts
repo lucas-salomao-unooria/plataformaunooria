@@ -25,12 +25,14 @@
  * três ações da ficha são copiadas. O Enigma da Capa da Rádio (exp02ef1b,
  * ADR-184) é individual por padrão (decisão do Lucas): a equipe é o
  * mecanismo do APARELHO COMPARTILHADO — o painel conta por computador e as
- * duas marcas da ficha são copiadas aos colegas de tela. O
+ * duas marcas da ficha são copiadas aos colegas de tela. O Assistente
+ * Invisível (exp01em1b, ADR-185) segue o mesmo desenho: individual por
+ * padrão, o painel conta por computador e as quatro marcas são copiadas. O
  * UnooTube estava aqui como exp04ef1b até ser ARQUIVADO (ADR-116): o código
  * passou ao Jornal, e a lista é por CÓDIGO. Missão que entra aqui sem essa
  * conferência abre para equipe e continua contando por criança no painel.
  */
-export const EXPERIENCIAS_COM_EQUIPE = ["exp08ef1b", "exp02em1b-v0", "exp05ef1b", "exp07ef1b", "exp04ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b"] as const;
+export const EXPERIENCIAS_COM_EQUIPE = ["exp08ef1b", "exp02em1b-v0", "exp05ef1b", "exp07ef1b", "exp04ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b"] as const;
 export type ExperienciaComEquipe = (typeof EXPERIENCIAS_COM_EQUIPE)[number];
 
 export function permiteEquipes(expId: string): expId is ExperienciaComEquipe {
@@ -48,7 +50,7 @@ export function permiteEquipes(expId: string): expId is ExperienciaComEquipe {
  * andamento na turma (`registrarAtividades`). A plataforma só guarda o id,
  * opaco, como a evidência pedagógica.
  */
-export const EXPERIENCIAS_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b"] as const;
+export const EXPERIENCIAS_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b"] as const;
 
 export function temAtividades(expId: string): boolean {
   return (EXPERIENCIAS_COM_ATIVIDADE as readonly string[]).includes(expId);

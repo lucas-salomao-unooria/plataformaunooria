@@ -54,7 +54,7 @@ function todosUmaVez(r: ResultadoDoSorteio, presentes: readonly Presente[]) {
 
 describe("as missões que aceitam equipe", () => {
   test("só as seis conferidas — o exp04ef1b voltou com o Jornal da Escola, o UnooTube arquivado não (ADR-116), e o Júri Estadual entrou", () => {
-    expect([...EXPERIENCIAS_COM_EQUIPE]).toEqual(["exp08ef1b", "exp02em1b-v0", "exp05ef1b", "exp07ef1b", "exp04ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b"]);
+    expect([...EXPERIENCIAS_COM_EQUIPE]).toEqual(["exp08ef1b", "exp02em1b-v0", "exp05ef1b", "exp07ef1b", "exp04ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b"]);
     expect(permiteEquipes("exp02em1b-v0")).toBe(true);
     expect(permiteEquipes("exp05ef1b")).toBe(true);
     expect(permiteEquipes("exp07ef1b")).toBe(true);
@@ -336,7 +336,7 @@ describe("o modo manual", () => {
 
 describe("a atividade da montagem (ADR-130)", () => {
   test("as cinco missões com atividade, e o fixo `turma` só nas outras", () => {
-    expect([...EXPERIENCIAS_COM_ATIVIDADE]).toEqual(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b"]);
+    expect([...EXPERIENCIAS_COM_ATIVIDADE]).toEqual(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b"]);
     expect(temAtividades("exp02em1b-v0")).toBe(false);
     const uuid = "3f2a8c1e-0b4d-4c2a-9f1e-2d3c4b5a6f70";
     expect(atividadeCasaComMissao("exp07ef1b", uuid)).toBe(true);
