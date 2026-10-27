@@ -13,8 +13,12 @@ import { COLUNAS, type Cartao, type ClassificacaoValor, type Coluna } from "../l
  * `PuzzleTrack` torna acionável com `onSlotActivate` e chama "Colocar em …";
  * tocar um cartão já colocado o devolve à bandeja).
  *
+ * - A vaga vazia de cada coluna mostra o texto (`showEmptySlotLabel`, DS
+ *   0.2.23), como o Figma desenha: "[Solte o cartão aqui]" enquanto nenhum
+ *   cartão está escolhido, e a ação "Colocar em …" com um escolhido — que é
+ *   também o nome do botão.
  * - Com scaffolding: enquanto nada foi colocado, o 1º cartão leva a tag
- *   "Cartão 1" e a coluna da esquerda diz "[Solte o cartão aqui]".
+ *   "Cartão 1".
  * - Incompleta: o aviso do PO; o envio segue (a régua só registra).
  * - A tela NÃO sabe a coluna certa (regra 3): manda a alocação e o servidor
  *   devolve se a tabela causal aparece (`classificacao.cadeiaCausal`), que a
@@ -70,10 +74,10 @@ export function Classificacao({ ctx }: { ctx: Contexto }) {
                   )),
                   null,
                 ]}
-                emptySlotLabel={() => TEXTOS.e5.colocarEm(nome)}
+                emptySlotLabel={() => (selecionado ? TEXTOS.e5.colocarEm(nome) : TEXTOS.e5.solte)}
+                showEmptySlotLabel
                 onSlotActivate={() => colocar(coluna)}
                 slotsDisabled={!selecionado}
-                status={comScaffolding && coluna === "fornecidos" ? TEXTOS.e5.solte : undefined}
               />
             </div>
           );
