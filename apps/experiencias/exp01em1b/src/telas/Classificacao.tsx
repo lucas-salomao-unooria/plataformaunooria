@@ -9,8 +9,9 @@ import { COLUNAS, type Cartao, type ClassificacaoValor, type Coluna } from "../l
 /**
  * E5-ALU-01 — Explicar, parte 1: os 6 cartões da sessão técnica entre "Dados
  * Fornecidos" e "Dados Observados" (`PuzzleTrack` + `PuzzleBlock` do DS, por
- * TOQUE: toca o cartão, depois "Colocar em …"; tocar um cartão já colocado o
- * devolve à bandeja).
+ * TOQUE: toca o cartão — `selected` — e depois a vaga da coluna, que o
+ * `PuzzleTrack` torna acionável com `onSlotActivate` e chama "Colocar em …";
+ * tocar um cartão já colocado o devolve à bandeja).
  *
  * - Com scaffolding: enquanto nada foi colocado, o 1º cartão leva a tag
  *   "Cartão 1" e a coluna da esquerda diz "[Solte o cartão aqui]".
@@ -69,13 +70,11 @@ export function Classificacao({ ctx }: { ctx: Contexto }) {
                   )),
                   null,
                 ]}
-                emptySlotLabel={() => TEXTOS.e5.solte}
+                emptySlotLabel={() => TEXTOS.e5.colocarEm(nome)}
+                onSlotActivate={() => colocar(coluna)}
+                slotsDisabled={!selecionado}
                 status={comScaffolding && coluna === "fornecidos" ? TEXTOS.e5.solte : undefined}
               />
-              {/* (b) COMPENSAÇÃO de interação: a vaga do `PuzzleTrack` não é tocável nem recebe soltura; o alvo do toque é este botão. */}
-              <Button variant="outline" size="sm" fullWidth disabled={!selecionado} onClick={() => colocar(coluna)}>
-                {TEXTOS.e5.colocarEm(nome)}
-              </Button>
             </div>
           );
         })}
@@ -93,8 +92,7 @@ export function Classificacao({ ctx }: { ctx: Contexto }) {
                   description={comScaffolding && i === 0 ? TEXTOS.e5.cartao1 : undefined}
                   state="idle"
                   theme="light"
-                  aria-pressed={selecionado === c.id}
-                  className={selecionado === c.id ? "bandeja__selecionado" : undefined}
+                  selected={selecionado === c.id}
                   onClick={() => setSelecionado((s) => (s === c.id ? null : c.id))}
                 />
               </li>

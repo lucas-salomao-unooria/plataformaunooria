@@ -8,7 +8,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | Dev | `pnpm --filter @edu/exp01em1b dev` → **:5188** (`strictPort`) · hub `/exp/exp01em1b` ou `/dev-embed?src=http://localhost:5188` |
 | DS | DUAS seções: `unooria` (`@edu/ui/ds`, a escola) e `unooriaai` (`@edu/ui/ds-unooriaai`, o assistente testado) |
 | api | módulo `assistente-invisivel` (`apps/api/src/assistente-invisivel/`, prefixo `/assistente-invisivel`, tabelas `exp01em1b_*`, ADR-185) |
-| Versão | `1.0.0` nos três lugares (`public/experiencia.json`, `package.json`, `EXP_VERSION` em `src/lib/tipos.ts`) |
+| Versão | `1.0.1` nos três lugares (`public/experiencia.json`, `package.json`, `EXP_VERSION` em `src/lib/tipos.ts`) |
 | Copy | o Figma `9QyrVdEBJZkOS64ZauPfmk` (63 telas), literal em `src/lib/textos.ts` |
 
 A comissão estudantil testa o UnooriaAI com três colegas (Lucas, Beatriz,
@@ -58,15 +58,15 @@ erro:exibir {codigo: sem-sinal | sessao-expirada}` · `completed
 missao:concluida`. Nenhuma resposta do estudante sai por aqui: a evidência é
 gravada pela api, na rota de cada gesto.
 
-## Compensações e desvios (pedidos abertos no storybook-unooria)
+## Componentes do DS que fecharam as lacunas (0.2.22)
 
-| Peça | Onde | A lacuna |
-|---|---|---|
-| Foco do `Collapse` fechado (`visibility: hidden`) | `estilos/globals.css` | o corpo fechado continua focável (`inert` pedido) |
-| Cartão "selecionado para alocar" (contorno) | `estilos/globals.css` (`.bandeja__selecionado`) | o `PuzzleBlock` não tem estado `selected` |
-| Alvo do toque da coluna ("Colocar em …") | `telas/Classificacao.tsx` | a vaga do `PuzzleTrack` não é tocável nem recebe soltura (sem arrastar) |
-| Certificado (`Card` + `Icon` "balance" + `Badge`) | `telas/Concluida.tsx` | não há selo/certificado no pacote |
-| Separador de sessão no chat (`Divider` + texto) | `componentes/PecasDoAssistente.tsx` | o `unooriaai` não tem mensagem de sistema/separador |
+As cinco compensações da 1.0.0 saíram na 1.0.1, com o DS 0.2.22
+(storybook-unnoria #25): o `Collapse` fechado já é `inert` (desde a 0.2.20); o
+cartão selecionado é `PuzzleBlock selected`; a vaga da coluna é o próprio
+`PuzzleTrack` com `onSlotActivate` (o nome dela é "Colocar em …", o mesmo que
+a e2e procura) e `slotsDisabled` enquanto nada está selecionado; o selo é o
+`Certificate`; o separador de sessão do chat é o `SessionDivider` do UnooriaAI.
+Não há compensação local nesta experiência.
 
 Copy que o Figma não deu e a tela precisou: "Concluir Classificação" (o fim da
 E5-ALU-01), "Colocar em Dados Fornecidos/Observados", "Novo teste no UnooriaAI"

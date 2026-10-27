@@ -1,4 +1,4 @@
-import { AssistantCard, ChatBubble, Divider } from "@edu/ui/ds-unooriaai";
+import { AssistantCard, ChatBubble, SessionDivider } from "@edu/ui/ds-unooriaai";
 import type { Fala } from "../lib/roteiro";
 import type { ConteudoDoPacote, Funcao } from "../lib/tipos";
 
@@ -19,13 +19,7 @@ export function Falas({ falas }: { falas: readonly Fala[] }) {
     <>
       {falas.map((f, i) => {
         if (f.tipo === "separador") {
-          return (
-            <div key={i} className="uai-separador" role="separator" aria-label={f.texto}>
-              <Divider />
-              <span className="uai-separador__texto">{f.texto}</span>
-              <Divider />
-            </div>
-          );
+          return <SessionDivider key={i} label={f.texto} />;
         }
         if (f.tipo === "cartao") {
           return <AssistantCard key={i} name={f.titulo} description={f.texto} initial="U" block />;
