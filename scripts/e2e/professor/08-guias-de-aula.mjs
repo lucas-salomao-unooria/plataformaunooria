@@ -103,10 +103,12 @@ const GUIAS = [
        cenas prontas COM o gabarito (os dois objetos iguais de cada uma), o
        roteiro da conversa individual (a frase do arraste é conferida pelo
        texto exato: o professor a repete em todo arraste) e o critério de cada
-       nível da régua. */
+       nível da régua. Desde a 2.0.0 (ADR-186) o bloco das cenas também lista os
+       componentes do 2º ano que a personalização aceita. */
     vivo: [
       /As cenas prontas, com o gabarito — só para você/,
       /Biblioteca Escolar — /,
+      /Para personalizar com IA, escolha o componente:.*Ensino Religioso.*Computação.*Outro componente/,
       /A conversa individual: a pausa, os três cartões e as perguntas/,
       /Você pode mover a foto, mas não mudar o tamanho\./,
       /O critério de cada nível \(registrado pelo que a criança faz\)/,
@@ -243,6 +245,11 @@ await suite(
     r.exigir(
       (await p.locator("[data-cena-do-enigma] [data-alvo]").count()) >= 6,
       "o guia do Enigma mostra as três cenas prontas com os dois objetos marcados em cada uma",
+    );
+    const textoDoEnigma = (await p.locator("main").textContent()) ?? "";
+    r.exigir(
+      /ABRIR BANCADA/.test(textoDoEnigma) && /Colocar no álbum/.test(textoDoEnigma) && !/crach|A HORTA ACABOU/i.test(textoDoEnigma),
+      "o guia do Enigma segue a 2.0.0: começa no card (ABRIR BANCADA) e termina no Colocar no álbum",
     );
     await r.registrar(p, "guia-do-enigma-cenas-prontas", {
       titulo: "O Enigma da Capa da Rádio: as cenas prontas, com o gabarito",

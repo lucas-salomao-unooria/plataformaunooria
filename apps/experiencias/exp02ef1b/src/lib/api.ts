@@ -1,6 +1,5 @@
 import type { ExperienciaHandle } from "@edu/sdk";
 import type {
-  CrachaId,
   Deslocamento,
   Elemento,
   Estado,
@@ -14,7 +13,6 @@ import type {
   RespostaDoToque,
   SeloId,
   Sessao,
-  Voto,
 } from "./tipos";
 
 /**
@@ -43,7 +41,8 @@ const BASE = "/enigma-capa";
 export const api = {
   sessao: () => exigir().api.get<Sessao>(`${BASE}/sessao`),
   gate: () => exigir().api.get<Gate>(`${BASE}/gate`),
-  cracha: (cracha: CrachaId) => exigir().api.post<Estado>(`${BASE}/cracha`, { cracha }),
+  /** ABRIR BANCADA: a sessão nasce aqui (o passo vai de `inicio` a `lupa`). */
+  iniciar: () => exigir().api.post<Estado>(`${BASE}/iniciar`, {}),
   lupa: (relato: RelatoDaLupa, avancar: boolean) =>
     exigir().api.post<RespostaDaLupa>(`${BASE}/lupa`, { ...relato, avancar }),
   publicar: (fotoId: FotoId, seloId: SeloId, deslocamento: Deslocamento) =>
@@ -55,7 +54,6 @@ export const api = {
   pares: (cartas: [string, string], motivo: Motivo) => exigir().api.post<Estado>(`${BASE}/pares`, { cartas, motivo }),
   segundaFoto: (elemento: Elemento, deslocamento: Deslocamento) =>
     exigir().api.post<Estado>(`${BASE}/segunda-foto`, { elemento, deslocamento }),
-  transferencia: (opcao: Voto) => exigir().api.post<Estado>(`${BASE}/transferencia`, { opcao }),
 };
 
 /** Fecha a missão na plataforma. Sem `score`: a experiência não pontua (regra 3) — a régua é da api. */

@@ -2,7 +2,6 @@ import { z } from "zod";
 import {
   CHAVES_DE_CENA,
   CHAVES_PRONTAS,
-  CRACHAS,
   DISCIPLINAS,
   ELEMENTOS_DA_SEGUNDA_FOTO,
   FASES,
@@ -15,12 +14,12 @@ import {
   SELOS,
   TEMA,
   TOQUES_FORA_MAX,
-  VOTOS,
 } from "./conteudo";
 import { PASSOS } from "./regras/passos";
 
 /**
- * O CONTRATO HTTP da exp02ef1b — O Enigma da Capa da Rádio (ADR-184), em Zod.
+ * O CONTRATO HTTP da exp02ef1b — O Enigma da Capa da Rádio (ADR-184; a
+ * revisão 2.0.0 que segue o protótipo, ADR-186), em Zod.
  * O OpenAPI é derivado daqui (ADR-36), e os vocabulários vêm do catálogo.
  *
  * **A experiência (`apps/experiencias/exp02ef1b`) e o hub ESPELHAM estes
@@ -32,27 +31,28 @@ import { PASSOS } from "./regras/passos";
  *
  *   GET  /enigma-capa/sessao           → SessaoSchema
  *   GET  /enigma-capa/gate             → GateDoEstudanteSchema   (polling 3 s)
- *   POST /enigma-capa/cracha           CrachaSchema       → EstadoSchema
+ *   POST /enigma-capa/iniciar          IniciarSchema      → EstadoSchema              (ABRIR BANCADA: abre a sessão)
  *   POST /enigma-capa/lupa             LupaSchema         → RespostaDaLupaSchema
  *   POST /enigma-capa/publicar         PublicarSchema     → RespostaDoPublicarSchema   (LATCH 1)
  *   POST /enigma-capa/invariantes      ToqueSchema        → RespostaDoToqueSchema      (só depois da virada)
  *   POST /enigma-capa/slider           —                  → EstadoSchema
- *   POST /enigma-capa/fora             ForaSchema         → EstadoSchema
+ *   POST /enigma-capa/fora             ForaSchema         → EstadoSchema              (marca a EF02CO05)
  *   POST /enigma-capa/pares            ParesSchema        → EstadoSchema
- *   POST /enigma-capa/segunda-foto     SegundaFotoSchema  → EstadoSchema
- *   POST /enigma-capa/transferencia    TransferenciaSchema → EstadoSchema              (LATCH 2, conclui)
+ *   POST /enigma-capa/segunda-foto     SegundaFotoSchema  → EstadoSchema              (conclui)
  *
  * Toda resposta de POST de estudante É um `Estado` (as que têm resultado
  * próprio o ESTENDEM): a tela troca o estado inteiro a cada resposta.
  * Jogada fora do passo = 409 `passo-invalido`; repetir uma jogada já feita
  * devolve o estado atual (200) — o duplo toque e a fila de reenvio da tela são
- * inofensivos. Os dois latches com OUTRA escolha respondem 409 (`ja-publicado`,
- * `ja-enviado`).
+ * inofensivos. O latch da capa com OUTRA escolha responde 409 (`ja-publicado`).
  *
  * **O gabarito NÃO desce**: a cena vai sem `nucleo`, sem `visitante`, sem
  * `seloCoerente`, sem os alvos dos invariantes NÃO achados (o do achado desce
  * em `invariantes.achados`; todos, depois da AJUDA, para o pulso) e sem os
- * `marcaveis`; as cartas da E5 vão só com id e imagem.
+ * `marcaveis`; as cartas da E5 vão só com id e imagem. Uma exceção registrada
+ * na ADR-186: os DOIS alvos descem em `lupa.alvos` enquanto o passo é `lupa` —
+ * o brilho da lente precisa do lugar, e o que a E4 cobra (achá-los NAS DUAS
+ * fotos, por toque) continua corrigido aqui.
  *
  * **COORDENADAS**: tudo em 0–100 da PANORÂMICA 16:9 (x em % da largura, y em %
  * da altura). A foto N é o recorte `geometria.recortes[N]` da panorâmica — UMA
@@ -81,14 +81,12 @@ export const ImagemSchema = z.discriminatedUnion("tipo", [
 
 export const FaseSchema = z.enum(FASES);
 export const PassoSchema = z.enum(PASSOS);
-export const CrachaIdSchema = z.enum(CRACHAS);
 export const FotoIdSchema = z.enum(FOTOS);
 export const SeloIdSchema = z.enum(SELOS);
 export const InvarianteIdSchema = z.enum(INVARIANTES);
 export const DisciplinaSchema = z.enum(DISCIPLINAS);
 export const OrigemSchema = z.enum(ORIGENS);
 export const ChaveDeCenaSchema = z.enum(CHAVES_DE_CENA);
-export const VotoSchema = z.enum(VOTOS);
 export const MotivoSchema = z.enum(MOTIVOS_DO_PAR);
 export const ElementoSchema = z.enum(ELEMENTOS_DA_SEGUNDA_FOTO);
 /** Um invariante achado numa foto: `"inv-1:foto-1"`. */
@@ -132,21 +130,19 @@ export type ConteudoDoPacoteDoContrato = z.infer<typeof ConteudoBaseSchema>;
 
 // ─────────────────────────────────────────────────────────── entrada (estudante)
 
-/** E1: o crachá — abre a sessão desta rodada. */
-export const CrachaSchema = z.object({ cracha: CrachaIdSchema });
+/** E1: ABRIR BANCADA — abre a sessão desta rodada. Sem corpo (o corpo vazio também vale). */
+export const IniciarSchema = z.object({}).strict();
 
 /**
- * E2: o relato da lupa. `foto1Ms`/`foto2Ms` = o tempo ACUMULADO da lente sobre
- * cada foto; `fundo1`/`fundo2` = a lente já passou pelo `cena.fundo` de cada
- * uma. Mande de tempos em tempos (`avancar: false`) e no toque do botão de
+ * E2: o relato da lupa. `alvo1Ms` = os ms ACUMULADOS com o centro da lente
+ * sobre o invariante `inv-1` (em qualquer das duas fotos); `alvo2Ms`, sobre
+ * `inv-2`. Mande de tempos em tempos (`avancar: false`) e no toque do botão de
  * avançar (`avancar: true`). O servidor guarda o máximo, limita ao tempo desde
- * a entrada e, com `avancar`, confere o piso (3 s em cada foto + o fundo das duas).
+ * a entrada e, com `avancar`, confere o piso (3 s em CADA um dos dois).
  */
 export const LupaSchema = z.object({
-  foto1Ms: z.number().int().min(0).max(3_600_000),
-  foto2Ms: z.number().int().min(0).max(3_600_000),
-  fundo1: z.boolean(),
-  fundo2: z.boolean(),
+  alvo1Ms: z.number().int().min(0).max(3_600_000),
+  alvo2Ms: z.number().int().min(0).max(3_600_000),
   avancar: z.boolean(),
 });
 
@@ -156,8 +152,8 @@ export const PublicarSchema = z.object({ fotoId: FotoIdSchema, seloId: SeloIdSch
 /** E4, Momento 4: um toque na foto `fotoId`, no ponto (x, y) DA PANORÂMICA. */
 export const ToqueSchema = z.object({ fotoId: FotoIdSchema, x: n100, y: n100 });
 
-/** E4, Momento 5: os toques na cena inteira ("o que ficou fora"), em coordenadas da panorâmica. Zero toques vale. */
-export const ForaSchema = z.object({ toques: z.array(PontoSchema).max(TOQUES_FORA_MAX) });
+/** E4, Momento 5: os alfinetes na cena inteira ("o que ficou fora"), em coordenadas da panorâmica. De 1 a 10. */
+export const ForaSchema = z.object({ toques: z.array(PontoSchema).min(1).max(TOQUES_FORA_MAX) });
 
 /** E5: o par de cartas e o motivo. */
 export const ParesSchema = z.object({
@@ -165,15 +161,13 @@ export const ParesSchema = z.object({
   motivo: MotivoSchema,
 });
 
-/** E5: a segunda foto — o elemento escolhido e a posição na moldura fixa. */
+/** E5: a segunda foto — o elemento escolhido e a posição na moldura fixa. Conclui a missão. */
 export const SegundaFotoSchema = z.object({ elemento: ElementoSchema, deslocamento: DeslocamentoSchema });
-
-/** E6: o voto. LATCH 2 — conclui a missão. */
-export const TransferenciaSchema = z.object({ opcao: VotoSchema });
 
 // ─────────────────────────────────────────────────────────── saída (estudante)
 
 const AtividadeSchema = z.object({ pacoteId: z.string(), rodada: z.number().int() });
+const AlvoComIdSchema = z.object({ id: InvarianteIdSchema, x: z.number(), y: z.number(), r: z.number() });
 
 /** O estado da missão do estudante — a resposta de TODO POST de estudante. Allowlist: nada do gabarito. */
 export const EstadoSchema = z.object({
@@ -185,15 +179,19 @@ export const EstadoSchema = z.object({
   /** Publicou e a turma ainda está na fase `aberta`: "AGUARDE O PROFESSOR". */
   aguardandoVirada: z.boolean(),
   atividade: AtividadeSchema.nullable(),
-  cracha: CrachaIdSchema.nullable(),
+  /** `null` sem sessão (passo `inicio`). */
   lupa: z
     .object({
-      foto1Ms: z.number().int(),
-      foto2Ms: z.number().int(),
-      fundo1: z.boolean(),
-      fundo2: z.boolean(),
+      /** Os ms com o centro da lente sobre `inv-1` e sobre `inv-2` (o máximo relatado, limitado). */
+      alvo1Ms: z.number().int(),
+      alvo2Ms: z.number().int(),
       alertas: z.number().int(),
       liberada: z.boolean(),
+      /**
+       * Os DOIS invariantes na panorâmica, para o brilho da lente — SÓ com o
+       * passo `lupa` (`null` nos outros). Exceção à regra 3 registrada na ADR-186.
+       */
+      alvos: z.array(AlvoComIdSchema).nullable(),
     })
     .nullable(),
   /** A capa publicada (LATCH 1). `visivel` é o retângulo da panorâmica que a moldura mostrou. */
@@ -217,13 +215,13 @@ export const EstadoSchema = z.object({
       erros: z.number().int(),
       /** Três erros: a ajuda acendeu, e `alvos` desce para o pulso amarelo. */
       ajuda: z.boolean(),
-      alvos: z.array(z.object({ id: InvarianteIdSchema, x: z.number(), y: z.number(), r: z.number() })).nullable(),
+      alvos: z.array(AlvoComIdSchema).nullable(),
       /**
        * O alvo de cada invariante JÁ ACHADO (em ao menos uma foto): deixou de
        * ser gabarito, e é o que a tela precisa para redesenhar os círculos e as
        * linhas douradas depois de um F5. O não achado só desce em `alvos`, com a ajuda.
        */
-      achados: z.array(z.object({ id: InvarianteIdSchema, x: z.number(), y: z.number(), r: z.number() })),
+      achados: z.array(AlvoComIdSchema),
       completo: z.boolean(),
     })
     .nullable(),
@@ -232,7 +230,7 @@ export const EstadoSchema = z.object({
   fora: z.object({ toques: z.array(PontoSchema) }).nullable(),
   pares: z.object({ cartas: z.array(z.string()), motivo: MotivoSchema }).nullable(),
   segundaFoto: z.object({ elemento: ElementoSchema, deslocamento: DeslocamentoSchema }).nullable(),
-  transferencia: z.object({ voto: VotoSchema }).nullable(),
+  /** A segunda foto foi para o álbum: a missão terminou. */
   concluido: z.boolean(),
 });
 
@@ -269,17 +267,14 @@ export const GeometriaSchema = z.object({
 });
 
 /**
- * O material FIXO da missão (igual em todo pacote): os crachás, a E5 e a E6.
- * Fica em `material` e não no topo porque o `Estado` já usa `segundaFoto` e
- * `transferencia` para o que o estudante FEZ.
+ * O material FIXO da missão (igual em todo pacote): a E5. Fica em `material` e
+ * não no topo porque o `Estado` já usa `segundaFoto` para o que o estudante FEZ.
  */
 export const MaterialFixoSchema = z.object({
-  crachas: z.array(z.object({ id: CrachaIdSchema, rotulo: z.string(), emoji: z.string() })),
   /** E5, os pares: SÓ id e imagem (a atividade e a cor são o gabarito). */
   cartas: z.array(z.object({ id: z.string(), imagem: ImagemSchema })),
   motivos: z.array(z.object({ id: MotivoSchema, rotulo: z.string() })),
   segundaFoto: z.object({ imagem: ImagemSchema, elementos: z.array(z.object({ id: ElementoSchema, rotulo: z.string() })) }),
-  transferencia: z.object({ imagem: ImagemSchema, opcoes: z.array(z.object({ id: VotoSchema, rotulo: z.string(), emoji: z.string() })) }),
 });
 
 /** `GET /enigma-capa/sessao`: o estado, a cena SEM gabarito, a geometria, o material fixo e os textos. */
@@ -321,9 +316,9 @@ export const RespostaDoToqueSchema = EstadoSchema.extend({
     /** A ajuda está acesa (acendeu agora ou antes). */
     ajuda: z.boolean(),
     /** Só com a ajuda acesa: os alvos para o pulso amarelo. */
-    alvos: z.array(z.object({ id: InvarianteIdSchema, x: z.number(), y: z.number(), r: z.number() })).optional(),
+    alvos: z.array(AlvoComIdSchema).optional(),
     /** O alvo dos invariantes já achados (o mesmo de `estado.invariantes.achados`). */
-    achados: z.array(z.object({ id: InvarianteIdSchema, x: z.number(), y: z.number(), r: z.number() })),
+    achados: z.array(AlvoComIdSchema),
     /** Os quatro achados: os círculos dourados unem os pares e o slider aparece. */
     completo: z.boolean(),
   }),
@@ -429,27 +424,26 @@ export const PacotesDaTurmaSchema = z.object({
 
 export const PacoteDetalheSchema = PacoteDoProfessorSchema.extend({ rodadas: z.number().int() });
 
-/** Uma linha do painel: o progresso e as escolhas de UM estudante (ou de um computador, com equipe). */
+/** Uma linha do painel: o progresso e as escolhas de UM estudante (ou de um computador, com equipe), pelo NOME. */
 export const LinhaDoPainelSchema = z.object({
   estudanteId: z.string(),
+  /** O nome do estudante (com equipe, o da linha que representa o computador). */
   nome: z.string(),
   equipe: z.object({ id: z.string(), nome: z.string(), membros: z.array(z.object({ id: z.string(), nome: z.string() })) }).nullable(),
   passo: PassoSchema,
   /** Publicou e a turma ainda não virou. */
   aguardandoVirada: z.boolean(),
-  cracha: CrachaIdSchema.nullable(),
-  lupa: z.object({ foto1Ms: z.number().int(), foto2Ms: z.number().int(), alertas: z.number().int(), liberada: z.boolean() }).nullable(),
+  lupa: z.object({ alvo1Ms: z.number().int(), alvo2Ms: z.number().int(), alertas: z.number().int(), liberada: z.boolean() }).nullable(),
   capa: z
     .object({ fotoId: FotoIdSchema, seloId: SeloIdSchema, seloCoerente: z.boolean(), visitante: z.string(), nucleoVisivel: z.boolean() })
     .nullable(),
   invariantes: z
     .object({ encontrados: z.number().int(), erros: z.number().int(), ajuda: z.boolean(), errosPosAjuda: z.number().int(), completo: z.boolean() })
     .nullable(),
-  /** O que marcou "fora da foto" (nomes), e quantas coisas ficaram fora de verdade. */
+  /** O que marcou "fora da foto" (nomes) — "marcou X de Y": `itens.length` de `possiveis`, as coisas que ficaram fora de verdade. */
   fora: z.object({ itens: z.array(z.object({ id: z.string(), nome: z.string() })), possiveis: z.number().int() }).nullable(),
   par: z.object({ cartas: z.array(z.string()), motivo: MotivoSchema, correto: z.boolean() }).nullable(),
   segundaFoto: z.object({ elemento: ElementoSchema, essencialVisivel: z.boolean() }).nullable(),
-  voto: VotoSchema.nullable(),
 });
 
 export const PainelSchema = z.object({
@@ -463,7 +457,8 @@ export const PainelSchema = z.object({
     publicaram: z.number().int(),
     aguardandoVirada: z.number().int(),
     concluiram: z.number().int(),
-    votos: z.object({ "so-um-pedaco": z.number().int(), "mostra-tudo": z.number().int() }),
+    /** Quantos marcaram ao menos UMA coisa que ficou fora da capa (o indicador "fora" pleno). */
+    marcaramFora: z.number().int(),
   }),
   linhas: z.array(LinhaDoPainelSchema),
   roteiro: z.object({
@@ -472,13 +467,14 @@ export const PainelSchema = z.object({
     pausa: z.string(),
     cartoes: z.array(z.string()),
     perguntas: z.array(z.string()),
-    ponte: z.string(),
     liberar: z.string(),
   }),
 });
 
 export const MaterialSchema = z.object({
   prontos: z.array(ProntoSchema),
+  /** Os componentes curriculares do recorte, na ordem do catálogo (o 2º ano, Computação e "Outro componente" no fim). */
+  disciplinas: z.array(z.object({ slug: DisciplinaSchema, rotulo: z.string() })),
   roteiro: PainelSchema.shape.roteiro,
   cartas: z.array(z.object({ id: z.string(), descricao: z.string(), atividade: z.string(), cor: z.string() })),
   habilidades: z.array(
@@ -501,6 +497,7 @@ export type RespostaDoToque = z.infer<typeof RespostaDoToqueSchema>;
 export type CenaDoEstudante = z.infer<typeof CenaDoEstudanteSchema>;
 export type Geometria = z.infer<typeof GeometriaSchema>;
 export type Painel = z.infer<typeof PainelSchema>;
+export type Material = z.infer<typeof MaterialSchema>;
 export type LinhaDoPainel = z.infer<typeof LinhaDoPainelSchema>;
 export type PacoteDoProfessor = z.infer<typeof PacoteDoProfessorSchema>;
 export type PacoteDaTurma = z.infer<typeof PacoteDaTurmaSchema>;

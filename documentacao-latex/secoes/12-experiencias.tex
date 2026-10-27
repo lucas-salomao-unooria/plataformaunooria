@@ -85,8 +85,9 @@ A unidade 1 do 7º ano é A Seleção, que reocupou o código \cd{exp07ef1b} e a
 porta 5179 do Eco no Grupo (\adrr{ADR-113}, \adrr{ADR-115}).
 
 A unidade 1 do 2º ano é \textbf{O Enigma da Capa da Rádio} (\adrr{ADR-184}),
-no Unoovista, que nasce na 1.0.0, na porta 5187: a primeira missão do 2º ano, com ficha pedagógica só pelo que
-a criança faz (Seção~\ref{sec:exp02ef1b}).
+no Unoovista, na porta 5187: a primeira missão do 2º ano, com ficha pedagógica só pelo que
+a criança faz. Nasceu na 1.0.0; a 2.0.0 segue o protótipo validado pelo time
+e tem cinco etapas (\adrr{ADR-186}; Seção~\ref{sec:exp02ef1b}).
 
 A unidade 1 da 1ª série do Ensino Médio é \textbf{O Assistente Invisível}
 (\adrr{ADR-185}), na escola (\cd{unooria}) e no UnooriaAI (\cd{unooriaai}),
@@ -296,8 +297,9 @@ da missão injeta o que só ela sabe montar:
     prontos COM o gabarito (a panorâmica com as duas molduras, os dois objetos
     iguais circulados e a fala da visitante de cada foto), o roteiro da
     conversa (a frase do arraste, a pausa, os três cartões ENQUADRAMENTO,
-    AUTORIA e O QUE FICOU DE FORA, as perguntas e a pergunta-ponte), as cartas
-    dos pares com a atividade e a cor, e os critérios das duas habilidades. O
+    AUTORIA e O QUE FICOU DE FORA e as perguntas), os componentes
+    curriculares do 2º ano, as cartas dos pares com a atividade e a cor, e os
+    critérios das duas habilidades. O
     componente é \arq{guia/\B{}material-do-enigma.tsx}, que desenha a cena com
     o mesmo \arq{cena-do-enigma.tsx} do painel (\adrr{ADR-184}).
   \item \textbf{exp01em1b} (O Assistente Invisível) ---
@@ -1259,8 +1261,9 @@ O que define a missão, tecnicamente:
 \label{sec:exp02ef1b}
 
 \textbf{2º ano EF, unidade 1 (\enquote{Toda imagem tem um autor}), clone
-\cd{unoovista}, experiência 1.0.0, porta 5187.} Desde 2026-10-26
-(\adrr{ADR-184}), vinda da esteira de produto (one-pager v1.1 do PO). Módulo
+\cd{unoovista}, experiência 2.0.0, porta 5187.} Desde 2026-10-26
+(\adrr{ADR-184}), vinda da esteira de produto (one-pager v1.1 do PO); a 2.0.0
+segue o protótipo validado pelo time e tira a etapa 6 (\adrr{ADR-186}). Módulo
 da api: \arq{enigma-capa} (prefixo \rota{/enigma-capa}, tabelas
 \cd{exp02ef1b\_*}). Manifesto: \cd{telemetria} e \cd{progresso}, permissão
 \cd{forms}, 375$\times$812, produto \cd{entre-redes}.
@@ -1277,60 +1280,71 @@ a virada é GERAL da turma, um botão só; a sessão é individual, e o aparelho
 compartilhado entra pelas equipes da plataforma (a missão está em
 \cd{EXPERIENCIAS\_COM\_EQUIPE} e em \cd{EXPERIENCIAS\_COM\_ATIVIDADE},
 \cd{individual} por padrão); e a IA existe desde o lançamento, só no preparo
-do professor. Sem Canal B, sem áudio de tela e sem nenhuma rota que receba
-texto da criança.
+do professor. A evidência é 100\% o que a criança FAZ na tela: sem pergunta,
+sem áudio de tela e sem nenhuma rota que receba texto dela.
 
-\subsection{O que a criança vive: as seis etapas}
+A 2.0.0 (\adrr{ADR-186}) trouxe a tela para o protótipo HTML que o time
+validou (\cd{artefatos\_exp02ef1b/design/08-prototipo.html}): toda tela diz no
+alto o que fazer AGORA (um título, uma frase curta e, onde há busca, o
+contador), sem dizer onde está a resposta; os avisos do protótipo (OLHE O
+FUNDO, CAPA PUBLICADA!, AGUARDE O PROFESSOR, FOTO GUARDADA NO ÁLBUM!) são o
+\cd{BottomSheet} modal da seção, só com ícone e mensagem; e a missão começa
+direto na ação, porque quem joga o professor já vê pelo nome no painel.
+
+\subsection{O que a criança vive: as cinco etapas}
 
 \begin{tabularx}{\linewidth}{@{}L{22mm}X@{}}
 \toprule
 \headrow \thd{Etapa} & \thd{Na tela, e o que o servidor guarda}\\
 \midrule
-\textbf{E1} Desafiar & ESCOLHA SEU CRACHÁ (fone azul, fone amarelo, microfone
-  verde, gravador laranja), com o toque liberado só depois de 3\,s; o Bento
-  aflito (BENTO PRECISA DE AJUDA!) e o card INVESTIGAR A NOVA CAPA. O crachá
-  abre a sessão da rodada.\\
-\zebra \textbf{E2} Navegar & As duas fotos, FOTO 1 e FOTO 2, com o mesmo
-  lugar e a mesma hora no rótulo, e a lupa circular de ampliação 2$\times$.
-  Na parede do fundo a lente pulsa em azul. O avanço exige o PISO: 3\,s de
-  lupa sobre CADA foto e a lente no fundo das duas. Tocar antes conta um
-  alerta (OLHE O FUNDO, a mãozinha e a vibração). Em 375\,px as fotos ficam
-  uma sobre a outra.\\
-\textbf{E3} Decidir & ESCOLHA 1 FOTO; a foto entra numa moldura de tamanho
-  FIXO e a criança só a arrasta; um de dois selos (CAIXA ALTA, até três
-  palavras); PUBLICAR CAPA. É o \textbf{LATCH 1}: a foto, o selo e a posição
-  gravados de uma vez, sem volta.\\
+\textbf{E1} Desafiar & O mural da \cd{@radio\_escola} com UM card: RASCUNHO
+  PENDENTE, INVESTIGAR A NOVA CAPA, o que aconteceu (\enquote{A capa sobre a
+  biblioteca causou confusão entre os ouvintes.}) e a missão em letra grande,
+  ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA. ABRIR BANCADA abre a sessão da
+  rodada.\\
+\zebra \textbf{E2} Navegar & INVESTIGUE COM A LUPA: as duas fotos, FOTO 1 e
+  FOTO 2, com o mesmo lugar e a mesma hora no rótulo, e a lupa circular de
+  ampliação 2$\times$. Quando o centro da lente para sobre um dos dois objetos
+  do fundo, a lente BRILHA e um anel em volta dela enche em 3\,s (SEGURE A
+  LUPA AQUI!); cheio, o objeto ganha o círculo dourado nas duas fotos e o
+  contador anda (1 DE 2 ENCONTRADOS). O PISO é 3\,s em CADA objeto
+  (INVESTIGAÇÃO COMPLETA!). Tocar AVANÇAR antes conta um alerta: o aviso OLHE
+  O FUNDO, a vibração e, ao voltar, a mãozinha no objeto que falta. Em
+  375\,px as fotos ficam uma sobre a outra.\\
+\textbf{E3} Decidir & ESCOLHA 1 FOTO \seta{} SELECIONE O SELO \seta{} CAPA
+  PRONTA!: a foto entra numa moldura de tamanho FIXO e a criança só a arrasta
+  (\enquote{Enquadre a foto (Tamanho fixo, sem zoom)}); um de dois selos;
+  PUBLICAR CAPA. É o \textbf{LATCH 1}: a foto, o selo e a posição gravados de
+  uma vez, sem volta, e o aviso CAPA PUBLICADA! antes do feed.\\
 \zebra \textbf{E4} Aha & A visitante diz só o que o recorte mostrou
-  (\enquote{Na foto, vi crianças lendo!}, ou só o lugar, \enquote{Na foto, vi
-  a biblioteca!}); AGUARDE O PROFESSOR até o LIBERAR VIRADA (depois de
-  3\,min, O PROFESSOR JÁ VEM!). Na virada, SUA FOTO ao lado da OUTRA FOTO;
-  TOQUE EM 2 COISAS IGUAIS (os dois objetos do fundo, nas duas fotos: quatro
-  acertos); o \emph{slider} funde a panorâmica (ERA O MESMO LUGAR!); e a
-  criança marca na cena inteira o que ficou fora da capa (\enquote{Pronto}).\\
+  (\enquote{Na foto, vi crianças lendo!}, ou só o lugar); o aviso AGUARDE O
+  PROFESSOR, sem retrato, até o LIBERAR VIRADA (depois de 3\,min, O
+  PROFESSOR JÁ VEM! com o círculo de respiração). Na virada: TOQUE EM 2
+  COISAS IGUAIS (SUA FOTO ao lado da OUTRA FOTO, quatro acertos);
+  DESLIZE PARA REVELAR, o \emph{slider} de COMPARAÇÃO que parte do centro;
+  A CENA COMPLETA (MESMO LUGAR · MESMO MINUTO e o Bento: ERA O MESMO LUGAR!);
+  e o ALFINETE no que ficou fora da capa (\enquote{Pronto}).\\
 \textbf{E5} Explicar & Junte duas fotos da mesma atividade (quatro cartas
   fixas: o par certo é a atividade, o distrator é a cor da camiseta); O que é
-  parecido? (a atividade ou a cor da roupa); a segunda foto, de leitura, numa
-  moldura fixa mais estreita (o que precisa aparecer: mochila, parede ou
-  criança lendo), e Colocar no álbum.\\
-\zebra \textbf{E6} Refletir & A HORTA DA ESCOLA: uma foto fechada da lagarta
-  na alface, e A HORTA ACABOU? --- SÓ UM PEDAÇO ou MOSTRA TUDO. É o
-  \textbf{LATCH 2}: o voto conclui a missão (MISSÃO CUMPRIDA!, com o Bento e
-  a Iara).\\
+  parecido?; a segunda foto, de leitura, numa moldura fixa mais estreita (o
+  que precisa aparecer: mochila, parede ou criança lendo), e Colocar no
+  álbum, que \textbf{conclui} a missão: FOTO GUARDADA NO ÁLBUM! e MISSÃO
+  CUMPRIDA!\\
 \bottomrule
 \end{tabularx}
 
 Os passos são DERIVADOS no servidor das colunas da sessão e da fase da turma
-(\arq{regras/\B{}passos.ts}): \cd{cracha} \seta{} \cd{lupa} \seta{}
+(\arq{regras/\B{}passos.ts}): \cd{inicio} \seta{} \cd{lupa} \seta{}
 \cd{decidir} \seta{} \cd{feed} \seta{} \cd{invariantes} \seta{} \cd{slider}
 \seta{} \cd{fora} \seta{} \cd{pares} \seta{} \cd{segunda-foto} \seta{}
-\cd{transferencia} \seta{} \cd{concluida}. A tela só escolhe quem desenha o
-passo; dois estados locais, e só dois, seguram uma tela além dele (o mural com
-o Bento depois do crachá, e a visitante por 5\,s para quem publica depois da
-virada) --- um F5 os pula de propósito. Jogada à frente do passo é 409
+\cd{concluida}. A tela só escolhe quem desenha o passo; três estados locais
+seguram uma tela além dele (o aviso CAPA PUBLICADA!, a visitante por 5\,s para
+quem publica depois da virada, e a cena completa depois do \emph{slider}) ---
+um F5 os pula de propósito. Jogada à frente do passo é 409
 \cd{passo-\B{}invalido}; repetir a jogada já feita devolve o estado (200), e o
-duplo toque e o reenvio da fila são inofensivos; os dois latches com OUTRA
-escolha respondem 409 (\cd{ja-publicado}, \cd{ja-enviado}). Os \emph{CHECKs}
-de ordem do banco são a rede final: cada etapa só grava depois da anterior.
+duplo toque e o reenvio da fila são inofensivos; a capa publicada com OUTRA
+escolha responde 409 (\cd{ja-publicado}). Os \emph{CHECKs} de ordem do banco
+são a rede final: cada etapa só grava depois da anterior.
 
 \subsection{A geometria: uma imagem, duas fotos}
 
@@ -1344,14 +1358,13 @@ todo pacote:
     \{x{:}32, y{:}0, w{:}68, h{:}100\}$. A \textbf{faixa comum}
     $x \in [32, 68]$ aparece nas duas, e é nela que moram os dois objetos
     iguais: a régua do pacote exige $x - r \geq 32$ e $x + r \leq 68$. Por
-    isso a tela dividida mostra os mesmos objetos dos dois lados e o
-    \emph{slider} revela a panorâmica sem emenda.
-  \item A experiência renderiza cada foto, a capa, a tela dividida e a
-    revelação como JANELAS da mesma imagem, recortadas por CSS
+    isso a lupa os acha nas duas fotos e a tela dividida mostra os mesmos
+    objetos dos dois lados.
+  \item A experiência renderiza cada foto, a capa, a tela dividida e as duas
+    camadas do \emph{slider} como JANELAS da mesma imagem, recortadas por CSS
     (\arq{lib/geometria.ts}, \arq{componentes/Janela.tsx}). As constantes
     (os recortes, a faixa, as duas molduras, o piso da lupa) descem em
-    \rota{GET /enigma-capa/sessao}, no bloco \cd{geometria}: não são
-    gabarito, e a tela não as duplica.
+    \rota{GET /enigma-capa/sessao}, no bloco \cd{geometria}.
   \item A \textbf{moldura da capa} é 80\% $\times$ 80\% da foto. A criança só
     a desloca; o \cd{deslocamento} é a FRAÇÃO da folga ($\{0,0\}$ encostada
     no canto superior esquerdo, $\{1,1\}$ no inferior direito), nunca pixel.
@@ -1359,48 +1372,54 @@ todo pacote:
   \item Do retângulo visível saem três coisas. A \textbf{fala da visitante}:
     metade ou mais do \cd{nucleo} da foto dentro da capa dá a fala da foto,
     senão \enquote{Na foto, vi \{lugar\}!}. O \textbf{o que ficou fora}: os
-    toques da criança viram os \cd{marcaveis} que ela tocou e que estão
-    metade ou mais FORA da capa (o toque no que estava na capa, ou no vazio,
-    não conta). E a \textbf{segunda foto} (E5), na moldura de 55\% $\times$
-    85\% de \arq{fixas/leitura.webp} (4:3), estreita o bastante para PODER
-    cortar a criança: o servidor calcula se metade da criança lendo ficou
-    visível.
+    alfinetes viram os \cd{marcaveis} tocados que estão metade ou mais FORA
+    da capa. E a \textbf{segunda foto} (E5), na moldura de 55\% $\times$ 85\%
+    de \arq{fixas/leitura.webp} (4:3), estreita o bastante para PODER cortar
+    a criança.
+  \item \textbf{O \emph{slider} de comparação} (\cd{ladoEscondido}): sobre a
+    mesma área, de um lado da alça o LUGAR INTEIRO, do outro só a SUA FOTO,
+    com o resto apagado em xadrez --- como a prévia de quem remove o fundo de
+    uma imagem. A alça parte do centro e revela para o lado onde mais coisa
+    ficou fora da capa; no fim do curso, \rota{POST /enigma-capa/slider}.
   \item \textbf{O alvo é redondo na tela}: o raio é em \% da largura, e um
-    ponto de altura vale 9/16 de um de largura (\cd{acertaAlvo}). Raio 7
-    $\approx$ 44\,px no celular.
+    ponto de altura vale 9/16 de um de largura (\cd{acertaAlvo}). A lupa
+    considera o objeto \enquote{sob a lente} com folga de 1,25$\times$ o raio.
 \end{itemize}
 
 \begin{atencao}
 \textbf{A geometria dos pacotes prontos é ANOTAÇÃO das imagens}
 (\cd{PACOTES\_PRONTOS} em \arq{conteudo.ts}): os núcleos, os alvos, o fundo e
 os marcáveis foram medidos sobre \arq{cenas/\{biblioteca,horta,museu\}.webp}.
-Trocou a imagem, reanota esse objeto; a suíte passa os três prontos pela
-régua do pacote. No Museu o objeto é a PLACA DOURADA, e não a \enquote{placa
-1952} do one-pager: a imagem não tem texto escrito.
+As três imagens foram refeitas na 2.0.0 com a composição LIMPA que o time
+pediu (paredes lisas, poucos objetos neutros, os dois objetos do fundo grandes
+e de cor forte) e reanotadas. Trocou a imagem, reanota esse objeto; a suíte
+passa os três prontos pela régua do pacote.
 \end{atencao}
 
 \subsection{O gabarito fica no servidor}
 
 A cena desce SEM \cd{nucleo}, sem a fala da visitante, sem o selo coerente de
-cada foto, sem os alvos dos objetos e sem os \cd{marcaveis}; as cartas da E5,
-só com id e imagem (a atividade e a cor são o gabarito). O que desce é o
-\cd{fundo} (a parede comum, onde a lupa pulsa: é a dica, não a resposta).
-Duas exceções, e só elas: o alvo do objeto JÁ ACHADO (\cd{invariantes.achados}
---- deixou de ser gabarito, e sem ele um F5 não redesenha o círculo dourado)
-e todos os alvos depois da AJUDA, no terceiro erro, porque o PO pede o pulso
-amarelo sobre os objetos e o pulso precisa do lugar. \arq{src/contrato.test.ts}
-da experiência e a suíte da api cobram a ausência no \emph{schema} da sessão.
+cada foto e sem os \cd{marcaveis}; as cartas da E5, só com id e imagem. Os
+alvos dos dois objetos descem em três casos, e só neles: no passo da LUPA
+(\cd{lupa.alvos} --- o brilho e o anel precisam do lugar; a criança vê os
+objetos brilharem, e o que a E4 cobra é achá-los NAS DUAS fotos, por toque,
+corrigido no servidor), o alvo do objeto JÁ ACHADO na E4
+(\cd{invariantes.achados}, para um F5 redesenhar o círculo dourado) e todos
+depois da AJUDA, no terceiro erro, porque o PO pede o pulso amarelo sobre os
+objetos. \arq{src/contrato.test.ts} da experiência e a suíte da api cobram a
+ausência no \emph{schema} da sessão.
 
 \subsection{A lupa: medida no cliente, decidida no servidor}
 
-Quem cronometra é a tela (\arq{lib/lupa.ts}): o servidor não vê o dedo. A tela
-relata a cada 4\,s e no AVANÇAR (\rota{POST /enigma-capa/lupa}); o servidor
-guarda o MÁXIMO de cada tempo (monótono: um relato velho que chega atrasado
-não apaga o novo), nunca mais que o tempo desde o crachá, e o fundo, uma vez
-visto, fica visto (\arq{regras/lupa.ts}). Com \cd{avancar}, o piso libera o
-\cd{decidir}; sem ele, \cd{lupa\_alertas} sobe e a resposta é 200 com
-\cd{alerta: true}. O botão esmaecido continua TOCÁVEL de propósito: o toque
-antes do piso é a evidência.
+Quem cronometra é a tela (\arq{lib/lupa.ts}): o servidor não vê o dedo. A
+cada amostra, o tempo vai para o objeto sob o centro da lente
+(\cd{alvo1Ms}, \cd{alvo2Ms}). A tela relata a cada 4\,s e no AVANÇAR
+(\rota{POST /enigma-capa/lupa}); o servidor guarda o MÁXIMO de cada tempo
+(monótono: um relato velho que chega atrasado não apaga o novo), nunca mais
+que o tempo desde a entrada (\arq{regras/lupa.ts}). Com \cd{avancar}, o piso
+(os dois $\geq$ 3\,s) libera o \cd{decidir}; sem ele, \cd{lupa\_alertas} sobe
+e a resposta é 200 com \cd{alerta: true}. O botão esmaecido continua TOCÁVEL
+de propósito: o toque antes do piso é a evidência.
 
 \subsection{A virada é da turma; a busca, da criança}
 
@@ -1409,40 +1428,43 @@ A fase da turma é \cd{aberta} ou \cd{virada}, só para a frente
 \cd{exp02ef1b\_\B{}gates\_\B{}historico}). A tela acompanha por \emph{polling} de 3\,s
 (\rota{GET /enigma-capa/gate}, \adrr{ADR-93}) e relê a sessão quando passo,
 fase, pacote ou rodada mudam; o \enquote{Zerar} (rodada $+1$) devolve a tela
-ao mural sozinho. A busca (\arq{regras/\B{}invariantes.ts}) só aceita toque depois
-da virada (409 \cd{virada-nao-liberada}); o toque é no ponto DA PANORÂMICA,
-dentro do recorte da foto tocada (fora dele é defeito da tela, 400). Os erros
-contam até 3; no terceiro a ajuda acende, e os erros DEPOIS dela contam à
-parte (\cd{invariantes\_\B{}erros\_\B{}pos\_\B{}ajuda}): são o \enquote{precisou de
-apontamento} que a EF02CO01 mede. O fluxo nunca trava.
+ao card da missão sozinho. A busca (\arq{regras/\B{}invariantes.ts}) só aceita
+toque depois da virada (409 \cd{virada-nao-liberada}); o toque é no ponto DA
+PANORÂMICA, dentro do recorte da foto tocada (fora dele é defeito da tela,
+400). Os erros contam até 3; no terceiro a ajuda acende, e os erros DEPOIS
+dela contam à parte (\cd{invariantes\_\B{}erros\_\B{}pos\_\B{}ajuda}): são o
+\enquote{precisou de apontamento} que a EF02CO01 mede. O fluxo nunca trava.
 
 \subsection{A fila de envio é em memória}
 
-As jogadas (crachá, publicar, \emph{slider}, fora, pares, segunda foto,
-transferência) entram numa fila em MEMÓRIA (\arq{lib/fila.ts}), nunca em
-\cd{localStorage}, e esperam a rede voltar com a faixa SEM SINAL NA
-RÁDIO. Os toques da busca NÃO entram na fila: cada um conta acerto ou erro, e
-a criança toca de novo. Um 409 relê o estado inteiro. A imagem que não
-carrega mostra CARREGANDO CAPA\ldots{} e TENTAR DE NOVO.
+As jogadas (iniciar, publicar, \emph{slider}, fora, pares, segunda foto)
+entram numa fila em MEMÓRIA (\arq{lib/fila.ts}), nunca em \cd{localStorage},
+e esperam a rede voltar com a faixa SEM SINAL NA RÁDIO. Os toques da busca NÃO
+entram na fila: cada um conta acerto ou erro, e a criança toca de novo. Um
+409 relê o estado inteiro. A imagem que não carrega mostra CARREGANDO
+CAPA\ldots{} e TENTAR DE NOVO.
 
 \subsection{A atividade é o pacote}
 
 O pacote (\cd{exp02ef1b\_pacotes}) é a ATIVIDADE da evidência, e a rodada é o
 \enquote{Zerar}, como na exp02em1b (\adrr{ADR-130}, \adrr{ADR-155}): aprovar
 cria a atividade pronta; \enquote{Usar esta atividade agora} a põe no ar; o
-banco padrão faz os dois num toque (reusando o mesmo pronto já aprovado na
-turma, sem tocar no rascunho da IA); e o \enquote{Zerar} apaga a evidência do
+banco padrão faz os dois num toque; e o \enquote{Zerar} apaga a evidência do
 pacote, guarda as sessões e devolve a fase a \cd{aberta}. A missão nasce
 VAZIA: sem atividade no ar, \rota{GET /enigma-capa/sessao} responde
 \cd{preparada: false} e as jogadas, 409 \cd{radio-em-preparo} --- espera, não
 bloqueio. O preparo tem três caminhos: o banco padrão (Biblioteca), os prontos
 Horta e Museu, com as imagens no \emph{bundle}, e a cena gerada por IA
 (Seção~\ref{sec:ia-preparo-exp02ef1b}), cujos dois alvos o professor marca
-tocando na panorâmica antes de aprovar.
+tocando na panorâmica antes de aprovar. O componente curricular do recorte
+lista TODOS os do 2º ano na BNCC --- Língua Portuguesa, Arte, Educação
+Física, Matemática, Ciências, Geografia, História e Ensino Religioso, de
+\arq{curriculo/componentes.ts} --- mais Computação e \enquote{Outro
+componente} (\adrr{ADR-186}).
 
-\subsection{A régua pedagógica: 100\% Canal A}
+\subsection{A régua pedagógica: 100\% ações em tela}
 
-A ficha \arq{evidencias/\B{}fichas/\B{}exp02ef1b.ts}, versão 1, não tem pergunta (no
+A ficha \arq{evidencias/\B{}fichas/\B{}exp02ef1b.ts}, versão 2, não tem pergunta (no
 2º ano é proibido questionário com alternativas textuais) nem resolvedor de
 contexto. As duas marcas são de AÇÃO, gravadas por \arq{enigma-capa} na
 transação do próprio gesto, com a régua pura em \arq{regras/\B{}evidencia.ts}.
@@ -1456,7 +1478,8 @@ Lupa (E2) & piso com 0 alertas & 1 alerta & 2 alertas ou mais\\
 \zebra Selo (E3) & coerente com a foto & --- & incoerente\\
 Busca (E4) & menos de 3 erros, sem a ajuda & com a ajuda, menos de 3 erros
   depois dela & 3 erros ou mais depois da ajuda\\
-\zebra Voto (E6) & SÓ UM PEDAÇO & --- & MOSTRA TUDO\\
+\zebra Fora (E4) & ao menos um alfinete no que ficou fora da capa & --- &
+  nenhum\\
 \bottomrule
 \end{tabularx}
 
@@ -1464,11 +1487,11 @@ Busca (E4) & menos de 3 erros, sem a ajuda & com a ajuda, menos de 3 erros
 \toprule
 \headrow \thd{Habilidade} & \thd{Onde marca} & \thd{A régua}\\
 \midrule
-\textbf{EF02CO05} (foco) & No voto da horta, que conclui (marcador
+\textbf{EF02CO05} (foco) & No \enquote{Pronto} da cena inteira (marcador
   \cd{recorte-da-capa}) & \cd{atingiu}: os quatro plenos.
-  \cd{nao\_atingiu}: MOSTRA TUDO \textbf{e} mais um ausente (lupa, selo ou
-  busca). \cd{em\_processo}: o resto --- inclusive MOSTRA TUDO com o resto
-  pleno. A tabela-verdade inteira (36 combinações) está na suíte.\\
+  \cd{nao\_atingiu}: o fora ausente \textbf{e} mais um ausente (lupa, selo
+  ou busca). \cd{em\_processo}: o resto. A tabela-verdade inteira (36
+  combinações) está na suíte.\\
 \zebra \textbf{EF02CO01} (associada) & Quando os quatro achados completam
   (marcador \cd{invariantes-do-fundo}) & \cd{atingiu}: sem a ajuda.
   \cd{em\_processo}: com a ajuda e menos de 3 erros depois dela.
@@ -1477,66 +1500,67 @@ Busca (E4) & menos de 3 erros, sem a ajuda & com a ajuda, menos de 3 erros
 \end{tabularx}
 
 \begin{decisao}
-\textbf{Dois ajustes da régua do PO} (\adrr{ADR-184}). O \enquote{não
-atingiu} da EF02CO05 foi escrito com as quatro faltas ligadas por
-\enquote{e}: literal, seria inalcançável, e a criança que PERSISTE na crença
-de entrada (MOSTRA TUDO, o descritor central) cairia em \enquote{em processo}
-com outro sinal ausente --- a régua pede a crença MAIS um sinal. E o
-\enquote{não atingiu} da EF02CO01 (\enquote{precisou de apontamento direto do
-professor na tela}) é o que o sistema mede como os erros depois da ajuda.
+\textbf{O fora toma o lugar do voto da horta} (\adrr{ADR-186}). O PO media o
+fim da EF02CO05 no voto da etapa 6 (SÓ UM PEDAÇO $\times$ MOSTRA TUDO), que
+saiu da missão. Marcar na cena inteira o que ficou fora da própria foto é o
+MESMO reconhecimento --- a foto mostra só um pedaço do lugar ---, por ação, e
+já corrigido no servidor. A estrutura do ajuste da \adrr{ADR-184} fica: o
+\enquote{não atingiu} pede a falta central MAIS um sinal ausente, porque as
+quatro faltas ligadas por \enquote{e} seriam inalcançáveis.
 \end{decisao}
 
-O \enquote{o que ficou fora}, os pares, o motivo e a segunda foto vão SÓ ao
-painel do professor: o PO só os registra. Quem não chega ao gesto fica
-\enquote{Não avaliado} --- a ausência de marca, nunca \cd{nao\_atingiu} ---, e
-falha técnica também. A equipe recebe a cópia do nível pela regra da
-plataforma (\adrr{ADR-111}).
+Os pares, o motivo e a segunda foto vão SÓ ao painel do professor: o PO só os
+registra. Quem não chega ao gesto fica \enquote{Não avaliado} --- a ausência
+de marca, nunca \cd{nao\_atingiu} ---, e falha técnica também. A equipe
+recebe a cópia do nível pela regra da plataforma (\adrr{ADR-111}).
 
 \subsection{O professor: painel, guia e podcast}
 
 As telas de condução seguem os templates da \adrr{ADR-182}: o painel da aula
-mostra, por estudante (ou por computador, com equipe), o crachá, o passo, a
-lupa (tempos e alertas), a capa (foto, selo coerente, fala da visitante, se a
-ação ficou visível), a busca (erros, ajuda), o que marcou fora (\enquote{marcou
-X de Y}), o par e o motivo, a segunda foto e o voto, mais o resumo da turma
-(entraram, publicaram, aguardando a virada, concluíram) e o botão LIBERAR
-VIRADA. O guia (\arq{lib/entre-redes/guias/exp02ef1b.ts}) traz a introdução
-oral, a frase do arraste (\enquote{Você pode mover a foto, mas não mudar o
-tamanho.}), a pausa, os três cartões ENQUADRAMENTO, AUTORIA e O QUE FICOU DE
-FORA --- a nomeação é ORAL, e por isso a seção \cd{unooria} não entra no
-\emph{bundle} --- e a pergunta-ponte da E6. O podcast é FIXO
-(\arq{podcast.ts}, \adrr{ADR-150}): o roteiro literal do PO, com o Bento e a
-Iara, e os efeitos sonoros na direção de atuação.
+mostra, por estudante, pelo NOME (ou por computador, com equipe), o passo, a
+lupa (o tempo em cada objeto e os alertas), a capa (foto, selo coerente, fala
+da visitante, se a ação ficou visível), a busca (erros, ajuda), o que marcou
+fora (\enquote{marcou X de Y}), o par e o motivo e a segunda foto, mais o
+resumo da turma (entraram, publicaram, aguardando a virada, marcaram algo
+fora, concluíram) e o botão LIBERAR VIRADA. O guia
+(\arq{lib/entre-redes/guias/exp02ef1b.ts}) traz a introdução oral, a frase do
+arraste (\enquote{Você pode mover a foto, mas não mudar o tamanho.}), a pausa
+e os três cartões ENQUADRAMENTO, AUTORIA e O QUE FICOU DE FORA --- a nomeação
+é ORAL, e por isso a seção \cd{unooria} não entra no \emph{bundle}. O podcast
+é FIXO (\arq{podcast.ts}, \adrr{ADR-150}): o roteiro literal do PO, com o
+Bento e a Iara, e os efeitos sonoros na direção de atuação.
 
 \subsection{Compensações locais do DS}
 
-A experiência usa UMA seção, \cd{unoovista}. Oito peças não existem no pacote
+A experiência usa UMA seção, \cd{unoovista}. Nove peças não existem no pacote
 e estão compensadas no código, marcadas \enquote{(b) COMPENSAÇÃO local ---
 pedido aberto no storybook-unooria} (a lista, com a lacuna de cada uma, está
 na Seção~\ref{sec:ds-lacunas-exp02ef1b}): a janela recortada da panorâmica, a
-moldura de tamanho fixo, a lupa circular, a tela dividida com o
-\emph{slider}, as cartas arrastáveis, o Bento e a Iara sem ilustração, as
-cores de celebração e de ajuda, e o alvo de toque de 56\,px. Três desvios de
-\emph{layout}, registrados: em 375\,px as fotos da E2 ficam uma sobre a
-outra; PUBLICAR CAPA é o botão primário do Unoovista (roxo), não verde; e o
-avanço da E2 se chama AVANÇAR (o PO não nomeou o botão).
+moldura de tamanho fixo, a lupa com o brilho e o anel do tempo, a tela
+dividida, o \emph{slider} de comparação e o alfinete, o aviso de uma ação só,
+as cartas arrastáveis, o Bento só como balão, as cores de celebração e de
+ajuda, e o alvo de toque de 56\,px. Três desvios de \emph{layout},
+registrados: em 375\,px as fotos da E2 ficam uma sobre a outra; PUBLICAR CAPA
+é o botão primário do Unoovista (roxo), não verde; e o avanço da E2 se chama
+AVANÇAR (o PO não nomeou o botão).
 
 \subsection*{As duas suítes de ponta a ponta}
 
 \arq{scripts/e2e/estudante/\B{}14-enigma-capa.mjs} é o caminho inteiro com IA
 real: a professora gera a cena por tema, marca os dois objetos e põe a
-atividade no ar; o estudante faz E1 a E6 (com um erro na busca e um F5 que
-redesenha os achados); a professora libera a virada e lê as duas habilidades.
+atividade no ar; o estudante faz E1 a E5 (a lupa nos dois objetos, um erro na
+busca, o \emph{slider} de comparação, o alfinete e um F5 que redesenha os
+achados); a professora libera a virada e lê as duas habilidades.
 \arq{scripts/e2e/estudante/\B{}15-enigma-capa-caminhos.mjs} cobre o que a
 primeira não percorre, com o banco padrão da Biblioteca em um toque e duas
-crianças: a inatividade de 45\,s (o Bento, sem avançar sozinho), o balão
-\enquote{O PROFESSOR JÁ VEM!} depois de 3\,min com a virada fechada, a queda de
-rede no PUBLICAR CAPA (a faixa SEM SINAL NA RÁDIO e a jogada entregue quando a
-rede volta), a ajuda no 3º erro com os alvos e mais três erros depois dela, o
-voto MOSTRA TUDO travado e o \enquote{não atingiu} das duas habilidades ao lado
-do \enquote{atingiu} da outra criança, e o zerar (a rodada sobe, a evidência da
-atividade some, a virada fecha e a criança volta ao crachá). Os auxiliares das
-duas moram em \arq{scripts/e2e/lib/\B{}enigma-capa.mjs}.
+crianças: a inatividade de 45\,s (o Bento, sem avançar sozinho), O PROFESSOR
+JÁ VEM! depois de 3\,min com a virada fechada, a queda de rede no PUBLICAR
+CAPA (a faixa SEM SINAL NA RÁDIO e a jogada entregue quando a rede volta), a
+ajuda no 3º erro com os alvos e mais três erros depois dela, o alfinete só
+dentro da própria foto e o \enquote{não atingiu} das duas habilidades ao lado
+do \enquote{atingiu} da outra criança, e o zerar (a rodada sobe, a evidência
+da atividade some, a virada fecha e a criança volta ao card da missão). Os
+auxiliares das duas moram em \arq{scripts/e2e/lib/\B{}enigma-capa.mjs}.
 
 % ---------------------------------------------------------------------------
 \section{exp01em1b --- O Assistente Invisível}

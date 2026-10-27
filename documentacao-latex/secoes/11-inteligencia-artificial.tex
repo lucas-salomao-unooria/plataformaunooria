@@ -254,7 +254,8 @@ preparo cai no banco padrão (\adrr{ADR-157}). A suíte de ponta a ponta
 
 A única superfície de IA da exp02ef1b é o \enquote{Gerar com IA} do
 professor, antes da aula (\arq{enigma-capa/\B{}preparo.\B{}service.ts},
-\adrr{ADR-184}). O professor dá a disciplina, o tema (até 60 caracteres), de 3
+\adrr{ADR-184}). O professor dá o componente curricular (um dos do 2º ano na BNCC, mais
+Computação e \enquote{Outro componente}), o tema (até 60 caracteres), de 3
 a 6 palavras e uma nota opcional (até 200), e \rota{POST
 /enigma-capa/\B{}turmas/\B{}:turmaId/\B{}gerar-\B{}conteudo} faz DUAS chamadas pagas,
 as duas na quota do perfil \cd{professor} (regra 5: \cd{temSaldo} ANTES,
@@ -272,7 +273,10 @@ as duas na quota do perfil \cd{professor} (regra 5: \cd{temSaldo} ANTES,
     do JSON, pedida como \enquote{ilustração}, nunca \enquote{foto}
     (\adrr{ADR-178}), com a atividade 1 na metade esquerda, a 2 na direita, os
     dois objetos exatamente no centro da parede, sem texto escrito, sem logos e
-    com crianças genéricas. A imagem vai ao \emph{bucket} de mídia da
+    com crianças genéricas. Desde a 2.0.0 (\adrr{ADR-186}) o pedido é de uma
+    cena LIMPA, para a criança de 7 anos achar o que procura: paredes lisas,
+    poucos objetos neutros, no máximo duas crianças em cada atividade, e os
+    dois objetos do meio GRANDES, de cor forte e sozinhos na parede. A imagem vai ao \emph{bucket} de mídia da
     experiência (\cd{Assets\B{}Service.\B{}salvar\B{}Midia\B{}De\B{}Experiencia}, 1920$\times$1080
     em \cd{webp}) e o pacote guarda a URL absoluta.
 \end{enumerate}
@@ -294,9 +298,9 @@ chamadas (\cd{aoUsarTokens}); a imagem sem contagem vale
 debitar zero faria a quota mentir. Na falha, cobra-se o que já foi pago
 (\adrr{ADR-74}), inclusive o texto de uma geração cuja imagem falhou. Sem saldo
 (\cd{motivo: "sem-saldo"}) ou com o \emph{vendor} fora (\cd{"indisponivel"}),
-o rascunho é o \textbf{pacote pronto da disciplina} (Língua Portuguesa e
-\enquote{outra} \seta{} Biblioteca, Ciências \seta{} Horta, História \seta{}
-Museu), com \cd{usouIa: false}: a aula acontece. O pacote conta
+o rascunho é o \textbf{pacote pronto da disciplina} (Ciências \seta{} Horta,
+História e Geografia \seta{} Museu, os demais componentes \seta{}
+Biblioteca), com \cd{usouIa: false}: a aula acontece. O pacote conta
 \cd{ia\_geracoes} e \cd{ia\_tokens}. No painel de custos (\adrr{ADR-161}) a
 chamada aparece como \cd{enigma-capa} (\enquote{O Enigma da Capa da Rádio}, em
 \cd{RECURSOS\_\B{}DE\_\B{}IA}). Na aula não há chamada de IA nenhuma.

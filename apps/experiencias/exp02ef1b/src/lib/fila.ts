@@ -1,7 +1,6 @@
 /**
- * A FILA DE ENVIO, em MEMÓRIA (one-pager §8: "o envio do evento de publicação
- * ou de transferência é enfileirado e sincronizado assim que a conexão
- * retornar"). Nunca `localStorage`: a jogada é da sessão autenticada desta aba,
+ * A FILA DE ENVIO, em MEMÓRIA (one-pager §8: o envio da publicação "é
+ * enfileirado e sincronizado assim que a conexão retornar"). Nunca `localStorage`: a jogada é da sessão autenticada desta aba,
  * e o servidor é quem reconstitui o estado num F5 (o checkpoint).
  *
  * Uma tarefa por CHAVE (a rota): a jogada mais nova substitui a pendente da

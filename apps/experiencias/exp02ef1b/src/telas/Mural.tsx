@@ -1,33 +1,32 @@
 import { useState } from "react";
-import { AvatarUnv, NotificationItem } from "@edu/ui/ds-unoovista";
-import { Personagem } from "../componentes/Personagem";
+import { AvatarUnv, BadgeUnv, ButtonUnv, IconUnv } from "@edu/ui/ds-unoovista";
 import type { Contexto } from "../contexto";
-import { useDepoisDe } from "../hooks/tela";
 import { api } from "../lib/api";
-import { ROTULOS, textoDe } from "../lib/textos";
-import type { CrachaId } from "../lib/tipos";
+import { fraseDaMissao } from "../lib/geometria";
+import { preencher, ROTULOS, textoDe } from "../lib/textos";
 
 /**
- * E1 — DESAFIAR. O mural oficial da @radio_escola e o seletor ESCOLHA SEU
- * CRACHÁ, com os 4 avatares do banco curado. O toque só libera depois de 3 s
- * (one-pager §4: "evitar toque acidental"); antes disso o avatar não reage.
+ * E1 — DESAFIAR: a chamada para a ação (`E1-ALU-02` do protótipo, ADR-186).
  *
- * Tocar no crachá ABRE a sessão (`POST /enigma-capa/cracha`): a notificação
- * vermelha do rascunho pendente acende e o Bento aparece aflito. Tocar na
- * notificação desliza para a bancada (o passo do servidor já é `lupa`; quem
- * segura esta tela até o toque é o `rascunhoAberto` do despachante).
+ * O mural oficial da @radio_escola com UM card: o rascunho pendente, o que
+ * aconteceu ("A capa sobre a biblioteca causou confusão…") e a MISSÃO, em
+ * letra grande — "ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA" — e o botão
+ * ABRIR BANCADA, que abre a sessão (`POST /enigma-capa/iniciar`). Cinco
+ * elementos, um só gesto possível.
+ *
+ * A missão começa direto na ação: quem joga, o professor vê pelo nome no
+ * painel (ADR-186).
  */
-export function Mural({ ctx, aoAbrir }: { ctx: Contexto; aoAbrir: () => void }) {
-  const { sessao, estado, executar } = ctx;
-  const liberado = useDepoisDe(sessao.tempos.toqueLiberadoMs || 3000);
-  const [enviando, setEnviando] = useState<CrachaId | null>(null);
-  const escolhido = estado.cracha;
+export function Mural({ ctx }: { ctx: Contexto }) {
+  const { sessao, executar } = ctx;
+  const cena = sessao.cena!;
+  const [enviando, setEnviando] = useState(false);
 
-  async function escolher(id: CrachaId) {
-    if (!liberado || escolhido || enviando) return;
-    setEnviando(id);
-    await executar(() => api.cracha(id), "cracha");
-    setEnviando(null);
+  async function abrir() {
+    if (enviando) return;
+    setEnviando(true);
+    const r = await executar(() => api.iniciar(), "iniciar");
+    if (r === null && !ctx.naFila("iniciar")) setEnviando(false);
   }
 
   return (
@@ -40,42 +39,24 @@ export function Mural({ ctx, aoAbrir }: { ctx: Contexto; aoAbrir: () => void }) 
         </div>
       </header>
 
-      {!escolhido ? (
-        <>
-          <h1 className="titulo-da-tela">{textoDe(sessao.textos, "e1", "titulo")}</h1>
-          <ul className={`crachas${liberado ? "" : " crachas--travados"}`} aria-busy={!liberado}>
-            {sessao.material.crachas.map((c) => (
-              <li key={c.id} className="crachas__item">
-                <AvatarUnv
-                  initials={c.emoji}
-                  size="xl"
-                  aria-label={c.rotulo}
-                  aria-disabled={!liberado || Boolean(enviando)}
-                  className={enviando === c.id ? "crachas__avatar crachas__avatar--escolhido" : "crachas__avatar"}
-                  onClick={() => void escolher(c.id)}
-                />
-                <span className="crachas__rotulo" aria-hidden="true">
-                  {c.rotulo}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : (
-        <div className="mural__rascunho">
-          <Personagem quem="bento" fala={textoDe(sessao.textos, "e1", "bento")} animado anunciar />
-          <NotificationItem
-            className="mural__notificacao"
-            initials={ctx.cracha?.emoji ?? "★"}
-            username={ctx.cracha?.rotulo ?? ""}
-            action={ROTULOS.rascunho}
-            unread
-            unreadLabel={ROTULOS.rascunho}
-            footer={<strong>{textoDe(sessao.textos, "e1", "card")}</strong>}
-            onClick={aoAbrir}
-          />
-        </div>
-      )}
+      <article className="missao" aria-labelledby="missao-titulo">
+        <BadgeUnv variant="neutral" className="missao__tag">
+          {textoDe(sessao.textos, "e1", "tag")} <span aria-hidden="true">🔴</span>
+        </BadgeUnv>
+        <h1 id="missao-titulo" className="missao__titulo">
+          {textoDe(sessao.textos, "e1", "titulo")}
+        </h1>
+        <p className="missao__contexto">{preencher(textoDe(sessao.textos, "e1", "contexto"), { espacoCurto: cena.espacoCurto })}</p>
+        <p className="missao__cta">
+          <span className="missao__icone" aria-hidden="true">
+            <IconUnv name="search" size="lg" />
+          </span>
+          {fraseDaMissao(cena.espacoCurto)}
+        </p>
+        <ButtonUnv size="lg" block disabled={enviando} onClick={() => void abrir()}>
+          {textoDe(sessao.textos, "e1", "abrir")}
+        </ButtonUnv>
+      </article>
     </section>
   );
 }

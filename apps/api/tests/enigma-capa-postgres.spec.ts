@@ -1,14 +1,15 @@
 import { HttpException } from "@nestjs/common";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import type { AiImagemOpcoes, AiJsonRequest, AiProvider } from "../src/ai/provider";
 import { QuotaService } from "../src/ai/quota.service";
 import type { AssetsService } from "../src/assets/assets.service";
 import type { AuthClaims } from "../src/auth/claims";
-import { EXP_ID, PACOTES_PRONTOS, conteudoPronto, type FotoId, type SeloId, type Voto } from "../src/enigma-capa/conteudo";
+import { EXP_ID, PACOTES_PRONTOS, conteudoPronto, type FotoId, type Ponto, type SeloId } from "../src/enigma-capa/conteudo";
 import {
   EstadoSchema,
   GateDoEstudanteSchema,
   GerarRespostaSchema,
+  MaterialSchema,
   PacoteDaTurmaSchema,
   PainelSchema,
   RespostaDaLupaSchema,
@@ -28,16 +29,17 @@ import { criarRoleDeRuntime, urlDeRuntime } from "./role-de-runtime";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * O Enigma da Capa da Rádio (exp02ef1b, ADR-184) no Postgres: o que só o banco
- * responde.
+ * O Enigma da Capa da Rádio (exp02ef1b, ADR-184; 2.0.0, ADR-186) no Postgres:
+ * o que só o banco responde.
  *
  * A porta da sala em TODA rota de estudante, a missão que nasce vazia, o
  * preparo com a quota do professor (texto + imagem) e a reserva no pacote
  * pronto, os alvos que o professor marca, a homologação, o banco padrão em um
  * toque, o piso da lupa, o LATCH da capa com a fala da visitante, a virada
- * GERAL (só para a frente), a busca com a ajuda e a EF02CO01, o voto com a
- * EF02CO05, o gabarito ausente da saída do estudante, o painel, a RLS com a
- * role sem `BYPASSRLS`, os CHECKs e o zerar.
+ * GERAL (só para a frente), a busca com a ajuda e a EF02CO01, o "o que ficou
+ * fora" com a EF02CO05, a segunda foto que conclui, o gabarito ausente da
+ * saída do estudante (e a exceção da lupa), o painel, a RLS com a role sem
+ * `BYPASSRLS`, os CHECKs da 2.0.0 e o zerar.
  *
  * Os testes dependem da ORDEM: é a aula, na sequência em que ela acontece.
  */
@@ -140,32 +142,31 @@ async function nivel(estudanteId: string, marcador: string) {
 const envelhecer = (estudanteId: string) =>
   prisma.exp02ef1bSessao.updateMany({ where: { escolaId: ESCOLA, estudanteId }, data: { entrouEm: new Date(Date.now() - 60_000) } });
 
-const LUPA_CHEIA = { foto1Ms: 4000, foto2Ms: 4000, fundo1: true, fundo2: true, avancar: true };
+const LUPA_CHEIA = { alvo1Ms: 4000, alvo2Ms: 4000, avancar: true };
 const relogio = PACOTES_PRONTOS.biblioteca.conteudo.cena.invariantes[0]!.alvo!;
 const cartaz = PACOTES_PRONTOS.biblioteca.conteudo.cena.invariantes[1]!.alvo!;
 const LONGE = { x: 10, y: 95 };
 
 /** A criança até a capa publicada (E1–E3). */
 async function ateACapa(estudanteId: string, foto: FotoId, selo: SeloId, alertas = 0) {
-  await service.cracha(ESCOLA, estudanteId, "fone-azul");
+  await service.iniciar(ESCOLA, estudanteId);
   await envelhecer(estudanteId);
-  for (let i = 0; i < alertas; i += 1) await service.lupa(ESCOLA, estudanteId, { ...LUPA_CHEIA, fundo2: false });
+  for (let i = 0; i < alertas; i += 1) await service.lupa(ESCOLA, estudanteId, { ...LUPA_CHEIA, alvo2Ms: 0 });
   await service.lupa(ESCOLA, estudanteId, LUPA_CHEIA);
   return RespostaDoPublicarSchema.parse(await service.publicar(ESCOLA, estudanteId, foto, selo, { x: 0.5, y: 0.5 }));
 }
 
-/** Da virada ao voto (E4–E6). */
-async function daViradaAoVoto(estudanteId: string, o: { errosAntes: number; errosDepois: number; voto: Voto }) {
+/** Da virada ao fim (E4–E5): a busca, o slider, os alfinetes do "fora", o par e a segunda foto, que conclui. */
+async function daViradaAoFim(estudanteId: string, o: { errosAntes: number; errosDepois: number; fora: Ponto[] }) {
   for (let i = 0; i < o.errosAntes + o.errosDepois; i += 1) await service.tocarInvariante(ESCOLA, estudanteId, "foto-1", LONGE);
   for (const foto of ["foto-1", "foto-2"] as const) {
     await service.tocarInvariante(ESCOLA, estudanteId, foto, relogio);
     await service.tocarInvariante(ESCOLA, estudanteId, foto, cartaz);
   }
   await service.abrirPanoramica(ESCOLA, estudanteId);
-  await service.marcarFora(ESCOLA, estudanteId, [{ x: 80, y: 70 }]);
+  await service.marcarFora(ESCOLA, estudanteId, o.fora);
   await service.formarPar(ESCOLA, estudanteId, ["carta-a", "carta-c"], "atividade");
-  await service.segundaFoto(ESCOLA, estudanteId, "crianca-lendo", { x: 0, y: 0 });
-  return EstadoSchema.parse(await service.transferencia(ESCOLA, estudanteId, o.voto));
+  return EstadoSchema.parse(await service.segundaFoto(ESCOLA, estudanteId, "crianca-lendo", { x: 0, y: 0 }));
 }
 
 beforeAll(async () => {
@@ -211,15 +212,14 @@ describe("a porta da sala (ADR-69)", () => {
     for (const chamada of [
       () => service.sessao(ESCOLA, ids.fabi),
       () => service.gate(ESCOLA, ids.fabi),
-      () => service.cracha(ESCOLA, ids.fabi, "fone-azul"),
+      () => service.iniciar(ESCOLA, ids.fabi),
       () => service.lupa(ESCOLA, ids.fabi, LUPA_CHEIA),
       () => service.publicar(ESCOLA, ids.fabi, "foto-1", "selo-1", { x: 0.5, y: 0.5 }),
       () => service.tocarInvariante(ESCOLA, ids.fabi, "foto-1", relogio),
       () => service.abrirPanoramica(ESCOLA, ids.fabi),
-      () => service.marcarFora(ESCOLA, ids.fabi, []),
+      () => service.marcarFora(ESCOLA, ids.fabi, [{ x: 80, y: 70 }]),
       () => service.formarPar(ESCOLA, ids.fabi, ["carta-a", "carta-c"], "atividade"),
       () => service.segundaFoto(ESCOLA, ids.fabi, "crianca-lendo", { x: 0, y: 0 }),
-      () => service.transferencia(ESCOLA, ids.fabi, "so-um-pedaco"),
     ]) {
       expect(await recusa(chamada)).toMatchObject({ status: 403, corpo: { codigo: "missao-nao-liberada" } });
     }
@@ -231,11 +231,11 @@ describe("a porta da sala (ADR-69)", () => {
 });
 
 describe("a missão nasce VAZIA", () => {
-  test("sem pacote no ar: espera; o crachá é 409; o botão do professor também espera", async () => {
+  test("sem pacote no ar: espera; o ABRIR BANCADA é 409; o botão do professor também espera", async () => {
     const s = SessaoSchema.parse(await service.sessao(ESCOLA, ids.ana));
-    expect(s).toMatchObject({ passo: "cracha", preparada: false, fase: null, cena: null });
+    expect(s).toMatchObject({ passo: "inicio", preparada: false, fase: null, cena: null, lupa: null });
     expect(s.geometria.recortes["foto-2"]).toEqual({ x: 32, y: 0, w: 68, h: 100 });
-    expect(await codigo(service.cracha(ESCOLA, ids.ana, "fone-azul"))).toBe("radio-em-preparo");
+    expect(await codigo(service.iniciar(ESCOLA, ids.ana))).toBe("radio-em-preparo");
     expect(await codigo(service.mudarGate(ESCOLA, ids.turmaA, ids.prof))).toBe("pacote-nao-aprovado");
   });
 });
@@ -325,35 +325,56 @@ describe("o preparo do professor (IA com a quota do perfil professor)", () => {
   });
 });
 
-describe("a aula: o crachá, a lupa e a capa", () => {
-  test("a sessão traz a cena SEM o gabarito, a geometria e os textos com o espaço", async () => {
+describe("a aula: o ABRIR BANCADA, a lupa e a capa", () => {
+  test("a sessão traz a cena SEM o gabarito, a geometria, o material e os textos com o espaço", async () => {
     const s = SessaoSchema.parse(await service.sessao(ESCOLA, ids.ana));
-    expect(s).toMatchObject({ passo: "cracha", preparada: true, fase: "aberta", cena: { chave: "biblioteca", imagem: { tipo: "bundle", nome: "cenas/biblioteca.webp" } } });
+    expect(s).toMatchObject({ passo: "inicio", preparada: true, fase: "aberta", cena: { chave: "biblioteca", imagem: { tipo: "bundle", nome: "cenas/biblioteca.webp" } } });
+    expect(s.textos.e1).toMatchObject({
+      tag: "RASCUNHO PENDENTE",
+      contexto: "A capa sobre a biblioteca causou confusão entre os ouvintes.",
+      missao: "ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA",
+      abrir: "ABRIR BANCADA",
+    });
     expect(s.textos.e4?.fora).toBe("Marque na biblioteca o que ficou fora da sua foto.");
+    expect(s.textos.e4?.mesmoLugar).toBe("MESMO LUGAR · MESMO MINUTO (14:15)");
     expect(s.textos.e2?.rotuloDaFoto1).toBe("FOTO 1 — BIBLIOTECA ESCOLAR 14:15");
+    /* O contador fica para a tela. */
+    expect(s.textos.e2?.contador).toBe("{n} DE 2 ENCONTRADOS");
+    expect(Object.keys(s.textos)).toEqual(["e1", "e2", "e3", "e4", "e5", "erros"]);
+    expect(Object.keys(s.material).sort()).toEqual(["cartas", "motivos", "segundaFoto"]);
     const json = JSON.stringify(await service.sessao(ESCOLA, ids.ana));
     expect(json).not.toMatch(/"nucleo"|"seloCoerente"|"alvo"|"alvos":\[|"marcaveis"|"atividade":"leitura"|"cor":|Na foto, vi crianças/);
   });
 
-  test("jogada fora do passo é 409; o crachá abre a sessão", async () => {
+  test("jogada fora do passo é 409; o ABRIR BANCADA abre a sessão (idempotente) e os dois alvos descem para o brilho da lente", async () => {
     expect(await codigo(service.publicar(ESCOLA, ids.ana, "foto-1", "selo-1", { x: 0.5, y: 0.5 }))).toBe("sessao-nao-aberta");
-    const e = EstadoSchema.parse(await service.cracha(ESCOLA, ids.ana, "fone-azul"));
-    expect(e).toMatchObject({ passo: "lupa", cracha: "fone-azul" });
-    /* O crachá escolhido fica: outro toque devolve o estado. */
-    expect(EstadoSchema.parse(await service.cracha(ESCOLA, ids.ana, "gravador-laranja")).cracha).toBe("fone-azul");
+    const e = EstadoSchema.parse(await service.iniciar(ESCOLA, ids.ana));
+    expect(e).toMatchObject({ passo: "lupa", lupa: { alvo1Ms: 0, alvo2Ms: 0, alertas: 0, liberada: false } });
+    /* A exceção da ADR-186: no passo da lupa, os DOIS invariantes descem. */
+    expect(e.lupa?.alvos).toEqual([
+      { id: "inv-1", ...relogio },
+      { id: "inv-2", ...cartaz },
+    ]);
+    /* O duplo toque devolve o estado; a sessão é uma só. */
+    expect(EstadoSchema.parse(await service.iniciar(ESCOLA, ids.ana)).passo).toBe("lupa");
+    expect(await prisma.exp02ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).toBe(1);
+    const linha = await prisma.exp02ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
+    expect(linha.versaoInstrumento).toBe("2.0.0");
     expect(await codigo(service.publicar(ESCOLA, ids.ana, "foto-1", "selo-1", { x: 0.5, y: 0.5 }))).toBe("passo-invalido");
-    expect(SessaoSchema.parse(await service.sessao(ESCOLA, ids.ana)).textos.e3?.assinatura).toBe("POSTAGEM DE: FONE AZUL");
   });
 
-  test("a lupa: avançar sem o piso conta o alerta; o tempo é limitado ao da sessão; com o piso, libera", async () => {
+  test("a lupa: avançar sem o piso conta o alerta; o tempo é limitado ao da sessão; com 3 s em cada objeto, libera", async () => {
     const cedo = RespostaDaLupaSchema.parse(await service.lupa(ESCOLA, ids.ana, LUPA_CHEIA));
     /* A sessão acabou de nascer: os 4 s relatados viram o tempo que passou de verdade. */
     expect(cedo).toMatchObject({ liberado: false, alerta: true, lupa: { alertas: 1, liberada: false } });
-    expect(cedo.lupa!.foto1Ms).toBeLessThan(4000);
+    expect(cedo.lupa!.alvo1Ms).toBeLessThan(4000);
     await envelhecer(ids.ana);
+    /* Só um dos dois objetos: o relato fica, sem avançar não há alerta. */
+    const meio = RespostaDaLupaSchema.parse(await service.lupa(ESCOLA, ids.ana, { alvo1Ms: 4000, alvo2Ms: 0, avancar: false }));
+    expect(meio).toMatchObject({ liberado: false, alerta: false, passo: "lupa", lupa: { alvo1Ms: 4000, alertas: 1 } });
     const ok = RespostaDaLupaSchema.parse(await service.lupa(ESCOLA, ids.ana, LUPA_CHEIA));
-    expect(ok).toMatchObject({ liberado: true, alerta: false, passo: "decidir", lupa: { foto1Ms: 4000, alertas: 1, liberada: true } });
-    expect(RespostaDaLupaSchema.parse(await service.lupa(ESCOLA, ids.ana, { ...LUPA_CHEIA, fundo1: false }))).toMatchObject({ liberado: true, lupa: { alertas: 1 } });
+    expect(ok).toMatchObject({ liberado: true, alerta: false, passo: "decidir", lupa: { alvo1Ms: 4000, alvo2Ms: 4000, alertas: 1, liberada: true, alvos: null } });
+    expect(RespostaDaLupaSchema.parse(await service.lupa(ESCOLA, ids.ana, { ...LUPA_CHEIA, alvo1Ms: 0 }))).toMatchObject({ liberado: true, lupa: { alertas: 1 } });
   });
 
   test("PUBLICAR CAPA é o latch: a fala da visitante, a espera da virada; a mesma escolha é idempotente, outra é 409", async () => {
@@ -370,7 +391,7 @@ describe("a aula: o crachá, a lupa e a capa", () => {
     await ateACapa(ids.bia, "foto-1", "selo-2");
     await ateACapa(ids.caio, "foto-2", "selo-2");
     const p = PainelSchema.parse(await service.painel(ESCOLA, ids.turmaA, ids.prof));
-    expect(p.resumo).toMatchObject({ unidades: 3, entraram: 3, publicaram: 3, aguardandoVirada: 3, concluiram: 0 });
+    expect(p.resumo).toMatchObject({ unidades: 3, entraram: 3, publicaram: 3, aguardandoVirada: 3, concluiram: 0, marcaramFora: 0 });
     expect(p.linhas.find((l) => l.estudanteId === ids.bia)?.capa).toMatchObject({ seloCoerente: false, visitante: "Na foto, vi crianças lendo!" });
     expect(GateDoEstudanteSchema.parse(await service.gate(ESCOLA, ids.bia))).toMatchObject({ fase: "aberta", passo: "feed", rodada: 1 });
   });
@@ -409,69 +430,128 @@ describe("a virada (geral da turma) e a busca dos invariantes", () => {
     expect(await nivel(ids.ana, "recorte-da-capa")).toBeNull();
   });
 
-  test("a Bia precisa da ajuda e erra 3 vezes depois dela: os alvos descem; não atingiu", async () => {
+  test("a Bia precisa da ajuda, erra 3 vezes depois dela e não marca nada fora: os alvos descem; não atingiu nas duas", async () => {
     for (let i = 0; i < 2; i += 1) await service.tocarInvariante(ESCOLA, ids.bia, "foto-1", LONGE);
     const terceiro = RespostaDoToqueSchema.parse(await service.tocarInvariante(ESCOLA, ids.bia, "foto-1", LONGE));
     expect(terceiro.toque).toMatchObject({ erros: 3, ajuda: true });
     expect(terceiro.toque.alvos?.map((a) => a.id)).toEqual(["inv-1", "inv-2"]);
     expect(terceiro.invariantes?.alvos?.length).toBe(2);
-    const fim = await daViradaAoVoto(ids.bia, { errosAntes: 0, errosDepois: 3, voto: "mostra-tudo" });
-    expect(fim).toMatchObject({ passo: "concluida", concluido: true, transferencia: { voto: "mostra-tudo" } });
+    /* O alfinete na mesa de leitura, que ESTAVA na capa dela: nada fora. */
+    const fim = await daViradaAoFim(ids.bia, { errosAntes: 0, errosDepois: 3, fora: [{ x: 20, y: 60 }] });
+    expect(fim).toMatchObject({ passo: "concluida", concluido: true });
     expect(await nivel(ids.bia, "invariantes-do-fundo")).toBe("nao_atingiu");
-    /* MOSTRA TUDO + selo incoerente (e invariantes ausente): não atingiu. */
+    /* Nada fora + selo incoerente (e invariantes ausente): não atingiu. */
     expect(await nivel(ids.bia, "recorte-da-capa")).toBe("nao_atingiu");
   });
 });
 
-describe("o slider, o fora, a E5 e o voto", () => {
-  test("a Ana marca o que ficou fora, forma o par da cor, enquadra a segunda foto e vota; em processo (1 alerta da lupa)", async () => {
+describe("o slider, o fora (a EF02CO05) e a E5, que conclui", () => {
+  test("a Ana marca o que ficou fora — a EF02CO05 em processo (1 alerta da lupa) —, forma o par da cor e a segunda foto conclui", async () => {
     await service.abrirPanoramica(ESCOLA, ids.ana);
     expect(await codigo(service.formarPar(ESCOLA, ids.ana, ["carta-a", "carta-d"], "roupa"))).toBe("passo-invalido");
     const fora = EstadoSchema.parse(await service.marcarFora(ESCOLA, ids.ana, [{ x: 80, y: 70 }, { x: 20, y: 60 }]));
     expect(fora).toMatchObject({ passo: "pares", fora: { toques: [{ x: 80, y: 70 }, { x: 20, y: 60 }] } });
+    /* Marcada no "Pronto": o tapete ficou fora da capa (fora pleno), mas a lupa teve 1 alerta. */
+    expect(await nivel(ids.ana, "recorte-da-capa")).toBe("em_processo");
+    /* O "Pronto" de novo devolve o estado, sem regravar. */
+    expect(EstadoSchema.parse(await service.marcarFora(ESCOLA, ids.ana, [{ x: 50, y: 95 }])).fora?.toques).toHaveLength(2);
     expect(await codigo(service.formarPar(ESCOLA, ids.ana, ["carta-a", "carta-z"], "roupa"))).toBe("carta-desconhecida");
     await service.formarPar(ESCOLA, ids.ana, ["carta-a", "carta-d"], "roupa");
-    await service.segundaFoto(ESCOLA, ids.ana, "mochila", { x: 1, y: 0.5 });
-    const fim = EstadoSchema.parse(await service.transferencia(ESCOLA, ids.ana, "so-um-pedaco"));
-    expect(fim).toMatchObject({ passo: "concluida", concluido: true });
-    expect(await nivel(ids.ana, "recorte-da-capa")).toBe("em_processo");
-    /* O mesmo voto é idempotente; outro, 409. */
-    expect(EstadoSchema.parse(await service.transferencia(ESCOLA, ids.ana, "so-um-pedaco")).concluido).toBe(true);
-    expect(await codigo(service.transferencia(ESCOLA, ids.ana, "mostra-tudo"))).toBe("ja-enviado");
+    const fim = EstadoSchema.parse(await service.segundaFoto(ESCOLA, ids.ana, "mochila", { x: 1, y: 0.5 }));
+    expect(fim).toMatchObject({ passo: "concluida", concluido: true, segundaFoto: { elemento: "mochila" } });
+    const linha = await prisma.exp02ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
+    expect(linha.concluidoEm).not.toBeNull();
+    expect(linha.concluidoEm?.getTime()).toBe(linha.segundaEm?.getTime());
+    /* A mesma jogada de novo é idempotente. */
+    expect(EstadoSchema.parse(await service.segundaFoto(ESCOLA, ids.ana, "parede", { x: 0, y: 0 })).segundaFoto?.elemento).toBe("mochila");
+    expect(GateDoEstudanteSchema.parse(await service.gate(ESCOLA, ids.ana)).passo).toBe("concluida");
   });
 
-  test("o Caio faz tudo pleno: atingiu nas duas", async () => {
-    await daViradaAoVoto(ids.caio, { errosAntes: 0, errosDepois: 0, voto: "so-um-pedaco" });
+  test("o Caio faz tudo pleno e marca fora a mesa de leitura: atingiu nas duas", async () => {
+    /* A capa dele é a foto 2 centrada: a mesa de leitura (à esquerda) ficou fora. */
+    await daViradaAoFim(ids.caio, { errosAntes: 0, errosDepois: 0, fora: [{ x: 20, y: 60 }] });
     expect(await nivel(ids.caio, "invariantes-do-fundo")).toBe("atingiu");
     expect(await nivel(ids.caio, "recorte-da-capa")).toBe("atingiu");
   });
 
-  test("o painel: as escolhas por estudante (o fora, o par, a segunda foto, o voto) e os agregados", async () => {
+  test("o painel: as escolhas por estudante, pelo nome (o fora, o par, a segunda foto) e os agregados", async () => {
     const p = PainelSchema.parse(await service.painel(ESCOLA, ids.turmaA, ids.prof));
-    expect(p.resumo).toMatchObject({ publicaram: 3, aguardandoVirada: 0, concluiram: 3, votos: { "so-um-pedaco": 2, "mostra-tudo": 1 } });
+    expect(p.resumo).toMatchObject({ publicaram: 3, aguardandoVirada: 0, concluiram: 3, marcaramFora: 2 });
+    expect(p.roteiro.introducao).toBe(
+      "O Bento postou uma foto da biblioteca e os ouvintes entenderam tudo errado. Encontre nas fotos os 2 objetos da biblioteca e descubra o mistério da capa!",
+    );
     const ana = p.linhas.find((l) => l.estudanteId === ids.ana)!;
     expect(ana).toMatchObject({
+      nome: "Ana Teste",
       passo: "concluida",
-      cracha: "fone-azul",
-      lupa: { alertas: 1, liberada: true },
+      lupa: { alvo1Ms: 4000, alvo2Ms: 4000, alertas: 1, liberada: true },
       capa: { fotoId: "foto-1", seloCoerente: true, nucleoVisivel: true },
       invariantes: { encontrados: 4, erros: 2, ajuda: false, completo: true },
       fora: { itens: [{ id: "tapete-fantoches", nome: "TAPETE COM FANTOCHES" }] },
       par: { cartas: ["carta-a", "carta-d"], motivo: "roupa", correto: false },
       segundaFoto: { elemento: "mochila", essencialVisivel: false },
-      voto: "so-um-pedaco",
     });
     expect(ana.fora!.possiveis).toBeGreaterThanOrEqual(1);
-    expect(p.linhas.find((l) => l.estudanteId === ids.bia)?.invariantes).toMatchObject({ ajuda: true, errosPosAjuda: 3 });
+    const bia = p.linhas.find((l) => l.estudanteId === ids.bia)!;
+    expect(bia).toMatchObject({ nome: "Bia Teste", invariantes: { ajuda: true, errosPosAjuda: 3 }, fora: { itens: [] } });
+    expect(Object.keys(bia).sort()).toEqual(["aguardandoVirada", "capa", "equipe", "estudanteId", "fora", "invariantes", "lupa", "nome", "par", "passo", "segundaFoto"]);
+  });
+
+  test("o material do guia: as disciplinas do 2º ano na ordem do catálogo, com Computação e Outro componente no fim", () => {
+    const m = MaterialSchema.parse(service.material());
+    expect(m.disciplinas.map((d) => d.slug)).toEqual([
+      "lingua-portuguesa",
+      "arte",
+      "educacao-fisica",
+      "matematica",
+      "ciencias",
+      "geografia",
+      "historia",
+      "ensino-religioso",
+      "computacao",
+      "outra",
+    ]);
+    expect(m.disciplinas.at(-1)).toEqual({ slug: "outra", rotulo: "Outro componente" });
+    expect(m.habilidades[0]?.rotulo).toBe("A capa da rádio e o que ficou fora");
+  });
+
+  test("o recorte aceita a disciplina nova (Geografia → o Museu de reserva, sem saldo)", async () => {
+    const r = await servicoSemSaldo.gerar(ESCOLA, ids.turmaA, ids.prof, "professor", { disciplina: "geografia", tema: "O bairro da escola", palavras: ["rua", "mapa", "praça"] });
+    expect(r).toMatchObject({ usouIa: false, motivo: "sem-saldo", rascunho: { disciplina: "geografia", chaveDaCena: "museu" } });
   });
 });
 
 describe("o banco, a RLS e o zerar", () => {
-  test("os CHECKs são a rede final: a capa pela metade e o voto sem conclusão são recusados", async () => {
+  test("os CHECKs são a rede final: a capa pela metade e a conclusão sem a segunda foto são recusadas", async () => {
     const onde = { escolaId: ESCOLA, estudanteId: ids.ana };
     await expect(prisma.exp02ef1bSessao.updateMany({ where: onde, data: { capaSeloId: null } })).rejects.toThrow(/exp02ef1b_sessoes_capa_check/);
-    await expect(prisma.exp02ef1bSessao.updateMany({ where: onde, data: { concluidoEm: null } })).rejects.toThrow(/exp02ef1b_sessoes_transferencia_check/);
+    await expect(
+      prisma.exp02ef1bSessao.updateMany({
+        where: onde,
+        data: { segundaEm: null, segundaElemento: null, segundaDeslocamento: Prisma.DbNull, segundaEssencialVisivel: null },
+      }),
+    ).rejects.toThrow(/exp02ef1b_sessoes_conclusao_check/);
     await expect(prisma.exp02ef1bSessao.updateMany({ where: onde, data: { invariantesErros: 3 } })).rejects.toThrow(/exp02ef1b_sessoes_invariantes_check/);
+    await expect(prisma.exp02ef1bSessao.updateMany({ where: onde, data: { lupaAlvo1Ms: -1 } })).rejects.toThrow(/exp02ef1b_sessoes_lupa_check/);
+    await expect(prisma.$executeRawUnsafe(`UPDATE exp02ef1b_pacotes SET disciplina = 'quimica' WHERE escola_id = '${ESCOLA}'`)).rejects.toThrow(
+      /exp02ef1b_pacotes_disciplina_check/,
+    );
+  });
+
+  test("a 2.0.0 no banco: as colunas da sessão são EXATAMENTE estas (a lupa por objeto) e a versão nova é o padrão", async () => {
+    const colunas = await prisma.$queryRawUnsafe<{ coluna: string; padrao: string | null }[]>(
+      `SELECT column_name AS coluna, column_default AS padrao FROM information_schema.columns WHERE table_name = 'exp02ef1b_sessoes'`,
+    );
+    expect(colunas.map((c) => c.coluna).sort()).toEqual(
+      [
+        "atualizado_em", "capa_deslocamento", "capa_foto_id", "capa_nucleo_visivel", "capa_publicada_em", "capa_selo_coerente", "capa_selo_id",
+        "concluido_em", "criado_em", "entrou_em", "escola_id", "estudante_id", "fora_em", "fora_itens", "fora_toques", "invariantes_ajuda_em",
+        "invariantes_concluido_em", "invariantes_encontrados", "invariantes_erros", "invariantes_erros_pos_ajuda", "lupa_alertas", "lupa_alvo1_ms",
+        "lupa_alvo2_ms", "lupa_liberada_em", "pacote_id", "panoramica_aberta_em", "par_cartas", "par_correto", "par_em", "par_motivo", "rodada",
+        "segunda_deslocamento", "segunda_elemento", "segunda_em", "segunda_essencial_visivel", "turma_id", "versao_instrumento", "visitante_fala",
+      ].sort(),
+    );
+    expect(colunas.find((c) => c.coluna === "versao_instrumento")?.padrao).toMatch(/'2\.0\.0'/);
   });
 
   test("a role SEM BYPASSRLS só enxerga a própria escola", async () => {
@@ -492,7 +572,7 @@ describe("o banco, a RLS e o zerar", () => {
     expect(r).toMatchObject({ fase: "aberta", atividade: { rodada: 2 } });
     expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, turmaId: ids.turmaA, expId: EXP_ID } })).toBe(0);
     expect(await prisma.exp02ef1bSessao.count({ where: { escolaId: ESCOLA, turmaId: ids.turmaA } })).toBe(3);
-    expect(SessaoSchema.parse(await service.sessao(ESCOLA, ids.ana))).toMatchObject({ passo: "cracha", fase: "aberta", atividade: { rodada: 2 } });
+    expect(SessaoSchema.parse(await service.sessao(ESCOLA, ids.ana))).toMatchObject({ passo: "inicio", fase: "aberta", atividade: { rodada: 2 }, lupa: null });
     expect(await codigo(service.novaRodada(ESCOLA, ids.turmaA, ids.prof, 5))).toBe("rodada-desatualizada");
     /* O duplo clique do zerar (a rodada que ele VIU) devolve a mesma. */
     expect((await service.novaRodada(ESCOLA, ids.turmaA, ids.prof, 1)).atividade.rodada).toBe(2);

@@ -5,10 +5,10 @@ import { Roles, RolesGuard } from "../auth/roles";
 import { rateLimit } from "../comum/rate-limit";
 import { Contrato } from "../openapi/contrato";
 import {
-  CrachaSchema,
   EstadoSchema,
   ForaSchema,
   GateDoEstudanteSchema,
+  IniciarSchema,
   LupaSchema,
   ParesSchema,
   PublicarSchema,
@@ -18,7 +18,6 @@ import {
   SegundaFotoSchema,
   SessaoSchema,
   ToqueSchema,
-  TransferenciaSchema,
 } from "./contrato-de-rotas";
 import { EnigmaCapaService } from "./enigma-capa.service";
 import { erroDeJogo } from "./erros";
@@ -41,14 +40,15 @@ const NOTA_DA_PORTA =
   "A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).";
 const NOTA_SEM_PACOTE = "Sem atividade no ar responde **409** `radio-em-preparo` — espera, não bloqueio.";
 const NOTA_DO_PASSO =
-  "Jogada à frente do passo: **409** `passo-invalido` (sem crachá: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).";
+  "Jogada à frente do passo: **409** `passo-invalido` (sem a sessão aberta pelo `iniciar`: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).";
 
 /**
- * Rotas do ESTUDANTE da exp02ef1b — O Enigma da Capa da Rádio (ADR-184).
+ * Rotas do ESTUDANTE da exp02ef1b — O Enigma da Capa da Rádio (ADR-184; a
+ * revisão 2.0.0, ADR-186).
  *
- * O gabarito fica no servidor (regra 3): a tela manda o crachá, o relato da
- * lupa, a foto e a posição, os toques; é o servidor que diz a fala da
- * visitante, o que foi acerto e o que ficou fora. A identidade — inclusive a
+ * O gabarito fica no servidor (regra 3): a tela manda o relato da lupa, a foto
+ * e a posição, os toques; é o servidor que diz a fala da visitante, o que foi
+ * acerto e o que ficou fora. A identidade — inclusive a
  * TURMA — sai do token e do banco. A guarda de liberação está no FUNIL do
  * service, não aqui.
  */
@@ -62,7 +62,7 @@ export class EnigmaCapaController {
   @Contrato({
     resumo: "O estado da missão, a cena SEM o gabarito, a geometria, o material fixo e os textos.",
     descricao:
-      "`passo` é DERIVADO no servidor: `cracha → lupa → decidir → feed → invariantes → slider → fora → pares → segunda-foto → transferencia → concluida`. `feed` com a turma na fase `aberta` é a espera (\"AGUARDE O PROFESSOR\").\n\nA cena desce sem `nucleo`, sem a fala da visitante, sem a coerência dos selos, sem os alvos dos invariantes e sem os marcáveis. Coordenadas em 0–100 da panorâmica 16:9.",
+      "`passo` é DERIVADO no servidor: `inicio → lupa → decidir → feed → invariantes → slider → fora → pares → segunda-foto → concluida`. `inicio` é o card \"INVESTIGAR A NOVA CAPA\" (sem sessão); `feed` com a turma na fase `aberta` é a espera (\"AGUARDE O PROFESSOR\").\n\nA cena desce sem `nucleo`, sem a fala da visitante, sem a coerência dos selos, sem os alvos dos invariantes e sem os marcáveis. A exceção (ADR-186): com o passo `lupa`, os dois alvos descem em `lupa.alvos`, para o brilho da lente. Coordenadas em 0–100 da panorâmica 16:9.",
     resposta: SessaoSchema,
     notas: [NOTA_DA_PORTA, "Sem atividade no ar: `preparada: false`, `cena: null` e a tela é de espera."],
   })
@@ -82,13 +82,19 @@ export class EnigmaCapaController {
     return this.missao.gate(req.auth.escolaId, req.auth.usuarioId);
   }
 
-  @Post("cracha")
+  @Post("iniciar")
   @HttpCode(200)
-  @Contrato({ resumo: "E1: o crachá de repórter — abre a sessão desta rodada. Idempotente.", corpo: CrachaSchema, resposta: EstadoSchema, notas: [NOTA_DA_PORTA, NOTA_SEM_PACOTE] })
-  cracha(@Body() corpo: unknown, @Req() req: Autenticado) {
+  @Contrato({
+    resumo: "E1: ABRIR BANCADA — abre a sessão desta rodada (o passo vira `lupa`). Idempotente.",
+    descricao: "Sem corpo (ou `{}`). A sessão já aberta devolve o estado (200).",
+    corpo: IniciarSchema,
+    resposta: EstadoSchema,
+    notas: [NOTA_DA_PORTA, NOTA_SEM_PACOTE],
+  })
+  iniciar(@Body() corpo: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
-    const { cracha } = valida(CrachaSchema, corpo);
-    return this.missao.cracha(req.auth.escolaId, req.auth.usuarioId, cracha);
+    valida(IniciarSchema, corpo ?? {});
+    return this.missao.iniciar(req.auth.escolaId, req.auth.usuarioId);
   }
 
   @Post("lupa")
@@ -96,7 +102,7 @@ export class EnigmaCapaController {
   @Contrato({
     resumo: "E2: o relato da lupa — e, com `avancar`, o piso.",
     descricao:
-      "O servidor guarda o MÁXIMO de cada tempo, limitado ao tempo desde a entrada. Com `avancar: true`: 3 s em cada foto E o fundo das duas liberam o `decidir` (`liberado: true`); senão o alerta conta (`alerta: true`, 200) — a tela vibra e mostra \"OLHE O FUNDO\". Os alertas entram na régua da EF02CO05.",
+      "`alvo1Ms`/`alvo2Ms` = os ms com o centro da lente sobre cada um dos dois objetos do fundo (em qualquer das duas fotos). O servidor guarda o MÁXIMO de cada tempo, limitado ao tempo desde a entrada. Com `avancar: true`: 3 s em CADA um dos dois liberam o `decidir` (`liberado: true`); senão o alerta conta (`alerta: true`, 200) — a tela mostra \"OLHE O FUNDO\". Os alertas entram na régua da EF02CO05.",
     corpo: LupaSchema,
     resposta: RespostaDaLupaSchema,
     notas: [NOTA_DA_PORTA, NOTA_SEM_PACOTE, NOTA_DO_PASSO],
@@ -149,8 +155,9 @@ export class EnigmaCapaController {
   @Post("fora")
   @HttpCode(200)
   @Contrato({
-    resumo: 'E4: "Marque n{espaço} o que ficou fora da sua foto." + "Pronto".',
-    descricao: "Os toques (0 a 10, na panorâmica) viram os marcáveis que ficaram FORA da capa publicada. Só painel.",
+    resumo: 'E4: "Marque n{espaço} o que ficou fora da sua foto." + "Pronto" — marca a EF02CO05.',
+    descricao:
+      "Os alfinetes (1 a 10, na panorâmica) viram os marcáveis que ficaram FORA da capa publicada. Marca a **EF02CO05** na mesma transação, com a lupa, o selo, os invariantes e o \"fora\" (ao menos um marcável fora da capa).",
     corpo: ForaSchema,
     resposta: EstadoSchema,
     notas: [NOTA_DA_PORTA, NOTA_DO_PASSO],
@@ -178,29 +185,14 @@ export class EnigmaCapaController {
   @Post("segunda-foto")
   @HttpCode(200)
   @Contrato({
-    resumo: 'E5: a segunda foto — o elemento e a posição na moldura fixa ("Colocar no álbum").',
+    resumo: 'E5: a segunda foto — o elemento e a posição na moldura fixa ("Colocar no álbum"). Conclui a missão.',
     corpo: SegundaFotoSchema,
     resposta: EstadoSchema,
-    notas: [NOTA_DA_PORTA, NOTA_DO_PASSO, "Só painel: o servidor registra se a criança lendo ficou na moldura."],
+    notas: [NOTA_DA_PORTA, NOTA_DO_PASSO, "Só painel: o servidor registra se a criança lendo ficou na moldura. O passo vira `concluida`."],
   })
   segundaFoto(@Body() corpo: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
     const { elemento, deslocamento } = valida(SegundaFotoSchema, corpo);
     return this.missao.segundaFoto(req.auth.escolaId, req.auth.usuarioId, elemento, deslocamento);
-  }
-
-  @Post("transferencia")
-  @HttpCode(200)
-  @Contrato({
-    resumo: 'E6: "A HORTA ACABOU?" — o LATCH 2, que conclui.',
-    descricao: "Marca a **EF02CO05** na mesma transação, com a lupa, o selo, os invariantes e o voto.",
-    corpo: TransferenciaSchema,
-    resposta: EstadoSchema,
-    notas: [NOTA_DA_PORTA, NOTA_DO_PASSO, "O mesmo voto de novo é idempotente; outro é **409** `ja-enviado`."],
-  })
-  transferencia(@Body() corpo: unknown, @Req() req: Autenticado) {
-    limitar(req.auth.usuarioId);
-    const { opcao } = valida(TransferenciaSchema, corpo);
-    return this.missao.transferencia(req.auth.escolaId, req.auth.usuarioId, opcao);
   }
 }

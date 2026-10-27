@@ -2,11 +2,13 @@ import type { GuiaDaAula } from "./tipos";
 
 /**
  * O guia da aula de O ENIGMA DA CAPA DA RÁDIO (exp02ef1b, 2º ano EF, unidade 1,
- * ADR-184). Escrito a partir do one-pager do PO v1.1 (§1, §4, §8, §9a, §10,
- * §13, §14 e §15), com os textos ditos ao estudante LITERAIS, e com as decisões
- * do Lucas de 2026-10-26: a virada é GERAL da turma (um botão, LIBERAR VIRADA,
- * e não por estudante como o one-pager descrevia), sessão individual, sem
- * narração e sem texto livre.
+ * ADR-184; revisão 2.0.0, ADR-186). Escrito a partir do one-pager do PO v1.1
+ * (§1, §4, §8, §9a, §10, §13, §14 e §15) e do protótipo validado pelo time, com
+ * os textos da tela do estudante LITERAIS (os de `TEXTOS` da api), e com as
+ * decisões do Lucas de 2026-10-26: a virada é GERAL da turma (um botão,
+ * LIBERAR VIRADA), sessão individual, sem narração e sem texto livre, e a
+ * missão começa no card INVESTIGAR A NOVA CAPA e termina na segunda foto
+ * ("Colocar no álbum"), com cinco etapas (E1 a E5).
  *
  * O que vem por BLOCO VIVO (`guia/material-do-enigma.tsx`, de `GET
  * /enigma-capa/professor/material`): os três pacotes prontos com o gabarito
@@ -17,7 +19,7 @@ import type { GuiaDaAula } from "./tipos";
 export const GUIA_EXP02EF1B: GuiaDaAula = {
   expId: "exp02ef1b",
   chamada:
-    "Uma aula individual em que cada criança descobre, com as próprias mãos, que uma foto mostra só um pedaço do " +
+    "Uma aula individual em que cada criança descobre, com as próprias mãos, que uma foto mostra só uma parte do " +
     "lugar: duas fotos tiradas no mesmo minuto podem contar histórias opostas sem que nenhuma esteja mentindo.",
 
   avisos: [
@@ -32,8 +34,8 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
       tom: "warning",
       titulo: "Não conte que as duas fotos são do mesmo lugar",
       texto:
-        "A virada é a criança descobrir, tocando no relógio e no cartaz iguais e arrastando o slider. Na abertura, " +
-        "conte só a aflição do Bento.",
+        "A virada é a criança descobrir, tocando nos dois objetos iguais das duas fotos e arrastando a comparação " +
+        "até a cena inteira. Na abertura, conte só a aflição do Bento.",
     },
     {
       tom: "info",
@@ -49,7 +51,7 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
     "Escolher e enquadrar uma foto, apenas mudando a posição dela, e dar a ela uma legenda coerente.",
     "Comparar duas fotos e encontrar os detalhes iguais do fundo que provam que é o mesmo lugar, no mesmo momento.",
     "Dizer o que ficou fora da própria foto e por que isso muda o que quem vê entende.",
-    "Aplicar a ideia a uma foto nova: uma foto bem de perto mostra só um pedaço, não tudo.",
+    "Juntar fotos pela atividade que elas mostram, e não pela cor da roupa, e planejar uma foto que mostre o que precisa aparecer.",
   ],
 
   bncc: [
@@ -59,8 +61,9 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
       eixo: "Cultura Digital",
       principal: true,
       ondeAcontece:
-        "Na missão inteira, registrada no voto da horta (E6): a lupa no fundo das duas fotos (E2), o selo coerente " +
-        "com a foto (E3), os dois objetos iguais achados sem ajuda (E4) e SÓ UM PEDAÇO na horta (E6).",
+        "Na missão inteira, registrada quando a criança toca em Pronto na cena inteira (E4): a lupa sobre os dois " +
+        "objetos do fundo sem precisar do aviso (E2), o selo que combina com a foto (E3), os dois objetos iguais " +
+        "achados sem a ajuda (E4) e pelo menos uma coisa marcada que ficou fora da foto dela (E4).",
     },
     {
       codigo: "EF02CO01",
@@ -116,7 +119,7 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
     naoDiga: [
       "Que as duas fotos são do mesmo lugar, ou do mesmo minuto.",
       "Qual foto ou qual selo é o certo: nenhuma foto é certa ou errada, as duas são verdadeiras.",
-      "Onde estão o relógio e o cartaz: na busca, leia a instrução e acompanhe, sem apontar.",
+      "Onde estão os dois objetos do fundo: na lupa e na busca, leia a instrução e acompanhe, sem apontar.",
     ],
   },
 
@@ -124,58 +127,68 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
     total: "50 min (20 em tela, 30 de conversa)",
     linhas: [
       {
-        tempo: "0–10",
+        tempo: "0–8",
         momento: "Acolhimento e apresentação do enigma",
         professor:
           "Conte a aflição do Bento: “O Bento postou uma foto da biblioteca e os ouvintes entenderam tudo errado. " +
-          "Escolha seu crachá de repórter e investigue o mistério da capa!”",
+          "Encontre nas fotos os 2 objetos da biblioteca e descubra o mistério da capa!”",
       },
       {
-        tempo: "10–12",
-        momento: "E1 — o crachá",
-        professor: "Cada criança escolhe o crachá e abre o rascunho: INVESTIGAR A NOVA CAPA.",
+        tempo: "8–10",
+        momento: "E1 — o card da missão",
+        professor:
+          "No mural da rádio, cada criança vê o card RASCUNHO PENDENTE: INVESTIGAR A NOVA CAPA, com a missão " +
+          "ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA. Leia o card com a turma; cada uma toca em ABRIR BANCADA.",
       },
       {
-        tempo: "12–16",
+        tempo: "10–15",
         momento: "E2 — a lupa",
         professor:
-          "Deixe explorar. Quem tenta pular vê OLHE O FUNDO; não aponte o relógio nem o cartaz.",
+          "A criança arrasta a lupa pelas duas fotos. Quando a lupa para sobre um dos dois objetos da parede do " +
+          "fundo, ela brilha e um anel se enche em 3 segundos (SEGURE A LUPA AQUI!); cheio o anel, o objeto conta " +
+          "(1 DE 2 ENCONTRADOS). Com os dois, a tela mostra INVESTIGAÇÃO COMPLETA!. Quem tenta avançar antes vê " +
+          "OLHE O FUNDO e volta com VOLTAR À INVESTIGAÇÃO. Deixe explorar, sem apontar os objetos.",
       },
       {
-        tempo: "16–19",
+        tempo: "15–19",
         momento: "E3 — a capa",
         professor:
-          "Repita: “Você pode mover a foto, mas não mudar o tamanho.” A criança escolhe a foto, enquadra, cola o selo " +
-          "e toca em PUBLICAR CAPA — não volta.",
+          "Repita: “Você pode mover a foto, mas não mudar o tamanho.” A criança escolhe 1 foto, arrasta na moldura, " +
+          "seleciona o selo e toca em PUBLICAR CAPA — não volta. A tela confirma CAPA PUBLICADA! e leva ao feed.",
       },
       {
         tempo: "19–24",
         momento: "E4 — a visitante e a pausa",
         professor:
           "Leia com a criança a resposta da visitante e pergunte: “O que a visitante conseguiu conhecer pela foto? " +
-          "O que ficou de fora?” A tela espera em AGUARDE O PROFESSOR.",
+          "O que ficou de fora?” A tela espera, com um cadeado, em AGUARDE O PROFESSOR.",
       },
       {
-        tempo: "24–30",
+        tempo: "24–32",
         momento: "E4 — a virada",
         professor:
-          "Com a conversa feita, libere. A tela divide em SUA FOTO e OUTRA FOTO: TOQUE EM 2 COISAS IGUAIS, o slider " +
-          "da cena inteira e o “Marque … o que ficou fora da sua foto.” Acompanhe sem indicar os alvos.",
+          "Com a conversa feita, libere. A tela divide em SUA FOTO e OUTRA FOTO: TOQUE EM 2 COISAS IGUAIS. Depois, " +
+          "DESLIZE PARA REVELAR: a comparação começa no meio, com a cena inteira de um lado e só a foto da criança " +
+          "do outro; arrastar a alça mostra o lugar inteiro (MESMO LUGAR · MESMO MINUTO). Por fim, “Marque na " +
+          "biblioteca o que ficou fora da sua foto.”: a criança arrasta o alfinete até o que ficou fora e toca em " +
+          "Pronto. Acompanhe sem indicar nada.",
         botao: "LIBERAR VIRADA",
       },
       {
-        tempo: "30–40",
-        momento: "E5 — pares, segunda foto e os cartões",
+        tempo: "32–40",
+        momento: "E5 — os pares e a segunda foto",
         professor:
           "Leia “Junte duas fotos da mesma atividade.”, “O que é parecido?” e “Foto de leitura: o que precisa " +
-          "aparecer?”, sem dar a resposta. Depois, nomeie com os cartões ENQUADRAMENTO, AUTORIA e O QUE FICOU DE FORA.",
+          "aparecer?”, sem dar a resposta. A missão termina quando a criança toca em Colocar no álbum: FOTO " +
+          "GUARDADA NO ÁLBUM! e MISSÃO CUMPRIDA!",
       },
       {
         tempo: "40–50",
-        momento: "E6 — a horta e o fechamento",
+        momento: "A conversa e o fechamento",
         professor:
-          "A HORTA ACABOU? A criança responde sozinha. Feche com a pergunta-ponte: “Quando alguém tira uma foto sua " +
-          "triste ou fazendo careta, você é daquele jeito o dia inteiro?”",
+          "Nomeie com os cartões ENQUADRAMENTO, AUTORIA e O QUE FICOU DE FORA. Feche com a pergunta: “Quando " +
+          "tiram uma foto sua na escola em um segundo em que você está bravo, aquela foto mostra como você é o dia " +
+          "inteiro?”",
       },
     ],
     nota:
@@ -184,7 +197,7 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
   },
 
   debate: {
-    aberturaNaLousa: "Uma foto mostra o lugar inteiro, ou só um pedaço?",
+    aberturaNaLousa: "Uma foto mostra o lugar inteiro, ou só uma parte dele?",
     tempo: "10 min, na conversa individual depois da virada",
     perguntas: [
       {
@@ -216,7 +229,7 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
         nivel: "transferencia",
         pergunta:
           "Quando tiram uma foto sua na escola em um segundo em que você está bravo, aquela foto mostra como você é o dia inteiro?",
-        porQue: "Leva a descoberta para a própria vida da criança, antes da horta.",
+        porQue: "Leva a descoberta para a própria vida da criança.",
       },
     ],
   },
@@ -224,14 +237,21 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
   observacao: {
     intro: "Enquanto cada criança está na tela, observe sem intervir:",
     marcas: [
-      { letra: "L", texto: "Explorou o fundo com a lupa antes de tentar avançar." },
+      { letra: "L", texto: "Segurou a lupa sobre os objetos do fundo antes de tentar avançar." },
       { letra: "M", texto: "Moveu a foto na moldura para escolher o que mostrar." },
-      { letra: "R", texto: "Reagiu ao slider (“Olha lá!”, “Era o mesmo lugar!”)." },
+      { letra: "R", texto: "Reagiu ao deslizar a comparação (“Olha lá!”, “Era o mesmo lugar!”)." },
     ],
     nota: "As marcas são para a conversa, não para nota: o nível de cada habilidade está no painel de habilidades.",
   },
 
   mediacao: [
+    {
+      quando: "Na lupa, a criança passa rápido e o anel não enche.",
+      faca:
+        "Diga que a lupa precisa ficar parada sobre o que está na parede do fundo: o anel enche em 3 segundos. " +
+        "Depois de um tempo parada, a tela mostra uma mão: ARRASTE A LUPA ATÉ A PAREDE DO FUNDO.",
+      naoFaca: "Não aponte os objetos: achar com a lupa é parte do que a EF02CO05 registra.",
+    },
     {
       quando: "A criança tenta aumentar ou diminuir a foto com os dedos.",
       faca: "Repita a regra: “Você pode mover a foto, mas não mudar o tamanho.” A moldura e a foto têm tamanho fixo.",
@@ -241,39 +261,47 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
       faca:
         "Leia de novo TOQUE EM 2 COISAS IGUAIS e pergunte o que aparece nas duas fotos. Depois de 3 toques fora, a " +
         "tela pulsa sozinha sobre os dois objetos.",
-      naoFaca: "Não aponte o relógio nem o cartaz: achar é o que a EF02CO01 registra.",
+      naoFaca: "Não aponte os objetos: achar é o que a EF02CO01 registra.",
+    },
+    {
+      quando: "Na cena inteira, o Pronto não acende.",
+      faca:
+        "O Pronto pede ao menos um alfinete. Pergunte: “O que tem no lugar inteiro que não aparece na sua foto?”",
+      naoFaca: "Não diga o que marcar: marcar o que ficou fora é o que fecha a EF02CO05.",
     },
     {
       quando: "A criança acha que escolheu a foto “errada”.",
-      faca: "Diga que as duas fotos são verdadeiras: cada uma mostra um pedaço da mesma sala.",
+      faca: "Diga que as duas fotos são verdadeiras: cada uma mostra uma parte do mesmo lugar.",
     },
     {
       quando: "A tela demora em AGUARDE O PROFESSOR.",
       faca:
-        "Converse com quem está esperando enquanto os outros publicam. Depois de 3 minutos o Bento diz O PROFESSOR " +
+        "Converse com quem está esperando enquanto os outros publicam. Depois de 3 minutos a tela mostra O PROFESSOR " +
         "JÁ VEM!; a criança não consegue passar sozinha.",
     },
   ],
 
   depois: {
     sintese: [
-      "Toda foto é uma escolha: ela mostra um pedaço do lugar e esconde o resto.",
+      "Toda foto é uma escolha: ela mostra uma parte do lugar e esconde o resto.",
       "Duas pessoas podem fotografar o mesmo lugar, no mesmo minuto, e mostrar ideias diferentes — sem nenhuma mentir.",
       "Os detalhes iguais do fundo provam que é o mesmo lugar.",
       "A legenda ajuda quem olha a entender o que a foto quis mostrar.",
     ],
     registro:
       "O painel de habilidades da atividade mostra o nível da EF02CO05 e da EF02CO01 por criança, com o critério de " +
-      "cada nível; você pode ajustar. O que a criança marcou fora da foto, os pares e a segunda foto ficam no painel da " +
-      "aula, para a conversa.",
+      "cada nível; você pode ajustar. A folha da página da atividade mostra, pelo nome de cada criança, o tempo da " +
+      "lupa em cada objeto, a capa, o que ela marcou fora da foto, os pares e a segunda foto, para a conversa.",
     rubrica: {
       nota: "A régua de cada habilidade, com o critério de cada nível, está no bloco do material e no painel de habilidades.",
       criterios: [
         {
           criterio: "O recorte da foto (EF02CO05)",
-          emDesenvolvimento: "Escolhe MOSTRA TUDO na horta e ainda deixa de lado a lupa, o selo ou os objetos iguais.",
-          adequado: "Faz parte do caminho sozinho e parte com o alerta, a ajuda ou a sua mediação.",
-          avancado: "Explora o fundo, cola o selo coerente, acha os objetos sem ajuda e escolhe SÓ UM PEDAÇO.",
+          emDesenvolvimento:
+            "Não marca nada fora da sua foto e ainda precisa do aviso da lupa, combina um selo que não descreve a foto ou não acha os objetos iguais.",
+          adequado: "Faz parte do caminho sozinho e parte com o aviso, a ajuda ou a sua mediação.",
+          avancado:
+            "Acha com a lupa os objetos do fundo sem o aviso, combina o selo com a foto, acha os objetos iguais sem ajuda e marca o que ficou fora da foto.",
         },
         {
           criterio: "Os atributos iguais (EF02CO01)",
@@ -292,7 +320,7 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
 
   cuidados: [
     "Nenhuma foto é certa ou errada: não elogie a escolha de uma foto nem a de um selo.",
-    "A missão não coleta foto, nome, rosto nem texto da criança: o crachá é a assinatura dela.",
+    "A missão não coleta foto, rosto nem texto da criança: tudo é toque e arraste, e você acompanha cada uma pelo nome, na página da atividade.",
     "Toque o podcast de recapitulação só depois da missão: ele conta a virada.",
   ],
 
@@ -305,7 +333,7 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
     },
     {
       contexto: "Duas sessões",
-      comoAdaptar: "A primeira vai da E1 ao PUBLICAR CAPA; a segunda começa na visitante, com a virada.",
+      comoAdaptar: "A primeira vai do card da missão ao PUBLICAR CAPA; a segunda começa na visitante, com a virada.",
     },
     {
       contexto: "Leitura ainda em formação",
@@ -315,6 +343,12 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
   ],
 
   duvidas: [
+    {
+      pergunta: "Onde a missão termina?",
+      resposta:
+        "Na segunda foto: quando a criança toca em Colocar no álbum, a tela mostra FOTO GUARDADA NO ÁLBUM! e " +
+        "MISSÃO CUMPRIDA!, e pede para conversar com você.",
+    },
     {
       pergunta: "Posso liberar a virada para uma criança só?",
       resposta:

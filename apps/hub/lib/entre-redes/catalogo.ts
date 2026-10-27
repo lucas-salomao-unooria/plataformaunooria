@@ -1121,11 +1121,12 @@ export const MISSAO_EFEITO_AMPLIFICADOR: Missao = {
 };
 
 /**
- * 2º ano · Unidade 1 — O Enigma da Capa da Rádio (`exp02ef1b`, ADR-184).
+ * 2º ano · Unidade 1 — O Enigma da Capa da Rádio (`exp02ef1b`, ADR-184; 2.0.0, ADR-186).
  *
- * Do one-pager do PO v1.1, com as decisões do Lucas de 2026-10-26: o clone é o
- * Unoovista (não o instanooria), a virada é GERAL da turma — um botão, LIBERAR
- * VIRADA —, sessão individual, sem narração e sem texto livre. A criança de 7
+ * Do one-pager do PO v1.1 e do protótipo validado pelo time, com as decisões do
+ * Lucas de 2026-10-26: o clone é o Unoovista (não o instanooria), a virada é
+ * GERAL da turma — um botão, LIBERAR VIRADA —, sessão individual, sem narração
+ * e sem texto livre, em cinco atos que terminam na segunda foto. A criança de 7
  * a 8 anos escolhe e enquadra a foto da capa da Rádio Escola e descobre, na
  * virada, que a outra foto é do mesmo lugar no mesmo minuto.
  */
@@ -1137,15 +1138,15 @@ export const MISSAO_ENIGMA_CAPA: Missao = {
   titulo: "O Enigma da Capa da Rádio",
   resumo:
     "O Bento publicou uma foto da biblioteca na capa da Rádio Escola e os ouvintes entenderam tudo errado. Cada " +
-    "estudante, com o seu crachá de repórter, examina duas fotos com a lupa, escolhe uma, arrasta para enquadrar " +
-    "— sem mudar o tamanho —, cola um selo e publica. A visitante só conta o que viu no recorte; depois da sua " +
-    "conversa, a tela mostra a outra foto ao lado, o relógio e o cartaz iguais no fundo, e a cena inteira: era o " +
-    "mesmo lugar, no mesmo minuto.",
+    "estudante procura com a lupa os 2 objetos do fundo das duas fotos, escolhe uma, arrasta para enquadrar — sem " +
+    "mudar o tamanho —, cola um selo e publica. A visitante só conta o que viu no recorte; depois da sua conversa, " +
+    "a tela mostra a outra foto ao lado, os objetos iguais no fundo e a cena inteira: era o mesmo lugar, no mesmo " +
+    "minuto.",
   status: "disponivel",
   // Sem spoiler: a criança não pode saber antes que as duas fotos são do mesmo lugar.
   estudante: {
     titulo: "O Enigma da Capa da Rádio",
-    chamada: "O Bento precisa de ajuda com a capa da Rádio Escola: escolha seu crachá de repórter e investigue as fotos!",
+    chamada: "O Bento precisa de ajuda com a capa da Rádio Escola: abra a bancada e investigue as fotos!",
   },
   ficha: {
     competencia:
@@ -1159,45 +1160,40 @@ export const MISSAO_ENIGMA_CAPA: Missao = {
       "modo anos iniciais): toques e arrastes, sem texto para ler sozinho e sem campo para escrever.",
     atos: [
       {
-        rotulo: "1 — Desafiar: o crachá de repórter",
+        rotulo: "1 — Desafiar: o card da missão",
         texto:
-          "Você conta a aflição do Bento em voz alta. A criança escolhe um dos quatro crachás (FONE AZUL, FONE " +
-          "AMARELO, MICROFONE VERDE, GRAVADOR LARANJA) — é a assinatura dela na capa — e abre o rascunho: " +
-          "INVESTIGAR A NOVA CAPA.",
+          "Você conta a aflição do Bento em voz alta. No mural da rádio, a criança vê o card RASCUNHO PENDENTE: " +
+          "INVESTIGAR A NOVA CAPA, com a missão ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA, e toca em ABRIR " +
+          "BANCADA.",
       },
       {
         rotulo: "2 — Navegar: a lupa",
         texto:
-          "Duas fotos do mesmo espaço, com o mesmo horário no rótulo. A criança arrasta a lupa sobre elas; o botão " +
-          "de avançar só libera depois de 3 segundos em cada foto e de a lupa passar pela parede do fundo. Quem " +
-          "tenta pular vê OLHE O FUNDO.",
+          "Duas fotos do mesmo espaço, com o mesmo horário no rótulo. A criança arrasta a lupa sobre elas: parada " +
+          "sobre um dos 2 objetos da parede do fundo, a lupa brilha e um anel se enche em 3 segundos, e o objeto " +
+          "conta como encontrado. Com os dois, INVESTIGAÇÃO COMPLETA!. Quem tenta avançar antes vê OLHE O FUNDO.",
       },
       {
         rotulo: "3 — Decidir: a capa",
         texto:
           "Escolhe 1 foto, arrasta para enquadrar na moldura de tamanho fixo, cola um dos dois selos e toca em " +
-          "PUBLICAR CAPA. Não volta: a capa sai assinada pelo crachá.",
+          "PUBLICAR CAPA. Não volta: a tela confirma CAPA PUBLICADA! e leva ao feed da rádio.",
       },
       {
         rotulo: "4 — Resultado: a visitante e a virada (o seu botão)",
         texto:
           "A visitante responde só o que viu no recorte (“Na foto, vi crianças lendo!”) e a tela espera em AGUARDE " +
           "O PROFESSOR. Depois da conversa, você toca em LIBERAR VIRADA, uma vez, para a turma toda: a tela divide " +
-          "em SUA FOTO e OUTRA FOTO, a criança toca nos 2 objetos iguais do fundo, arrasta o slider até a cena " +
-          "inteira e marca o que ficou fora da foto dela.",
+          "em SUA FOTO e OUTRA FOTO, a criança toca nos 2 objetos iguais do fundo, desliza a comparação — que " +
+          "começa no meio, com a cena inteira de um lado e só a foto dela do outro — até ver o lugar inteiro, e " +
+          "arrasta o alfinete até o que ficou fora da foto dela.",
       },
       {
         rotulo: "5 — Explicar: pares e segunda foto",
         texto:
           "Junta duas fotos da mesma atividade, diz o que é parecido (a atividade ou a cor da roupa) e enquadra uma " +
-          "segunda foto escolhendo o que precisa aparecer. Você nomeia com os cartões ENQUADRAMENTO, AUTORIA e O " +
-          "QUE FICOU DE FORA.",
-      },
-      {
-        rotulo: "6 — Refletir: a horta",
-        texto:
-          "Uma foto bem de perto mostra uma lagarta numa folha de alface. A HORTA ACABOU? SÓ UM PEDAÇO ou MOSTRA " +
-          "TUDO. Você fecha com a pergunta-ponte da foto de careta.",
+          "segunda foto escolhendo o que precisa aparecer. Colocar no álbum encerra a missão: MISSÃO CUMPRIDA!. " +
+          "Você nomeia com os cartões ENQUADRAMENTO, AUTORIA e O QUE FICOU DE FORA.",
       },
     ],
     preparo: [

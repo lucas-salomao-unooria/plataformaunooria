@@ -78151,7 +78151,7 @@
                     "passo": {
                       "type": "string",
                       "enum": [
-                        "cracha",
+                        "inicio",
                         "lupa",
                         "decidir",
                         "feed",
@@ -78160,7 +78160,6 @@
                         "fora",
                         "pares",
                         "segunda-foto",
-                        "transferencia",
                         "concluida"
                       ]
                     },
@@ -78195,45 +78194,60 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "cracha": {
-                      "type": "string",
-                      "enum": [
-                        "fone-azul",
-                        "fone-amarelo",
-                        "microfone-verde",
-                        "gravador-laranja"
-                      ],
-                      "nullable": true
-                    },
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "foto1Ms": {
+                        "alvo1Ms": {
                           "type": "integer"
                         },
-                        "foto2Ms": {
+                        "alvo2Ms": {
                           "type": "integer"
-                        },
-                        "fundo1": {
-                          "type": "boolean"
-                        },
-                        "fundo2": {
-                          "type": "boolean"
                         },
                         "alertas": {
                           "type": "integer"
                         },
                         "liberada": {
                           "type": "boolean"
+                        },
+                        "alvos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "inv-1",
+                                  "inv-2"
+                                ]
+                              },
+                              "x": {
+                                "type": "number"
+                              },
+                              "y": {
+                                "type": "number"
+                              },
+                              "r": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "x",
+                              "y",
+                              "r"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "nullable": true
                         }
                       },
                       "required": [
-                        "foto1Ms",
-                        "foto2Ms",
-                        "fundo1",
-                        "fundo2",
+                        "alvo1Ms",
+                        "alvo2Ms",
                         "alertas",
-                        "liberada"
+                        "liberada",
+                        "alvos"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -78522,23 +78536,6 @@
                       "required": [
                         "elemento",
                         "deslocamento"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "transferencia": {
-                      "type": "object",
-                      "properties": {
-                        "voto": {
-                          "type": "string",
-                          "enum": [
-                            "so-um-pedaco",
-                            "mostra-tudo"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "voto"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -78932,35 +78929,6 @@
                     "material": {
                       "type": "object",
                       "properties": {
-                        "crachas": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "enum": [
-                                  "fone-azul",
-                                  "fone-amarelo",
-                                  "microfone-verde",
-                                  "gravador-laranja"
-                                ]
-                              },
-                              "rotulo": {
-                                "type": "string"
-                              },
-                              "emoji": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "rotulo",
-                              "emoji"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
                         "cartas": {
                           "type": "array",
                           "items": {
@@ -79125,97 +79093,12 @@
                             "elementos"
                           ],
                           "additionalProperties": false
-                        },
-                        "transferencia": {
-                          "type": "object",
-                          "properties": {
-                            "imagem": {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "tipo": {
-                                      "type": "string",
-                                      "enum": [
-                                        "bundle"
-                                      ]
-                                    },
-                                    "nome": {
-                                      "type": "string",
-                                      "minLength": 1,
-                                      "maxLength": 120
-                                    }
-                                  },
-                                  "required": [
-                                    "tipo",
-                                    "nome"
-                                  ],
-                                  "additionalProperties": false
-                                },
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "tipo": {
-                                      "type": "string",
-                                      "enum": [
-                                        "url"
-                                      ]
-                                    },
-                                    "url": {
-                                      "type": "string",
-                                      "minLength": 1,
-                                      "maxLength": 2000
-                                    }
-                                  },
-                                  "required": [
-                                    "tipo",
-                                    "url"
-                                  ],
-                                  "additionalProperties": false
-                                }
-                              ]
-                            },
-                            "opcoes": {
-                              "type": "array",
-                              "items": {
-                                "type": "object",
-                                "properties": {
-                                  "id": {
-                                    "type": "string",
-                                    "enum": [
-                                      "so-um-pedaco",
-                                      "mostra-tudo"
-                                    ]
-                                  },
-                                  "rotulo": {
-                                    "type": "string"
-                                  },
-                                  "emoji": {
-                                    "type": "string"
-                                  }
-                                },
-                                "required": [
-                                  "id",
-                                  "rotulo",
-                                  "emoji"
-                                ],
-                                "additionalProperties": false
-                              }
-                            }
-                          },
-                          "required": [
-                            "imagem",
-                            "opcoes"
-                          ],
-                          "additionalProperties": false
                         }
                       },
                       "required": [
-                        "crachas",
                         "cartas",
                         "motivos",
-                        "segundaFoto",
-                        "transferencia"
+                        "segundaFoto"
                       ],
                       "additionalProperties": false
                     },
@@ -79259,7 +79142,6 @@
                     "preparada",
                     "aguardandoVirada",
                     "atividade",
-                    "cracha",
                     "lupa",
                     "capa",
                     "invariantes",
@@ -79267,7 +79149,6 @@
                     "fora",
                     "pares",
                     "segundaFoto",
-                    "transferencia",
                     "concluido",
                     "cena",
                     "geometria",
@@ -79285,7 +79166,7 @@
           "enigma-capa"
         ],
         "summary": "O estado da missão, a cena SEM o gabarito, a geometria, o material fixo e os textos.",
-        "description": "`passo` é DERIVADO no servidor: `cracha → lupa → decidir → feed → invariantes → slider → fora → pares → segunda-foto → transferencia → concluida`. `feed` com a turma na fase `aberta` é a espera (\"AGUARDE O PROFESSOR\").\n\nA cena desce sem `nucleo`, sem a fala da visitante, sem a coerência dos selos, sem os alvos dos invariantes e sem os marcáveis. Coordenadas em 0–100 da panorâmica 16:9.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Sem atividade no ar: `preparada: false`, `cena: null` e a tela é de espera.",
+        "description": "`passo` é DERIVADO no servidor: `inicio → lupa → decidir → feed → invariantes → slider → fora → pares → segunda-foto → concluida`. `inicio` é o card \"INVESTIGAR A NOVA CAPA\" (sem sessão); `feed` com a turma na fase `aberta` é a espera (\"AGUARDE O PROFESSOR\").\n\nA cena desce sem `nucleo`, sem a fala da visitante, sem a coerência dos selos, sem os alvos dos invariantes e sem os marcáveis. A exceção (ADR-186): com o passo `lupa`, os dois alvos descem em `lupa.alvos`, para o brilho da lente. Coordenadas em 0–100 da panorâmica 16:9.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Sem atividade no ar: `preparada: false`, `cena: null` e a tela é de espera.",
         "security": [
           {
             "token-da-plataforma": []
@@ -79344,7 +79225,7 @@
                     "passo": {
                       "type": "string",
                       "enum": [
-                        "cracha",
+                        "inicio",
                         "lupa",
                         "decidir",
                         "feed",
@@ -79353,7 +79234,6 @@
                         "fora",
                         "pares",
                         "segunda-foto",
-                        "transferencia",
                         "concluida"
                       ]
                     },
@@ -79391,9 +79271,9 @@
         "x-acesso": "token"
       }
     },
-    "/enigma-capa/cracha": {
+    "/enigma-capa/iniciar": {
       "post": {
-        "operationId": "EnigmaCapaController_cracha",
+        "operationId": "EnigmaCapaController_iniciar",
         "parameters": [],
         "responses": {
           "200": {
@@ -79406,7 +79286,7 @@
                     "passo": {
                       "type": "string",
                       "enum": [
-                        "cracha",
+                        "inicio",
                         "lupa",
                         "decidir",
                         "feed",
@@ -79415,7 +79295,6 @@
                         "fora",
                         "pares",
                         "segunda-foto",
-                        "transferencia",
                         "concluida"
                       ]
                     },
@@ -79450,45 +79329,60 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "cracha": {
-                      "type": "string",
-                      "enum": [
-                        "fone-azul",
-                        "fone-amarelo",
-                        "microfone-verde",
-                        "gravador-laranja"
-                      ],
-                      "nullable": true
-                    },
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "foto1Ms": {
+                        "alvo1Ms": {
                           "type": "integer"
                         },
-                        "foto2Ms": {
+                        "alvo2Ms": {
                           "type": "integer"
-                        },
-                        "fundo1": {
-                          "type": "boolean"
-                        },
-                        "fundo2": {
-                          "type": "boolean"
                         },
                         "alertas": {
                           "type": "integer"
                         },
                         "liberada": {
                           "type": "boolean"
+                        },
+                        "alvos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "inv-1",
+                                  "inv-2"
+                                ]
+                              },
+                              "x": {
+                                "type": "number"
+                              },
+                              "y": {
+                                "type": "number"
+                              },
+                              "r": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "x",
+                              "y",
+                              "r"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "nullable": true
                         }
                       },
                       "required": [
-                        "foto1Ms",
-                        "foto2Ms",
-                        "fundo1",
-                        "fundo2",
+                        "alvo1Ms",
+                        "alvo2Ms",
                         "alertas",
-                        "liberada"
+                        "liberada",
+                        "alvos"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -79781,23 +79675,6 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "transferencia": {
-                      "type": "object",
-                      "properties": {
-                        "voto": {
-                          "type": "string",
-                          "enum": [
-                            "so-um-pedaco",
-                            "mostra-tudo"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "voto"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
                     "concluido": {
                       "type": "boolean"
                     }
@@ -79808,7 +79685,6 @@
                     "preparada",
                     "aguardandoVirada",
                     "atividade",
-                    "cracha",
                     "lupa",
                     "capa",
                     "invariantes",
@@ -79816,7 +79692,6 @@
                     "fora",
                     "pares",
                     "segundaFoto",
-                    "transferencia",
                     "concluido"
                   ],
                   "additionalProperties": false
@@ -79828,8 +79703,8 @@
         "tags": [
           "enigma-capa"
         ],
-        "summary": "E1: o crachá de repórter — abre a sessão desta rodada. Idempotente.",
-        "description": "**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Sem atividade no ar responde **409** `radio-em-preparo` — espera, não bloqueio.",
+        "summary": "E1: ABRIR BANCADA — abre a sessão desta rodada (o passo vira `lupa`). Idempotente.",
+        "description": "Sem corpo (ou `{}`). A sessão já aberta devolve o estado (200).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Sem atividade no ar responde **409** `radio-em-preparo` — espera, não bloqueio.",
         "security": [
           {
             "token-da-plataforma": []
@@ -79845,20 +79720,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "properties": {
-                  "cracha": {
-                    "type": "string",
-                    "enum": [
-                      "fone-azul",
-                      "fone-amarelo",
-                      "microfone-verde",
-                      "gravador-laranja"
-                    ]
-                  }
-                },
-                "required": [
-                  "cracha"
-                ],
+                "properties": {},
                 "additionalProperties": false
               }
             }
@@ -79881,7 +79743,7 @@
                     "passo": {
                       "type": "string",
                       "enum": [
-                        "cracha",
+                        "inicio",
                         "lupa",
                         "decidir",
                         "feed",
@@ -79890,7 +79752,6 @@
                         "fora",
                         "pares",
                         "segunda-foto",
-                        "transferencia",
                         "concluida"
                       ]
                     },
@@ -79925,45 +79786,60 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "cracha": {
-                      "type": "string",
-                      "enum": [
-                        "fone-azul",
-                        "fone-amarelo",
-                        "microfone-verde",
-                        "gravador-laranja"
-                      ],
-                      "nullable": true
-                    },
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "foto1Ms": {
+                        "alvo1Ms": {
                           "type": "integer"
                         },
-                        "foto2Ms": {
+                        "alvo2Ms": {
                           "type": "integer"
-                        },
-                        "fundo1": {
-                          "type": "boolean"
-                        },
-                        "fundo2": {
-                          "type": "boolean"
                         },
                         "alertas": {
                           "type": "integer"
                         },
                         "liberada": {
                           "type": "boolean"
+                        },
+                        "alvos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "inv-1",
+                                  "inv-2"
+                                ]
+                              },
+                              "x": {
+                                "type": "number"
+                              },
+                              "y": {
+                                "type": "number"
+                              },
+                              "r": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "x",
+                              "y",
+                              "r"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "nullable": true
                         }
                       },
                       "required": [
-                        "foto1Ms",
-                        "foto2Ms",
-                        "fundo1",
-                        "fundo2",
+                        "alvo1Ms",
+                        "alvo2Ms",
                         "alertas",
-                        "liberada"
+                        "liberada",
+                        "alvos"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -80256,23 +80132,6 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "transferencia": {
-                      "type": "object",
-                      "properties": {
-                        "voto": {
-                          "type": "string",
-                          "enum": [
-                            "so-um-pedaco",
-                            "mostra-tudo"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "voto"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
                     "concluido": {
                       "type": "boolean"
                     },
@@ -80289,7 +80148,6 @@
                     "preparada",
                     "aguardandoVirada",
                     "atividade",
-                    "cracha",
                     "lupa",
                     "capa",
                     "invariantes",
@@ -80297,7 +80155,6 @@
                     "fora",
                     "pares",
                     "segundaFoto",
-                    "transferencia",
                     "concluido",
                     "liberado",
                     "alerta"
@@ -80312,7 +80169,7 @@
           "enigma-capa"
         ],
         "summary": "E2: o relato da lupa — e, com `avancar`, o piso.",
-        "description": "O servidor guarda o MÁXIMO de cada tempo, limitado ao tempo desde a entrada. Com `avancar: true`: 3 s em cada foto E o fundo das duas liberam o `decidir` (`liberado: true`); senão o alerta conta (`alerta: true`, 200) — a tela vibra e mostra \"OLHE O FUNDO\". Os alertas entram na régua da EF02CO05.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Sem atividade no ar responde **409** `radio-em-preparo` — espera, não bloqueio.\n- Jogada à frente do passo: **409** `passo-invalido` (sem crachá: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).",
+        "description": "`alvo1Ms`/`alvo2Ms` = os ms com o centro da lente sobre cada um dos dois objetos do fundo (em qualquer das duas fotos). O servidor guarda o MÁXIMO de cada tempo, limitado ao tempo desde a entrada. Com `avancar: true`: 3 s em CADA um dos dois liberam o `decidir` (`liberado: true`); senão o alerta conta (`alerta: true`, 200) — a tela mostra \"OLHE O FUNDO\". Os alertas entram na régua da EF02CO05.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Sem atividade no ar responde **409** `radio-em-preparo` — espera, não bloqueio.\n- Jogada à frente do passo: **409** `passo-invalido` (sem a sessão aberta pelo `iniciar`: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).",
         "security": [
           {
             "token-da-plataforma": []
@@ -80329,31 +80186,23 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "foto1Ms": {
+                  "alvo1Ms": {
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 3600000
                   },
-                  "foto2Ms": {
+                  "alvo2Ms": {
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 3600000
-                  },
-                  "fundo1": {
-                    "type": "boolean"
-                  },
-                  "fundo2": {
-                    "type": "boolean"
                   },
                   "avancar": {
                     "type": "boolean"
                   }
                 },
                 "required": [
-                  "foto1Ms",
-                  "foto2Ms",
-                  "fundo1",
-                  "fundo2",
+                  "alvo1Ms",
+                  "alvo2Ms",
                   "avancar"
                 ],
                 "additionalProperties": false
@@ -80378,7 +80227,7 @@
                     "passo": {
                       "type": "string",
                       "enum": [
-                        "cracha",
+                        "inicio",
                         "lupa",
                         "decidir",
                         "feed",
@@ -80387,7 +80236,6 @@
                         "fora",
                         "pares",
                         "segunda-foto",
-                        "transferencia",
                         "concluida"
                       ]
                     },
@@ -80422,45 +80270,60 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "cracha": {
-                      "type": "string",
-                      "enum": [
-                        "fone-azul",
-                        "fone-amarelo",
-                        "microfone-verde",
-                        "gravador-laranja"
-                      ],
-                      "nullable": true
-                    },
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "foto1Ms": {
+                        "alvo1Ms": {
                           "type": "integer"
                         },
-                        "foto2Ms": {
+                        "alvo2Ms": {
                           "type": "integer"
-                        },
-                        "fundo1": {
-                          "type": "boolean"
-                        },
-                        "fundo2": {
-                          "type": "boolean"
                         },
                         "alertas": {
                           "type": "integer"
                         },
                         "liberada": {
                           "type": "boolean"
+                        },
+                        "alvos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "inv-1",
+                                  "inv-2"
+                                ]
+                              },
+                              "x": {
+                                "type": "number"
+                              },
+                              "y": {
+                                "type": "number"
+                              },
+                              "r": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "x",
+                              "y",
+                              "r"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "nullable": true
                         }
                       },
                       "required": [
-                        "foto1Ms",
-                        "foto2Ms",
-                        "fundo1",
-                        "fundo2",
+                        "alvo1Ms",
+                        "alvo2Ms",
                         "alertas",
-                        "liberada"
+                        "liberada",
+                        "alvos"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -80753,23 +80616,6 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "transferencia": {
-                      "type": "object",
-                      "properties": {
-                        "voto": {
-                          "type": "string",
-                          "enum": [
-                            "so-um-pedaco",
-                            "mostra-tudo"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "voto"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
                     "concluido": {
                       "type": "boolean"
                     },
@@ -80783,7 +80629,6 @@
                     "preparada",
                     "aguardandoVirada",
                     "atividade",
-                    "cracha",
                     "lupa",
                     "capa",
                     "invariantes",
@@ -80791,7 +80636,6 @@
                     "fora",
                     "pares",
                     "segundaFoto",
-                    "transferencia",
                     "concluido",
                     "visitante"
                   ],
@@ -80805,7 +80649,7 @@
           "enigma-capa"
         ],
         "summary": "E3: PUBLICAR CAPA — o LATCH 1.",
-        "description": "Irreversível. O servidor deriva o retângulo que a moldura mostrou (`capa.visivel`) e a fala da VISITANTE: metade ou mais da ação da foto na capa dá a fala da foto (\"Na foto, vi crianças lendo!\"); senão, só o lugar (\"Na foto, vi a biblioteca!\").\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Jogada à frente do passo: **409** `passo-invalido` (sem crachá: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).\n- A mesma foto e o mesmo selo de novo são idempotentes; outra escolha é **409** `ja-publicado`.",
+        "description": "Irreversível. O servidor deriva o retângulo que a moldura mostrou (`capa.visivel`) e a fala da VISITANTE: metade ou mais da ação da foto na capa dá a fala da foto (\"Na foto, vi crianças lendo!\"); senão, só o lugar (\"Na foto, vi a biblioteca!\").\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Jogada à frente do passo: **409** `passo-invalido` (sem a sessão aberta pelo `iniciar`: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).\n- A mesma foto e o mesmo selo de novo são idempotentes; outra escolha é **409** `ja-publicado`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -80884,7 +80728,7 @@
                     "passo": {
                       "type": "string",
                       "enum": [
-                        "cracha",
+                        "inicio",
                         "lupa",
                         "decidir",
                         "feed",
@@ -80893,7 +80737,6 @@
                         "fora",
                         "pares",
                         "segunda-foto",
-                        "transferencia",
                         "concluida"
                       ]
                     },
@@ -80928,45 +80771,60 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "cracha": {
-                      "type": "string",
-                      "enum": [
-                        "fone-azul",
-                        "fone-amarelo",
-                        "microfone-verde",
-                        "gravador-laranja"
-                      ],
-                      "nullable": true
-                    },
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "foto1Ms": {
+                        "alvo1Ms": {
                           "type": "integer"
                         },
-                        "foto2Ms": {
+                        "alvo2Ms": {
                           "type": "integer"
-                        },
-                        "fundo1": {
-                          "type": "boolean"
-                        },
-                        "fundo2": {
-                          "type": "boolean"
                         },
                         "alertas": {
                           "type": "integer"
                         },
                         "liberada": {
                           "type": "boolean"
+                        },
+                        "alvos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "inv-1",
+                                  "inv-2"
+                                ]
+                              },
+                              "x": {
+                                "type": "number"
+                              },
+                              "y": {
+                                "type": "number"
+                              },
+                              "r": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "x",
+                              "y",
+                              "r"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "nullable": true
                         }
                       },
                       "required": [
-                        "foto1Ms",
-                        "foto2Ms",
-                        "fundo1",
-                        "fundo2",
+                        "alvo1Ms",
+                        "alvo2Ms",
                         "alertas",
-                        "liberada"
+                        "liberada",
+                        "alvos"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -81255,23 +81113,6 @@
                       "required": [
                         "elemento",
                         "deslocamento"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "transferencia": {
-                      "type": "object",
-                      "properties": {
-                        "voto": {
-                          "type": "string",
-                          "enum": [
-                            "so-um-pedaco",
-                            "mostra-tudo"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "voto"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -81386,7 +81227,6 @@
                     "preparada",
                     "aguardandoVirada",
                     "atividade",
-                    "cracha",
                     "lupa",
                     "capa",
                     "invariantes",
@@ -81394,7 +81234,6 @@
                     "fora",
                     "pares",
                     "segundaFoto",
-                    "transferencia",
                     "concluido",
                     "toque"
                   ],
@@ -81408,7 +81247,7 @@
           "enigma-capa"
         ],
         "summary": "E4: um toque no \"TOQUE EM 2 COISAS IGUAIS\" — só depois da virada.",
-        "description": "`x`, `y` são da PANORÂMICA, dentro do recorte da foto tocada. Quatro acertos (2 objetos × 2 fotos) completam e marcam a **EF02CO01**. No 3º erro a AJUDA acende e os alvos descem em `toque.alvos` (o pulso amarelo).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Jogada à frente do passo: **409** `passo-invalido` (sem crachá: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).\n- Antes da virada: **409** `virada-nao-liberada`. Toque fora da foto: **400** `toque-fora-da-foto`.",
+        "description": "`x`, `y` são da PANORÂMICA, dentro do recorte da foto tocada. Quatro acertos (2 objetos × 2 fotos) completam e marcam a **EF02CO01**. No 3º erro a AJUDA acende e os alvos descem em `toque.alvos` (o pulso amarelo).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Jogada à frente do passo: **409** `passo-invalido` (sem a sessão aberta pelo `iniciar`: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).\n- Antes da virada: **409** `virada-nao-liberada`. Toque fora da foto: **400** `toque-fora-da-foto`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -81470,7 +81309,7 @@
                     "passo": {
                       "type": "string",
                       "enum": [
-                        "cracha",
+                        "inicio",
                         "lupa",
                         "decidir",
                         "feed",
@@ -81479,7 +81318,6 @@
                         "fora",
                         "pares",
                         "segunda-foto",
-                        "transferencia",
                         "concluida"
                       ]
                     },
@@ -81514,45 +81352,60 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "cracha": {
-                      "type": "string",
-                      "enum": [
-                        "fone-azul",
-                        "fone-amarelo",
-                        "microfone-verde",
-                        "gravador-laranja"
-                      ],
-                      "nullable": true
-                    },
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "foto1Ms": {
+                        "alvo1Ms": {
                           "type": "integer"
                         },
-                        "foto2Ms": {
+                        "alvo2Ms": {
                           "type": "integer"
-                        },
-                        "fundo1": {
-                          "type": "boolean"
-                        },
-                        "fundo2": {
-                          "type": "boolean"
                         },
                         "alertas": {
                           "type": "integer"
                         },
                         "liberada": {
                           "type": "boolean"
+                        },
+                        "alvos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "inv-1",
+                                  "inv-2"
+                                ]
+                              },
+                              "x": {
+                                "type": "number"
+                              },
+                              "y": {
+                                "type": "number"
+                              },
+                              "r": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "x",
+                              "y",
+                              "r"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "nullable": true
                         }
                       },
                       "required": [
-                        "foto1Ms",
-                        "foto2Ms",
-                        "fundo1",
-                        "fundo2",
+                        "alvo1Ms",
+                        "alvo2Ms",
                         "alertas",
-                        "liberada"
+                        "liberada",
+                        "alvos"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -81845,23 +81698,6 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "transferencia": {
-                      "type": "object",
-                      "properties": {
-                        "voto": {
-                          "type": "string",
-                          "enum": [
-                            "so-um-pedaco",
-                            "mostra-tudo"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "voto"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
                     "concluido": {
                       "type": "boolean"
                     }
@@ -81872,7 +81708,6 @@
                     "preparada",
                     "aguardandoVirada",
                     "atividade",
-                    "cracha",
                     "lupa",
                     "capa",
                     "invariantes",
@@ -81880,7 +81715,6 @@
                     "fora",
                     "pares",
                     "segundaFoto",
-                    "transferencia",
                     "concluido"
                   ],
                   "additionalProperties": false
@@ -81893,7 +81727,7 @@
           "enigma-capa"
         ],
         "summary": "E4: o slider abriu a panorâmica. Idempotente.",
-        "description": "**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Jogada à frente do passo: **409** `passo-invalido` (sem crachá: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).",
+        "description": "**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Jogada à frente do passo: **409** `passo-invalido` (sem a sessão aberta pelo `iniciar`: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).",
         "security": [
           {
             "token-da-plataforma": []
@@ -81920,7 +81754,7 @@
                     "passo": {
                       "type": "string",
                       "enum": [
-                        "cracha",
+                        "inicio",
                         "lupa",
                         "decidir",
                         "feed",
@@ -81929,7 +81763,6 @@
                         "fora",
                         "pares",
                         "segunda-foto",
-                        "transferencia",
                         "concluida"
                       ]
                     },
@@ -81964,45 +81797,60 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "cracha": {
-                      "type": "string",
-                      "enum": [
-                        "fone-azul",
-                        "fone-amarelo",
-                        "microfone-verde",
-                        "gravador-laranja"
-                      ],
-                      "nullable": true
-                    },
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "foto1Ms": {
+                        "alvo1Ms": {
                           "type": "integer"
                         },
-                        "foto2Ms": {
+                        "alvo2Ms": {
                           "type": "integer"
-                        },
-                        "fundo1": {
-                          "type": "boolean"
-                        },
-                        "fundo2": {
-                          "type": "boolean"
                         },
                         "alertas": {
                           "type": "integer"
                         },
                         "liberada": {
                           "type": "boolean"
+                        },
+                        "alvos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "inv-1",
+                                  "inv-2"
+                                ]
+                              },
+                              "x": {
+                                "type": "number"
+                              },
+                              "y": {
+                                "type": "number"
+                              },
+                              "r": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "x",
+                              "y",
+                              "r"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "nullable": true
                         }
                       },
                       "required": [
-                        "foto1Ms",
-                        "foto2Ms",
-                        "fundo1",
-                        "fundo2",
+                        "alvo1Ms",
+                        "alvo2Ms",
                         "alertas",
-                        "liberada"
+                        "liberada",
+                        "alvos"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -82295,23 +82143,6 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "transferencia": {
-                      "type": "object",
-                      "properties": {
-                        "voto": {
-                          "type": "string",
-                          "enum": [
-                            "so-um-pedaco",
-                            "mostra-tudo"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "voto"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
                     "concluido": {
                       "type": "boolean"
                     }
@@ -82322,7 +82153,6 @@
                     "preparada",
                     "aguardandoVirada",
                     "atividade",
-                    "cracha",
                     "lupa",
                     "capa",
                     "invariantes",
@@ -82330,7 +82160,6 @@
                     "fora",
                     "pares",
                     "segundaFoto",
-                    "transferencia",
                     "concluido"
                   ],
                   "additionalProperties": false
@@ -82342,8 +82171,8 @@
         "tags": [
           "enigma-capa"
         ],
-        "summary": "E4: \"Marque n{espaço} o que ficou fora da sua foto.\" + \"Pronto\".",
-        "description": "Os toques (0 a 10, na panorâmica) viram os marcáveis que ficaram FORA da capa publicada. Só painel.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Jogada à frente do passo: **409** `passo-invalido` (sem crachá: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).",
+        "summary": "E4: \"Marque n{espaço} o que ficou fora da sua foto.\" + \"Pronto\" — marca a EF02CO05.",
+        "description": "Os alfinetes (1 a 10, na panorâmica) viram os marcáveis que ficaram FORA da capa publicada. Marca a **EF02CO05** na mesma transação, com a lupa, o selo, os invariantes e o \"fora\" (ao menos um marcável fora da capa).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Jogada à frente do passo: **409** `passo-invalido` (sem a sessão aberta pelo `iniciar`: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).",
         "security": [
           {
             "token-da-plataforma": []
@@ -82382,6 +82211,7 @@
                       ],
                       "additionalProperties": false
                     },
+                    "minItems": 1,
                     "maxItems": 10
                   }
                 },
@@ -82410,7 +82240,7 @@
                     "passo": {
                       "type": "string",
                       "enum": [
-                        "cracha",
+                        "inicio",
                         "lupa",
                         "decidir",
                         "feed",
@@ -82419,7 +82249,6 @@
                         "fora",
                         "pares",
                         "segunda-foto",
-                        "transferencia",
                         "concluida"
                       ]
                     },
@@ -82454,45 +82283,60 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "cracha": {
-                      "type": "string",
-                      "enum": [
-                        "fone-azul",
-                        "fone-amarelo",
-                        "microfone-verde",
-                        "gravador-laranja"
-                      ],
-                      "nullable": true
-                    },
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "foto1Ms": {
+                        "alvo1Ms": {
                           "type": "integer"
                         },
-                        "foto2Ms": {
+                        "alvo2Ms": {
                           "type": "integer"
-                        },
-                        "fundo1": {
-                          "type": "boolean"
-                        },
-                        "fundo2": {
-                          "type": "boolean"
                         },
                         "alertas": {
                           "type": "integer"
                         },
                         "liberada": {
                           "type": "boolean"
+                        },
+                        "alvos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "inv-1",
+                                  "inv-2"
+                                ]
+                              },
+                              "x": {
+                                "type": "number"
+                              },
+                              "y": {
+                                "type": "number"
+                              },
+                              "r": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "x",
+                              "y",
+                              "r"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "nullable": true
                         }
                       },
                       "required": [
-                        "foto1Ms",
-                        "foto2Ms",
-                        "fundo1",
-                        "fundo2",
+                        "alvo1Ms",
+                        "alvo2Ms",
                         "alertas",
-                        "liberada"
+                        "liberada",
+                        "alvos"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -82785,23 +82629,6 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "transferencia": {
-                      "type": "object",
-                      "properties": {
-                        "voto": {
-                          "type": "string",
-                          "enum": [
-                            "so-um-pedaco",
-                            "mostra-tudo"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "voto"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
                     "concluido": {
                       "type": "boolean"
                     }
@@ -82812,7 +82639,6 @@
                     "preparada",
                     "aguardandoVirada",
                     "atividade",
-                    "cracha",
                     "lupa",
                     "capa",
                     "invariantes",
@@ -82820,7 +82646,6 @@
                     "fora",
                     "pares",
                     "segundaFoto",
-                    "transferencia",
                     "concluido"
                   ],
                   "additionalProperties": false
@@ -82833,7 +82658,7 @@
           "enigma-capa"
         ],
         "summary": "E5: o par de fotos da mesma atividade e o motivo.",
-        "description": "**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Jogada à frente do passo: **409** `passo-invalido` (sem crachá: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).\n- Carta desconhecida ou repetida: **400** `carta-desconhecida`. Só painel.",
+        "description": "**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Jogada à frente do passo: **409** `passo-invalido` (sem a sessão aberta pelo `iniciar`: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).\n- Carta desconhecida ou repetida: **400** `carta-desconhecida`. Só painel.",
         "security": [
           {
             "token-da-plataforma": []
@@ -82901,7 +82726,7 @@
                     "passo": {
                       "type": "string",
                       "enum": [
-                        "cracha",
+                        "inicio",
                         "lupa",
                         "decidir",
                         "feed",
@@ -82910,7 +82735,6 @@
                         "fora",
                         "pares",
                         "segunda-foto",
-                        "transferencia",
                         "concluida"
                       ]
                     },
@@ -82945,45 +82769,60 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "cracha": {
-                      "type": "string",
-                      "enum": [
-                        "fone-azul",
-                        "fone-amarelo",
-                        "microfone-verde",
-                        "gravador-laranja"
-                      ],
-                      "nullable": true
-                    },
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "foto1Ms": {
+                        "alvo1Ms": {
                           "type": "integer"
                         },
-                        "foto2Ms": {
+                        "alvo2Ms": {
                           "type": "integer"
-                        },
-                        "fundo1": {
-                          "type": "boolean"
-                        },
-                        "fundo2": {
-                          "type": "boolean"
                         },
                         "alertas": {
                           "type": "integer"
                         },
                         "liberada": {
                           "type": "boolean"
+                        },
+                        "alvos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "inv-1",
+                                  "inv-2"
+                                ]
+                              },
+                              "x": {
+                                "type": "number"
+                              },
+                              "y": {
+                                "type": "number"
+                              },
+                              "r": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "x",
+                              "y",
+                              "r"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "nullable": true
                         }
                       },
                       "required": [
-                        "foto1Ms",
-                        "foto2Ms",
-                        "fundo1",
-                        "fundo2",
+                        "alvo1Ms",
+                        "alvo2Ms",
                         "alertas",
-                        "liberada"
+                        "liberada",
+                        "alvos"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -83276,23 +83115,6 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "transferencia": {
-                      "type": "object",
-                      "properties": {
-                        "voto": {
-                          "type": "string",
-                          "enum": [
-                            "so-um-pedaco",
-                            "mostra-tudo"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "voto"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
                     "concluido": {
                       "type": "boolean"
                     }
@@ -83303,7 +83125,6 @@
                     "preparada",
                     "aguardandoVirada",
                     "atividade",
-                    "cracha",
                     "lupa",
                     "capa",
                     "invariantes",
@@ -83311,7 +83132,6 @@
                     "fora",
                     "pares",
                     "segundaFoto",
-                    "transferencia",
                     "concluido"
                   ],
                   "additionalProperties": false
@@ -83323,8 +83143,8 @@
         "tags": [
           "enigma-capa"
         ],
-        "summary": "E5: a segunda foto — o elemento e a posição na moldura fixa (\"Colocar no álbum\").",
-        "description": "**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Jogada à frente do passo: **409** `passo-invalido` (sem crachá: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).\n- Só painel: o servidor registra se a criança lendo ficou na moldura.",
+        "summary": "E5: a segunda foto — o elemento e a posição na moldura fixa (\"Colocar no álbum\"). Conclui a missão.",
+        "description": "**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Jogada à frente do passo: **409** `passo-invalido` (sem a sessão aberta pelo `iniciar`: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).\n- Só painel: o servidor registra se a criança lendo ficou na moldura. O passo vira `concluida`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -83373,479 +83193,6 @@
                 "required": [
                   "elemento",
                   "deslocamento"
-                ],
-                "additionalProperties": false
-              }
-            }
-          }
-        }
-      }
-    },
-    "/enigma-capa/transferencia": {
-      "post": {
-        "operationId": "EnigmaCapaController_transferencia",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Sucesso.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "passo": {
-                      "type": "string",
-                      "enum": [
-                        "cracha",
-                        "lupa",
-                        "decidir",
-                        "feed",
-                        "invariantes",
-                        "slider",
-                        "fora",
-                        "pares",
-                        "segunda-foto",
-                        "transferencia",
-                        "concluida"
-                      ]
-                    },
-                    "fase": {
-                      "type": "string",
-                      "enum": [
-                        "aberta",
-                        "virada"
-                      ],
-                      "nullable": true
-                    },
-                    "preparada": {
-                      "type": "boolean"
-                    },
-                    "aguardandoVirada": {
-                      "type": "boolean"
-                    },
-                    "atividade": {
-                      "type": "object",
-                      "properties": {
-                        "pacoteId": {
-                          "type": "string"
-                        },
-                        "rodada": {
-                          "type": "integer"
-                        }
-                      },
-                      "required": [
-                        "pacoteId",
-                        "rodada"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "cracha": {
-                      "type": "string",
-                      "enum": [
-                        "fone-azul",
-                        "fone-amarelo",
-                        "microfone-verde",
-                        "gravador-laranja"
-                      ],
-                      "nullable": true
-                    },
-                    "lupa": {
-                      "type": "object",
-                      "properties": {
-                        "foto1Ms": {
-                          "type": "integer"
-                        },
-                        "foto2Ms": {
-                          "type": "integer"
-                        },
-                        "fundo1": {
-                          "type": "boolean"
-                        },
-                        "fundo2": {
-                          "type": "boolean"
-                        },
-                        "alertas": {
-                          "type": "integer"
-                        },
-                        "liberada": {
-                          "type": "boolean"
-                        }
-                      },
-                      "required": [
-                        "foto1Ms",
-                        "foto2Ms",
-                        "fundo1",
-                        "fundo2",
-                        "alertas",
-                        "liberada"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "capa": {
-                      "type": "object",
-                      "properties": {
-                        "fotoId": {
-                          "type": "string",
-                          "enum": [
-                            "foto-1",
-                            "foto-2"
-                          ]
-                        },
-                        "outraFotoId": {
-                          "type": "string",
-                          "enum": [
-                            "foto-1",
-                            "foto-2"
-                          ]
-                        },
-                        "seloId": {
-                          "type": "string",
-                          "enum": [
-                            "selo-1",
-                            "selo-2"
-                          ]
-                        },
-                        "deslocamento": {
-                          "type": "object",
-                          "properties": {
-                            "x": {
-                              "type": "number",
-                              "minimum": 0,
-                              "maximum": 1
-                            },
-                            "y": {
-                              "type": "number",
-                              "minimum": 0,
-                              "maximum": 1
-                            }
-                          },
-                          "required": [
-                            "x",
-                            "y"
-                          ],
-                          "additionalProperties": false
-                        },
-                        "visivel": {
-                          "type": "object",
-                          "properties": {
-                            "x": {
-                              "type": "number",
-                              "minimum": 0,
-                              "maximum": 100
-                            },
-                            "y": {
-                              "type": "number",
-                              "minimum": 0,
-                              "maximum": 100
-                            },
-                            "w": {
-                              "type": "number",
-                              "minimum": 0,
-                              "maximum": 100
-                            },
-                            "h": {
-                              "type": "number",
-                              "minimum": 0,
-                              "maximum": 100
-                            }
-                          },
-                          "required": [
-                            "x",
-                            "y",
-                            "w",
-                            "h"
-                          ],
-                          "additionalProperties": false
-                        },
-                        "visitante": {
-                          "type": "string"
-                        },
-                        "publicadaEm": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "fotoId",
-                        "outraFotoId",
-                        "seloId",
-                        "deslocamento",
-                        "visivel",
-                        "visitante",
-                        "publicadaEm"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "invariantes": {
-                      "type": "object",
-                      "properties": {
-                        "encontrados": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "pattern": "^inv-[12]:foto-[12]$"
-                          }
-                        },
-                        "erros": {
-                          "type": "integer"
-                        },
-                        "ajuda": {
-                          "type": "boolean"
-                        },
-                        "alvos": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "enum": [
-                                  "inv-1",
-                                  "inv-2"
-                                ]
-                              },
-                              "x": {
-                                "type": "number"
-                              },
-                              "y": {
-                                "type": "number"
-                              },
-                              "r": {
-                                "type": "number"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "x",
-                              "y",
-                              "r"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "nullable": true
-                        },
-                        "achados": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "enum": [
-                                  "inv-1",
-                                  "inv-2"
-                                ]
-                              },
-                              "x": {
-                                "type": "number"
-                              },
-                              "y": {
-                                "type": "number"
-                              },
-                              "r": {
-                                "type": "number"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "x",
-                              "y",
-                              "r"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "completo": {
-                          "type": "boolean"
-                        }
-                      },
-                      "required": [
-                        "encontrados",
-                        "erros",
-                        "ajuda",
-                        "alvos",
-                        "achados",
-                        "completo"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "panoramicaAberta": {
-                      "type": "boolean"
-                    },
-                    "fora": {
-                      "type": "object",
-                      "properties": {
-                        "toques": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "x": {
-                                "type": "number",
-                                "minimum": 0,
-                                "maximum": 100
-                              },
-                              "y": {
-                                "type": "number",
-                                "minimum": 0,
-                                "maximum": 100
-                              }
-                            },
-                            "required": [
-                              "x",
-                              "y"
-                            ],
-                            "additionalProperties": false
-                          }
-                        }
-                      },
-                      "required": [
-                        "toques"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "pares": {
-                      "type": "object",
-                      "properties": {
-                        "cartas": {
-                          "type": "array",
-                          "items": {
-                            "type": "string"
-                          }
-                        },
-                        "motivo": {
-                          "type": "string",
-                          "enum": [
-                            "atividade",
-                            "roupa"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "cartas",
-                        "motivo"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "segundaFoto": {
-                      "type": "object",
-                      "properties": {
-                        "elemento": {
-                          "type": "string",
-                          "enum": [
-                            "mochila",
-                            "parede",
-                            "crianca-lendo"
-                          ]
-                        },
-                        "deslocamento": {
-                          "type": "object",
-                          "properties": {
-                            "x": {
-                              "type": "number",
-                              "minimum": 0,
-                              "maximum": 1
-                            },
-                            "y": {
-                              "type": "number",
-                              "minimum": 0,
-                              "maximum": 1
-                            }
-                          },
-                          "required": [
-                            "x",
-                            "y"
-                          ],
-                          "additionalProperties": false
-                        }
-                      },
-                      "required": [
-                        "elemento",
-                        "deslocamento"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "transferencia": {
-                      "type": "object",
-                      "properties": {
-                        "voto": {
-                          "type": "string",
-                          "enum": [
-                            "so-um-pedaco",
-                            "mostra-tudo"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "voto"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "concluido": {
-                      "type": "boolean"
-                    }
-                  },
-                  "required": [
-                    "passo",
-                    "fase",
-                    "preparada",
-                    "aguardandoVirada",
-                    "atividade",
-                    "cracha",
-                    "lupa",
-                    "capa",
-                    "invariantes",
-                    "panoramicaAberta",
-                    "fora",
-                    "pares",
-                    "segundaFoto",
-                    "transferencia",
-                    "concluido"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "enigma-capa"
-        ],
-        "summary": "E6: \"A HORTA ACABOU?\" — o LATCH 2, que conclui.",
-        "description": "Marca a **EF02CO05** na mesma transação, com a lupa, o selo, os invariantes e o voto.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Jogada à frente do passo: **409** `passo-invalido` (sem crachá: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).\n- O mesmo voto de novo é idempotente; outro é **409** `ja-enviado`.",
-        "security": [
-          {
-            "token-da-plataforma": []
-          }
-        ],
-        "x-papeis": [
-          "estudante"
-        ],
-        "x-acesso": "token",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "opcao": {
-                    "type": "string",
-                    "enum": [
-                      "so-um-pedaco",
-                      "mostra-tudo"
-                    ]
-                  }
-                },
-                "required": [
-                  "opcao"
                 ],
                 "additionalProperties": false
               }
@@ -83994,8 +83341,14 @@
                           "type": "string",
                           "enum": [
                             "lingua-portuguesa",
+                            "arte",
+                            "educacao-fisica",
+                            "matematica",
                             "ciencias",
+                            "geografia",
                             "historia",
+                            "ensino-religioso",
+                            "computacao",
                             "outra"
                           ]
                         },
@@ -84467,8 +83820,14 @@
                           "type": "string",
                           "enum": [
                             "lingua-portuguesa",
+                            "arte",
+                            "educacao-fisica",
+                            "matematica",
                             "ciencias",
+                            "geografia",
                             "historia",
+                            "ensino-religioso",
+                            "computacao",
                             "outra"
                           ]
                         },
@@ -84950,8 +84309,14 @@
                             "type": "string",
                             "enum": [
                               "lingua-portuguesa",
+                              "arte",
+                              "educacao-fisica",
+                              "matematica",
                               "ciencias",
+                              "geografia",
                               "historia",
+                              "ensino-religioso",
+                              "computacao",
                               "outra"
                             ]
                           },
@@ -85373,8 +84738,14 @@
                             "type": "string",
                             "enum": [
                               "lingua-portuguesa",
+                              "arte",
+                              "educacao-fisica",
+                              "matematica",
                               "ciencias",
+                              "geografia",
                               "historia",
+                              "ensino-religioso",
+                              "computacao",
                               "outra"
                             ]
                           },
@@ -85463,8 +84834,14 @@
                           "type": "string",
                           "enum": [
                             "lingua-portuguesa",
+                            "arte",
+                            "educacao-fisica",
+                            "matematica",
                             "ciencias",
+                            "geografia",
                             "historia",
+                            "ensino-religioso",
+                            "computacao",
                             "outra"
                           ]
                         },
@@ -85996,8 +85373,14 @@
                           "type": "string",
                           "enum": [
                             "lingua-portuguesa",
+                            "arte",
+                            "educacao-fisica",
+                            "matematica",
                             "ciencias",
+                            "geografia",
                             "historia",
+                            "ensino-religioso",
+                            "computacao",
                             "outra"
                           ]
                         },
@@ -86506,8 +85889,14 @@
                     "type": "string",
                     "enum": [
                       "lingua-portuguesa",
+                      "arte",
+                      "educacao-fisica",
+                      "matematica",
                       "ciencias",
+                      "geografia",
                       "historia",
+                      "ensino-religioso",
+                      "computacao",
                       "outra"
                     ]
                   },
@@ -86581,8 +85970,14 @@
                       "type": "string",
                       "enum": [
                         "lingua-portuguesa",
+                        "arte",
+                        "educacao-fisica",
+                        "matematica",
                         "ciencias",
+                        "geografia",
                         "historia",
+                        "ensino-religioso",
+                        "computacao",
                         "outra"
                       ]
                     },
@@ -87149,8 +86544,14 @@
                       "type": "string",
                       "enum": [
                         "lingua-portuguesa",
+                        "arte",
+                        "educacao-fisica",
+                        "matematica",
                         "ciencias",
+                        "geografia",
                         "historia",
+                        "ensino-religioso",
+                        "computacao",
                         "outra"
                       ]
                     },
@@ -88030,21 +87431,8 @@
                         "concluiram": {
                           "type": "integer"
                         },
-                        "votos": {
-                          "type": "object",
-                          "properties": {
-                            "so-um-pedaco": {
-                              "type": "integer"
-                            },
-                            "mostra-tudo": {
-                              "type": "integer"
-                            }
-                          },
-                          "required": [
-                            "so-um-pedaco",
-                            "mostra-tudo"
-                          ],
-                          "additionalProperties": false
+                        "marcaramFora": {
+                          "type": "integer"
                         }
                       },
                       "required": [
@@ -88053,7 +87441,7 @@
                         "publicaram",
                         "aguardandoVirada",
                         "concluiram",
-                        "votos"
+                        "marcaramFora"
                       ],
                       "additionalProperties": false
                     },
@@ -88108,7 +87496,7 @@
                           "passo": {
                             "type": "string",
                             "enum": [
-                              "cracha",
+                              "inicio",
                               "lupa",
                               "decidir",
                               "feed",
@@ -88117,30 +87505,19 @@
                               "fora",
                               "pares",
                               "segunda-foto",
-                              "transferencia",
                               "concluida"
                             ]
                           },
                           "aguardandoVirada": {
                             "type": "boolean"
                           },
-                          "cracha": {
-                            "type": "string",
-                            "enum": [
-                              "fone-azul",
-                              "fone-amarelo",
-                              "microfone-verde",
-                              "gravador-laranja"
-                            ],
-                            "nullable": true
-                          },
                           "lupa": {
                             "type": "object",
                             "properties": {
-                              "foto1Ms": {
+                              "alvo1Ms": {
                                 "type": "integer"
                               },
-                              "foto2Ms": {
+                              "alvo2Ms": {
                                 "type": "integer"
                               },
                               "alertas": {
@@ -88151,8 +87528,8 @@
                               }
                             },
                             "required": [
-                              "foto1Ms",
-                              "foto2Ms",
+                              "alvo1Ms",
+                              "alvo2Ms",
                               "alertas",
                               "liberada"
                             ],
@@ -88307,14 +87684,6 @@
                             ],
                             "additionalProperties": false,
                             "nullable": true
-                          },
-                          "voto": {
-                            "type": "string",
-                            "enum": [
-                              "so-um-pedaco",
-                              "mostra-tudo"
-                            ],
-                            "nullable": true
                           }
                         },
                         "required": [
@@ -88323,14 +87692,12 @@
                           "equipe",
                           "passo",
                           "aguardandoVirada",
-                          "cracha",
                           "lupa",
                           "capa",
                           "invariantes",
                           "fora",
                           "par",
-                          "segundaFoto",
-                          "voto"
+                          "segundaFoto"
                         ],
                         "additionalProperties": false
                       }
@@ -88359,9 +87726,6 @@
                             "type": "string"
                           }
                         },
-                        "ponte": {
-                          "type": "string"
-                        },
                         "liberar": {
                           "type": "string"
                         }
@@ -88372,7 +87736,6 @@
                         "pausa",
                         "cartoes",
                         "perguntas",
-                        "ponte",
                         "liberar"
                       ],
                       "additionalProperties": false
@@ -88397,7 +87760,7 @@
           "enigma-capa"
         ],
         "summary": "O painel da aula: o progresso e as escolhas de cada estudante (ou computador).",
-        "description": "Por linha: passo, crachá, lupa (tempos e alertas), a capa (foto, selo coerente, a fala da visitante, a ação na capa), os invariantes (erros, ajuda), o que marcou fora, o par e o motivo, a segunda foto e o voto. `aguardandoVirada` = publicou e a turma ainda não virou. O NÍVEL de cada habilidade é da evidência (E14).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe.",
+        "description": "Por linha, pelo NOME do estudante: passo, lupa (o tempo sobre cada objeto do fundo e os alertas), a capa (foto, selo coerente, a fala da visitante, a ação na capa), os invariantes (erros, ajuda), o que marcou fora (\"marcou X de Y\"), o par e o motivo e a segunda foto. `aguardandoVirada` = publicou e a turma ainda não virou; `resumo.marcaramFora` = quantos marcaram ao menos uma coisa que ficou fora da capa. O NÍVEL de cada habilidade é da evidência (E14).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe.",
         "security": [
           {
             "token-da-plataforma": []
@@ -88572,8 +87935,14 @@
                             "type": "string",
                             "enum": [
                               "lingua-portuguesa",
+                              "arte",
+                              "educacao-fisica",
+                              "matematica",
                               "ciencias",
+                              "geografia",
                               "historia",
+                              "ensino-religioso",
+                              "computacao",
                               "outra"
                             ]
                           },
@@ -88696,8 +88065,14 @@
                       "type": "string",
                       "enum": [
                         "lingua-portuguesa",
+                        "arte",
+                        "educacao-fisica",
+                        "matematica",
                         "ciencias",
+                        "geografia",
                         "historia",
+                        "ensino-religioso",
+                        "computacao",
                         "outra"
                       ]
                     },
@@ -89311,8 +88686,14 @@
                             "type": "string",
                             "enum": [
                               "lingua-portuguesa",
+                              "arte",
+                              "educacao-fisica",
+                              "matematica",
                               "ciencias",
+                              "geografia",
                               "historia",
+                              "ensino-religioso",
+                              "computacao",
                               "outra"
                             ]
                           },
@@ -89725,6 +89106,37 @@
                         "additionalProperties": false
                       }
                     },
+                    "disciplinas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "slug": {
+                            "type": "string",
+                            "enum": [
+                              "lingua-portuguesa",
+                              "arte",
+                              "educacao-fisica",
+                              "matematica",
+                              "ciencias",
+                              "geografia",
+                              "historia",
+                              "ensino-religioso",
+                              "computacao",
+                              "outra"
+                            ]
+                          },
+                          "rotulo": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "slug",
+                          "rotulo"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "roteiro": {
                       "type": "object",
                       "properties": {
@@ -89749,9 +89161,6 @@
                             "type": "string"
                           }
                         },
-                        "ponte": {
-                          "type": "string"
-                        },
                         "liberar": {
                           "type": "string"
                         }
@@ -89762,7 +89171,6 @@
                         "pausa",
                         "cartoes",
                         "perguntas",
-                        "ponte",
                         "liberar"
                       ],
                       "additionalProperties": false
@@ -89837,6 +89245,7 @@
                   },
                   "required": [
                     "prontos",
+                    "disciplinas",
                     "roteiro",
                     "cartas",
                     "habilidades"
@@ -89850,7 +89259,7 @@
         "tags": [
           "enigma-capa"
         ],
-        "summary": "Os pacotes prontos COM o gabarito, o roteiro da conversa, as cartas da E5 e as réguas.",
+        "summary": "Os pacotes prontos COM o gabarito, os componentes curriculares do recorte, o roteiro da conversa, as cartas da E5 e as réguas.",
         "description": "**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {

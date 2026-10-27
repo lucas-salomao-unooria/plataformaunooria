@@ -1,25 +1,29 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
-import { ButtonUnv, GestureHint, InlineHint } from "@edu/ui/ds-unoovista";
+import { BadgeUnv, ButtonUnv, GestureHint } from "@edu/ui/ds-unoovista";
+import { Aviso } from "../componentes/Aviso";
 import { Janela } from "../componentes/Janela";
 import { Personagem } from "../componentes/Personagem";
 import type { Contexto } from "../contexto";
 import { prefereMenosMovimento, useInatividade, useTamanho } from "../hooks/tela";
 import { api } from "../lib/api";
-import { contemPonto, encaixar, lente, limitar, pontoNaImagem, proporcaoDaJanela } from "../lib/geometria";
-import { fotoQueFalta, juntarRelatos, LUPA_VAZIA, pisoLocal, registrarAmostra, relatoMudou } from "../lib/lupa";
+import { encaixar, lente, limitar, pontoNaImagem, proporcaoDaJanela } from "../lib/geometria";
+import { achados as achadosDe, alvoQueFalta, alvoSob, juntarRelatos, LUPA_VAZIA, msDo, pisoLocal, registrarAmostra, relatoMudou } from "../lib/lupa";
 import { telemetria } from "../lib/telemetria";
 import { preencher, ROTULOS, textoDe } from "../lib/textos";
-import type { FotoId, Ponto, RelatoDaLupa, Retangulo } from "../lib/tipos";
+import type { Alvo, FotoId, InvarianteId, Ponto, RelatoDaLupa, Retangulo } from "../lib/tipos";
 
 /** O raio da lente, em px: 112 px de diâmetro, maior que um dedo de 7 anos (o alvo ≥ 56 px). */
 const RAIO = 56;
 /** A ampliação é FIXA (one-pager §4): a criança move a lente, nunca o zoom. */
 const AMPLIACAO = 2;
-const AMOSTRA_MS = 200;
+const AMOSTRA_MS = 100;
 const RELATO_MS = 4000;
 const ROTULO_H = 28;
 const VAO = 12;
 const PASSO_DA_TECLA = 16;
+/** O anel do tempo, em volta da lente. */
+const ANEL = RAIO + 8;
+const VOLTA = 2 * Math.PI * ANEL;
 
 interface FotoNaTela {
   id: FotoId;
@@ -30,25 +34,34 @@ interface FotoNaTela {
 }
 
 /**
- * E2 — NAVEGAR. As duas fotos brutas, imóveis, e a LUPA circular de ampliação
- * fixa 2× que a criança arrasta sobre elas. Quando o centro da lente passa
- * pela parede do fundo (`cena.fundo` — a dica, não o gabarito), o fundo daquela
- * foto pulsa em azul, discreto.
+ * E2 — NAVEGAR: "INVESTIGUE COM A LUPA" (o `E2-ALU-01` do protótipo, ADR-186).
  *
- * O piso (3 s sobre CADA foto E o fundo das DUAS) é medido aqui e decidido na
- * api: o relato vai de tempos em tempos e no toque de AVANÇAR. Antes do piso o
- * botão fica esmaecido mas tocável — o toque precoce é a evidência que a régua
- * lê (`lupa_alertas`): a tela vibra, a mãozinha aponta a parede e aparece
- * "OLHE O FUNDO" (one-pager §7). 45 s sem gesto: o Bento, "VAMOS INVESTIGAR?".
+ * As duas fotos brutas, imóveis, e a LUPA circular de ampliação fixa 2× que a
+ * criança arrasta. A missão (a tela de abertura disse) é achar os DOIS objetos
+ * do fundo. Quando o centro da lente para sobre um deles, a lente BRILHA e o
+ * anel em volta dela enche em 3 s ("SEGURE A LUPA AQUI!"); cheio, o objeto
+ * ganha o círculo dourado nas duas fotos e o contador anda ("1 DE 2
+ * ENCONTRADOS"). Os dois achados: "INVESTIGAÇÃO COMPLETA!" e o AVANÇAR acende.
+ *
+ * O lugar dos dois objetos desce SÓ neste passo (`estado.lupa.alvos`): o
+ * brilho precisa dele. O que a E4 cobra é achá-los NAS DUAS fotos, por toque,
+ * e isso o servidor continua corrigindo.
+ *
+ * O piso (3 s em CADA objeto) é medido aqui e decidido na api: o relato vai de
+ * tempos em tempos e no toque de AVANÇAR. Antes do piso o botão fica
+ * esmaecido mas tocável — o toque precoce é a evidência que a régua lê
+ * (`lupa_alertas`): a tela vibra, o aviso "OLHE O FUNDO" abre e, ao voltar, a
+ * mãozinha aponta o objeto que falta. 45 s sem gesto: o Bento, "VAMOS
+ * INVESTIGAR?".
  *
  * As fotos ficam lado a lado quando cabem (≥ 600 px); no celular de 375 px,
  * uma sobre a outra — lado a lado, cada uma teria 170 px e a lente cobriria
  * meia foto.
  *
- * (b) COMPENSAÇÃO local — pedido aberto no storybook-unooria: a lupa não existe
- * na seção `unoovista` (nem em seção alguma). Composição de posicionamento
- * sobre a `Janela`; a conta está em `lib/geometria.ts#lente` e o cronômetro em
- * `lib/lupa.ts`.
+ * (b) COMPENSAÇÃO local — pedido aberto no storybook-unooria: a lupa, o brilho
+ * e o anel do tempo não existem na seção `unoovista` (nem em seção alguma).
+ * Composição de posicionamento sobre a `Janela`; a conta está em
+ * `lib/geometria.ts#lente` e o cronômetro em `lib/lupa.ts`.
  */
 export function Bancada({ ctx }: { ctx: Contexto }) {
   const { sessao, estado, executar, url } = ctx;
@@ -56,6 +69,7 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
   const geo = sessao.geometria;
   const piso = geo.pisoDaLupaMs || 3000;
   const src = url(cena.imagem);
+  const alvos: Alvo[] = estado.lupa?.alvos ?? [];
   const [areaRef, area] = useTamanho<HTMLDivElement>();
 
   /* ── a disposição das duas fotos ── */
@@ -89,27 +103,27 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
   fotosRef.current = fotos;
   const centroRef = useRef(centro);
   centroRef.current = centro;
+  const alvosRef = useRef(alvos);
+  alvosRef.current = alvos;
 
   function sob(c: Ponto) {
     for (const f of fotosRef.current) {
       const { x, y, w, h } = f.caixa;
       if (c.x >= x && c.x <= x + w && c.y >= y && c.y <= y + h) {
         const ponto = pontoNaImagem(f.recorte, c.x - x, c.y - y, { w, h });
-        return { foto: f, ponto, noFundo: contemPonto(cena.fundo, ponto) };
+        return { foto: f, ponto, alvo: alvoSob(alvosRef.current, ponto, geo.proporcaoDaPanoramica) };
       }
     }
     return null;
   }
 
-  /* ── o cronômetro: a cada amostra, o tempo vai para a foto sob o centro da lente ── */
-  const inicial: RelatoDaLupa = estado.lupa
-    ? { foto1Ms: estado.lupa.foto1Ms, foto2Ms: estado.lupa.foto2Ms, fundo1: estado.lupa.fundo1, fundo2: estado.lupa.fundo2 }
-    : LUPA_VAZIA;
+  /* ── o cronômetro: a cada amostra, o tempo vai para o objeto sob o centro da lente ── */
+  const inicial: RelatoDaLupa = estado.lupa ? { alvo1Ms: estado.lupa.alvo1Ms, alvo2Ms: estado.lupa.alvo2Ms } : LUPA_VAZIA;
   const lupaRef = useRef<RelatoDaLupa>(inicial);
   const enviadoRef = useRef<RelatoDaLupa>(inicial);
-  const [fundoAceso, setFundoAceso] = useState<FotoId | null>(null);
-  const [cumpriu, setCumpriu] = useState(() => pisoLocal(inicial, piso));
-  const [sobre, setSobre] = useState<FotoId | null>(null);
+  const [lupa, setLupa] = useState<RelatoDaLupa>(inicial);
+  const [sobreAlvo, setSobreAlvo] = useState<InvarianteId | null>(null);
+  const [sobreFoto, setSobreFoto] = useState<FotoId | null>(null);
 
   useEffect(() => {
     let ultimo = performance.now();
@@ -119,10 +133,16 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
       ultimo = agora;
       if (document.visibilityState !== "visible") return;
       const s = sob(centroRef.current);
-      lupaRef.current = registrarAmostra(lupaRef.current, s?.foto.id ?? null, s?.noFundo ?? false, dt);
-      setFundoAceso(s?.noFundo ? s.foto.id : null);
-      setSobre(s?.foto.id ?? null);
-      setCumpriu(pisoLocal(lupaRef.current, piso));
+      const alvo = s?.alvo?.id ?? null;
+      const antes = lupaRef.current;
+      lupaRef.current = registrarAmostra(antes, alvo, dt);
+      if (alvo && msDo(antes, alvo) < piso && msDo(lupaRef.current, alvo) >= piso) {
+        telemetria.achouNaLupa();
+        if (!prefereMenosMovimento()) navigator.vibrate?.(40);
+      }
+      setLupa(lupaRef.current);
+      setSobreAlvo(alvo);
+      setSobreFoto(s?.foto.id ?? null);
     }, AMOSTRA_MS);
     return () => window.clearInterval(id);
     // `sob` lê só refs e a cena (fixa nesta tela).
@@ -140,7 +160,11 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
     return () => window.clearInterval(id);
   }, [executar]);
 
+  const achados = achadosDe(lupa, piso);
+  const cumpriu = pisoLocal(lupa, piso);
+
   /* ── o avanço ── */
+  const [alertaAberto, setAlertaAberto] = useState(false);
   const [alertas, setAlertas] = useState(0);
   const [enviando, setEnviando] = useState(false);
   async function avancar() {
@@ -152,6 +176,7 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
     setEnviando(false);
     if (r && !r.liberado) {
       setAlertas((n) => n + 1);
+      setAlertaAberto(true);
       telemetria.alertaDaLupa();
       if (!prefereMenosMovimento()) navigator.vibrate?.(80);
     }
@@ -195,7 +220,7 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
     setCentro(limitarCentro({ x: centro.x + v[0], y: centro.y + v[1] }));
   }
 
-  const inativo = useInatividade(sessao.tempos.inatividadeMs || 45_000, true);
+  const inativo = useInatividade(sessao.tempos.inatividadeMs || 45_000, !cumpriu);
   useEffect(() => {
     if (inativo) telemetria.inatividade("lupa");
   }, [inativo]);
@@ -204,16 +229,42 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
   const vista = s
     ? lente(s.foto.recorte, { w: s.foto.caixa.w, h: s.foto.caixa.h }, { x: centro.x - s.foto.caixa.x, y: centro.y - s.foto.caixa.y }, RAIO, AMPLIACAO)
     : null;
-  const falta = fotos.find((f) => f.id === fotoQueFalta(lupaRef.current, piso));
+  /* O objeto sob a lente ainda não achado: a lente brilha e o anel enche. */
+  const procurando = sobreAlvo && !achados.includes(sobreAlvo) ? sobreAlvo : null;
+  const fracao = procurando ? Math.min(1, msDo(lupa, procurando) / piso) : 0;
+  const naCaixa = (f: FotoNaTela, a: Alvo) => ({
+    x: f.caixa.x + ((a.x - f.recorte.x) / f.recorte.w) * f.caixa.w,
+    y: f.caixa.y + ((a.y - f.recorte.y) / f.recorte.h) * f.caixa.h,
+    r: Math.max(22, (a.r / f.recorte.w) * f.caixa.w),
+  });
+  /* A mãozinha, depois do "OLHE O FUNDO": no objeto que falta, na primeira foto. */
+  const falta = alvoQueFalta(lupa, piso);
+  const alvoDaMao = alertas > 0 && !alertaAberto && falta ? alvos.find((a) => a.id === falta) : undefined;
+  const fotoDaMao = fotos[0];
 
   return (
     <section className="bancada">
-      <InlineHint className="bancada__objetivo">{textoDe(sessao.textos, "e1", "card")}</InlineHint>
-      {alertas > 0 ? (
-        <InlineHint key={alertas} tone="friction" announce className="bancada__alerta">
-          {textoDe(sessao.textos, "e2", "alerta")}
-        </InlineHint>
-      ) : null}
+      <header className="cabecalho-da-tela">
+        <h1 className="titulo-da-tela">
+          {cumpriu ? (
+            <>
+              {textoDe(sessao.textos, "e2", "completa")} <span aria-hidden="true">✅</span>
+            </>
+          ) : (
+            textoDe(sessao.textos, "e2", "titulo")
+          )}
+        </h1>
+        <p className={`instrucao${alvoDaMao ? " instrucao--dica" : ""}`} aria-live="polite">
+          {cumpriu
+            ? textoDe(sessao.textos, "e2", "completaTexto")
+            : alvoDaMao
+              ? textoDe(sessao.textos, "e2", "mao")
+              : textoDe(sessao.textos, "e2", "instrucao")}
+        </p>
+        <BadgeUnv variant="neutral" className="contador" aria-live="polite">
+          {preencher(textoDe(sessao.textos, "e2", "contador"), { n: String(achados.length) })}
+        </BadgeUnv>
+      </header>
 
       <div
         ref={areaRef}
@@ -236,41 +287,38 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
               src={src}
               alt={`${f.rotulo}. ${cena.fotos.find((x) => x.id === f.id)?.acao ?? ""}`}
               janela={f.recorte}
-              className="bancada__foto"
+              className={`bancada__foto${cumpriu ? " bancada__foto--completa" : ""}`}
               style={{ left: f.caixa.x, top: f.caixa.y, width: f.caixa.w, height: f.caixa.h }}
-            >
-              {fundoAceso === f.id ? (
-                <span
-                  className="pulso-do-fundo"
-                  aria-hidden="true"
-                  style={{
-                    left: `${((cena.fundo.x - f.recorte.x) / f.recorte.w) * 100}%`,
-                    top: `${((cena.fundo.y - f.recorte.y) / f.recorte.h) * 100}%`,
-                    width: `${(cena.fundo.w / f.recorte.w) * 100}%`,
-                    height: `${(cena.fundo.h / f.recorte.h) * 100}%`,
-                  }}
-                />
-              ) : null}
-            </Janela>
+            />
           </div>
         ))}
 
-        {alertas > 0 && falta ? (
-          <span
-            key={`mao-${alertas}`}
-            className="bancada__mao"
-            style={{
-              left: falta.caixa.x + ((cena.fundo.x + cena.fundo.w / 2 - falta.recorte.x) / falta.recorte.w) * falta.caixa.w,
-              top: falta.caixa.y + ((cena.fundo.y + cena.fundo.h / 2 - falta.recorte.y) / falta.recorte.h) * falta.caixa.h,
-            }}
-          >
+        {/* O círculo dourado nos objetos já achados, nas duas fotos. */}
+        {fotos.flatMap((f) =>
+          alvos
+            .filter((a) => achados.includes(a.id))
+            .map((a) => {
+              const q = naCaixa(f, a);
+              return (
+                <span
+                  key={`${f.id}-${a.id}`}
+                  className="achado-na-lupa"
+                  aria-hidden="true"
+                  style={{ left: q.x - q.r, top: q.y - q.r, width: q.r * 2, height: q.r * 2 }}
+                />
+              );
+            }),
+        )}
+
+        {alvoDaMao && fotoDaMao ? (
+          <span key={`mao-${alertas}`} className="bancada__mao" style={{ left: naCaixa(fotoDaMao, alvoDaMao).x, top: naCaixa(fotoDaMao, alvoDaMao).y }}>
             <GestureHint gesture="tap" iterations={3} />
           </span>
         ) : null}
 
         {area.w > 0 ? (
           <div
-            className="lupa"
+            className={`lupa${procurando ? " lupa--brilhando" : ""}${sobreAlvo && achados.includes(sobreAlvo) ? " lupa--achou" : ""}`}
             role="img"
             aria-roledescription={ROTULOS.lupa}
             aria-label={ROTULOS.lupaAria}
@@ -289,13 +337,45 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
             ) : null}
           </div>
         ) : null}
+
+        {/* O anel do tempo: enche em 3 s enquanto a lente fica sobre o objeto. */}
+        {procurando ? (
+          <svg
+            className="anel-do-tempo"
+            width={ANEL * 2 + 8}
+            height={ANEL * 2 + 8}
+            style={{ left: centro.x - ANEL - 4, top: centro.y - ANEL - 4 }}
+            role="progressbar"
+            aria-label={ROTULOS.anel(Math.round(fracao * 100))}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(fracao * 100)}
+          >
+            <circle className="anel-do-tempo__trilho" cx={ANEL + 4} cy={ANEL + 4} r={ANEL} />
+            <circle
+              className="anel-do-tempo__progresso"
+              cx={ANEL + 4}
+              cy={ANEL + 4}
+              r={ANEL}
+              strokeDasharray={VOLTA}
+              strokeDashoffset={VOLTA * (1 - fracao)}
+              transform={`rotate(-90 ${ANEL + 4} ${ANEL + 4})`}
+            />
+          </svg>
+        ) : null}
+        {procurando ? (
+          <p className="segure" style={{ left: centro.x, top: centro.y + ANEL + 8 }}>
+            {textoDe(sessao.textos, "e2", "segure")}
+          </p>
+        ) : null}
+
         <span className="so-leitor" aria-live="polite">
-          {fotos.find((f) => f.id === sobre)?.rotulo ?? ""}
+          {fotos.find((f) => f.id === sobreFoto)?.rotulo ?? ""}
         </span>
       </div>
 
       <div className="bancada__acoes">
-        {inativo ? <Personagem quem="bento" fala={textoDe(sessao.textos, "e2", "inatividade")} animado anunciar /> : null}
+        {inativo ? <Personagem fala={textoDe(sessao.textos, "e2", "inatividade")} animado anunciar /> : null}
         <ButtonUnv
           size="lg"
           block
@@ -306,6 +386,16 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
           {ROTULOS.avancar}
         </ButtonUnv>
       </div>
+
+      <Aviso
+        aberto={alertaAberto}
+        icone="search"
+        titulo={textoDe(sessao.textos, "e2", "alerta")}
+        texto={textoDe(sessao.textos, "e2", "alertaTexto")}
+        acao={textoDe(sessao.textos, "e2", "voltar")}
+        aoAgir={() => setAlertaAberto(false)}
+        aoFechar={() => setAlertaAberto(false)}
+      />
     </section>
   );
 }

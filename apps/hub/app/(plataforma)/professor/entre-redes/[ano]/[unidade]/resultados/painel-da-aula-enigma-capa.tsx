@@ -21,12 +21,9 @@ import {
 } from "@edu/ui/ds";
 import { AVISO_POR_COMPUTADOR, chaveDaLinha } from "@/lib/equipe-no-painel";
 import {
-  ROTULO_DO_CRACHA,
   ROTULO_DO_ELEMENTO,
   ROTULO_DO_MOTIVO,
   ROTULO_DO_PASSO,
-  ROTULO_DO_VOTO,
-  VOTOS,
   erroDaApi,
   mudouAEvidencia,
   rotuloDaFase,
@@ -43,15 +40,15 @@ const SEM_REDE = "A conexão falhou. Confira a internet e tente de novo.";
 const INTERVALO_MS = 5_000;
 
 /**
- * A CONDUÇÃO AO VIVO de O Enigma da Capa da Rádio (ADR-184): quantas crianças
+ * A CONDUÇÃO AO VIVO de O Enigma da Capa da Rádio (ADR-184, ADR-186): quantas crianças
  * aguardam a virada, o botão LIBERAR VIRADA e a folha por criança.
  *
  * **A virada é GERAL da turma e só anda para a frente** (decisão do Lucas,
  * 2026-10-26): um toque, com confirmação, e quem já publicou a capa sai do
  * AGUARDE O PROFESSOR para a comparação. Quem publicar depois passa direto.
  *
- * A FOLHA é o que cada criança FEZ — crachá, lupa, capa, objetos iguais, o que
- * marcou fora, par, segunda foto, voto —, para a conversa individual. O nível
+ * A FOLHA é o que cada criança FEZ — lupa, capa, objetos iguais, o que marcou
+ * fora, par, segunda foto —, pelo NOME, para a conversa individual. O nível
  * de cada habilidade não está aqui: é do painel de habilidades, que o polling
  * mantém em dia (`router.refresh()` quando `mudouAEvidencia`).
  */
@@ -133,16 +130,10 @@ export function PainelDaAulaEnigmaCapa({
       minWidth: 180,
       render: (_, linha) =>
         linha.equipe ? (
-          <EquipeNaLinha equipe={linha.equipe} representante={linha.nome} entrou={linha.cracha !== null} />
+          <EquipeNaLinha equipe={linha.equipe} representante={linha.nome} entrou={linha.passo !== "inicio"} />
         ) : (
           <span className="font-semibold text-unooria-neutral-950">{linha.nome}</span>
         ),
-    },
-    {
-      key: "cracha",
-      title: "Crachá",
-      minWidth: 140,
-      render: (_, linha) => (linha.cracha ? `${ROTULO_DO_CRACHA[linha.cracha].emoji} ${ROTULO_DO_CRACHA[linha.cracha].rotulo}` : "—"),
     },
     {
       key: "passo",
@@ -153,22 +144,16 @@ export function PainelDaAulaEnigmaCapa({
           <Tag variant="warning" size="sm" pill>
             Aguarda a virada
           </Tag>
-        ) : linha.cracha === null && linha.passo === "cracha" ? (
+        ) : linha.passo === "inicio" ? (
           "Ainda não entrou"
         ) : (
           ROTULO_DO_PASSO[linha.passo]
         ),
     },
-    { key: "lupa", title: "Lupa (E2)", minWidth: 170, render: (_, linha) => textoDaLupa(linha) },
+    { key: "lupa", title: "Lupa nos 2 objetos (E2)", minWidth: 220, render: (_, linha) => textoDaLupa(linha) },
     { key: "capa", title: "Capa (E3)", minWidth: 220, render: (_, linha) => textoDaCapa(linha) },
     { key: "invariantes", title: "2 coisas iguais (E4)", minWidth: 190, render: (_, linha) => textoDosInvariantes(linha) },
-    {
-      key: "fora",
-      title: "Marcou fora da foto",
-      minWidth: 200,
-      render: (_, linha) =>
-        linha.fora ? (linha.fora.itens.length > 0 ? linha.fora.itens.map((i) => i.nome).join(", ") : "Nada marcado") : "—",
-    },
+    { key: "fora", title: "Marcou fora da foto (E4)", minWidth: 220, render: (_, linha) => textoDoFora(linha) },
     {
       key: "par",
       title: "Par (E5)",
@@ -185,7 +170,6 @@ export function PainelDaAulaEnigmaCapa({
           ? `${ROTULO_DO_ELEMENTO[linha.segundaFoto.elemento]} · ${linha.segundaFoto.essencialVisivel ? "a leitura aparece" : "a leitura ficou fora"}`
           : "—",
     },
-    { key: "voto", title: "A horta (E6)", minWidth: 150, render: (_, linha) => (linha.voto ? ROTULO_DO_VOTO[linha.voto] : "—") },
   ];
 
   return (
@@ -196,17 +180,13 @@ export function PainelDaAulaEnigmaCapa({
             title="Condução da Turma — O Enigma da Capa da Rádio"
             description={`${rotuloDaFase(painel.fase)}${painel.atividade ? ` · ${painel.atividade.espaco}` : ""}`}
           />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <MetricCard title="Entraram" value={`${r.entraram} de ${r.unidades}`} />
             <MetricCard title="Publicaram a capa" value={`${r.publicaram}`} />
             <MetricCard title="Aguardam a virada" value={virada ? "—" : `${r.aguardandoVirada}`} />
+            <MetricCard title="Marcaram algo fora da foto" value={`${r.marcaramFora}`} />
             <MetricCard title="Concluíram" value={`${r.concluiram}`} />
           </div>
-          {virada ? (
-            <p className="text-[14px] text-unooria-neutral-800" data-votos>
-              <strong>A HORTA ACABOU?</strong> {VOTOS.map((v) => `${ROTULO_DO_VOTO[v]} ${r.votos[v]}`).join(" · ")}
-            </p>
-          ) : null}
           {podeConduzir ? (
             <div className="flex flex-col items-start gap-2" data-botoes-da-aula>
               <Button variant="primary" size="md" isDisabled={virada || !painel.atividade} onClick={() => setConfirmando(true)} data-acao="liberar-virada">
@@ -240,9 +220,6 @@ export function PainelDaAulaEnigmaCapa({
               <li key={p}>{p}</li>
             ))}
           </ol>
-          <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
-            <strong>Depois da horta:</strong> {painel.roteiro.ponte}
-          </p>
         </div>
       </Card>
 
@@ -298,11 +275,20 @@ export function PainelDaAulaEnigmaCapa({
   );
 }
 
+/** O tempo com a lupa sobre cada um dos dois objetos do fundo (o piso é 3 s em cada) e os alertas OLHE O FUNDO. */
 function textoDaLupa(l: LinhaDoPainel): string {
   if (!l.lupa) return "—";
-  const tempos = `${segundosDaLupa(l.lupa.foto1Ms)} / ${segundosDaLupa(l.lupa.foto2Ms)}`;
+  const tempos = `objeto 1: ${segundosDaLupa(l.lupa.alvo1Ms)} · objeto 2: ${segundosDaLupa(l.lupa.alvo2Ms)}`;
   const alertas = l.lupa.alertas === 0 ? "sem alerta" : l.lupa.alertas === 1 ? "1 alerta" : `${l.lupa.alertas} alertas`;
   return `${tempos} · ${alertas}${l.lupa.liberada ? "" : " · explorando"}`;
+}
+
+/** "Marcou X de Y" (Y = o que ficou fora de verdade), com os nomes do que marcou. */
+function textoDoFora(l: LinhaDoPainel): string {
+  if (!l.fora) return "—";
+  const n = l.fora.itens.length;
+  const marcou = `marcou ${n} de ${l.fora.possiveis}`;
+  return n > 0 ? `${marcou}: ${l.fora.itens.map((i) => i.nome).join(", ")}` : marcou;
 }
 
 function textoDaCapa(l: LinhaDoPainel): string {

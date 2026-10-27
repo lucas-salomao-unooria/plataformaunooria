@@ -3965,10 +3965,11 @@ model Exp02em1bSessao {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// exp02ef1b — O Enigma da Capa da Rádio (ADR-184). A missão do 2º ano EF,
-// unidade 1, no Unoovista: a capa da rádio é UM recorte da panorâmica, e a
-// virada (geral da turma) revela a outra foto do mesmo minuto.
-// CHECKs, índices parciais, RLS e GRANT na migration `20261026120000_exp02ef1b_enigma_capa`.
+// exp02ef1b — O Enigma da Capa da Rádio (ADR-184; 2.0.0, ADR-186). A missão
+// do 2º ano EF, unidade 1, no Unoovista: a capa da rádio é UM recorte da
+// panorâmica, e a virada (geral da turma) revela a outra foto do mesmo minuto.
+// CHECKs, índices parciais, RLS e GRANT nas migrations
+// `20261026120000_exp02ef1b_enigma_capa` e `20261026210000_exp02ef1b_prototipo`.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// O pacote da cena — a ATIVIDADE da evidência. Rascunho (`aprovado_em` nulo,
@@ -4057,9 +4058,9 @@ model Exp02ef1bGateHistorico {
   @@map("exp02ef1b_gates_historico")
 }
 
-/// A sessão do estudante por (pacote, rodada). Nasce no CRACHÁ (E1). O PASSO
-/// não é coluna: sai dos carimbos e da fase (`regras/passos.ts`). Cada etapa só
-/// depois da anterior (CHECKs de ordem).
+/// A sessão do estudante por (pacote, rodada). Nasce no ABRIR BANCADA (E1). O
+/// PASSO não é coluna: sai dos carimbos e da fase (`regras/passos.ts`). Cada
+/// etapa só depois da anterior (CHECKs de ordem).
 model Exp02ef1bSessao {
   escolaId    String @map("escola_id")
   estudanteId String @map("estudante_id") @db.Uuid
@@ -4069,14 +4070,11 @@ model Exp02ef1bSessao {
   turmaId     String @map("turma_id") @db.Uuid
 
   entrouEm DateTime @default(now()) @map("entrou_em") @db.Timestamptz(6)
-  /// O crachá de repórter (E1, CHECK).
-  cracha   String
 
-  /// A lupa (E2): o MÁXIMO relatado de cada foto, limitado ao tempo desde a entrada.
-  lupaFoto1Ms    Int       @default(0) @map("lupa_foto1_ms")
-  lupaFoto2Ms    Int       @default(0) @map("lupa_foto2_ms")
-  lupaFundo1     Boolean   @default(false) @map("lupa_fundo1")
-  lupaFundo2     Boolean   @default(false) @map("lupa_fundo2")
+  /// A lupa (E2): o MÁXIMO relatado do tempo com a lente sobre cada um dos dois
+  /// objetos do fundo (`inv-1`, `inv-2`), limitado ao tempo desde a entrada.
+  lupaAlvo1Ms    Int       @default(0) @map("lupa_alvo1_ms")
+  lupaAlvo2Ms    Int       @default(0) @map("lupa_alvo2_ms")
   /// Tentativas de avançar sem o piso ("OLHE O FUNDO") — a régua da EF02CO05.
   lupaAlertas    Int       @default(0) @map("lupa_alertas") @db.SmallInt
   lupaLiberadaEm DateTime? @map("lupa_liberada_em") @db.Timestamptz(6)
@@ -4112,17 +4110,16 @@ model Exp02ef1bSessao {
   parCorreto Boolean?  @map("par_correto")
   parEm      DateTime? @map("par_em") @db.Timestamptz(6)
 
-  /// E5, a segunda foto (só painel).
+  /// E5, a segunda foto (só painel). Ela CONCLUI a missão.
   segundaElemento         String?   @map("segunda_elemento")
   segundaDeslocamento     Json?     @map("segunda_deslocamento")
   segundaEssencialVisivel Boolean?  @map("segunda_essencial_visivel")
   segundaEm               DateTime? @map("segunda_em") @db.Timestamptz(6)
 
-  /// E6 — o LATCH 2: o voto conclui (CHECK: voto e conclusão andam juntos).
-  transferenciaVoto String?   @map("transferencia_voto")
-  concluidoEm       DateTime? @map("concluido_em") @db.Timestamptz(6)
+  /// Gravado junto com `segundaEm` (CHECK: a conclusão só depois da segunda foto).
+  concluidoEm DateTime? @map("concluido_em") @db.Timestamptz(6)
 
-  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+  versaoInstrumento String @default("2.0.0") @map("versao_instrumento")
 
   criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)

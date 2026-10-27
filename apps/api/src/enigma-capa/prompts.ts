@@ -30,15 +30,17 @@ Você escreve a cena de uma missão de leitura de imagens: a rádio da escola pu
 
 A cena é UM espaço da escola (biblioteca, horta, museu, quadra, refeitório, laboratório...) com DUAS atividades opostas acontecendo AO MESMO TEMPO, a poucos passos uma da outra:
 - "atividade1" fica na metade ESQUERDA do espaço; "atividade2" na metade DIREITA. As duas são atividades reais e boas da escola, mas dão impressões opostas (ex.: leitura em silêncio × contação de histórias com fantoches; canteiro de alfaces × adubação com minhocas);
-- na parede (ou no fundo) do MEIO há DOIS objetos fixos e fáceis de reconhecer ("invariantes"): objetos que não mudam de lugar (um relógio de parede, um cartaz colorido sem texto, um espantalho, uma janela de madeira), cada um de uma cor diferente.
+- na parede (ou no fundo) do MEIO há DOIS objetos fixos e fáceis de reconhecer ("invariantes"): objetos que não mudam de lugar (um relógio de parede, um cartaz colorido sem texto, um espantalho, uma janela de madeira), GRANDES, cada um de uma cor forte e diferente, que contraste com a parede lisa — e SOZINHOS naquela parede.
+
+A cena é LIMPA, para uma criança de 7 anos achar tudo de primeira: paredes lisas, poucos objetos, nada de decoração, estantes cheias, enfeites ou detalhes de fundo; cada atividade com no máximo 2 crianças, grande e clara.
 
 Para cada atividade escreva:
 - "acao": o que a foto mostra, em até 6 palavras ("Mesa de leitura em silêncio");
 - "visitante": a fala curta de quem vê só aquela foto, EXATAMENTE no modelo "Na foto, vi …!" ("Na foto, vi crianças lendo!"), até ${VISITANTE_MAX_CARACTERES} caracteres;
 - "selo": a legenda da foto em CAIXA ALTA, até ${SELO_MAX_PALAVRAS} palavras ("SILÊNCIO PARA LER"), com um emoji;
-- "descricao": como desenhar essa metade da cena (uma frase).
+- "descricao": como desenhar essa metade da cena (uma frase), com no máximo 2 crianças e poucos objetos.
 "espaco" é o nome do espaço ("Biblioteca Escolar"); "espacoCurto" é o nome com artigo, em minúsculas ("a biblioteca"); "alt" descreve a cena INTEIRA numa frase, para quem não enxerga.
-Cada invariante tem "nome" em CAIXA ALTA, curto ("RELÓGIO", "CARTAZ AMARELO") e "descricao" de como desenhá-lo.
+Cada invariante tem "nome" em CAIXA ALTA, curto ("RELÓGIO", "CARTAZ AMARELO") e "descricao" de como desenhá-lo: grande, de uma cor forte, sem texto escrito.
 
 Regras gerais: português do Brasil; linguagem simples, para uma criança de 7 anos; nenhuma pessoa, marca ou escola real; nada de violência, medo, comida que uma criança não possa comer, política ou religião; nenhuma das duas atividades é "errada".`;
 
@@ -183,14 +185,21 @@ const limpo = (t: string) => t.replace(/<<<|>>>/g, "").replace(/\s+/g, " ").trim
  * O PEDIDO DE IMAGEM (16:9). "Ilustração", NUNCA "foto" (ADR-178: a palavra
  * "foto" puxa o modelo para o fotorrealismo e para rostos de criança
  * identificáveis). O layout é o que a geometria da cena gerada supõe.
+ *
+ * A cena é LIMPA (ADR-186): paredes lisas, poucos objetos, as duas atividades
+ * grandes e claras (no máximo 2 crianças cada) e os dois objetos da parede do
+ * meio GRANDES, de cor forte e contrastante, sozinhos naquela parede — a
+ * criança de 7 anos acha com a lupa o que se destaca, não o que se esconde.
  */
 export function pedidoDeImagem(g: CenaGerada): string {
   const [i1, i2] = g.invariantes;
-  return `Ilustração digital colorida, plano aberto e panorâmico, proporção 16:9, de ${limpo(g.espaco)} de uma escola, no mesmo instante, com luz clara do começo da tarde.
+  return `Ilustração digital colorida e LIMPA, plano aberto e panorâmico, proporção 16:9, de ${limpo(g.espaco)} de uma escola, no mesmo instante, com luz clara do começo da tarde.
 
-Metade ESQUERDA da imagem: ${limpo(g.atividade1.descricao)}
-Metade DIREITA da imagem: ${limpo(g.atividade2.descricao)}
-Exatamente no CENTRO da imagem, na parede (ou no fundo) entre as duas metades, bem visíveis e separados um do outro: ${limpo(i1?.descricao ?? "")}; e ${limpo(i2?.descricao ?? "")}. Os dois objetos ficam no terço central da largura, na metade de cima da imagem, e não se repetem em nenhum outro lugar.
+Metade ESQUERDA da imagem: ${limpo(g.atividade1.descricao)} No máximo 2 crianças, grandes e bem visíveis.
+Metade DIREITA da imagem: ${limpo(g.atividade2.descricao)} No máximo 2 crianças, grandes e bem visíveis.
+Exatamente no CENTRO da imagem, numa parede lisa entre as duas metades, GRANDES, bem visíveis e separados um do outro: ${limpo(i1?.descricao ?? "")}; e ${limpo(i2?.descricao ?? "")}. Os dois objetos têm cores fortes que contrastam com a parede lisa, ficam no terço central da largura, na metade de cima da imagem, SOZINHOS naquela parede, e não se repetem em nenhum outro lugar.
+
+Cena simples: paredes lisas, de uma cor só; poucos objetos; nada de decoração, enfeites, estantes cheias, quadros ou detalhes de fundo além dos dois objetos do centro.
 
 Regras: crianças genéricas e estilizadas, de costas, de perfil ou de longe, sem rosto identificável; nenhuma pessoa real; nenhum texto escrito, letra ou número em lugar nenhum (nem em cartaz, placa ou livro); nenhum logotipo, marca ou aplicativo; as duas metades contínuas, como um único ambiente, sem moldura nem divisão.`;
 }

@@ -1077,7 +1077,7 @@ de foco, então os \emph{handlers} de fechar continuam estáveis
 (\cd{useCallback}). As duas compensações de CSS da seção antiga eram código
 morto e saíram.
 
-\subsection{Lacunas abertas em \cd{unoovista} (exp02ef1b 1.0.0)}
+\subsection{Lacunas abertas em \cd{unoovista} (exp02ef1b 2.0.0)}
 \label{sec:ds-lacunas-exp02ef1b}
 
 O Enigma da Capa da Rádio (\adrr{ADR-184}) é a primeira missão dos anos
@@ -1095,15 +1095,20 @@ Janela (recorte por CSS, CARREGANDO CAPA\ldots{} e TENTAR DE NOVO) &
   INTEIRA\\
 \zebra Moldura de tamanho fixo (só desloca, sem zoom) &
   \arq{componentes/\B{}MolduraFixa.tsx} & não há enquadramento na seção\\
-Lupa circular 2$\times$, com o pulso azul do fundo & \arq{telas/\B{}Bancada.tsx}
-  & não existe em seção alguma\\
-\zebra Tela dividida, \emph{slider} de revelação, linhas douradas e marcas &
-  \arq{telas/\B{}Virada.tsx} & idem; o \emph{slider} é o
-  \cd{<input type="range">} nativo\\
+Lupa circular 2$\times$, com o brilho sobre o objeto e o anel de 3\,s &
+  \arq{telas/\B{}Bancada.tsx} & não existe em seção alguma\\
+\zebra Tela dividida, linhas douradas, \emph{slider} de COMPARAÇÃO (alça no
+  centro, \cd{role="slider"}) e o alfinete arrastável & \arq{telas/\B{}Virada.tsx}
+  & idem; e a seção não tem glifo de alfinete (o alfinete é o emoji do sistema, como no
+  protótipo)\\
+Aviso de UMA ação (OLHE O FUNDO, CAPA PUBLICADA!, AGUARDE O PROFESSOR) &
+  \arq{componentes/\B{}Aviso.tsx} & o \cd{ConfirmDialog} tem sempre duas
+  ações; o aviso é o \cd{BottomSheet} modal da seção, controlado\\
 Cartas de tamanho fixo arrastáveis & \arq{telas/\B{}Explicar.tsx} & não há
   carta arrastável\\
-\zebra Bento e Iara & \arq{componentes/\B{}Personagem.tsx} & não há arte dos
-  dois; \cd{AvatarUnv} com iniciais e \cd{MessageBubble}\\
+\zebra O Bento só como balão & \arq{componentes/\B{}Personagem.tsx} & não há
+  arte dele; o \cd{MessageBubble} com o nome. O retrato com iniciais da 1.0.0
+  saiu na 2.0.0 (\adrr{ADR-186}): parecia avatar do estudante\\
 Cor de celebração (dourado) e de ajuda (amarelo) &
   \arq{estilos/\B{}globals.css} & a seção não publica essas cores
   (\cd{--exp-dourado}, \cd{--exp-amarelo})\\

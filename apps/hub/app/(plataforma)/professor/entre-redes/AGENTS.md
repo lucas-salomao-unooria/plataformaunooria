@@ -236,6 +236,10 @@ espelho `lib/enigma-capa-tipos.ts`. O `banco-padrao` (Biblioteca, Horta, Museu) 
 ar** num toque. Na cena da IA o professor marca os dois objetos iguais TOCANDO na imagem (a IA não
 devolve coordenada): os dois toques vão juntos em `rascunho/invariantes`. A cena pronta é arquivo do
 bundle: a base vem de `lib/bundle-da-experiencia.ts`, no servidor. LIBERAR VIRADA é um botão só, da turma.
+Desde a 2.0.0 (ADR-186) a folha identifica a criança pelo NOME e mostra a lupa nos 2 objetos e o "fora"
+(`marcaramFora` na lousa); o componente curricular do recorte é a lista `disciplinas` da api (o 2º ano
+inteiro, Computação e "Outro componente"), num `Selection` — o hub não guarda essa lista, só o rótulo
+para o histórico, conferido contra a api em `enigma-capa-tipos.test.ts`.
 
 ## O Assistente Invisível (exp01em1b)
 
