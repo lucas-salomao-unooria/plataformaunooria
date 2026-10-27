@@ -235,7 +235,7 @@ describe("os gestos que vão à api", () => {
     expect(publicar().disabled).toBe(true);
     const fotos = recipiente!.querySelectorAll<HTMLButtonElement>(".decidir__miniatura");
     await act(async () => fotos[1]!.click());
-    expect(texto()).toContain("Arraste a foto");
+    expect(texto()).toContain("Enquadre a foto");
     await act(async () => botao("CONTAÇÃO DE HISTÓRIAS")!.click());
     expect(publicar().disabled).toBe(false);
     expect(texto()).toContain("CAPA PRONTA!");
