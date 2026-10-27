@@ -114,6 +114,22 @@ const GUIAS = [
     bncc: "EF02CO05",
   },
   {
+    rota: "/professor/entre-redes/1-serie/unidade-1/guia",
+    missao: "O Assistente Invisível · 1ª série EM",
+    /* Os dois blocos vivos vêm de `GET /assistente-invisivel/professor/material`:
+       as quatro perguntas do roteiro de debate (one-pager §9a), cada uma no
+       momento dela, com o caso de transferência; e o critério de cada nível das
+       quatro habilidades. A pergunta é conferida pelo texto exato: é a mesma
+       que o painel da aula projeta na Mediação 1. */
+    vivo: [
+      /O roteiro de debate mediado — as quatro perguntas/,
+      /Estudar às 23h45 significa necessariamente que um estudante não tem capacidade/,
+      /Um aplicativo de transporte urbano passou a analisar o modelo do celular/,
+      /O critério de cada nível \(registrado pelo que o estudante faz\)/,
+    ],
+    bncc: "EM13CO20",
+  },
+  {
     rota: "/professor/entre-redes/vila-do-lume/guia",
     missao: "Vila do Lume · transversal",
     vivo: [/não foi um colega de verdade/i],
@@ -152,7 +168,7 @@ await suite(
       "O professor abre o guia na véspera para preparar e na hora para conduzir. Ele é o mesmo " +
       "documento em toda missão — mudam o conteúdo e os blocos que vêm de fonte viva.",
     prova: [
-      "As sete missões desta lista têm guia, e nenhuma cai em 404",
+      "As oito missões desta lista têm guia, e nenhuma cai em 404",
       "As nove seções aparecem na mesma ordem em todas, divididas em quatro tempos (abas)",
       "Cada tempo mostra só as seções dele",
       "Cada guia traz a habilidade da BNCC Computação com o código",
@@ -232,6 +248,30 @@ await suite(
       titulo: "O Enigma da Capa da Rádio: as cenas prontas, com o gabarito",
       mostra: "A Biblioteca, a Horta e o Museu, cada uma com as duas molduras das fotos e os círculos dos dois objetos iguais do fundo.",
       prova: "O bloco é vivo (GET /enigma-capa/professor/material): o professor lê a cena que a turma vai ver, com os alvos que a api usa — e não projeta.",
+    });
+
+    /* A missão da 1ª série (exp01em1b, ADR-185) — tela nova, passo novo: o
+       roteiro de debate com as quatro perguntas, cada uma no momento dela. */
+    await p.goto(`${HUB}/professor/entre-redes/1-serie/unidade-1/guia`, { waitUntil: "domcontentloaded" });
+    await esperarOuFalharCedo(p.locator("h1", { hasText: "Guia da aula" }), p.locator(ALERTA_DE_ERRO), {
+      oQue: "o guia do Assistente Invisível",
+      timeout: 30_000,
+    });
+    const roteiroDoAssistente = p.locator("[data-roteiro-do-assistente]").first();
+    await revelar(p, roteiroDoAssistente);
+    await roteiroDoAssistente.scrollIntoViewIfNeeded();
+    /* `textContent`, não `innerText`: o momento vem em caixa alta por CSS (`uppercase`), e o `innerText` devolve o texto transformado. */
+    const momentos = await roteiroDoAssistente.locator("li").evaluateAll((lis) => lis.map((li) => li.textContent ?? ""));
+    r.exigir(
+      momentos.length === 4 &&
+        momentos.slice(0, 2).every((m) => m.includes("Mediação 1, depois das fichas (Etapa 4)")) &&
+        momentos.slice(2).every((m) => m.includes("Fechamento coletivo (Etapa 6)")),
+      "o guia do Assistente Invisível traz as quatro perguntas do roteiro, duas na Mediação 1 e duas no fechamento",
+    );
+    await r.registrar(p, "guia-do-assistente-roteiro", {
+      titulo: "O Assistente Invisível: o roteiro de debate mediado",
+      mostra: "As quatro perguntas do PO, cada uma com o momento da aula em que entra, e o caso do aplicativo de transporte.",
+      prova: "O bloco é vivo (GET /assistente-invisivel/professor/material): a pergunta do guia é a mesma que o painel da aula projeta.",
     });
 
     await abrirAba(p, "Conduzir");
