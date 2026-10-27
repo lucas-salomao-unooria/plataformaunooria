@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import {
   MISSAO_A_SELECAO,
+  MISSAO_ASSISTENTE_INVISIVEL,
   MISSAO_EFEITO_AMPLIFICADOR,
   MISSAO_ENIGMA_CAPA,
   MISSAO_MANIFESTO_IA,
@@ -15,6 +16,7 @@ import {
 } from "@/lib/entre-redes/catalogo";
 
 import { ResultadosASelecao } from "./resultados-a-selecao";
+import { ResultadosAssistenteInvisivel } from "./resultados-assistente-invisivel";
 import { ResultadosEfeitoAmplificador } from "./resultados-efeito-amplificador";
 import { ResultadosEnigmaCapa } from "./resultados-enigma-capa";
 import { ResultadosManifestoIa } from "./resultados-manifesto-ia";
@@ -87,6 +89,9 @@ export default async function ResultadosPage({
   }
   if (missao.expId === MISSAO_ENIGMA_CAPA.expId) {
     return <ResultadosEnigmaCapa missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} separar={separar} />;
+  }
+  if (missao.expId === MISSAO_ASSISTENTE_INVISIVEL.expId) {
+    return <ResultadosAssistenteInvisivel missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} separar={separar} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();

@@ -139,7 +139,15 @@ function Pares({ ctx }: { ctx: Contexto }) {
 
   return (
     <section ref={ref} className="explicar">
-      <h1 className="instrucao">{textoDe(sessao.textos, "e5", "pares")}</h1>
+      <h1 className="instrucao" aria-live="polite">
+        {par.length === 2 ? (
+          <>
+            {textoDe(sessao.textos, "e5", "parFormado")} <span aria-hidden="true">✅</span>
+          </>
+        ) : (
+          textoDe(sessao.textos, "e5", "pares")
+        )}
+      </h1>
       <div className="cartas">
         <div className={`cartas__par${par.length === 2 ? " cartas__par--completo" : ""}`}>{ordem.slice(0, 2).map(carta)}</div>
         <div className="cartas__resto">{ordem.slice(2).map(carta)}</div>

@@ -1,5 +1,6 @@
 import type { CoberturasDaTurma } from "../a-selecao-tipos";
 import type { PacotesDaTurmaEfeito } from "../efeito-amplificador-tipos";
+import type { PacotesDaTurmaAssistente } from "../assistente-invisivel-tipos";
 import type { PacotesDaTurmaEnigma } from "../enigma-capa-tipos";
 import type { PacotesDaTurma } from "../jornal-escola-tipos";
 import type { PacotesDoJuri } from "../juri-estadual-tipos";
@@ -20,7 +21,7 @@ import type { PacotesDaTurmaQuemMandou } from "../quem-mandou-tipos";
  */
 
 /** As missões com atividade — o mesmo par de `equipes/regras.ts#EXPERIENCIAS_COM_ATIVIDADE` na api. */
-export const MISSOES_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b"] as const;
+export const MISSOES_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b"] as const;
 export type MissaoComAtividade = (typeof MISSOES_COM_ATIVIDADE)[number];
 
 export function temAtividades(expId: string | null | undefined): expId is MissaoComAtividade {
@@ -118,6 +119,8 @@ export function caminhoDoEmAndamento(expId: MissaoComAtividade, turmaId: string,
       return `/efeito-amplificador/turmas/${t}/pacotes/${a}/em-andamento`;
     case "exp02ef1b":
       return `/enigma-capa/turmas/${t}/pacotes/${a}/em-andamento`;
+    case "exp01em1b":
+      return `/assistente-invisivel/turmas/${t}/pacotes/${a}/em-andamento`;
   }
 }
 
@@ -231,6 +234,21 @@ export function atividadesDoEfeito(p: PacotesDaTurmaEfeito, rotuloDaDisciplina: 
  * (pacote pronto ou gerado com IA).
  */
 export function atividadesDoEnigma(p: PacotesDaTurmaEnigma, rotuloDaDisciplina: (slug: string) => string): AtividadeNaLista[] {
+  return p.historico.map((h) => ({
+    id: h.id,
+    titulo: h.tema,
+    detalhe: [rotuloDaDisciplina(h.disciplina), ORIGEM[h.origem]].join(" · "),
+    estado: h.ativo ? "em-andamento" : "pronta",
+    criadaEm: h.aprovadoEm,
+    rodadas: h.rodadas,
+  }));
+}
+
+/**
+ * O Assistente Invisível (ADR-185): o pacote homologado é a atividade, sem
+ * segunda fase. O título é o tema; a linha de baixo diz a disciplina e a origem.
+ */
+export function atividadesDoAssistente(p: PacotesDaTurmaAssistente, rotuloDaDisciplina: (slug: string) => string): AtividadeNaLista[] {
   return p.historico.map((h) => ({
     id: h.id,
     titulo: h.tema,

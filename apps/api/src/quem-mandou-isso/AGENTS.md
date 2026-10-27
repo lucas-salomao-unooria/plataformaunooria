@@ -141,6 +141,12 @@ histórico; nenhuma rota as escreve.
 - **Termos proibidos no clone**: `atividade`, `gabarito`, `nota`, `exercício`,
   por PALAVRA INTEIRA, sem acento, com plural ("notícia" passa). "Professor"
   fica de fora de propósito: a "Professora Helena" escreve no grupo da turma.
+- **A disciplina cobre o 5º ano inteiro da BNCC, mais Computação**
+  (`componentesDoAno("5EF")` + `computacao`, o padrão da exp02ef1b), e guarda
+  `lingua-inglesa` e `letramento-digital`, que já estavam gravados. O CHECK foi
+  recriado em `20261026230000_componentes_bncc_nas_missoes`; só se
+  ACRESCENTA valor (um CHECK mais estreito quebra a migração com linha
+  antiga), e o teste de regras confere a lista contra o catálogo.
 - **Vocabulário em dois lugares**: disciplina, origem, motivo, condição e fase
   estão no código e nos CHECKs (a condição em DOIS CHECKs: o de `_reflexoes` e
   `exp05ef1b_sessoes_regra_check`, que vale para o robô); a suíte de Postgres

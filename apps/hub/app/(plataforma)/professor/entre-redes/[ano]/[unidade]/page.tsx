@@ -7,6 +7,7 @@ import { LinkButton } from "@/components/link-button";
 import { temAtividades } from "@/lib/entre-redes/atividades";
 import {
   MISSAO_A_SELECAO,
+  MISSAO_ASSISTENTE_INVISIVEL,
   MISSAO_EFEITO_AMPLIFICADOR,
   MISSAO_ENIGMA_CAPA,
   MISSAO_FOTO_CONTA,
@@ -22,6 +23,7 @@ import {
 import { turmaDaConducao } from "@/lib/turmas";
 
 import { MissaoASelecao } from "./missao-a-selecao";
+import { MissaoAssistenteInvisivel } from "./missao-assistente-invisivel";
 import { MissaoEfeitoAmplificador } from "./missao-efeito-amplificador";
 import { MissaoEnigmaCapa } from "./missao-enigma-capa";
 import { MissaoFotoConta } from "./missao-foto-conta";
@@ -142,6 +144,9 @@ export default async function MissaoPage({
   }
   if (missao.expId === MISSAO_ENIGMA_CAPA.expId) {
     return corpo(<MissaoEnigmaCapa ano={ano} missao={comFicha} turma={turma} />);
+  }
+  if (missao.expId === MISSAO_ASSISTENTE_INVISIVEL.expId) {
+    return corpo(<MissaoAssistenteInvisivel ano={ano} missao={comFicha} turma={turma} />);
   }
   /* FALLBACK = INSTANOORIA, e é por isso que ele é perigoso: uma missão
      publicada sem ramo aqui não quebra — ela mostra a tela de OUTRA missão,

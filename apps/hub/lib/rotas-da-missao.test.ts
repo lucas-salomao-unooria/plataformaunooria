@@ -120,6 +120,11 @@ describe("da sala para a missão", () => {
     expect(rotasDaMissao("exp02ef1b")?.guia).toBe("/professor/entre-redes/2-ano/unidade-1/guia");
   });
 
+  test("a 1ª série (O Assistente Invisível) abre a ficha da unidade 1, com guia", () => {
+    expect(rotaDeConducao("exp01em1b", TURMA)).toBe(`/professor/entre-redes/1-serie/unidade-1?turmaId=${TURMA}`);
+    expect(rotasDaMissao("exp01em1b")?.guia).toBe("/professor/entre-redes/1-serie/unidade-1/guia");
+  });
+
   test("missão que o hub não conhece não ganha link", () => {
     expect(rotaDeConducao("exp09ef4b", TURMA)).toBeNull();
   });

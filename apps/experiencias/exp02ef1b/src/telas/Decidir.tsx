@@ -101,6 +101,11 @@ export function Decidir({ ctx, aoPublicar }: { ctx: Contexto; aoPublicar: () => 
       <h1 className="titulo-da-tela">
         {!foto ? textoDe(sessao.textos, "e3", "titulo") : !selo ? textoDe(sessao.textos, "e3", "tituloSelo") : textoDe(sessao.textos, "e3", "tituloPronta")}
       </h1>
+      {foto && selo ? (
+        <p className="instrucao instrucao--confirma" aria-live="polite">
+          {textoDe(sessao.textos, "e3", "prontaTexto")}
+        </p>
+      ) : null}
 
       <div className="decidir__fotos" role="group" aria-label={textoDe(sessao.textos, "e3", "titulo")}>
         {fotos.map((f, i) => (

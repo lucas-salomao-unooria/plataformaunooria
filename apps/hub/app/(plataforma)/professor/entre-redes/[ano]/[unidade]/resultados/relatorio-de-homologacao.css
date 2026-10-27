@@ -1,0 +1,73 @@
+/*
+ * A FOLHA DE IMPRESSÃO do "Exportar Relatório de Homologação Ética"
+ * (exp01em1b, ADR-185; E6-PROF-01). O PDF sai do diálogo de impressão do
+ * navegador ("Salvar como PDF"): não há gerador de PDF no hub.
+ *
+ * Só vale com `html[data-impressao="relatorio-homologacao"]`, que o
+ * `BotaoImprimir` põe durante a impressão e tira no `afterprint`: o CSS
+ * importado por um componente do App Router fica no documento depois da
+ * navegação, e sem a marca o `Ctrl+P` de qualquer outra página sumiria com ela.
+ *
+ * Como o guia (`components/guia/guia.css`), mira classes PRÓPRIAS
+ * (`.relatorio-homologacao`, `.relatorio-fora-do-papel`) — a única exceção é o
+ * contêiner do `ScrollBar` do DS, a mesma que o guia já abre.
+ */
+@media print {
+  /* Fora: tudo o que não é o relatório, nem caminho até ele (o header, as abas, a folha, o zerar). */
+  html[data-impressao="relatorio-homologacao"]
+    body
+    *:not(:has(.relatorio-homologacao)):not(.relatorio-homologacao):not(.relatorio-homologacao *) {
+    display: none !important;
+  }
+
+  /* A aba da aula fica montada com `hidden` quando fechada; impressa a partir dela, abre. */
+  html[data-impressao="relatorio-homologacao"] [hidden]:has(.relatorio-homologacao) {
+    display: block !important;
+  }
+
+  html[data-impressao="relatorio-homologacao"] .relatorio-fora-do-papel {
+    display: none !important;
+  }
+
+  html[data-impressao="relatorio-homologacao"] main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  html[data-impressao="relatorio-homologacao"] .relatorio-homologacao {
+    font-size: 10.5pt;
+    color: #000;
+  }
+
+  html[data-impressao="relatorio-homologacao"] .relatorio-homologacao * {
+    box-shadow: none !important;
+  }
+
+  html[data-impressao="relatorio-homologacao"] .relatorio-homologacao .unooria-scrollbar-container {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /*
+   * A `.tabela-rolavel` (packages/ui/styles/plataforma.css) prende o `<th>` com
+   * `position: sticky` e limita a altura. No papel não há rolagem: o cabeçalho
+   * grudado saía NO MEIO da tabela de níveis, sobre uma linha, e deixava uma
+   * linha vazia no topo (visto no print da e2e `estudante/16`). Volta ao fluxo,
+   * e o `table-header-group` o repete no topo de cada folha.
+   */
+  html[data-impressao="relatorio-homologacao"] .relatorio-homologacao .tabela-rolavel {
+    max-height: none !important;
+  }
+
+  html[data-impressao="relatorio-homologacao"] .relatorio-homologacao .tabela-rolavel thead {
+    display: table-header-group;
+  }
+
+  html[data-impressao="relatorio-homologacao"] .relatorio-homologacao .tabela-rolavel thead th {
+    position: static !important;
+  }
+
+  html[data-impressao="relatorio-homologacao"] .relatorio-homologacao tr {
+    break-inside: avoid;
+  }
+}

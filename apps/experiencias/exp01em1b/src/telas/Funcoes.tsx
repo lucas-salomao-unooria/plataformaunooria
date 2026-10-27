@@ -1,0 +1,65 @@
+import { useState } from "react";
+import { Button, Collapse } from "@edu/ui/ds";
+import { Casca } from "../componentes/Casca";
+import { PreviaDoAssistente } from "../componentes/PecasDoAssistente";
+import type { Contexto } from "../contexto";
+import { api } from "../lib/api";
+import { TEXTOS } from "../lib/textos";
+import { FUNCOES, type Funcao } from "../lib/tipos";
+
+/**
+ * E2-ALU-01 — Navegar: as três funções do assistente em `Collapse`, cada uma
+ * com a descrição LONGA e a prévia estática no UnooriaAI (a peça do clone,
+ * `PreviaDoAssistente`). A função vista ganha "✓" no título.
+ *
+ * "Ir para Bateria de Testes" só acende depois de pelo menos UMA função
+ * expandida (recolhido → expandido → habilitado). Com equipe, a mesma regra.
+ */
+export function Funcoes({ ctx }: { ctx: Contexto }) {
+  const { estado, sessao, executar } = ctx;
+  const [abertas, setAbertas] = useState<Set<Funcao>>(() => new Set(estado.funcoesAbertas));
+  const [enviando, setEnviando] = useState(false);
+
+  function alternar(funcao: Funcao, aberta: boolean) {
+    if (!aberta) return;
+    setAbertas((atual) => (atual.has(funcao) ? atual : new Set(atual).add(funcao)));
+  }
+
+  async function ir() {
+    setEnviando(true);
+    await executar(() => api.navegar(FUNCOES.filter((f) => abertas.has(f))), "navegar");
+    setEnviando(false);
+  }
+
+  return (
+    <Casca etapas={{ atual: 2, janela: [1, 2, 3, 4] }} equipe={estado.equipe}>
+      <p className="escola__instrucao">{TEXTOS.e2.instrucao}</p>
+      <div className="escola__lista">
+        {FUNCOES.map((f) => (
+          <Collapse
+            key={f}
+            variant="bordered"
+            size="md"
+            theme="light"
+            titleAs="h2"
+            title={abertas.has(f) ? `${TEXTOS.e2.titulos[f]} ✓` : TEXTOS.e2.titulos[f]}
+            onToggle={(aberta) => alternar(f, aberta)}
+          >
+            <p className="escola__texto">{TEXTOS.e2.descricoes[f]}</p>
+            <PreviaDoAssistente funcao={f} conteudo={sessao.pacote?.conteudo ?? null} rotulo={TEXTOS.e2.previa[f]} />
+          </Collapse>
+        ))}
+      </div>
+      <Button
+        variant="primary"
+        size="lg"
+        fullWidth
+        disabled={abertas.size === 0}
+        isLoading={enviando || ctx.naFila("navegar")}
+        onClick={() => void ir()}
+      >
+        {TEXTOS.e2.ir}
+      </Button>
+    </Casca>
+  );
+}

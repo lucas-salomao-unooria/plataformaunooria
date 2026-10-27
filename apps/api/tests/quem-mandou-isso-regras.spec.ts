@@ -1,8 +1,10 @@
+import { componentePorSlug, componentesDoAno } from "../src/curriculo/componentes";
 import { colapsarEmUnidades, type EquipeDoMapa } from "../src/equipes/regras";
 import { FICHA_EXP05EF1B } from "../src/evidencias/fichas/exp05ef1b";
 import { CHAVES_REDIGIDAS } from "../src/observabilidade/redaction";
 import {
   CALLBACK_DO_MOTIVO,
+  DISCIPLINAS,
   ENCERRAMENTO_DA_NINA,
   FALA_DO_TIO,
   GRUPO,
@@ -10,6 +12,7 @@ import {
   NINA_ANTES_DO_TEMA,
   NINA_DEPOIS_DO_TEMA,
   PACOTE_PADRAO,
+  ROTULO_DA_DISCIPLINA,
   ROTULO_DO_MOTIVO,
   falaDaNina,
   mensagensDoPadrao,
@@ -882,5 +885,22 @@ describe("o robô do grupo da EF05CO04", () => {
     expect(roboEmPalavras(r(false, "link_nao_checado", "esperar"))).toBe(
       "Se a mensagem tiver link que ninguém checou, o robô espera antes de encaminhar.",
     );
+  });
+});
+
+describe("as disciplinas do recorte: todo o 5º ano da BNCC e Computação", () => {
+  test("a lista CONTÉM cada componente de componentesDoAno(\"5EF\") e computacao, na ordem do catálogo", () => {
+    const esperados = [...componentesDoAno("5EF").map((c) => c.slug), "computacao"];
+    expect(DISCIPLINAS.slice(0, esperados.length)).toEqual(esperados);
+  });
+  test("os valores antigos ficam (há linhas gravadas com eles)", () => {
+    expect(DISCIPLINAS).toEqual(expect.arrayContaining(["letramento-digital", "lingua-inglesa"]));
+  });
+  test("o rótulo é o do catálogo de componentes", () => {
+    for (const slug of DISCIPLINAS) {
+      const componente = componentePorSlug(slug);
+      if (componente) expect(ROTULO_DA_DISCIPLINA[slug]).toBe(componente.rotulo);
+    }
+    expect(ROTULO_DA_DISCIPLINA.computacao).toBe("Computação");
   });
 });

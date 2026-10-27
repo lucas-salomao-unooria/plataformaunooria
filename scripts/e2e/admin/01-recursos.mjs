@@ -115,6 +115,18 @@ await suite(
       inteira: true,
     });
 
+    /* A missão mais nova (exp01em1b, ADR-185) entra no Entre Redes pelo
+       `produto` do manifesto, com o interruptor próprio (regra 8): o modo de
+       falhar seria MUDO — a missão abriria para todos e não haveria como
+       desligá-la nesta rede. */
+    const linhaDoAssistente = cartao(p, "Entre Redes").locator("li").filter({ hasText: "exp01em1b" });
+    r.exigir(
+      (await linhaDoAssistente.count()) === 1 &&
+        (await linhaDoAssistente.innerText()).includes("O Assistente Invisível") &&
+        (await linhaDoAssistente.locator("button[role=combobox]").count()) === 1,
+      "O Assistente Invisível (exp01em1b) aparece dentro do Entre Redes, com o interruptor “Neste escopo”",
+    );
+
     // ── o escopo ────────────────────────────────────────────────────────
     await escolher(p, p, "Escopo", escolaDoProfessor);
     await p.waitForURL("**/unooria/recursos?escolaId=*", { timeout: 20_000 });

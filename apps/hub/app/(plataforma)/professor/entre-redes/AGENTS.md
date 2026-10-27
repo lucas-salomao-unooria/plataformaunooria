@@ -240,3 +240,19 @@ Desde a 2.0.0 (ADR-186) a folha identifica a criança pelo NOME e mostra a lupa 
 (`marcaramFora` na lousa); o componente curricular do recorte é a lista `disciplinas` da api (o 2º ano
 inteiro, Computação e "Outro componente"), num `Selection` — o hub não guarda essa lista, só o rótulo
 para o histórico, conferido contra a api em `enigma-capa-tipos.test.ts`.
+
+## O Assistente Invisível (exp01em1b)
+
+Página `resultados/resultados-assistente-invisivel.tsx`, criação `atividades/nova/criar-assistente-invisivel.tsx`,
+espelho `lib/assistente-invisivel-tipos.ts` (as rotas da turma num lugar só, `ROTAS_DA_CURADORIA`, e o
+teste confere cada uma no controller da api). **Aqui `GET /pacotes` é o PREPARO** e a lista das
+atividades é `GET /historico` — o contrário das irmãs; UMA atividade inteira (o Conteúdo da que está
+fora do ar) é `GET /pacotes/:pacoteId`. O `banco-padrao` aprova E põe no ar.
+A curadoria vai ao SERVIDOR item a item ("Editar Texto" e "Regenerar Este Item" devolvem o rascunho
+inteiro) e o "Aprovar Pacote Homologado" manda só o `rascunhoId`. Sem saldo ou com o vendor fora, a
+geração cai no banco padrão e a curadoria só abre depois de "Prosseguir com Banco Oficial" / "Usar
+Banco Padrão" (E0-PROF-03). A aula são cinco liberações e duas pausas, só para a frente
+(`ACOES_DA_FASE`, que o teste confere contra `PROXIMAS_FASES` da api); "Liberar Início da Simulação"
+só acende com `todosApostaram`, e o painel lista quem falta. O relatório final (E6-PROF-01) imprime
+SOZINHO pelo `BotaoImprimir` com `impressao="relatorio-homologacao"`: a folha
+(`resultados/relatorio-de-homologacao.css`) só vale com a marca no `<html>`.

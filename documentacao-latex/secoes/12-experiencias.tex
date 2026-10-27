@@ -25,6 +25,8 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria & \arq{efeito-amplificador}, \arq{evidencias}\\
 \cd{exp02em1b-v0} & \cd{2EM} & \textbf{versão anterior} &
   telemetria, ia & \arq{unoogpt}\\
+\zebra \cd{exp01em1b} & \cd{1EM} & estudante &
+  telemetria, progresso & \arq{assistente-\B{}invisivel}, \arq{evidencias}\\
 \cd{exp01ef1b} & \cd{1EF} & estudante &
   telemetria, progresso & \arq{foto-conta}\\
 \zebra \cd{exp02ef1b} & \cd{2EF} & estudante &
@@ -87,6 +89,11 @@ no Unoovista, na porta 5187: a primeira missão do 2º ano, com ficha pedagógic
 a criança faz. Nasceu na 1.0.0; a 2.0.0 segue o protótipo validado pelo time
 e tem cinco etapas (\adrr{ADR-186}; Seção~\ref{sec:exp02ef1b}).
 
+A unidade 1 da 1ª série do Ensino Médio é \textbf{O Assistente Invisível}
+(\adrr{ADR-185}), na escola (\cd{unooria}) e no UnooriaAI (\cd{unooriaai}),
+que nasce na 1.0.0, na porta 5188: a primeira missão da 1ª série, com ficha
+pedagógica só pelo que o estudante faz (Seção~\ref{sec:exp01em1b}).
+
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{18mm}X@{}}
 \toprule
 \headrow \thd{Experiência} & \thd{Porta em \emph{dev}} & \thd{Onde aparece no hub}\\
@@ -105,6 +112,7 @@ e tem cinco etapas (\adrr{ADR-186}; Seção~\ref{sec:exp02ef1b}).
 \zebra \cd{exp05ef1b} & \cd{5184} & \rota{/exp/exp05ef1b}\\
 \cd{exp06ef1b} & \cd{5185} & \rota{/exp/exp06ef1b}\\
 \zebra \cd{exp02ef1b} & \cd{5187} & \rota{/exp/exp02ef1b} (O Enigma da Capa da Rádio, \cd{strictPort})\\
+\cd{exp01em1b} & \cd{5188} & \rota{/exp/exp01em1b} (O Assistente Invisível, \cd{strictPort})\\
 \bottomrule
 \end{tabularx}
 
@@ -294,6 +302,13 @@ da missão injeta o que só ela sabe montar:
     critérios das duas habilidades. O
     componente é \arq{guia/\B{}material-do-enigma.tsx}, que desenha a cena com
     o mesmo \arq{cena-do-enigma.tsx} do painel (\adrr{ADR-184}).
+  \item \textbf{exp01em1b} (O Assistente Invisível) ---
+    \rota{GET /assistente-\B{}invisivel/\B{}professor/\B{}material} devolve as quatro
+    perguntas do roteiro de debate (as duas do E4-PROF-01, literais, e as duas
+    do E6-PROF-01, na forma curta do Figma), o caso de transferência (o
+    aplicativo de transporte que cobra mais pelo modelo do celular e pelo
+    bairro) e o critério de cada nível das quatro habilidades. O componente é
+    \arq{guia/\B{}material-\B{}do-\B{}assistente-\B{}invisivel.tsx} (\adrr{ADR-185}).
   \item \textbf{backup-exp04ef1b} (o UnooTube, arquivado na \adrr{ADR-116}; o
     bloco saiu do guia com ele) --- a tabela dos 21 vídeos, com o \cd{factual} de
     cada um, vinha de \rota{GET /unootube/professor/videos}. A criança de nove
@@ -1246,7 +1261,7 @@ O que define a missão, tecnicamente:
 \label{sec:exp02ef1b}
 
 \textbf{2º ano EF, unidade 1 (\enquote{Toda imagem tem um autor}), clone
-\cd{unoovista}, experiência 2.0.0, porta 5187.} Desde 2026-10-26
+\cd{unoovista}, experiência 2.1.0, porta 5187.} Desde 2026-10-26
 (\adrr{ADR-184}), vinda da esteira de produto (one-pager v1.1 do PO); a 2.0.0
 segue o protótipo validado pelo time e tira a etapa 6 (\adrr{ADR-186}). Módulo
 da api: \arq{enigma-capa} (prefixo \rota{/enigma-capa}, tabelas
@@ -1330,6 +1345,59 @@ um F5 os pula de propósito. Jogada à frente do passo é 409
 duplo toque e o reenvio da fila são inofensivos; a capa publicada com OUTRA
 escolha responde 409 (\cd{ja-publicado}). Os \emph{CHECKs} de ordem do banco
 são a rede final: cada etapa só grava depois da anterior.
+
+\subsection{Conferência com o protótipo do time}
+\label{sec:exp02ef1b-prototipo}
+
+A 2.0.0 foi conferida quadro a quadro contra o protótipo HTML validado
+(\cd{08-prototipo.html}, 44 estados; os da etapa 6 saíram com ela). Os quadros
+do professor (\cd{E0-PROF-*}, \cd{E4-PROF-01}) são as telas do hub da
+\adrr{ADR-184}; os do estudante estão na tabela.
+
+\begin{tabularx}{\linewidth}{@{}L{26mm}X@{}}
+\toprule
+\headrow \thd{Quadro} & \thd{Na missão}\\
+\midrule
+\cd{E1-ALU-01} & O seletor de crachá saiu (\adrr{ADR-186}).\\
+\zebra \cd{E1-ALU-02} & O card RASCUNHO PENDENTE / INVESTIGAR A NOVA CAPA /
+  ABRIR BANCADA, com a missão em letra grande (\arq{telas/Mural.tsx}).\\
+\cd{E2-ALU-01} & INVESTIGUE COM A LUPA, a mãozinha guia, INVESTIGAÇÃO
+  COMPLETA! e o Bento de inatividade (VAMOS INVESTIGAR?), mais o brilho e o
+  anel de 3\,s que o time pediu (\arq{telas/Bancada.tsx}).\\
+\zebra \cd{E2-SIS-01} & O aviso OLHE O FUNDO com VOLTAR À INVESTIGAÇÃO.\\
+\cd{E3-ALU-01} & ESCOLHA 1 FOTO \seta{} SELECIONE O SELO \seta{} CAPA PRONTA!
+  (\enquote{Foto enquadrada e selo carimbado!}), a moldura \enquote{Enquadre a
+  foto (Tamanho fixo, sem zoom)} e o Bento de inatividade.\\
+\zebra \cd{E3-ALU-02} & O aviso CAPA PUBLICADA! com IR PARA O FEED.\\
+\cd{E4-ALU-01} & A capa no feed e a fala da visitante.\\
+\zebra \cd{E4-ALU-02} & O aviso AGUARDE O PROFESSOR (cadeado e mensagem, sem
+  retrato) e, depois de 3\,min, O PROFESSOR JÁ VEM! com o círculo de
+  respiração.\\
+\cd{E4-ALU-03} & TOQUE EM 2 COISAS IGUAIS, SUA FOTO / OUTRA FOTO, o contador
+  e o pulso da ajuda depois de 3 erros.\\
+\zebra \cd{E4-ALU-04} & DESLIZE PARA REVELAR com a alça das duas setas no
+  centro da imagem (o \emph{slider} de comparação, \cd{role="slider"}), o
+  Bento ERA O MESMO LUGAR! e A CENA COMPLETA.\\
+\cd{E4-ALU-05} & \enquote{Marque na biblioteca o que ficou fora da sua foto.}
+  com o ALFINETE grande e o \enquote{Pronto} que só acende com um alfinete.\\
+\zebra \cd{E4-SIS-01} & A faixa SEM SINAL NA RÁDIO e o CARREGANDO CAPA\ldots{}
+  com TENTAR DE NOVO.\\
+\cd{E5-ALU-01} & Junte duas fotos da mesma atividade. \seta{} PAR FORMADO!, e
+  O que é parecido?\\
+\zebra \cd{E5-ALU-02} & Foto de leitura: o que precisa aparecer?, a moldura e
+  Colocar no álbum \seta{} FOTO GUARDADA NO ÁLBUM! e MISSÃO CUMPRIDA!\\
+\bottomrule
+\end{tabularx}
+
+\textbf{Os desvios, e por quê.} No \cd{E4-ALU-05} o protótipo desenha os
+alvos marcáveis como círculos: na tela eles entregariam a resposta e o
+gabarito ao cliente (regra 3), então a criança finca o alfinete onde achar. O
+\cd{E4-ALU-01} tinha o botão PROSSEGUIR PARA PAUSA, e o one-pager pede a pausa
+sozinha depois de 5\,s: ficou o tempo. No \cd{E5-ALU-01}, escolher o motivo já
+leva à segunda foto, sem o botão intermediário. A frase da cena completa diz
+\enquote{MESMO LUGAR}, e não \enquote{MESMA SALA}, porque a horta e as cenas da
+IA não são salas. A ilustração do Bento continua sem arte: ele fala só pelo
+balão.
 
 \subsection{A geometria: uma imagem, duas fotos}
 
@@ -1511,7 +1579,9 @@ fora, concluíram) e o botão LIBERAR VIRADA. O guia
 (\arq{lib/entre-redes/guias/exp02ef1b.ts}) traz a introdução oral, a frase do
 arraste (\enquote{Você pode mover a foto, mas não mudar o tamanho.}), a pausa
 e os três cartões ENQUADRAMENTO, AUTORIA e O QUE FICOU DE FORA --- a nomeação
-é ORAL, e por isso a seção \cd{unooria} não entra no \emph{bundle}. O podcast
+é ORAL, e por isso a seção \cd{unooria} não entra no \emph{bundle}. O debate do guia termina na generalização: a missão não tem transferência
+(\adrr{ADR-186}), e é a única com essa exceção em
+\arq{lib/entre-redes/guias/index.test.ts}. O podcast
 é FIXO (\arq{podcast.ts}, \adrr{ADR-150}): o roteiro literal do PO, com o
 Bento e a Iara, e os efeitos sonoros na direção de atuação.
 
@@ -1546,6 +1616,306 @@ dentro da própria foto e o \enquote{não atingiu} das duas habilidades ao lado
 do \enquote{atingiu} da outra criança, e o zerar (a rodada sobe, a evidência
 da atividade some, a virada fecha e a criança volta ao card da missão). Os
 auxiliares das duas moram em \arq{scripts/e2e/lib/\B{}enigma-capa.mjs}.
+
+% ---------------------------------------------------------------------------
+\section{exp01em1b --- O Assistente Invisível}
+\label{sec:exp01em1b}
+
+\textbf{1ª série EM, unidade 1 (\enquote{Dados que viram decisões}), seções
+\cd{unooria} e \cd{unooriaai}, experiência 1.0.0, porta 5188.} Desde
+2026-10-26 (\adrr{ADR-185}), vinda da esteira de produto (one-pager v1.5 do
+PO), com o Figma de 63 telas como referência de tela e de \emph{copy}. Módulo
+da api: \arq{assistente-\B{}invisivel} (prefixo \rota{/assistente-\B{}invisivel},
+tabelas \cd{exp01em1b\_*}). Manifesto: \cd{telemetria} e \cd{progresso} (sem
+\cd{ia}), permissão \cd{forms}, 375$\times$812, produto \cd{entre-redes}.
+
+\begin{destaque}
+Um assistente que decide pelo que observa, e não pelo que a pessoa declarou,
+discrimina sem dizer; a regra corrigida e o direito de pedir revisão humana
+são o que devolve a decisão a quem ela afeta.
+\end{destaque}
+
+A turma é a comissão de auditoria do UnooriaAI da escola. Três colegas
+(Lucas, Beatriz e Thiago) pediram no cadastro a MESMA Trilha Avançada; o
+assistente deu o avançado ao Lucas, rebaixou a Beatriz pelo HORÁRIO de acesso
+(23h45) e limitou o Thiago pela CONEXÃO (sinal instável). Os três perfis são
+controlados: só o horário e a conexão variam, e o Lucas é o controle
+(\enquote{Resultado: Avançado}, sem inferência). A missão é individual; o
+aparelho compartilhado e a projeção entram pelas equipes da plataforma (a
+missão está em \cd{EXPERIENCIAS\_\B{}COM\_\B{}EQUIPE} e em
+\cd{EXPERIENCIAS\_\B{}COM\_\B{}ATIVIDADE}). Sem IA na tela do estudante, sem texto
+livre, sem Canal B: as conversas são roteirizadas a partir do pacote que o
+professor aprovou (\arq{lib/roteiro.ts}).
+
+\subsection{O que o estudante vive: as seis etapas}
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}X@{}}
+\toprule
+\headrow \thd{Etapa} & \thd{Na tela, e o que o servidor guarda}\\
+\midrule
+\textbf{E1} Desafiar & A Zara apresenta a comissão; \enquote{Abrir Módulo de
+  Teste} só vale depois de \enquote{Liberar Início dos Testes}.\\
+\zebra \textbf{E2} Funções & Três \cd{Collapse} (Exercícios, Dúvidas,
+  Sugestões) com a prévia do UnooriaAI; \enquote{Ir para Bateria de Testes}
+  só acende com uma função aberta.\\
+\textbf{E3} Aposta & As três fichas (nome, idade, \enquote{[Fornecido no
+  cadastro]}, Trilha Avançada) e a aposta em \cd{RadioGroup}: (A) todos
+  Avançado, (B) só alguns, (C) todos Básico. \enquote{Disparar Simulação} é o
+  \textbf{LATCH 1} (\enquote{Previsão arquivada}, \enquote{Estado Latch
+  Gravado}); a tela espera em \enquote{Iniciando Simulação de Chat\ldots} até
+  \enquote{Liberar Início da Simulação}.\\
+\zebra \textbf{E4} Resultado & As três sessões no UnooriaAI (\cd{ChatBubble},
+  \cd{AssistantCard}, \cd{Composer} bloqueado), com os avisos de sistema da
+  Beatriz e do Thiago; o confronto com a PRÓPRIA aposta (o texto inteiro da
+  opção, a fala da Zara e o medidor da turma); as fichas de auditoria num
+  \cd{BottomSheet} (Formulário, Observado, Ação do Sistema) e
+  \enquote{Concluir Inspeção de Metadados}. Depois dela, a \textbf{Trava 1}
+  (\enquote{Aguardando autorização da mediação docente\ldots}).\\
+\textbf{E5} Explicar & Os seis cartões entre Dados Fornecidos e Dados
+  Observados (incompleto vale, com aviso; completo mostra a tabela causal); o
+  painel OPCIONAL \enquote{[Opcional / Aprofundamento] Ver etapas de
+  processamento do assistente}, com cinco passos e \enquote{Pular Etapa}; o
+  banco de critérios 3$\times$3, com a configuração B-B-A no ar (1B, 2B e 3A
+  marcados \enquote{[Ativo]}); \enquote{Executar Novo Teste de Homologação} e
+  o resultado: \enquote{Homologação Aprovada} ou \enquote{Alerta de Viés
+  Mantido}, com \enquote{Revisar Critérios} / \enquote{Avançar para
+  Publicação}. Depois do avanço, a \textbf{Trava 2}.\\
+\zebra \textbf{E6} Publicar & O \cd{Toggle} da página de transparência
+  (nasce DESLIGADO), os quatro blocos do comunicado, de duas opções cada
+  (\cd{RadioGroup}, com \enquote{Comece aqui} no bloco 1) e \enquote{Publicar
+  Transparência e Comunicado}, sempre habilitado (aviso só para bloco em
+  branco): o \textbf{LATCH 2}, que conclui. Depois, o certificado com a
+  salvaguarda LGPD, a transferência, a síntese e o desafio extra (Casos
+  Extremos), que \enquote{Pular Desafio Extra e Encerrar} recolhe.\\
+\bottomrule
+\end{tabularx}
+
+Os passos são DERIVADOS no servidor das colunas da sessão
+(\arq{regras/\B{}passos.ts}): \cd{boas-vindas} \seta{} \cd{funcoes} \seta{}
+\cd{aposta} \seta{} \cd{simulacao} \seta{} \cd{confronto} \seta{}
+\cd{fichas} \seta{} \cd{classificacao} \seta{} \cd{algoritmo} \seta{}
+\cd{criterios} \seta{} \cd{reteste} \seta{} \cd{publicacao} \seta{}
+\cd{concluida}. Jogada à frente do passo é 409 \cd{passo-\B{}invalido}; repetir
+a jogada já feita devolve o estado (200), salvo os latches com OUTRA escolha
+(\cd{ja-apostou}, \cd{ja-publicado}) e o reteste com outros critérios sem
+\enquote{Revisar Critérios}. Todo \cd{POST} do estudante leva a
+\cd{atividade} DO GESTO (\cd{\{pacoteId, rodada\}}, gravada quando o
+estudante tocou, e não quando a fila conseguiu enviar; opcional no contrato,
+mas a tela sempre a manda): se o professor zerou ou trocou o pacote no meio,
+409 \cd{rodada-mudou}, e a fila de reenvio não aplica jogada velha na rodada
+nova --- a tela relê o estado e descarta a jogada.
+
+\subsection{As cinco liberações são a fase da turma}
+
+O professor conduz a aula por cinco botões e duas pausas opcionais, que movem
+a FASE da turma, só para a frente (\cd{exp01em1b\_\B{}gates\_\B{}turma}, cada botão
+em \cd{exp01em1b\_\B{}gates\_\B{}historico}):
+
+\begin{center}
+\cd{aguardando-\B{}inicio} \seta{} \cd{testes} \seta{} \cd{simulacao} \seta{}
+[\cd{debate-1}] \seta{} \cd{explicar} \seta{} [\cd{debate-2}] \seta{}
+\cd{publicar}
+\end{center}
+
+\begin{itemize}
+  \item \enquote{Liberar Início dos Testes} (E1), \enquote{Liberar Início da
+    Simulação} (E3), \enquote{Liberar Bancada de Reconstrução} (E4),
+    \enquote{Liberar Publicação e Transparência} (E5); as pausas
+    \enquote{Travar Telas da Turma} (todas as telas da E4 em espera, não só
+    quem terminou) e \enquote{Pausar para Comparação} (E5) são puláveis.
+    Pedir a fase atual é idempotente (sem linha nova no histórico); para trás,
+    409 \cd{transicao-\B{}de-\B{}etapa-\B{}invalida}.
+  \item \textbf{A fase não muda o passo}: ela põe a espera por cima dele
+    (\cd{aguardandoProfessor}, a camada de espera da tela, um \cd{Modal} do
+    DS). Jogada no passo certo com a turma travada é 409
+    \cd{aguardando-professor}.
+  \item \textbf{A Trava 1 vem DEPOIS das fichas} (decisão do Vinicius): o
+    estudante vê o chat, o confronto e as fichas, conclui a inspeção e só
+    então espera o debate de 8 minutos.
+  \item \textbf{\enquote{Liberar Início da Simulação} só acende com 100\%}
+    das sessões ABERTAS da rodada (\arq{regras/\B{}medidor.ts\#\B{}todosApostaram}).
+    A sessão nasce quando o estudante abre a missão com o pacote no ar (o
+    primeiro \rota{GET .../\B{}sessao}) --- quem faltou não segura o botão; quem abriu a tela e saiu,
+    segura, e o painel lista quem falta. Sem 100\%, 409
+    \cd{apostas-pendentes}.
+  \item A tela relê \rota{GET /assistente-\B{}invisivel/gate} a cada 3\,s
+    (\adrr{ADR-93}) e a sessão quando passo, fase, preparo, espera ou rodada
+    mudam; o painel do professor se relê a cada 5\,s.
+\end{itemize}
+
+\subsection{O medidor da turma}
+
+No confronto (E4), o estudante vê \enquote{Na sua turma: X\% apostou\ldots,
+Y\%\ldots, Z\%\ldots}. É o ÚNICO dado de colegas que desce, e desce só
+agregado (as contagens A, B e C da rodada, nunca quem apostou o quê), só
+com 3 apostas ou mais (\cd{MEDIDOR\_MINIMO}: numa turma de dois, o
+percentual entregaria a aposta do colega) e só para quem JÁ apostou (antes do
+latch, o percentual viraria a resposta). O arredondamento fecha 100 pelo
+maior resto (\arq{regras/\B{}medidor.ts\#\B{}medidorDaTurma}).
+
+\subsection{O gabarito fica no servidor}
+
+As colunas certas dos cartões, os passos dispensáveis (2, 3 e 4), os
+critérios equitativos (1A ou 1C, 2A ou 2C) e a opção certa de cada bloco do
+comunicado vivem em \arq{conteudo.ts} e não descem. Desce o que a MECÂNICA
+mostra: a tabela causal (quando horário e sinal de rede estão em
+Observados), o resultado do reteste e o efeito no chat (a Beatriz no
+avançado, o Thiago sem limite). O rótulo \enquote{(Inferência dispensável)} /
+\enquote{(Essencial)} do painel opcional é o do ESTUDANTE, e
+\enquote{Otimização: de 5 para N passos essenciais} é 5 menos os marcados. O
+\enquote{(Ação enviesada)} que o Figma põe no passo 4 marcado vem do SERVIDOR
+(\cd{estado.algoritmo.enviesados}, só dos passos já marcados): o bundle não
+sabe qual passo é. A configuração no ar aparece como \enquote{[Ativo]}. Também não
+há o aviso de bloco \enquote{desconexo} no Publicar: ele entregaria a
+resposta. \arq{src/contrato.test.ts} da experiência e a suíte da api cobram a
+ausência no \emph{schema} da sessão.
+
+\subsection{As duas seções do DS, e quem fala}
+
+A escola é \cd{unooria} (\cd{@edu/ui/ds}); a bateria de testes
+(\arq{telas/\B{}Simulacao.tsx}) é \cd{unooriaai} inteira; as PEÇAS do assistente
+dentro de telas da escola (a prévia da E2, o efeito do reteste na E5) moram em
+\arq{componentes/\B{}PecasDoAssistente.tsx}, o único outro arquivo que importa a
+ponte do clone (\adrr{ADR-117}, \adrr{ADR-173}). \arq{src/contrato.test.ts}
+prende uma ponte por arquivo e a seção de cada tela. A barra de etapas
+(\enquote{Etapa 1: Desafiar} a \enquote{Etapa 6: Publicar}) só indica, não
+navega.
+
+\subsection{A fila de envio é em memória}
+
+As jogadas entram numa fila em MEMÓRIA (\arq{lib/fila.ts}), nunca em
+\cd{localStorage}: a rede caída (a janela \enquote{Módulo de Homologação
+Offline}, com \enquote{Tentar Reconectar Agora}) e o 401 (\enquote{Sessão
+escolar pausada por segurança institucional}, com \enquote{Entrar Novamente}) seguram a jogada até
+passar. Quem renova o \emph{token} é o SDK; a experiência não tem como pedir
+um na hora (lacuna do SDK).
+
+\subsection{A atividade é o pacote}
+
+O pacote (\cd{exp01em1b\_\B{}pacotes}) é a ATIVIDADE da evidência, e a rodada é
+o \enquote{Zerar}, como na exp02ef1b (\adrr{ADR-130}, \adrr{ADR-155}): aprovar
+cria a atividade pronta; \enquote{Liberar Atividade para a Turma} a põe no ar
+e devolve a fase ao início; o banco padrão faz os dois num toque; e o
+\enquote{Zerar Turma para Nova Aplicação} apaga a evidência do pacote,
+guarda as sessões e devolve a fase a \cd{aguardando-\B{}inicio}. Na lista de
+atividades da turma, o professor abre qualquer uma inteira, mesmo fora do ar
+(a aba Conteúdo), por \rota{GET .../pacotes/\B{}:pacoteId}. A missão nasce
+VAZIA: sem atividade no ar, as jogadas respondem 409 \cd{missao-em-preparo}
+--- espera, não bloqueio. O preparo (a IA gera o pacote inteiro e o professor
+cura item por item) está na Seção~\ref{sec:ia-preparo-exp01em1b}; quando a
+geração cai no banco padrão por falta de saldo ou de provedor, a tela do
+estudante mostra a faixa \enquote{Carregando versão de contingência da rede
+escolar} e a etiqueta \enquote{Pacote Padrão}.
+
+\subsection{A régua pedagógica: 100\% Canal A}
+
+A ficha \arq{evidencias/\B{}fichas/\B{}exp01em1b.ts}, versão 1, não tem pergunta
+nem resolvedor de contexto. As quatro marcas são de AÇÃO, gravadas JUNTAS por
+\arq{assistente-\B{}invisivel} na transação do LATCH 2 (o Publicar), com a régua
+pura em \arq{regras/\B{}evidencia.ts}. Nenhuma habilidade bloqueia o avanço.
+
+\begin{tabularx}{\linewidth}{@{}L{20mm}X X X@{}}
+\toprule
+\headrow \thd{Habilidade} & \thd{Atingiu} & \thd{Em processo} & \thd{Não atingiu}\\
+\midrule
+\textbf{EM13CO20} (foco) & página ativa \textbf{e} os 4 blocos certos &
+  página ativa com bloco em branco ou só o bloco 1 trocado; \textbf{ou} os 4
+  certos sem a página & não publicou; ou erro nos blocos 2, 3 ou 4\\
+\zebra \textbf{EM13CO01} & no último reteste, F1 e F2 em \{A, C\} & só uma
+  das duas & manteve 1B e 2B, ou não retestou\\
+\textbf{EM13CO18} & equidade total \textbf{e} publicação plena & uma das
+  pontas & nenhuma\\
+\zebra \textbf{EM13CO03} & abriu o painel e marcou exatamente \{2, 3, 4\} &
+  abriu e marcou outro conjunto & não abriu, pulou ou não marcou\\
+\bottomrule
+\end{tabularx}
+
+\begin{decisao}
+\textbf{O bloco 1 trocado é \enquote{em processo}} (\adrr{ADR-185}). O
+\S{}12a do PO diz que errar um elo \enquote{descaracteriza a relação causal};
+a régua computável lê como elo a inferência, a regra e a salvaguarda (blocos
+2, 3 e 4). Trocar só o problema (\enquote{lentidão técnica} no lugar de
+\enquote{restringindo acessos}) descreve mal o sintoma, mas mantém a cadeia
+dado observado \seta{} inferência \seta{} revisão humana.
+\end{decisao}
+
+\textbf{Conta ao encerrar.} Quem apostou e não publicou recebe as quatro
+marcas quando o professor ENCERRA a missão na Sala de Aula, com a
+publicação ausente (o padrão da \adrr{ADR-154}): o serviço da missão se
+registra em \cd{SalasService.\B{}aoEncerrarMissao} no \cd{onModuleInit} e roda na
+transação de quem encerrou. A rota \rota{POST .../encerrar} faz o mesmo e
+fica para a api; o hub não tem botão próprio (o Figma não tem). A F3
+(sugestões) e os cartões vão só ao painel; falha técnica é ausência de marca
+(\enquote{Não avaliado}). Com equipe, a marca vai a cada integrante
+(\adrr{ADR-111}). Os KPIs do PO saem de colunas: \cd{aposta} (PQ-01),
+\cd{fichas\_\B{}abertas\_em} (PQ-02), \cd{retestes} e
+\cd{equidade\_\B{}no\_\B{}1o\_\B{}reteste} (PQ-03), \cd{painel\_\B{}passos\_\B{}aberto\_em}
+(PQ-04) e \cd{blocos\_corretos} (PQ-05).
+
+\subsection{O professor: preparo, aula ao vivo, relatório e guia}
+
+As telas de condução seguem os templates da \adrr{ADR-182}. O preparo
+(\arq{atividades/\B{}nova/\B{}criar-\B{}assistente-\B{}invisivel.tsx}) é o E0: o recorte
+(\enquote{Usar Banco Padrão da Rede} ou \enquote{Gerar Cenários de Teste com
+IA}), a curadoria item a item (\enquote{Editar Texto}, que dá o Badge
+\enquote{Editado pelo professor}, e \enquote{Regenerar Este Item}),
+\enquote{Aprovar Pacote Homologado} e \enquote{Liberar Atividade para a
+Turma}. A aba Aula ao vivo
+(\arq{resultados/\B{}painel-\B{}da-\B{}aula-\B{}assistente-\B{}invisivel.tsx}, \enquote{Painel
+ao Vivo}, em pt-BR por ser tela da plataforma, \adrr{ADR-91}) mostra, por estudante ou por
+computador, o passo, a aposta, os cartões, o painel opcional, os critérios, a
+equidade e a publicação; o resumo da turma (as apostas e quem falta, as
+simulações concluídas, a Projeção de Soluções 1A $\times$ 1C, os
+\enquote{Avisos Discretos} de quem avançou mantendo 1B ou 2B, quem publicou e
+com a página ativa), as perguntas do roteiro no momento delas e os botões da
+fase (\cd{ACOES\_DA\_FASE}, que o teste confere contra \cd{PROXIMAS\_FASES}
+da api). O Relatório Formativo Final (E6-PROF-01) traz a homologação, a matriz
+BNCC (\% Atingiu; a EM13CO03 como \% Participou), os níveis por estudante e
+os comunicados montados; \enquote{Exportar Relatório de Homologação Ética} é
+a versão de impressão (\cd{BotaoImprimir} com a folha
+\arq{relatorio-de-homologacao.css}; o PDF sai do navegador). O guia
+(\arq{lib/entre-redes/\B{}guias/\B{}exp01em1b.ts}) traz os tempos da aula de 50
+minutos, os avisos (sem atividade no ar a missão não abre; não contar que o
+assistente usa horário e conexão) e o material vivo. O podcast é FIXO
+(\arq{podcast.ts}, \adrr{ADR-150}): o roteiro literal do \S{}11 do
+one-pager, com o Alex e a Sam, para depois da missão.
+
+\subsection{Compensações locais do DS}
+
+Cinco peças não existem no pacote e estão compensadas no código, marcadas
+\enquote{(b) COMPENSAÇÃO local --- pedido aberto no storybook-unooria} (a
+lista, com a lacuna de cada uma, está na
+Seção~\ref{sec:ds-lacunas-exp01em1b}): o foco do \cd{Collapse} fechado, o
+cartão selecionado para alocar, o alvo do toque da coluna, o certificado e o
+separador de sessão no chat. Três textos que o Figma não deu e a tela
+precisou: \enquote{Concluir Classificação}, \enquote{Colocar em Dados
+Fornecidos/Observados} e \enquote{Novo teste no UnooriaAI}.
+
+\subsection*{A suíte de ponta a ponta}
+
+\arq{scripts/e2e/estudante/\B{}16-assistente-\B{}invisivel.mjs} é o caminho inteiro
+com IA REAL (Vertex), em 35 passos: a professora recorta a aula, GERA o pacote,
+edita um item, regenera outro, aprova e libera a atividade para a turma; no
+Painel ao Vivo, as cinco liberações e as duas pausas andam só para a frente
+(\enquote{Liberar Início da Simulação} só com 100\% das apostas). O
+estudante, num celular, faz E1 a E6: a aposta (o LATCH 1), as três sessões
+roteirizadas, o confronto e as fichas, a Trava 1, os seis cartões, as etapas
+do algoritmo (marca 2, 3 e 4 e \enquote{Pular Etapa}), o reteste com o 1B
+mantido, o Alerta de Viés, \enquote{Revisar Critérios}, 1C e 2C e a
+Homologação Aprovada, a Trava 2, a página ligada com os quatro blocos certos
+e a publicação (o LATCH 2). No fim, as quatro habilidades em
+\enquote{Atingiu} no painel e na evidência, o relatório formativo e a
+impressão. Se a IA cair, o preparo segue pelo banco padrão (o ramo legítimo do
+E0-PROF-03) e a suíte diz qual caminho rodou. Passos novos em outras três
+suítes: \arq{professor/\B{}06-resultados-\B{}das-\B{}missoes.mjs} (a página da
+atividade, a folha sem nível nem nota, e o relatório com a matriz BNCC e a
+exportação), \arq{professor/\B{}08-guias-\B{}de-\B{}aula.mjs} (o roteiro vivo do guia)
+e \arq{admin/\B{}01-recursos.mjs} (a missão aparece no Entre Redes do painel da
+Unooria, com o interruptor). Por baixo, as suítes da api
+(\arq{tests/\B{}assistente-\B{}invisivel-\B{}regras.\B{}spec.ts}, sem banco, e
+\arq{tests/\B{}assistente-\B{}invisivel-\B{}postgres.\B{}spec.ts}, com a RLS sob a
+\emph{role} sem \cd{BYPASSRLS}). O passo de equipe com um computador ainda
+não está na suíte.
 
 % ---------------------------------------------------------------------------
 \section{exp08ef4b --- O Manifesto da IA}

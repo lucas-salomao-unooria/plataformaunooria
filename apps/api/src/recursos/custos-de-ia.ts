@@ -36,6 +36,7 @@ export const RECURSOS_DE_IA: Record<string, { chave: string; nome: string }> = {
   "a-selecao": { chave: "a-selecao", nome: "A Seleção" },
   "agente-professor": { chave: "agente-professor", nome: "Agente de IA do professor" },
   ajuda: { chave: "ajuda", nome: "Ajuda (mascote e avatar)" },
+  "assistente-invisivel": { chave: "assistente-invisivel", nome: "O Assistente Invisível" },
   bemestar: { chave: "bemestar", nome: "Acompanhamento de bem-estar" },
   "efeito-amplificador": { chave: "efeito-amplificador", nome: "O Efeito Amplificador" },
   "enigma-capa": { chave: "enigma-capa", nome: "O Enigma da Capa da Rádio" },

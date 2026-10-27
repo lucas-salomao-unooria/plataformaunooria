@@ -271,5 +271,67 @@ await suite(
         "cada criança fez, para a conversa; o nível de cada habilidade fica na aba Habilidades.",
       inteira: true,
     });
+
+    // ── O Assistente Invisível (1ª série EM, unidade 1) ─────────────────
+    /* A suíte do estudante (estudante/16-assistente-invisivel.mjs) corre ANTES:
+       cria a atividade na 1EM-A, passa pelas liberações até “Liberar Publicação
+       e Transparência”, e um estudante publica. É a página DESSA atividade que
+       este passo lê; rodando sozinha, a turma pode estar sem atividade — os dois
+       ramos são legítimos e cada um é provado. */
+    const professorPrimeiraEM = conta("professor", { serie: "1EM" });
+    await r.entrar(p, professorPrimeiraEM.login);
+    const turmasDoAssistente =
+      (await (await p.request.get(`${BFF}/assistente-invisivel/turmas`)).json().catch(() => null))?.turmas ?? [];
+    const turmaDoAssistente = turmasDoAssistente.find((t) => t.nome === "1EM-A") ?? turmasDoAssistente[0];
+    if (!r.exigir(Boolean(turmaDoAssistente), `${professorPrimeiraEM.login} tem turma no seletor do Assistente Invisível`)) return;
+    await p.goto(`${HUB}/professor/entre-redes/1-serie/unidade-1/resultados?turmaId=${turmaDoAssistente.id}`, {
+      waitUntil: "domcontentloaded",
+    });
+    await p.locator("[data-painel-da-aula], [data-sem-atividade], [data-atividade-pronta]").first().waitFor({ timeout: 30_000 });
+    if ((await p.locator("[data-painel-da-aula]").count()) === 0) {
+      r.ressalva("a 1EM-A não tem atividade do Assistente Invisível em andamento: rode antes a estudante/16-assistente-invisivel, que a cria");
+      r.exigir(
+        /Nenhuma atividade em andamento nesta turma|Esta atividade está pronta/.test(await p.locator("main").innerText()),
+        "sem atividade em andamento, a página do Assistente Invisível diz que a turma vê a missão fechada",
+      );
+    } else {
+      const fase = await p.locator("[data-painel-da-aula]").getAttribute("data-fase-da-turma");
+      const lousa = (await p.locator("[data-lousa]").innerText()).replace(/\s+/g, " ");
+      r.exigir(/Painel ao Vivo/.test(lousa), `a aula do Assistente Invisível mora na página da atividade (fase da turma: ${fase})`);
+      /* Os botões só andam para a frente: em cada fase, só os da fase seguinte (e nenhum em “publicar”). */
+      const botoes = await p.locator("[data-botoes-da-aula] button").allInnerTexts();
+      r.exigir(
+        fase === "publicar" ? botoes.length === 0 : botoes.length >= 1 && botoes.length <= 2,
+        `os botões da aula são os da fase “${fase}”, só para a frente (${botoes.join(" · ") || "nenhum"})`,
+      );
+      const colunas = await p.locator("[data-folha]").getByRole("columnheader").allInnerTexts();
+      r.exigir(
+        colunas.length > 0 && !colunas.some((c) => /\b(n[íi]vel|pontos|nota|ranking)\b/i.test(c)),
+        `a folha do Assistente Invisível não tem coluna de nível, nota nem ranking (colunas: ${colunas.join(", ")})`,
+      );
+      if (fase === "publicar") {
+        const relatorio = p.locator("[data-relatorio-final]");
+        r.exigir(
+          (await relatorio.locator("[data-matriz-bncc]").innerText()).includes("EM13CO20") &&
+            (await relatorio.locator("[data-niveis-por-estudante]").count()) === 1 &&
+            (await p.locator('[data-acao="imprimir-relatorio-homologacao"]').count()) === 1,
+          "na publicação, o relatório formativo traz a matriz BNCC, os níveis por estudante e “Exportar Relatório de Homologação Ética”",
+        );
+        await relatorio.scrollIntoViewIfNeeded();
+      } else {
+        await p.locator("[data-folha]").scrollIntoViewIfNeeded();
+      }
+    }
+    await r.registrar(p, "resultados-assistente-invisivel", {
+      titulo: "A atividade do Assistente Invisível: a aula e os resultados",
+      mostra:
+        "A atividade em andamento: o Painel ao Vivo com a etiqueta da fase, os botões da fase seguinte, a folha por " +
+        "estudante (onde está, aposta, cartões, etapas do algoritmo, critérios e publicação) e, na Etapa 6, o " +
+        "relatório formativo com a matriz BNCC, os níveis e a exportação para impressão.",
+      prova:
+        "As liberações andam só para a frente, com confirmação. A folha é para a tela do professor, sem nível; os " +
+        "níveis (Canal A) ficam no relatório final e na aba Habilidades, sem nota nem ordenação.",
+      inteira: true,
+    });
   },
 );
