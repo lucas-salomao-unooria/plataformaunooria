@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Card, CardContent, Checkbox, Collapse, Tag } from "@edu/ui/ds";
+import { Button, Checkbox, Collapse, Tag } from "@edu/ui/ds";
 import { Casca } from "../componentes/Casca";
 import type { Contexto } from "../contexto";
 import { api } from "../lib/api";
@@ -14,10 +14,13 @@ import type { PassoDoAlgoritmo } from "../lib/tipos";
  * - Ao marcar, o passo marcado ganha "(Inferência dispensável)" e o não
  *   marcado "(Essencial)": é o rótulo DO ESTUDANTE, não o gabarito. A linha
  *   "Otimização: de 5 para N passos essenciais" usa N = 5 − marcados.
+ * - Com um passo marcado, o painel vira "[Opcional / Aprofundamento]
+ *   Decomposição EM13CO03" e cada passo ganha o rótulo CURTO do Figma
+ *   ("Passo 2: Checar relógio (Inferência dispensável)").
  * - "Pular Etapa" fecha o painel (o pedido do Vinicius de poder pular).
  *
- * No topo, a tabela causal que a classificação abriu (quando o servidor diz
- * `cadeiaCausal`).
+ * A tabela causal NÃO mora aqui desde a 1.0.4: ela aparece na própria tela dos
+ * cartões, quando a classificação fecha (E5-ALU-01 "sem scaffolding").
  */
 export function Algoritmo({ ctx }: { ctx: Contexto }) {
   const { estado, sessao, executar } = ctx;
@@ -43,13 +46,6 @@ export function Algoritmo({ ctx }: { ctx: Contexto }) {
 
   return (
     <Casca cabecalho={{ titulo: TEXTOS.geral.unooria, tag: TEXTOS.e5.etapaChip }} equipe={estado.equipe}>
-      {estado.classificacao?.cadeiaCausal && (
-        <Card variant="outlined">
-          <CardContent>
-            <p className="escola__texto">{TEXTOS.e5.tabelaCausal}</p>
-          </CardContent>
-        </Card>
-      )}
       <Collapse
         variant="bordered"
         size="md"
@@ -57,7 +53,7 @@ export function Algoritmo({ ctx }: { ctx: Contexto }) {
         titleAs="h2"
         defaultOpen={estado.algoritmo.aberto}
         leadingIcon={<span aria-hidden="true">{algumMarcado ? "🧩" : "⚙️"}</span>}
-        title={TEXTOS.e5.opcional}
+        title={algumMarcado ? TEXTOS.e5.opcionalMarcado : TEXTOS.e5.opcional}
         onToggle={alternarPainel}
       >
         <p className="escola__texto">{TEXTOS.e5.marqueAsInstrucoes}</p>
@@ -67,13 +63,15 @@ export function Algoritmo({ ctx }: { ctx: Contexto }) {
             /* "(Ação enviesada)" só para o passo que o SERVIDOR diz (`enviesados`, já marcado): o bundle não sabe qual é. */
             const rotuloDoMarcado = estado.algoritmo.enviesados.includes(p.id) ? TEXTOS.e5.enviesada : TEXTOS.e5.dispensavel;
             const sufixo = algumMarcado ? ` ${marcado ? rotuloDoMarcado : TEXTOS.e5.essencial}` : "";
+            /* Marcado algum, o rótulo encurta (E5-ALU-02 "marcado"); antes, é o inteiro do servidor. */
+            const rotulo = algumMarcado ? (TEXTOS.e5.passoCurto[p.id] ?? p.rotulo) : p.rotulo;
             return (
               <Checkbox
                 key={p.id}
                 theme="light"
                 checked={marcado}
                 onChange={(v) => marcar(p.id, v)}
-                label={`${TEXTOS.e5.iconesDosPassos[p.id] ?? ""} ${TEXTOS.e5.passo(p.id, p.rotulo)}${sufixo}`}
+                label={`${TEXTOS.e5.iconesDosPassos[p.id] ?? ""} ${TEXTOS.e5.passo(p.id, rotulo)}${sufixo}`}
               />
             );
           })}

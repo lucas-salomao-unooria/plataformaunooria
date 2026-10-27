@@ -46,6 +46,16 @@ export const TEXTOS = {
       duvidas: "Função 2: Responder Dúvidas",
       sugestoes: "Função 3: Sugerir Conteúdos",
     } as Record<Funcao, string>,
+    /**
+     * O RESUMO sob o título da função já vista e recolhida (E2-ALU-01
+     * "habilitado"). Só a função 1 encurta; as outras repetem a longa, como o
+     * Figma desenha.
+     */
+    resumos: {
+      exercicios: "Distribui trilhas nos níveis básico e avançado.",
+      duvidas: "Atende estudantes em tempo real via chat inteligente para esclarecer conteúdos.",
+      sugestoes: "Recomenda artigos, videoaulas e materiais de apoio no tema curricular trabalhado.",
+    } as Record<Funcao, string>,
     /** A descrição LONGA (estado expandido) — briefing comum. */
     descricoes: {
       exercicios: "Distribui trilhas de estudos nos níveis básico e avançado para os estudantes.",
@@ -82,6 +92,8 @@ export const TEXTOS = {
     titulo: "UnooriaAI",
     sessao: (n: number, nome: string) => `Sessão de Teste ${n}/3: ${nome}`,
     concluidas: "Sessões 2/3 e 3/3 Concluídas",
+    /** E4-ALU-01 "simulando": o card da Trilha Avançada do Lucas fecha com o acesso pleno (o Figma). */
+    acessoPleno: "Acesso pleno concedido. Envie sua dúvida quando quiser.",
     tagDaEquipe: (nome: string) => `Bancada: ${nome}`,
     separadorBeatriz: "--- Sessão 2/3: Beatriz (23h45) ---",
     separadorThiago: "--- Sessão 3/3: Thiago (Sinal Instável) ---",
@@ -94,7 +106,16 @@ export const TEXTOS = {
   e4: {
     cabecalho: "Unooria · Auditoria",
     tag: "Flagrante da Triagem",
-    /** A citação é o TEXTO INTEIRO da opção (sem o ponto final), entre aspas simples — `citarAposta`. */
+    /**
+     * A citação de cada aposta no confronto, LITERAL do Figma (E4-ALU-02 A, B e
+     * C): a A sai sem o "no cadastro" da opção; a B e a C são a opção inteira
+     * sem o ponto final. `citacaoDaAposta` põe as aspas simples.
+     */
+    citacao: {
+      a: "Todos receberão o nível Avançado conforme solicitado",
+      b: "Apenas alguns receberão Avançado, pois o assistente fará triagem",
+      c: "Todos receberão nível Básico até comprovarem proficiência",
+    } as Record<ApostaId, string>,
     confronto: {
       a: (citacao: string) =>
         `Você previu: ${citacao}. No entanto, Beatriz e Thiago foram barrados. Por que o formulário que eles preencheram não foi respeitado?`,
@@ -143,6 +164,8 @@ export const TEXTOS = {
     cartao1: "Cartão 1",
     /** (b) COMPENSAÇÃO de copy: o Figma não nomeia o alvo do toque nem o fechamento (ver AGENTS.md). */
     colocarEm: (rotulo: string) => `Colocar em ${rotulo}`,
+    /** Etapa 5 da barra: "Reconstruir" nos cartões (E5-ALU-01), "Banco de Regras" nos critérios (E5-ALU-03). */
+    etapaDosCriterios: "Banco de Regras",
     /* O cartão JÁ COLOCADO usa o rótulo curto do Figma (E5-ALU-01 "sem scaffolding"): na coluna estreita, o longo quebrava a palavra no meio. */
     rotuloCurto: {
       "trilha-avancada": "Trilha Avançada",
@@ -152,13 +175,25 @@ export const TEXTOS = {
       "endereco-ip": "Endereço IP",
       "modelo-aparelho": "Modelo Aparelho",
     } as Record<string, string>,
+    /** E5-ALU-01 "por aparelho": o botão secundário no fim da tela, como o Figma. */
     selecione: "Toque para Selecionar e Alocar",
-    concluir: "Concluir Classificação",
     incompleta: "A classificação dos dados da sessão ainda não foi concluída. Seus critérios serão registrados como estão.",
-    tabelaCausal: "Tabela Causal: Horário (Dado Observado) → Cansaço Presumido (Inferência) → Reforço Básico (Decisão Restritiva).",
+    /** E5-ALU-01 "sem scaffolding": a tabela causal, NA tela da classificação, quando ela fecha. */
+    tabelaCausalTitulo: "Tabela Causal:",
+    tabelaCausal: "Horário (Dado Observado) → Cansaço Presumido (Inferência) → Reforço Básico (Decisão Restritiva).",
     // E5-ALU-02
     etapaChip: "Etapa 5 · Explicar",
     opcional: "[Opcional / Aprofundamento] Ver etapas de processamento do assistente",
+    /** E5-ALU-02 "marcado": o título do painel depois do primeiro passo marcado. */
+    opcionalMarcado: "[Opcional / Aprofundamento] Decomposição EM13CO03",
+    /** E5-ALU-02 "marcado": o rótulo CURTO de cada passo, ao lado do "(Essencial)"/"(Inferência dispensável)". */
+    passoCurto: {
+      1: "Ler mensagem enviada",
+      2: "Checar relógio",
+      3: "Calcular cansaço",
+      4: "Alterar trilha",
+      5: "Enviar resposta formatada",
+    } as Record<number, string>,
     marqueAsInstrucoes: "Marque quais instruções do algoritmo realizam inferência comportamental desnecessária sobre o estudante.",
     passo: (n: number, rotulo: string) => `Passo ${n}: ${rotulo}`,
     dispensavel: "(Inferência dispensável)",
@@ -175,6 +210,9 @@ export const TEXTOS = {
       sugestoes: "Função 3 (Sugestões)",
     } as Record<Funcao, string>,
     ativo: "[Ativo]",
+    /** E5-ALU-03 "critérios alterados": o botão que reabre as três opções da função resumida. */
+    trocar: "Trocar critério",
+    trocarCriterio: (funcao: string) => `Trocar o critério da ${funcao}`,
     executar: "Executar Novo Teste de Homologação",
     // E5-ALU-04
     reteste: "Unooria · Reteste",
@@ -198,6 +236,8 @@ export const TEXTOS = {
       "Garantia de direito à explicação e canal de contestação com revisão humana para qualquer decisão automática de trilha ou limite",
     comunicado: "Comunicado Institucional da Comissão:",
     comeceAqui: "▶ Comece aqui",
+    /** E6-ALU-01 "blocos preenchidos": a página e os quatro blocos se recolhem sob este título (o Figma só desenha o comunicado montado). */
+    revisarBlocos: "Revisar página e blocos",
     /** O rótulo curto de cada bloco no texto montado ("blocos preenchidos"). */
     rotuloCurto: { problema: "1. Problema:", inferencia: "2. Inferência:", regra: "3. Regra Corrigida:", salvaguarda: "4. LGPD:" } as Record<string, string>,
     incompleto:
@@ -228,13 +268,14 @@ export function rotuloDoCriterio(funcao: Funcao, opcao: OpcaoDeCriterio, rotulo:
   return `Critério ${n}${opcao.toUpperCase()}: ${rotulo}`;
 }
 
-/**
- * A citação da aposta no confronto (E4-ALU-02): o TEXTO INTEIRO da opção,
- * entre aspas simples, sem o ponto final (o Figma: "Você previu: 'Apenas
- * alguns receberão Avançado, pois o assistente fará triagem'. Você acertou…").
- */
+/** Um texto entre aspas simples, sem o ponto final (a forma da citação no confronto). */
 export function citarAposta(texto: string): string {
   return `'${texto.trim().replace(/\.+$/, "")}'`;
+}
+
+/** A citação do confronto pela aposta (literal do Figma, E4-ALU-02), entre aspas simples. */
+export function citacaoDaAposta(aposta: ApostaId): string {
+  return citarAposta(TEXTOS.e4.citacao[aposta]);
 }
 
 /**

@@ -15,7 +15,8 @@ export type Fala =
   | { tipo: "cartao"; titulo: string; texto: string; sessao: 1 | 2 | 3 };
 
 /**
- * E4-ALU-01: Lucas pergunta → boas-vindas, a Trilha Avançada e a resposta;
+ * E4-ALU-01: Lucas pergunta → boas-vindas, a Trilha Avançada (o card diz o
+ * "Acesso pleno concedido…" do Figma, sob o título da trilha) e a resposta;
  * Beatriz pergunta → o aviso de rebaixamento e o Reforço Básico; Thiago
  * pergunta duas vezes (com resposta) e na terceira recebe o limite.
  */
@@ -23,7 +24,7 @@ export function roteiroDaSimulacao(c: ConteudoDoPacote, m: MaterialFixo): Fala[]
   return [
     { tipo: "estudante", texto: c.duvidas.lucas, sessao: 1 },
     { tipo: "assistente", texto: TEXTOS.e4chat.boasVindasLucas, sessao: 1 },
-    { tipo: "cartao", titulo: c.trilhaAvancada.titulo, texto: c.trilhaAvancada.enunciado, sessao: 1 },
+    { tipo: "cartao", titulo: c.trilhaAvancada.titulo, texto: TEXTOS.e4chat.acessoPleno, sessao: 1 },
     { tipo: "assistente", texto: c.respostas.lucas, sessao: 1 },
     { tipo: "separador", texto: TEXTOS.e4chat.separadorBeatriz, sessao: 2 },
     { tipo: "estudante", texto: c.duvidas.beatriz, sessao: 2 },

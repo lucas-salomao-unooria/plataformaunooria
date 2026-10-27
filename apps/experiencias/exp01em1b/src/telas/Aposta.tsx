@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AlertBox, Button, Card, CardContent, CardHeader, RadioGroup, Tag } from "@edu/ui/ds";
-import { Casca } from "../componentes/Casca";
+import { Casca, type CascaProps } from "../componentes/Casca";
 import type { Contexto } from "../contexto";
 import { useInatividade } from "../hooks/tela";
 import { api } from "../lib/api";
@@ -19,7 +19,9 @@ const INATIVIDADE_MS = 60_000;
  * que espera "Liberar Início da Simulação" (E3-PROF-01, 100% das apostas).
  *
  * E3-SIS-01: com o pacote na reserva (`pacote.contingencia`), a faixa
- * "Carregando versão de contingência da rede escolar" e a tag "Pacote Padrão".
+ * "Carregando versão de contingência da rede escolar" no topo e o cabeçalho
+ * do Figma — "Unooria · Homologação" com a tag "Pacote Padrão" — no lugar da
+ * barra de etapas, e o cartão "Fichas Cadastrais Carregadas (Banco Oficial)".
  */
 export function Aposta({ ctx }: { ctx: Contexto }) {
   const { estado, sessao, executar } = ctx;
@@ -41,9 +43,9 @@ export function Aposta({ ctx }: { ctx: Contexto }) {
   }
 
   return (
-    <Casca etapas={{ atual: 3, janela: [2, 3, 4, 5] }} equipe={estado.equipe}>
-      <Contingencia sessao={sessao} />
+    <Casca {...moldura(sessao)} equipe={estado.equipe}>
       <p className="escola__instrucao">{estado.equipe ? TEXTOS.e3.instrucaoDaEquipe : TEXTOS.e3.instrucao}</p>
+      <FichasDoBancoOficial sessao={sessao} />
       <div className="escola__lista">
         {fichasNaOrdem(sessao.material.fichas).map((f) => (
           <Card key={f.perfil} variant="outlined">
@@ -83,8 +85,7 @@ export function ApostaTravada({ ctx, aposta }: { ctx: Contexto; aposta?: ApostaI
   const id = aposta ?? estado.aposta;
   const texto = sessao.material.apostas.find((a) => a.id === id)?.texto ?? "";
   return (
-    <Casca etapas={{ atual: 3, janela: [2, 3, 4, 5] }} equipe={estado.equipe}>
-      <Contingencia sessao={sessao} />
+    <Casca {...moldura(sessao)} equipe={estado.equipe}>
       <Card variant="outlined">
         <CardContent>
           <div className="escola__pilha-curta">
@@ -103,21 +104,28 @@ export function ApostaTravada({ ctx, aposta }: { ctx: Contexto; aposta?: ApostaI
   );
 }
 
-function Contingencia({ sessao }: { sessao: Sessao }) {
+/**
+ * A moldura da E3: a barra de etapas; na contingência (E3-SIS-01), a faixa no
+ * topo e o cabeçalho "Unooria · Homologação" + "Pacote Padrão" no lugar dela.
+ */
+function moldura(sessao: Sessao): Pick<CascaProps, "cabecalho" | "etapas" | "faixa"> {
+  if (!sessao.pacote?.contingencia) return { etapas: { atual: 3, janela: [2, 3, 4, 5] } };
+  return {
+    faixa: <AlertBox variant="info" device="mobile" theme="light" title={TEXTOS.e3.contingencia} />,
+    cabecalho: { titulo: TEXTOS.e6.cabecalho, tag: TEXTOS.e3.pacotePadrao },
+  };
+}
+
+/** E3-SIS-01: o cartão das fichas carregadas do banco oficial (só na contingência). */
+function FichasDoBancoOficial({ sessao }: { sessao: Sessao }) {
   if (!sessao.pacote?.contingencia) return null;
   return (
-    <AlertBox
-      variant="info"
-      device="mobile"
-      theme="light"
-      title={TEXTOS.e3.contingencia}
-      description={`${TEXTOS.e3.contingenciaFichas}. ${TEXTOS.e3.contingenciaSegue}`}
-      actions={
-        <Tag variant="neutral" size="sm">
-          {TEXTOS.e3.pacotePadrao}
-        </Tag>
-      }
-    />
+    <Card variant="outlined">
+      <CardHeader title={TEXTOS.e3.contingenciaFichas} />
+      <CardContent>
+        <p className="escola__texto escola__texto--suave">{TEXTOS.e3.contingenciaSegue}</p>
+      </CardContent>
+    </Card>
   );
 }
 

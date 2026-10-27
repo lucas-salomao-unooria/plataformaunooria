@@ -15,19 +15,18 @@ import {
   ProgressBar,
   ScrollBar,
   SectionHeader,
-  StackedProgressBar,
   Table,
   Tag,
-  UNOORIA_DATAVIZ_PALETTE,
   type TableColumn,
 } from "@edu/ui/ds";
 import { BotaoImprimir } from "@/components/guia/botao-imprimir";
 import { AVISO_POR_COMPUTADOR } from "@/lib/equipe-no-painel";
 import {
-  ACOES_DA_FASE,
   APOSTAS,
-  ETIQUETA_DA_FASE,
-  OPCOES_DE_CRITERIO,
+  ETIQUETA_DO_MOMENTO,
+  PAUSA_FEITA,
+  acoesDoMomento,
+  momentoDoPainel,
   ROTULO_DA_APOSTA,
   ROTULO_DO_NIVEL,
   ROTULO_DO_PASSO,
@@ -39,6 +38,7 @@ import {
   type Fase,
   type GateDaTurma,
   type LinhaDoPainel,
+  type MomentoDoPainel,
   type Nivel,
   type PainelDaTurma,
 } from "@/lib/assistente-invisivel-tipos";
@@ -52,16 +52,23 @@ const INTERVALO_MS = 5_000;
 /** O nome da folha de impressão do relatório (`relatorio-de-homologacao.css`). */
 const IMPRESSAO = "relatorio-homologacao";
 
-/** O que o 1A e o 1C querem dizer, sob a barra (E5-PROF-01, literal do Figma). */
-const SENTIDO_DO_CRITERIO_1: Record<"a" | "c", string> = {
-  a: "Critério 1A (Autonomia / Livre Escolha): prioriza decisão voluntária do estudante sem barreiras.",
-  c: "Critério 1C (Progressão por Acertos): critério pedagógico objetivo sem dedução de cansaço por horário.",
-};
-const ROTULO_DO_CRITERIO_1: Record<"a" | "b" | "c", string> = {
-  a: "Critério 1A (Autonomia / Livre Escolha)",
-  b: "Critério 1B (Horário de acesso)",
-  c: "Critério 1C (Progressão por Acertos)",
-};
+/**
+ * As duas barras do gráfico 1A × 1C (E5-PROF-01, literal do Figma): o rótulo
+ * e o sentido de cada uma. O 1B NÃO entra no gráfico — o quadro compara as
+ * duas estratégias equitativas da sala; quem manteve o 1B aparece nos Avisos
+ * Discretos. O percentual é sobre 1A + 1C.
+ */
+const BARRAS_DO_CRITERIO_1: { opcao: "a" | "c"; rotulo: string; sentido: string }[] = [
+  { opcao: "a", rotulo: "Critério 1A (Autonomia / Livre Escolha)", sentido: "Prioriza decisão voluntária do estudante sem barreiras." },
+  { opcao: "c", rotulo: "Critério 1C (Progressão por Acertos)", sentido: "Critério pedagógico objetivo sem dedução de cansaço por horário." },
+];
+
+/** A instrução dos dois momentos da Mediação 1 (E4-PROF-01 "pausado", literal do Figma). */
+const INSTRUCAO_DA_MEDIACAO_1 =
+  "A turma concluiu as sessões simuladas. Clique em “Travar Telas da Turma” e inicie o debate de 8 minutos com as perguntas 1 e 2 do roteiro. Concluída a conversa, clique em “Liberar Bancada de Reconstrução” para abrir a Etapa 5.";
+/** A instrução dos dois momentos da Mediação 2 (E5-PROF-01 "pausado", literal do Figma). */
+const INSTRUCAO_DA_MEDIACAO_2 =
+  "A turma retestou as novas regras. Clique em “Pausar para Comparação” e projete no quadro o contraste entre os critérios 1A e 1C durante 5 minutos. Concluída a síntese, clique em “Liberar Publicação e Transparência” para abrir a Etapa 6.";
 
 /** A confirmação de cada botão: são todos só para a frente. */
 const CONFIRMACAO: Partial<Record<Fase, { titulo: string; texto: string }>> = {
@@ -93,7 +100,8 @@ const CONFIRMACAO: Partial<Record<Fase, { titulo: string; texto: string }>> = {
 
 /**
  * A CONDUÇÃO AO VIVO de O Assistente Invisível (ADR-185): a aba "Aula ao vivo"
- * do template (ADR-182), com os estados do Figma por fase da turma —
+ * do template (ADR-182), com os estados do Figma por MOMENTO da turma
+ * (`momentoDoPainel`: cada momento desenha só o que o quadro dele desenha) —
  * E1-PROF-01 (Liberar Início dos Testes), E3-PROF-01 (as apostas da sala e o
  * botão que só acende com 100%), E4-PROF-01 (Travar Telas / Liberar Bancada,
  * perguntas 1 e 2), E5-PROF-01 (1A × 1C, Avisos Discretos, Pausar /
@@ -101,7 +109,8 @@ const CONFIRMACAO: Partial<Record<Fase, { titulo: string; texto: string }>> = {
  * exportação para impressão).
  *
  * **Os botões só andam para a frente** (`ACOES_DA_FASE`, o espelho de
- * `PROXIMAS_FASES` da api), com confirmação. O painel se relê a cada 5 s e
+ * `PROXIMAS_FASES` da api), com confirmação. Na pausa, o botão dela fica à
+ * vista e desabilitado (`PAUSA_FEITA`), como o quadro "pausado" desenha. O painel se relê a cada 5 s e
  * chama `router.refresh()` quando a evidência muda (ADR-146) — as marcas vão
  * na publicação.
  */
@@ -178,7 +187,9 @@ export function PainelDaAulaAssistenteInvisivel({
 
   const fase = painel.fase;
   const r = painel.resumo;
-  const acoes = fase ? ACOES_DA_FASE[fase] : [];
+  const momento = fase ? momentoDoPainel(fase, r) : null;
+  const acoes = fase && momento ? acoesDoMomento(fase, momento) : [];
+  const pausaFeita = fase ? PAUSA_FEITA[fase] : undefined;
   const confirmacao = confirmando ? CONFIRMACAO[confirmando.para] : undefined;
 
   return (
@@ -188,9 +199,9 @@ export function PainelDaAulaAssistenteInvisivel({
           <SectionHeader
             title="Painel ao Vivo"
             badge={
-              fase ? (
+              momento ? (
                 <Tag variant="info" size="sm" pill>
-                  {ETIQUETA_DA_FASE[fase]}
+                  {ETIQUETA_DO_MOMENTO[momento]}
                 </Tag>
               ) : undefined
             }
@@ -203,11 +214,16 @@ export function PainelDaAulaAssistenteInvisivel({
             }
           />
 
-          {fase ? <BlocoDaFase painel={painel} fase={fase} /> : null}
+          {momento ? <BlocoDoMomento painel={painel} momento={momento} /> : null}
 
           {podeConduzir && acoes.length > 0 ? (
             <div className="flex flex-col items-start gap-2" data-botoes-da-aula>
               <div className="flex flex-wrap gap-3">
+                {pausaFeita ? (
+                  <Button variant={pausaFeita.variante} size="md" isDisabled data-acao="pausa-feita">
+                    {pausaFeita.rotulo}
+                  </Button>
+                ) : null}
                 {acoes.map((acao) => {
                   const esperaApostas = acao.para === "simulacao" && !r.todosApostaram;
                   return (
@@ -237,7 +253,7 @@ export function PainelDaAulaAssistenteInvisivel({
         </div>
       </Card>
 
-      {fase === "publicar" ? <RelatorioFinal painel={painel} /> : null}
+      {momento === "relatorio" ? <RelatorioFinal painel={painel} /> : null}
 
       <FolhaDaTurma painel={painel} />
 
@@ -319,14 +335,14 @@ function Pergunta({ numero, texto }: { numero: number; texto: string | undefined
   );
 }
 
-/** O conteúdo da lousa em cada fase — os estados E1, E3, E4, E5 e E6 do Figma. */
-function BlocoDaFase({ painel, fase }: { painel: PainelDaTurma; fase: Fase }) {
+/** O conteúdo da lousa em cada momento — cada um desenha só o que o quadro dele desenha no Figma. */
+function BlocoDoMomento({ painel, momento }: { painel: PainelDaTurma; momento: MomentoDoPainel }) {
   const r = painel.resumo;
   const apostaram = APOSTAS.reduce((s, k) => s + r.apostas[k], 0);
   const perguntas = painel.roteiro.perguntas;
 
-  switch (fase) {
-    case "aguardando-inicio":
+  switch (momento) {
+    case "inicio":
       return (
         <Status titulo="Status da Condução: Papel da Turma">
           Apresente o papel da turma como comissão de auditoria de tecnologia da escola. Quando todos estiverem
@@ -334,7 +350,7 @@ function BlocoDaFase({ painel, fase }: { painel: PainelDaTurma; fase: Fase }) {
         </Status>
       );
 
-    case "testes":
+    case "apostas":
       return (
         <div className="flex flex-col gap-4">
           <Status titulo={`Status da Condução: ${r.todosApostaram ? "Apostas Registradas" : "Aguardando Apostas"}`}>
@@ -364,14 +380,13 @@ function BlocoDaFase({ painel, fase }: { painel: PainelDaTurma; fase: Fase }) {
         </div>
       );
 
+    /* E4-PROF-01 "pausado": o mesmo quadro antes e depois de travar — muda o título e o botão da pausa. */
     case "simulacao":
-    case "debate-1":
+    case "telas-travadas":
       return (
         <div className="flex flex-col gap-4">
-          <Status titulo={`Status da Condução: ${fase === "debate-1" ? "Telas Travadas" : "Sessões Simuladas"}`}>
-            {fase === "debate-1"
-              ? "As telas da turma estão travadas. Conduza o debate de 8 minutos com as perguntas 1 e 2 do roteiro. Concluída a conversa, clique em “Liberar Bancada de Reconstrução” para abrir a Etapa 5."
-              : "A turma concluiu as sessões simuladas. Clique em “Travar Telas da Turma” e inicie o debate de 8 minutos com as perguntas 1 e 2 do roteiro. Concluída a conversa, clique em “Liberar Bancada de Reconstrução” para abrir a Etapa 5."}
+          <Status titulo={`Status da Condução: ${momento === "telas-travadas" ? "Telas Travadas" : "Sessões Simuladas"}`}>
+            {INSTRUCAO_DA_MEDIACAO_1}
           </Status>
           <DistribuicaoDasApostas painel={painel} titulo="Distribuição das Apostas da Sala" />
           <Barra rotulo="Estudantes que concluíram as 3 sessões de chat" parte={r.simulacoesConcluidas} total={r.sessoes} sucesso />
@@ -380,24 +395,27 @@ function BlocoDaFase({ painel, fase }: { painel: PainelDaTurma; fase: Fase }) {
         </div>
       );
 
-    case "explicar":
-    case "debate-2":
+    /* E4-PROF-01 "liberado": só a confirmação e as apostas consolidadas — a projeção e os botões da E5 ainda não. */
+    case "bancada-liberada":
       return (
         <div className="flex flex-col gap-4">
-          {fase === "explicar" ? (
-            <FeedbackAlert
-              type="success"
-              title="Mediação 1 Concluída ✓"
-              description="As telas dos estudantes foram desbloqueadas para a bancada de reconstrução na Etapa 5."
-            />
-          ) : null}
+          <FeedbackAlert
+            type="success"
+            title="Mediação 1 Concluída ✓"
+            description="As telas dos estudantes foram desbloqueadas para a bancada de reconstrução na Etapa 5."
+          />
           <DistribuicaoDasApostas painel={painel} titulo="Apostas Consolidadas da Sala" />
           <Barra rotulo="Estudantes na bancada de reconstrução" parte={r.naBancada} total={r.sessoes} sucesso />
-          <ProjecaoDeSolucoes painel={painel} fase={fase} />
         </div>
       );
 
-    case "publicar":
+    /* E5-PROF-01 "pausado": a projeção, antes e depois de pausar. */
+    case "projecao":
+    case "projecao-pausada":
+      return <ProjecaoDeSolucoes painel={painel} />;
+
+    /* E5-PROF-01 "liberado": só a confirmação — o relatório final vem com a primeira publicação. */
+    case "publicacao-liberada":
       return (
         <FeedbackAlert
           type="success"
@@ -405,14 +423,20 @@ function BlocoDaFase({ painel, fase }: { painel: PainelDaTurma; fase: Fase }) {
           description="As telas dos estudantes foram desbloqueadas para a publicação da transparência na Etapa 6."
         />
       );
+
+    case "relatorio":
+      return null;
   }
 }
 
-/** E5-PROF-01 "Projeção de Soluções": 1A × 1C no quadro e os Avisos Discretos. */
-function ProjecaoDeSolucoes({ painel, fase }: { painel: PainelDaTurma; fase: "explicar" | "debate-2" }) {
+/**
+ * E5-PROF-01 "Projeção de Soluções": o gráfico 1A × 1C (SÓ as duas barras do
+ * quadro, o percentual sobre 1A + 1C) e os Avisos Discretos. Antes e depois de
+ * pausar, o mesmo texto do Figma; quem muda é o botão da pausa.
+ */
+function ProjecaoDeSolucoes({ painel }: { painel: PainelDaTurma }) {
   const c = painel.resumo.criterioExercicios;
-  const total = OPCOES_DE_CRITERIO.reduce((s, k) => s + c[k], 0);
-  const cores = [UNOORIA_DATAVIZ_PALETTE[0], UNOORIA_DATAVIZ_PALETTE[3], UNOORIA_DATAVIZ_PALETTE[1]] as const;
+  const total = c.a + c.c;
   const avisos = painel.linhas.flatMap((l) => {
     const aviso = avisoDiscreto(l);
     return aviso ? [`${l.equipe?.nome ?? l.nome} ${aviso}.`] : [];
@@ -421,26 +445,16 @@ function ProjecaoDeSolucoes({ painel, fase }: { painel: PainelDaTurma; fase: "ex
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-unooria-neutral-200 p-4" data-projecao-de-solucoes>
       <SectionHeader title="Projeção de Soluções" />
-      <Status titulo="Comparação de Soluções no Quadro">
-        {fase === "debate-2"
-          ? "As telas estão em espera. Projete no quadro o contraste entre os critérios 1A e 1C durante 5 minutos. Concluída a síntese, clique em “Liberar Publicação e Transparência” para abrir a Etapa 6."
-          : "A turma retestou as novas regras. Clique em “Pausar para Comparação” e projete no quadro o contraste entre os critérios 1A e 1C durante 5 minutos. Concluída a síntese, clique em “Liberar Publicação e Transparência” para abrir a Etapa 6."}
-      </Status>
-      <StackedProgressBar
-        title="Critérios Escolhidos pela Sala: 1A × 1C"
-        subtitle={total > 0 ? `Último reteste de cada ${painel.porComputador ? "computador" : "estudante"} · ${total} no total` : "Ninguém retestou ainda"}
-        totalValue={total}
-        segments={OPCOES_DE_CRITERIO.map((k, i) => ({
-          label: ROTULO_DO_CRITERIO_1[k],
-          value: c[k],
-          amountText: `${percentual(c[k], total)}%`,
-          color: cores[i] ?? UNOORIA_DATAVIZ_PALETTE[0],
-        }))}
-      />
-      <ul className="flex flex-col gap-1 text-[13px] leading-snug text-unooria-neutral-700">
-        <li>{SENTIDO_DO_CRITERIO_1.a}</li>
-        <li>{SENTIDO_DO_CRITERIO_1.c}</li>
-      </ul>
+      <Status titulo="Comparação de Soluções no Quadro">{INSTRUCAO_DA_MEDIACAO_2}</Status>
+      <div className="flex flex-col gap-3" data-criterios-1a-1c>
+        <h4 className="text-[14px] font-semibold text-unooria-neutral-950">Critérios Escolhidos pela Sala: 1A × 1C</h4>
+        {BARRAS_DO_CRITERIO_1.map((b) => (
+          <div key={b.opcao} className="flex flex-col gap-1">
+            <Barra rotulo={b.rotulo} parte={c[b.opcao]} total={total} />
+            <p className="text-[13px] leading-snug text-unooria-neutral-700">{b.sentido}</p>
+          </div>
+        ))}
+      </div>
       {avisos.length > 0 ? (
         <div data-avisos-discretos>
           <FeedbackAlert
@@ -472,8 +486,7 @@ const HABILIDADES_DO_RELATORIO = [
 
 type LinhaDaMatriz = { codigo: string; descricao: string; resultado: string };
 
-function TagDoNivel({ nivel }: { nivel: Nivel | undefined }) {
-  if (!nivel) return <span className="text-unooria-neutral-500">Não avaliado</span>;
+function TagDoNivel({ nivel }: { nivel: Nivel }) {
   const n = ROTULO_DO_NIVEL[nivel];
   return (
     <Tag variant={n.variante} size="sm" pill>
@@ -512,12 +525,15 @@ function RelatorioFinal({ painel }: { painel: PainelDaTurma }) {
       minWidth: 180,
       render: (_, l) => (l.equipe ? `${l.equipe.nome} (${l.equipe.membros.map((m) => m.nome).join(", ")})` : l.nome),
     },
-    { key: "co20", title: "EM13CO20 (Foco)", minWidth: 130, render: (_, l) => <TagDoNivel nivel={l.niveis?.co20} /> },
-    { key: "co01", title: "EM13CO01", minWidth: 120, render: (_, l) => <TagDoNivel nivel={l.niveis?.co01} /> },
-    { key: "co18", title: "EM13CO18", minWidth: 120, render: (_, l) => <TagDoNivel nivel={l.niveis?.co18} /> },
-    { key: "co03", title: "EM13CO03 (Opcional)", minWidth: 150, render: (_, l) => <TagDoNivel nivel={l.niveis?.co03} /> },
+    { key: "co20", title: "EM13CO20 (Foco)", minWidth: 130, render: (_, l) => <TagDoNivel nivel={l.niveis!.co20} /> },
+    { key: "co01", title: "EM13CO01", minWidth: 120, render: (_, l) => <TagDoNivel nivel={l.niveis!.co01} /> },
+    { key: "co18", title: "EM13CO18", minWidth: 120, render: (_, l) => <TagDoNivel nivel={l.niveis!.co18} /> },
+    { key: "co03", title: "EM13CO03 (Opcional)", minWidth: 150, render: (_, l) => <TagDoNivel nivel={l.niveis!.co03} /> },
   ];
   const comunicados = painel.linhas.filter((l) => l.publicacao);
+  /* "Níveis por Estudante" lista SÓ quem já tem nível (publicou, ou a missão foi encerrada), como o quadro E6-PROF-01:
+     nenhuma célula "Não avaliado" aqui — esse estado continua no painel de habilidades. */
+  const comNivel = painel.linhas.filter((l) => l.niveis !== null);
 
   return (
     <section className="relatorio-homologacao flex flex-col gap-6" data-relatorio-final aria-label="Relatório Formativo Final">
@@ -569,9 +585,9 @@ function RelatorioFinal({ painel }: { painel: PainelDaTurma }) {
           <ScrollBar orientation="both" autoHide className="tabela-rolavel">
             <Table<LinhaDoPainel>
               columns={colunasDosNiveis}
-              data={[...painel.linhas]}
+              data={comNivel}
               keyExtractor={(l) => l.unidadeId}
-              emptyText="A turma ainda não tem estudantes."
+              emptyText="Ninguém publicou ainda: o nível aparece quando o estudante publica."
               size="md"
               theme="light"
             />
