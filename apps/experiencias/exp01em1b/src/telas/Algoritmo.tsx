@@ -64,7 +64,9 @@ export function Algoritmo({ ctx }: { ctx: Contexto }) {
         <div className="escola__lista">
           {sessao.material.passosDoAlgoritmo.map((p) => {
             const marcado = marcados.includes(p.id);
-            const sufixo = algumMarcado ? ` ${marcado ? TEXTOS.e5.dispensavel : TEXTOS.e5.essencial}` : "";
+            /* "(Ação enviesada)" só para o passo que o SERVIDOR diz (`enviesados`, já marcado): o bundle não sabe qual é. */
+            const rotuloDoMarcado = estado.algoritmo.enviesados.includes(p.id) ? TEXTOS.e5.enviesada : TEXTOS.e5.dispensavel;
+            const sufixo = algumMarcado ? ` ${marcado ? rotuloDoMarcado : TEXTOS.e5.essencial}` : "";
             return (
               <Checkbox
                 key={p.id}

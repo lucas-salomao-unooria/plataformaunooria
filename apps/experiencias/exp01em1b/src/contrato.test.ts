@@ -36,7 +36,7 @@ describe("o bundle não carrega o gabarito", () => {
     ["a lista de passos dispensáveis", /\[\s*2\s*,\s*3\s*,\s*4\s*\]/],
     ["os critérios equitativos por função", /(exercicios|duvidas)\s*:\s*\[\s*["']a["']\s*,\s*["']c["']\s*\]/],
     ["a opção certa de um bloco", /(problema|inferencia|regra|salvaguarda)\s*:\s*["'](restringindo|metadados|criterios-pedagogicos|revisao-humana)["']/],
-    ["o rótulo do Figma que entrega o gabarito do passo 4", /Ação enviesada/],
+    ["o passo 4 amarrado ao rótulo \"(Ação enviesada)\" (o servidor decide, em `enviesados`)", /(\b4\b[^\n]{0,40}enviesad|enviesad[^\n]{0,40}\b4\b)/],
     ["os acertos da classificação", /acertos\s*:/],
   ])("%s", (_nome, padrao) => {
     for (const [arquivo, texto] of fonte) expect({ arquivo, casou: padrao.test(texto) }).toEqual({ arquivo, casou: false });

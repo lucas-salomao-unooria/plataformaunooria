@@ -51,6 +51,7 @@ import {
   type Funcao,
   type ItemDoPacote,
   type PassoDoAlgoritmo,
+  PASSOS_DE_ACAO_ENVIESADA,
 } from "./conteudo";
 import {
   ClassificacaoValorSchema,
@@ -935,6 +936,7 @@ export class AssistenteInvisivelService implements OnModuleInit {
       algoritmo: {
         aberto: Boolean(s?.painelPassosAbertoEm),
         marcados: s ? lerPassos(s.passosMarcados) : [],
+        enviesados: s ? lerPassos(s.passosMarcados).filter((p) => PASSOS_DE_ACAO_ENVIESADA.includes(p)) : [],
         concluido: Boolean(s?.algoritmoConcluidoEm),
       },
       criterios: criterios ?? { ...CRITERIOS_INICIAIS },

@@ -100,7 +100,8 @@ export interface Estado {
   aposta: ApostaId | null;
   apostadaEm: string | null;
   classificacao: { cartoes: ClassificacaoValor; completa: boolean; cadeiaCausal: boolean } | null;
-  algoritmo: { aberto: boolean; marcados: PassoDoAlgoritmo[]; concluido: boolean };
+  /** `enviesados`: dos marcados, os que levam "(Ação enviesada)" — vem do servidor (gabarito). */
+  algoritmo: { aberto: boolean; marcados: PassoDoAlgoritmo[]; enviesados: PassoDoAlgoritmo[]; concluido: boolean };
   criterios: CriteriosValor;
   retestes: number;
   ultimoReteste: Reteste | null;

@@ -195,6 +195,15 @@ export const ROTULO_DO_PASSO_DO_ALGORITMO: Readonly<Record<PassoDoAlgoritmo, str
 /** GABARITO (EM13CO03): os passos adicionados pela inferência — consomem processamento sem atender o pedido. */
 export const PASSOS_DISPENSAVEIS: readonly PassoDoAlgoritmo[] = [2, 3, 4];
 
+/**
+ * GABARITO: o passo que AGE sobre o estudante a partir da inferência ("Alterar
+ * trilha de estudos por perfil"). O Figma (E5-ALU-02 "marcado") o rotula
+ * "(Ação enviesada)" quando o estudante o marca; o rótulo vem do SERVIDOR
+ * (`estado.algoritmo.enviesados`), e só para o passo já marcado — o bundle não
+ * sabe qual é (decisão do Lucas, 2026-10-26).
+ */
+export const PASSOS_DE_ACAO_ENVIESADA: readonly PassoDoAlgoritmo[] = [4];
+
 // ──────────────────────────────────────────── E5, parte 3: o banco de critérios 3×3 (GABARITO)
 
 export const FUNCOES = ["exercicios", "duvidas", "sugestoes"] as const;

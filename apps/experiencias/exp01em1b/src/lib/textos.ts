@@ -153,6 +153,7 @@ export const TEXTOS = {
     marqueAsInstrucoes: "Marque quais instruções do algoritmo realizam inferência comportamental desnecessária sobre o estudante.",
     passo: (n: number, rotulo: string) => `Passo ${n}: ${rotulo}`,
     dispensavel: "(Inferência dispensável)",
+    enviesada: "(Ação enviesada)",
     essencial: "(Essencial)",
     pular: "Pular Etapa",
     iconesDosPassos: { 1: "💬", 2: "🕒", 3: "📊", 4: "🔀", 5: "📤" } as Record<number, string>,

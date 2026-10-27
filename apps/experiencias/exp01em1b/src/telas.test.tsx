@@ -87,7 +87,7 @@ function sessao(passo: Passo, extra: Partial<Sessao> = {}): Sessao {
     aposta: ["boas-vindas", "funcoes", "aposta"].includes(passo) ? null : "b",
     apostadaEm: null,
     classificacao: null,
-    algoritmo: { aberto: false, marcados: [], concluido: false },
+    algoritmo: { aberto: false, marcados: [], enviesados: [], concluido: false },
     criterios: { exercicios: "b", duvidas: "b", sugestoes: "a" },
     retestes: 0,
     ultimoReteste: passo === "reteste" ? { equidade: "total", beatrizAvancada: true, thiagoLivre: true } : null,
@@ -405,6 +405,13 @@ describe("os gestos que vão à api", () => {
     expect(texto()).toContain("Passo 1: Ler mensagem enviada pelo usuário (Essencial)");
     expect(texto()).toContain("Otimização: de 5 para 4 passos essenciais");
     expect(corpos["/assistente-invisivel/algoritmo/marcar"]).toEqual({ marcados: [2], atividade: { pacoteId: "p1", rodada: 1 } });
+  });
+
+  test("E5-ALU-02: \"(Ação enviesada)\" só no passo que o servidor diz, e só marcado", async () => {
+    await abrir(sessao("algoritmo", { algoritmo: { aberto: true, marcados: [3, 4], enviesados: [4], concluido: false } }));
+    expect(texto()).toContain("Passo 4: Alterar trilha de estudos por perfil (Ação enviesada)");
+    expect(texto()).toContain("Passo 3: Calcular pontuação presumida de cansaço (Inferência dispensável)");
+    expect(texto()).not.toContain("Passo 3: Calcular pontuação presumida de cansaço (Ação enviesada)");
   });
 
   test("E6-ALU-01: publicar é sempre habilitado; bloco em branco só avisa; o toggle nasce desligado", async () => {

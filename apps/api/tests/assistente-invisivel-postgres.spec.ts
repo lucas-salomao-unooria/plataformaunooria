@@ -441,7 +441,8 @@ describe("E5: a bancada, o painel opcional e o reteste", () => {
     await service.abrirAlgoritmo(ESCOLA, ids.ana, SEM);
     await service.marcarAlgoritmo(ESCOLA, ids.ana, SEM, [2, 5]);
     const e = EstadoSchema.parse(await service.marcarAlgoritmo(ESCOLA, ids.ana, SEM, [4, 3, 2]));
-    expect(e.algoritmo).toEqual({ aberto: true, marcados: [2, 3, 4], concluido: false });
+    /* "(Ação enviesada)" (Figma E5-ALU-02): dos marcados, só o 4 — o gabarito decide no servidor. */
+    expect(e.algoritmo).toEqual({ aberto: true, marcados: [2, 3, 4], enviesados: [4], concluido: false });
     expect(EstadoSchema.parse(await service.concluirAlgoritmo(ESCOLA, ids.ana, SEM)).passo).toBe("criterios");
   });
 

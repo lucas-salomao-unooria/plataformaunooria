@@ -1707,9 +1707,10 @@ mostra: a tabela causal (quando horário e sinal de rede estão em
 Observados), o resultado do reteste e o efeito no chat (a Beatriz no
 avançado, o Thiago sem limite). O rótulo \enquote{(Inferência dispensável)} /
 \enquote{(Essencial)} do painel opcional é o do ESTUDANTE, e
-\enquote{Otimização: de 5 para N passos essenciais} é 5 menos os marcados; o
-\enquote{(Ação enviesada)} que o Figma pôs nos critérios não entrou (seria
-gabarito), e a configuração no ar aparece como \enquote{[Ativo]}. Também não
+\enquote{Otimização: de 5 para N passos essenciais} é 5 menos os marcados. O
+\enquote{(Ação enviesada)} que o Figma põe no passo 4 marcado vem do SERVIDOR
+(\cd{estado.algoritmo.enviesados}, só dos passos já marcados): o bundle não
+sabe qual passo é. A configuração no ar aparece como \enquote{[Ativo]}. Também não
 há o aviso de bloco \enquote{desconexo} no Publicar: ele entregaria a
 resposta. \arq{src/contrato.test.ts} da experiência e a suíte da api cobram a
 ausência no \emph{schema} da sessão.

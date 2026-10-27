@@ -38,8 +38,10 @@ página de transparência com o comunicado (o LATCH 2).
 - **O gabarito não desce, e o teste cobra**: nada de coluna certa dos cartões,
   passos dispensáveis, critérios equitativos ou opção certa dos blocos. O
   rótulo "(Inferência dispensável)/(Essencial)" é o do ESTUDANTE, e "Otimização:
-  de 5 para N" é 5 − marcados. O "(Ação enviesada)" do Figma não entra (é
-  gabarito).
+  de 5 para N" é 5 − marcados. O "(Ação enviesada)" do Figma (passo 4
+  marcado) vem do SERVIDOR em `estado.algoritmo.enviesados`, só para passo já
+  marcado — o bundle não sabe qual é, e o `contrato.test.ts` recusa amarrar o
+  4 ao rótulo.
 - **As conversas são roteirizadas** (`lib/roteiro.ts`), a partir do pacote que o
   professor curou: sem IA na tela do estudante, sem texto livre, sem Canal B.
 - **Fila de envio em MEMÓRIA** (`lib/fila.ts`), nunca `localStorage`: rede caída

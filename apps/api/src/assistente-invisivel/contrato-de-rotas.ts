@@ -187,7 +187,13 @@ export const EstadoSchema = z.object({
   apostadaEm: z.string().nullable(),
   /** Os cartões como o estudante os deixou, e se a tabela causal aparece. Sem acertos. */
   classificacao: z.object({ cartoes: ClassificacaoValorSchema, completa: z.boolean(), cadeiaCausal: z.boolean() }).nullable(),
-  algoritmo: z.object({ aberto: z.boolean(), marcados: z.array(PassoDoAlgoritmoSchema), concluido: z.boolean() }),
+  algoritmo: z.object({
+    aberto: z.boolean(),
+    marcados: z.array(PassoDoAlgoritmoSchema),
+    /** Dos MARCADOS, os que a tela rotula "(Ação enviesada)" (Figma E5-ALU-02). Só desce o que o estudante já marcou. */
+    enviesados: z.array(PassoDoAlgoritmoSchema),
+    concluido: z.boolean(),
+  }),
   /** A configuração no ar: B-B-A até o primeiro reteste. */
   criterios: CriteriosValorSchema,
   retestes: z.number().int(),
