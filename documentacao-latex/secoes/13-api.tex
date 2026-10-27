@@ -1443,8 +1443,8 @@ com o resultado). Toda jogada declara o passo dela: à frente, 409
 a tela sempre manda): diferente da do servidor, 409 \cd{rodada-mudou}, e a
 fila de reenvio não aplica jogada velha na rodada nova. A sessão
 sai trancada por \cd{SELECT \ldots{} FOR UPDATE}. A turma do estudante sai do
-\emph{token}, nunca do corpo. Não há rota de texto livre, nem Canal B, nem IA
-do estudante. O podcast é do módulo da plataforma
+\emph{token}, nunca do corpo. Não há rota de texto livre nem IA do
+estudante. O podcast é do módulo da plataforma
 (\rota{/podcast/\B{}exp01em1b/\B{}turmas/:t/*}, \adrr{ADR-150}).
 
 \begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
@@ -1542,7 +1542,7 @@ do estudante. O podcast é do módulo da plataforma
   pacote apagada (\adrr{ADR-155}), as sessões guardadas e a fase de volta a
   \cd{aguardando-\B{}inicio}.\\
 \rota{GET /assistente-\B{}invisivel/\B{}professor/\B{}material} & prof., gestor & O
-  guia da aula: as quatro perguntas do roteiro, o caso de transferência e os
+  guia da aula: as quatro perguntas do roteiro (só elas, \adrr{ADR-189}) e os
   critérios das quatro habilidades. Catálogo, sem \emph{tenancy}
   (\adrr{ADR-86}).\\
 \bottomrule
@@ -1922,8 +1922,8 @@ hub divergiria na primeira revisão de \emph{copy}.
   os núcleos, as falas da visitante), o roteiro da conversa, as cartas dos
   pares com a atividade e a cor, e os critérios das duas habilidades.\\
 \rota{GET /assistente-\B{}invisivel/\B{}professor/\B{}material} & prof., gestor & As
-  quatro perguntas do roteiro de debate de O Assistente Invisível, o caso de
-  transferência e os critérios das quatro habilidades.\\
+  quatro perguntas do roteiro de debate de O Assistente Invisível e os
+  critérios das quatro habilidades.\\
 \bottomrule
 \end{tabularx}
 

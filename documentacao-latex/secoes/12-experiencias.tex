@@ -305,10 +305,10 @@ da missão injeta o que só ela sabe montar:
   \item \textbf{exp01em1b} (O Assistente Invisível) ---
     \rota{GET /assistente-\B{}invisivel/\B{}professor/\B{}material} devolve as quatro
     perguntas do roteiro de debate (as duas do E4-PROF-01, literais, e as duas
-    do E6-PROF-01, na forma curta do Figma), o caso de transferência (o
-    aplicativo de transporte que cobra mais pelo modelo do celular e pelo
-    bairro) e o critério de cada nível das quatro habilidades. O componente é
-    \arq{guia/\B{}material-\B{}do-\B{}assistente-\B{}invisivel.tsx} (\adrr{ADR-185}).
+    do E6-PROF-01, na forma curta do Figma) e o critério de cada nível das
+    quatro habilidades. O componente é
+    \arq{guia/\B{}material-\B{}do-\B{}assistente-\B{}invisivel.tsx} (\adrr{ADR-185},
+    \adrr{ADR-189}).
   \item \textbf{backup-exp04ef1b} (o UnooTube, arquivado na \adrr{ADR-116}; o
     bloco saiu do guia com ele) --- a tabela dos 21 vídeos, com o \cd{factual} de
     cada um, vinha de \rota{GET /unootube/professor/videos}. A criança de nove
@@ -1638,7 +1638,7 @@ auxiliares das duas moram em \arq{scripts/e2e/lib/\B{}enigma-capa.mjs}.
 \label{sec:exp01em1b}
 
 \textbf{1ª série EM, unidade 1 (\enquote{Dados que viram decisões}), seções
-\cd{unooria} e \cd{unooriaai}, experiência 1.0.0, porta 5188.} Desde
+\cd{unooria} e \cd{unooriaai}, experiência 1.0.3, porta 5188.} Desde
 2026-10-26 (\adrr{ADR-185}), vinda da esteira de produto (one-pager v1.5 do
 PO), com o Figma de 63 telas como referência de tela e de \emph{copy}. Módulo
 da api: \arq{assistente-\B{}invisivel} (prefixo \rota{/assistente-\B{}invisivel},
@@ -1659,8 +1659,8 @@ controlados: só o horário e a conexão variam, e o Lucas é o controle
 (\enquote{Resultado: Avançado}, sem inferência). A missão é individual; o
 aparelho compartilhado e a projeção entram pelas equipes da plataforma (a
 missão está em \cd{EXPERIENCIAS\_\B{}COM\_\B{}EQUIPE} e em
-\cd{EXPERIENCIAS\_\B{}COM\_\B{}ATIVIDADE}). Sem IA na tela do estudante, sem texto
-livre, sem Canal B: as conversas são roteirizadas a partir do pacote que o
+\cd{EXPERIENCIAS\_\B{}COM\_\B{}ATIVIDADE}). Sem IA na tela do estudante e sem texto
+livre: as conversas são roteirizadas a partir do pacote que o
 professor aprovou (\arq{lib/roteiro.ts}).
 
 \subsection{O que o estudante vive: as seis etapas}
@@ -1701,8 +1701,9 @@ professor aprovou (\arq{lib/roteiro.ts}).
   (\cd{RadioGroup}, com \enquote{Comece aqui} no bloco 1) e \enquote{Publicar
   Transparência e Comunicado}, sempre habilitado (aviso só para bloco em
   branco): o \textbf{LATCH 2}, que conclui. Depois, o certificado com a
-  salvaguarda LGPD, a transferência, a síntese e o desafio extra (Casos
-  Extremos), que \enquote{Pular Desafio Extra e Encerrar} recolhe.\\
+  salvaguarda LGPD, a síntese e o desafio extra (Casos Extremos), que
+  \enquote{Pular Desafio Extra e Encerrar} recolhe. O card do caso de
+  mercado que o Figma desenhava saiu na 1.0.3 (\adrr{ADR-189}).\\
 \bottomrule
 \end{tabularx}
 
