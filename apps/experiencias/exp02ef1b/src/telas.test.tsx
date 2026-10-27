@@ -62,13 +62,12 @@ function sessao(passo: Passo, extra: Partial<Estado> = {}): Sessao {
     lupa:
       passo === "lupa"
         ? {
-            alvo1Ms: 0,
-            alvo2Ms: 0,
+            tempos: { "inv-1:foto-1": 0, "inv-1:foto-2": 0, "inv-2:foto-1": 0, "inv-2:foto-2": 0 },
             alertas: 0,
             liberada: false,
             alvos: [
-              { id: "inv-1", x: 41, y: 33, r: 8 },
-              { id: "inv-2", x: 60, y: 33, r: 7 },
+              { id: "inv-1", x: 36, y: 20, w: 10, h: 18 },
+              { id: "inv-2", x: 54, y: 20, w: 12, h: 22 },
             ],
           }
         : null,
@@ -119,6 +118,7 @@ function sessao(passo: Passo, extra: Partial<Estado> = {}): Sessao {
       molduraDaCapa: { w: 0.8, h: 0.8 },
       segundaFoto: { proporcao: 4 / 3, moldura: { w: 0.55, h: 0.85 } },
       pisoDaLupaMs: 3000,
+      margemDoAlvo: 1.5,
       toquesForaMax: 10,
     },
     material: {
@@ -185,8 +185,8 @@ afterEach(async () => {
 
 describe("cada passo do servidor desenha a sua tela, com o texto do PO", () => {
   test.each<[Passo, string[]]>([
-    ["inicio", ["RASCUNHO PENDENTE", "INVESTIGAR A NOVA CAPA", "ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA", "ABRIR BANCADA"]],
-    ["lupa", ["INVESTIGUE COM A LUPA", "0 DE 2 ENCONTRADOS", "FOTO 1 — BIBLIOTECA ESCOLAR 14:15", "AVANÇAR"]],
+    ["inicio", ["RASCUNHO PENDENTE", "INVESTIGAR A NOVA CAPA", "ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DA BIBLIOTECA", "ABRIR BANCADA"]],
+    ["lupa", ["INVESTIGUE COM A LUPA", "0 DE 4 ENCONTRADOS", "FOTO 1 — BIBLIOTECA ESCOLAR 14:15", "0 DE 2", "AVANÇAR"]],
     ["decidir", ["ESCOLHA 1 FOTO", "PUBLICAR CAPA"]],
     ["feed", ["Na foto, vi a biblioteca!"]],
     ["invariantes", ["TOQUE EM 2 COISAS IGUAIS", "0 DE 2 ENCONTRADOS", "SUA FOTO", "OUTRA FOTO"]],

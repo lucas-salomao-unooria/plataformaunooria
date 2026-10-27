@@ -44,7 +44,7 @@ export const api = {
   /** ABRIR BANCADA: a sessão nasce aqui (o passo vai de `inicio` a `lupa`). */
   iniciar: () => exigir().api.post<Estado>(`${BASE}/iniciar`, {}),
   lupa: (relato: RelatoDaLupa, avancar: boolean) =>
-    exigir().api.post<RespostaDaLupa>(`${BASE}/lupa`, { ...relato, avancar }),
+    exigir().api.post<RespostaDaLupa>(`${BASE}/lupa`, { tempos: relato, avancar }),
   publicar: (fotoId: FotoId, seloId: SeloId, deslocamento: Deslocamento) =>
     exigir().api.post<RespostaDoPublicar>(`${BASE}/publicar`, { fotoId, seloId, deslocamento }),
   invariante: (fotoId: FotoId, ponto: Ponto) =>

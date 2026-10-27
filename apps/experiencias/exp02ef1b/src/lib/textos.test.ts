@@ -11,7 +11,8 @@ describe("os textos da tela", () => {
   test("{ESPACO} sai em caixa alta; {hora}, {espacoCurto} e {n} como vieram", () => {
     expect(preencher(TEXTOS.e2.rotuloDaFoto1, { espaco: "Biblioteca Escolar", hora: "14:15" })).toBe("FOTO 1 — BIBLIOTECA ESCOLAR 14:15");
     expect(preencher(TEXTOS.e1.contexto, { espacoCurto: "a biblioteca" })).toBe("A capa sobre a biblioteca causou confusão entre os ouvintes.");
-    expect(preencher(TEXTOS.e2.contador, { n: "1" })).toBe("1 DE 2 ENCONTRADOS");
+    expect(preencher(TEXTOS.e2.contador, { n: "1" })).toBe("1 DE 4 ENCONTRADOS");
+    expect(preencher(TEXTOS.e2.contadorDaFoto, { n: "1" })).toBe("1 DE 2");
     expect(preencher("{nada}", {})).toBe("{nada}");
   });
 });
