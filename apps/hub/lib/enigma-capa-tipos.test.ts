@@ -4,8 +4,6 @@ import { describe, expect, test } from "vitest";
 import {
   CHAVES_DE_CENA,
   CHAVES_PRONTAS,
-  CRACHAS,
-  DISCIPLINAS,
   ELEMENTOS_DA_SEGUNDA_FOTO,
   FAIXA_COMUM,
   FASES,
@@ -15,8 +13,8 @@ import {
   ORIGENS,
   PASSOS,
   RAIO_PADRAO,
+  ROTULO_DA_DISCIPLINA,
   SELOS,
-  VOTOS,
   alvoNaFaixaComum,
   mudouAEvidencia,
   palavrasDoTexto,
@@ -33,6 +31,7 @@ import {
 const API = join(__dirname, "../../api/src/enigma-capa");
 const conteudo = readFileSync(join(API, "conteudo.ts"), "utf8");
 const passos = readFileSync(join(API, "regras/passos.ts"), "utf8");
+const componentes = readFileSync(join(__dirname, "../../api/src/curriculo/componentes.ts"), "utf8");
 
 const lista = (fonte: string, nome: string) => {
   const m = new RegExp(`export const ${nome} = \\[([^\\]]+)\\] as const`).exec(fonte);
@@ -41,18 +40,15 @@ const lista = (fonte: string, nome: string) => {
 
 describe("o espelho dos vocabulários", () => {
   test.each([
-    ["DISCIPLINAS", DISCIPLINAS, conteudo],
     ["ORIGENS", ORIGENS, conteudo],
     ["CHAVES_DE_CENA", CHAVES_DE_CENA, conteudo],
     ["CHAVES_PRONTAS", CHAVES_PRONTAS, conteudo],
     ["FASES", FASES, conteudo],
-    ["CRACHAS", CRACHAS, conteudo],
     ["FOTOS", FOTOS, conteudo],
     ["SELOS", SELOS, conteudo],
     ["INVARIANTES", INVARIANTES, conteudo],
     ["MOTIVOS_DO_PAR", MOTIVOS_DO_PAR, conteudo],
     ["ELEMENTOS_DA_SEGUNDA_FOTO", ELEMENTOS_DA_SEGUNDA_FOTO, conteudo],
-    ["VOTOS", VOTOS, conteudo],
   ])("%s", (nome, valores, fonte) => {
     expect(lista(fonte, nome)).toEqual([...valores]);
   });
@@ -60,6 +56,14 @@ describe("o espelho dos vocabulários", () => {
   test("PASSOS", () => {
     const m = /export const PASSOS = \[([\s\S]+?)\] as const/.exec(passos);
     expect(m ? [...(m[1] as string).matchAll(/"([^"]+)"/g)].map((x) => x[1]) : null).toEqual([...PASSOS]);
+  });
+
+  test("o rótulo do componente cobre o DISCIPLINAS da api, com o rótulo do catálogo de componentes", () => {
+    expect(Object.keys(ROTULO_DA_DISCIPLINA)).toEqual(lista(conteudo, "DISCIPLINAS"));
+    for (const [slug, rotulo] of Object.entries(ROTULO_DA_DISCIPLINA)) {
+      if (slug === "outra") continue;
+      expect(componentes).toMatch(new RegExp(`slug: "${slug}",\\s*rotulo: "${rotulo}"`));
+    }
   });
 
   test("a faixa comum e o raio padrão são os da api", () => {
@@ -95,27 +99,25 @@ describe("a curadoria", () => {
   });
 });
 
-test("a evidência muda nos invariantes completos e no voto, não no resto", () => {
+test("a evidência muda nos invariantes completos e no \"Pronto\" do que ficou fora, não no resto", () => {
   const linha = {
     estudanteId: "e1",
     nome: "Ana",
     equipe: null,
     passo: "feed",
     aguardandoVirada: true,
-    cracha: "fone-azul",
     lupa: null,
     capa: null,
     invariantes: null,
     fora: null,
     par: null,
     segundaFoto: null,
-    voto: null,
   } as const;
   const base = { linhas: [linha] } as unknown as PainelDaTurma;
   const andou = { linhas: [{ ...linha, passo: "invariantes" }] } as unknown as PainelDaTurma;
   const achou = { linhas: [{ ...linha, invariantes: { encontrados: 4, erros: 0, ajuda: false, errosPosAjuda: 0, completo: true } }] } as unknown as PainelDaTurma;
-  const votou = { linhas: [{ ...linha, voto: "so-um-pedaco" }] } as unknown as PainelDaTurma;
+  const marcouFora = { linhas: [{ ...linha, fora: { itens: [{ id: "m1", nome: "Estante" }], possiveis: 3 } }] } as unknown as PainelDaTurma;
   expect(mudouAEvidencia(base, andou)).toBe(false);
   expect(mudouAEvidencia(base, achou)).toBe(true);
-  expect(mudouAEvidencia(base, votou)).toBe(true);
+  expect(mudouAEvidencia(base, marcouFora)).toBe(true);
 });

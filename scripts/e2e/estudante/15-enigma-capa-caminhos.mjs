@@ -16,7 +16,7 @@ import {
 } from "../lib/enigma-capa.mjs";
 
 /**
- * O ENIGMA DA CAPA DA RÁDIO (exp02ef1b, ADR-184) — os CAMINHOS DE BORDA, com
+ * O ENIGMA DA CAPA DA RÁDIO (exp02ef1b, ADR-184; 2.0.0, ADR-186) — os CAMINHOS DE BORDA, com
  * duas crianças da mesma turma e o banco padrão (sem IA na aula).
  *
  * A 14 prova o caminho feliz com a cena gerada pela IA. Esta prova o que a
@@ -30,10 +30,11 @@ import {
  *    memória entrega quando a rede volta — provado pela api);
  * 4. a AJUDA depois de 3 erros na busca (o pulso amarelo nos alvos que o
  *    servidor manda) e mais 3 erros depois dela (o "não atingiu" da EF02CO01);
- * 5. MOSTRA TUDO na horta (o LATCH 2) com o selo incoerente e dois alertas da
- *    lupa: a EF02CO05 não atingida, enquanto a outra criança, toda plena, atinge;
+ * 5. os alfinetes SÓ dentro da própria foto (o "fora" ausente), com o selo
+ *    incoerente e dois alertas da lupa: a EF02CO05 não atingida, enquanto a
+ *    outra criança, toda plena, atinge;
  * 6. o ZERAR da professora: rodada nova, evidência apagada (ADR-155), virada
- *    fechada e a criança de volta ao crachá.
+ *    fechada e a criança de volta ao card da missão.
  *
  * A professora usa "USAR BANCO PADRÃO (BIBLIOTECA)" — o caminho de um toque —,
  * e a suíte joga com o gabarito que ELA vê (`GET …/pacotes/:id`).
@@ -63,11 +64,12 @@ await suite(
     slug: "estudante/15-enigma-capa-caminhos",
     papel: "estudante",
     titulo: "O Enigma da Capa da Rádio — os caminhos de borda",
-    subtitulo: "banco padrão em um toque, inatividade, a espera longa, sem rede, a ajuda, MOSTRA TUDO e o zerar",
+    subtitulo: "banco padrão em um toque, inatividade, a espera longa, sem rede, a ajuda, o alfinete dentro da foto e o zerar",
     contexto:
       "Duas crianças da mesma turma do 2º ano jogam a Biblioteca, o banco padrão que a professora põe no ar em um " +
       "toque. Uma delas faz tudo certo — mas a rede cai no meio do PUBLICAR CAPA. A outra fica parada na lupa, tenta " +
-      "avançar antes da hora, cola o selo errado, erra a busca até a ajuda acender (e erra de novo) e vota MOSTRA TUDO. " +
+      "avançar antes da hora, cola o selo errado, erra a busca até a ajuda acender (e erra de novo) e finca os " +
+      "alfinetes só dentro da própria foto. " +
       "No fim, as habilidades das duas pela régua, e a professora zera a turma para uma aplicação nova.",
     prova: [
       "USAR BANCO PADRÃO (BIBLIOTECA): um toque aprova a Biblioteca e a põe em andamento, sem IA",
@@ -75,8 +77,8 @@ await suite(
       "A rede cai no PUBLICAR CAPA: SEM SINAL NA RÁDIO, a api não tem a capa; a rede volta e a fila a entrega",
       "3 min esperando a virada: O PROFESSOR JÁ VEM!, e a tela (e a api) continuam travadas",
       "3 erros na busca acendem a ajuda: a api manda os alvos e o pulso amarelo aparece; 3 erros depois dela contam",
-      "MOSTRA TUDO trava o voto (LATCH 2); a EF02CO05 fica “não atingiu” para ela e “atingiu” para a colega plena",
-      "Zerar: rodada nova, evidência da atividade apagada, virada fechada e as crianças de volta ao crachá",
+      "Os alfinetes só dentro da foto: a EF02CO05 fica “não atingiu” para ela e “atingiu” para a colega plena",
+      "Zerar: rodada nova, evidência da atividade apagada, virada fechada e as crianças de volta ao card da missão",
     ],
     comando: "node scripts/e2e/estudante/15-enigma-capa-caminhos.mjs",
   },
@@ -161,7 +163,7 @@ await suite(
 
     /* Estado de ONTEM não reprova hoje: a Biblioteca reusada pode voltar com sessões ou com a virada aberta. */
     let painel = (await lerApi(prof, `${daTurma}/painel`)).corpo;
-    const sujas = (painel?.linhas ?? []).filter((l) => l.cracha !== null);
+    const sujas = (painel?.linhas ?? []).filter((l) => l.passo !== "inicio");
     if (painel?.fase !== "aberta" || sujas.length > 0) {
       const z = await postarNaApi(prof, `${daTurma}/zerar`, { rodada: painel.atividade.rodada });
       r.ressalva(
@@ -174,32 +176,30 @@ await suite(
 
     const k = detalhe.conteudo.cena;
     const alvos = Object.fromEntries(k.invariantes.map((i) => [i.id, i.alvo]));
-    const fundoX = k.fundo.x + k.fundo.w / 2;
-    const fundoY = k.fundo.y + k.fundo.h / 2;
     const linhaDe = (pn, c) => pn?.linhas?.find((l) => l.nome === c.nome) ?? null;
 
     // ═══ os gestos de uma criança (as duas jogam pelo mesmo caminho) ═══════
     async function abrirMissao(p, quem) {
       await p.goto(`${HUB}/exp/${EXP_ID}`, { waitUntil: "domcontentloaded" });
       const q = p.frameLocator("iframe[data-experiencia]");
-      await esperarOuFalharPorHttp(p, q.getByText("ESCOLHA SEU CRACHÁ", { exact: true }), /enigma-capa\/sessao/, {
+      await esperarOuFalharPorHttp(p, q.getByRole("button", { name: "ABRIR BANCADA" }), /enigma-capa\/sessao/, {
         timeout: 40_000,
         oQue: `o boot da missão (${quem})`,
       });
       return q;
     }
-    async function escolherCracha(p, q, rotulo) {
-      await p.waitForTimeout(3300); /* o toque só libera depois de 3 s (a 14 prova a trava) */
-      await q.getByLabel(rotulo, { exact: true }).click();
-      await q.getByText("BENTO PRECISA DE AJUDA!").first().waitFor({ timeout: 15_000 });
+    async function abrirBancada(q) {
+      await q.getByRole("button", { name: "ABRIR BANCADA" }).click();
+      await q.getByText("INVESTIGUE COM A LUPA").first().waitFor({ timeout: 15_000 });
     }
     const avancou = (req) => req.postDataJSON()?.avancar === true;
     async function cumprirOPiso(p, q) {
       const fotos = q.locator(".bancada__foto");
       await fotos.nth(1).waitFor({ timeout: 15_000 });
-      for (const [i, f] of [[0, "foto-1"], [1, "foto-2"]]) {
+      /* 3 s com o centro da lente sobre CADA objeto: o 1º na foto 1, o 2º na foto 2. */
+      for (const [i, f, inv] of [[0, "foto-1", "inv-1"], [1, "foto-2", "inv-2"]]) {
         const recorte = k.fotos.find((x) => x.id === f).recorte;
-        const destino = await pontoEm(fotos.nth(i), (fundoX - recorte.x) / recorte.w, (fundoY - recorte.y) / recorte.h);
+        const destino = await pontoEm(fotos.nth(i), (alvos[inv].x - recorte.x) / recorte.w, (alvos[inv].y - recorte.y) / recorte.h);
         const deLente = await pontoEm(q.locator(".lupa"), 0.5, 0.5);
         await arrastar(p, deLente, destino, 16);
         await p.waitForTimeout(3600);
@@ -211,6 +211,7 @@ await suite(
       await q.getByText("ESCOLHA 1 FOTO").first().waitFor({ timeout: 15_000 });
       await q.locator(".decidir__miniatura").nth(fotoId === "foto-1" ? 0 : 1).click();
       await q.locator(".moldura").waitFor({ timeout: 10_000 });
+      await q.getByText("SELECIONE O SELO").first().waitFor({ timeout: 5000 });
       const selo = k.selos.find((s) => s.id === seloId);
       await q.getByRole("button", { name: new RegExp(selo.texto) }).click();
       await q.locator(".moldura .carimbo").waitFor({ timeout: 5000 });
@@ -228,18 +229,29 @@ await suite(
       for (const inv of ["inv-1", "inv-2"]) for (const f of ["foto-1", "foto-2"]) toques.push(await tocarNa(p, q, f, alvos[inv]));
       return toques;
     }
-    /** Do slider à horta: a revelação, o “fora”, o par e a segunda foto — o caminho que a 14 detalha. */
-    async function ateAHorta(p, q) {
-      await q.getByText("AGORA EU ENTENDI!").first().waitFor({ timeout: 10_000 });
-      const slider = q.locator('input[type="range"]');
-      const doSlider = await comResposta(p, /\/enigma-capa\/slider$/, () => slider.fill("100"));
-      await q.getByText("ERA O MESMO LUGAR!").first().waitFor({ timeout: 15_000 });
+    /**
+     * Do slider ao álbum: a alça de comparação do centro ao fim, A CENA COMPLETA,
+     * os alfinetes (`dentro`: só dentro da própria foto — o "fora" ausente), o
+     * par e a segunda foto, que conclui — o caminho que a 14 detalha.
+     */
+    async function ateOAlbum(p, q, { dentro = false } = {}) {
+      await q.getByText("DESLIZE PARA REVELAR").first().waitFor({ timeout: 15_000 });
       const vis = (await lerApi(p, "/enigma-capa/sessao")).corpo?.capa?.visivel;
+      const direita = vis.x <= 100 - (vis.x + vis.w);
+      const alca = await pontoEm(q.locator(".comparar__alca"), 0.5, 0.5);
+      const fim = await pontoEm(q.locator(".comparar"), direita ? 0.995 : 0.005, 0.5);
+      const doSlider = await comResposta(p, /\/enigma-capa\/slider$/, () => arrastar(p, alca, fim, 16));
+      await q.getByText("A CENA COMPLETA").first().waitFor({ timeout: 10_000 });
+      await q.getByRole("button", { name: "AVANÇAR" }).click();
       const inteira = q.locator(".cena-inteira");
-      for (const y of [60, 75]) {
-        const alvo = await pontoEm(inteira, Math.min(97, vis.x + vis.w + (100 - vis.x - vis.w) * 0.6) / 100, y / 100);
-        await p.mouse.click(alvo.x, alvo.y);
-        await p.waitForTimeout(200);
+      await inteira.waitFor({ timeout: 10_000 });
+      const xs = dentro ? [vis.x + vis.w * 0.3, vis.x + vis.w * 0.6] : [Math.min(97, vis.x + vis.w + (100 - vis.x - vis.w) * 0.6)];
+      for (const x of xs) {
+        for (const y of dentro ? [vis.y + vis.h * 0.7] : [60, 75]) {
+          const alvo = await pontoEm(inteira, x / 100, y / 100);
+          await p.mouse.click(alvo.x, alvo.y);
+          await p.waitForTimeout(200);
+        }
       }
       const fora = await comResposta(p, /\/enigma-capa\/fora$/, () => q.getByRole("button", { name: "Pronto", exact: true }).click());
       await q.getByText("Junte duas fotos da mesma atividade.").first().waitFor({ timeout: 15_000 });
@@ -251,8 +263,8 @@ await suite(
       await q.getByText("Foto de leitura: o que precisa aparecer?").first().waitFor({ timeout: 10_000 });
       await q.getByRole("button", { name: /Criança lendo/ }).click();
       const segunda = await comResposta(p, /\/enigma-capa\/segunda-foto$/, () => q.getByRole("button", { name: "Colocar no álbum" }).click());
-      await q.getByText("A HORTA ACABOU?").first().waitFor({ timeout: 15_000 });
-      return [doSlider, fora, pares, segunda].every((x) => x.status === 200);
+      await q.getByText("MISSÃO CUMPRIDA!").first().waitFor({ timeout: 15_000 });
+      return [doSlider, fora, pares, segunda].every((x) => x.status === 200) && segunda.corpo?.passo === "concluida";
     }
 
     // ═══ A CRIANÇA CERTA: tudo certo — e a rede cai no PUBLICAR CAPA ═══════════════════
@@ -262,8 +274,7 @@ await suite(
     const tempos = (await lerApi(pa, "/enigma-capa/sessao")).corpo?.tempos ?? {};
     const INATIVIDADE_MS = tempos.inatividadeMs ?? 45_000;
     const ESPERA_DO_PROFESSOR_MS = tempos.esperaDoProfessorMs ?? 180_000;
-    await escolherCracha(pa, qa, "FONE AZUL");
-    await qa.getByText("INVESTIGAR A NOVA CAPA").first().click();
+    await abrirBancada(qa);
     const pisoDaCerta = await cumprirOPiso(pa, qa);
     r.exigir(pisoDaCerta?.liberado === true && pisoDaCerta?.lupa?.alertas === 0, `${certa.nome}: a lupa com o piso cumprido e nenhum alerta (lupa plena)`);
     const seloDaCerta = await prepararCapa(qa, "foto-1", k.fotos[0].seloCoerente);
@@ -292,6 +303,9 @@ await suite(
       capaDaCerta.fotoId === "foto-1" && capaDaCerta.seloId === seloDaCerta.id && capaDaCerta.seloCoerente === true,
       `a rede voltou e a fila entregou: a api tem a capa de ${certa.nome} (foto 1, “${seloDaCerta.texto}”, selo coerente)`,
     );
+    /* A capa entregue mostra o aviso do protótipo antes do feed. */
+    await qa.getByText("CAPA PUBLICADA!").first().waitFor({ timeout: 20_000 });
+    await qa.getByRole("button", { name: /IR PARA O FEED/ }).click();
     await qa.locator(".feed__resposta").waitFor({ timeout: 20_000 });
     const feedDaCertaEm = Date.now();
     await faixaSemSinal(qa).waitFor({ state: "hidden", timeout: 15_000 });
@@ -307,9 +321,8 @@ await suite(
     const pb = await r.pagina("estudante-apressada", { viewport: { width: 412, height: 915 }, mobile: true, deviceScaleFactor: 2 });
     await r.entrar(pb, apressada.login, senhaDe(apressada));
     const qb = await abrirMissao(pb, apressada.nome);
-    await escolherCracha(pb, qb, "MICROFONE VERDE");
     const abriuALupaEm = Date.now();
-    await qb.getByText("INVESTIGAR A NOVA CAPA").first().click();
+    await abrirBancada(qb);
     await qb.getByRole("button", { name: "AVANÇAR" }).waitFor({ timeout: 15_000 });
     /* Nenhum toque: o desfecho esperado é o Bento, com folga de 20 s sobre o tempo do produto. */
     const bento = qb.getByText("VAMOS INVESTIGAR?");
@@ -333,12 +346,15 @@ await suite(
     const cedo1 = await comResposta(pb, /\/enigma-capa\/lupa$/, () => tocarNoMeio(pb, avancar), avancou);
     await bento.first().waitFor({ state: "hidden", timeout: 5000 });
     await qb.getByText("OLHE O FUNDO").first().waitFor({ timeout: 10_000 });
+    /* O aviso é modal (o BottomSheet do DS): fecha em VOLTAR À INVESTIGAÇÃO antes do segundo toque. */
+    await qb.getByRole("button", { name: "VOLTAR À INVESTIGAÇÃO" }).click();
     await pb.waitForTimeout(500);
     const cedo2 = await comResposta(pb, /\/enigma-capa\/lupa$/, () => tocarNoMeio(pb, avancar), avancou);
     r.exigir(
       cedo1.corpo?.liberado === false && cedo2.corpo?.liberado === false && cedo2.corpo?.lupa?.alertas === 2,
       `um toque faz o Bento sair; dois avanços antes do piso: recusados, lupa_alertas = ${cedo2.corpo?.lupa?.alertas}`,
     );
+    await qb.getByRole("button", { name: "VOLTAR À INVESTIGAÇÃO" }).click();
     const pisoDaApressada = await cumprirOPiso(pb, qb);
     r.exigir(pisoDaApressada?.liberado === true && pisoDaApressada?.lupa?.alertas === 2, `${apressada.nome}: o piso libera, com os 2 alertas guardados`);
     const outroSelo = k.selos.find((s) => s.id !== k.fotos[0].seloCoerente);
@@ -348,6 +364,7 @@ await suite(
       publicadaDaApressada.status === 200 && publicadaDaApressada.corpo?.capa?.seloId === outroSelo.id,
       `${apressada.nome} publica a foto 1 com o selo “${outroSelo.texto}” — o da OUTRA foto (incoerente)`,
     );
+    await qb.getByRole("button", { name: /IR PARA O FEED/ }).click();
     await qb.getByText("AGUARDE O PROFESSOR").first().waitFor({ timeout: 15_000 });
 
     // ═══ A CRIANÇA CERTA: 3 min esperando a virada ═════════════════════════════════════
@@ -369,10 +386,10 @@ await suite(
       tentarFurar.status === 409 && JSON.stringify(tentarFurar.corpo ?? {}).includes("virada-nao-liberada"),
       `nem a api deixa furar: um toque na busca antes da virada responde ${tentarFurar.status} virada-nao-liberada`,
     );
-    r.exigir((await qa.getByText("TOQUE EM 2 COISAS IGUAIS").count()) === 0 && (await qa.getByText("AGUARDE O PROFESSOR").count()) >= 1, "o cadeado AGUARDE O PROFESSOR continua, sem a tela dividida");
+    r.exigir((await qa.getByText("TOQUE EM 2 COISAS IGUAIS").count()) === 0 && (await qa.locator(".respiracao").count()) === 1, "o aviso continua, agora com o círculo de respiração, sem a tela dividida");
     await r.registrar(pa, "o-professor-ja-vem", {
       titulo: "O PROFESSOR JÁ VEM!",
-      mostra: "Depois de 3 min no cadeado, Bento e Iara ganham o balão “O PROFESSOR JÁ VEM!” — e nenhum botão.",
+      mostra: "Depois de 3 min, o aviso troca para “O PROFESSOR JÁ VEM!”, com o círculo de respiração — sem retrato e sem botão.",
       prova: "A espera longa tranquiliza sem abrir nada: quem libera a virada é a professora, e a api recusa o toque antes dela.",
     });
 
@@ -388,17 +405,14 @@ await suite(
     await dialogo.getByRole("button", { name: "LIBERAR VIRADA" }).click();
     await prof.getByRole("button", { name: "Virada liberada" }).waitFor({ timeout: 20_000 });
 
-    // ═══ A CRIANÇA CERTA: a busca sem erro, até SÓ UM PEDAÇO ═══════════════════════════
+    // ═══ A CRIANÇA CERTA: a busca sem erro, até o álbum ═══════════════════════════════
     await qa.getByText("TOQUE EM 2 COISAS IGUAIS").first().waitFor({ timeout: 20_000 });
     const achadosDaCerta = await acharOsQuatro(pa, qa);
     r.exigir(
       achadosDaCerta.at(-1)?.completo === true && achadosDaCerta.at(-1)?.erros === 0 && achadosDaCerta.at(-1)?.ajuda === false,
       `${certa.nome} acha os quatro sem errar (erros ${achadosDaCerta.at(-1)?.erros}, sem ajuda)`,
     );
-    r.exigir(await ateAHorta(pa, qa), `${certa.nome}: slider, “fora”, par e segunda foto gravados`);
-    const votoDaCerta = await comResposta(pa, /\/enigma-capa\/transferencia$/, () => qa.getByRole("button", { name: /SÓ UM PEDAÇO$/ }).click());
-    r.exigir(votoDaCerta.corpo?.transferencia?.voto === "so-um-pedaco" && votoDaCerta.corpo?.passo === "concluida", `${certa.nome} vota SÓ UM PEDAÇO e conclui`);
-    await qa.getByText("MISSÃO CUMPRIDA!").first().waitFor({ timeout: 10_000 });
+    r.exigir(await ateOAlbum(pa, qa), `${certa.nome}: slider, alfinetes fora da foto, par e segunda foto gravados — a missão conclui no álbum`);
 
     // ═══ A APRESSADA: a ajuda depois de 3 erros, e mais 3 erros depois dela ════════
     await qb.getByText("TOQUE EM 2 COISAS IGUAIS").first().waitFor({ timeout: 20_000 });
@@ -420,7 +434,7 @@ await suite(
     r.exigir((await qb.locator("circle.pulso-amarelo").count()) === 4, "o pulso amarelo aparece nos dois objetos das duas fotos (4 alvos)");
     await r.registrar(pb, "a-ajuda-acende", {
       titulo: "Três erros: a ajuda acende",
-      mostra: "O relógio e o cartaz amarelo pulsam em amarelo nas duas fotos, nos lugares que o servidor mandou.",
+      mostra: "Os dois objetos do fundo pulsam em amarelo nas duas fotos, nos lugares que o servidor mandou.",
       prova: "Antes do 3º erro o alvo nunca desce; depois dele, desce — o pulso precisa do lugar (one-pager §7).",
     });
     for (const [f, ponto] of TOQUES_ERRADOS.slice(3)) await tocarNa(pb, qb, f, ponto);
@@ -431,30 +445,16 @@ await suite(
     );
     const achadosDaApressada = await acharOsQuatro(pb, qb);
     r.exigir(achadosDaApressada.at(-1)?.completo === true, `com o pulso, ${apressada.nome} acha os quatro e o fluxo segue`);
-    r.exigir(await ateAHorta(pb, qb), `${apressada.nome}: slider, “fora”, par e segunda foto gravados`);
-
-    // ═══ A APRESSADA: MOSTRA TUDO ══════════════════════════════════════════════════
-    await r.registrar(pb, "a-horta-da-apressada", {
-      titulo: "A HORTA ACABOU?",
-      mostra: "A lagarta na alface e os dois botões: SÓ UM PEDAÇO e MOSTRA TUDO.",
-      prova: "A transferência para um cenário novo — o voto é o descritor central da EF02CO05.",
-    });
-    const votoDaApressada = await comResposta(pb, /\/enigma-capa\/transferencia$/, () => qb.getByRole("button", { name: /MOSTRA TUDO$/ }).click());
+    r.exigir(await ateOAlbum(pb, qb, { dentro: true }), `${apressada.nome}: slider, alfinetes SÓ dentro da própria foto, par e segunda foto — conclui no álbum`);
+    const foraDaApressada = linhaDe((await lerApi(prof, `${daTurma}/painel`)).corpo, apressada)?.fora;
     r.exigir(
-      votoDaApressada.corpo?.transferencia?.voto === "mostra-tudo" && votoDaApressada.corpo?.passo === "concluida",
-      `💥 MOSTRA TUDO: o voto grava e conclui (${votoDaApressada.corpo?.passo})`,
+      (foraDaApressada?.itens ?? ["?"]).length === 0 && (foraDaApressada?.possiveis ?? 0) >= 1,
+      `os alfinetes dela ficaram dentro da capa: marcou ${foraDaApressada?.itens?.length} de ${foraDaApressada?.possiveis} fora (o “fora” ausente)`,
     );
-    await qb.getByText("SELEÇÃO ENVIADA").first().waitFor({ timeout: 10_000 });
-    const trocarVoto = await postarNaApi(pb, "/enigma-capa/transferencia", { opcao: "so-um-pedaco" });
-    const depoisDaTroca = (await lerApi(pb, "/enigma-capa/sessao")).corpo;
-    r.exigir(
-      trocarVoto.status === 409 && JSON.stringify(trocarVoto.corpo ?? {}).includes("ja-enviado") && depoisDaTroca?.transferencia?.voto === "mostra-tudo",
-      `LATCH 2: trocar para SÓ UM PEDAÇO depois responde ${trocarVoto.status} ja-enviado, e o voto continua “${depoisDaTroca?.transferencia?.voto}”`,
-    );
-    await r.registrar(pb, "selecao-enviada", {
-      titulo: "💥 MOSTRA TUDO — SELEÇÃO ENVIADA",
-      mostra: "A enquete travada com o sinal em MOSTRA TUDO, e a celebração da missão cumprida.",
-      prova: "O voto é o LATCH 2: não volta, nem pela tela nem pela api (409 ja-enviado).",
+    await r.registrar(pb, "missao-cumprida-da-apressada", {
+      titulo: "FOTO GUARDADA NO ÁLBUM! — MISSÃO CUMPRIDA!",
+      mostra: "O aviso final do protótipo, depois dos alfinetes que ficaram dentro da própria foto.",
+      prova: "O álbum conclui; o que ela marcou (nada fora da foto) é o que a EF02CO05 lê no “Pronto” (ADR-186).",
     });
 
     // ═══ PROFESSORA: a régua das duas ══════════════════════════════════════
@@ -469,12 +469,12 @@ await suite(
     const final = (await lerApi(prof, `${daTurma}/painel`)).corpo;
     const lb = linhaDe(final, apressada);
     r.exigir(
-      lb?.lupa?.alertas === 2 && lb?.capa?.seloCoerente === false && lb?.invariantes?.errosPosAjuda >= 3 && lb?.voto === "mostra-tudo",
-      `a linha de ${apressada.nome}: lupa com ${lb?.lupa?.alertas} alertas, selo incoerente, ${lb?.invariantes?.errosPosAjuda} erros depois da ajuda, MOSTRA TUDO`,
+      lb?.lupa?.alertas === 2 && lb?.capa?.seloCoerente === false && lb?.invariantes?.errosPosAjuda >= 3 && (lb?.fora?.itens ?? ["?"]).length === 0,
+      `a linha de ${apressada.nome}: lupa com ${lb?.lupa?.alertas} alertas, selo incoerente, ${lb?.invariantes?.errosPosAjuda} erros depois da ajuda, nada marcado fora`,
     );
     r.exigir(
       nivelDe(evidencia, apressada, "EF02CO05") === "nao_atingiu",
-      `EF02CO05 de ${apressada.nome}: “${nivelDe(evidencia, apressada, "EF02CO05")}” — MOSTRA TUDO e mais um ausente (selo, lupa e busca) = não atingiu`,
+      `EF02CO05 de ${apressada.nome}: “${nivelDe(evidencia, apressada, "EF02CO05")}” — nada marcado fora e mais um ausente (selo, lupa e busca) = não atingiu`,
     );
     r.exigir(
       nivelDe(evidencia, apressada, "EF02CO01") === "nao_atingiu",
@@ -506,7 +506,7 @@ await suite(
     await r.registrar(prof, "habilidades-das-duas", {
       titulo: "As habilidades das duas crianças",
       mostra: `${certa.nome}: EF02CO05 e EF02CO01 atingidas. ${apressada.nome}: as duas não atingidas.`,
-      prova: "A régua é 100% Canal A: a lupa, o selo, a busca e o voto decidem o nível — a crença de entrada (MOSTRA TUDO) com mais um sinal ausente.",
+      prova: "A régua é 100% ação em tela: a lupa, o selo, a busca e o que marcou fora decidem o nível — nada fora da foto com mais um sinal ausente.",
       inteira: true,
     });
 
@@ -522,7 +522,7 @@ await suite(
     const confirmar = confirmacao.getByRole("button", { name: "Zerar a turma" });
     r.exigir(await confirmar.isDisabled(), "“Zerar a turma” só habilita depois de marcar que entendeu");
     /* Pelo rótulo: o `<input>` do Checkbox do DS é só para leitor de tela (`sr-input`), fora da área visível. */
-    await confirmacao.getByText("Entendi: a turma recomeça do crachá numa rodada nova.").click();
+    await confirmacao.getByText("Entendi: a turma recomeça do começo numa rodada nova.").click();
     await confirmar.waitFor({ state: "visible" });
     r.exigir(!(await confirmar.isDisabled()), "com o “Entendi” marcado, “Zerar a turma” habilita");
     await r.registrar(prof, "confirmar-o-zerar", {
@@ -553,7 +553,7 @@ await suite(
       `a virada fecha: fase “${painelDepois?.fase}”, rodada ${painelDepois?.atividade?.rodada}, ninguém entrou ainda`,
     );
     const gateDaCerta = (await lerApi(pa, "/enigma-capa/gate")).corpo;
-    r.exigir(gateDaCerta?.passo === "cracha" && gateDaCerta?.fase === "aberta" && gateDaCerta?.rodada === rodada + 1, `para ${certa.nome}, a api devolve o crachá na rodada ${gateDaCerta?.rodada}`);
+    r.exigir(gateDaCerta?.passo === "inicio" && gateDaCerta?.fase === "aberta" && gateDaCerta?.rodada === rodada + 1, `para ${certa.nome}, a api devolve o começo da missão na rodada ${gateDaCerta?.rodada}`);
     await prof.reload({ waitUntil: "domcontentloaded" });
     const habilidadesDepois = prof.locator("[data-habilidades-enigma-capa]");
     await revelar(prof, habilidadesDepois);
@@ -573,13 +573,13 @@ await suite(
 
     /* A criança, ao recarregar, volta ao começo; a outra volta pelo polling, sem recarregar. */
     await pa.reload({ waitUntil: "domcontentloaded" });
-    await pa.frameLocator("iframe[data-experiencia]").getByText("ESCOLHA SEU CRACHÁ", { exact: true }).waitFor({ timeout: 40_000 });
-    await r.registrar(pa, "de-volta-ao-cracha", {
-      titulo: "De volta ao crachá",
-      mostra: `${certa.nome} recarrega e está no começo: ESCOLHA SEU CRACHÁ, na rodada ${rodada + 1}.`,
-      prova: "O passo é derivado do servidor: rodada nova sem sessão é o crachá.",
+    await pa.frameLocator("iframe[data-experiencia]").getByRole("button", { name: "ABRIR BANCADA" }).waitFor({ timeout: 40_000 });
+    await r.registrar(pa, "de-volta-ao-comeco", {
+      titulo: "De volta ao começo",
+      mostra: `${certa.nome} recarrega e está no card da missão (ABRIR BANCADA), na rodada ${rodada + 1}.`,
+      prova: "O passo é derivado do servidor: rodada nova sem sessão é o começo.",
     });
-    await qb.getByText("ESCOLHA SEU CRACHÁ", { exact: true }).waitFor({ timeout: 20_000 });
-    r.exigir(true, `${apressada.nome}, sem recarregar, voltou ao crachá pelo polling de 3 s`);
+    await qb.getByRole("button", { name: "ABRIR BANCADA" }).waitFor({ timeout: 20_000 });
+    r.exigir(true, `${apressada.nome}, sem recarregar, voltou ao card da missão pelo polling de 3 s`);
   },
 );

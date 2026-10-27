@@ -17,10 +17,10 @@ export const EXP_ID = "exp02ef1b";
  * A versão vive em TRÊS lugares: aqui, no `package.json` e no
  * `public/experiencia.json` (`versao.test.ts` compara os três — ADR-84).
  */
-export const EXP_VERSION = "1.0.0";
+export const EXP_VERSION = "2.0.0";
 
 export type Passo =
-  | "cracha"
+  | "inicio"
   | "lupa"
   | "decidir"
   | "feed"
@@ -29,17 +29,14 @@ export type Passo =
   | "fora"
   | "pares"
   | "segunda-foto"
-  | "transferencia"
   | "concluida";
 
 export type Fase = "aberta" | "virada";
-export type CrachaId = "fone-azul" | "fone-amarelo" | "microfone-verde" | "gravador-laranja";
 export type FotoId = "foto-1" | "foto-2";
 export type SeloId = "selo-1" | "selo-2";
 export type InvarianteId = "inv-1" | "inv-2";
 export type Motivo = "atividade" | "roupa";
 export type Elemento = "mochila" | "parede" | "crianca-lendo";
-export type Voto = "so-um-pedaco" | "mostra-tudo";
 export type ChaveDeCena = "biblioteca" | "horta" | "museu" | "ia";
 /** `"inv-1:foto-1"` — um invariante achado numa foto. */
 export type Achado = `${InvarianteId}:${FotoId}`;
@@ -85,8 +82,14 @@ export interface Estado {
   preparada: boolean;
   aguardandoVirada: boolean;
   atividade: Atividade | null;
-  cracha: CrachaId | null;
-  lupa: { foto1Ms: number; foto2Ms: number; fundo1: boolean; fundo2: boolean; alertas: number; liberada: boolean } | null;
+  lupa: {
+    alvo1Ms: number;
+    alvo2Ms: number;
+    alertas: number;
+    liberada: boolean;
+    /** Os dois objetos do fundo, SÓ no passo `lupa`: o brilho da lente precisa do lugar (ADR-186). */
+    alvos: Alvo[] | null;
+  } | null;
   capa: {
     fotoId: FotoId;
     outraFotoId: FotoId;
@@ -109,7 +112,6 @@ export interface Estado {
   fora: { toques: Ponto[] } | null;
   pares: { cartas: string[]; motivo: Motivo } | null;
   segundaFoto: { elemento: Elemento; deslocamento: Deslocamento } | null;
-  transferencia: { voto: Voto } | null;
   concluido: boolean;
 }
 
@@ -137,11 +139,9 @@ export interface Geometria {
 }
 
 export interface Material {
-  crachas: { id: CrachaId; rotulo: string; emoji: string }[];
   cartas: { id: string; imagem: Imagem }[];
   motivos: { id: Motivo; rotulo: string }[];
   segundaFoto: { imagem: Imagem; elementos: { id: Elemento; rotulo: string }[] };
-  transferencia: { imagem: Imagem; opcoes: { id: Voto; rotulo: string; emoji: string }[] };
 }
 
 export interface Tempos {
@@ -189,9 +189,8 @@ export interface RespostaDoToque extends Estado {
   };
 }
 
+/** Os ms com o centro da lente sobre cada objeto do fundo (`inv-1`, `inv-2`), em qualquer das duas fotos. */
 export interface RelatoDaLupa {
-  foto1Ms: number;
-  foto2Ms: number;
-  fundo1: boolean;
-  fundo2: boolean;
+  alvo1Ms: number;
+  alvo2Ms: number;
 }

@@ -2,35 +2,37 @@ import type { FichaPedagogica } from "./tipos";
 
 /**
  * A FICHA de O ENIGMA DA CAPA DA RÁDIO (exp02ef1b, 2º ano EF, unidade 1,
- * ADR-184) — versão 1, de 2026-10-26: 100% Canal A, sem pergunta (o one-pager
- * §12a: "proibido questionário com alternativas textuais" no 2º ano). Toda
- * habilidade é medida pelo que a criança FAZ
- * (`enigma-capa/regras/evidencia.ts`):
+ * ADR-184) — versão 2, de 2026-10-26 (a revisão 2.0.0 da missão, ADR-186):
+ * 100% Canal A, sem pergunta (o one-pager §12a: "proibido questionário com
+ * alternativas textuais" no 2º ano). Toda habilidade é medida pelo que a
+ * criança FAZ (`enigma-capa/regras/evidencia.ts`):
  *
- *   - **EF02CO05** (o foco) no voto da transferência (E6), que conclui: a lupa
- *     (E2), o selo (E3), a busca dos invariantes (E4) e o voto, juntos.
+ *   - **EF02CO05** (o foco) no "Pronto" da cena inteira (E4, Momento 5): a lupa
+ *     (E2), o selo (E3), a busca dos invariantes (E4) e o "o que ficou fora",
+ *     juntos — marcar na cena inteira algo que ficou fora da própria foto é o
+ *     reconhecimento de que a foto mostra só um pedaço do lugar.
  *   - **EF02CO01** (associada) quando os quatro achados dos invariantes
  *     completam (E4).
  *
- * A marcação "fora da foto", os pares, o motivo e a segunda foto (E5) vão só
- * ao painel. Falha técnica = sem marca ("Não avaliado").
+ * Os pares, o motivo e a segunda foto (E5) vão só ao painel. Falha técnica =
+ * sem marca ("Não avaliado").
  */
 export const FICHA_EXP02EF1B: FichaPedagogica = {
   expId: "exp02ef1b",
-  versao: 1,
+  versao: 2,
   habilidades: [
     {
       codigo: "EF02CO05",
-      marcadores: [{ id: "recorte-da-capa", tipo: "acao", rotulo: "A capa da rádio e a horta" }],
+      marcadores: [{ id: "recorte-da-capa", tipo: "acao", rotulo: "A capa da rádio e o que ficou fora" }],
       criterios: {
         atingiu:
-          "Explora o fundo das duas fotos com a lupa sem precisar do aviso, combina o selo com a foto que escolheu, acha os dois objetos iguais do fundo sem a ajuda e, na horta, responde SÓ UM PEDAÇO.",
+          "Acha com a lupa os dois objetos do fundo sem precisar do aviso, combina o selo com a foto que escolheu, acha os dois objetos iguais nas duas fotos sem a ajuda e marca, na cena inteira, algo que ficou fora da sua foto.",
         em_processo:
-          "Mostra parte disso: precisou do aviso da lupa, precisou da ajuda para achar os objetos ou respondeu MOSTRA TUDO tendo feito o resto.",
+          "Mostra parte disso: precisou do aviso da lupa, precisou da ajuda para achar os objetos iguais ou não marcou nada fora da sua foto tendo feito o resto.",
         nao_atingiu:
-          "Responde MOSTRA TUDO na horta e, além disso, ignorou o fundo mesmo com os avisos da lupa, combinou um selo que não descreve a foto ou não achou os objetos nem com a ajuda.",
+          "Não marca nada fora da sua foto e, além disso, avançou duas vezes sem achar os objetos com a lupa, combinou um selo que não descreve a foto ou não achou os objetos iguais nem com a ajuda.",
         observacao:
-          'Medida no voto da horta, o fim da missão. O PO pedia as quatro faltas juntas para "não atingiu"; a régua pede MOSTRA TUDO e mais uma (ADR-184). Quem não chega ao voto fica "Não avaliado", e você pode ajustar.',
+          'Medida no "Pronto" da cena inteira: marcar o que ficou fora da própria foto mostra que a criança reconhece que a foto é só um pedaço do lugar (ADR-186). Quem não chega ao "Pronto" fica "Não avaliado", e você pode ajustar.',
       },
     },
     {

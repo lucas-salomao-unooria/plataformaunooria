@@ -2461,10 +2461,11 @@ de aplicação é feita com Zod.
 \section{As quatro tabelas da exp02ef1b}
 \label{sec:tabelas-exp02ef1b}
 
-O Enigma da Capa da Rádio (\adrr{ADR-184}), no desenho de O Efeito
+O Enigma da Capa da Rádio (\adrr{ADR-184}; a 2.0.0 na migração
+\cd{20261026210000\_\B{}exp02ef1b\_\B{}prototipo}, \adrr{ADR-186}), no desenho de O Efeito
 Amplificador: todas com \cd{escola\_id NOT NULL}, RLS forçada, política por
 escola e \cd{GRANT} para \cd{app\_runtime}. Os vocabulários (disciplina,
-origem, cena, fase, crachá, foto, selo, motivo, elemento, voto e as cartas)
+origem, cena, fase, foto, selo, motivo, elemento e as cartas)
 vivem em \arq{enigma-capa/conteudo.ts} E nos \emph{CHECKs}, e
 \arq{tests/enigma-capa-regras.spec.ts} compara os dois textos.
 
@@ -2486,14 +2487,14 @@ vivem em \arq{enigma-capa/conteudo.ts} E nos \emph{CHECKs}, e
 \cd{exp02ef1b\_gates\_historico} & Cada LIBERAR VIRADA: o pacote, a rodada e
   o professor (\cd{SET NULL} se a conta sair).\\
 \zebra \cd{exp02ef1b\_sessoes} & Uma linha por (escola, estudante, pacote,
-  rodada), com a turma. O crachá; a lupa (os dois tempos, o fundo das duas, os
-  alertas, a liberação); a capa (foto, selo, deslocamento, selo coerente,
+  rodada), com a turma. A entrada (\cd{entrou\_em}, o ABRIR BANCADA); a lupa
+  (o tempo sobre cada um dos dois objetos, os alertas, a liberação); a capa (foto, selo, deslocamento, selo coerente,
   fala da visitante, núcleo visível e o carimbo --- o LATCH 1, os sete campos
   juntos); a busca (achados em \cd{JSONB}, erros até 3, a ajuda, os erros
   depois dela, a conclusão); a panorâmica aberta; o que ficou fora (toques e
   itens); os pares (cartas, motivo, acerto); a segunda foto (elemento,
-  deslocamento, essencial visível); e o voto com o \cd{concluido\_em} (o
-  LATCH 2). Sem texto livre.\\
+  deslocamento, essencial visível), com o \cd{concluido\_em}: o
+  \enquote{Colocar no álbum} conclui. Sem texto livre.\\
 \bottomrule
 \end{tabularx}
 
@@ -2502,7 +2503,7 @@ vivem em \arq{enigma-capa/conteudo.ts} E nos \emph{CHECKs}, e
 que exige a anterior (a capa só depois da lupa liberada, a busca só depois da
 capa, a panorâmica só depois da busca, o \enquote{fora} só depois da
 panorâmica, os pares só depois do \enquote{fora}, a segunda foto só depois dos
-pares, o voto só depois da segunda foto), e os campos de cada etapa andam
+pares, a conclusão só com a segunda foto), e os campos de cada etapa andam
 juntos (\enquote{todos ou nenhum}). O passo da tela é derivado dessas mesmas
 colunas: a jogada fora de ordem que escapasse do serviço seria recusada aqui.
 \end{regra}

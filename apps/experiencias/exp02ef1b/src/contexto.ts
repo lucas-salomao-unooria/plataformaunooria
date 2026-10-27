@@ -18,6 +18,4 @@ export interface Contexto {
   /** A jogada desta chave está na fila em memória, esperando a conexão? (o latch fica travado enquanto estiver) */
   naFila: (chave: string) => boolean;
   url: (imagem: Imagem) => string;
-  /** O crachá escolhido, como a tela o mostra ("FONE AZUL"). */
-  cracha: { rotulo: string; emoji: string } | null;
 }

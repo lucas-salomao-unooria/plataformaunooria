@@ -2,7 +2,7 @@ import type { ExperienciaHandle } from "@edu/sdk";
 
 /**
  * Telemetria ANALÍTICA da missão — `verbo:objeto`, e nada além disso. O que a
- * evidência mede (a lupa, o selo, os invariantes, o voto) é gravado pela api,
+ * evidência mede (a lupa, o selo, os invariantes, o "fora") é gravado pela api,
  * na rota de cada gesto: aqui ficam só os sinais de produto.
  *
  * Contrato: `track(verbo, objeto, { resultado?, contexto? })`, com OBJETOS de
@@ -25,6 +25,8 @@ export const telemetria = {
   entrou: (retomada: boolean) => track("attempted", "missao:iniciar", { resultado: { retomada } }),
   /** A entrada em cada passo (derivado do servidor). */
   etapa: (passo: string) => track("progressed", "etapa:entrar", { contexto: { passo } }),
+  /** E2: um objeto do fundo achado com a lupa (o anel encheu) — nunca qual. */
+  achouNaLupa: () => track("interacted", "lupa:achar"),
   /** E2: o avanço tentado sem o piso da lupa ("OLHE O FUNDO"). */
   alertaDaLupa: () => track("interacted", "lupa:alerta"),
   /** E2/E3: 45 s sem ação — o Bento aparece ("VAMOS INVESTIGAR?"). */
@@ -44,6 +46,6 @@ export const telemetria = {
   rede: () => track("attempted", "erro:exibir", { resultado: { codigo: "sem-sinal" } }),
   /** Uma imagem do pacote que não carregou ("CARREGANDO CAPA..."). */
   imagem: () => track("attempted", "erro:exibir", { resultado: { codigo: "imagem" } }),
-  /** O LATCH 2: a missão concluída. */
+  /** O "Colocar no álbum", que conclui a missão. */
   concluiu: () => track("completed", "missao:concluida"),
 };

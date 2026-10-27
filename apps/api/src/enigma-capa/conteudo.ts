@@ -1,35 +1,56 @@
 /**
  * O CATÁLOGO da exp02ef1b — O Enigma da Capa da Rádio (2º ano EF, unidade 1,
- * ADR-184): vocabulários, a geometria fixa da panorâmica, os três pacotes
- * prontos (Biblioteca, Horta, Museu), a E5 e a E6 fixas e os textos da tela.
+ * ADR-184; revisão 2.0.0, ADR-186): vocabulários, a geometria fixa da
+ * panorâmica, os três pacotes prontos (Biblioteca, Horta, Museu), a E5 fixa e
+ * os textos da tela.
  *
- * Fonte: o one-pager do PO v1.1 (`artefatos_exp02ef1b/produto/00-material-anexado.md`),
- * LITERAL nos textos. As decisões do Lucas de 2026-10-26 vencem o one-pager
- * onde divergem: o clone é o Unoovista (não o instanooria), a virada é GERAL
- * da turma (um botão), sem Canal B, sem áudio de tela, sem texto livre.
+ * Fonte: o one-pager do PO v1.1 (`artefatos_exp02ef1b/produto/00-material-anexado.md`)
+ * e o protótipo validado pelo time (`design/08-prototipo.html`), LITERAIS nos
+ * textos. As decisões do Lucas de 2026-10-26 vencem os dois onde divergem: o
+ * clone é o Unoovista (não o instanooria), a virada é GERAL da turma (um
+ * botão), a missão é 100% ações em tela (Canal A), sem áudio de tela e sem
+ * texto livre; a 2.0.0 segue o protótipo e termina na segunda foto (a E5).
  *
  * Puro — sem Nest e sem Prisma. A experiência e o hub espelham os TIPOS de
  * `contrato-de-rotas.ts`; os números daqui (os alvos, os núcleos, os
  * marcáveis) não descem ao cliente, exceto o que o contrato diz que desce.
  */
 
+import { componentePorSlug } from "../curriculo/componentes";
+
 export const EXP_ID = "exp02ef1b";
 
 /** Gravada em cada sessão: o histórico se reprocessa pela versão que o mediu. */
-export const VERSAO_DO_INSTRUMENTO = "1.0.0";
+export const VERSAO_DO_INSTRUMENTO = "2.0.0";
 
 // ──────────────────────────────────────────── vocabulários (CHECK na migration)
 
-/** O componente curricular do recorte do professor (one-pager §3, "teste das três disciplinas"). */
-export const DISCIPLINAS = ["lingua-portuguesa", "ciencias", "historia", "outra"] as const;
+/**
+ * O componente curricular do recorte do professor: TODOS os do 2º ano na matriz
+ * da plataforma (`curriculo/componentes.ts#componentesDoAno("2EF")`, na ordem
+ * do catálogo), mais Computação (o complemento de 2022 à BNCC) e "Outro
+ * componente" no fim (decisão do Lucas, ADR-186). Literal, e não derivado em
+ * tempo de execução: o CHECK da migration precisa do texto, e
+ * `tests/enigma-capa-regras.spec.ts` confere a lista contra o catálogo.
+ */
+export const DISCIPLINAS = [
+  "lingua-portuguesa",
+  "arte",
+  "educacao-fisica",
+  "matematica",
+  "ciencias",
+  "geografia",
+  "historia",
+  "ensino-religioso",
+  "computacao",
+  "outra",
+] as const;
 export type Disciplina = (typeof DISCIPLINAS)[number];
 
-export const ROTULO_DA_DISCIPLINA: Readonly<Record<Disciplina, string>> = {
-  "lingua-portuguesa": "Língua Portuguesa",
-  ciencias: "Ciências",
-  historia: "História",
-  outra: "Outro componente",
-};
+/** O rótulo vem do catálogo de componentes (uma fonte só); "outra" não está nele. */
+export const ROTULO_DA_DISCIPLINA: Readonly<Record<Disciplina, string>> = Object.fromEntries(
+  DISCIPLINAS.map((slug) => [slug, slug === "outra" ? "Outro componente" : (componentePorSlug(slug)?.rotulo ?? slug)]),
+) as Record<Disciplina, string>;
 
 export const ORIGENS = ["padrao", "ia"] as const;
 export type Origem = (typeof ORIGENS)[number];
@@ -43,17 +64,6 @@ export type ChavePronta = (typeof CHAVES_PRONTAS)[number];
 /** As fases da TURMA, que o professor move: só para a frente (decisão do Lucas: a virada é GERAL). */
 export const FASES = ["aberta", "virada"] as const;
 export type Fase = (typeof FASES)[number];
-
-/** Os crachás de repórter mirim (E1). */
-export const CRACHAS = ["fone-azul", "fone-amarelo", "microfone-verde", "gravador-laranja"] as const;
-export type Cracha = (typeof CRACHAS)[number];
-
-export const ROTULO_DO_CRACHA: Readonly<Record<Cracha, { rotulo: string; emoji: string }>> = {
-  "fone-azul": { rotulo: "FONE AZUL", emoji: "🎧" },
-  "fone-amarelo": { rotulo: "FONE AMARELO", emoji: "⭐" },
-  "microfone-verde": { rotulo: "MICROFONE VERDE", emoji: "🎙️" },
-  "gravador-laranja": { rotulo: "GRAVADOR LARANJA", emoji: "📻" },
-};
 
 export const FOTOS = ["foto-1", "foto-2"] as const;
 export type FotoId = (typeof FOTOS)[number];
@@ -69,10 +79,6 @@ export type MotivoDoPar = (typeof MOTIVOS_DO_PAR)[number];
 /** E5, a segunda foto: "Mochila" / "Parede" / "Criança lendo". */
 export const ELEMENTOS_DA_SEGUNDA_FOTO = ["mochila", "parede", "crianca-lendo"] as const;
 export type ElementoDaSegundaFoto = (typeof ELEMENTOS_DA_SEGUNDA_FOTO)[number];
-
-/** E6, o voto da transferência — o LATCH 2. */
-export const VOTOS = ["so-um-pedaco", "mostra-tudo"] as const;
-export type Voto = (typeof VOTOS)[number];
 
 // ──────────────────────────────────────────── a geometria fixa
 
@@ -145,10 +151,13 @@ export const ERROS_ATE_A_AJUDA = 3;
 /** Os erros depois da ajuda que fazem a EF02CO01 "não atingiu" (o "apontamento do professor", medido). */
 export const ERROS_POS_AJUDA_NAO_ATINGIU = 3;
 
-/** O piso da lupa (E2): 3 s sobre CADA foto E o fundo das duas. */
+/**
+ * O piso da lupa (E2): 3 s com o centro da lente sobre CADA um dos dois
+ * objetos do fundo (os invariantes, os mesmos da E4), em qualquer das duas fotos.
+ */
 export const PISO_DA_LUPA_MS = 3000;
 
-/** Até 10 toques no "o que ficou fora" (E4, Momento 5). */
+/** De 1 a 10 toques no "o que ficou fora" (E4, Momento 5): o "Pronto" exige ao menos um. */
 export const TOQUES_FORA_MAX = 10;
 export const MARCAVEIS = { min: 2, max: 6 } as const;
 
@@ -239,7 +248,8 @@ const recorte = (id: FotoId): Retangulo => ({ ...RECORTE_DA_FOTO[id] });
  * OS TRÊS PACOTES PRONTOS (origem `padrao`). Os textos são LITERAIS do one-pager
  * (§3 "teste das três disciplinas", §9b); a geometria é a ANOTAÇÃO MEDIDA pelo
  * líder sobre `apps/experiencias/exp02ef1b/public/cenas/{chave}.webp`
- * (1920×1080), em 2026-10-26.
+ * (1920×1080). As imagens foram REFEITAS na 2.0.0 (ADR-186), com a composição
+ * limpa que o time pediu, e reanotadas no mesmo dia.
  *
  * Mexeu numa imagem? Reanote e edite SÓ este objeto: núcleos, alvos, fundo e
  * marcáveis. `tests/enigma-capa-regras.spec.ts` passa os três pela régua
@@ -264,12 +274,12 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
         espacoCurto: "a biblioteca",
         hora: "14:15",
         imagem: { tipo: "bundle", nome: "cenas/biblioteca.webp" },
-        alt: "A biblioteca da escola inteira: à esquerda, crianças lendo numa mesa; à direita, crianças contando histórias com fantoches num tapete; na parede do meio, um relógio e um cartaz amarelo.",
+        alt: "A biblioteca da escola inteira: à esquerda, duas crianças lendo numa mesa; à direita, duas crianças contando histórias com fantoches num tapete colorido; na parede lisa do meio, um relógio de moldura vermelha e um cartaz amarelo com um livro.",
         fotos: [
           {
             id: "foto-1",
             recorte: recorte("foto-1"),
-            nucleo: { x: 5, y: 38, w: 41, h: 52 },
+            nucleo: { x: 11, y: 55, w: 31, h: 37 },
             acao: "Mesa de leitura em silêncio",
             visitante: "Na foto, vi crianças lendo!",
             seloCoerente: "selo-1",
@@ -277,7 +287,7 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
           {
             id: "foto-2",
             recorte: recorte("foto-2"),
-            nucleo: { x: 59, y: 50, w: 35, h: 42 },
+            nucleo: { x: 65, y: 60, w: 27, h: 32 },
             acao: "Tapete com fantoches",
             visitante: "Na foto, vi crianças contando histórias!",
             seloCoerente: "selo-2",
@@ -288,15 +298,15 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
           { id: "selo-2", texto: "CONTAÇÃO DE HISTÓRIAS", emoji: "🎭" },
         ],
         invariantes: [
-          { id: "inv-1", nome: "RELÓGIO", alvo: { x: 44, y: 19, r: 7.5 } },
-          { id: "inv-2", nome: "CARTAZ AMARELO", alvo: { x: 60, y: 21, r: 7 } },
+          { id: "inv-1", nome: "RELÓGIO", alvo: { x: 41.3, y: 33.5, r: 8 } },
+          { id: "inv-2", nome: "CARTAZ AMARELO", alvo: { x: 60, y: 33.5, r: 7 } },
         ],
-        fundo: { x: 32, y: 3, w: 36, h: 33 },
+        fundo: { x: 32, y: 15, w: 36, h: 36 },
         marcaveis: [
-          { id: "mesa-leitura", nome: "MESA DE LEITURA", area: { x: 3, y: 38, w: 43, h: 58 } },
-          { id: "tapete-fantoches", nome: "TAPETE COM FANTOCHES", area: { x: 56, y: 48, w: 43, h: 52 } },
-          { id: "estante-esquerda", nome: "ESTANTE", area: { x: 0, y: 4, w: 32, h: 36 } },
-          { id: "estante-direita", nome: "ESTANTE", area: { x: 69, y: 4, w: 31, h: 36 } },
+          { id: "mesa-leitura", nome: "MESA DE LEITURA", area: { x: 10, y: 55, w: 33, h: 40 } },
+          { id: "tapete-fantoches", nome: "TAPETE COM FANTOCHES", area: { x: 55, y: 60, w: 42, h: 37 } },
+          { id: "estante-esquerda", nome: "ESTANTE", area: { x: 0, y: 62, w: 9, h: 30 } },
+          { id: "estante-direita", nome: "ESTANTE", area: { x: 91, y: 62, w: 9, h: 30 } },
         ],
       },
     },
@@ -314,12 +324,12 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
         espacoCurto: "a horta",
         hora: "14:15",
         imagem: { tipo: "bundle", nome: "cenas/horta.webp" },
-        alt: "A horta da escola inteira: à esquerda, uma criança regando um canteiro de alfaces; à direita, crianças com minhocas num canteiro de terra escura; no meio, ao fundo, um espantalho e um regador vermelho.",
+        alt: "A horta da escola inteira: à esquerda, duas crianças regando um canteiro de alfaces; à direita, duas crianças com minhocas num canteiro de terra escura; no muro liso do meio, um espantalho e um regador vermelho.",
         fotos: [
           {
             id: "foto-1",
             recorte: recorte("foto-1"),
-            nucleo: { x: 7, y: 30, w: 38, h: 62 },
+            nucleo: { x: 6, y: 40, w: 36, h: 58 },
             acao: "Canteiro de alfaces",
             visitante: "Na foto, vi alfaces!",
             seloCoerente: "selo-1",
@@ -327,7 +337,7 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
           {
             id: "foto-2",
             recorte: recorte("foto-2"),
-            nucleo: { x: 63, y: 40, w: 33, h: 45 },
+            nucleo: { x: 62, y: 50, w: 34, h: 48 },
             acao: "Adubação com minhocas",
             visitante: "Na foto, vi minhocas!",
             seloCoerente: "selo-2",
@@ -338,15 +348,15 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
           { id: "selo-2", texto: "TERRA ADUBADA", emoji: "🪱" },
         ],
         invariantes: [
-          { id: "inv-1", nome: "ESPANTALHO", alvo: { x: 44, y: 32, r: 8 } },
-          { id: "inv-2", nome: "REGADOR VERMELHO", alvo: { x: 61, y: 33, r: 6.5 } },
+          { id: "inv-1", nome: "ESPANTALHO", alvo: { x: 47, y: 35, r: 7 } },
+          { id: "inv-2", nome: "REGADOR VERMELHO", alvo: { x: 60.5, y: 37, r: 6 } },
         ],
         fundo: { x: 32, y: 15, w: 36, h: 45 },
         marcaveis: [
-          { id: "canteiro-alfaces", nome: "CANTEIRO DE ALFACES", area: { x: 0, y: 58, w: 35, h: 42 } },
-          { id: "crianca-regando", nome: "CRIANÇA REGANDO", area: { x: 7, y: 30, w: 14, h: 48 } },
-          { id: "canteiro-terra", nome: "CANTEIRO DE TERRA", area: { x: 55, y: 63, w: 45, h: 37 } },
-          { id: "criancas-minhocas", nome: "CRIANÇAS COM MINHOCAS", area: { x: 63, y: 38, w: 32, h: 45 } },
+          { id: "canteiro-alfaces", nome: "CANTEIRO DE ALFACES", area: { x: 5, y: 67, w: 37, h: 33 } },
+          { id: "crianca-regando", nome: "CRIANÇAS REGANDO", area: { x: 8, y: 39, w: 32, h: 42 } },
+          { id: "canteiro-terra", nome: "CANTEIRO DE TERRA", area: { x: 60, y: 74, w: 40, h: 26 } },
+          { id: "criancas-minhocas", nome: "CRIANÇAS COM MINHOCAS", area: { x: 65, y: 49, w: 28, h: 34 } },
         ],
       },
     },
@@ -364,12 +374,12 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
         espacoCurto: "o museu",
         hora: "14:15",
         imagem: { tipo: "bundle", nome: "cenas/museu.webp" },
-        alt: "O museu da escola inteiro: à esquerda, uma estante antiga com tinteiros e penas; à direita, crianças desenhando numa bancada com canetas coloridas e cadernos; na parede do meio, uma placa dourada e uma janela de madeira.",
+        alt: "O museu da escola inteiro: à esquerda, duas crianças olhando uma vitrine antiga com tinteiros e penas; à direita, duas crianças desenhando numa mesa com canetas coloridas e cadernos; na parede lisa do meio, uma placa dourada e uma janela de madeira.",
         fotos: [
           {
             id: "foto-1",
             recorte: recorte("foto-1"),
-            nucleo: { x: 1, y: 16, w: 40, h: 72 },
+            nucleo: { x: 1, y: 36, w: 32, h: 56 },
             acao: "Estante com tinteiros e penas",
             visitante: "Na foto, vi tinteiros!",
             seloCoerente: "selo-1",
@@ -377,7 +387,7 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
           {
             id: "foto-2",
             recorte: recorte("foto-2"),
-            nucleo: { x: 58, y: 40, w: 40, h: 50 },
+            nucleo: { x: 69, y: 47, w: 29, h: 43 },
             acao: "Bancada com canetas e cadernos",
             visitante: "Na foto, vi canetas!",
             seloCoerente: "selo-2",
@@ -388,15 +398,15 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
           { id: "selo-2", texto: "TEMPO DE HOJE", emoji: "✏️" },
         ],
         invariantes: [
-          { id: "inv-1", nome: "PLACA DOURADA", alvo: { x: 44, y: 30, r: 7 } },
-          { id: "inv-2", nome: "JANELA DE MADEIRA", alvo: { x: 58, y: 30, r: 6.5 } },
+          { id: "inv-1", nome: "PLACA DOURADA", alvo: { x: 44, y: 31, r: 7 } },
+          { id: "inv-2", nome: "JANELA DE MADEIRA", alvo: { x: 59.5, y: 31, r: 5.5 } },
         ],
         fundo: { x: 32, y: 15, w: 36, h: 30 },
         marcaveis: [
-          { id: "estante-antiga", nome: "ESTANTE ANTIGA", area: { x: 1, y: 16, w: 24, h: 75 } },
-          { id: "criancas-observando", nome: "CRIANÇAS OLHANDO", area: { x: 22, y: 40, w: 20, h: 48 } },
-          { id: "bancada", nome: "BANCADA COM CANETAS", area: { x: 58, y: 60, w: 40, h: 38 } },
-          { id: "criancas-desenhando", nome: "CRIANÇAS DESENHANDO", area: { x: 63, y: 40, w: 33, h: 30 } },
+          { id: "estante-antiga", nome: "VITRINE ANTIGA", area: { x: 0, y: 35, w: 21, h: 60 } },
+          { id: "criancas-observando", nome: "CRIANÇAS OLHANDO", area: { x: 15, y: 45, w: 19, h: 45 } },
+          { id: "bancada", nome: "MESA COM CANETAS", area: { x: 68, y: 64, w: 30, h: 36 } },
+          { id: "criancas-desenhando", nome: "CRIANÇAS DESENHANDO", area: { x: 77, y: 47, w: 20, h: 40 } },
         ],
       },
     },
@@ -406,11 +416,21 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
 /** O banco padrão do PO: o caminho curto ("USAR BANCO PADRÃO (BIBLIOTECA)"). */
 export const CHAVE_PADRAO: ChavePronta = "biblioteca";
 
-/** Sem saldo de IA ou com o vendor fora: o rascunho sai do pacote pronto da disciplina. */
+/**
+ * Sem saldo de IA ou com o vendor fora: o rascunho sai do pacote pronto da
+ * disciplina. Ciências → Horta; História e Geografia → Museu; o resto →
+ * Biblioteca (o banco padrão).
+ */
 export const PRONTO_DA_DISCIPLINA: Readonly<Record<Disciplina, ChavePronta>> = {
   "lingua-portuguesa": "biblioteca",
+  arte: "biblioteca",
+  "educacao-fisica": "biblioteca",
+  matematica: "biblioteca",
   ciencias: "horta",
+  geografia: "museu",
   historia: "museu",
+  "ensino-religioso": "biblioteca",
+  computacao: "biblioteca",
   outra: "biblioteca",
 };
 
@@ -434,7 +454,7 @@ export const GEOMETRIA_DA_CENA_GERADA = {
   marcaveis: { "foto-1": { x: 2, y: 36, w: 42, h: 60 }, "foto-2": { x: 56, y: 36, w: 42, h: 60 } },
 } as const satisfies { nucleos: Record<FotoId, Retangulo>; fundo: Retangulo; marcaveis: Record<FotoId, Retangulo> };
 
-// ──────────────────────────────────────────── E5 e E6 — FIXAS em todo pacote
+// ──────────────────────────────────────────── E5 — FIXA em todo pacote
 
 /**
  * E5, os pares: quatro cartas de ids OPACOS (o cliente recebe só id e imagem).
@@ -468,67 +488,83 @@ export const ROTULO_DO_ELEMENTO: Readonly<Record<ElementoDaSegundaFoto, string>>
   "crianca-lendo": "Criança lendo",
 };
 
-export const ROTULO_DO_VOTO: Readonly<Record<Voto, { rotulo: string; emoji: string }>> = {
-  "so-um-pedaco": { rotulo: "SÓ UM PEDAÇO", emoji: "🌿" },
-  "mostra-tudo": { rotulo: "MOSTRA TUDO", emoji: "💥" },
-};
-
 export const ROTULO_DO_MOTIVO: Readonly<Record<MotivoDoPar, string>> = {
   atividade: "A atividade",
   roupa: "A cor da roupa",
 };
 
-/** E6: a lagarta na alface. */
-export const TRANSFERENCIA = { imagem: "fixas/lagarta.webp" } as const;
-
-// ──────────────────────────────────────────── os textos da tela (literais do PO)
+// ──────────────────────────────────────────── os textos da tela (literais do protótipo)
 
 /**
- * Os textos da tela do estudante, LITERAIS do one-pager (CAIXA ALTA onde o PO
- * usa). `{espacoCurto}`, `{espaco}`, `{hora}` e `{cracha}` são preenchidos pela
- * tela. Descem em `GET /enigma-capa/sessao`.
+ * Os textos da tela do estudante, LITERAIS do protótipo validado pelo time
+ * (CAIXA ALTA onde ele usa). O servidor preenche `{espacoCurto}`, `{ESPACO}`,
+ * `{hora}` e as frases que dependem do artigo do espaço (`e1.missao`,
+ * `e4.fora`); `{n}` (o contador) fica para a tela. Descem em
+ * `GET /enigma-capa/sessao`.
  */
 export const TEXTOS = {
   e1: {
-    titulo: "ESCOLHA SEU CRACHÁ",
-    bento: "BENTO PRECISA DE AJUDA!",
-    card: "INVESTIGAR A NOVA CAPA",
+    tag: "RASCUNHO PENDENTE",
+    titulo: "INVESTIGAR A NOVA CAPA",
+    contexto: "A capa sobre {espacoCurto} causou confusão entre os ouvintes.",
+    missao: "ENCONTRE NAS FOTOS 2 OBJETOS {DO_ESPACO}",
+    abrir: "ABRIR BANCADA",
   },
   e2: {
+    titulo: "INVESTIGUE COM A LUPA",
+    instrucao: "Arraste a lupa pelas duas fotos.",
+    segure: "SEGURE A LUPA AQUI!",
+    contador: "{n} DE 2 ENCONTRADOS",
+    completa: "INVESTIGAÇÃO COMPLETA!",
+    completaTexto: "Você observou atentamente as duas fotos e os detalhes da parede!",
     rotuloDaFoto1: "FOTO 1 — {ESPACO} {hora}",
     rotuloDaFoto2: "FOTO 2 — {ESPACO} {hora}",
     alerta: "OLHE O FUNDO",
+    alertaTexto: "Antes de avançar, passe a lupa nas paredes do fundo de cada foto para encontrar pistas importantes!",
+    voltar: "VOLTAR À INVESTIGAÇÃO",
+    mao: "ARRASTE A LUPA ATÉ A PAREDE DO FUNDO",
     inatividade: "VAMOS INVESTIGAR?",
   },
   e3: {
     titulo: "ESCOLHA 1 FOTO",
-    arraste: "Arraste a foto",
-    assinatura: "POSTAGEM DE: {cracha}",
+    tituloSelo: "SELECIONE O SELO",
+    tituloPronta: "CAPA PRONTA!",
+    arraste: "Enquadre a foto",
+    arrasteNota: "(Tamanho fixo, sem zoom)",
     publicar: "PUBLICAR CAPA",
+    publicada: "CAPA PUBLICADA!",
+    publicadaTexto: "Sua capa foi para o feed da rádio.",
+    irParaOFeed: "IR PARA O FEED",
   },
   e4: {
     aguarde: "AGUARDE O PROFESSOR",
     professorJaVem: "O PROFESSOR JÁ VEM!",
+    respire: "Respire fundo enquanto o professor conversa com a turma.",
     suaFoto: "SUA FOTO",
     outraFoto: "OUTRA FOTO",
     invariantes: "TOQUE EM 2 COISAS IGUAIS",
+    invariantesTexto: "Toque na mesma coisa nas duas fotos.",
+    contador: "{n} DE 2 ENCONTRADOS",
     bentoEntendeu: "AGORA EU ENTENDI!",
+    revelar: "DESLIZE PARA REVELAR",
+    revelarTexto: "Arraste o botão e veja o lugar inteiro.",
+    cenaInteira: "A CENA COMPLETA",
+    mesmoLugar: "MESMO LUGAR · MESMO MINUTO ({hora})",
     bentoMesmoLugar: "ERA O MESMO LUGAR!",
+    avancar: "AVANÇAR",
     fora: "Marque n{espacoCurto} o que ficou fora da sua foto.",
+    alfinete: "ARRASTE O ALFINETE",
     pronto: "Pronto",
   },
   e5: {
     pares: "Junte duas fotos da mesma atividade.",
     motivo: "O que é parecido?",
     segunda: "Foto de leitura: o que precisa aparecer?",
-    arraste: "Arraste a foto",
+    arraste: "Enquadre a foto",
     album: "Colocar no álbum",
-  },
-  e6: {
-    cabecalho: "HORTA DA ESCOLA",
-    pergunta: "A HORTA ACABOU?",
-    enviada: "SELEÇÃO ENVIADA",
+    guardada: "FOTO GUARDADA NO ÁLBUM!",
     fim: "MISSÃO CUMPRIDA!",
+    fimTexto: "Agora conversem com o professor.",
   },
   erros: {
     semSinal: "SEM SINAL NA RÁDIO",
@@ -537,6 +573,8 @@ export const TEXTOS = {
   },
 } as const;
 
+const ARTIGO = /^(a|o|as|os)\s+(.+)$/i;
+
 /**
  * A frase do "o que ficou fora" com o espaço da cena. O PO escreveu "Marque na
  * biblioteca…" e "Marque no pátio…": o artigo vem do `espacoCurto` ("a
@@ -544,9 +582,22 @@ export const TEXTOS = {
  */
 export function fraseDoFora(espacoCurto: string): string {
   const t = espacoCurto.trim();
-  const m = /^(a|o|as|os)\s+(.+)$/i.exec(t);
+  const m = ARTIGO.exec(t);
   const lugar = m ? `${({ a: "na", o: "no", as: "nas", os: "nos" } as Record<string, string>)[m[1]!.toLowerCase()]} ${m[2]}` : `em ${t}`;
   return `Marque ${lugar} o que ficou fora da sua foto.`;
+}
+
+/**
+ * A missão do card da E1, em CAIXA ALTA, com o artigo contraído do
+ * `espacoCurto`: "a biblioteca" → "ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA",
+ * "o museu" → "…DO MUSEU", "as salas" → "…DAS SALAS"; sem artigo, "…DE {X}".
+ * A tela tem uma cópia (como a de `fraseDoFora`).
+ */
+export function fraseDaMissao(espacoCurto: string): string {
+  const t = espacoCurto.trim();
+  const m = ARTIGO.exec(t);
+  const lugar = m ? `${({ a: "da", o: "do", as: "das", os: "dos" } as Record<string, string>)[m[1]!.toLowerCase()]} ${m[2]}` : `de ${t}`;
+  return `ENCONTRE NAS FOTOS 2 OBJETOS ${lugar}`.toLocaleUpperCase("pt-BR");
 }
 
 /** Os tempos da tela (o one-pager §4 e §7; o 45 s e os 3 min são o "[PARÂMETRO]" sugerido pelo PO). */
@@ -559,10 +610,10 @@ export const TEMPOS = {
 
 // ──────────────────────────────────────────── o professor
 
-/** O roteiro da conversa individual: a pausa (E4), as perguntas (§9a e §4 E5) e a ponte (E6). */
+/** O roteiro da conversa: a introdução, a pausa (E4) e as perguntas (§9a e §4 E5). */
 export const ROTEIRO = {
   introducao:
-    "O Bento postou uma foto da biblioteca e os ouvintes entenderam tudo errado. Escolha seu crachá de repórter e investigue o mistério da capa!",
+    "O Bento postou uma foto da biblioteca e os ouvintes entenderam tudo errado. Encontre nas fotos os 2 objetos da biblioteca e descubra o mistério da capa!",
   regraDoArraste: "Você pode mover a foto, mas não mudar o tamanho.",
   pausa: "O que a visitante conseguiu conhecer pela foto? O que ficou de fora?",
   cartoes: ["ENQUADRAMENTO", "AUTORIA", "O QUE FICOU DE FORA"],
@@ -574,6 +625,5 @@ export const ROTEIRO = {
     "Quem tirou a foto escolheu mostrar tudo ou só um pedaço?",
     "O que ficou de fora da sua foto que mudou o que os ouvintes pensaram da escola?",
   ],
-  ponte: "Quando alguém tira uma foto sua triste ou fazendo careta, você é daquele jeito o dia inteiro?",
   liberar: "Depois da conversa, toque em LIBERAR VIRADA: as telas da turma mostram a foto de cada um ao lado da outra foto.",
 } as const;
