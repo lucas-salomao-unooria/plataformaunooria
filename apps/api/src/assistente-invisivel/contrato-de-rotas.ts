@@ -407,7 +407,7 @@ export const PainelSchema = z.object({
     habilidades: z.object({ co20: z.number().int(), co01: z.number().int(), co18: z.number().int(), co03Participou: z.number().int() }),
   }),
   linhas: z.array(LinhaDoPainelSchema),
-  roteiro: z.object({ perguntas: z.array(z.string()).length(4), transferencia: z.string() }),
+  roteiro: z.object({ perguntas: z.array(z.string()).length(4) }),
 });
 
 export const MaterialSchema = z.object({

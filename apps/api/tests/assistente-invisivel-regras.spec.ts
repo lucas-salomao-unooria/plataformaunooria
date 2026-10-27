@@ -368,10 +368,10 @@ describe("a saída do estudante não tem lugar para o gabarito", () => {
 });
 
 describe("o roteiro e o podcast", () => {
-  test("as quatro perguntas do roteiro e o card de transferência", () => {
+  test("as quatro perguntas do roteiro, e nada além delas (ADR-189)", () => {
     expect(ROTEIRO.perguntas).toHaveLength(4);
     expect(ROTEIRO.perguntas[1]).toMatch(/^Estudar às 23h45/);
-    expect(ROTEIRO.transferencia).toMatch(/^Um aplicativo de transporte urbano/);
+    expect(Object.keys(ROTEIRO)).toEqual(["perguntas"]);
   });
 
   test("só Alex e Sam falam, e o texto é o do §11", () => {
