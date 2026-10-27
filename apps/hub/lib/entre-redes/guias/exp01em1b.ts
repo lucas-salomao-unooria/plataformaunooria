@@ -10,8 +10,12 @@ import type { GuiaDaAula } from "./tipos";
  *
  * O que vem por BLOCO VIVO (`guia/material-do-assistente-invisivel.tsx`, de
  * `GET /assistente-invisivel/professor/material`): as quatro perguntas do
- * roteiro com o caso de transferência, e o critério de cada nível das quatro
- * habilidades. Tudo isso tem fonte na api, e uma cópia aqui seria a que diverge.
+ * roteiro e o critério de cada nível das quatro habilidades. Tudo isso tem
+ * fonte na api, e uma cópia aqui seria a que diverge.
+ *
+ * O debate fecha na pergunta 4 (LGPD), sem pergunta-ponte para a vida do
+ * estudante: o caso de mercado da Etapa 6 saiu da missão (ADR-189, decisão do
+ * Lucas em 2026-10-27).
  */
 export const GUIA_EXP01EM1B: GuiaDaAula = {
   expId: "exp01em1b",
@@ -213,8 +217,8 @@ export const GUIA_EXP01EM1B: GuiaDaAula = {
         tempo: "40–50",
         momento: "Fechamento e síntese oral (7 min)",
         professor:
-          "Parta do caso do aplicativo de transporte, faça as perguntas 3 e 4 e amarre a síntese sobre LGPD e direito " +
-          "à explicação. O relatório final está no painel, com a exportação para impressão.",
+          "Faça as perguntas 3 e 4 e amarre a síntese sobre LGPD e direito à explicação. O relatório final está no " +
+          "painel, com a exportação para impressão.",
       },
     ],
     nota:
@@ -255,13 +259,6 @@ export const GUIA_EXP01EM1B: GuiaDaAula = {
           "Por que a Lei Geral de Proteção de Dados (LGPD) proíbe que decisões tomadas exclusivamente por algoritmos " +
           "funcionem como “caixas-pretas”, sem que o usuário possa pedir explicação ou revisão humana?",
         porQue: "A pergunta 4: dá nome ao que a página de transparência garante.",
-      },
-      {
-        nivel: "transferencia",
-        pergunta:
-          "Um aplicativo de transporte passou a usar o modelo do celular e o bairro de embarque para cobrar mais caro. " +
-          "Onde mais um algoritmo pode estar decidindo sobre você a partir do que você nunca declarou?",
-        porQue: "O caso de transferência da Etapa 6, como pergunta-ponte para a vida do estudante.",
       },
     ],
   },
