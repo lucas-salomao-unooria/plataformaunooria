@@ -70,7 +70,9 @@ criar. Pelo mesmo motivo o template traz o DS, o `@edu/ui` e a fiação da exp08
 teste de versão.
 
 Mudou dependência de uma experiência? O bundle mudou: **sobe a versão nos três
-lugares** e commita o `pnpm-lock.yaml` junto com o `package.json`.
+lugares** e commita o `pnpm-lock.yaml` junto com o `package.json`. **Subiu o
+DS? Sobem TODAS as publicáveis**, mesmo a que saiu idêntica (ADR-187, a regra
+em `docs/regras/design-system.md`): a versão de cada missão diz o DS dela.
 
 ## Design System nas experiências
 
