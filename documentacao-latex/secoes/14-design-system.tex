@@ -1122,37 +1122,43 @@ professor: não há tela da escola, e por isso a seção \cd{unooria} não entra
 \emph{bundle}. E PUBLICAR CAPA é o botão primário do Unoovista (roxo), não o
 verde do one-pager: cor de ação é do DS.
 
-\subsection{Lacunas abertas em \cd{unooria} e \cd{unooriaai} (exp01em1b 1.0.0)}
+\subsection{As lacunas da exp01em1b, fechadas na 0.2.22}
 \label{sec:ds-lacunas-exp01em1b}
 
 O Assistente Invisível (\adrr{ADR-185}) usa as DUAS seções: a escola em
 \cd{unooria} e o assistente testado em \cd{unooriaai} (a fronteira é
 \enquote{quem fala}, \adrr{ADR-117}, \adrr{ADR-173}). O Figma de 63 telas é
 um \emph{wireframe} cinza: a cor, a tipografia e os componentes vêm do DS,
-nunca do cinza. Cinco peças estão compensadas no código da experiência,
-marcadas \enquote{(b) COMPENSAÇÃO local --- pedido aberto no
-storybook-unooria}, e saem quando o pacote publicar a peça.
+nunca do cinza. A 1.0.0 nasceu com cinco compensações locais; o pacote
+publicou as peças na 0.2.22 (storybook-unnoria \#25), e a 1.0.1 da
+experiência as usa --- não sobrou compensação nela.
 
-\begin{tabularx}{\linewidth}{@{}L{44mm}L{34mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{40mm}X@{}}
 \toprule
-\headrow \thd{Peça} & \thd{Onde} & \thd{A lacuna}\\
+\headrow \thd{Lacuna da 1.0.0} & \thd{O que o DS publicou} & \thd{Onde a exp usa}\\
 \midrule
-Foco do \cd{Collapse} fechado (\cd{visibility: hidden}) &
-  \arq{estilos/\B{}globals.css} & o corpo fechado continua focável (\cd{inert}
-  pedido)\\
-\zebra Cartão \enquote{selecionado para alocar} (contorno) &
-  \arq{estilos/\B{}globals.css} & o \cd{PuzzleBlock} não tem estado
-  \cd{selected}\\
-Alvo do toque da coluna (\enquote{Colocar em \ldots}) &
-  \arq{telas/\B{}Classificacao.tsx} & a vaga do \cd{PuzzleTrack} não é tocável
-  nem recebe soltura (sem arrastar)\\
-\zebra Certificado (\cd{Card} + \cd{Icon} \enquote{balance} + \cd{Badge}) &
-  \arq{telas/\B{}Concluida.tsx} & não há selo nem certificado no pacote\\
-Separador de sessão no chat (\cd{Divider} + texto) &
-  \arq{componentes/\B{}PecasDoAssistente.tsx} & o \cd{unooriaai} não tem
-  mensagem de sistema nem separador\\
+O corpo do \cd{Collapse} fechado continuava focável &
+  já era \cd{inert} desde a 0.2.20 (a compensação estava velha) &
+  \arq{telas/\B{}Algoritmo.tsx}\\
+\zebra O \cd{PuzzleBlock} sem estado \enquote{selecionado} &
+  \cd{selected} (com \cd{aria-pressed}) &
+  \arq{telas/\B{}Classificacao.tsx}\\
+A vaga do \cd{PuzzleTrack} não era tocável &
+  \cd{onSlotActivate} e \cd{slotsDisabled}; a vaga vazia vira botão &
+  \arq{telas/\B{}Classificacao.tsx}\\
+\zebra Sem selo nem certificado &
+  \cd{Certificate} (\cd{title}, \cd{icon}, \cd{safeguard}, \cd{footer}) &
+  \arq{telas/\B{}Concluida.tsx}\\
+Sem separador de sessão no \cd{unooriaai} &
+  \cd{SessionDivider} (\cd{label}) &
+  \arq{componentes/\B{}PecasDoAssistente.tsx}\\
 \bottomrule
 \end{tabularx}
+
+Subir para a 0.2.22 mudou o \emph{bundle} de 14 das 16 experiências (o CSS
+e o JS do pacote); as que mudaram subiram um \emph{patch} nos três lugares,
+pela regra da versão única (\adrr{ADR-139}). A \cd{app-70} e a
+\cd{exp02ef1b} saíram idênticas byte a byte e não subiram.
 
 \subsection{Avisos que ficaram obsoletos}
 
