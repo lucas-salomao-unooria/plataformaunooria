@@ -143,6 +143,15 @@ export const TEXTOS = {
     cartao1: "Cartão 1",
     /** (b) COMPENSAÇÃO de copy: o Figma não nomeia o alvo do toque nem o fechamento (ver AGENTS.md). */
     colocarEm: (rotulo: string) => `Colocar em ${rotulo}`,
+    /* O cartão JÁ COLOCADO usa o rótulo curto do Figma (E5-ALU-01 "sem scaffolding"): na coluna estreita, o longo quebrava a palavra no meio. */
+    rotuloCurto: {
+      "trilha-avancada": "Trilha Avançada",
+      "nome-turma": "Nome e Turma",
+      horario: "Horário (23h45)",
+      "sinal-de-rede": "Sinal de Rede",
+      "endereco-ip": "Endereço IP",
+      "modelo-aparelho": "Modelo Aparelho",
+    } as Record<string, string>,
     selecione: "Toque para Selecionar e Alocar",
     concluir: "Concluir Classificação",
     incompleta: "A classificação dos dados da sessão ainda não foi concluída. Seus critérios serão registrados como estão.",
