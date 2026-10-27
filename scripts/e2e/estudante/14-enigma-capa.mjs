@@ -11,12 +11,14 @@ import { arrastar, comResposta, esperarNaApi, hidratado, idDaTurma, lerApi, pont
  * REAL no preparo.
  *
  * A professora abre a ficha e o guia, CRIA a atividade com "Gerar com IA" e um
- * tema dela (o Vertex escreve o texto e desenha a panorâmica), marca na
- * curadoria os dois objetos iguais do fundo (a IA não devolve coordenada),
- * aprova e põe no ar. O estudante, num celular, lê a missão (ENCONTRE NAS
- * FOTOS 2 OBJETOS…), abre a bancada, tenta avançar antes do piso uma vez (o
- * aviso OLHE O FUNDO), acha os dois objetos com a lupa (ela brilha e o anel
- * enche em 3 s), escolhe uma foto, a desloca na moldura de tamanho fixo, cola o
+ * tema dela (o Vertex escreve o texto e desenha a panorâmica, com a espera
+ * animada no lugar da cena), EDITA o pedido da imagem e gera outra só da
+ * imagem (o véu animado em cima dela — ADR-188), DESENHA na curadoria a área
+ * dos dois objetos iguais do fundo (a IA não devolve coordenada), aprova e põe
+ * no ar. O estudante, num celular, lê a missão (ENCONTRE OS 2 OBJETOS IGUAIS
+ * NAS DUAS FOTOS…), abre a bancada, tenta avançar antes do piso uma vez (o
+ * aviso OLHE O FUNDO), acha os dois objetos com a lupa EM CADA foto (ela
+ * brilha e o anel enche em 3 s; achar na foto 1 não marca a foto 2), escolhe uma foto, a desloca na moldura de tamanho fixo, cola o
  * selo e PUBLICA A CAPA (LATCH 1, o aviso CAPA PUBLICADA!). A visitante diz o
  * que o recorte mostrou, e o aviso AGUARDE O PROFESSOR espera. LIBERAR VIRADA
  * (geral) divide a tela: a criança erra um toque, acha os dois objetos nas
@@ -47,10 +49,13 @@ const RECORTE = {
 };
 
 /** Onde a professora toca na imagem gerada: o layout pedido põe os dois objetos no centro da parede (faixa comum 32–68). */
-const TOQUES_DA_PROFESSORA = [
-  { x: 44, y: 25 },
-  { x: 58, y: 25 },
+/* As caixas que a professora arrasta (0–100 da panorâmica): a IA desenha os objetos no terço central, na metade de cima. */
+const AREAS_DA_PROFESSORA = [
+  { x: 34, y: 8, w: 15, h: 34 },
+  { x: 51, y: 8, w: 15, h: 34 },
 ];
+/* O pedido que a professora escreve por cima do da IA: mais coisas na parede do meio. */
+const ACRESCIMO_AO_PEDIDO = " Acrescente na parede do meio um mural de cortiça vazio e um varal com três desenhos de criança, sem texto.";
 
 await suite(
   {
@@ -148,10 +153,17 @@ await suite(
     const comecouAGerar = Date.now();
     await passo.locator('[data-acao="gerar-com-ia"]').click();
     await passo.locator("[data-gerando]").waitFor({ timeout: 10_000 });
+    /* A espera animada ONDE a cena vai aparecer: o quadro (sem rascunho) ou o véu em cima da cena de antes. */
+    const esperaVisivel = await primeiroQueAparecer(
+      { quadro: passo.locator("[data-esperando-cena]"), veu: passo.locator("[data-gerando-imagem]") },
+      { timeout: 10_000, oQue: "a espera animada da geração" },
+    );
+    r.exigir(Boolean(esperaVisivel), `a geração mostra a espera animada no lugar da cena (${esperaVisivel === "quadro" ? "o quadro que pulsa" : "o véu sobre a imagem"})`);
+    await passo.locator(esperaVisivel === "quadro" ? "[data-esperando-cena]" : "[data-gerando-imagem]").scrollIntoViewIfNeeded().catch(() => undefined);
     await r.registrar(prof, "a-radio-prepara-as-fotos", {
       titulo: "A Rádio Escola está preparando as fotos...",
-      mostra: "A barra da geração enquanto o Vertex escreve o pacote e desenha a panorâmica.",
-      prova: "A espera tem voz da missão; o botão fica ocupado e os prontos continuam à mão se a IA cair.",
+      mostra: "A espera animada no lugar da cena — o quadro que pulsa, o ícone da IA e a barra — enquanto o Vertex escreve o pacote e desenha a panorâmica.",
+      prova: "A espera aparece onde a professora está olhando (ADR-188); o botão fica ocupado e os prontos continuam à mão se a IA cair.",
     });
     await passo.locator("[data-gerando]").waitFor({ state: "detached", timeout: 240_000 });
     const curadoria = passo.locator("[data-curadoria]");
@@ -193,47 +205,97 @@ await suite(
       r.exigir((await curadoria.innerText()).includes("Gerada com IA"), "a curadoria mostra a etiqueta “Gerada com IA”");
     }
 
-    /* A marcação dos dois objetos: “Toque no {NOME} na imagem”, um toque por objeto. */
     const cena = curadoria.locator("[data-cena-do-enigma]");
     await cena.waitFor({ timeout: 15_000 });
+
+    /* O PEDIDO DA IMAGEM (ADR-188): a professora o vê, o edita e gera outra imagem — só a imagem. */
+    if (!semIa) {
+      const caixaDoPedido = curadoria.locator("[data-pedido-da-imagem] textarea");
+      await caixaDoPedido.waitFor({ timeout: 10_000 });
+      const pedidoDaIa = await caixaDoPedido.inputValue();
+      r.exigir(
+        /^Ilustração/.test(pedidoDaIa) && /tamanho médio/.test(pedidoDaIa) && /outros 2 ou 3 objetos comuns/.test(pedidoDaIa) && !/Regras que valem sempre/.test(pedidoDaIa),
+        "a curadoria mostra o pedido da imagem que desenhou a cena — nem poluído nem óbvio (objetos médios, entre outros comuns) e sem as regras fixas, que a api acrescenta",
+      );
+      await caixaDoPedido.scrollIntoViewIfNeeded();
+      await caixaDoPedido.fill(pedidoDaIa + ACRESCIMO_AO_PEDIDO);
+      await r.registrar(prof, "o-pedido-da-imagem", {
+        titulo: "O pedido da imagem, editável",
+        mostra: "O texto que desenhou a cena, aberto para a professora, com um acréscimo dela: um mural de cortiça e um varal de desenhos na parede do meio.",
+        prova: "A professora muda a imagem sem refazer o pacote; as regras de segurança (ilustração, sem rosto, sem texto) a Unooria acrescenta sempre.",
+      });
+      const imagemAntes = (await lerApi(prof, `${daTurma}/rascunho`)).corpo?.rascunho?.conteudo?.cena?.imagem?.url ?? null;
+      await curadoria.locator('[data-acao="gerar-imagem-do-pedido"]').click();
+      await cena.locator("[data-gerando-imagem]").waitFor({ timeout: 10_000 });
+      r.exigir(
+        (await curadoria.locator('[data-acao="gerar-imagem-do-pedido"]').innerText()).includes("Gerando a imagem"),
+        "o botão diz que está gerando, e o véu animado cobre a imagem — a professora vê que é para esperar",
+      );
+      await r.registrar(prof, "gerando-a-nova-imagem", {
+        titulo: "A Rádio Escola está desenhando a nova imagem...",
+        mostra: "O véu animado em cima da cena — o ícone da IA pulsando e a barra — e o botão em carregamento.",
+        prova: "O pedido do time: a espera fica clara onde a professora clicou, e não numa barra lá em cima.",
+        inteira: true,
+      });
+      const fimDaImagem = await primeiroQueAparecer(
+        { pronta: curadoria.locator('[data-marcacao="marcando"] [data-desenho-na-cena]'), semIa: curadoria.locator("[data-aviso-sem-ia-imagem]"), falha: curadoria.locator(ALERTA_DE_ERRO) },
+        { timeout: 240_000, oQue: "a nova imagem pelo pedido editado" },
+      );
+      if (fimDaImagem === "falha") {
+        r.exigir(false, `a nova imagem respondeu (a tela mostrou: “${(await curadoria.locator(ALERTA_DE_ERRO).first().innerText()).slice(0, 200)}”)`);
+        return;
+      }
+      if (fimDaImagem === "semIa") r.ressalva("a IA não gerou a nova imagem (sem saldo ou fora do ar): a anterior continuou, com o aviso");
+      else {
+        const depois = (await lerApi(prof, `${daTurma}/rascunho`)).corpo?.rascunho;
+        r.exigir(
+          depois?.conteudo?.cena?.imagem?.url !== imagemAntes && depois?.pedidoDaImagem?.endsWith(ACRESCIMO_AO_PEDIDO.trim()) && depois?.conteudo?.cena?.invariantes?.every((i) => i.alvo === null),
+          "a imagem é outra, o pedido gravado é o da professora e as áreas voltaram a ser desenhadas na imagem nova",
+        );
+      }
+    }
+
+    /* As áreas dos dois objetos: “Desenhe a área do {NOME}”, uma caixa arrastada por objeto. */
     if ((await curadoria.locator('[data-marcacao="marcando"]').count()) > 0) {
-      const pedido = curadoria.locator("[data-toque-pedido]");
+      const pedido = curadoria.locator("[data-desenho-pedido]");
       await pedido.waitFor({ timeout: 10_000 });
       const nomes = (rascunho?.conteudo?.cena?.invariantes ?? []).map((i) => i.nome);
       r.exigir(
-        (await pedido.innerText()).trim() === `Toque no ${nomes[0]} na imagem`,
-        `a curadoria pede “Toque no ${nomes[0]} na imagem”`,
+        (await pedido.innerText()).trim().startsWith(`Desenhe a área do ${nomes[0]}`),
+        `a curadoria pede “Desenhe a área do ${nomes[0]}: arraste uma caixa em volta do objeto inteiro”`,
       );
       await cena.scrollIntoViewIfNeeded();
       await r.registrar(prof, "curadoria-da-ia", {
         titulo: "A cena escrita e desenhada pela IA, na curadoria",
-        mostra: `A panorâmica com as duas molduras, os selos, as falas da visitante e o pedido “Toque no ${nomes[0]} na imagem”.`,
-        prova: "Nada chega à turma sem a aprovação da professora — e é ela quem diz onde estão os dois objetos iguais.",
+        mostra: `A panorâmica com as duas molduras, os selos, as falas da visitante e o pedido “Desenhe a área do ${nomes[0]}”.`,
+        prova: "Nada chega à turma sem a aprovação da professora — e é ela quem diz onde estão os dois objetos iguais, do tamanho que eles têm.",
         inteira: true,
       });
-      const imagem = cena.locator("[data-toque-na-cena]");
-      for (const toque of TOQUES_DA_PROFESSORA) {
-        const ponto = await pontoEm(imagem, toque.x / 100, toque.y / 100);
-        await prof.mouse.click(ponto.x, ponto.y);
+      const imagem = cena.locator("[data-desenho-na-cena]");
+      for (const area of AREAS_DA_PROFESSORA) {
+        const de = await pontoEm(imagem, area.x / 100, area.y / 100);
+        const ate = await pontoEm(imagem, (area.x + area.w) / 100, (area.y + area.h) / 100);
+        await arrastar(prof, de, ate, 12);
         await prof.waitForTimeout(250);
       }
       await esperarOuFalharCedo(curadoria.locator('[data-marcacao="marcada"]'), curadoria.locator(ALERTA_DE_ERRO), {
         timeout: 20_000,
-        oQue: "gravar as marcações dos dois objetos",
+        oQue: "gravar as áreas dos dois objetos",
       });
     }
     const marcados = (await lerApi(prof, `${daTurma}/rascunho`)).corpo?.rascunho;
+    const areas = (marcados?.conteudo?.cena?.invariantes ?? []).map((i) => i.alvo);
     r.exigir(
-      (marcados?.conteudo?.cena?.invariantes ?? []).every((i) => i.alvo && i.alvo.x - i.alvo.r >= 32 && i.alvo.x + i.alvo.r <= 68),
-      `os dois objetos estão marcados, dentro da faixa comum 32–68 (${(marcados?.conteudo?.cena?.invariantes ?? []).map((i) => `${i.nome} x=${i.alvo?.x}`).join(", ")})`,
+      areas.length === 2 && areas.every((a) => a && a.w >= 3 && a.h >= 5 && a.x >= 32 && a.x + a.w <= 68),
+      `as duas ÁREAS estão desenhadas, dentro da faixa comum 32–68 (${(marcados?.conteudo?.cena?.invariantes ?? []).map((i) => `${i.nome} x=${i.alvo?.x} w=${i.alvo?.w} h=${i.alvo?.h}`).join(", ")})`,
     );
     r.exigir((marcados?.pendencias ?? ["?"]).length === 0, "o rascunho não tem pendências: pode aprovar");
-    r.exigir((await cena.locator("[data-alvo]").count()) === 2, "os dois círculos amarelos aparecem na cena");
+    r.exigir((await cena.locator("[data-alvo]").count()) === 2, "as duas caixas amarelas aparecem na cena");
     await cena.scrollIntoViewIfNeeded();
     await r.registrar(prof, "objetos-marcados", {
-      titulo: "Os dois objetos iguais, marcados pela professora",
-      mostra: "Os dois círculos amarelos na parede do meio: o que a criança vai procurar nas duas fotos.",
-      prova: "Os alvos ficam na faixa que aparece nas DUAS fotos (32–68); fora dela, a tela avisaria e a aprovação recusaria.",
+      titulo: "As áreas dos dois objetos iguais, desenhadas pela professora",
+      mostra: "As duas caixas amarelas na parede do meio: o que a criança vai procurar nas duas fotos, do tamanho do objeto.",
+      prova: "A área é o objeto inteiro (ADR-188): a lupa acha em qualquer ponto dentro dela, e ela só cabe na faixa que aparece nas DUAS fotos.",
       inteira: true,
     });
 
@@ -296,7 +358,8 @@ await suite(
     r.exigir(naSala?.estado === "liberada", `a missão está liberada na sala da ${TURMA} (GET /salas/turma: ${salas.status}, ${naSala?.estado})`);
     const k = detalhe.conteudo.cena;
     const foto = k.fotos.find((f) => f.id === "foto-1");
-    const alvos = Object.fromEntries(k.invariantes.map((i) => [i.id, i.alvo]));
+    /* O CENTRO de cada área: onde a lente para e onde a criança toca. */
+    const alvos = Object.fromEntries(k.invariantes.map((i) => [i.id, { x: i.alvo.x + i.alvo.w / 2, y: i.alvo.y + i.alvo.h / 2 }]));
     await r.registrar(prof, "atividade-no-ar", {
       titulo: "A atividade em andamento",
       mostra: "“Usar esta atividade agora” trocou o estado para Em andamento: a Aula ao vivo, com LIBERAR VIRADA, e a turma já entra.",
@@ -311,7 +374,7 @@ await suite(
     const abrir = q.getByRole("button", { name: "ABRIR BANCADA" });
     await esperarOuFalharPorHttp(p, abrir, /enigma-capa\/sessao/, { timeout: 40_000, oQue: "o boot da missão" });
     const cta = (await q.locator(".missao__cta").innerText()).replace(/^search\s*/, "").trim();
-    r.exigir(/^ENCONTRE NAS FOTOS 2 OBJETOS D[AOE]S? /.test(cta), `a missão em letra grande: “${cta}”`);
+    r.exigir(/^ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS D[AOE]S? /.test(cta), `a missão em letra grande pede os 2 objetos IGUAIS nas DUAS fotos: “${cta}”`);
     r.exigir((await q.getByText("RASCUNHO PENDENTE").count()) > 0 && (await q.getByText("INVESTIGAR A NOVA CAPA").count()) > 0, "o card do protótipo: RASCUNHO PENDENTE e INVESTIGAR A NOVA CAPA");
     await r.registrar(p, "a-missao", {
       titulo: "A missão, no mural da Rádio",
@@ -326,7 +389,7 @@ await suite(
     await avancar.waitFor({ timeout: 15_000 });
     await q.getByText("INVESTIGUE COM A LUPA").first().waitFor({ timeout: 10_000 });
     const contador = q.locator(".contador").first();
-    r.exigir((await contador.innerText()).trim() === "0 DE 2 ENCONTRADOS", "o contador começa em 0 DE 2 ENCONTRADOS");
+    r.exigir((await contador.innerText()).trim() === "0 DE 4 ENCONTRADOS", "o contador começa em 0 DE 4 ENCONTRADOS (2 objetos × 2 fotos)");
     const fotosDaBancada = q.locator(".bancada__foto");
     await fotosDaBancada.nth(1).waitFor({ timeout: 15_000 });
     const rotulos = await q.locator(".bancada__rotulo").allInnerTexts();
@@ -334,6 +397,7 @@ await suite(
       rotulos.length === 2 && rotulos[0].startsWith("FOTO 1 — ") && rotulos[0].includes(k.hora) && rotulos[1].startsWith("FOTO 2 — "),
       `as duas fotos com o rótulo do PO (“${rotulos[0]}” / “${rotulos[1]}”)`,
     );
+    const contadorDaFoto = (f) => q.locator(`.bancada__rotulo-contador[data-foto="${f}"]`);
     /* Tentar avançar ANTES do piso: a régua conta um alerta, e o aviso OLHE O FUNDO abre. */
     const avancou = (req) => req.postDataJSON()?.avancar === true;
     const { corpo: precoce } = await comResposta(p, /\/enigma-capa\/lupa$/, () => tocarNoMeio(p, avancar), avancou);
@@ -346,35 +410,60 @@ await suite(
     });
     await q.getByRole("button", { name: "VOLTAR À INVESTIGAÇÃO" }).click();
 
-    /* O piso: 3 s com o centro da lente sobre CADA objeto. A lente fica onde é solta. */
+    /* O piso: 3 s com o centro da lente sobre CADA objeto, EM CADA foto. A lente fica onde é solta. */
     const lente = q.locator(".lupa");
-    const naFoto = async (i, f, alvo) => {
+    const naFoto = async (f, alvo) => {
       const rec = k.fotos.find((x) => x.id === f).recorte;
-      return pontoEm(fotosDaBancada.nth(i), (alvo.x - rec.x) / rec.w, (alvo.y - rec.y) / rec.h);
+      return pontoEm(fotosDaBancada.nth(f === "foto-1" ? 0 : 1), (alvo.x - rec.x) / rec.w, (alvo.y - rec.y) / rec.h);
     };
-    await arrastar(p, await pontoEm(lente, 0.5, 0.5), await naFoto(0, "foto-1", alvos["inv-1"]), 16);
+    const segurarEm = async (f, inv, ms = 3700) => {
+      await arrastar(p, await pontoEm(lente, 0.5, 0.5), await naFoto(f, alvos[inv]), 16);
+      await q.locator(".lupa--brilhando").waitFor({ timeout: 3000 });
+      await p.waitForTimeout(ms);
+    };
+    await arrastar(p, await pontoEm(lente, 0.5, 0.5), await naFoto("foto-1", alvos["inv-1"]), 16);
     await q.locator(".lupa--brilhando").waitFor({ timeout: 3000 });
     await p.waitForTimeout(1300);
     await r.registrar(p, "a-lupa-brilha", {
       titulo: "A lupa brilha e o anel conta o tempo",
-      mostra: `A lente parada sobre o ${k.invariantes[0].nome}: ela brilha, o anel em volta enche e SEGURE A LUPA AQUI!`,
+      mostra: `A lente parada sobre o ${k.invariantes[0].nome} da FOTO 1: ela brilha, o anel em volta enche e SEGURE A LUPA AQUI!`,
       prova: "O pedido do time: a lupa mostra que está no lugar certo e que é preciso ficar 3 s.",
     });
-    await p.waitForTimeout(2300);
-    await q.getByText("1 DE 2 ENCONTRADOS").first().waitFor({ timeout: 5000 });
-    await arrastar(p, await pontoEm(lente, 0.5, 0.5), await naFoto(1, "foto-2", alvos["inv-2"]), 16);
-    await p.waitForTimeout(3700);
+    await p.waitForTimeout(2400);
+    await q.getByText("1 DE 4 ENCONTRADOS").first().waitFor({ timeout: 5000 });
+    /* O pedido do Lucas (ADR-188): achar na foto 1 NÃO marca a foto 2. */
+    r.exigir(
+      (await contadorDaFoto("foto-1").innerText()).trim() === "1 DE 2" &&
+        (await contadorDaFoto("foto-2").innerText()).trim() === "0 DE 2" &&
+        (await q.locator(".achado-na-lupa").count()) === 1 &&
+        (await q.locator('.achado-na-lupa[data-achado="inv-1:foto-1"]').count()) === 1,
+      "o objeto achado na FOTO 1 ganha a moldura dourada SÓ na foto 1: a foto 2 continua 0 DE 2, por investigar",
+    );
+    await r.registrar(p, "achado-so-na-foto-1", {
+      titulo: "Achado na FOTO 1 — a FOTO 2 continua por olhar",
+      mostra: `O ${k.invariantes[0].nome} dourado só na FOTO 1 (1 DE 2), a FOTO 2 em 0 DE 2 e o contador em 1 DE 4 ENCONTRADOS.`,
+      prova: "A lupa conta cada objeto em cada foto: a criança investiga as duas, e nenhuma marca a outra sozinha.",
+    });
+    await segurarEm("foto-1", "inv-2");
+    await segurarEm("foto-2", "inv-1");
+    await segurarEm("foto-2", "inv-2");
     await q.getByText("INVESTIGAÇÃO COMPLETA!").first().waitFor({ timeout: 5000 });
-    r.exigir((await contador.innerText()).trim() === "2 DE 2 ENCONTRADOS" && (await q.locator(".achado-na-lupa").count()) === 4, "os dois objetos achados, com o círculo dourado nas duas fotos (2 DE 2)");
+    r.exigir(
+      (await contador.innerText()).trim() === "4 DE 4 ENCONTRADOS" &&
+        (await q.locator(".achado-na-lupa").count()) === 4 &&
+        (await contadorDaFoto("foto-2").innerText()).trim() === "2 DE 2",
+      "os dois objetos achados nas duas fotos, com a moldura dourada em cada um (4 DE 4)",
+    );
     await r.registrar(p, "investigacao-completa", {
       titulo: "INVESTIGAÇÃO COMPLETA!",
-      mostra: "Os dois objetos marcados de dourado nas duas fotos, 2 DE 2 ENCONTRADOS, e o AVANÇAR aceso.",
-      prova: "O cronômetro é da tela e o piso é do servidor: 3 s sobre cada objeto.",
+      mostra: "Os dois objetos marcados de dourado em CADA foto, 2 DE 2 nas duas, 4 DE 4 ENCONTRADOS e o AVANÇAR aceso.",
+      prova: "O cronômetro é da tela e o piso é do servidor: 3 s sobre cada objeto, em cada foto.",
     });
     const { corpo: piso } = await comResposta(p, /\/enigma-capa\/lupa$/, () => tocarNoMeio(p, avancar), avancou);
+    const temposDoPiso = piso?.lupa?.tempos ?? {};
     r.exigir(
-      piso?.liberado === true && piso?.passo === "decidir" && piso?.lupa?.alvo1Ms >= 3000 && piso?.lupa?.alvo2Ms >= 3000,
-      `com o piso cumprido, o avanço é liberado (objeto 1 ${piso?.lupa?.alvo1Ms} ms, objeto 2 ${piso?.lupa?.alvo2Ms} ms)`,
+      piso?.liberado === true && piso?.passo === "decidir" && ["inv-1:foto-1", "inv-1:foto-2", "inv-2:foto-1", "inv-2:foto-2"].every((c) => temposDoPiso[c] >= 3000),
+      `com o piso cumprido nas duas fotos, o avanço é liberado (${Object.entries(temposDoPiso).map(([c, ms]) => `${c} ${ms} ms`).join(", ")})`,
     );
 
     // ═══ ESTUDANTE: a capa ═════════════════════════════════════════════════
