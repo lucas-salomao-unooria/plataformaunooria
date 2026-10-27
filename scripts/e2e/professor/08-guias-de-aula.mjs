@@ -120,13 +120,14 @@ const GUIAS = [
     missao: "O Assistente Invisível · 1ª série EM",
     /* Os dois blocos vivos vêm de `GET /assistente-invisivel/professor/material`:
        as quatro perguntas do roteiro de debate (one-pager §9a), cada uma no
-       momento dela, com o caso de transferência; e o critério de cada nível das
-       quatro habilidades. A pergunta é conferida pelo texto exato: é a mesma
-       que o painel da aula projeta na Mediação 1. */
+       momento dela; e o critério de cada nível das quatro habilidades. A
+       pergunta é conferida pelo texto exato: é a mesma que o painel da aula
+       projeta na Mediação 1. O caso de mercado da Etapa 6 saiu (ADR-189): o
+       passo do roteiro, abaixo, cobra que ele não volte. */
     vivo: [
       /O roteiro de debate mediado — as quatro perguntas/,
       /Estudar às 23h45 significa necessariamente que um estudante não tem capacidade/,
-      /Um aplicativo de transporte urbano passou a analisar o modelo do celular/,
+      /Por que a LGPD proíbe caixas-pretas e garante o direito de pedir revisão humana\?/,
       /O critério de cada nível \(registrado pelo que o estudante faz\)/,
     ],
     bncc: "EM13CO20",
@@ -275,9 +276,14 @@ await suite(
         momentos.slice(2).every((m) => m.includes("Fechamento coletivo (Etapa 6)")),
       "o guia do Assistente Invisível traz as quatro perguntas do roteiro, duas na Mediação 1 e duas no fechamento",
     );
+    const textoDoRoteiro = (await roteiroDoAssistente.textContent()) ?? "";
+    r.exigir(
+      !/transfer[eê]ncia|aplicativo de transporte/i.test(textoDoRoteiro),
+      "o roteiro do Assistente Invisível não traz mais o caso de transferência da Etapa 6 (ADR-189)",
+    );
     await r.registrar(p, "guia-do-assistente-roteiro", {
       titulo: "O Assistente Invisível: o roteiro de debate mediado",
-      mostra: "As quatro perguntas do PO, cada uma com o momento da aula em que entra, e o caso do aplicativo de transporte.",
+      mostra: "As quatro perguntas do PO, cada uma com o momento da aula em que entra — e só elas (ADR-189).",
       prova: "O bloco é vivo (GET /assistente-invisivel/professor/material): a pergunta do guia é a mesma que o painel da aula projeta.",
     });
 
