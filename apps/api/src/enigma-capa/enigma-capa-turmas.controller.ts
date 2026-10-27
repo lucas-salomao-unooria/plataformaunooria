@@ -196,7 +196,7 @@ export class EnigmaCapaTurmasController {
   @Contrato({
     resumo: "O painel da aula: o progresso e as escolhas de cada estudante (ou computador).",
     descricao:
-      "Por linha: passo, crachá, lupa (tempos e alertas), a capa (foto, selo coerente, a fala da visitante, a ação na capa), os invariantes (erros, ajuda), o que marcou fora, o par e o motivo, a segunda foto e o voto. `aguardandoVirada` = publicou e a turma ainda não virou. O NÍVEL de cada habilidade é da evidência (E14).",
+      "Por linha, pelo NOME do estudante: passo, lupa (o tempo sobre cada objeto do fundo e os alertas), a capa (foto, selo coerente, a fala da visitante, a ação na capa), os invariantes (erros, ajuda), o que marcou fora (\"marcou X de Y\"), o par e o motivo e a segunda foto. `aguardandoVirada` = publicou e a turma ainda não virou; `resumo.marcaramFora` = quantos marcaram ao menos uma coisa que ficou fora da capa. O NÍVEL de cada habilidade é da evidência (E14).",
     params: ParamsDaTurmaSchema,
     query: QueryDaEscolaSchema,
     resposta: PainelSchema,

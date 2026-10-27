@@ -29,7 +29,7 @@ export function Bootstrap() {
         const sessao = await api.sessao();
         if (!vivo) return;
         setInicial(sessao);
-        telemetria.entrou(sessao.passo !== "cracha");
+        telemetria.entrou(sessao.passo !== "inicio");
       } catch (erro) {
         handle?.reportarErro(erro);
         if (!vivo) return;

@@ -6,12 +6,14 @@ import { describe, expect, test } from "vitest";
  * O que o bundle NÃO pode ter — ele é público, e `/exp/exp02ef1b` é endereço
  * adivinhável (regra 3).
  *
- * - O GABARITO: os alvos dos invariantes, os núcleos, a fala da visitante por
+ * - O GABARITO: os alvos dos invariantes (que descem SÓ no passo da lupa, pela
+ *   api — nunca escritos aqui), os núcleos, a fala da visitante por
  *   foto, o selo coerente, os marcáveis, a atividade/cor das cartas e o núcleo
  *   da segunda foto — tudo isso é de `apps/api/src/enigma-capa/conteudo.ts`.
  * - Persistência no navegador: a fila de envio é em MEMÓRIA (one-pager §8), e
  *   token só em memória (regra 4).
- * - Canal B e texto livre (decisões do Lucas, 2026-10-26).
+ * - Pergunta de avaliação e texto livre: a evidência é 100% o que a criança
+ *   FAZ na tela (decisões do Lucas, 2026-10-26).
  * - Outra seção do DS: a missão inteira é Unoovista.
  */
 function arquivos(dir: string): string[] {
@@ -46,7 +48,7 @@ describe("nada persiste no navegador", () => {
   });
 });
 
-describe("sem Canal B e sem texto livre", () => {
+describe("só ações em tela: sem pergunta e sem texto livre", () => {
   test("nenhuma pergunta de avaliação, campo de texto nem StoryPoll", () => {
     for (const [arquivo, texto] of fonte) {
       expect({ arquivo, casou: /\/perguntas|StoryPoll|TextFieldUnv|<textarea|type="text"/.test(texto) }).toEqual({ arquivo, casou: false });

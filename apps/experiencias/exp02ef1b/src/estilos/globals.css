@@ -84,7 +84,8 @@ body {
 .carta:focus-visible,
 .pino:focus-visible,
 .decidir__miniatura:focus-visible,
-.revelar__controle:focus-visible {
+.comparar__alca:focus-visible,
+.bandeja__alfinete:focus-visible {
   outline: 3px solid var(--unv-color-action-primary, #716c98);
   outline-offset: 3px;
 }
@@ -96,10 +97,6 @@ body {
   flex-direction: column;
   height: 100%;
   min-height: 0;
-}
-
-.casca__cracha {
-  white-space: nowrap;
 }
 
 .casca__sem-sinal {
@@ -133,20 +130,11 @@ body {
   text-align: center;
 }
 
-.assinatura {
-  margin: 4px 0 0;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--unv-color-text-secondary, #475157);
-  text-align: center;
-}
-
 .botao-esmaecido {
   opacity: 0.45;
 }
 
-/* ─────────────────────────────────────────── Bento e Iara (compensação: sem arte) */
+/* ─────────────────────────────────────────── o Bento: só o balão (ADR-186) */
 
 .personagem {
   display: flex;
@@ -158,30 +146,9 @@ body {
   font-weight: 700;
 }
 
-.dupla {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.dupla__retratos {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.dupla__fones {
-  font-size: 28px;
-}
-
 @media (prefers-reduced-motion: no-preference) {
   .personagem--animado {
     animation: aceno 1.6s ease-in-out 2;
-  }
-
-  .dupla--animada .dupla__fones {
-    animation: fones 2.4s ease-in-out infinite;
   }
 }
 
@@ -192,16 +159,6 @@ body {
   }
   50% {
     transform: translateY(-6px);
-  }
-}
-
-@keyframes fones {
-  0%,
-  100% {
-    transform: rotate(-12deg);
-  }
-  50% {
-    transform: rotate(12deg);
   }
 }
 
@@ -243,7 +200,7 @@ body {
   font-weight: 700;
 }
 
-/* ─────────────────────────────────────────── E1 — o mural e os crachás */
+/* ─────────────────────────────────────────── E1 — o mural e a missão */
 
 .espera,
 .mural {
@@ -281,51 +238,6 @@ body {
   margin: 0;
   font-size: 13px;
   color: var(--unv-color-text-secondary, #475157);
-}
-
-.crachas {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px 16px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  width: 100%;
-  max-width: 360px;
-}
-
-.crachas__item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.crachas__avatar {
-  font-size: 36px;
-}
-
-.crachas--travados .crachas__avatar {
-  opacity: 0.55;
-}
-
-.crachas__avatar--escolhido {
-  outline: 3px solid var(--unv-color-brand-verified, #6487c2);
-  outline-offset: 4px;
-  border-radius: var(--unv-radius-full, 999px);
-}
-
-.crachas__rotulo {
-  font-size: 13px;
-  font-weight: 700;
-  text-align: center;
-}
-
-.mural__rascunho {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-self: stretch;
 }
 
 /* ─────────────────────────────────────────── E2 — a bancada e a lupa */
@@ -400,21 +312,6 @@ body {
   position: absolute;
   max-width: none;
   pointer-events: none;
-}
-
-/* O pulso azul DISCRETO sobre a parede do fundo (one-pager §4, E2). */
-.pulso-do-fundo {
-  position: absolute;
-  border-radius: var(--unv-radius-s, 8px);
-  border: 2px solid var(--unv-color-brand-verified, #6487c2);
-  background: color-mix(in srgb, var(--unv-color-brand-verified, #6487c2) 18%, transparent);
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .pulso-do-fundo {
-    animation: pulso 1.2s ease-in-out infinite;
-  }
 }
 
 @keyframes pulso {
@@ -551,7 +448,7 @@ body {
   }
 }
 
-/* ─────────────────────────────────────────── E4 — o feed e o cadeado */
+/* ─────────────────────────────────────────── E4 — o feed e a espera */
 
 .feed {
   position: relative;
@@ -569,37 +466,6 @@ body {
 
 .feed__resposta {
   padding: 0 16px;
-}
-
-/* O cadeado AGUARDE O PROFESSOR: uma camada SEM botão — a criança não fura o bloqueio. */
-.cadeado {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: var(--unv-color-overlay-scrim, rgb(14 16 57 / 50%));
-}
-
-.cadeado__cartao {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  max-width: 320px;
-  padding: 24px 20px;
-  border-radius: var(--unv-radius-xl, 24px);
-  background: var(--unv-color-background-elevated, #fff);
-  box-shadow: var(--unv-elevation-overlay, 0 0 10px rgb(14 16 57 / 30%));
-  text-align: center;
-}
-
-.cadeado__titulo {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
 }
 
 /* ─────────────────────────────────────────── E4 — a virada, a busca, o slider, a cena inteira */
@@ -622,7 +488,12 @@ body {
 .virada__rotulos {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  column-gap: 8px;
   padding: 0;
+}
+
+.virada__rotulo--sua {
+  color: var(--unv-color-action-primary, #716c98);
 }
 
 .virada__rotulo {
@@ -655,17 +526,6 @@ body {
 
 .dividida__foto--tocavel {
   cursor: pointer;
-}
-
-.dividida__linha {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  z-index: 3;
-  width: 4px;
-  margin-left: -2px;
-  background: var(--unv-color-background-primary, #fff);
-  pointer-events: none;
 }
 
 .dividida__marcas {
@@ -767,54 +627,15 @@ body {
   list-style: none;
 }
 
-/* O slider: o `<input type="range">` nativo, com medida e cor por token. */
-.revelar {
-  padding: 8px 16px;
-}
-
-.revelar__controle {
-  width: 100%;
-  height: var(--unv-touch-target, 56px);
-  margin: 0;
-  accent-color: var(--unv-color-action-primary, #716c98);
-  cursor: pointer;
-}
-
 .cena-inteira {
   position: relative;
   width: 100%;
   touch-action: manipulation;
-  cursor: crosshair;
 }
 
 .cena-inteira__imagem {
   position: absolute;
   inset: 0;
-}
-
-/* A marca do "o que ficou fora": alvo de toque de 48 px, ponto visível de 20 px. */
-.pino {
-  position: absolute;
-  z-index: 2;
-  width: 48px;
-  height: 48px;
-  margin: -24px 0 0 -24px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
-}
-
-.pino__ponto {
-  display: block;
-  width: 20px;
-  height: 20px;
-  margin: auto;
-  border-radius: 50%;
-  border: 3px solid var(--unv-color-text-on-media, #fff);
-  background: var(--unv-color-action-primary, #716c98);
-  box-shadow: var(--unv-elevation-overlay, 0 0 10px rgb(14 16 57 / 30%));
 }
 
 .virada__acoes {
@@ -915,31 +736,431 @@ body {
   max-width: 420px;
 }
 
-/* ─────────────────────────────────────────── E6 — a horta e o fim */
 
-.transferencia {
+/* ─────────────────────────────────────────── o protótipo validado (ADR-186) */
+
+/* O alto de toda tela: o QUE FAZER AGORA (título), a frase curta e o contador. */
+.cabecalho-da-tela {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 8px 0 24px;
-}
-
-.transferencia > .opcoes-grandes {
+  gap: 4px;
   padding: 0 16px;
 }
 
-.celebracao {
+.cabecalho-da-tela .titulo-da-tela {
+  margin: 4px 0 0;
+}
+
+.cabecalho-da-tela .instrucao {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+.titulo-da-tela--frase {
+  font-size: 18px;
+}
+
+.contador {
+  font-weight: 700;
+}
+
+.nota {
+  font-weight: 400;
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+/* E1 — o card da missão (o `E1-ALU-02` do protótipo). */
+.missao {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  align-self: stretch;
+  padding: 20px 16px;
+  border: 2px solid var(--unv-color-action-primary, #716c98);
+  border-radius: var(--unv-radius-l, 16px);
+  background: var(--unv-color-background-elevated, #fff);
+  box-shadow: var(--unv-elevation-card, 0 1px 4px rgb(14 16 57 / 12%));
+}
+
+.missao__tag {
+  align-self: flex-start;
+  font-weight: 800;
+}
+
+.missao__titulo {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.missao__contexto {
+  margin: 0;
+  font-size: 14px;
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+/* A missão em letra grande: o que a criança vai fazer, sem dizer onde está. */
+.missao__cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+  padding: 14px 12px;
+  border-radius: var(--unv-radius-m, 12px);
+  background: var(--unv-color-background-secondary, #f7f6fa);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.missao__icone {
+  display: inline-flex;
+  flex: none;
+  color: var(--unv-color-action-primary, #716c98);
+}
+
+/* (b) COMPENSAÇÃO — o brilho da lupa e o anel do tempo (pedido aberto no storybook-unooria). */
+.lupa--brilhando {
+  border-color: var(--exp-amarelo);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--exp-amarelo) 55%, transparent),
+    0 0 28px 10px color-mix(in srgb, var(--exp-amarelo) 70%, transparent);
+}
+
+.lupa--achou {
+  border-color: var(--exp-dourado);
+}
+
+.anel-do-tempo {
+  position: absolute;
+  z-index: 4;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.anel-do-tempo__trilho {
+  fill: none;
+  stroke: var(--unv-color-overlay-scrim, rgb(14 16 57 / 50%));
+  stroke-width: 6;
+}
+
+.anel-do-tempo__progresso {
+  fill: none;
+  stroke: var(--exp-dourado);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.1s linear;
+}
+
+.segure,
+.dica-da-mao {
+  position: absolute;
+  z-index: 5;
+  margin: 0;
+  padding: 4px 10px;
+  border-radius: var(--unv-radius-full, 999px);
+  transform: translateX(-50%);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--unv-color-text-on-media, #fff);
+  background: var(--unv-color-overlay-scrim, rgb(14 16 57 / 70%));
+  pointer-events: none;
+}
+
+/* O objeto já achado com a lupa: o círculo dourado, nas duas fotos. */
+.achado-na-lupa {
+  position: absolute;
+  z-index: 2;
+  border: 4px solid var(--exp-dourado);
+  border-radius: 50%;
+  box-shadow: 0 0 16px 4px color-mix(in srgb, var(--exp-dourado) 60%, transparent);
+  pointer-events: none;
+}
+
+.bancada__foto--completa {
+  outline: 3px solid var(--exp-dourado);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lupa--brilhando {
+    animation: brilho 0.9s ease-in-out infinite;
+  }
+
+  .achado-na-lupa {
+    animation: carimbo 0.4s ease-out;
+  }
+}
+
+@keyframes brilho {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.18);
+  }
+}
+
+/* Os avisos (o `BottomSheet` modal da seção): ícone, frase e uma ação. */
+.aviso__corpo {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  padding: 4px 4px 16px;
+  text-align: center;
+}
+
+.aviso__icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  color: var(--unv-color-action-primary, #716c98);
+  background: var(--unv-color-background-secondary, #f7f6fa);
+}
+
+.aviso__texto {
+  margin: 0;
+  font-size: 15px;
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+/* "O PROFESSOR JÁ VEM!": o círculo de respiração calmo do protótipo. */
+.respiracao {
+  display: block;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 4px solid var(--unv-color-action-primary, #716c98);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .respiracao {
+    animation: respirar 4s ease-in-out infinite;
+  }
+}
+
+@keyframes respirar {
+  0%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+.publicada,
+.concluida {
+  flex: 1;
+}
+
+.concluida__fim {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+/* (b) COMPENSAÇÃO — o slider de comparação (pedido aberto no storybook-unooria). */
+.comparar {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: ew-resize;
+}
+
+.comparar__camada {
+  position: absolute;
+  inset: 0;
+}
+
+/* Só a sua foto: o resto apagado no xadrez de "sem fundo". */
+.comparar__so-a-foto {
+  background-color: var(--unv-color-background-secondary, #f7f6fa);
+  background-image:
+    linear-gradient(45deg, var(--unv-color-border-default, #d8d6e4) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--unv-color-border-default, #d8d6e4) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--unv-color-border-default, #d8d6e4) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--unv-color-border-default, #d8d6e4) 75%);
+  background-size: 20px 20px;
+  background-position:
+    0 0,
+    0 10px,
+    10px -10px,
+    -10px 0;
+}
+
+.comparar__foto {
+  position: absolute;
+}
+
+.comparar__linha {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 4px;
+  margin-left: -2px;
+  background: var(--unv-color-background-primary, #fff);
+  box-shadow: 0 0 0 1px var(--unv-color-overlay-scrim, rgb(14 16 57 / 50%));
+  pointer-events: none;
+}
+
+.comparar__alca {
+  position: absolute;
+  top: 50%;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--unv-touch-target, 56px);
+  height: var(--unv-touch-target, 56px);
+  margin: -28px 0 0 -28px;
+  border-radius: 50%;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  color: var(--unv-color-text-on-action, #fff);
+  background: var(--unv-color-action-primary, #716c98);
+  box-shadow: var(--unv-elevation-overlay, 0 4px 8px rgb(14 16 57 / 30%));
+}
+
+.comparar__rotulo {
+  position: absolute;
+  bottom: 8px;
+  z-index: 3;
+  padding: 2px 8px;
+  border-radius: var(--unv-radius-xs, 4px);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--unv-color-text-on-media, #fff);
+  background: var(--unv-color-overlay-scrim, rgb(14 16 57 / 60%));
+  pointer-events: none;
+}
+
+.comparar__rotulo--esquerda {
+  left: 8px;
+}
+
+.comparar__rotulo--direita {
+  right: 8px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* As setas piscantes do protótipo: a alça chama o dedo. */
+  .comparar__alca span {
+    animation: pulso 1.2s ease-in-out infinite;
+  }
+}
+
+.mesmo-lugar {
+  margin: 0 16px;
+  font-size: 15px;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* (b) COMPENSAÇÃO — o ALFINETE (pedido aberto no storybook-unooria: a seção não tem glifo de alfinete). */
+.cena-inteira--alfinete {
+  cursor:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><text x='0' y='34' font-size='34'>📌</text></svg>")
+      4 36,
+    pointer;
+}
+
+.cena-inteira--cheia {
+  cursor: not-allowed;
+}
+
+.pino {
+  position: absolute;
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  margin: -44px 0 0 -6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 36px;
+  line-height: 48px;
+  text-align: left;
+  filter: drop-shadow(0 2px 2px rgb(14 16 57 / 35%));
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pino {
+    animation: fincar 0.25s ease-out;
+  }
+}
+
+@keyframes fincar {
+  from {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.bandeja {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   padding: 0 16px;
 }
 
-.celebracao__titulo {
+.bandeja__alfinete {
+  position: relative;
+  z-index: 10;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  border: 3px dashed var(--unv-color-action-primary, #716c98);
+  border-radius: 50%;
+  background: var(--unv-color-background-elevated, #fff);
+  font-size: 40px;
+  line-height: 1;
+  touch-action: none;
+  cursor: grab;
+}
+
+.bandeja__alfinete:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.bandeja__alfinete--arrastando {
+  cursor: grabbing;
+  border-style: solid;
+  box-shadow: var(--unv-elevation-overlay, 0 4px 8px rgb(14 16 57 / 30%));
+}
+
+.bandeja__rotulo {
   margin: 0;
-  font-size: 24px;
+  font-size: 15px;
   font-weight: 800;
-  text-align: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bandeja__alfinete:not(:disabled):not(.bandeja__alfinete--arrastando) {
+    animation: aceno 1.6s ease-in-out infinite;
+  }
 }

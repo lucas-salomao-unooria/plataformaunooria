@@ -15,7 +15,6 @@ export type CodigoErro =
   | "passo-invalido"
   | "virada-nao-liberada"
   | "ja-publicado"
-  | "ja-enviado"
   | "toque-fora-da-foto"
   | "carta-desconhecida"
   | "pacote-nao-aprovado"
@@ -34,7 +33,6 @@ export const STATUS: Readonly<Record<CodigoErro, number>> = {
   "passo-invalido": 409,
   "virada-nao-liberada": 409,
   "ja-publicado": 409,
-  "ja-enviado": 409,
   "toque-fora-da-foto": 400,
   "carta-desconhecida": 400,
   "pacote-nao-aprovado": 409,
@@ -51,11 +49,10 @@ export const STATUS: Readonly<Record<CodigoErro, number>> = {
 export const MENSAGENS: Readonly<Record<CodigoErro, string>> = {
   // O professor ainda não pôs uma atividade no ar. Espera, não bloqueio.
   "radio-em-preparo": "A Rádio Escola está preparando as fotos. Aguarde o professor.",
-  "sessao-nao-aberta": "Escolha seu crachá primeiro.",
+  "sessao-nao-aberta": "Toque em ABRIR BANCADA primeiro.",
   "passo-invalido": "Vamos uma coisa de cada vez.",
   "virada-nao-liberada": "AGUARDE O PROFESSOR",
   "ja-publicado": "Sua capa já foi publicada.",
-  "ja-enviado": "SELEÇÃO ENVIADA",
   "toque-fora-da-foto": "Toque dentro da foto.",
   "carta-desconhecida": "Essa foto não está na mesa.",
   // As de PROFESSOR, lidas no hub.

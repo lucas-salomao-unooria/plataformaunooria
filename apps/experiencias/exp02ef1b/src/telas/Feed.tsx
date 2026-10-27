@@ -1,11 +1,11 @@
 import { useEffect } from "react";
-import { BadgeUnv, IconUnv, MessageBubble, PostCard } from "@edu/ui/ds-unoovista";
+import { BadgeUnv, MessageBubble, PostCard } from "@edu/ui/ds-unoovista";
+import { Aviso } from "../componentes/Aviso";
 import { Janela } from "../componentes/Janela";
-import { Dupla } from "../componentes/Personagem";
 import type { Contexto } from "../contexto";
 import { useDepoisDe } from "../hooks/tela";
 import { proporcaoDaJanela } from "../lib/geometria";
-import { preencher, ROTULOS, textoDe } from "../lib/textos";
+import { ROTULOS, textoDe } from "../lib/textos";
 
 /** A fala da visitante fica sozinha na tela por este tempo antes do cadeado (a consequência sentida). */
 const VISITANTE_MS = 5000;
@@ -19,10 +19,11 @@ const VISITANTE_MS = 5000;
  * ou só "Na foto, vi a biblioteca!" quando a ação ficou fora). Sem explicação
  * do Bento: quem lê e explora é o professor.
  *
- * Depois de 5 s, com a turma na fase `aberta`, o feed pausa no cadeado
- * AGUARDE O PROFESSOR, com Bento e Iara arrumando os fones; o polling de 3 s
- * do despachante percebe a virada. Passados 3 min, o balão "O PROFESSOR JÁ
- * VEM!". A criança não fura o bloqueio: a camada não tem botão.
+ * Depois de 5 s, com a turma na fase `aberta`, o feed pausa no aviso com o
+ * cadeado e AGUARDE O PROFESSOR — só a mensagem, sem retrato (ADR-186); o
+ * polling de 3 s do despachante percebe a virada. Passados 3 min, "O
+ * PROFESSOR JÁ VEM!" com o círculo de respiração. A criança não fura o
+ * bloqueio: o aviso não tem botão e não fecha.
  */
 export function Feed({ ctx, aoVer }: { ctx: Contexto; aoVer: () => void }) {
   const { sessao, estado, url } = ctx;
@@ -43,7 +44,7 @@ export function Feed({ ctx, aoVer }: { ctx: Contexto; aoVer: () => void }) {
   return (
     <section className="feed">
       <PostCard>
-        <PostCard.Header username={ROTULOS.perfil} location={ctx.cracha ? `${ctx.cracha.emoji} ${ctx.cracha.rotulo}` : undefined} initials="RE" />
+        <PostCard.Header username={ROTULOS.perfil} initials="RE" />
         <PostCard.Media aspectRatio={proporcao} alt={cena.alt}>
           <Janela src={url(cena.imagem)} alt={cena.alt} janela={capa.visivel} className="feed__capa">
             {selo ? (
@@ -55,9 +56,6 @@ export function Feed({ ctx, aoVer }: { ctx: Contexto; aoVer: () => void }) {
             ) : null}
           </Janela>
         </PostCard.Media>
-        <PostCard.Caption username={ROTULOS.perfil}>
-          {preencher(textoDe(sessao.textos, "e3", "assinatura"), { cracha: ctx.cracha?.rotulo ?? "" })}
-        </PostCard.Caption>
         <PostCard.Timestamp>{cena.hora}</PostCard.Timestamp>
       </PostCard>
 
@@ -67,15 +65,14 @@ export function Feed({ ctx, aoVer }: { ctx: Contexto; aoVer: () => void }) {
         </MessageBubble>
       </div>
 
-      {esperando ? (
-        <div className="cadeado" role="status" aria-live="polite">
-          <div className="cadeado__cartao">
-            <IconUnv name="lock" size="lg" />
-            <p className="cadeado__titulo">{textoDe(sessao.textos, "e4", "aguarde")}</p>
-            <Dupla fala={demorou ? textoDe(sessao.textos, "e4", "professorJaVem") : undefined} />
-          </div>
-        </div>
-      ) : null}
+      <Aviso
+        aberto={esperando}
+        icone="lock"
+        titulo={demorou ? textoDe(sessao.textos, "e4", "professorJaVem") : textoDe(sessao.textos, "e4", "aguarde")}
+        texto={demorou ? textoDe(sessao.textos, "e4", "respire") : undefined}
+      >
+        {demorou ? <span className="respiracao" aria-hidden="true" /> : null}
+      </Aviso>
     </section>
   );
 }

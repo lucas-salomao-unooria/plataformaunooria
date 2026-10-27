@@ -7,12 +7,13 @@ import { urlDaImagem } from "./lib/geometria";
 import { telemetria } from "./lib/telemetria";
 import type { Estado, Imagem, Sessao } from "./lib/tipos";
 import { Bancada } from "./telas/Bancada";
+import { Concluida } from "./telas/Concluida";
 import { Decidir } from "./telas/Decidir";
 import { Espera } from "./telas/Espera";
 import { Explicar } from "./telas/Explicar";
 import { Feed } from "./telas/Feed";
 import { Mural } from "./telas/Mural";
-import { Transferencia } from "./telas/Transferencia";
+import { Publicada } from "./telas/Publicada";
 import { Virada } from "./telas/Virada";
 
 /** A fila em memória tenta de novo neste ritmo enquanto houver jogada pendente. */
@@ -27,17 +28,18 @@ const BASE = import.meta.env.BASE_URL;
  * Dois estados locais, e só dois, seguram uma tela além do passo do servidor —
  * os dois são transições que a criança precisa VER, e um F5 os pula de
  * propósito (ela já viu):
- * - `rascunhoAberto`: depois do crachá o servidor já está em `lupa`, mas a
- *   criança ainda vê o mural com o Bento aflito até tocar no rascunho;
+ * - `publicada`: o aviso "CAPA PUBLICADA!" entre o LATCH 1 e o feed (ADR-186);
  * - `segurarFeed`: quem publica DEPOIS da virada pularia direto da capa à
  *   busca; a tela mostra a visitante antes (contrato: "a tela mostra a
  *   visitante antes").
+ * (A "cena completa" depois do slider é o terceiro, mas mora dentro da
+ * `Virada`, que não desmonta entre os momentos da E4.)
  */
 export function App({ inicial }: { inicial: Sessao }) {
   const [sessao, setSessao] = useState<Sessao>(inicial);
   const [estado, setEstado] = useState<Estado>(inicial);
   const [semSinal, setSemSinal] = useState(false);
-  const [rascunhoAberto, setRascunhoAberto] = useState(inicial.passo !== "cracha");
+  const [publicada, setPublicada] = useState(false);
   const [segurarFeed, setSegurarFeed] = useState(false);
   const passoAnterior = useRef(inicial.passo);
 
@@ -122,15 +124,15 @@ export function App({ inicial }: { inicial: Sessao }) {
     return () => window.clearInterval(id);
   }, [estado.passo, estado.fase, estado.preparada, estado.atividade, sessao.tempos.pollingMs, reler, fila]);
 
-  /* Os marcos da trilha: a telemetria de etapa, o zerar do professor e o LATCH 2. */
+  /* Os marcos da trilha: a telemetria de etapa, o zerar do professor e a conclusão. */
   useEffect(() => {
     const anterior = passoAnterior.current;
     if (anterior === estado.passo) return;
     passoAnterior.current = estado.passo;
     telemetria.etapa(estado.passo);
-    if (estado.passo === "cracha") {
+    if (estado.passo === "inicio") {
       /* O professor zerou (ADR-155): a rodada recomeça do mural. */
-      setRascunhoAberto(false);
+      setPublicada(false);
       setSegurarFeed(false);
       fila.limpar();
     }
@@ -142,21 +144,30 @@ export function App({ inicial }: { inicial: Sessao }) {
 
   const verFeed = useCallback(() => setSegurarFeed(false), []);
   const url = useCallback((imagem: Imagem) => urlDaImagem(imagem, BASE), []);
-  const cracha = sessao.material.crachas.find((c) => c.id === estado.cracha) ?? null;
   const naFila = useCallback((chave: string) => fila.tem(chave), [fila]);
-  const ctx: Contexto = { sessao, estado, executar, naFila, url, cracha };
+  const ctx: Contexto = { sessao, estado, executar, naFila, url };
   const chave = `${estado.atividade?.pacoteId ?? "-"}:${estado.atividade?.rodada ?? 0}`;
   const p = estado.passo;
 
   let tela: ReactElement;
   if (!estado.preparada || !sessao.cena) {
     tela = <Espera />;
-  } else if (p === "cracha" || (p === "lupa" && !rascunhoAberto)) {
-    tela = <Mural ctx={ctx} aoAbrir={() => setRascunhoAberto(true)} />;
+  } else if (p === "inicio") {
+    tela = <Mural ctx={ctx} />;
   } else if (p === "lupa") {
     tela = <Bancada ctx={ctx} />;
   } else if (p === "decidir") {
-    tela = <Decidir ctx={ctx} aoPublicar={() => setSegurarFeed(true)} />;
+    tela = (
+      <Decidir
+        ctx={ctx}
+        aoPublicar={() => {
+          setPublicada(true);
+          setSegurarFeed(true);
+        }}
+      />
+    );
+  } else if (publicada && (p === "feed" || p === "invariantes")) {
+    tela = <Publicada ctx={ctx} aoIr={() => setPublicada(false)} />;
   } else if (p === "feed" || (segurarFeed && p === "invariantes")) {
     tela = <Feed ctx={ctx} aoVer={verFeed} />;
   } else if (p === "invariantes" || p === "slider" || p === "fora") {
@@ -164,12 +175,12 @@ export function App({ inicial }: { inicial: Sessao }) {
   } else if (p === "pares" || p === "segunda-foto") {
     tela = <Explicar ctx={ctx} />;
   } else {
-    tela = <Transferencia ctx={ctx} />;
+    tela = <Concluida ctx={ctx} />;
   }
 
   return (
     <div className="app" data-unv-theme="light">
-      <Casca cracha={cracha} semSinal={semSinal}>
+      <Casca semSinal={semSinal}>
         <div key={chave} className="app__tela">
           {tela}
         </div>

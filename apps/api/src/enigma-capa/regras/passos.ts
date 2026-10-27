@@ -4,8 +4,11 @@ import { FASES, type Fase } from "../conteudo";
  * O PASSO do estudante — DERIVADO dos carimbos da sessão e da fase da turma,
  * nunca guardado numa coluna (o desenho da exp02em1b e da exp05ef1b).
  *
- *   cracha → lupa → decidir → feed → invariantes → slider → fora → pares →
- *   segunda-foto → transferencia → concluida
+ *   inicio → lupa → decidir → feed → invariantes → slider → fora → pares →
+ *   segunda-foto → concluida
+ *
+ * `inicio` é a tela do card "INVESTIGAR A NOVA CAPA" (sem sessão: o toque em
+ * ABRIR BANCADA a abre). A segunda foto ("Colocar no álbum") conclui.
  *
  * `feed` é a capa publicada com a resposta da visitante: com a turma na fase
  * `aberta`, é a ESPERA ("AGUARDE O PROFESSOR"); quando o professor toca em
@@ -14,7 +17,7 @@ import { FASES, type Fase } from "../conteudo";
  * virada passa direto da capa à busca (a tela mostra a visitante antes).
  */
 export const PASSOS = [
-  "cracha",
+  "inicio",
   "lupa",
   "decidir",
   "feed",
@@ -23,14 +26,13 @@ export const PASSOS = [
   "fora",
   "pares",
   "segunda-foto",
-  "transferencia",
   "concluida",
 ] as const;
 export type Passo = (typeof PASSOS)[number];
 
 export const FASE_INICIAL: Fase = "aberta";
 
-/** Os marcos da sessão que decidem o passo (a sessão nasce no crachá). */
+/** Os marcos da sessão que decidem o passo (a sessão nasce no ABRIR BANCADA). */
 export interface MarcosDaSessao {
   lupaLiberada: boolean;
   publicou: boolean;
@@ -38,7 +40,7 @@ export interface MarcosDaSessao {
   panoramicaAberta: boolean;
   marcouFora: boolean;
   formouPar: boolean;
-  segundaFoto: boolean;
+  /** A segunda foto foi para o álbum: é ela que conclui a missão. */
   concluiu: boolean;
 }
 
@@ -52,7 +54,7 @@ export function avancarFase(atual: Fase, alvo: Fase): Fase {
 }
 
 export function passoEfetivo(m: MarcosDaSessao | null, fase: Fase | null): Passo {
-  if (!m) return "cracha";
+  if (!m) return "inicio";
   if (m.concluiu) return "concluida";
   if (!m.lupaLiberada) return "lupa";
   if (!m.publicou) return "decidir";
@@ -61,8 +63,7 @@ export function passoEfetivo(m: MarcosDaSessao | null, fase: Fase | null): Passo
   if (!m.panoramicaAberta) return "slider";
   if (!m.marcouFora) return "fora";
   if (!m.formouPar) return "pares";
-  if (!m.segundaFoto) return "segunda-foto";
-  return "transferencia";
+  return "segunda-foto";
 }
 
 /** A posição do passo na trilha — "a jogada é deste passo ou de um já feito?". */

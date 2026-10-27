@@ -83,7 +83,7 @@ export function ZerarTurmaEnigmaCapa({
         Zerar Turma para Nova Aplicação
       </Button>
       <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
-        Abre a {rodada + 1}ª rodada com a mesma atividade e volta a aula ao crachá. As habilidades desta
+        Abre a {rodada + 1}ª rodada com a mesma atividade e volta a aula ao começo. As habilidades desta
         atividade são apagadas do painel, e a {rodada + 1}ª rodada avalia a turma do zero.
       </p>
 
@@ -94,7 +94,7 @@ export function ZerarTurmaEnigmaCapa({
         <ModalBody>
           <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-unooria-neutral-700">
             <p>
-              A turma recomeça do crachá — a lupa, a capa e a espera pela virada — na{" "}
+              A turma recomeça do card INVESTIGAR A NOVA CAPA — a lupa, a capa e a espera pela virada — na{" "}
               <strong>{rodada + 1}ª rodada</strong>, com a mesma atividade. A virada volta a fechar: você libera de
               novo depois da conversa.
             </p>
@@ -107,7 +107,7 @@ export function ZerarTurmaEnigmaCapa({
               de cada estudante passa a ser o desta aplicação.
             </p>
             <Checkbox
-              label="Entendi: a turma recomeça do crachá numa rodada nova."
+              label="Entendi: a turma recomeça do começo numa rodada nova."
               checked={entendeu}
               onChange={(marcado) => setEntendeu(marcado)}
             />

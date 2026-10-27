@@ -300,51 +300,30 @@ await suite(
       prova: `A cena “${k.espaco}” (${k.invariantes.map((i) => i.nome).join(" e ")}) está no ar e a missão está liberada na sala da turma.`,
     });
 
-    // ═══ ESTUDANTE: o crachá e o mural ═════════════════════════════════════
+    // ═══ ESTUDANTE: a missão (a chamada para a ação) ═══════════════════════
     const p = await r.pagina("estudante", { viewport: { width: 412, height: 915 }, mobile: true, deviceScaleFactor: 2 });
     await r.entrar(p, estudante.login, senhaDe(estudante));
-    const chamadasDoCracha = [];
-    p.on("request", (req) => {
-      if (/\/enigma-capa\/cracha$/.test(req.url()) && req.method() === "POST") chamadasDoCracha.push(Date.now());
-    });
     await p.goto(`${HUB}/exp/${EXP_ID}`, { waitUntil: "domcontentloaded" });
     const q = p.frameLocator("iframe[data-experiencia]");
-    await esperarOuFalharPorHttp(p, q.getByText("ESCOLHA SEU CRACHÁ", { exact: true }), /enigma-capa\/sessao/, {
-      timeout: 40_000,
-      oQue: "o boot da missão",
+    const abrir = q.getByRole("button", { name: "ABRIR BANCADA" });
+    await esperarOuFalharPorHttp(p, abrir, /enigma-capa\/sessao/, { timeout: 40_000, oQue: "o boot da missão" });
+    const cta = (await q.locator(".missao__cta").innerText()).trim();
+    r.exigir(/^ENCONTRE NAS FOTOS 2 OBJETOS D[AOE]S? /.test(cta), `a missão em letra grande: “${cta}”`);
+    r.exigir((await q.getByText("RASCUNHO PENDENTE").count()) > 0 && (await q.getByText("INVESTIGAR A NOVA CAPA").count()) > 0, "o card do protótipo: RASCUNHO PENDENTE e INVESTIGAR A NOVA CAPA");
+    await r.registrar(p, "a-missao", {
+      titulo: "A missão, no mural da Rádio",
+      mostra: `Um card só: RASCUNHO PENDENTE, INVESTIGAR A NOVA CAPA, o que aconteceu e a missão — “${cta}” — com ABRIR BANCADA.`,
+      prova: "A criança sabe o que fazer antes de tocar em nada, e a tela não diz onde estão os objetos (ADR-186).",
     });
-    const abriuEm = Date.now();
-    const foneAzul = q.getByLabel("FONE AZUL", { exact: true });
-    /* O toque antes de 3 s não reage (one-pager §4: evitar toque acidental). O
-       evento vai direto (sem a espera de acionabilidade do `click`): o que se
-       prova é o toque CEDO, e ele precisa acontecer antes dos 3 s. */
-    await foneAzul.dispatchEvent("click");
-    const tocouCedoEm = Date.now() - abriuEm;
-    await p.waitForTimeout(400);
-    if (tocouCedoEm < 2500) {
-      r.exigir(chamadasDoCracha.length === 0, `o crachá tocado ${tocouCedoEm} ms depois de abrir não reage (nenhum POST /cracha)`);
-    } else {
-      r.ressalva(`o toque cedo saiu só ${tocouCedoEm} ms depois de abrir: a trava dos 3 s não foi provada nesta corrida`);
-    }
-    await r.registrar(p, "escolha-seu-cracha", {
-      titulo: "ESCOLHA SEU CRACHÁ",
-      mostra: "O mural da @radio_escola e os quatro crachás: FONE AZUL, FONE AMARELO, MICROFONE VERDE e GRAVADOR LARANJA.",
-      prova: "O toque só libera depois de 3 s: o crachá tocado cedo demais não abriu a sessão.",
-    });
-    await p.waitForTimeout(Math.max(0, 3300 - (Date.now() - abriuEm)));
-    if (chamadasDoCracha.length === 0) await foneAzul.click();
-    await q.getByText("BENTO PRECISA DE AJUDA!").first().waitFor({ timeout: 15_000 });
-    r.exigir(chamadasDoCracha.length === 1, "depois de 3 s, o crachá abre a sessão (um POST /cracha)");
-    await r.registrar(p, "bento-precisa-de-ajuda", {
-      titulo: "BENTO PRECISA DE AJUDA!",
-      mostra: "O Bento aflito e a notificação do rascunho pendente: INVESTIGAR A NOVA CAPA.",
-      prova: "O crachá abriu a sessão desta rodada; o rascunho é o convite para a investigação.",
-    });
-    await q.getByText("INVESTIGAR A NOVA CAPA").first().click();
+    const { status: iniciou, corpo: aberta } = await comResposta(p, /\/enigma-capa\/iniciar$/, () => abrir.click());
+    r.exigir(iniciou < 300 && aberta?.passo === "lupa" && (aberta?.lupa?.alvos ?? []).length === 2, "ABRIR BANCADA abre a sessão (POST /iniciar) e a lupa recebe o lugar dos dois objetos");
 
-    // ═══ ESTUDANTE: a lupa ═════════════════════════════════════════════════
+    // ═══ ESTUDANTE: a lupa que brilha e conta 3 s ══════════════════════════
     const avancar = q.getByRole("button", { name: "AVANÇAR" });
     await avancar.waitFor({ timeout: 15_000 });
+    await q.getByText("INVESTIGUE COM A LUPA").first().waitFor({ timeout: 10_000 });
+    const contador = q.locator(".contador").first();
+    r.exigir((await contador.innerText()).trim() === "0 DE 2 ENCONTRADOS", "o contador começa em 0 DE 2 ENCONTRADOS");
     const fotosDaBancada = q.locator(".bancada__foto");
     await fotosDaBancada.nth(1).waitFor({ timeout: 15_000 });
     const rotulos = await q.locator(".bancada__rotulo").allInnerTexts();
@@ -352,50 +331,60 @@ await suite(
       rotulos.length === 2 && rotulos[0].startsWith("FOTO 1 — ") && rotulos[0].includes(k.hora) && rotulos[1].startsWith("FOTO 2 — "),
       `as duas fotos com o rótulo do PO (“${rotulos[0]}” / “${rotulos[1]}”)`,
     );
-    /* Tentar avançar ANTES do piso: a régua conta um alerta, e a tela mostra OLHE O FUNDO. */
+    /* Tentar avançar ANTES do piso: a régua conta um alerta, e o aviso OLHE O FUNDO abre. */
     const avancou = (req) => req.postDataJSON()?.avancar === true;
     const { corpo: precoce } = await comResposta(p, /\/enigma-capa\/lupa$/, () => tocarNoMeio(p, avancar), avancou);
     await q.getByText("OLHE O FUNDO").first().waitFor({ timeout: 10_000 });
     r.exigir(precoce?.liberado === false && precoce?.alerta === true && precoce?.lupa?.alertas === 1, "avançar antes do piso: recusado, com um alerta contado (lupa_alertas = 1)");
     await r.registrar(p, "olhe-o-fundo", {
       titulo: "OLHE O FUNDO",
-      mostra: "As duas fotos, uma sobre a outra no celular, a lupa, e o alerta com a mãozinha apontando a parede.",
+      mostra: "O aviso do protótipo: a lupa, OLHE O FUNDO, a frase e VOLTAR À INVESTIGAÇÃO.",
       prova: "O botão esmaecido continua tocável: o toque antes do piso É a evidência que a régua lê.",
     });
+    await q.getByRole("button", { name: "VOLTAR À INVESTIGAÇÃO" }).click();
 
-    /* O piso: 3 s com a lente sobre cada foto E o fundo das duas. A lente fica onde é solta. */
-    const fundoX = k.fundo.x + k.fundo.w / 2;
-    const fundoY = k.fundo.y + k.fundo.h / 2;
+    /* O piso: 3 s com o centro da lente sobre CADA objeto. A lente fica onde é solta. */
     const lente = q.locator(".lupa");
-    for (const [i, f] of [[0, "foto-1"], [1, "foto-2"]]) {
-      const recorte = k.fotos.find((x) => x.id === f).recorte;
-      const destino = await pontoEm(fotosDaBancada.nth(i), (fundoX - recorte.x) / recorte.w, (fundoY - recorte.y) / recorte.h);
-      const deLente = await pontoEm(lente, 0.5, 0.5);
-      await arrastar(p, deLente, destino, 16);
-      await p.waitForTimeout(3600);
-    }
-    await q.locator(".pulso-do-fundo").first().waitFor({ timeout: 5000 });
-    await r.registrar(p, "lupa-no-fundo", {
-      titulo: "A lupa sobre o fundo",
-      mostra: "A lente de ampliação fixa 2× sobre a parede do fundo, que pulsa em azul; o AVANÇAR acendeu.",
-      prova: "O cronômetro é da tela e o piso é do servidor: 3 s sobre cada foto e o fundo das duas.",
+    const naFoto = async (i, f, alvo) => {
+      const rec = k.fotos.find((x) => x.id === f).recorte;
+      return pontoEm(fotosDaBancada.nth(i), (alvo.x - rec.x) / rec.w, (alvo.y - rec.y) / rec.h);
+    };
+    await arrastar(p, await pontoEm(lente, 0.5, 0.5), await naFoto(0, "foto-1", alvos["inv-1"]), 16);
+    await q.locator(".lupa--brilhando").waitFor({ timeout: 3000 });
+    await p.waitForTimeout(1300);
+    await r.registrar(p, "a-lupa-brilha", {
+      titulo: "A lupa brilha e o anel conta o tempo",
+      mostra: `A lente parada sobre o ${k.invariantes[0].nome}: ela brilha, o anel em volta enche e SEGURE A LUPA AQUI!`,
+      prova: "O pedido do time: a lupa mostra que está no lugar certo e que é preciso ficar 3 s.",
+    });
+    await p.waitForTimeout(2300);
+    await q.getByText("1 DE 2 ENCONTRADOS").first().waitFor({ timeout: 5000 });
+    await arrastar(p, await pontoEm(lente, 0.5, 0.5), await naFoto(1, "foto-2", alvos["inv-2"]), 16);
+    await p.waitForTimeout(3700);
+    await q.getByText("INVESTIGAÇÃO COMPLETA!").first().waitFor({ timeout: 5000 });
+    r.exigir((await contador.innerText()).trim() === "2 DE 2 ENCONTRADOS" && (await q.locator(".achado-na-lupa").count()) === 4, "os dois objetos achados, com o círculo dourado nas duas fotos (2 DE 2)");
+    await r.registrar(p, "investigacao-completa", {
+      titulo: "INVESTIGAÇÃO COMPLETA!",
+      mostra: "Os dois objetos marcados de dourado nas duas fotos, 2 DE 2 ENCONTRADOS, e o AVANÇAR aceso.",
+      prova: "O cronômetro é da tela e o piso é do servidor: 3 s sobre cada objeto.",
     });
     const { corpo: piso } = await comResposta(p, /\/enigma-capa\/lupa$/, () => tocarNoMeio(p, avancar), avancou);
     r.exigir(
-      piso?.liberado === true && piso?.passo === "decidir" && piso?.lupa?.foto1Ms >= 3000 && piso?.lupa?.foto2Ms >= 3000 && piso?.lupa?.fundo1 && piso?.lupa?.fundo2,
-      `com o piso cumprido, o avanço é liberado (foto 1 ${piso?.lupa?.foto1Ms} ms, foto 2 ${piso?.lupa?.foto2Ms} ms, fundo nas duas)`,
+      piso?.liberado === true && piso?.passo === "decidir" && piso?.lupa?.alvo1Ms >= 3000 && piso?.lupa?.alvo2Ms >= 3000,
+      `com o piso cumprido, o avanço é liberado (objeto 1 ${piso?.lupa?.alvo1Ms} ms, objeto 2 ${piso?.lupa?.alvo2Ms} ms)`,
     );
 
     // ═══ ESTUDANTE: a capa ═════════════════════════════════════════════════
     await q.getByText("ESCOLHA 1 FOTO").first().waitFor({ timeout: 15_000 });
     const miniaturas = q.locator(".decidir__miniatura");
     await miniaturas.nth(0).click();
+    await q.getByText("SELECIONE O SELO").first().waitFor({ timeout: 5000 });
     const moldura = q.locator(".moldura");
     await moldura.waitFor({ timeout: 10_000 });
-    await q.getByText("Arraste a foto").first().waitFor({ timeout: 5000 });
+    await q.getByText("(Tamanho fixo, sem zoom)").first().waitFor({ timeout: 5000 });
     const imagemDaMoldura = moldura.locator(".janela__imagem");
     const antes = { caixa: await moldura.boundingBox(), estilo: await imagemDaMoldura.getAttribute("style") };
-    /* Arrasta a foto para a direita e para baixo: a moldura mostra mais da esquerda e do alto — a mesa da ação 1 continua inteira. */
+    /* Arrasta a foto para a direita e para baixo: a moldura mostra mais da esquerda e do alto — a ação 1 continua inteira. */
     const meio = await pontoEm(moldura, 0.5, 0.5);
     await arrastar(p, meio, { x: meio.x + meio.caixa.width * 0.12, y: meio.y + meio.caixa.height * 0.05 }, 10);
     const depois = { caixa: await moldura.boundingBox(), estilo: await imagemDaMoldura.getAttribute("style") };
@@ -407,12 +396,13 @@ await suite(
     const seloCoerente = k.selos.find((s) => s.id === foto.seloCoerente);
     await q.getByRole("button", { name: new RegExp(seloCoerente.texto) }).click();
     await moldura.locator(".carimbo").waitFor({ timeout: 5000 });
+    await q.getByText("CAPA PRONTA!").first().waitFor({ timeout: 5000 });
     await q.locator("button:not([disabled])", { hasText: "PUBLICAR CAPA" }).waitFor({ timeout: 5000 });
     await p.waitForTimeout(400); /* o carimbo entra com animação: o print espera ele assentar */
-    await r.registrar(p, "capa-enquadrada", {
-      titulo: "ESCOLHA 1 FOTO, a moldura e o selo",
-      mostra: `A foto 1 escolhida (a outra esmaece), deslocada na moldura de tamanho fixo, com o selo “${seloCoerente.texto}”.`,
-      prova: "Você pode mover a foto, mas não mudar o tamanho: sem zoom, sem alça, sem vazio — a moldura tem a mesma medida antes e depois do arraste.",
+    await r.registrar(p, "capa-pronta", {
+      titulo: "ESCOLHA 1 FOTO → SELECIONE O SELO → CAPA PRONTA!",
+      mostra: `A foto 1 escolhida, deslocada na moldura de tamanho fixo, com o selo “${seloCoerente.texto}”; o título diz o passo.`,
+      prova: "Você pode mover a foto, mas não mudar o tamanho: a moldura tem a mesma medida antes e depois do arraste.",
     });
     const { corpo: publicada } = await comResposta(p, /\/enigma-capa\/publicar$/, () => q.getByRole("button", { name: "PUBLICAR CAPA" }).click());
     r.exigir(
@@ -420,33 +410,42 @@ await suite(
       `PUBLICAR CAPA grava a foto 1, o selo e o deslocamento (x=${publicada?.capa?.deslocamento?.x?.toFixed?.(2)}, y=${publicada?.capa?.deslocamento?.y?.toFixed?.(2)})`,
     );
     r.exigir(publicada?.visitante === foto.visitante, `a visitante diz o que o recorte mostrou: “${publicada?.visitante}” (a ação ficou na capa)`);
+    await q.getByText("CAPA PUBLICADA!").first().waitFor({ timeout: 10_000 });
+    await r.registrar(p, "capa-publicada", {
+      titulo: "CAPA PUBLICADA!",
+      mostra: "O aviso do protótipo entre a publicação e o feed, com IR PARA O FEED.",
+      prova: "LATCH 1: a escolha está gravada e não volta.",
+    });
+    await q.getByRole("button", { name: /IR PARA O FEED/ }).click();
     const resposta = q.locator(".feed__resposta");
     await resposta.waitFor({ timeout: 10_000 });
     r.exigir((await resposta.innerText()).includes(publicada?.visitante ?? "—"), "a fala da visitante aparece no feed, embaixo da capa");
     await r.registrar(p, "a-visitante", {
       titulo: "A capa no feed e a fala da visitante",
       mostra: `A capa publicada (a janela exata da moldura, com o selo) e a visitante: “${publicada?.visitante}”.`,
-      prova: "LATCH 1: a escolha está gravada e não volta. A visitante só conhece o que a capa mostrou.",
+      prova: "A visitante só conhece o que a capa mostrou.",
     });
     await q.getByText("AGUARDE O PROFESSOR").first().waitFor({ timeout: 15_000 });
+    r.exigir((await q.locator(".aviso [class*='avatar']").count()) === 0, "o aviso AGUARDE O PROFESSOR tem só o cadeado e a mensagem, sem retrato");
     await r.registrar(p, "aguarde-o-professor", {
       titulo: "AGUARDE O PROFESSOR",
-      mostra: "O cadeado sobre o feed, com Bento e Iara arrumando os fones — sem botão nenhum.",
+      mostra: "O aviso com o cadeado e a mensagem, sobre o feed — sem retrato e sem botão.",
       prova: "A criança não fura o bloqueio: quem abre a comparação é a professora, depois da conversa.",
     });
 
-    /* Regra 3: o estado do estudante não carrega o gabarito. */
+    /* Regra 3: fora do passo da lupa, o estado do estudante não carrega o gabarito. */
     const sessao = await lerApi(p, "/enigma-capa/sessao");
     const bruto = JSON.stringify(sessao.corpo ?? {});
     const cenaDoEstudante = sessao.corpo?.cena ?? {};
     r.exigir(
       sessao.status === 200 &&
         !/"nucleo"|"seloCoerente"|"marcaveis"|"alvo"/.test(bruto) &&
+        (sessao.corpo?.lupa?.alvos ?? null) === null &&
         (cenaDoEstudante.fotos ?? []).every((f) => !("visitante" in f)) &&
         (cenaDoEstudante.invariantes ?? []).every((i) => Object.keys(i).sort().join() === "id,nome") &&
         sessao.corpo?.invariantes === null &&
         (sessao.corpo?.material?.cartas ?? []).every((c) => Object.keys(c).sort().join() === "id,imagem"),
-      "GET /enigma-capa/sessao do estudante não traz núcleo, selo coerente, marcáveis, alvos nem as falas (o gabarito é do servidor)",
+      "GET /enigma-capa/sessao do estudante, depois da lupa, não traz núcleo, selo coerente, marcáveis, alvos nem as falas",
     );
 
     // ═══ PROFESSORA: a aula ao vivo e a virada ═════════════════════════════
@@ -476,7 +475,7 @@ await suite(
     await dialogo.getByRole("button", { name: "LIBERAR VIRADA" }).click();
     await prof.getByRole("button", { name: "Virada liberada" }).waitFor({ timeout: 20_000 });
 
-    // ═══ ESTUDANTE: a virada, a busca e o slider ═══════════════════════════
+    // ═══ ESTUDANTE: a virada, a busca e o slider de comparação ═════════════
     await q.getByText("TOQUE EM 2 COISAS IGUAIS").first().waitFor({ timeout: 20_000 });
     const metade = (f) => q.locator(".dividida__foto").nth(f === "foto-1" ? 0 : 1);
     const recorteDe = (f) => k.fotos.find((x) => x.id === f).recorte;
@@ -486,19 +485,13 @@ await suite(
       return (await comResposta(p, /\/enigma-capa\/invariantes$/, () => p.mouse.click(alvo.x, alvo.y))).corpo;
     };
     await r.registrar(p, "tela-dividida", {
-      titulo: "A virada: a tela dividida",
-      mostra: "SUA FOTO e OUTRA FOTO (do acervo da missão), lado a lado na mesma escala, e TOQUE EM 2 COISAS IGUAIS.",
+      titulo: "TOQUE EM 2 COISAS IGUAIS",
+      mostra: "SUA FOTO e OUTRA FOTO (do acervo da missão), lado a lado, a frase “Toque na mesma coisa nas duas fotos.” e 0 DE 2 ENCONTRADOS.",
       prova: "A virada chegou pelo polling de 3 s, sem recarregar: o professor tocou uma vez, a turma toda virou.",
     });
     /* Um erro proposital: longe dos dois objetos, no chão da foto 1. */
     const erro = await tocarNa("foto-1", { x: 8, y: 88 });
     r.exigir(erro?.toque?.acerto === null && erro?.toque?.erros === 1 && erro?.toque?.ajuda === false, "o toque fora dos objetos é um erro sem penalidade visível (a onda cinza; 1 erro, sem ajuda)");
-    await q.locator(".onda-neutra").first().waitFor({ state: "attached", timeout: 2000 }).catch(() => {});
-    await r.registrar(p, "onda-neutra", {
-      titulo: "O toque errado: a onda cinza",
-      mostra: "A ondulação neutra no ponto tocado, e nada mais.",
-      prova: "O gabarito é da api; o erro conta para a régua (a ajuda acende no 3º), mas a criança não é punida.",
-    });
     const acertos = [];
     acertos.push(await tocarNa("foto-1", alvos["inv-1"]));
     acertos.push(await tocarNa("foto-2", alvos["inv-1"]));
@@ -508,6 +501,7 @@ await suite(
     );
     /* `attached`: a linha dourada de dois pontos na mesma altura tem caixa de altura zero, e o Playwright a julga invisível. */
     await q.locator(".linha-dourada").first().waitFor({ state: "attached", timeout: 5000 });
+    await q.getByText("1 DE 2 ENCONTRADOS").first().waitFor({ timeout: 5000 });
     /* F5 no meio da busca: os achados redesenham a partir de `invariantes.achados`. */
     await p.reload({ waitUntil: "domcontentloaded" });
     await q.getByText("TOQUE EM 2 COISAS IGUAIS").first().waitFor({ timeout: 40_000 });
@@ -519,7 +513,7 @@ await suite(
     );
     await r.registrar(p, "f5-redesenha", {
       titulo: "F5 no meio da busca",
-      mostra: `O ${k.invariantes[0].nome} achado nas duas fotos, com a linha dourada, redesenhado depois do recarregamento.`,
+      mostra: `O ${k.invariantes[0].nome} achado nas duas fotos, com a linha dourada e 1 DE 2 ENCONTRADOS, redesenhado depois do recarregamento.`,
       prova: "O servidor devolve o alvo do invariante JÁ ACHADO (deixou de ser gabarito); o não achado continua sem descer.",
     });
     acertos.push(await tocarNa("foto-1", alvos["inv-2"]));
@@ -529,51 +523,71 @@ await suite(
       acertos.slice(2).every((a) => a?.toque?.acerto === "inv-2") && ultimo?.toque?.completo === true && ultimo?.toque?.encontrados?.length === 4 && ultimo?.toque?.erros === 1,
       `os quatro achados (2 objetos × 2 fotos), com 1 erro e sem ajuda: a busca está completa`,
     );
-    await q.getByText("AGORA EU ENTENDI!").first().waitFor({ timeout: 10_000 });
-    const slider = q.locator('input[type="range"]');
-    await slider.waitFor({ timeout: 10_000 });
-    await r.registrar(p, "agora-eu-entendi", {
-      titulo: "AGORA EU ENTENDI!",
-      mostra: "Os dois pares unidos pelas linhas douradas, os nomes dos objetos e o slider da revelação.",
-      prova: "EF02CO01: os mesmos objetos nas duas fotos são a prova de que é o mesmo lugar, achada pela criança.",
-    });
-    await slider.fill("50");
-    await p.waitForTimeout(400);
-    await r.registrar(p, "slider-no-meio", {
-      titulo: "O slider junta as fotos",
-      mostra: "A foto da direita desliza até o lugar dela na panorâmica, sem mudar de escala; a divisória some.",
-      prova: "UMA imagem serve as duas fotos e a revelação: não há emenda, porque nunca houve duas imagens.",
-    });
-    const doSlider = await comResposta(p, /\/enigma-capa\/slider$/, () => slider.fill("100"));
-    r.exigir(doSlider.status === 200 && doSlider.corpo?.passo === "fora", "o slider até o fim registra a panorâmica aberta (POST /slider)");
-    await q.getByText("ERA O MESMO LUGAR!").first().waitFor({ timeout: 15_000 });
-    const fraseDoFora = `Marque n${k.espacoCurto.startsWith("o ") ? "o" : "a"} ${k.espacoCurto.replace(/^(a|o) /, "")} o que ficou fora da sua foto.`;
-    const instrucao = await q.locator(".instrucao").first().innerText();
-    r.exigir(/o que ficou fora da sua foto\.$/.test(instrucao.trim()), `a instrução do “fora”: “${instrucao.trim()}”`);
-    void fraseDoFora;
 
-    /* O “fora”: dois toques na cena inteira, fora do contorno da SUA FOTO. */
+    /* DESLIZE PARA REVELAR: a alça parte do centro; arrastada até o lado escondido, revela o lugar. */
+    await q.getByText("DESLIZE PARA REVELAR").first().waitFor({ timeout: 15_000 });
+    const alca = q.locator(".comparar__alca");
+    await alca.waitFor({ timeout: 10_000 });
+    r.exigir((await alca.getAttribute("aria-valuenow")) === "50", "a alça do slider parte do CENTRO (50)");
+    await r.registrar(p, "deslize-para-revelar", {
+      titulo: "DESLIZE PARA REVELAR",
+      mostra: "A mesma imagem com a alça no meio: de um lado o LUGAR INTEIRO, do outro SUA FOTO com o resto em xadrez; o Bento: AGORA EU ENTENDI!",
+      prova: "O slider de comparação do protótipo, como a prévia de remover fundo (ADR-186).",
+    });
+    const comparar = q.locator(".comparar");
+    const ladoDireito = publicada.capa.visivel.x <= 100 - (publicada.capa.visivel.x + publicada.capa.visivel.w);
+    const inicioDaAlca = await pontoEm(alca, 0.5, 0.5);
+    const fimDoCurso = await pontoEm(comparar, ladoDireito ? 0.995 : 0.005, 0.5);
+    const meioDoCurso = await pontoEm(comparar, ladoDireito ? 0.78 : 0.22, 0.5);
+    await p.mouse.move(inicioDaAlca.x, inicioDaAlca.y);
+    await p.mouse.down();
+    await p.mouse.move(meioDoCurso.x, meioDoCurso.y, { steps: 10 });
+    await r.registrar(p, "slider-no-meio", {
+      titulo: "O lugar aparece",
+      mostra: "A alça a caminho do fim: o lado da SUA FOTO encolhe e o resto do lugar aparece, na mesma escala.",
+      prova: "UMA imagem serve a foto e o lugar inteiro: não há emenda, porque nunca houve duas imagens.",
+    });
+    const doSlider = await comResposta(p, /\/enigma-capa\/slider$/, async () => {
+      await p.mouse.move(fimDoCurso.x, fimDoCurso.y, { steps: 10 });
+      await p.mouse.up();
+    });
+    r.exigir(doSlider.status === 200 && doSlider.corpo?.passo === "fora", "a alça no fim do curso registra a panorâmica aberta (POST /slider)");
+    await q.getByText("A CENA COMPLETA").first().waitFor({ timeout: 10_000 });
+    await q.getByText("ERA O MESMO LUGAR!").first().waitFor({ timeout: 10_000 });
+    r.exigir((await q.locator(".mesmo-lugar").innerText()).includes(k.hora), `MESMO LUGAR · MESMO MINUTO (${k.hora})`);
+    await r.registrar(p, "a-cena-completa", {
+      titulo: "A CENA COMPLETA",
+      mostra: `O lugar inteiro com o contorno da SUA FOTO, “MESMO LUGAR · MESMO MINUTO (${k.hora})” e o Bento: ERA O MESMO LUGAR!`,
+      prova: "A revelação do protótipo, antes da marcação: a criança vê o que a foto deixou de fora.",
+    });
+    await q.getByRole("button", { name: "AVANÇAR" }).click();
+
+    /* O “fora”: um alfinete arrastado da bandeja e outro tocado na cena, fora do contorno da SUA FOTO. */
+    const instrucao = (await q.locator(".titulo-da-tela").first().innerText()).trim();
+    r.exigir(/o que ficou fora da sua foto\.$/.test(instrucao), `a instrução do “fora”: “${instrucao}”`);
+    const pronto = q.getByRole("button", { name: "Pronto", exact: true });
+    r.exigir(await pronto.isDisabled(), "“Pronto” apagado enquanto não há alfinete");
     const vis = publicada.capa.visivel;
     const inteira = q.locator(".cena-inteira");
     const pontosFora = [
       { x: Math.min(97, vis.x + vis.w + (100 - vis.x - vis.w) * 0.5), y: 60 },
       { x: Math.min(97, vis.x + vis.w + (100 - vis.x - vis.w) * 0.75), y: 75 },
     ];
-    for (const ponto of pontosFora) {
-      const alvo = await pontoEm(inteira, ponto.x / 100, ponto.y / 100);
-      await p.mouse.click(alvo.x, alvo.y);
-      await p.waitForTimeout(200);
-    }
-    r.exigir((await q.locator(".pino").count()) === 2, "as duas marcas aparecem fora do contorno da SUA FOTO");
-    await r.registrar(p, "era-o-mesmo-lugar", {
-      titulo: "ERA O MESMO LUGAR!",
-      mostra: `A cena inteira com o contorno da SUA FOTO e duas marcas no que ficou fora — “${instrucao.trim()}”`,
-      prova: "O “fora” vai só ao painel da professora: é o material da conversa, não nota.",
+    const bandeja = await pontoEm(q.locator(".bandeja__alfinete"), 0.5, 0.5);
+    await arrastar(p, bandeja, await pontoEm(inteira, pontosFora[0].x / 100, pontosFora[0].y / 100), 14);
+    const toque = await pontoEm(inteira, pontosFora[1].x / 100, pontosFora[1].y / 100);
+    await p.mouse.click(toque.x, toque.y);
+    await p.waitForTimeout(300);
+    r.exigir((await q.locator(".pino").count()) === 2 && !(await pronto.isDisabled()), "os dois alfinetes aparecem fora do contorno da SUA FOTO, e o “Pronto” acende");
+    await r.registrar(p, "o-alfinete", {
+      titulo: "Marque o que ficou fora da sua foto",
+      mostra: `A cena inteira com o contorno da SUA FOTO, o ALFINETE grande na bandeja (ARRASTE O ALFINETE) e dois fincados fora — “${instrucao}”`,
+      prova: "O alfinete diz “marque”; o que ele pega fora da capa é o reconhecimento que a EF02CO05 mede (ADR-186).",
     });
-    const { corpo: fora } = await comResposta(p, /\/enigma-capa\/fora$/, () => q.getByRole("button", { name: "Pronto", exact: true }).click());
-    r.exigir(fora?.passo === "pares" && fora?.fora?.toques?.length === 2, "“Pronto” grava as duas marcas e leva aos pares");
+    const { corpo: fora } = await comResposta(p, /\/enigma-capa\/fora$/, () => pronto.click());
+    r.exigir(fora?.passo === "pares" && fora?.fora?.toques?.length === 2, "“Pronto” grava os dois alfinetes e leva aos pares");
 
-    // ═══ ESTUDANTE: os pares, a segunda foto e a horta ═════════════════════
+    // ═══ ESTUDANTE: os pares e a segunda foto, que conclui ═════════════════
     await q.getByText("Junte duas fotos da mesma atividade.").first().waitFor({ timeout: 15_000 });
     /* O par certo é a mesma ATIVIDADE (carta-a + carta-c = Foto 1 + Foto 3): arrasta a Foto 1 sobre a Foto 3. */
     const carta1 = await pontoEm(q.getByRole("button", { name: "Foto 1", exact: true }), 0.5, 0.5);
@@ -604,22 +618,16 @@ await suite(
       prova: "A moldura PODE cortar a criança: o servidor calcula se a leitura ficou na foto, e isso vai ao painel.",
     });
     const { corpo: segunda } = await comResposta(p, /\/enigma-capa\/segunda-foto$/, () => q.getByRole("button", { name: "Colocar no álbum" }).click());
-    r.exigir(segunda?.passo === "transferencia" && segunda?.segundaFoto?.elemento === "crianca-lendo", "“Colocar no álbum” grava a segunda foto e leva à horta");
-
-    await q.getByText("A HORTA ACABOU?").first().waitFor({ timeout: 15_000 });
-    await r.registrar(p, "a-horta-acabou", {
-      titulo: "HORTA DA ESCOLA: A HORTA ACABOU?",
-      mostra: "A foto fechada da lagarta na alface e os dois botões grandes: SÓ UM PEDAÇO e MOSTRA TUDO.",
-      prova: "A transferência para um cenário inédito: a mesma ideia — a foto é um pedaço — sem a cena da aula.",
-    });
-    const { corpo: voto } = await comResposta(p, /\/enigma-capa\/transferencia$/, () => q.getByRole("button", { name: /SÓ UM PEDAÇO$/ }).click());
-    r.exigir(voto?.passo === "concluida" && voto?.concluido === true && voto?.transferencia?.voto === "so-um-pedaco", "SÓ UM PEDAÇO: o voto trava (LATCH 2) e conclui a missão");
-    await q.getByText("SELEÇÃO ENVIADA").first().waitFor({ timeout: 10_000 });
+    r.exigir(
+      segunda?.passo === "concluida" && segunda?.concluido === true && segunda?.segundaFoto?.elemento === "crianca-lendo",
+      "“Colocar no álbum” grava a segunda foto e CONCLUI a missão (a etapa 6 saiu, ADR-186)",
+    );
+    await q.getByText("FOTO GUARDADA NO ÁLBUM!").first().waitFor({ timeout: 10_000 });
     await q.getByText("MISSÃO CUMPRIDA!").first().waitFor({ timeout: 10_000 });
     await r.registrar(p, "missao-cumprida", {
-      titulo: "SELEÇÃO ENVIADA — MISSÃO CUMPRIDA!",
-      mostra: "A enquete travada com o sinal na escolhida, e Bento e Iara com a bandeira da Rádio.",
-      prova: "O voto marca a EF02CO05 na mesma transação; a missão conclui na plataforma.",
+      titulo: "FOTO GUARDADA NO ÁLBUM! — MISSÃO CUMPRIDA!",
+      mostra: "O aviso final do protótipo: a foto guardada, MISSÃO CUMPRIDA! e “Agora conversem com o professor.”",
+      prova: "O álbum é o fim da missão; a conversa sobre ENQUADRAMENTO, AUTORIA e O QUE FICOU DE FORA é do professor, oral.",
     });
 
     // ═══ PROFESSORA: a folha, as habilidades e o podcast ═══════════════════
@@ -631,7 +639,7 @@ await suite(
     const evidencia = await esperarNaApi(prof, caminhoDaEvidencia, (c) => nivelDe(c, "EF02CO05") !== null && nivelDe(c, "EF02CO01") !== null, {
       oQue: "as marcas da EF02CO05 e da EF02CO01",
     });
-    /* A régua: lupa PARCIAL (1 alerta), selo coerente, invariantes plenos (1 erro, sem ajuda), SÓ UM PEDAÇO → CO05 em processo; CO01 atingiu (sem ajuda). */
+    /* A régua: lupa PARCIAL (1 alerta), selo coerente, invariantes plenos (1 erro, sem ajuda), o fora pleno → CO05 em processo; CO01 atingiu (sem ajuda). */
     r.exigir(nivelDe(evidencia, "EF02CO05") === "em_processo", `EF02CO05: o painel registra “${nivelDe(evidencia, "EF02CO05")}”, e a régua dá “em_processo” (lupa com 1 alerta)`);
     r.exigir(nivelDe(evidencia, "EF02CO01") === "atingiu", `EF02CO01: o painel registra “${nivelDe(evidencia, "EF02CO01")}”, e a régua dá “atingiu” (achou sem a ajuda)`);
 
@@ -641,15 +649,16 @@ await suite(
     const linha = painel?.linhas?.find((l) => l.nome === estudante.nome);
     r.exigir(
       linha?.passo === "concluida" &&
-        linha?.cracha === "fone-azul" &&
         linha?.lupa?.alertas === 1 &&
         linha?.capa?.seloCoerente === true &&
         linha?.invariantes?.completo === true &&
         linha?.invariantes?.erros === 1 &&
         linha?.par?.correto === true &&
         linha?.segundaFoto?.elemento === "crianca-lendo" &&
-        linha?.voto === "so-um-pedaco",
-      `a linha de ${estudante.nome} no painel: crachá, lupa (1 alerta), capa coerente, busca (1 erro), par certo, segunda foto e o voto`,
+        (linha?.fora?.itens ?? []).length >= 1 &&
+        !("cracha" in (linha ?? {})) &&
+        !("voto" in (linha ?? {})),
+      `a linha de ${estudante.nome} no painel, pelo nome: lupa (1 alerta), capa coerente, busca (1 erro), o que marcou fora, par certo e segunda foto`,
     );
     const folha = prof.locator("[data-folha]");
     await folha.getByText(estudante.nome).first().scrollIntoViewIfNeeded();
@@ -670,7 +679,7 @@ await suite(
     await r.registrar(prof, "habilidades-da-bncc", {
       titulo: "As habilidades da BNCC",
       mostra: `EF02CO05 (em processo: a lupa teve um alerta) e EF02CO01 (atingiu: os objetos achados sem a ajuda) para ${estudante.nome}.`,
-      prova: "100% Canal A: tudo foi medido pelo que a criança fez — a lupa, o selo, a busca e o voto. Não há pergunta no fim.",
+      prova: "Tudo foi medido pelo que a criança fez — a lupa, o selo, a busca e o que marcou fora. Não há pergunta no fim.",
       inteira: true,
     });
 
