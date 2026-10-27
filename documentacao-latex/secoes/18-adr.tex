@@ -234,7 +234,7 @@ que a cercam.
 \adrr{ADR-181} & O Efeito Amplificador toma o código da 2ª série, unidade 1, e a Missão Tempestade vira a versão anterior \cd{exp02em1b-v0}: no ar, fora do catálogo & 2026-10-22 & Aceita; estende a \adrr{ADR-110} e a \adrr{ADR-116}\\
 \zebra \adrr{ADR-182} & O guia da aula em quatro tempos e as telas de condução em abas: um template para a ficha e para a página da atividade, sem tirar texto & 2026-10-22 & Aceita; estende a \adrr{ADR-65} e a \adrr{ADR-100}\\
 \adrr{ADR-183} & O Raio-x do Unoovista aparece para todo estudante: neutros fora do tema, o lado dele acima de 3 no último caso, e o lado do início para quem mal rolou & 2026-10-23 & Aceita; estende a \adrr{ADR-179}\\
-\zebra \adrr{ADR-184} & O Enigma da Capa da Rádio toma o código do 2º ano, unidade 1: duas fotos que são recortes de uma panorâmica, a virada geral da turma e a IA só no preparo, com o professor marcando os objetos & 2026-10-26 & Aceita; estende a \adrr{ADR-110} e a \adrr{ADR-155}\\
+\zebra \adrr{ADR-184} & O Enigma da Capa da Rádio toma o código do 2º ano, unidade 1: duas fotos que são recortes de uma panorâmica, a virada geral da turma e a IA só no preparo, com o professor marcando os objetos & 2026-10-26 & Aceita; estende a \adrr{ADR-110} e a \adrr{ADR-155}; superada em parte pela \adrr{ADR-186}\\
 \adrr{ADR-185} & O Assistente Invisível toma o código da 1ª série do EM, unidade 1: o Figma acima do protótipo, cinco liberações do professor como fase da turma, a Trava 1 depois das fichas, o medidor só agregado, a régua computável das quatro habilidades e a IA gerando o pacote inteiro & 2026-10-26 & Aceita; estende a \adrr{ADR-110}, a \adrr{ADR-154} e a \adrr{ADR-155}\\
 \adrr{ADR-186} & O Enigma da Capa da Rádio segue o protótipo validado pelo time: sem a etapa 6 e sem crachá, a tela de missão, a lupa que brilha e enche em 3\,s, o \emph{slider} de comparação, o alfinete e o \enquote{fora} no lugar do voto da horta & 2026-10-26 & Aceita; supera em parte a \adrr{ADR-184}\\
 \bottomrule
@@ -16749,7 +16749,8 @@ uma régua para Raio-x incompleto.
 \section{ADR-184 --- O Enigma da Capa da Rádio: duas fotos recortadas de uma panorâmica, a virada geral da turma e a IA só no preparo}
 \label{adr:exp02ef1b-enigma-capa}
 
-\textbf{Data.} 2026-10-26. \textbf{Status.} Aceita. \textbf{Estende} a
+\textbf{Data.} 2026-10-26. \textbf{Status.} Aceita; superada em parte pela
+\adrr{ADR-186} (o fluxo do estudante, a lupa e onde a EF02CO05 é marcada). \textbf{Estende} a
 \adrr{ADR-110} (o código derivado da série e da unidade: a missão é a
 \cd{exp02ef1b}, a primeira do 2º ano) e a \adrr{ADR-155} (o
 \enquote{Zerar} apaga a evidência do pacote), no molde de O Efeito
@@ -16765,7 +16766,8 @@ capa, numa moldura de tamanho fixo e com um selo, ouve o que a visitante
 entendeu do recorte e, depois da conversa com o professor, descobre que as
 duas fotos eram o MESMO lugar: os dois objetos iguais do fundo, o
 \emph{slider} que revela a panorâmica e o que ficou de fora. Fecham a missão
-os pares e a segunda foto (E5) e a transferência da horta, com a lagarta na
+os pares e a segunda foto (E5) e, na 1.0.0, uma etapa 6 na horta (que a
+\adrr{ADR-186} tirou da missão), com a lagarta na
 alface (E6). Foco EF02CO05, associada EF02CO01, 100\% Canal A (no 2º ano é
 proibido questionário com alternativas textuais). O one-pager pede o clone
 \cd{instanooria}, a liberação da virada por estudante e a IA só como opção
@@ -16824,7 +16826,8 @@ dois pontos que, lidos ao pé da letra, não medem o que ele quer.
   \item \textbf{Sessão individual}, como pede o PO; o aparelho compartilhado
     entra pelo mecanismo de equipes da plataforma (\adrr{ADR-111},
     \adrr{ADR-130}), com \cd{individual} como padrão. Sem texto livre de
-    estudante, sem áudio de tela, sem Canal B.
+    estudante, sem áudio de tela e sem pergunta: a evidência é só o que a
+    criança faz na tela.
   \item O módulo é \arq{enigma-capa} (prefixo \rota{/enigma-capa}, tabelas
     \cd{exp02ef1b\_*}) e a experiência nasce na 1.0.0, na porta 5187.
 \end{itemize}
