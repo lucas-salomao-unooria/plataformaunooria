@@ -34,6 +34,12 @@ describe("a bateria de testes (E4-ALU-01)", () => {
     ]);
   });
 
+  test("os avisos de sistema saem como AVISO, não como resposta do assistente", () => {
+    const avisos = roteiroDaSimulacao(c, m).filter((f) => f.tipo === "aviso");
+    expect(avisos.map((f) => (f.tipo === "aviso" ? f.corpo : ""))).toEqual(["rebaixou", "limitou"]);
+    expect(roteiroDaSimulacao(c, m).some((f) => f.tipo === "assistente" && f.texto.startsWith("Aviso de Sistema"))).toBe(false);
+  });
+
   test("a resposta avançada da Beatriz e a 3ª do Thiago NÃO aparecem na bateria", () => {
     const t = textos(roteiroDaSimulacao(c, m));
     expect(t).not.toContain("rB");

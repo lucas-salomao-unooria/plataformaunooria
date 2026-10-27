@@ -8,7 +8,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | Dev | `pnpm --filter @edu/exp01em1b dev` → **:5188** (`strictPort`) · hub `/exp/exp01em1b` ou `/dev-embed?src=http://localhost:5188` |
 | DS | DUAS seções: `unooria` (`@edu/ui/ds`, a escola) e `unooriaai` (`@edu/ui/ds-unooriaai`, o assistente testado) |
 | api | módulo `assistente-invisivel` (`apps/api/src/assistente-invisivel/`, prefixo `/assistente-invisivel`, tabelas `exp01em1b_*`, ADR-185) |
-| Versão | `1.0.4` nos três lugares (`public/experiencia.json`, `package.json`, `EXP_VERSION` em `src/lib/tipos.ts`) |
+| Versão | `1.0.5` nos três lugares (`public/experiencia.json`, `package.json`, `EXP_VERSION` em `src/lib/tipos.ts`) |
 | Copy | o Figma `9QyrVdEBJZkOS64ZauPfmk` (63 telas), literal em `src/lib/textos.ts` |
 
 A comissão estudantil testa o UnooriaAI com três colegas (Lucas, Beatriz,
@@ -109,3 +109,29 @@ Copy que o Figma não deu e a tela precisou: "Colocar em Dados
 Fornecidos/Observados", "Novo teste no UnooriaAI" (o título do efeito do
 reteste), "Trocar critério" e "Revisar página e blocos". "Concluir
 Classificação" saiu na 1.0.4.
+
+## A 1.0.5: a segunda conferência (ADR-190, complementada)
+
+Nove divergências fechadas. **Quatro compensações marcadas "(b)"** em
+`estilos/globals.css`, cada uma com o pedido ao `storybook-unooria` no
+comentário — apague quando o pacote trouxer:
+
+- `.aviso-de-sistema`: o AVISO DE SISTEMA do chat é o `FeatureCard` do
+  `unooriaai`, deitado na linha e com a borda forte (`--uai-border-strong`).
+  A seção não tem mensagem de sistema; pedido: `ChatBubble role="system"`.
+  A fala de roteiro é `tipo: "aviso"` (`lib/roteiro.ts`), nunca
+  `"assistente"` — o teste cobra.
+- `.ficha`: a ficha cadastral da E3 é o `Card` SEM `CardHeader` (que põe a
+  etiqueta acima do título), com recuo de 12/16 px. A pergunta e "Disparar
+  Simulação" cabem em 375×812.
+- `.faixa-de-contingencia`: o `AlertBox` sem ícone, sem sombra e de ponta a
+  ponta (E3-SIS-01). Pedido: uma variante de faixa.
+- `.unooria-collapse` fechado com `gap: 0`: DEFEITO do DS (o `gap` da raiz
+  sobra com o corpo fechado, o vão sob o título recolhido). Pedido: o
+  pacote zerar o `gap` do fechado.
+
+Sem CSS: as janelas continuam a folha que sobe da base (o `Modal` não tem
+prop de centralizar) e o respiro de cima é a prop `padding` do `ModalBody`;
+"Avançar para Homologação e Transparência" é `Button size="md"`; o
+placeholder do `Composer` é UMA linha e virou o texto curto ("Entrada
+bloqueada nos testes...", "Relatório de auditoria gerado...").

@@ -310,7 +310,10 @@ export function CriarAssistenteInvisivel({
                       }
                       description="Defina a disciplina e o tema semanal para calibrar os exercícios e as dúvidas simuladas no UnooriaAI."
                     />
-                    <div className="grid gap-4 lg:grid-cols-2">
+                    {/* Uma coluna, como o Figma (1.0.5): em duas, o campo tinha ~460px e o
+                        placeholder ("…(máximo de 60 caracteres)...") saía cortado no meio
+                        da palavra — o placeholder de um campo de uma linha não quebra. */}
+                    <div className="flex flex-col gap-4">
                       <Selection
                         label="Disciplina Escolar"
                         placeholder="Selecione o componente curricular oficial da BNCC..."
@@ -478,7 +481,11 @@ function ContingenciaDaGeracao({
           Serviço de geração temporariamente instável. Tente novamente ou utilize o banco padrão curado.
         </p>
         <div className="flex flex-wrap gap-3">
-          <Button variant="secondary" size="md" isDisabled={ocupado} onClick={tentarDeNovo} data-acao="tentar-novamente">
+          {/* A hierarquia do Figma: "Usar Banco Padrão" é a ação principal (cheia) e
+              "Tentar Novamente" a secundária (contorno). O `secondary` do DS também
+              é CHEIO (navy) — os dois saíam com o mesmo peso; o `outline` é o
+              secundário que se vê. */}
+          <Button variant="outline" size="md" isDisabled={ocupado} onClick={tentarDeNovo} data-acao="tentar-novamente">
             Tentar Novamente
           </Button>
           <Button variant="primary" size="md" isDisabled={ocupado} onClick={usarPadrao} data-acao="usar-banco-padrao-503">

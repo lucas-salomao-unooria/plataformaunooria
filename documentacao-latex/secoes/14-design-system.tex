@@ -1209,6 +1209,26 @@ o modo declarativo (\cd{Table.Row}, \cd{Table.Cell}); a compensação é só de
 medida (recuo de 6\,px, cabeçalho em duas linhas) para caber na folha de
 341\,px.
 
+\paragraph{A 1.0.5: mais três lacunas e um defeito (\adrr{ADR-190},
+complementada).} A segunda conferência achou o que o pacote não tem: a seção
+\cd{unooriaai} não tem mensagem de SISTEMA (o \cd{ChatBubble} só conhece
+\cd{user} e \cd{assistant}), e o aviso do flagrante virou o
+\cd{FeatureCard} deitado na linha, com a borda forte
+(\cd{--uai-border-strong}); o \cd{CardHeader} empilha a etiqueta acima do
+título e o \cd{Card} tem recuo de 16\,px, e a ficha cadastral virou o
+\cd{Card} sem cabeçalho, com recuo de 12/16\,px; o \cd{AlertBox} é sempre o
+cartão flutuante, e a faixa de contingência é ele sem ícone, sem sombra e de
+ponta a ponta. O DEFEITO é do \cd{Collapse}: a raiz é uma coluna com
+\cd{gap}, e o corpo fechado fica no fluxo com altura zero, então o \cd{gap}
+sobra sob o título do cartão recolhido; a compensação zera o \cd{gap} do
+fechado. As quatro estão em \arq{estilos/globals.css} marcadas
+\enquote{(b)}, com o pedido no comentário: um \cd{ChatBubble role="system"},
+uma variante de faixa do \cd{AlertBox}, o \cd{gap} zero do \cd{Collapse}
+fechado. Nenhuma versão do DS saiu por isso (a 0.2.24 ainda não estava no
+npm). O \cd{Modal} também não centraliza no celular (até 640\,px ele é a
+folha que sobe da base); o respiro de cima veio da prop \cd{padding} do
+\cd{ModalBody}, sem CSS local.
+
 \subsection{Avisos que ficaram obsoletos}
 
 \begin{nota}

@@ -182,6 +182,83 @@ body {
   align-items: flex-start;
 }
 
+/* (b) COMPENSAÇÃO MARCADA — a ficha cadastral COMPACTA da E3 (1.0.5): nome e
+   etiqueta numa linha, a preferência embaixo, como o Figma (cada ficha com
+   ~64px; as três, a pergunta e "Disparar Simulação" cabem em 375×812). Só
+   MEDIDA: o `Card` do DS tem recuo de 16px e máximo de 398px, e o
+   `CardHeader` empilha a etiqueta ACIMA do título (o que dobrava a altura).
+   O recuo vira 12/16px; o resto é a grade do conteúdo. A folha do componente
+   entra DEPOIS desta: o seletor leva a classe do próprio `Card`. */
+.escola .ficha.unooria-card {
+  max-width: none;
+  padding: 12px 16px;
+}
+
+.ficha__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ficha__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ficha__nome {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* (b) COMPENSAÇÃO MARCADA — a FAIXA fina de contingência no topo da E3-SIS-01
+   ("📡 Carregando versão de contingência da rede escolar"), de ponta a ponta
+   como no Figma. Lacuna: o DS 0.2.23 não tem faixa de aviso — o `AlertBox`
+   (o aviso de status da seção) é sempre o cartão flutuante com sombra, ícone
+   e título de 16px, e na contingência ocupava ~120px antes do cabeçalho. O
+   ícone sai pela prop (`icon={false}`); este bloco tira o cartão: sangra até
+   as bordas do aparelho (o recuo da `.escola__pilha`), recuo de 8px, sem
+   raio nem sombra, fundo neutro e título de 13px. Pedido ao storybook-unooria:
+   `AlertBox variant="banner"` (ou um `Banner`) com estas medidas; quando
+   sair, troque e APAGUE este bloco. Seletores com a classe do componente
+   para vencer a folha dele, que entra depois desta. */
+.escola .faixa-de-contingencia.unooria-alertbox {
+  max-width: none;
+  width: auto;
+  margin: -16px -16px 0;
+  padding: 8px 16px;
+  gap: 0;
+  border: 0;
+  border-bottom: 1px solid var(--unooria-color-neutral-150);
+  border-radius: 0;
+  box-shadow: none;
+  background-color: var(--unooria-color-neutral-100);
+}
+
+.escola .faixa-de-contingencia.unooria-alertbox--mobile .unooria-alertbox__title {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+}
+
+/* (b) COMPENSAÇÃO MARCADA — o vão vazio sob o título do `Collapse` RECOLHIDO
+   (E2-ALU-01 e "Revisar página e blocos" da E6). Defeito do DS 0.2.23: a raiz
+   do `Collapse` é uma coluna flex com `gap` (16px no `md`) entre o cabeçalho
+   e o corpo, e o corpo fechado continua no fluxo com altura 0 (a animação é
+   `grid-template-rows: 0fr`) — o `gap` sobra embaixo do título, e o cartão
+   recolhido ficava 16px mais alto que o do Figma. Aberto, o `gap` é o
+   respiro certo e fica. O ajuste que o DS precisa (storybook-unooria):
+   `gap: 0` no `.unooria-collapse` sem `--open` (ou o espaço como
+   `padding-top` do corpo aberto). Quando sair, APAGUE este bloco. NÃO
+   publicar DS por isso agora (a 0.2.24 nem saiu). */
+.escola .unooria-collapse.unooria-collapse--size-md:not(.unooria-collapse--open) {
+  gap: 0;
+}
+
 /* E1 "primeira vez": a borda de destaque do Figma, com o token da marca. */
 .escola .cartao-destaque {
   outline: 2px solid var(--unooria-color-brandnavy-600);
@@ -419,6 +496,37 @@ body {
   background: var(--uai-bg-primary);
   color: var(--uai-text-primary);
   font-family: var(--uai-font-sans);
+}
+
+/* (b) COMPENSAÇÃO MARCADA — o AVISO DE SISTEMA na conversa (E4-ALU-01 e o
+   efeito do reteste na E5-ALU-04). Lacuna: a seção `unooriaai` do DS 0.2.23
+   não tem mensagem de SISTEMA — o `ChatBubble` só conhece `user` e
+   `assistant`, e o aviso saía como uma resposta comum, justo no flagrante.
+   A peça é o `FeatureCard` do DS (rótulo no título, frase na descrição); este
+   bloco faz só o que o Figma pede e o cartão não tem: deitado na linha
+   ("**Aviso de Sistema:** Identificamos…"), alinhado à esquerda como uma
+   fala, a borda forte (o token `--uai-border-strong`, 1,5px) e a descrição
+   no corpo da conversa (`body-sm`, o mesmo do `ChatBubble`). Pedido ao
+   storybook-unooria: `ChatBubble role="system"` (ou um `SystemNotice`) com
+   estas medidas; quando sair, troque o `FeatureCard` por ele e APAGUE este
+   bloco. A folha do componente entra DEPOIS desta (o JS a injeta): o
+   seletor leva a classe do próprio cartão para vencer o `.uai-feature-card`. */
+.aviso-de-sistema.uai-feature-card {
+  display: block;
+  align-self: flex-start;
+  width: auto;
+  max-width: 88%;
+  padding: 12px 16px;
+  border: 1.5px solid var(--uai-border-strong);
+  text-align: left;
+}
+
+.aviso-de-sistema.uai-feature-card .uai-feature-card__title,
+.aviso-de-sistema.uai-feature-card .uai-feature-card__description {
+  display: inline;
+  font-size: var(--uai-font-body-sm-size);
+  line-height: var(--uai-font-body-sm-line);
+  color: var(--uai-text-primary);
 }
 
 .previa-uai__rotulo {

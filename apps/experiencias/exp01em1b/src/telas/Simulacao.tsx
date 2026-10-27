@@ -14,12 +14,13 @@ export const PAUSA_NO_FIM_MS = 3500;
  * E4-ALU-01 — as três sessões de teste no UnooriaAI (a seção `unooriaai`
  * inteira: é o assistente que está falando). A conversa é ROTEIRIZADA a partir
  * do pacote (`lib/roteiro.ts`) e aparece em sequência; o `Composer` fica
- * bloqueado ("Entrada bloqueada durante a execução da bateria de testes…").
+ * bloqueado ("Entrada bloqueada nos testes…", o texto curto que cabe numa
+ * linha; o placeholder do campo não quebra).
  *
- * No fim, o placeholder vira "Sessões concluídas. Relatório de auditoria
- * gerado…" e, depois de uma pausa para ler, a tela marca a simulação
- * concluída (`POST /simulacao/concluir`) — o passo vira o confronto. Um F5 no
- * meio repete a bateria do começo (o passo ainda é `simulacao`).
+ * No fim, o placeholder vira "Relatório de auditoria gerado…" e, depois de
+ * uma pausa para ler, a tela marca a simulação concluída
+ * (`POST /simulacao/concluir`) — o passo vira o confronto. Um F5 no meio
+ * repete a bateria do começo (o passo ainda é `simulacao`).
  *
  * Sem `ScrollBar` (é do DS da plataforma): a conversa rola na barra do sistema.
  */

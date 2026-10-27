@@ -18,7 +18,13 @@ const INATIVIDADE_MS = 60_000;
  * o LATCH 1 ("Previsão arquivada"); a partir daí a tela é `ApostaTravada`,
  * que espera "Liberar Início da Simulação" (E3-PROF-01, 100% das apostas).
  *
- * E3-SIS-01: com o pacote na reserva (`pacote.contingencia`), a faixa
+ * As fichas são COMPACTAS como no Figma (1.0.5, ADR-190): nome e etiqueta
+ * numa linha, a preferência embaixo — com elas, a pergunta e "Disparar
+ * Simulação" cabem na primeira tela de 375×812 (antes ficavam abaixo da
+ * dobra). O `Card` do DS sem o `CardHeader`, que põe a etiqueta ACIMA do
+ * título; a compensação (b) `.ficha` em `estilos/globals.css` é só o recuo.
+ *
+ * E3-SIS-01: com o pacote na reserva (`pacote.contingencia`), a faixa FINA
  * "Carregando versão de contingência da rede escolar" no topo e o cabeçalho
  * do Figma — "Unooria · Homologação" com a tag "Pacote Padrão" — no lugar da
  * barra de etapas, e o cartão "Fichas Cadastrais Carregadas (Banco Oficial)".
@@ -48,18 +54,16 @@ export function Aposta({ ctx }: { ctx: Contexto }) {
       <FichasDoBancoOficial sessao={sessao} />
       <div className="escola__lista">
         {fichasNaOrdem(sessao.material.fichas).map((f) => (
-          <Card key={f.perfil} variant="outlined">
-            <CardHeader
-              title={TEXTOS.e3.idade(f.nome, f.idade)}
-              tag={
+          <Card key={f.perfil} variant="outlined" className="ficha">
+            <div className="ficha__corpo">
+              <div className="ficha__topo">
+                <h2 className="ficha__nome">{TEXTOS.e3.idade(f.nome, f.idade)}</h2>
                 <Tag variant="neutral" size="sm">
                   {TEXTOS.e3.fornecido}
                 </Tag>
-              }
-            />
-            <CardContent>
-              <p className="escola__texto">{TEXTOS.e3.preferencia}</p>
-            </CardContent>
+              </div>
+              <p className="escola__texto escola__texto--suave">{TEXTOS.e3.preferencia}</p>
+            </div>
           </Card>
         ))}
       </div>
@@ -111,7 +115,7 @@ export function ApostaTravada({ ctx, aposta }: { ctx: Contexto; aposta?: ApostaI
 function moldura(sessao: Sessao): Pick<CascaProps, "cabecalho" | "etapas" | "faixa"> {
   if (!sessao.pacote?.contingencia) return { etapas: { atual: 3, janela: [2, 3, 4, 5] } };
   return {
-    faixa: <AlertBox variant="info" device="mobile" theme="light" title={TEXTOS.e3.contingencia} />,
+    faixa: <AlertBox variant="info" device="mobile" theme="light" icon={false} className="faixa-de-contingencia" title={TEXTOS.e3.contingencia} />,
     cabecalho: { titulo: TEXTOS.e6.cabecalho, tag: TEXTOS.e3.pacotePadrao },
   };
 }

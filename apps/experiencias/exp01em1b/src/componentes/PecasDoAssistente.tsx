@@ -1,4 +1,5 @@
-import { AssistantCard, ChatBubble, SessionDivider } from "@edu/ui/ds-unooriaai";
+import { AssistantCard, ChatBubble, FeatureCard, SessionDivider } from "@edu/ui/ds-unooriaai";
+import { TEXTOS } from "../lib/textos";
 import type { Fala } from "../lib/roteiro";
 import type { ConteudoDoPacote, Funcao } from "../lib/tipos";
 
@@ -11,6 +12,12 @@ import type { ConteudoDoPacote, Funcao } from "../lib/tipos";
  * - `PreviaDoAssistente` (E2-ALU-01): a prévia ESTÁTICA de cada função no
  *   UnooriaAI, com o conteúdo do pacote da turma. Sem pista de triagem.
  * - `Falas`: as falas roteirizadas (a simulação inteira e o efeito do reteste).
+ *   O AVISO DE SISTEMA (o flagrante: Beatriz rebaixada, Thiago limitado) NÃO
+ *   é uma resposta do assistente: é o `FeatureCard` do UnooriaAI, com
+ *   "Aviso de Sistema:" no título, para se destacar das falas como no Figma
+ *   (a caixa de borda forte). A seção não tem mensagem de sistema; a
+ *   compensação (b) em `estilos/globals.css` (".aviso-de-sistema") deita o
+ *   cartão na linha e dá a borda forte — pedido ao DS no `AGENTS.md`.
  *
  * A seção lê `data-uai-theme` na raiz (o `main.tsx` põe "light").
  */
@@ -20,6 +27,18 @@ export function Falas({ falas }: { falas: readonly Fala[] }) {
       {falas.map((f, i) => {
         if (f.tipo === "separador") {
           return <SessionDivider key={i} label={f.texto} />;
+        }
+        if (f.tipo === "aviso") {
+          return (
+            <FeatureCard
+              key={i}
+              role="note"
+              className="aviso-de-sistema"
+              title={TEXTOS.e4chat.avisoRotulo}
+              description={f.corpo}
+              block
+            />
+          );
         }
         if (f.tipo === "cartao") {
           return <AssistantCard key={i} name={f.titulo} description={f.texto} initial="U" block />;

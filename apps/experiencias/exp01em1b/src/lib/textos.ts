@@ -99,8 +99,17 @@ export const TEXTOS = {
     separadorThiago: "--- Sessão 3/3: Thiago (Sinal Instável) ---",
     boasVindasLucas: "Olá, Lucas! Seja bem-vindo à plataforma.",
     aviso: (texto: string) => `Aviso de Sistema: ${texto}`,
-    bloqueada: "Entrada bloqueada durante a execução da bateria de testes...",
-    concluida: "Sessões concluídas. Relatório de auditoria gerado...",
+    /** O rótulo em negrito da caixa do aviso (E4-ALU-01); o espaço no fim separa o corpo na leitura. */
+    avisoRotulo: "Aviso de Sistema: ",
+    /**
+     * O placeholder do `Composer` é UMA linha (é um `input`): o texto longo do
+     * Figma ("…durante a execução da bateria de testes…", "Sessões concluídas.
+     * Relatório…") saía cortado no meio da palavra em 375px. O texto curto
+     * diz o mesmo em ~30 caracteres (1.0.5); "Sessões concluídas" já está no
+     * selo do topo ("Sessões 2/3 e 3/3 Concluídas").
+     */
+    bloqueada: "Entrada bloqueada nos testes...",
+    concluida: "Relatório de auditoria gerado...",
     enviar: "Enviar",
   },
   e4: {

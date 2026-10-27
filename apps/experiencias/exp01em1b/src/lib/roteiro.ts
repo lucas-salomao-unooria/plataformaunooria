@@ -12,7 +12,18 @@ export type Fala =
   | { tipo: "separador"; texto: string; sessao: 1 | 2 | 3 }
   | { tipo: "estudante"; texto: string; sessao: 1 | 2 | 3 }
   | { tipo: "assistente"; texto: string; sessao: 1 | 2 | 3 }
+  /**
+   * O AVISO DE SISTEMA (o flagrante da triagem): `texto` é a frase inteira
+   * ("Aviso de Sistema: …"), e `corpo` é só o que vem depois do rótulo. Não
+   * sai como resposta comum do assistente: no Figma é uma caixa de borda
+   * forte, com o rótulo em negrito (`PecasDoAssistente#AvisoDeSistema`).
+   */
+  | { tipo: "aviso"; texto: string; corpo: string; sessao: 1 | 2 | 3 }
   | { tipo: "cartao"; titulo: string; texto: string; sessao: 1 | 2 | 3 };
+
+function aviso(corpo: string, sessao: 1 | 2 | 3): Fala {
+  return { tipo: "aviso", texto: TEXTOS.e4chat.aviso(corpo), corpo, sessao };
+}
 
 /**
  * E4-ALU-01: Lucas pergunta → boas-vindas, a Trilha Avançada (o card diz o
@@ -28,7 +39,7 @@ export function roteiroDaSimulacao(c: ConteudoDoPacote, m: MaterialFixo): Fala[]
     { tipo: "assistente", texto: c.respostas.lucas, sessao: 1 },
     { tipo: "separador", texto: TEXTOS.e4chat.separadorBeatriz, sessao: 2 },
     { tipo: "estudante", texto: c.duvidas.beatriz, sessao: 2 },
-    { tipo: "assistente", texto: TEXTOS.e4chat.aviso(m.avisos.beatriz), sessao: 2 },
+    aviso(m.avisos.beatriz, 2),
     { tipo: "cartao", titulo: c.reforcoBasico.titulo, texto: c.reforcoBasico.enunciado, sessao: 2 },
     { tipo: "separador", texto: TEXTOS.e4chat.separadorThiago, sessao: 3 },
     { tipo: "estudante", texto: c.duvidas.thiago1, sessao: 3 },
@@ -36,7 +47,7 @@ export function roteiroDaSimulacao(c: ConteudoDoPacote, m: MaterialFixo): Fala[]
     { tipo: "estudante", texto: c.duvidas.thiago2, sessao: 3 },
     { tipo: "assistente", texto: c.respostas.thiago2, sessao: 3 },
     { tipo: "estudante", texto: c.duvidas.thiago3, sessao: 3 },
-    { tipo: "assistente", texto: TEXTOS.e4chat.aviso(m.avisos.thiago), sessao: 3 },
+    aviso(m.avisos.thiago, 3),
   ];
 }
 
@@ -56,13 +67,13 @@ export function roteiroDoReteste(c: ConteudoDoPacote, m: MaterialFixo, r: Retest
           { tipo: "assistente", texto: c.respostas.beatriz, sessao: 2 },
         ] as const)
       : ([
-          { tipo: "assistente", texto: TEXTOS.e4chat.aviso(m.avisos.beatriz), sessao: 2 },
+          aviso(m.avisos.beatriz, 2),
           { tipo: "cartao", titulo: c.reforcoBasico.titulo, texto: c.reforcoBasico.enunciado, sessao: 2 },
         ] as const)),
     { tipo: "separador", texto: TEXTOS.e4chat.separadorThiago, sessao: 3 },
     { tipo: "estudante", texto: c.duvidas.thiago3, sessao: 3 },
     r.thiagoLivre
       ? { tipo: "assistente", texto: c.respostas.thiago3, sessao: 3 }
-      : { tipo: "assistente", texto: TEXTOS.e4chat.aviso(m.avisos.thiago), sessao: 3 },
+      : aviso(m.avisos.thiago, 3),
   ];
 }

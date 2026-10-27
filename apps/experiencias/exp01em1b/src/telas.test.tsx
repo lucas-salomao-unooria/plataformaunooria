@@ -418,7 +418,7 @@ describe("os gestos que vão à api", () => {
     await abrir(sessao("simulacao"));
     expect(texto()).not.toContain("Dúvida do Lucas?");
     const campo = () => document.body.querySelector<HTMLElement>("[placeholder]")?.getAttribute("placeholder");
-    expect(campo()).toBe("Entrada bloqueada durante a execução da bateria de testes...");
+    expect(campo()).toBe("Entrada bloqueada nos testes...");
     /* Uma fala por vez: cada uma agenda a seguinte depois de desenhada. */
     for (let i = 0; i < 15; i += 1) {
       await act(async () => {
@@ -426,7 +426,14 @@ describe("os gestos que vão à api", () => {
       });
     }
     expect(texto()).toContain("Aviso de Sistema: Limite de interações atingido para a sua sessão. Retorne amanhã");
-    expect(campo()).toBe("Sessões concluídas. Relatório de auditoria gerado...");
+    /* O aviso de sistema é a CAIXA do Figma, não uma resposta do assistente (1.0.5). */
+    const avisos = Array.from(document.body.querySelectorAll<HTMLElement>(".aviso-de-sistema"));
+    expect(avisos.map((a) => a.textContent)).toEqual([
+      "Aviso de Sistema: Identificamos o seu ritmo de estudos e direcionamos você para o Reforço Básico",
+      "Aviso de Sistema: Limite de interações atingido para a sua sessão. Retorne amanhã",
+    ]);
+    expect(avisos.every((a) => a.getAttribute("role") === "note" && a.closest(".uai-chat-bubble") === null)).toBe(true);
+    expect(campo()).toBe("Relatório de auditoria gerado...");
     expect(chamadas).not.toContain("/assistente-invisivel/simulacao/concluir");
     await act(async () => {
       vi.advanceTimersByTime(PAUSA_NO_FIM_MS + 10);
