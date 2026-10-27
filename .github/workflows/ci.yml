@@ -67,14 +67,19 @@ jobs:
       # tudo; se a verificacao continuasse filtrando por `...[HEAD^]`, ela
       # passaria sem exercitar o pacote que quebra — foi o que aconteceu no
       # primeiro deploy: o portao ficou verde em 36s sem compilar a api.
+      # `--concurrency=2`: com a concorrência padrão do turbo (10), uma mudança
+      # que toca quase o monorepo inteiro (subir o design system recompila 14
+      # experiências, a api e o hub) esgota o runner. Na promoção #228 o
+      # `verify` caiu três vezes: um teste do hub estourou o tempo e, nas duas
+      # seguintes, o runner foi desligado no meio dos builds (código 137).
       - name: Verificar
         env:
           COMPLETO: ${{ inputs.completo }}
         run: |
           if [ "$COMPLETO" = "true" ]; then
-            pnpm turbo typecheck lint test build
+            pnpm turbo typecheck lint test build --concurrency=2
           else
-            pnpm turbo typecheck lint test build --filter='...[HEAD^]'
+            pnpm turbo typecheck lint test build --filter='...[HEAD^]' --concurrency=2
           fi
 
       # Trava de vulnerabilidade: high ou critical em dependencia = portao
