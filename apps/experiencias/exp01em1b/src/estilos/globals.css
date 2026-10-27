@@ -1,0 +1,367 @@
+/**
+ * Estilos locais da exp01em1b. Só o que o design system não dá: o layout do
+ * aparelho (375×812, desenhado pelo HUB a partir do `viewport` do manifesto),
+ * espaçamento, grade e tipografia de texto corrido. Controle (botão, campo,
+ * rádio, interruptor, tabela, folha, janela) é TODO do pacote.
+ *
+ * Cor nunca se escreve à mão: sai dos tokens `--unooria-*` (a escola) e
+ * `--uai-*` (o assistente). A fronteira está MARCADA abaixo — os dois são
+ * claros, e token de um no outro passa despercebido.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--unooria-color-neutral-50);
+  color: var(--unooria-color-neutral-900);
+  font-family: var(--unooria-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* `100%` e não `100dvh`: dentro do iframe do aparelho, `dvh` se refere à
+   janela do navegador, não ao aparelho. */
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.app__tela {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.app--centrado {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.app__carregando {
+  width: 100%;
+  max-width: 240px;
+}
+
+.so-leitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ================================================== A ESCOLA (seção unooria) */
+
+.escola {
+  background: var(--unooria-color-neutral-50);
+  color: var(--unooria-color-neutral-900);
+  font-family: var(--unooria-font-sans);
+}
+
+.escola__pilha {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 16px 28px;
+}
+
+.escola__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.escola__marca {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.escola__etapas {
+  min-width: 0;
+}
+
+.escola__instrucao,
+.escola__texto,
+.escola__dica,
+.escola__medidor,
+.escola__destaque {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.escola__instrucao {
+  font-size: 15px;
+  color: var(--unooria-color-neutral-700);
+}
+
+.escola__texto {
+  font-size: 14px;
+}
+
+.escola__texto--suave,
+.escola__dica,
+.escola__medidor {
+  font-size: 13px;
+  color: var(--unooria-color-neutral-600);
+}
+
+.escola__medidor {
+  text-align: center;
+}
+
+.escola__destaque {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.escola__subtitulo {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.escola__lista,
+.escola__pilha-curta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.escola__pilha-curta {
+  align-items: flex-start;
+}
+
+/* E1 "primeira vez": a borda de destaque do Figma, com o token da marca. */
+.escola .cartao-destaque {
+  outline: 2px solid var(--unooria-color-brandnavy-600);
+  outline-offset: -2px;
+}
+
+/* (b) COMPENSAÇÃO — o `Collapse` do DS esconde o corpo fechado com
+   `aria-hidden` + `grid-template-rows: 0fr`, e nada disso tira do FOCO: o Tab
+   entraria em controles que o leitor de tela não anuncia (medido na exp-92,
+   ADR registrada em memória do projeto). `visibility: hidden` tira do foco sem
+   tirar do fluxo; o atraso preserva a animação de fechamento do pacote. Morre
+   quando o `Collapse` publicar `inert` (pedido aberto no storybook-unooria). */
+.escola .unooria-collapse__body[aria-hidden="true"] {
+  visibility: hidden;
+  transition: visibility 0s linear 0.3s;
+}
+
+/* E4-ALU-03: a tabela de 4 colunas rola na horizontal dentro do `ScrollBar`. */
+.fichas {
+  margin: 0 -4px;
+}
+
+.fichas__celula {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+/* E5-ALU-01: as duas colunas lado a lado; o `PuzzleTrack` quebra as vagas sozinho. */
+.trilhas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.trilhas__coluna {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bandeja {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* (b) COMPENSAÇÃO — o `PuzzleBlock` publica `idle | placed | returned | locked`,
+   e não "selecionado para alocar" (o toque sequencial). O estado vai em
+   `aria-pressed`; aqui só o contorno, com o token da marca. Pedido aberto no
+   storybook-unooria (estado `selected`). */
+.bandeja__selecionado {
+  outline: 2px solid var(--unooria-color-brandnavy-600);
+  outline-offset: 2px;
+}
+
+/* E6-ALU-01 */
+.bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bloco__topo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bloco__titulo {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.comunicado {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comunicado__linha {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.comunicado__trecho {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.efeito-no-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* As janelas (`Modal` do DS): só o empilhamento do conteúdo. */
+.janela {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.janela__icone {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.janela__marca {
+  margin: 0;
+  font-weight: 700;
+}
+
+.janela__titulo {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.janela__texto {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--unooria-color-neutral-600);
+}
+
+/* ================================================== O ASSISTENTE (seção unooriaai)
+   Daqui para baixo, só `--uai-*`. */
+
+.uai-tela {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--uai-bg-primary);
+  color: var(--uai-text-primary);
+  font-family: var(--uai-font-sans);
+}
+
+.uai-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--uai-border-default);
+}
+
+.uai-topo__titulo {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* A conversa rola na barra do SISTEMA: o `ScrollBar` é da seção da plataforma
+   e não entra no clone (`apps/experiencias/AGENTS.md`). */
+.uai-conversa {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.uai-rodape {
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--uai-border-default);
+}
+
+.uai-separador {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.uai-separador__texto {
+  font-size: 12px;
+  color: var(--uai-text-secondary);
+  text-align: center;
+}
+
+/* A peça do assistente dentro de uma tela da escola (E2): um recorte do app,
+   sem barra, abas nem composer — só o fundo e as falas, nos tokens dele. */
+.previa-uai {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 0 0;
+  padding: 12px;
+  border: 1px solid var(--uai-border-default);
+  border-radius: 12px;
+  background: var(--uai-bg-primary);
+  color: var(--uai-text-primary);
+  font-family: var(--uai-font-sans);
+}
+
+.previa-uai__rotulo {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--uai-text-secondary);
+}

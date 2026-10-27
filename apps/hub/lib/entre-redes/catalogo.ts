@@ -1207,6 +1207,94 @@ export const MISSAO_ENIGMA_CAPA: Missao = {
   },
 };
 
+/**
+ * 1ª série do EM · Unidade 1 — O Assistente Invisível: Dados que viram decisões
+ * (`exp01em1b`, ADR-185).
+ *
+ * Do one-pager do PO v1.5 e do Figma de 63 telas (decisão do Lucas,
+ * 2026-10-26: o Figma é a referência de tela e de copy). O estudante é auditor
+ * da comissão de tecnologia da escola: testa o UnooriaAI com três colegas que
+ * pediram a mesma trilha, aposta no resultado, vê dois deles barrados por
+ * horário e conexão, reconstrói as regras com o banco de critérios e publica a
+ * página de transparência. Individual, com equipe opcional (E13), cinco
+ * liberações e duas pausas do professor.
+ */
+export const MISSAO_ASSISTENTE_INVISIVEL: Missao = {
+  anoSlug: "1-serie",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp01em1b",
+  titulo: "O Assistente Invisível: Dados que viram decisões",
+  resumo:
+    "Auditoria algorítmica escolar: o estudante, como auditor da comissão de tecnologia da escola, testa o " +
+    "assistente UnooriaAI com três colegas que pediram a mesma Trilha Avançada no cadastro, aposta no que vai " +
+    "acontecer e vê dois deles barrados — um pelo horário de acesso, outro pela conexão instável. Nas fichas de " +
+    "auditoria ele descobre a inferência que ninguém declarou, reconstrói as regras com o banco de critérios da " +
+    "rede e publica a página de transparência com o direito à revisão humana.",
+  status: "disponivel",
+  // Sem spoiler: a aposta só mede a crença de entrada se o estudante não souber que o sistema usa metadados.
+  estudante: {
+    titulo: "O Assistente Invisível",
+    chamada: "A escola pôs um assistente de estudos em teste. A comissão de auditoria precisa de você para conferir se ele cumpre o que cada estudante pediu.",
+  },
+  ficha: {
+    competencia:
+      "EM13CO20 — Criar conteúdos, disponibilizando-os em ambientes virtuais para publicação e compartilhamento, " +
+      "avaliando a confiabilidade e as consequências da disseminação dessas informações (o foco: a página de " +
+      "transparência e o comunicado da comissão). Com EM13CO01 (reutilizar critérios do repositório), EM13CO18 " +
+      "(o ciclo da auditoria) e, opcional, EM13CO03 (as etapas de processamento do algoritmo).",
+    duracao: "1 aula de 50 min (25 min em tela, 25 min de mediação e debate) — ou 2 aulas, com a pausa depois da Etapa 4",
+    formato:
+      "Individual, um estudante por aparelho (ou uma equipe por computador), alternando o módulo escolar de " +
+      "homologação da Unooria e as telas do UnooriaAI. Sem texto livre: a aposta, os cartões, os critérios e os " +
+      "blocos do comunicado são escolhas fechadas.",
+    atos: [
+      {
+        rotulo: "1 — Desafiar: a comissão de auditoria",
+        texto:
+          "Você apresenta o papel da turma como comissão de tecnologia da escola e toca em Liberar Início dos " +
+          "Testes. A Zara recebe cada estudante e abre o módulo de teste.",
+      },
+      {
+        rotulo: "2 — Navegar: as três funções",
+        texto: "O estudante expande as três funções do assistente (Exercícios, Dúvidas e Sugestões) e vê a prévia do UnooriaAI.",
+      },
+      {
+        rotulo: "3 — Decidir: a aposta",
+        texto:
+          "Três fichas com a mesma escolha no cadastro: Trilha Avançada. O estudante aposta (A, B ou C) e a previsão " +
+          "fica arquivada. Liberar Início da Simulação só acende quando toda sessão aberta tiver apostado.",
+      },
+      {
+        rotulo: "4 — Resultado: as fichas de auditoria (a sua primeira pausa)",
+        texto:
+          "No chat, o Lucas recebe o avançado, a Beatriz é rebaixada e o Thiago é bloqueado. As fichas mostram o " +
+          "horário e a conexão por trás de cada decisão. Você trava as telas e conduz as perguntas 1 e 2; depois, " +
+          "Liberar Bancada de Reconstrução.",
+      },
+      {
+        rotulo: "5 — Explicar: a bancada (a sua segunda pausa)",
+        texto:
+          "Seis cartões entre dados fornecidos e observados, as etapas do algoritmo (opcional) e o banco de critérios " +
+          "com a configuração B-B-A no ar. O estudante retesta; você projeta 1A × 1C e libera a publicação.",
+      },
+      {
+        rotulo: "6 — Refletir: a página de transparência",
+        texto:
+          "O estudante liga a página, monta o comunicado em quatro blocos e publica. Você fecha com o caso do " +
+          "aplicativo de transporte e as perguntas 3 e 4 sobre desigualdade e LGPD.",
+      },
+    ],
+    preparo: [
+      "Crie a atividade: Usar Banco Padrão da Rede (Língua Portuguesa) ou o recorte da sua disciplina gerado com IA, que você revisa item a item antes de aprovar.",
+      "Ponha a atividade em andamento e libere a missão na sala de aula: sem as duas, o estudante vê a missão fechada.",
+      "Deixe a página da atividade aberta na aba Aula ao vivo: são cinco botões seus, sempre para a frente.",
+      "Não diga que o assistente usa horário e conexão: a aposta só mede a crença da turma se ninguém souber antes.",
+      "Toque o podcast de recapitulação só depois da missão: ele conta a virada.",
+    ],
+  },
+};
+
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "1-ano": [MISSAO_FOTO_CONTA],
   "2-ano": [MISSAO_ENIGMA_CAPA],
@@ -1215,6 +1303,7 @@ const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "6-ano": [MISSAO_JURI_ESTADUAL, MISSAO_RASTRO_BOATO],
   "7-ano": [MISSAO_A_SELECAO],
   "8-ano": [MISSAO_ATUAL, MISSAO_MANIFESTO_IA],
+  "1-serie": [MISSAO_ASSISTENTE_INVISIVEL],
   "2-serie": [MISSAO_EFEITO_AMPLIFICADOR],
 };
 

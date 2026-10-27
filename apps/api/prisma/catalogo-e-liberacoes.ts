@@ -187,6 +187,8 @@ export const LIBERACOES_DE_DEMO: Array<{ turma: string; expIds: string[] }> = [
   // Estadual de Projetos (exp06ef1b, unidade 1).
   { turma: "6A", expIds: ["exp06ef2b", "exp06ef1b"] },
   { turma: "7A", expIds: ["exp07ef1b"] },
+  // A 1ª série EM: O Assistente Invisível (ADR-185).
+  { turma: "1EM-A", expIds: ["exp01em1b"] },
   { turma: "2EM-A", expIds: ["exp02em1b"] },
 ];
 

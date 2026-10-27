@@ -279,6 +279,12 @@ model Turma {
   enigmaGates        Exp02ef1bGateTurma[]
   enigmaHistorico    Exp02ef1bGateHistorico[]
   enigmaSessoes      Exp02ef1bSessao[]
+  /// O Assistente Invisível (exp01em1b, ADR-185): o pacote homologado é POR
+  /// TURMA (e é a atividade da evidência), a fase é da turma, e a sessão carrega a turma.
+  assistPacotes      Exp01em1bPacote[]
+  assistGates        Exp01em1bGateTurma[]
+  assistHistorico    Exp01em1bGateHistorico[]
+  assistSessoes      Exp01em1bSessao[]
 
   @@unique([escolaId, periodoLetivoId, nome])
   @@index([escolaId])
@@ -501,6 +507,10 @@ model User {
   enigmaSessoes              Exp02ef1bSessao[]           @relation("Exp02ef1bEstudante")
   /// O botão LIBERAR VIRADA de O Enigma da Capa da Rádio (o histórico).
   enigmaGatesApertados       Exp02ef1bGateHistorico[]    @relation("Exp02ef1bGateProfessor")
+  /// Lista: a sessão da exp01em1b é por (pacote, rodada), não por estudante.
+  assistenteSessoes          Exp01em1bSessao[]           @relation("Exp01em1bEstudante")
+  /// As liberações e pausas de O Assistente Invisível (o histórico).
+  assistenteGatesApertados   Exp01em1bGateHistorico[]    @relation("Exp01em1bGateProfessor")
   /// As conversas deste professor com o agente de IA — a POSSE da sessão do
   /// Agent Engine mora aqui, não no engine.
   agenteProfessorConversas   AgenteProfessorConversa[]   @relation("AgenteProfessorConversaUsuario")
@@ -4121,4 +4131,177 @@ model Exp02ef1bSessao {
   @@id([escolaId, estudanteId, pacoteId, rodada])
   @@index([escolaId, turmaId, pacoteId, rodada])
   @@map("exp02ef1b_sessoes")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// exp01em1b — O Assistente Invisível: Dados que viram decisões (ADR-185). A
+// missão da 1ª série EM, unidade 1: a comissão audita o assistente escolar que
+// rebaixa a Beatriz pelo horário e trava o Thiago pela conexão, reconstrói os
+// critérios e publica a transparência. As cinco liberações do professor são a
+// fase da turma. CHECKs, índices parciais, RLS e GRANT na migration
+// `20261027120000_exp01em1b_assistente_invisivel`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// O pacote didático (o que a IA gera e o professor cura) — a ATIVIDADE da
+/// evidência. Rascunho (`aprovado_em` nulo, um por turma) ou homologado; o em
+/// andamento (`ativo`) é um por turma.
+model Exp01em1bPacote {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  /// O componente curricular do recorte (CHECK, `conteudo.ts#DISCIPLINAS`).
+  disciplina String
+  tema       String
+  /// Os 3 a 5 tópicos que o professor deu à IA (CHECK).
+  topicos    String[]
+  /// O contexto regional opcional (≤ 120).
+  contexto   String?
+
+  /// O pacote inteiro: trilhas, dúvidas, respostas e leitura. `Json` e não
+  /// tabela-filha: é lido e homologado SEMPRE inteiro. O schema real é
+  /// `contrato-de-rotas.ts#ConteudoDoPacoteSchema`.
+  conteudoJson Json @map("conteudo_json")
+
+  /// padrao | ia (CHECK).
+  origem       String
+  /// Os itens que o professor reescreveu ("Editado pelo professor", CHECK do vocabulário).
+  editados     String[] @default([])
+  /// O banco padrão entrou porque a IA falhou ou não tinha saldo: a faixa
+  /// "Carregando versão de contingência da rede escolar" (E3-SIS-01). Só com `origem = padrao` (CHECK).
+  contingencia Boolean  @default(false)
+
+  ativo       Boolean   @default(false)
+  /// A reaplicação: "Zerar a turma" soma 1, e as rodadas anteriores ficam.
+  rodadaAtual Int       @default(1) @map("rodada_atual") @db.SmallInt
+  /// `null` = rascunho. Carimbo e autor andam juntos (CHECK).
+  aprovadoEm  DateTime? @map("aprovado_em") @db.Timestamptz(6)
+  /// Carimbo, sem FK: a saída de um professor da rede não trava o pacote.
+  aprovadoPor String?   @map("aprovado_por") @db.Uuid
+
+  /// Quantas gerações por IA este rascunho custou (a geração e as regenerações), e quantos tokens.
+  iaGeracoes Int @default(0) @map("ia_geracoes")
+  iaTokens   Int @default(0) @map("ia_tokens")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma   Turma             @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  sessoes Exp01em1bSessao[]
+
+  /// O alvo da FK composta das sessões: a sessão de uma escola não aponta para o pacote de outra.
+  @@unique([escolaId, id])
+  @@index([escolaId, turmaId])
+  @@map("exp01em1b_pacotes")
+}
+
+/// A fase da TURMA, que o professor move — só para a frente (`regras/passos.ts`).
+/// É a linha do polling de 3 s.
+model Exp01em1bGateTurma {
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  /// aguardando-inicio | testes | simulacao | debate-1 | explicar | debate-2 | publicar (CHECK).
+  fase String @default("aguardando-inicio")
+
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, turmaId])
+  @@map("exp01em1b_gates_turma")
+}
+
+/// O histórico append-only dos botões do professor: cada liberação e cada pausa.
+model Exp01em1bGateHistorico {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String   @map("escola_id")
+  turmaId     String   @map("turma_id") @db.Uuid
+  pacoteId    String   @map("pacote_id") @db.Uuid
+  rodada      Int      @db.SmallInt
+  /// A fase para a qual a turma foi (CHECK: nunca a inicial).
+  fase        String
+  /// Quem apertou. Nulo se o professor saiu da rede (SET NULL): o histórico fica.
+  professorId String?  @map("professor_id") @db.Uuid
+  em          DateTime @default(now()) @db.Timestamptz(6)
+
+  turma     Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  professor User? @relation("Exp01em1bGateProfessor", fields: [professorId], references: [id], onDelete: SetNull)
+
+  @@index([escolaId, turmaId])
+  @@map("exp01em1b_gates_historico")
+}
+
+/// A sessão de uma UNIDADE (o estudante, ou o computador da equipe — quem está
+/// logado nele) por (pacote, rodada). Nasce no primeiro `GET /sessao` com o
+/// pacote no ar. O PASSO não é coluna: sai dos carimbos e da fase
+/// (`regras/passos.ts`). Cada etapa só depois da anterior (CHECKs de ordem).
+model Exp01em1bSessao {
+  escolaId    String @map("escola_id")
+  estudanteId String @map("estudante_id") @db.Uuid
+  pacoteId    String @map("pacote_id") @db.Uuid
+  rodada      Int    @db.SmallInt
+  /// Denormalizada do pacote: o painel lê por turma o tempo todo.
+  turmaId     String @map("turma_id") @db.Uuid
+
+  entrouEm   DateTime  @default(now()) @map("entrou_em") @db.Timestamptz(6)
+  /// E1 "Abrir Módulo de Teste".
+  iniciadoEm DateTime? @map("iniciado_em") @db.Timestamptz(6)
+
+  /// E2: as funções expandidas (CHECK do vocabulário) e "Ir para Bateria de Testes".
+  funcoesAbertas String[]  @default([]) @map("funcoes_abertas")
+  navegouEm      DateTime? @map("navegou_em") @db.Timestamptz(6)
+
+  /// E3 — o LATCH 1 (PQ-01): a aposta e o carimbo juntos (CHECK).
+  aposta     String?
+  apostadaEm DateTime? @map("apostada_em") @db.Timestamptz(6)
+
+  /// E4: as três sessões de chat, as fichas (PQ-02) e a inspeção.
+  simulacaoConcluidaEm DateTime? @map("simulacao_concluida_em") @db.Timestamptz(6)
+  fichasAbertasEm      DateTime? @map("fichas_abertas_em") @db.Timestamptz(6)
+  inspecaoConcluidaEm  DateTime? @map("inspecao_concluida_em") @db.Timestamptz(6)
+
+  /// E5-ALU-01: a alocação dos 6 cartões `{cartao: coluna}`, os acertos (gabarito, só painel) e se completou.
+  cartoes         Json?     @map("cartoes")
+  cartoesAcertos  Int?      @map("cartoes_acertos") @db.SmallInt
+  cartoesCompleta Boolean?  @map("cartoes_completa")
+  classificadaEm  DateTime? @map("classificada_em") @db.Timestamptz(6)
+
+  /// E5-ALU-02, o painel OPCIONAL (PQ-04): abriu, os passos marcados e "Pular Etapa".
+  painelPassosAbertoEm DateTime? @map("painel_passos_aberto_em") @db.Timestamptz(6)
+  passosMarcados       Int[]     @default([]) @map("passos_marcados") @db.SmallInt
+  algoritmoConcluidoEm DateTime? @map("algoritmo_concluido_em") @db.Timestamptz(6)
+
+  /// E5-ALU-03/04, o reteste (PQ-03): a ÚLTIMA configuração, quantos retestes, a
+  /// equidade do primeiro e a do último (CHECK: os cinco juntos).
+  criterios           Json?     @map("criterios")
+  retestes            Int       @default(0) @db.SmallInt
+  equidadeNo1oReteste String?   @map("equidade_no_1o_reteste")
+  ultimaEquidade      String?   @map("ultima_equidade")
+  retestadoEm         DateTime? @map("retestado_em") @db.Timestamptz(6)
+  /// "Revisar Critérios": volta ao banco até o próximo reteste.
+  revisando           Boolean   @default(false)
+  /// "Avançar para …" — e se avançou mantendo 1B ou 2B (o Aviso Discreto do E5-PROF-01).
+  avancouEm           DateTime? @map("avancou_em") @db.Timestamptz(6)
+  avancouComVies      Boolean?  @map("avancou_com_vies")
+
+  /// E6 — o LATCH 2: a página, os blocos, os acertos (PQ-05), o alinhamento e o carimbo juntos (CHECK).
+  paginaAtiva    Boolean?  @map("pagina_ativa")
+  comunicado     Json?
+  blocosCorretos Int?      @map("blocos_corretos") @db.SmallInt
+  alinhamento    String?
+  publicadaEm    DateTime? @map("publicada_em") @db.Timestamptz(6)
+
+  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  estudante User            @relation("Exp01em1bEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  turma     Turma           @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  pacote    Exp01em1bPacote @relation(fields: [escolaId, pacoteId], references: [escolaId, id], onDelete: Cascade)
+
+  @@id([escolaId, estudanteId, pacoteId, rodada])
+  @@index([escolaId, turmaId, pacoteId, rodada])
+  @@map("exp01em1b_sessoes")
 }

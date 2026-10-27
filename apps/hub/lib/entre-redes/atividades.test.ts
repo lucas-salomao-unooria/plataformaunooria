@@ -20,8 +20,8 @@ import { concluirCriacao, destinoDepoisDeCriar } from "./criar-atividade";
  * leva, e o fim da criação — pôr no ar e montar as equipes, na ordem certa.
  */
 describe("a lista de atividades", () => {
-  test("as sete missões com atividade — o mesmo par da api", () => {
-    expect(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b"].every(temAtividades)).toBe(true);
+  test("as oito missões com atividade — o mesmo par da api", () => {
+    expect(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b"].every(temAtividades)).toBe(true);
     /* A Missão Tempestade, versão anterior (ADR-181), segue sem atividade. */
     expect(temAtividades("exp02em1b-v0")).toBe(false);
     expect(temAtividades(undefined)).toBe(false);
@@ -33,6 +33,7 @@ describe("a lista de atividades", () => {
     expect(serieDaMissao("exp06ef1b")).toBe("6EF");
     expect(serieDaMissao("exp02em1b")).toBe("2EM");
     expect(serieDaMissao("exp02ef1b")).toBe("2EF");
+    expect(serieDaMissao("exp01em1b")).toBe("1EM");
     expect(serieDaMissao("app-90-plano-de-aula")).toBeNull();
   });
 
@@ -152,6 +153,7 @@ describe("para onde a atividade leva", () => {
     expect(caminhoDoEmAndamento("exp04ef1b", "t", "p")).toBe("/jornal-escola/turmas/t/pacotes/p/em-andamento");
     expect(caminhoDoEmAndamento("exp05ef1b", "t", "p")).toBe("/quem-mandou-isso/turmas/t/pacotes/p/em-andamento");
     expect(caminhoDoEmAndamento("exp06ef1b", "t", "p")).toBe("/juri-estadual/turmas/t/pacotes/p/em-andamento");
+    expect(caminhoDoEmAndamento("exp01em1b", "t", "p")).toBe("/assistente-invisivel/turmas/t/pacotes/p/em-andamento");
   });
 
   test("'Eu separo' leva o número de computadores para a página", () => {

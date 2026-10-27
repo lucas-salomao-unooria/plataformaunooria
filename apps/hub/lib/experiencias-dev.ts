@@ -83,6 +83,14 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
    * fetch" e o erro não diz por quê.
    */
   "exp02ef1b": "http://localhost:5187",
+  /**
+   * O Assistente Invisível — 1ª série EM, unidade 1 (ADR-185).
+   *
+   * 5188, a próxima livre depois da 5187 (a exp02ef1b). A porta entra também
+   * no CORS_ORIGINS da api — sem ela o boot da missão morre com "Failed to
+   * fetch" e o erro não diz por quê.
+   */
+  "exp01em1b": "http://localhost:5188",
 };
 
 export function baseDevDaExperiencia(expId: string, fallback: string): string {

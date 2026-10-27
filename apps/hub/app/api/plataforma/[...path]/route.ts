@@ -111,6 +111,14 @@ const PREFIXOS_PERMITIDOS = [
      professor toca na frente da sala e os aparelhos andam pelo polling do gate
      (3 s). As guardas de papel estão na api (`@Roles("professor")` na escrita). */
   "enigma-capa",
+  /* exp01em1b (O Assistente Invisível, ADR-185): o preparo (banco padrão,
+     gerar com IA, editar e regenerar cada item na curadoria, homologar), o
+     "Usar esta atividade agora", as cinco liberações e as duas pausas da aula
+     ("Liberar Início dos Testes" … "Liberar Publicação e Transparência"), o
+     painel relido a cada 5 s e o "Zerar Turma" são client-side — o professor
+     toca na frente da sala e os aparelhos andam pelo polling do gate (3 s). As
+     guardas de papel estão na api (`@Roles("professor")` na escrita). */
+  "assistente-invisivel",
   /* exp06ef2b: o gate da aula (abrir a Aula 2, pausar a simulação) e o "zerar
      turma" são client-side — a professora aperta no meio da aula e as 30 telas
      andam na hora, sem recarregar a página. As guardas de papel estão na api
