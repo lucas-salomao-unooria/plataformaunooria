@@ -72,9 +72,13 @@ jobs:
       # experiências, a api e o hub) esgota o runner. Na promoção #228 o
       # `verify` caiu três vezes: um teste do hub estourou o tempo e, nas duas
       # seguintes, o runner foi desligado no meio dos builds (código 137).
+      # `NODE_OPTIONS`: o lint da api (o ESLint com informação de tipo, sobre
+      # src, tests e prisma) passou do heap padrão do Node (~2 GB) no deploy
+      # da promoção #228 — "heap out of memory", código 134. O runner tem 16 GB.
       - name: Verificar
         env:
           COMPLETO: ${{ inputs.completo }}
+          NODE_OPTIONS: --max-old-space-size=4096
         run: |
           if [ "$COMPLETO" = "true" ]; then
             pnpm turbo typecheck lint test build --concurrency=2
