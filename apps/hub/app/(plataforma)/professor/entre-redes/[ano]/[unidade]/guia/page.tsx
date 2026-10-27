@@ -9,6 +9,7 @@ import {
   rotuloDaMissao,
   MISSAO_ATUAL,
   MISSAO_A_SELECAO,
+  MISSAO_ASSISTENTE_INVISIVEL,
   MISSAO_EFEITO_AMPLIFICADOR,
   MISSAO_ENIGMA_CAPA,
   MISSAO_JORNAL_DA_ESCOLA,
@@ -22,6 +23,7 @@ import type { BlocosVivos } from "@/lib/entre-redes/guias/tipos";
 import type { MaterialDaSelecao } from "@/lib/a-selecao-tipos";
 import type { MaterialDoJornal } from "@/lib/jornal-escola-tipos";
 import { CAMINHO_DO_MATERIAL as MATERIAL_DO_EFEITO, type Material as MaterialDoEfeito } from "@/lib/efeito-amplificador-tipos";
+import { CAMINHO_DO_MATERIAL as MATERIAL_DO_ASSISTENTE, type Material as MaterialDoAssistente } from "@/lib/assistente-invisivel-tipos";
 import { CAMINHO_DO_MATERIAL as MATERIAL_DO_ENIGMA, type Material as MaterialDoEnigma } from "@/lib/enigma-capa-tipos";
 import { baseDoBundleDaExperiencia } from "@/lib/bundle-da-experiencia";
 import { CAMINHO_DO_MATERIAL, type MaterialDoJuri } from "@/lib/juri-estadual-tipos";
@@ -29,6 +31,7 @@ import type { MaterialDoProfessor } from "@/lib/quem-mandou-tipos";
 
 import { IntervencoesDoRastro, type MaterialDoRastro } from "./intervencoes-do-rastro";
 import { GatilhosDaSelecao, RoteiroDaSelecao } from "./material-da-selecao";
+import { ReguasDoAssistente, RoteiroDoAssistente } from "./material-do-assistente-invisivel";
 import { GabaritoDoEfeito, ReguasDoEfeito } from "./material-do-efeito";
 import { CartoesDoEnigma, CenasDoEnigma, ReguasDoEnigma } from "./material-do-enigma";
 import { BotoesDoJornal, MesaDoJornal, PerguntasDoJornal } from "./material-do-jornal";
@@ -207,6 +210,13 @@ async function blocosDaMissao(expId: string | undefined): Promise<BlocosVivos | 
         debate: <CartoesDoEnigma dados={material} />,
         depois: <ReguasDoEnigma dados={material} />,
       };
+    }
+
+    case MISSAO_ASSISTENTE_INVISIVEL.expId: {
+      /* UMA chamada para os dois blocos: as quatro perguntas e o caso de
+         transferência, para a mediação; o critério de cada nível, para o depois. */
+      const material = await apiDoServidor<MaterialDoAssistente>(MATERIAL_DO_ASSISTENTE);
+      return { debate: <RoteiroDoAssistente dados={material} />, depois: <ReguasDoAssistente dados={material} /> };
     }
 
     default:

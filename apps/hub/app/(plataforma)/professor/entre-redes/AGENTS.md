@@ -236,3 +236,19 @@ espelho `lib/enigma-capa-tipos.ts`. O `banco-padrao` (Biblioteca, Horta, Museu) 
 ar** num toque. Na cena da IA o professor marca os dois objetos iguais TOCANDO na imagem (a IA não
 devolve coordenada): os dois toques vão juntos em `rascunho/invariantes`. A cena pronta é arquivo do
 bundle: a base vem de `lib/bundle-da-experiencia.ts`, no servidor. LIBERAR VIRADA é um botão só, da turma.
+
+## O Assistente Invisível (exp01em1b)
+
+Página `resultados/resultados-assistente-invisivel.tsx`, criação `atividades/nova/criar-assistente-invisivel.tsx`,
+espelho `lib/assistente-invisivel-tipos.ts` (as rotas da turma num lugar só, `ROTAS_DA_CURADORIA`, e o
+teste confere cada uma no controller da api). **Aqui `GET /pacotes` é o PREPARO** e a lista das
+atividades é `GET /historico` — o contrário das irmãs; UMA atividade inteira (o Conteúdo da que está
+fora do ar) é `GET /pacotes/:pacoteId`. O `banco-padrao` aprova E põe no ar.
+A curadoria vai ao SERVIDOR item a item ("Editar Texto" e "Regenerar Este Item" devolvem o rascunho
+inteiro) e o "Aprovar Pacote Homologado" manda só o `rascunhoId`. Sem saldo ou com o vendor fora, a
+geração cai no banco padrão e a curadoria só abre depois de "Prosseguir com Banco Oficial" / "Usar
+Banco Padrão" (E0-PROF-03). A aula são cinco liberações e duas pausas, só para a frente
+(`ACOES_DA_FASE`, que o teste confere contra `PROXIMAS_FASES` da api); "Liberar Início da Simulação"
+só acende com `todosApostaram`, e o painel lista quem falta. O relatório final (E6-PROF-01) imprime
+SOZINHO pelo `BotaoImprimir` com `impressao="relatorio-homologacao"`: a folha
+(`resultados/relatorio-de-homologacao.css`) só vale com a marca no `<html>`.

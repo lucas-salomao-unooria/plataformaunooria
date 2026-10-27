@@ -9,6 +9,7 @@ import { minhasTurmas } from "@/lib/turmas";
 import type { TurmaDoAssistente } from "@/components/atividades/assistente-de-atividade";
 
 import { CriarASelecao } from "./criar-a-selecao";
+import { CriarAssistenteInvisivel } from "./criar-assistente-invisivel";
 import { CriarEfeitoAmplificador } from "./criar-efeito-amplificador";
 import { CriarEnigmaCapa } from "./criar-enigma-capa";
 import { CriarJornalEscola } from "./criar-jornal-escola";
@@ -81,6 +82,8 @@ export default async function NovaAtividadePage({
       ) : expId === "exp02ef1b" ? (
         /* As cenas prontas são arquivos do bundle da experiência: a base sai do servidor (env de runtime). */
         <CriarEnigmaCapa {...props} baseDoBundle={await baseDoBundleDaExperiencia(expId)} />
+      ) : expId === "exp01em1b" ? (
+        <CriarAssistenteInvisivel {...props} />
       ) : (
         <CriarQuemMandou {...props} />
       )}
