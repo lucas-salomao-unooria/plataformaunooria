@@ -11,6 +11,7 @@ import {
 import {
   AVISO_SEM_IA,
   CHAVES_PRONTAS,
+  FORA_DA_FAIXA_MAXIMO,
   NOTA_MAX,
   PEDIDO_DA_IMAGEM,
   TEMA,
@@ -516,6 +517,8 @@ function Curadoria({
   const [pedido, setPedido] = useState(rascunho.pedidoDaImagem ?? "");
   const [enviando, setEnviando] = useState<"marcar" | "aprovar" | "imagem" | null>(null);
   const [imagemSemIa, setImagemSemIa] = useState<"sem-saldo" | "indisponivel" | null>(null);
+  /* O objeto que o professor arrastou e que ficou FORA da faixa do meio: a IA nem sempre obedece à posição. */
+  const [foraDaFaixa, setForaDaFaixa] = useState<InvarianteId | null>(null);
   const [erro, setErro] = useState<{ mensagem: string; erros: string[] } | null>(null);
   const cenaRef = useRef<HTMLDivElement>(null);
 
@@ -568,14 +571,21 @@ function Curadoria({
     }
   }
 
-  function desenhar(area: Retangulo) {
+  function desenhar(area: Retangulo, fora: number) {
     if (!proximo || enviando) return;
+    /* Mais de um quarto da caixa fora da faixa: o objeto não aparece nas duas fotos, e a caixa presa à borda marcaria parede. */
+    if (fora > FORA_DA_FAIXA_MAXIMO) {
+      setForaDaFaixa(proximo.id);
+      return;
+    }
+    setForaDaFaixa(null);
     const novas = { ...areas, [proximo.id]: area };
     setAreas(novas);
     if (cena.invariantes.every((i) => novas[i.id])) void enviarAreas(novas);
   }
 
   function refazer() {
+    setForaDaFaixa(null);
     setAreas({});
     setMarcando(true);
     setErro(null);
@@ -583,6 +593,7 @@ function Curadoria({
 
   async function gerarImagem() {
     setEnviando("imagem");
+    setForaDaFaixa(null);
     setErro(null);
     setImagemSemIa(null);
     try {
@@ -677,6 +688,35 @@ function Curadoria({
             rotuloDoDesenho={proximo ? `Desenhe a área do ${proximo.nome} na imagem` : undefined}
             ocupada={espera}
           />
+          {proximo && !espera ? (
+            <p className="text-[12px] text-unooria-neutral-600">
+              A parte clara do meio é a que aparece nas duas fotos: o objeto precisa estar nela.
+            </p>
+          ) : null}
+          {foraDaFaixa && !espera ? (
+            <div className="flex flex-col gap-2" data-objeto-fora-da-faixa={foraDaFaixa}>
+              <FeedbackAlert
+                type="warning"
+                title={`O ${cena.invariantes.find((i) => i.id === foraDaFaixa)?.nome ?? "objeto"} ficou fora da parte do meio`}
+                description="Nesta imagem ele não aparece nas duas fotos, então a criança não teria como achá-lo nas duas. Gere outra imagem — no pedido, você pode reforçar que os dois objetos ficam juntos no centro da parede — ou desenhe de novo, se a caixa escapou do objeto."
+              />
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<Icon name="auto_awesome" size={18} />}
+                  isDisabled={trabalhando || (temPedido && !pedidoValido)}
+                  onClick={() => (temPedido ? void gerarImagem() : gerarNovamente())}
+                  data-acao="gerar-outra-imagem"
+                >
+                  Gerar outra imagem
+                </Button>
+                <Button variant="ghost" size="sm" isDisabled={trabalhando} onClick={() => setForaDaFaixa(null)} data-acao="desenhar-de-novo">
+                  Desenhar de novo
+                </Button>
+              </div>
+            </div>
+          ) : null}
           {avisosDasAreas.length > 0 ? <FeedbackAlert type="warning" description={avisosDasAreas.join(" ")} /> : null}
           <div className="flex flex-wrap gap-3">
             <Button variant="secondary" size="sm" leftIcon={<Icon name="restart_alt" size={18} />} isDisabled={trabalhando} onClick={refazer} data-acao="refazer-marcacao">

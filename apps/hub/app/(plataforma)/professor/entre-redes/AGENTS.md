@@ -235,7 +235,9 @@ Página `resultados/resultados-enigma-capa.tsx`, criação `atividades/nova/cria
 espelho `lib/enigma-capa-tipos.ts`. O `banco-padrao` (Biblioteca, Horta, Museu) **aprova E põe no
 ar** num toque. Na cena da IA o professor DESENHA a área de cada objeto igual, arrastando uma caixa
 (a IA não devolve coordenada; ADR-188): as duas áreas vão juntas em `rascunho/invariantes`, e a caixa
-fica presa à faixa do meio. O **pedido da imagem** (só a descrição; as regras fixas são da api) fica
+fica presa à faixa do meio — mas a caixa arrastada com mais de 1/4 FORA da faixa não vira área
+(`fracaoForaDaFaixa`): é o objeto que a IA pôs fora (medido: ~metade das imagens, com qualquer
+redação), e a curadoria oferece "Gerar outra imagem". O **pedido da imagem** (só a descrição; as regras fixas são da api) fica
 editável na curadoria, e "Gerar a imagem com este pedido" (`rascunho/imagem`) troca SÓ a imagem e
 apaga as áreas. Toda geração mostra a espera ONDE o professor olha: o quadro animado no lugar da cena
 (`EsperaDaCena`) ou o véu sobre a imagem (`ocupada` da `CenaDoEnigma`), com o botão em carregamento —

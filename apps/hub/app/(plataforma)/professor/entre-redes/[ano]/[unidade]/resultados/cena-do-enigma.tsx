@@ -10,6 +10,7 @@ import {
   areaDoArraste,
   areaDoToque,
   ehArraste,
+  fracaoForaDaFaixa,
   pontoNaPanoramica,
   urlDaImagem,
   type ConteudoDoPacote,
@@ -60,8 +61,12 @@ export function CenaDoEnigma({
   conteudo: ConteudoDoPacote;
   baseDoBundle: string | null;
   marcas: MarcaNaCena[];
-  /** Com ele, a imagem aceita o desenho da área (a curadoria); sem ele, é só leitura. */
-  aoDesenhar?: (area: Retangulo) => void;
+  /**
+   * Com ele, a imagem aceita o desenho da área (a curadoria); sem ele, é só
+   * leitura. `foraDaFaixa` é quanto do arraste caiu fora da faixa do meio (0 a
+   * 1) — a área já vem presa à faixa, e quem decide recusá-la é a curadoria.
+   */
+  aoDesenhar?: (area: Retangulo, foraDaFaixa: number) => void;
   /** O que o desenho vai marcar agora ("Desenhe a área do RELÓGIO") — vira o `aria-label`. */
   rotuloDoDesenho?: string;
   /** A espera da geração por cima da imagem (o texto lúdico), ou nada. */
@@ -94,11 +99,14 @@ export function CenaDoEnigma({
 
   function aoSoltar(e: PointerEvent<HTMLDivElement>) {
     if (!inicio || !caixa.current) return;
-    const area = areaDoArraste(inicio, ponto(e));
-    const final = ehArraste(area) ? area : areaDoToque(inicio);
+    const fim = ponto(e);
+    const area = areaDoArraste(inicio, fim);
+    const arrastou = ehArraste(area);
+    const final = arrastou ? area : areaDoToque(inicio);
+    const fora = arrastou ? fracaoForaDaFaixa(inicio, fim) : inicio.x < FAIXA_COMUM.de || inicio.x > FAIXA_COMUM.ate ? 1 : 0;
     setInicio(null);
     setRascunho(null);
-    aoDesenhar?.(final);
+    aoDesenhar?.(final, fora);
   }
 
   const areas: { id: string; nome: string; area: Retangulo; provisoria?: boolean }[] = [
