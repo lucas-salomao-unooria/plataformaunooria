@@ -589,13 +589,19 @@ await suite(
       }
       r.exigir(JSON.stringify(marcou?.corpo?.algoritmo?.marcados) === "[2,3,4]", `os passos 2, 3 e 4 marcados no servidor (${JSON.stringify(marcou?.corpo?.algoritmo?.marcados)})`);
       await q.getByText("Otimização: de 5 para 2 passos essenciais").waitFor({ timeout: 5000 });
+      /* O passo 4 marcado leva "(Ação enviesada)" — o Figma —, mas quem diz qual é o enviesado é o SERVIDOR
+         (`algoritmo.enviesados`, só dos já marcados): o bundle não carrega o gabarito do algoritmo. */
+      const enviesados = marcou?.corpo?.algoritmo?.enviesados ?? [];
       r.exigir(
-        (await q.getByText(/\(Inferência dispensável\)$/).count()) === 3 && (await q.getByText(/\(Essencial\)$/).count()) === 2,
-        "os marcados ganham “(Inferência dispensável)” e os outros “(Essencial)” — o rótulo do estudante, não o gabarito",
+        JSON.stringify(enviesados) === "[4]" &&
+          (await q.getByRole("checkbox", { name: /Passo 4: .*\(Ação enviesada\)$/ }).count()) === 1 &&
+          (await q.getByText(/\(Inferência dispensável\)$/).count()) === 2 &&
+          (await q.getByText(/\(Essencial\)$/).count()) === 2,
+        `os marcados ganham “(Inferência dispensável)” — e o passo 4, que o servidor diz enviesado (${JSON.stringify(enviesados)}), “(Ação enviesada)”; os outros, “(Essencial)”`,
       );
       await registrar(p, "etapas-do-algoritmo", {
         titulo: "Ver etapas de processamento do assistente",
-        mostra: "Os 5 passos do algoritmo com 2, 3 e 4 marcados como inferência dispensável e “Otimização: de 5 para 2 passos essenciais”.",
+        mostra: "Os 5 passos do algoritmo com 2 e 3 marcados como inferência dispensável, o 4 como ação enviesada e “Otimização: de 5 para 2 passos essenciais”.",
         prova: "Opcional (EM13CO03): a tela não sabe quais passos sobram — a conta é do estudante, a régua é do servidor.",
         inteira: true,
       });
