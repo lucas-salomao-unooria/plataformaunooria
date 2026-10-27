@@ -62,14 +62,21 @@ diferentes, sem erro nenhum.
 
 Subir é UM passo para todos: `pnpm up -r @unooria/design-system@^X.Y.Z` (nunca
 `--filter`: deixa importador para trás), lockfile e `package.json` no mesmo
-commit. Depois, compile cada experiência ANTES e DEPOIS e compare o hash do
-`dist/` **sem os `.map`**: o sourcemap carrega o caminho do pacote no store do
-pnpm, que tem a versão no nome, e muda em TODA subida — com ele, todas as
-experiências pareceriam mudadas (foi o que a 0.2.15 mostrou: 14 "mudaram", 12
-mudaram de verdade). **A que mudou sobe a versão nos três lugares** (o caminho no bucket é
-imutável); a que saiu idêntica byte a byte não sobe; e a que mudou mas JÁ está
+commit. **E toda subida do DS sobe a versão de TODAS as experiências
+publicáveis** (toda pasta de `apps/experiencias` menos `_template` e
+`backup-*`), um patch nos três lugares, mesmo a que sair idêntica byte a byte
+(ADR-187; decisão do Lucas, 2026-10-27): a versão de cada missão passa a dizer
+sempre com que DS ela foi construída, e "esta saiu igual" deixou de ser uma
+conta que alguém precisa refazer para saber o que está no ar. Até a 0.2.22,
+só subia a que mudava o hash, e a app-70 e a exp02ef1b ficavam paradas em
+versões que não diziam o DS. A única que não sobe de novo é a que JÁ está
 numa versão à frente da do `dev` (subiu desde a última promoção, nunca foi
-publicada) também não sobe de novo — compare com `git show origin/dev:<pasta>/public/experiencia.json`. `^0.2.8` não pega `0.3.0`
+publicada: a versão já é inédita no bucket) — compare com
+`git show origin/dev:<pasta>/public/experiencia.json`. O `_template` só
+acompanha a dependência. A comparação do hash do `dist/` **sem os `.map`**
+(o sourcemap carrega o caminho do pacote no store do pnpm, com a versão no
+nome, e muda em TODA subida) continua como VERIFICAÇÃO do que a subida
+mexeu, mas não decide mais quem sobe. `^0.2.8` não pega `0.3.0`
 — caret em `0.x` só sobe patch, e minor é decisão ativa. Mecânica completa
 (CSS, fontes, frames, compensações, armadilhas de migração) em
 `packages/ui/AGENTS.md`.
