@@ -100,7 +100,7 @@ type FalhaDaIa = { tipo: "sem-saldo" | "indisponivel"; de: "gerar" | string };
  *
  * O caminho, na ordem da tela:
  *
- * 1. **parametrizar** — componente curricular (as nove disciplinas da missão),
+ * 1. **parametrizar** — componente curricular (todo o 6º ano, Computação e o projeto interdisciplinar),
  *    tema, assuntos e, se quiser, o contexto da escola;
  * 2. **gerar com IA** (`gerar-conteudo`: cinco chamadas na api — as categorias
  *    e as quatro áreas em paralelo —, perto de um minuto), com a espera à

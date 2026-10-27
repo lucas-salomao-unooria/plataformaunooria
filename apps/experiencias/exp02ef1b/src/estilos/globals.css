@@ -765,6 +765,12 @@ body {
   color: var(--unv-color-action-primary, #716c98);
 }
 
+.instrucao--confirma {
+  margin: 0 0 4px;
+  font-size: 15px;
+  color: var(--unv-color-text-secondary, #475157);
+}
+
 .titulo-da-tela--frase {
   font-size: 18px;
 }

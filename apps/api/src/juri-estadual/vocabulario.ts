@@ -182,17 +182,25 @@ export type OrigemDoPacote = (typeof ORIGENS_DO_PACOTE)[number];
 
 /**
  * As disciplinas do preparo (a missão é transversal: qualquer professor
- * parametriza o recorte da mostra).
+ * parametriza o recorte da mostra). Cobre TODO o 6º ano da matriz da
+ * plataforma (`curriculo/componentes.ts#componentesDoAno("6EF")`, na ordem do
+ * catálogo), mais Computação (o complemento de 2022 à BNCC) e o projeto
+ * interdisciplinar no fim — migração
+ * `20261026230000_componentes_bncc_nas_missoes`. Só se ACRESCENTA: há linhas
+ * gravadas com cada valor, e um CHECK mais estreito quebraria a migração.
+ * `tests/juri-estadual-regras.spec.ts` confere a lista contra o catálogo.
  */
 export const DISCIPLINAS = [
   "lingua-portuguesa",
-  "ciencias",
-  "historia",
-  "geografia",
-  "matematica",
   "arte",
   "educacao-fisica",
   "lingua-inglesa",
+  "matematica",
+  "ciencias",
+  "geografia",
+  "historia",
+  "ensino-religioso",
+  "computacao",
   "projeto-interdisciplinar",
 ] as const;
 export type Disciplina = (typeof DISCIPLINAS)[number];

@@ -247,7 +247,7 @@ export function CriarEfeitoAmplificador({
                     <div className="grid gap-4 lg:grid-cols-2">
                       <Selection
                         label="Componente Curricular da BNCC"
-                        helperText="Selecione Língua Portuguesa, Biologia/Ciências da Natureza, História/Ciências Humanas ou Projeto Interdisciplinar."
+                        helperText="Selecione um componente da 2ª série do Ensino Médio, Computação ou Projeto Interdisciplinar."
                         placeholder="Selecione"
                         value={recorte.disciplina || undefined}
                         showOptionCheckbox={false}

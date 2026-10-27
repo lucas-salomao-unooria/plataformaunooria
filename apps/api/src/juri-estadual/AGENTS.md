@@ -110,6 +110,11 @@ lados têm espelhos dessas listas; mudar a forma aqui sem avisar quebra os dois.
   `servirAte(projetos, FEED_VAZIO, semente, N)` com N = posts que a criança viu — cortado pelos 8 min, tem N —, por área, na
   ordem do pacote; calculado aqui, o motor nunca desce), `ocultosAbertos`,
   `podeManter` e `resumo` (o bastidor, a ficha de inspeção).
+- **A disciplina do preparo cobre o 6º ano inteiro da BNCC, mais Computação**
+  (`componentesDoAno("6EF")` + `computacao`, e `projeto-interdisciplinar` no
+  fim; o banco padrão é `ciencias`). O CHECK foi recriado em
+  `20261026230000_componentes_bncc_nas_missoes`; só se ACRESCENTA valor, e o
+  espelho do hub (`lib/juri-estadual-tipos.ts`) acompanha.
 - **Locks**: por estudante (funil `garantirSessao`) e da turma (exclusivo para
   botão/zerar/homologar/pôr no ar/banco padrão; compartilhado nas jogadas que
   marcam, com 409 `rodada-mudou`).

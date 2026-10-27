@@ -132,32 +132,45 @@ export type Condicao = (typeof CONDICOES)[number];
  * a lista fica AQUI, e não importada de lá, porque é o vocabulário do CHECK
  * `exp05ef1b_pacotes_disciplina_check` — e acrescentar uma disciplina aos
  * planos de aula não pode mudar o que esta tabela aceita sem migração.
+ *
+ * A lista cobre TODO o 5º ano da matriz da plataforma
+ * (`curriculo/componentes.ts#componentesDoAno("5EF")`, na ordem do catálogo),
+ * mais Computação (o complemento de 2022 à BNCC) — migração
+ * `20261026230000_componentes_bncc_nas_missoes`. Depois vêm os dois valores
+ * que já estavam gravados e ficam por compatibilidade: Língua Inglesa (parte
+ * diversificada nos anos iniciais; a BNCC só a tem do 6º ano em diante) e
+ * Letramento Digital (a disciplina do pacote curado). Só se ACRESCENTA: há
+ * linhas com cada valor, e um CHECK mais estreito quebraria a migração.
+ * `tests/quem-mandou-isso-regras.spec.ts` confere a lista contra o catálogo.
  */
 export const DISCIPLINAS = [
-  "letramento-digital",
   "lingua-portuguesa",
-  "matematica",
-  "ciencias",
-  "historia",
-  "geografia",
   "arte",
   "educacao-fisica",
-  "lingua-inglesa",
+  "matematica",
+  "ciencias",
+  "geografia",
+  "historia",
   "ensino-religioso",
+  "computacao",
+  "lingua-inglesa",
+  "letramento-digital",
 ] as const;
 export type Disciplina = (typeof DISCIPLINAS)[number];
 
+/** Os rótulos são os do catálogo de componentes (`curriculo/componentes.ts`); o teste confere. */
 export const ROTULO_DA_DISCIPLINA: Readonly<Record<Disciplina, string>> = {
-  "letramento-digital": "Letramento Digital",
   "lingua-portuguesa": "Língua Portuguesa",
-  matematica: "Matemática",
-  ciencias: "Ciências",
-  historia: "História",
-  geografia: "Geografia",
   arte: "Arte",
   "educacao-fisica": "Educação Física",
-  "lingua-inglesa": "Língua Inglesa",
+  matematica: "Matemática",
+  ciencias: "Ciências",
+  geografia: "Geografia",
+  historia: "História",
   "ensino-religioso": "Ensino Religioso",
+  computacao: "Computação",
+  "lingua-inglesa": "Língua Inglesa",
+  "letramento-digital": "Letramento Digital",
 };
 
 // ─────────────────────────────────────────────────────────────── os tetos
