@@ -21,7 +21,7 @@ export const EXP_ID = "exp06ef1b";
  * `public/experiencia.json`. O CI lê a do manifesto, e a divergência já causou
  * bug — o `versao.test.ts` compara os três (ADR-84).
  */
-export const EXP_VERSION = "0.8.2";
+export const EXP_VERSION = "0.8.3";
 
 /** O prefixo das rotas da missão na api. */
 export const ROTA = "/juri-estadual";

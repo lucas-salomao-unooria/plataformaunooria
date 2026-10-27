@@ -55,11 +55,9 @@ export function Casca({ cabecalho, etapas, faixa, equipe, children }: CascaProps
 }
 
 /**
- * COMPENSAÇÃO MARCADA (`estilos/globals.css`, ".escola__etapas"): o `Stepper`
- * do DS 0.2.23 não tem a barra só de texto — o `sm` desenha o glifo de cada
- * etapa e passa de 440px em 375. O DS 0.2.24 traz `size="xs"` e
- * `showIcons={false}` (storybook-unnoria #27); quando o pacote estiver no npm,
- * troque a compensação pelas duas props e apague o bloco do CSS.
+ * A barra só de texto do Figma: `Stepper size="xs"` com `showIcons={false}` e
+ * sem conector (DS 0.2.24, storybook-unnoria #27) — quatro etapas em 343px.
+ * Até a 0.2.23 era uma compensação no CSS.
  */
 function BarraDeEtapas({ atual, janela, rotulo }: { atual: number; janela: number[]; rotulo?: string }) {
   const steps = janela.map((n) => ({
@@ -69,7 +67,7 @@ function BarraDeEtapas({ atual, janela, rotulo }: { atual: number; janela: numbe
   }));
   return (
     <nav aria-label="Etapas da missão" className="escola__etapas">
-      <Stepper steps={steps} currentStep={janela.indexOf(atual)} size="sm" showConnector={false} clickable={false} />
+      <Stepper steps={steps} currentStep={janela.indexOf(atual)} size="xs" showIcons={false} showConnector={false} clickable={false} />
     </nav>
   );
 }

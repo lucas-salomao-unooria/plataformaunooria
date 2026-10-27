@@ -1943,20 +1943,18 @@ A 1.0.0 compensava cinco peças que o pacote não tinha; a 1.0.1 usa as que o
 DS publicou na 0.2.22 (Seção~\ref{sec:ds-lacunas-exp01em1b}): \cd{PuzzleBlock}
 com \cd{selected}, a vaga do \cd{PuzzleTrack} com \cd{onSlotActivate}, o
 \cd{Certificate} e o \cd{SessionDivider}; e o \cd{Collapse} fechado já era
-\cd{inert}. A 1.0.4 (\adrr{ADR-190}) voltou a ter DUAS compensações
-MARCADAS, de medida, em \arq{estilos/globals.css}: a barra de etapas só de
-texto (sem o glifo do \cd{Stepper}, rótulo de 12\,px) e o cartão colocado
-compacto (14\,px, caixa normal, quebra só entre palavras). As duas imitam o
-\cd{Stepper size="xs" showIcons=\{false\}} e o \cd{PuzzleBlock size="sm"}
-que o DS 0.2.24 traz (storybook-unnoria \#27), e morrem quando o pacote
-chegar ao npm. As fichas cabem em 375\,px pela medida das células (recuo de
+\cd{inert}. A 1.0.4 (\adrr{ADR-190}) teve DUAS compensações de medida em
+\arq{estilos/globals.css}, a barra de etapas só de texto e o cartão colocado
+compacto; com o DS 0.2.24 no npm elas viraram as props \cd{Stepper
+size="xs" showIcons=\{false\}} e \cd{PuzzleBlock size="sm"}
+(storybook-unnoria \#27), e os dois blocos saíram. As fichas cabem em 375\,px pela medida das células (recuo de
 6\,px, cabeçalho em duas linhas). Textos que o Figma não deu e a tela
 precisou: \enquote{Colocar em Dados Fornecidos/Observados}, \enquote{Novo
 teste no UnooriaAI}, \enquote{Trocar critério} e \enquote{Revisar página e
 blocos}; \enquote{Concluir Classificação} saiu na 1.0.4.
 
 A 1.0.5 (\adrr{ADR-190}, complementada) fechou as nove divergências que uma
-segunda conferência completa achou, com mais quatro compensações MARCADAS
+segunda conferência completa achou, com quatro compensações MARCADAS
 \enquote{(b)} em \arq{estilos/globals.css}, cada uma com o pedido ao
 \cd{storybook-unooria} no comentário: o aviso de sistema deitado na linha,
 com a borda forte (\cd{.aviso-de-sistema}; o pedido é um \cd{ChatBubble

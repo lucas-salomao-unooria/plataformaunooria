@@ -86,16 +86,14 @@ do professor (api, painel e guia da aula). Não o recoloque.
 
 ## A 1.0.4: as telas alinhadas ao Figma (ADR-190)
 
-Uma conferência dos 63 estados contra o Figma. **Duas compensações MARCADAS**
-voltaram, em `estilos/globals.css`, ambas de MEDIDA: a barra de etapas só de
-texto (`.escola__etapas`: sem o glifo do `Stepper`, rótulo de 12 px) e o
-cartão colocado compacto (`.trilhas`: 14 px, caixa normal, quebra só entre
-palavras). Elas imitam o `Stepper size="xs" showIcons={false}` e o
-`PuzzleBlock size="sm"` do DS 0.2.24 (storybook-unnoria #27, no `master`; a
-publicação no npm esperava o CI). **Quando a 0.2.24 estiver no npm, troque
-pelas props e apague os dois blocos** (e a ADR-187 sobe todas as
-experiências). A folha do componente é injetada DEPOIS da nossa, então os
-seletores levam uma classe a mais — sem ela a compensação some calada.
+Uma conferência dos 63 estados contra o Figma. A barra de etapas só de
+texto e o cartão colocado compacto foram, na 1.0.4, duas compensações de
+MEDIDA no CSS; com o DS 0.2.24 no npm (storybook-unnoria #27) viraram as
+props `Stepper size="xs" showIcons={false}` (`componentes/Casca.tsx`) e
+`PuzzleBlock size="sm"` (o cartão colocado, `telas/Classificacao.tsx`), e os
+dois blocos saíram. Uma regra que vale para as compensações que restam: a
+folha do componente é injetada DEPOIS da nossa, então os seletores levam uma
+classe a mais — sem ela a compensação some calada.
 
 O que a 1.0.4 mudou, e a suíte 16 cobra: nenhuma tela do estudante rola para
 o lado; as fichas cabem em 375 px (o `Table` declarativo, fio nas linhas com
