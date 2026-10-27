@@ -1300,15 +1300,17 @@ direto na ação, porque quem joga o professor já vê pelo nome no painel.
 \textbf{E1} Desafiar & O mural da \cd{@radio\_escola} com UM card: RASCUNHO
   PENDENTE, INVESTIGAR A NOVA CAPA, o que aconteceu (\enquote{A capa sobre a
   biblioteca causou confusão entre os ouvintes.}) e a missão em letra grande,
-  ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA. ABRIR BANCADA abre a sessão da
+  ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DA BIBLIOTECA (IGUAIS e NAS
+  DUAS FOTOS desde a 2.2.0, \adrr{ADR-188}). ABRIR BANCADA abre a sessão da
   rodada.\\
 \zebra \textbf{E2} Navegar & INVESTIGUE COM A LUPA: as duas fotos, FOTO 1 e
   FOTO 2, com o mesmo lugar e a mesma hora no rótulo, e a lupa circular de
   ampliação 2$\times$. Quando o centro da lente para sobre um dos dois objetos
   do fundo, a lente BRILHA e um anel em volta dela enche em 3\,s (SEGURE A
-  LUPA AQUI!); cheio, o objeto ganha o círculo dourado nas duas fotos e o
-  contador anda (1 DE 2 ENCONTRADOS). O PISO é 3\,s em CADA objeto
-  (INVESTIGAÇÃO COMPLETA!). Tocar AVANÇAR antes conta um alerta: o aviso OLHE
+  LUPA AQUI!); cheio, o objeto ganha a moldura dourada SÓ NA FOTO em que a
+  lente estava, o rótulo daquela foto anda (1 DE 2) e o contador também (1
+  DE 4 ENCONTRADOS) --- achar na FOTO 1 não marca a FOTO 2 (\adrr{ADR-188}).
+  O PISO é 3\,s em CADA objeto, em CADA foto (INVESTIGAÇÃO COMPLETA!). Tocar AVANÇAR antes conta um alerta: o aviso OLHE
   O FUNDO, a vibração e, ao voltar, a mãozinha no objeto que falta. Em
   375\,px as fotos ficam uma sobre a outra.\\
 \textbf{E3} Decidir & ESCOLHA 1 FOTO \seta{} SELECIONE O SELO \seta{} CAPA
@@ -1434,9 +1436,15 @@ todo pacote:
     com o resto apagado em xadrez --- como a prévia de quem remove o fundo de
     uma imagem. A alça parte do centro e revela para o lado onde mais coisa
     ficou fora da capa; no fim do curso, \rota{POST /enigma-capa/slider}.
-  \item \textbf{O alvo é redondo na tela}: o raio é em \% da largura, e um
-    ponto de altura vale 9/16 de um de largura (\cd{acertaAlvo}). A lupa
-    considera o objeto \enquote{sob a lente} com folga de 1,25$\times$ o raio.
+  \item \textbf{O alvo é a ÁREA do objeto} (\adrr{ADR-188}): o retângulo que
+    o professor desenha em volta dele no preparo, do tamanho que o objeto
+    tiver. O toque e a lente acertam dentro dele com uma folga
+    (\cd{MARGEM\_DO\_ALVO}, 1,5 da largura; na altura, a mesma distância NA
+    TELA, $\times$ 16/9 --- \cd{acertaAlvo}), e a folga desce em
+    \cd{geometria.margemDoAlvo}. Até a 2.1.0 era um círculo de raio fixo, e
+    o topo de um espantalho alto ficava fora dele. A régua pede a área inteira
+    na faixa comum, entre 3\% $\times$ 5\% e 30\% $\times$ 60\%, sem
+    sobrepor a outra.
 \end{itemize}
 
 \begin{atencao}
@@ -1444,8 +1452,12 @@ todo pacote:
 (\cd{PACOTES\_PRONTOS} em \arq{conteudo.ts}): os núcleos, os alvos, o fundo e
 os marcáveis foram medidos sobre \arq{cenas/\{biblioteca,horta,museu\}.webp}.
 As três imagens foram refeitas na 2.0.0 com a composição LIMPA que o time
-pediu (paredes lisas, poucos objetos neutros, os dois objetos do fundo grandes
-e de cor forte) e reanotadas. Trocou a imagem, reanota esse objeto; a suíte
+pediu (paredes lisas, os dois objetos do fundo grandes, de cor forte e
+sozinhos) --- e ficaram ÓBVIAS: na busca da virada só havia duas coisas para
+tocar. Na 2.2.0 (\adrr{ADR-188}) foram refeitas de novo: os dois objetos de
+tamanho médio, com a cor natural deles, entre outros três objetos comuns
+(prateleira, vaso e mochila; pá, carrinho e balde; vaso, quadro e banco), e as
+áreas medidas com grade de 1\%. Trocou a imagem, reanota esse objeto; a suíte
 passa os três prontos pela régua do pacote.
 \end{atencao}
 
@@ -1457,7 +1469,7 @@ alvos dos dois objetos descem em três casos, e só neles: no passo da LUPA
 (\cd{lupa.alvos} --- o brilho e o anel precisam do lugar; a criança vê os
 objetos brilharem, e o que a E4 cobra é achá-los NAS DUAS fotos, por toque,
 corrigido no servidor), o alvo do objeto JÁ ACHADO na E4
-(\cd{invariantes.achados}, para um F5 redesenhar o círculo dourado) e todos
+(\cd{invariantes.achados}, para um F5 redesenhar o achado) e todos
 depois da AJUDA, no terceiro erro, porque o PO pede o pulso amarelo sobre os
 objetos. \arq{src/contrato.test.ts} da experiência e a suíte da api cobram a
 ausência no \emph{schema} da sessão.
@@ -1465,12 +1477,15 @@ ausência no \emph{schema} da sessão.
 \subsection{A lupa: medida no cliente, decidida no servidor}
 
 Quem cronometra é a tela (\arq{lib/lupa.ts}): o servidor não vê o dedo. A
-cada amostra, o tempo vai para o objeto sob o centro da lente
-(\cd{alvo1Ms}, \cd{alvo2Ms}). A tela relata a cada 4\,s e no AVANÇAR
-(\rota{POST /enigma-capa/lupa}); o servidor guarda o MÁXIMO de cada tempo
-(monótono: um relato velho que chega atrasado não apaga o novo), nunca mais
-que o tempo desde a entrada (\arq{regras/lupa.ts}). Com \cd{avancar}, o piso
-(os dois $\geq$ 3\,s) libera o \cd{decidir}; sem ele, \cd{lupa\_alertas} sobe
+cada amostra, o tempo vai para o objeto sob o centro da lente NAQUELA foto:
+são quatro tempos, \cd{tempos["inv-1:foto-1"]} \ldots{}
+\cd{tempos["inv-2:foto-2"]}, a mesma chave dos achados da E4
+(\adrr{ADR-188}: até a 2.1.0 era um tempo por objeto, em qualquer foto, e
+achar o relógio na foto 1 marcava o da foto 2). A tela relata a cada 4\,s e
+no AVANÇAR (\rota{POST /enigma-capa/lupa}); o servidor guarda o MÁXIMO de
+cada tempo (monótono: um relato velho que chega atrasado não apaga o novo),
+nunca mais que o tempo desde a entrada (\arq{regras/lupa.ts}). Com
+\cd{avancar}, o piso (os quatro $\geq$ 3\,s) libera o \cd{decidir}; sem ele, \cd{lupa\_alertas} sobe
 e a resposta é 200 com \cd{alerta: true}. O botão esmaecido continua TOCÁVEL
 de propósito: o toque antes do piso é a evidência.
 
@@ -1508,8 +1523,9 @@ VAZIA: sem atividade no ar, \rota{GET /enigma-capa/sessao} responde
 \cd{preparada: false} e as jogadas, 409 \cd{radio-em-preparo} --- espera, não
 bloqueio. O preparo tem três caminhos: o banco padrão (Biblioteca), os prontos
 Horta e Museu, com as imagens no \emph{bundle}, e a cena gerada por IA
-(Seção~\ref{sec:ia-preparo-exp02ef1b}), cujos dois alvos o professor marca
-tocando na panorâmica antes de aprovar. O componente curricular do recorte
+(Seção~\ref{sec:ia-preparo-exp02ef1b}), cujo pedido de imagem o professor
+vê e pode editar para gerar outra imagem, e cujas duas ÁREAS ele desenha na
+panorâmica antes de aprovar (\adrr{ADR-188}). O componente curricular do recorte
 lista TODOS os do 2º ano na BNCC --- Língua Portuguesa, Arte, Educação
 Física, Matemática, Ciências, Geografia, História e Ensino Religioso, de
 \arq{curriculo/componentes.ts} --- mais Computação e \enquote{Outro

@@ -1832,7 +1832,12 @@ guarda texto escrito pela criança.
     $|$ \cd{ensino-religioso} ---, \cd{computacao} $|$ \cd{outra}), \cd{tema}, \cd{palavras} (\cd{TEXT[]}),
     \cd{nota}, \cd{chave\_cena} (\cd{biblioteca} $|$ \cd{horta} $|$
     \cd{museu} $|$ \cd{ia}), \cd{conteudo\_json} (a cena inteira, validada
-    pelo Zod; objeto), \cd{origem} (\cd{padrao} $|$ \cd{ia}), \cd{ativo},
+    pelo Zod; objeto --- o alvo de cada objeto é a ÁREA desenhada,
+    \cd{\{x, y, w, h\}}, desde a 2.2.0), \cd{origem} (\cd{padrao} $|$ \cd{ia}),
+    \cd{pedido\_\B{}da\_\B{}imagem} (\cd{TEXT?}: a descrição da cena que desenhou a
+    imagem da IA, editável pelo professor; só com \cd{chave\_cena = 'ia'}, até
+    4.000 caracteres --- \emph{CHECK} \cd{exp02ef1b\_\B{}pacotes\_\B{}pedido\_\B{}check},
+    \adrr{ADR-188}), \cd{ativo},
     \cd{rodada\_atual} ($\geq 1$), \cd{aprovado\_em}/\cd{aprovado\_por}
     (juntos; \cd{ativo} só aprovado; aprovado só com os dois alvos em
     \cd{conteudo\_json}, o \emph{CHECK} \cd{exp02ef1b\_\B{}pacotes\_\B{}alvos\_\B{}check}),
@@ -1861,9 +1866,12 @@ guarda texto escrito pela criança.
   turma, pacote e rodada (índice).\\
 \cd{entrou\_em} & \cd{TIMESTAMPTZ} & O ABRIR BANCADA: o teto de
   plausibilidade da lupa é o tempo desde aqui.\\
-\zebra \cd{lupa\_alvo1\_ms}, \cd{lupa\_alvo2\_ms} & \cd{INTEGER} & O tempo
-  de lupa sobre cada um dos dois objetos do fundo, o máximo relatado
-  ($\geq 0$); o piso é 3\,s em cada.\\
+\zebra \cd{lupa\_inv1\_foto1\_ms}, \cd{lupa\_inv1\_foto2\_ms},
+  \cd{lupa\_inv2\_foto1\_ms}, \cd{lupa\_inv2\_foto2\_ms} & \cd{INTEGER} & O tempo
+  de lupa sobre cada um dos dois objetos do fundo EM CADA foto, o máximo
+  relatado ($\geq 0$); o piso é 3\,s em cada um dos quatro (\adrr{ADR-188}:
+  eram dois, um por objeto em qualquer foto; a migração copiou o tempo antigo
+  para as duas fotos).\\
 \cd{lupa\_alertas} & \cd{SMALLINT} & Os avanços antes do piso --- o indicador
   da lupa na régua.\\
 \zebra \cd{lupa\_\B{}liberada\_\B{}em} & \cd{TIMESTAMPTZ?} & O piso cumprido.\\
