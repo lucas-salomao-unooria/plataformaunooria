@@ -150,7 +150,7 @@ export function PainelDaAulaEnigmaCapa({
           ROTULO_DO_PASSO[linha.passo]
         ),
     },
-    { key: "lupa", title: "Lupa nos 2 objetos (E2)", minWidth: 220, render: (_, linha) => textoDaLupa(linha) },
+    { key: "lupa", title: "Lupa nos 2 objetos, por foto (E2)", minWidth: 260, render: (_, linha) => textoDaLupa(linha) },
     { key: "capa", title: "Capa (E3)", minWidth: 220, render: (_, linha) => textoDaCapa(linha) },
     { key: "invariantes", title: "2 coisas iguais (E4)", minWidth: 190, render: (_, linha) => textoDosInvariantes(linha) },
     { key: "fora", title: "Marcou fora da foto (E4)", minWidth: 220, render: (_, linha) => textoDoFora(linha) },
@@ -275,10 +275,15 @@ export function PainelDaAulaEnigmaCapa({
   );
 }
 
-/** O tempo com a lupa sobre cada um dos dois objetos do fundo (o piso é 3 s em cada) e os alertas OLHE O FUNDO. */
+/**
+ * O tempo com a lupa sobre cada um dos dois objetos do fundo EM CADA foto (o
+ * piso é 3 s em cada um dos quatro — achar na foto 1 não acha na 2, ADR-188)
+ * e os alertas OLHE O FUNDO.
+ */
 function textoDaLupa(l: LinhaDoPainel): string {
   if (!l.lupa) return "—";
-  const tempos = `objeto 1: ${segundosDaLupa(l.lupa.alvo1Ms)} · objeto 2: ${segundosDaLupa(l.lupa.alvo2Ms)}`;
+  const t = l.lupa.tempos;
+  const tempos = `foto 1: ${segundosDaLupa(t["inv-1:foto-1"])} e ${segundosDaLupa(t["inv-2:foto-1"])} · foto 2: ${segundosDaLupa(t["inv-1:foto-2"])} e ${segundosDaLupa(t["inv-2:foto-2"])}`;
   const alertas = l.lupa.alertas === 0 ? "sem alerta" : l.lupa.alertas === 1 ? "1 alerta" : `${l.lupa.alertas} alertas`;
   return `${tempos} · ${alertas}${l.lupa.liberada ? "" : " · explorando"}`;
 }

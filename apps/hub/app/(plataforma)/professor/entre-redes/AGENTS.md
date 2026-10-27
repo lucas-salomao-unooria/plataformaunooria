@@ -233,8 +233,13 @@ A página da atividade é `resultados/resultados-juri-estadual.tsx`; a criação
 
 Página `resultados/resultados-enigma-capa.tsx`, criação `atividades/nova/criar-enigma-capa.tsx`,
 espelho `lib/enigma-capa-tipos.ts`. O `banco-padrao` (Biblioteca, Horta, Museu) **aprova E põe no
-ar** num toque. Na cena da IA o professor marca os dois objetos iguais TOCANDO na imagem (a IA não
-devolve coordenada): os dois toques vão juntos em `rascunho/invariantes`. A cena pronta é arquivo do
+ar** num toque. Na cena da IA o professor DESENHA a área de cada objeto igual, arrastando uma caixa
+(a IA não devolve coordenada; ADR-188): as duas áreas vão juntas em `rascunho/invariantes`, e a caixa
+fica presa à faixa do meio. O **pedido da imagem** (só a descrição; as regras fixas são da api) fica
+editável na curadoria, e "Gerar a imagem com este pedido" (`rascunho/imagem`) troca SÓ a imagem e
+apaga as áreas. Toda geração mostra a espera ONDE o professor olha: o quadro animado no lugar da cena
+(`EsperaDaCena`) ou o véu sobre a imagem (`ocupada` da `CenaDoEnigma`), com o botão em carregamento —
+a barra lá em cima, sozinha, ficava fora da tela. A cena pronta é arquivo do
 bundle: a base vem de `lib/bundle-da-experiencia.ts`, no servidor. LIBERAR VIRADA é um botão só, da turma.
 Desde a 2.0.0 (ADR-186) a folha identifica a criança pelo NOME e mostra a lupa nos 2 objetos e o "fora"
 (`marcaramFora` na lousa); o componente curricular do recorte é a lista `disciplinas` da api (o 2º ano
