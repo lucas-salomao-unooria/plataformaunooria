@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
 import { BadgeUnv, ButtonUnv } from "@edu/ui/ds-unoovista";
 import { Janela } from "../componentes/Janela";
 import { Personagem } from "../componentes/Personagem";
@@ -64,6 +64,9 @@ export function Virada({ ctx }: { ctx: Contexto }) {
   const [pontos, setPontos] = useState<Partial<Record<Achado, Ponto>>>({});
   const [ondas, setOndas] = useState<{ id: number; foto: FotoId; ponto: Ponto }[]>([]);
   const ocupado = useRef(false);
+  /* Os timers das ondas morrem com a tela: um que dispara depois de desmontar acharia o mundo sem `window`. */
+  const timers = useRef<number[]>([]);
+  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
   const [marcas, setMarcas] = useState<Ponto[]>(estado.fora?.toques ?? []);
   const [enviandoFora, setEnviandoFora] = useState(false);
   const [alfinete, setAlfinete] = useState<{ ponteiro: number; x: number; y: number } | null>(null);
@@ -334,7 +337,7 @@ export function Virada({ ctx }: { ctx: Contexto }) {
     } else {
       const id = Date.now();
       setOndas((o) => [...o, { id, foto: f, ponto: p }]);
-      window.setTimeout(() => setOndas((o) => o.filter((x) => x.id !== id)), ONDA_MS);
+      timers.current.push(window.setTimeout(() => setOndas((o) => o.filter((x) => x.id !== id)), ONDA_MS));
     }
   }
 
