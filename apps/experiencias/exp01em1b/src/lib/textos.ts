@@ -212,9 +212,6 @@ export const TEXTOS = {
     salvaguarda: "Salvaguarda Ativa: Direito à Explicação e Revisão Humana (LGPD)",
     estacaoHomologada: (nome: string) => `Bancada da Comissão: ${nome} Homologada`,
     congelada: "Interface congelada em modo leitura oficial.",
-    transferenciaTitulo: "Cenário de Transferência: Algoritmos no Mercado",
-    transferencia:
-      "Um aplicativo de transporte urbano passou a analisar o modelo do celular e o bairro de embarque de passageiros para estimar o poder de compra e cobrar tarifas dinâmicas mais altas, sem informar os usuários.",
     sinteseTitulo: "Síntese Conceitual da Missão",
     sintese:
       "Você investigou como dados observados alimentam inferências algorítmicas enviesadas. Reconstruiu regras com critérios justos e garantiu transparência pública e direito à revisão humana, conforme assegurado pela LGPD.",

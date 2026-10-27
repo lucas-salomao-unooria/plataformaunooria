@@ -15,6 +15,9 @@ import { TEXTOS } from "../lib/textos";
  *
  * "Pular Desafio Extra e Encerrar" só recolhe o desafio extra: a conclusão já
  * foi enviada à plataforma na chegada a este passo.
+ *
+ * Sem o card do caso de mercado do Figma (ADR-189): o certificado leva direto à
+ * síntese e ao desafio extra.
  */
 export function Concluida({ ctx }: { ctx: Contexto }) {
   const { estado } = ctx;
@@ -38,12 +41,6 @@ export function Concluida({ ctx }: { ctx: Contexto }) {
           </Tag>
         )}
       </Certificate>
-      <Card variant="outlined">
-        <CardHeader title={TEXTOS.e6.transferenciaTitulo} />
-        <CardContent>
-          <p className="escola__texto">{TEXTOS.e6.transferencia}</p>
-        </CardContent>
-      </Card>
       <Card variant="outlined">
         <CardHeader title={TEXTOS.e6.sinteseTitulo} />
         <CardContent>

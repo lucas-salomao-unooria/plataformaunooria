@@ -399,9 +399,10 @@ export const MARCADOR_CO03 = "etapas-do-algoritmo";
 // ──────────────────────────────────────────── o roteiro do professor (painel e guia)
 
 /**
- * As quatro perguntas do roteiro de debate (one-pager §9a) e o card de
- * transferência (E6). As perguntas 1 e 2 são as do E4-PROF-01, literais; as 3
- * e 4 são as do E6-PROF-01, na forma curta do Figma (que vence o one-pager).
+ * As quatro perguntas do roteiro de debate (one-pager §9a). As perguntas 1 e 2
+ * são as do E4-PROF-01, literais; as 3 e 4 são as do E6-PROF-01, na forma curta
+ * do Figma (que vence o one-pager). O card do caso de mercado da E6 saiu
+ * (ADR-189): o roteiro é só as quatro perguntas.
  */
 export const ROTEIRO = {
   perguntas: [
@@ -410,8 +411,6 @@ export const ROTEIRO = {
     "Quem costuma ter conexões mais instáveis ou usar pacotes de dados limitados? Se a IA bloqueia essas pessoas, que tipo de desigualdade ela reforça?",
     "Por que a LGPD proíbe caixas-pretas e garante o direito de pedir revisão humana?",
   ],
-  transferencia:
-    "Um aplicativo de transporte urbano passou a analisar o modelo do celular e o bairro de embarque de passageiros para estimar o poder de compra e cobrar tarifas dinâmicas mais altas, sem informar os usuários.",
 } as const;
 
 /** O intervalo do polling do gate (a tela relê a fase da turma). */

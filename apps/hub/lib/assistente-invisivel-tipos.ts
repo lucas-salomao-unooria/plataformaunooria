@@ -277,7 +277,6 @@ export interface LinhaDoPainel {
 export interface RoteiroDaAula {
   /** As quatro perguntas do roteiro do PO (§9a): 1 e 2 na Etapa 4, 3 e 4 no fechamento. */
   perguntas: string[];
-  transferencia: string;
 }
 
 /** `GET …/turmas/:turmaId/painel`. */

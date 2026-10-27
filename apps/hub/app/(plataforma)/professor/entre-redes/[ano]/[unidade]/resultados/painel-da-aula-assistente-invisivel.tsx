@@ -555,9 +555,6 @@ function RelatorioFinal({ painel }: { painel: PainelDaTurma }) {
               {painel.roteiro.perguntas[2] ? <li>{`Pergunta 3: “${painel.roteiro.perguntas[2]}”`}</li> : null}
               {painel.roteiro.perguntas[3] ? <li>{`Pergunta 4: “${painel.roteiro.perguntas[3]}”`}</li> : null}
             </ul>
-            <p className="text-[13px] leading-relaxed text-unooria-neutral-700">
-              <strong>O caso de transferência:</strong> {painel.roteiro.transferencia}
-            </p>
           </div>
         </div>
       </Card>

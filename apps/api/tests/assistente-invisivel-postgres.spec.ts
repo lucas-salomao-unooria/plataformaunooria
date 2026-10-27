@@ -515,6 +515,7 @@ describe("E6: o latch 2 e as quatro marcas", () => {
     });
     expect(ana.publicacao!.texto).toMatch(/^Identificamos que o assistente estava restringindo acessos automaticamente/);
     expect(p.linhas.find((l) => l.unidadeId === ids.caio)).toMatchObject({ passo: "publicacao", aguardandoProfessor: false, publicacao: null, niveis: null });
+    expect(p.roteiro).toEqual({ perguntas: expect.any(Array) });
     expect(p.roteiro.perguntas).toHaveLength(4);
   });
 

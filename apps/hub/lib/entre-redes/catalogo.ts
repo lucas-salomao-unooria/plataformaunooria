@@ -1281,8 +1281,8 @@ export const MISSAO_ASSISTENTE_INVISIVEL: Missao = {
       {
         rotulo: "6 — Refletir: a página de transparência",
         texto:
-          "O estudante liga a página, monta o comunicado em quatro blocos e publica. Você fecha com o caso do " +
-          "aplicativo de transporte e as perguntas 3 e 4 sobre desigualdade e LGPD.",
+          "O estudante liga a página, monta o comunicado em quatro blocos e publica. Você fecha com as perguntas " +
+          "3 e 4 sobre desigualdade e LGPD.",
       },
     ],
     preparo: [
