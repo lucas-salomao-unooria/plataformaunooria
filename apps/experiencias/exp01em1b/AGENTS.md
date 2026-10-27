@@ -8,7 +8,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | Dev | `pnpm --filter @edu/exp01em1b dev` → **:5188** (`strictPort`) · hub `/exp/exp01em1b` ou `/dev-embed?src=http://localhost:5188` |
 | DS | DUAS seções: `unooria` (`@edu/ui/ds`, a escola) e `unooriaai` (`@edu/ui/ds-unooriaai`, o assistente testado) |
 | api | módulo `assistente-invisivel` (`apps/api/src/assistente-invisivel/`, prefixo `/assistente-invisivel`, tabelas `exp01em1b_*`, ADR-185) |
-| Versão | `1.0.3` nos três lugares (`public/experiencia.json`, `package.json`, `EXP_VERSION` em `src/lib/tipos.ts`) |
+| Versão | `1.0.4` nos três lugares (`public/experiencia.json`, `package.json`, `EXP_VERSION` em `src/lib/tipos.ts`) |
 | Copy | o Figma `9QyrVdEBJZkOS64ZauPfmk` (63 telas), literal em `src/lib/textos.ts` |
 
 A comissão estudantil testa o UnooriaAI com três colegas (Lucas, Beatriz,
@@ -27,6 +27,11 @@ página de transparência com o comunicado (o LATCH 2).
   aposta travada esperando "Liberar Início da Simulação" é a própria E3
   "travada", não camada. Nenhum estado local segura tela: marcar passos do
   algoritmo não resolve o painel, só "Pular Etapa" (`/algoritmo/concluir`).
+  **A exceção, de TEMPO (1.0.4, ADR-190):** o sexto cartão fecha a
+  classificação (não há botão de concluir) e o despachante segura a tela dos
+  cartões `LEITURA_DA_TABELA_MS` (6 s) com a tabela causal, detectando a
+  passagem `classificacao → algoritmo` no próprio render. F5 vai direto ao
+  algoritmo.
 - **O polling de 3 s** (`GET /assistente-invisivel/gate`) relê a sessão quando
   passo, fase, preparo, espera ou rodada mudam, e atualiza o medidor.
 - **A fronteira das seções é "quem fala"**: a escola é `unooria`; a bateria de
@@ -66,7 +71,7 @@ cartão selecionado é `PuzzleBlock selected`; a vaga da coluna é o próprio
 `PuzzleTrack` com `onSlotActivate` (o nome dela é "Colocar em …", o mesmo que
 a e2e procura) e `slotsDisabled` enquanto nada está selecionado; o selo é o
 `Certificate`; o separador de sessão do chat é o `SessionDivider` do UnooriaAI.
-Não há compensação local nesta experiência.
+Não há compensação local nesta experiência — até a 1.0.4.
 
 Na 1.0.2, com o DS 0.2.23 (storybook-unnoria #26), a vaga vazia passou a
 mostrar o TEXTO, como o Figma desenha (`showEmptySlotLabel`): "[Solte o
@@ -79,6 +84,28 @@ do caso de mercado que o Figma desenhava: depois do
 certificado vêm só a síntese e o desafio extra. O caso também saiu do roteiro
 do professor (api, painel e guia da aula). Não o recoloque.
 
-Copy que o Figma não deu e a tela precisou: "Concluir Classificação" (o fim da
-E5-ALU-01), "Colocar em Dados Fornecidos/Observados", "Novo teste no UnooriaAI"
-(o título do efeito do reteste).
+## A 1.0.4: as telas alinhadas ao Figma (ADR-190)
+
+Uma conferência dos 63 estados contra o Figma. **Duas compensações MARCADAS**
+voltaram, em `estilos/globals.css`, ambas de MEDIDA: a barra de etapas só de
+texto (`.escola__etapas`: sem o glifo do `Stepper`, rótulo de 12 px) e o
+cartão colocado compacto (`.trilhas`: 14 px, caixa normal, quebra só entre
+palavras). Elas imitam o `Stepper size="xs" showIcons={false}` e o
+`PuzzleBlock size="sm"` do DS 0.2.24 (storybook-unnoria #27, no `master`; a
+publicação no npm esperava o CI). **Quando a 0.2.24 estiver no npm, troque
+pelas props e apague os dois blocos** (e a ADR-187 sobe todas as
+experiências). A folha do componente é injetada DEPOIS da nossa, então os
+seletores levam uma classe a mais — sem ela a compensação some calada.
+
+O que a 1.0.4 mudou, e a suíte 16 cobra: nenhuma tela do estudante rola para
+o lado; as fichas cabem em 375 px (o `Table` declarativo, fio nas linhas com
+inferência); a tabela causal aparece NA tela dos cartões; o guia do
+comunicado (blocos 2–4 desabilitados até o 1) e, com os quatro, o comunicado
+montado com a página e os blocos recolhidos; o banco de critérios resume no
+escolhido; os botões do reteste vêm antes do efeito no chat; as citações das
+apostas são as do Figma (`TEXTOS.e4.citacao`); as janelas usam `ModalBody`.
+
+Copy que o Figma não deu e a tela precisou: "Colocar em Dados
+Fornecidos/Observados", "Novo teste no UnooriaAI" (o título do efeito do
+reteste), "Trocar critério" e "Revisar página e blocos". "Concluir
+Classificação" saiu na 1.0.4.

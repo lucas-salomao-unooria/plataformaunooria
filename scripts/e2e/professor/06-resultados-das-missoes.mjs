@@ -298,10 +298,13 @@ await suite(
       const fase = await p.locator("[data-painel-da-aula]").getAttribute("data-fase-da-turma");
       const lousa = (await p.locator("[data-lousa]").innerText()).replace(/\s+/g, " ");
       r.exigir(/Painel ao Vivo/.test(lousa), `a aula do Assistente Invisível mora na página da atividade (fase da turma: ${fase})`);
-      /* Os botões só andam para a frente: em cada fase, só os da fase seguinte (e nenhum em “publicar”). */
+      /* Os botões só andam para a frente: em cada fase, só os da fase seguinte (e nenhum em “publicar”). Na
+         pausa, o botão dela fica à vista e desabilitado (o quadro "pausado" do Figma); com a bancada recém-
+         liberada (fase “explicar” sem reteste, o E4-PROF-01 "liberado"), ainda não há botão. */
       const botoes = await p.locator("[data-botoes-da-aula] button").allInnerTexts();
+      const bancadaRecemLiberada = fase === "explicar" && (await p.locator("[data-projecao-de-solucoes]").count()) === 0;
       r.exigir(
-        fase === "publicar" ? botoes.length === 0 : botoes.length >= 1 && botoes.length <= 2,
+        fase === "publicar" || bancadaRecemLiberada ? botoes.length === 0 : botoes.length >= 1 && botoes.length <= 2,
         `os botões da aula são os da fase “${fase}”, só para a frente (${botoes.join(" · ") || "nenhum"})`,
       );
       const colunas = await p.locator("[data-folha]").getByRole("columnheader").allInnerTexts();

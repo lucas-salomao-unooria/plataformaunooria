@@ -100,6 +100,37 @@ body {
   min-width: 0;
 }
 
+/* COMPENSAÇÃO MARCADA — a barra de etapas SÓ DE TEXTO do Figma ("Etapa 1 ·
+   Etapa 2: Funções · Etapa 3 · Etapa 4") em 343px. Lacuna: o `Stepper` do DS
+   0.2.23 sempre desenha o glifo de cada etapa e o menor tamanho (`sm`) tem
+   rótulo de 14px; com quatro etapas a barra passava de 440px e a PÁGINA
+   rolava para o lado (na E2 "habilitado" o texto saía cortado). O conector já
+   sai pela prop (`showConnector={false}`). Este bloco faz o que o DS 0.2.24
+   traz como `size="xs"` + `showIcons={false}` (storybook-unnoria #27, mesmas
+   medidas): quando o pacote estiver no npm, troque pelas props e APAGUE este
+   bloco. A folha do DS entra DEPOIS desta (o JS a injeta): os seletores levam
+   uma classe a mais para vencer o `--size-sm` do componente. */
+.escola__etapas .unooria-stepper.unooria-stepper--horizontal {
+  gap: 8px;
+}
+
+.escola__etapas .unooria-stepper .unooria-step {
+  height: 28px;
+  min-height: 28px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.escola__etapas .unooria-stepper .unooria-step__icon-wrapper {
+  display: none;
+}
+
+.escola__etapas .unooria-stepper .unooria-step__label {
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0;
+}
+
 .escola__instrucao,
 .escola__texto,
 .escola__dica,
@@ -157,9 +188,25 @@ body {
   outline-offset: -2px;
 }
 
-/* E4-ALU-03: a tabela de 4 colunas rola na horizontal dentro do `ScrollBar`. */
-.fichas {
-  margin: 0 -4px;
+/* E4-ALU-03: a tabela de 4 colunas CABE na folha de 341px, como no Figma
+   (antes tinha 408px e a "Ação do Sistema" ficava cortada). Compensação de
+   MEDIDA, não de componente: o `Table` do DS tem recuo de 16px por célula e
+   cabeçalho sem quebra (`nowrap`), feitos para a tela do professor; aqui o
+   recuo vira 6px, o cabeçalho quebra em duas linhas ("Ação do / Sistema") e o
+   texto desce a 12px, a medida do quadro. A folha do componente entra DEPOIS
+   desta (o JS do DS a injeta), então o seletor leva a classe do contêiner do
+   próprio `Table` para vencer o `--size-sm` dele. */
+.fichas.unooria-table-container .unooria-table__head-cell,
+.fichas.unooria-table-container .unooria-table__cell {
+  padding: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  vertical-align: top;
+}
+
+.fichas.unooria-table-container .unooria-table__head-cell {
+  height: auto;
+  white-space: normal;
 }
 
 .fichas__celula {
@@ -169,7 +216,47 @@ body {
   gap: 4px;
 }
 
+/* O destaque do Figma nas linhas da Beatriz e do Thiago (as duas com
+   inferência): um fio de 2px em volta da linha inteira, com o token da escola. */
+.fichas .fichas__linha--inferencia > td {
+  border-top: 2px solid var(--unooria-color-neutral-950);
+  border-bottom: 2px solid var(--unooria-color-neutral-950);
+}
+
+.fichas .fichas__linha--inferencia > td:first-child {
+  border-left: 2px solid var(--unooria-color-neutral-950);
+}
+
+.fichas .fichas__linha--inferencia > td:last-child {
+  border-right: 2px solid var(--unooria-color-neutral-950);
+}
+
 /* E5-ALU-01: as duas colunas lado a lado; o `PuzzleTrack` quebra as vagas sozinho. */
+
+/* COMPENSAÇÃO MARCADA — o cartão COLOCADO na vaga estreita (~100px de texto).
+   Lacuna: o `PuzzleBlock` do DS 0.2.23 só tem a peça de 64px, com rótulo em
+   caixa alta de 16px e `overflow-wrap: anywhere`, que partia "AVANÇADA" em
+   "AVANÇAD/A". O DS 0.2.24 traz `size="sm"` (storybook-unnoria #27, estas
+   mesmas medidas): quando o pacote estiver no npm, troque por `size="sm"` e
+   APAGUE este bloco. */
+.trilhas .unooria-puzzle-block.unooria-puzzle-block--placed {
+  --unooria-puzzle-block-knob: 7px;
+  min-height: 44px;
+}
+
+.trilhas .unooria-puzzle-block--placed .unooria-puzzle-block__body {
+  gap: 8px;
+  padding: 8px 12px 8px 16px;
+}
+
+.trilhas .unooria-puzzle-block--placed .unooria-puzzle-block__label {
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: normal;
+  text-transform: none;
+  overflow-wrap: break-word;
+  hyphens: manual;
+}
 .trilhas {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -190,6 +277,13 @@ body {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* E6-ALU-01: o guia progressivo do Figma — os blocos 2–4 esmaecidos enquanto
+   o bloco 1 não tem escolha (o `RadioGroup` já vem `disabled`; isto apaga o
+   título e o começo da frase junto, como o quadro). */
+.escola .bloco--espera {
+  opacity: 0.55;
 }
 
 /* E6-ALU-01 */

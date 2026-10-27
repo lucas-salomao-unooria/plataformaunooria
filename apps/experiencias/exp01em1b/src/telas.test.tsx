@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import type { ExperienciaHandle } from "@edu/sdk";
-import { App } from "./App";
+import { App, LEITURA_DA_TABELA_MS } from "./App";
 import { definirExperiencia } from "./lib/api";
 import type { Estado, Fase, Passo, Sessao } from "./lib/tipos";
 import { PAUSA_NO_FIM_MS, RITMO_MS } from "./telas/Simulacao";
@@ -275,7 +275,7 @@ describe("cada passo do servidor desenha a sua tela, com a copy do Figma", () =>
     ["fichas", ["Relatório Comparativo", "Ação do Sistema", "Inferência: Acesso noturno / Possível cansaço e baixo rendimento → Rebaixar para Básico", "Concluir Inspeção de Metadados"]],
     ["classificacao", ["Dados Fornecidos", "Dados Observados", "Cartão 1", "Cartões da Sessão Técnica:"]],
     ["algoritmo", ["[Opcional / Aprofundamento] Ver etapas de processamento do assistente", "Pular Etapa"]],
-    ["criterios", ["Função 1 (Exercícios)", "Critério 1B: Ajustar automaticamente pelo horário de acesso [Ativo]", "Critério 3A: Priorizar assuntos escolhidos no cadastro [Ativo]", "Executar Novo Teste de Homologação"]],
+    ["criterios", ["Etapa 5: Banco de Regras", "Função 1 (Exercícios)", "Critério 1B: Ajustar automaticamente pelo horário de acesso [Ativo]", "Critério 3A: Priorizar assuntos escolhidos no cadastro [Ativo]", "Executar Novo Teste de Homologação"]],
     ["reteste", ["Equidade Homologada", "Beatriz acessou o nível Avançado", "Resposta à Beatriz.", "Avançar para Homologação e Transparência"]],
     ["publicacao", ["Página Pública de Transparência do UnooriaAI", "▶ Comece aqui", "Publicar Transparência e Comunicado"]],
     ["concluida", ["Certificado de Homologação Ética Escolar", "Salvaguarda Ativa: Direito à Explicação e Revisão Humana (LGPD)", "Pular Desafio Extra e Encerrar"]],
@@ -297,11 +297,57 @@ describe("cada passo do servidor desenha a sua tela, com a copy do Figma", () =>
     expect(texto()).toContain("Thiago (16 anos)");
   });
 
-  test("E3-SIS-01: o pacote de contingência acende a faixa", async () => {
+  test("E3-SIS-01: o pacote de contingência acende a faixa e o cabeçalho 'Unooria · Homologação'", async () => {
     const s = sessao("aposta");
     await abrir({ ...s, pacote: { ...s.pacote!, contingencia: true } });
     expect(texto()).toContain("Carregando versão de contingência da rede escolar");
+    expect(texto()).toContain("Unooria · Homologação");
     expect(texto()).toContain("Pacote Padrão");
+    expect(texto()).toContain("Fichas Cadastrais Carregadas (Banco Oficial)");
+  });
+
+  test("E4-ALU-02: as três citações são as do Figma (a A sem 'no cadastro')", async () => {
+    await abrir(sessao("confronto", { aposta: "a" }));
+    expect(texto()).toContain("Você previu: 'Todos receberão o nível Avançado conforme solicitado'. No entanto, Beatriz e Thiago foram barrados.");
+    await act(async () => raiz!.unmount());
+    document.body.innerHTML = "";
+    await abrir(sessao("confronto", { aposta: "c" }));
+    expect(texto()).toContain("Você previu: 'Todos receberão nível Básico até comprovarem proficiência'. Mas Lucas recebeu");
+  });
+
+  test("E4-ALU-03: a tabela das fichas destaca as linhas com inferência e não tem rolagem lateral própria", async () => {
+    await abrir(sessao("fichas"));
+    const linhas = Array.from(document.body.querySelectorAll<HTMLElement>(".fichas__linha--inferencia")).map((l) => l.textContent ?? "");
+    expect(linhas).toHaveLength(2);
+    expect(linhas[0]).toContain("Beatriz");
+    expect(linhas[1]).toContain("Thiago");
+    expect(document.body.querySelector(".fichas .unooria-scrollbar")).toBeNull();
+  });
+
+  test("a barra de etapas é só de texto: rótulo na atual, sem conector", async () => {
+    await abrir(sessao("funcoes"));
+    const barra = document.body.querySelector<HTMLElement>(".escola__etapas")!;
+    const rotulos = Array.from(barra.querySelectorAll(".unooria-step__label")).map((r) => r.textContent);
+    expect(rotulos).toEqual(["Etapa 1", "Etapa 2: Funções", "Etapa 3", "Etapa 4"]);
+    expect(barra.querySelector(".unooria-stepper__connector-horizontal")).toBeNull();
+  });
+
+  test("E5-ALU-04: os botões do resultado vêm antes do efeito no chat", async () => {
+    await abrir(sessao("reteste"));
+    const html = document.body.innerHTML;
+    expect(html.indexOf("Avançar para Homologação e Transparência")).toBeLessThan(html.indexOf("Novo teste no UnooriaAI"));
+  });
+
+  test("E4-ALU-01: o card da trilha do Lucas diz o acesso pleno do Figma", async () => {
+    vi.useFakeTimers();
+    await abrir(sessao("simulacao"));
+    for (let i = 0; i < 3; i += 1) {
+      await act(async () => {
+        vi.advanceTimersByTime(RITMO_MS + 10);
+      });
+    }
+    expect(texto()).toContain("Trilha Avançada: Análise de Poemas Modernistas");
+    expect(texto()).toContain("Acesso pleno concedido. Envie sua dúvida quando quiser.");
   });
 
   test("a aposta travada espera a turma: 'Previsão arquivada' e 'Iniciando Simulação de Chat...'", async () => {
@@ -347,6 +393,10 @@ describe("os gestos que vão à api", () => {
     await act(async () => cabecalho.click());
     expect(texto()).toContain("Função 1: Apresentar Exercícios ✓");
     expect(botao("Ir para Bateria de Testes")!.disabled).toBe(false);
+    /* Recolhida, a função vista mostra o resumo do Figma (E2-ALU-01 "habilitado"). */
+    expect(texto()).not.toContain("Distribui trilhas nos níveis básico e avançado.");
+    await act(async () => cabecalho.click());
+    expect(texto()).toContain("Distribui trilhas nos níveis básico e avançado.");
     await act(async () => botao("Ir para Bateria de Testes")!.click());
     expect(chamadas).toContain("/assistente-invisivel/navegar");
     expect(corpos["/assistente-invisivel/navegar"]).toEqual({ abertas: ["exercicios"], atividade: { pacoteId: "p1", rodada: 1 } });
@@ -384,7 +434,7 @@ describe("os gestos que vão à api", () => {
     expect(chamadas).toContain("/assistente-invisivel/simulacao/concluir");
   });
 
-  test("E5-ALU-01: tocar o cartão e a coluna o coloca; o envio vai como está", async () => {
+  test("E5-ALU-01: tocar o cartão e a coluna o coloca; incompleta só avisa, sem botão de concluir", async () => {
     await abrir(sessao("classificacao"));
     /* A vaga mostra o texto (DS 0.2.23): o andaime à espera, a ação com cartão escolhido. */
     const vagas = () => Array.from(document.body.querySelectorAll<HTMLElement>(".unooria-puzzle-track__socket-text")).map((v) => v.textContent);
@@ -395,8 +445,70 @@ describe("os gestos que vão à api", () => {
     await act(async () => botao("Colocar em Dados Observados")!.click());
     expect(texto()).toContain("Dados Observados (1)");
     expect(texto()).toContain("A classificação dos dados da sessão ainda não foi concluída.");
-    await act(async () => botao("Concluir Classificação")!.click());
-    expect(corpos["/assistente-invisivel/cartoes"]).toEqual({ classificacao: { horario: "observados" }, atividade: { pacoteId: "p1", rodada: 1 } });
+    expect(botao("Concluir Classificação")).toBeUndefined();
+    expect(chamadas).not.toContain("/assistente-invisivel/cartoes");
+    /* O cartão colocado tem o rótulo curto do Figma. */
+    expect(botao("Horário (23h45)")).toBeDefined();
+  });
+
+  test("E5-ALU-01: o sexto cartão fecha sozinho; a tabela causal aparece NA tela dos cartões e depois vem o algoritmo", async () => {
+    vi.useFakeTimers();
+    await abrir(sessao("classificacao"));
+    const colunas: [string, string][] = [
+      ["Escolha de Trilha Avançada", "Dados Fornecidos"],
+      ["Nome e Turma do Estudante", "Dados Fornecidos"],
+      ["Horário de Acesso (23h45)", "Dados Observados"],
+      ["Oscilação no Sinal de Rede", "Dados Observados"],
+      ["Endereço IP de Conexão", "Dados Observados"],
+      ["Modelo do Dispositivo Utilizado", "Dados Observados"],
+    ];
+    resposta = {
+      passo: "algoritmo",
+      classificacao: {
+        cartoes: {
+          "trilha-avancada": "fornecidos",
+          "nome-turma": "fornecidos",
+          horario: "observados",
+          "sinal-de-rede": "observados",
+          "endereco-ip": "observados",
+          "modelo-aparelho": "observados",
+        },
+        completa: true,
+        cadeiaCausal: true,
+      },
+    };
+    for (const [cartao, coluna] of colunas) {
+      await act(async () => botao(cartao)!.click());
+      await act(async () => botao(`Colocar em ${coluna}`)!.click());
+    }
+    expect(chamadas).toContain("/assistente-invisivel/cartoes");
+    expect(texto()).toContain("Tabela Causal: Horário (Dado Observado) → Cansaço Presumido (Inferência) → Reforço Básico (Decisão Restritiva).");
+    expect(texto()).toContain("Dados Observados (4)");
+    expect(texto()).not.toContain("Pular Etapa");
+    await act(async () => {
+      vi.advanceTimersByTime(LEITURA_DA_TABELA_MS + 10);
+    });
+    expect(texto()).toContain("Pular Etapa");
+    expect(texto()).not.toContain("Tabela Causal");
+  });
+
+  test("E5-ALU-03: escolher um critério resume as funções; 'Trocar critério' reabre a função", async () => {
+    await abrir(sessao("criterios"));
+    await clicarRotulo("Critério 1A: Escolha livre pelo estudante");
+    expect(texto()).toContain("Critério 1A: Escolha livre pelo estudante");
+    expect(texto()).not.toContain("Critério 1B");
+    expect(texto()).not.toContain("[Ativo]");
+    expect(texto()).toContain("Critério 2B: Ajustar limite pela estabilidade da conexão");
+    expect(texto()).not.toContain("Critério 2C");
+    const trocar = document.body.querySelector<HTMLButtonElement>('button[aria-label="Trocar o critério da Função 2 (Dúvidas)"]')!;
+    await act(async () => trocar.click());
+    await clicarRotulo("Critério 2C: Sem limite de perguntas");
+    expect(texto()).not.toContain("Critério 2A");
+    await act(async () => botao("Executar Novo Teste de Homologação")!.click());
+    expect(corpos["/assistente-invisivel/criterios"]).toEqual({
+      criterios: { exercicios: "a", duvidas: "c", sugestoes: "a" },
+      atividade: { pacoteId: "p1", rodada: 1 },
+    });
   });
 
   test("E5-ALU-02: o rótulo é do estudante, e a otimização conta 5 − marcados", async () => {
@@ -405,25 +517,56 @@ describe("os gestos que vão à api", () => {
     await act(async () => cabecalho.click());
     expect(chamadas).toContain("/assistente-invisivel/algoritmo/abrir");
     await clicarRotulo("Passo 2: Checar relógio do sistema local");
-    expect(texto()).toContain("Passo 2: Checar relógio do sistema local (Inferência dispensável)");
-    expect(texto()).toContain("Passo 1: Ler mensagem enviada pelo usuário (Essencial)");
+    /* Marcado um, o painel vira "Decomposição EM13CO03" e os rótulos encurtam (o Figma). */
+    expect(texto()).toContain("[Opcional / Aprofundamento] Decomposição EM13CO03");
+    expect(texto()).toContain("Passo 2: Checar relógio (Inferência dispensável)");
+    expect(texto()).toContain("Passo 1: Ler mensagem enviada (Essencial)");
     expect(texto()).toContain("Otimização: de 5 para 4 passos essenciais");
     expect(corpos["/assistente-invisivel/algoritmo/marcar"]).toEqual({ marcados: [2], atividade: { pacoteId: "p1", rodada: 1 } });
   });
 
   test("E5-ALU-02: \"(Ação enviesada)\" só no passo que o servidor diz, e só marcado", async () => {
     await abrir(sessao("algoritmo", { algoritmo: { aberto: true, marcados: [3, 4], enviesados: [4], concluido: false } }));
-    expect(texto()).toContain("Passo 4: Alterar trilha de estudos por perfil (Ação enviesada)");
-    expect(texto()).toContain("Passo 3: Calcular pontuação presumida de cansaço (Inferência dispensável)");
-    expect(texto()).not.toContain("Passo 3: Calcular pontuação presumida de cansaço (Ação enviesada)");
+    expect(texto()).toContain("Passo 4: Alterar trilha (Ação enviesada)");
+    expect(texto()).toContain("Passo 3: Calcular cansaço (Inferência dispensável)");
+    expect(texto()).not.toContain("Passo 3: Calcular cansaço (Ação enviesada)");
   });
 
   test("E6-ALU-01: publicar é sempre habilitado; bloco em branco só avisa; o toggle nasce desligado", async () => {
     await abrir(sessao("publicacao"));
     expect(botao("Publicar Transparência e Comunicado")!.disabled).toBe(false);
+    /* O guia: os blocos 2–4 nascem desabilitados até o bloco 1 ser escolhido. */
+    const radio = (valor: string) => document.body.querySelector<HTMLInputElement>(`input[type="radio"][value="${valor}"]`)!;
+    expect(radio("x2").disabled).toBe(true);
+    expect(radio("x1").disabled).toBe(false);
     await clicarRotulo("restringindo acessos automaticamente");
+    expect(radio("x2").disabled).toBe(false);
     expect(texto()).toContain("O comunicado da comissão precisa articular todos os quatro pontos");
     await act(async () => botao("Publicar Transparência e Comunicado")!.click());
     expect(corpos["/assistente-invisivel/publicar"]).toEqual({ paginaAtiva: false, comunicado: { problema: "x1" }, atividade: { pacoteId: "p1", rodada: 1 } });
+  });
+
+  test("E6-ALU-01: os quatro blocos preenchidos viram o comunicado montado; a página e os blocos recolhem", async () => {
+    await abrir(sessao("publicacao"));
+    await act(async () => document.body.querySelector<HTMLElement>('[role="switch"], input[type="checkbox"]')!.click());
+    for (const t of [
+      "restringindo acessos automaticamente",
+      "metadados de horário e oscilação de rede",
+      "critérios pedagógicos objetivos e escolha do estudante",
+      "solicitar explicação e revisão humana de decisões automatizadas",
+    ]) {
+      await clicarRotulo(t);
+    }
+    const montado = document.body.querySelector<HTMLElement>('[data-testid="comunicado-montado"]')!;
+    expect(montado.textContent).toContain("1. Problema: Identificamos que o assistente estava restringindo acessos automaticamente...");
+    expect(montado.textContent).toContain("4. LGPD: Qualquer estudante tem direito a solicitar explicação e revisão humana de decisões automatizadas.");
+    expect(texto()).toContain("Revisar página e blocos");
+    expect(texto()).not.toContain("O comunicado da comissão precisa articular");
+    await act(async () => botao("Publicar Transparência e Comunicado")!.click());
+    expect(corpos["/assistente-invisivel/publicar"]).toEqual({
+      paginaAtiva: true,
+      comunicado: { problema: "x1", inferencia: "x2", regra: "x3", salvaguarda: "x4" },
+      atividade: { pacoteId: "p1", rodada: 1 },
+    });
   });
 });

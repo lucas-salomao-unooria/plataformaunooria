@@ -15,7 +15,9 @@ import { TEXTOS } from "../lib/textos";
  * registra). Depois de avançar, a Trava 2 (E5-SIS-01) é do despachante.
  *
  * O efeito no chat (Beatriz avançada / Thiago livre) é a PEÇA do UnooriaAI
- * (`Falas`), dentro da tela da escola.
+ * (`Falas`), dentro da tela da escola, e vem DEPOIS dos botões: o Figma tem
+ * só o resultado e os botões, que ficam à vista em 375×812 (antes o efeito os
+ * empurrava para baixo da dobra).
  */
 export function Reteste({ ctx }: { ctx: Contexto }) {
   const { estado, sessao, executar } = ctx;
@@ -48,14 +50,6 @@ export function Reteste({ ctx }: { ctx: Contexto }) {
           </div>
         </CardContent>
       </Card>
-      {r && sessao.pacote && (
-        <section className="efeito-no-chat" aria-label={TEXTOS.e5.efeitoNoChat}>
-          <h2 className="escola__subtitulo">{TEXTOS.e5.efeitoNoChat}</h2>
-          <div className="previa-uai">
-            <Falas falas={roteiroDoReteste(sessao.pacote.conteudo, sessao.material, r)} />
-          </div>
-        </section>
-      )}
       {aprovado ? (
         <Button variant="primary" size="lg" fullWidth isLoading={enviando === "avancar"} onClick={() => void avancar()}>
           {TEXTOS.e5.avancarAprovado}
@@ -69,6 +63,14 @@ export function Reteste({ ctx }: { ctx: Contexto }) {
             {TEXTOS.e5.avancarComAlerta}
           </Button>
         </>
+      )}
+      {r && sessao.pacote && (
+        <section className="efeito-no-chat" aria-label={TEXTOS.e5.efeitoNoChat}>
+          <h2 className="escola__subtitulo">{TEXTOS.e5.efeitoNoChat}</h2>
+          <div className="previa-uai">
+            <Falas falas={roteiroDoReteste(sessao.pacote.conteudo, sessao.material, r)} />
+          </div>
+        </section>
       )}
     </Casca>
   );

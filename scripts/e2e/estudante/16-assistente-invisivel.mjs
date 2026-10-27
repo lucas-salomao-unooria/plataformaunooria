@@ -160,6 +160,10 @@ await suite(
     );
     await recorte.locator('[data-acao="gerar-com-ia"]').click();
     await recorte.locator("[data-gerando]").waitFor({ timeout: 10_000 });
+    r.exigir(
+      await recorte.getByText("Criando exercícios e diálogos temáticos no UnooriaAI. Isso leva cerca de 10 segundos...", { exact: true }).isVisible(),
+      "E0-PROF-03 “gerando”: o texto do Figma está À VISTA sobre a barra (1.0.4)",
+    );
     await r.registrar(prof, "gerando-com-ia", {
       titulo: "Criando exercícios e diálogos temáticos no UnooriaAI…",
       mostra: "A barra da geração enquanto o Vertex escreve o pacote inteiro: as duas trilhas, as cinco dúvidas, as cinco respostas e a leitura.",
@@ -221,8 +225,11 @@ await suite(
       oQue: "salvar o texto editado",
     });
     r.exigir(
-      edicao.status() === 200 && (await itemEditado.innerText()).includes(DUVIDA_EDITADA) && (await itemEditado.innerText()).includes("Editado pelo professor"),
-      "“Editar Texto”: a dúvida do Lucas foi reescrita e ganhou “Editado pelo professor”",
+      edicao.status() === 200 &&
+        (await itemEditado.innerText()).includes(DUVIDA_EDITADA) &&
+        (await itemEditado.innerText()).includes("Editado pelo professor") &&
+        (await itemEditado.innerText()).includes("Item Customizado"),
+      "“Editar Texto”: a dúvida do Lucas foi reescrita e ganhou “Item Customizado” e “Editado pelo professor”",
     );
 
     /* Regenerar Este Item: a resposta do assistente ao Thiago. */
@@ -337,6 +344,18 @@ await suite(
      * a segunda volta não repetir a primeira tela a tela.
      */
     const jogarAMissao = async ({ equipe, duvidaDoLucas, passos }) => {
+      /* 1.0.4: nenhuma tela do estudante rola para o lado — nem a barra de etapas, nem a página. */
+      const semRolagemLateral = async (onde) => {
+        const m = await q.locator("body").evaluate(() => {
+          const barra = document.querySelector(".escola__etapas");
+          return {
+            pagina: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+            barra: barra ? barra.scrollWidth - barra.clientWidth : 0,
+            temBarra: Boolean(barra),
+          };
+        });
+        r.exigir(m.pagina <= 1 && m.barra <= 1, `${onde}: nada rola para o lado (página ${m.pagina}px, barra de etapas ${m.temBarra ? `${m.barra}px` : "—"})`);
+      };
       const registrar = (pagina, nome, ficha) =>
         !equipe
           ? r.registrar(pagina, nome, ficha)
@@ -389,6 +408,7 @@ await suite(
         await q.getByRole("button", { name: `${funcao} ✓` }).waitFor({ timeout: 5000 });
       }
       r.exigir(await ir.isEnabled(), "com as funções abertas (✓), o botão acende");
+      await semRolagemLateral("tres-funcoes");
       await registrar(p, "tres-funcoes", {
         titulo: "Etapa 2 — Funções",
         mostra: "As três funções expandidas, com a descrição longa e a prévia estática do UnooriaAI; cada uma ganhou o ✓.",
@@ -414,6 +434,7 @@ await suite(
         );
       }
       await q.getByRole("radio", { name: APOSTA_A, exact: true }).click();
+      await semRolagemLateral("a-aposta");
       await registrar(p, "a-aposta", {
         titulo: "Etapa 3 — Aposta",
         mostra: "As três fichas com a mesma preferência e a aposta (A): “Todos receberão o nível Avançado conforme solicitado no cadastro.”",
@@ -479,12 +500,12 @@ await suite(
       r.exigir(simulacao.status() === 200, "a simulação concluída vai ao servidor depois da pausa para ler");
 
       const confronto =
-        "Você previu: 'Todos receberão o nível Avançado conforme solicitado no cadastro'. No entanto, Beatriz e Thiago foram barrados. Por que o formulário que eles preencheram não foi respeitado?";
+        "Você previu: 'Todos receberão o nível Avançado conforme solicitado'. No entanto, Beatriz e Thiago foram barrados. Por que o formulário que eles preencheram não foi respeitado?";
       await q.getByText(confronto, { exact: true }).waitFor({ timeout: 15_000 });
       r.exigir((await q.getByText(/^Na sua turma:/).count()) === 0, "com menos de 3 apostas, o medidor da turma não aparece");
       await registrar(p, "confronto", {
         titulo: "Etapa 4 — Flagrante da Triagem",
-        mostra: "O confronto nominal com a aposta A (o texto inteiro, entre aspas) e a Zara: “Precisamos abrir essas fichas.”",
+        mostra: "O confronto nominal com a aposta A (a citação do Figma, entre aspas) e a Zara: “Precisamos abrir essas fichas.”",
         prova: "A aposta gravada volta como espelho: o estudante previu o cadastro respeitado, e o cadastro não foi.",
       });
       const abriuFichas = await postDo(/\/assistente-invisivel\/fichas\/abrir$/, () => q.getByRole("button", { name: "Abrir Fichas de Auditoria de Acesso" }).click());
@@ -500,6 +521,9 @@ await suite(
           textoDasFichas.includes("Resultado: Avançado"),
         "as fichas mostram o horário e a conexão observados, a inferência e a ação de cada perfil (o Lucas sem inferência)",
       );
+      /* 1.0.4: a tabela CABE na folha (nada rola para o lado) e as linhas com inferência têm o fio do Figma. */
+      const medidaDaTabela = await folha.locator(".fichas").evaluate((t) => ({ rola: t.scrollWidth - t.clientWidth, destaque: t.querySelectorAll(".fichas__linha--inferencia").length }));
+      r.exigir(medidaDaTabela.rola <= 1 && medidaDaTabela.destaque === 2, `as fichas cabem na folha sem rolar para o lado (sobra ${medidaDaTabela.rola}px) e destacam as linhas da Beatriz e do Thiago`);
       await registrar(p, "fichas-de-auditoria", {
         titulo: "Fichas de Auditoria de Acesso",
         mostra: "Estudante | Formulário | Observado | Ação do Sistema: Lucas avançado; Beatriz rebaixada pelo acesso noturno; Thiago limitado pelo sinal.",
@@ -519,6 +543,14 @@ await suite(
       await esperarNaApi(prof, `${daTurma}/painel`, (c) => c?.resumo?.simulacoesConcluidas >= 1, { oQue: "o painel contar a simulação concluída" });
       await liberar("debate-1");
       await painel.locator('[data-pergunta="2"]').waitFor({ timeout: 10_000 });
+      /* E4-PROF-01 "pausado": o título do Figma e os dois botões, o da pausa já feita desabilitado. */
+      r.exigir(
+        (await painel.getByText("Status da Condução: Telas Travadas", { exact: true }).count()) === 1 &&
+          (await painel.locator('[data-acao="pausa-feita"]').innerText()).trim() === "Travar Telas da Turma" &&
+          (await painel.locator('[data-acao="pausa-feita"]').isDisabled()) &&
+          (await painel.locator('[data-acao="fase-explicar"]').count()) === 1,
+        "telas travadas: “Travar Telas da Turma” à vista e desabilitado, ao lado de “Liberar Bancada de Reconstrução”",
+      );
       await registrar(prof, "telas-travadas", {
         titulo: "Status da Condução: Telas Travadas",
         mostra: "As apostas da sala, quem concluiu as 3 sessões e as perguntas 1 e 2 do roteiro de debate.",
@@ -531,6 +563,17 @@ await suite(
         prova: "A pausa é a FASE da turma, não o passo do estudante: o polling do gate a trouxe sozinho.",
       });
       await liberar("explicar");
+      /* E4-PROF-01 "liberado": a confirmação e as apostas consolidadas — sem a projeção e sem os botões da E5. */
+      await painel.getByText("Mediação 1 Concluída ✓").waitFor({ timeout: 10_000 });
+      r.exigir(
+        (await painel.locator("[data-projecao-de-solucoes]").count()) === 0 && (await painel.locator("[data-botoes-da-aula] button").count()) === 0,
+        "liberada a bancada, o painel NÃO mostra ainda a Projeção de Soluções nem os botões da Etapa 5",
+      );
+      await registrar(prof, "bancada-liberada", {
+        titulo: "Etapa 5 Destravada",
+        mostra: "“Mediação 1 Concluída ✓”, as apostas consolidadas e quem está na bancada — sem a projeção nem os botões da Etapa 5.",
+        prova: "Cada momento do painel mostra só o que o quadro dele mostra no Figma; a projeção vem quando a turma retesta.",
+      });
 
       // ═══ ESTUDANTE: E5, os cartões ════════════════════════════════════════
       await q
@@ -557,12 +600,15 @@ await suite(
         (await textoDaVaga.allTextContents()).every((t) => t === "[Solte o cartão aqui]") && (await textoDaVaga.count()) === 2,
         "sem cartão escolhido, as duas vagas mostram “[Solte o cartão aqui]”",
       );
+      await semRolagemLateral("cartoes-andaime");
       await registrar(p, "cartoes-andaime", {
         titulo: "Etapa 5 — a vaga diz onde soltar",
         mostra: "As duas colunas vazias, cada uma com a vaga tracejada escrita “[Solte o cartão aqui]”, e o 1º cartão com a etiqueta “Cartão 1”.",
         prova: "A vaga vazia mostra o texto do Figma, não só o número; à espera, ela não aceita toque (nenhum cartão escolhido).",
         inteira: true,
       });
+      r.exigir((await q.getByRole("button", { name: "Concluir Classificação" }).count()) === 0, "a tela dos cartões não tem botão de concluir (o Figma não tem)");
+      let classificou = null;
       for (const [i, cartao] of CARTOES.entries()) {
         await bandeja.getByRole("button", { name: cartao.rotulo }).click();
         if (i === 0) {
@@ -578,7 +624,12 @@ await suite(
             inteira: true,
           });
         }
-        await q.getByRole("button", { name: `Colocar em ${cartao.coluna}` }).click();
+        if (i === CARTOES.length - 1) {
+          /* 1.0.4: não há "Concluir Classificação" — o SEXTO cartão fecha a classificação e vai ao servidor. */
+          classificou = await postDo(/\/assistente-invisivel\/cartoes$/, () => q.getByRole("button", { name: `Colocar em ${cartao.coluna}` }).click());
+        } else {
+          await q.getByRole("button", { name: `Colocar em ${cartao.coluna}` }).click();
+        }
         if (i === 2) {
           await q.getByText(/A classificação dos dados da sessão ainda não foi concluída/).first().waitFor({ timeout: 5000 });
           await registrar(p, "cartoes-no-meio", {
@@ -590,20 +641,30 @@ await suite(
         }
       }
       r.exigir((await bandeja.count()) === 0, "os 6 cartões saíram da bandeja");
+      r.exigir(
+        classificou?.corpo?.passo === "algoritmo" && classificou?.corpo?.classificacao?.completa === true && classificou?.corpo?.classificacao?.cadeiaCausal === true,
+        "o sexto cartão fecha a classificação e o servidor abre a tabela causal (`cadeiaCausal`)",
+      );
+      /* A tabela causal aparece NA tela dos cartões (E5-ALU-01 "sem scaffolding"), com os rótulos curtos inteiros. */
+      const tabelaCausal = q.locator('[data-testid="tabela-causal"]');
+      await tabelaCausal.waitFor({ timeout: 10_000 });
+      r.exigir(
+        (await tabelaCausal.innerText()).replace(/\s+/g, " ").trim() ===
+          "Tabela Causal: Horário (Dado Observado) → Cansaço Presumido (Inferência) → Reforço Básico (Decisão Restritiva)." &&
+          (await q.getByText("Dados Observados (4)", { exact: true }).count()) === 1 &&
+          (await q.getByRole("button", { name: "Trilha Avançada", exact: true }).count()) === 1 &&
+          (await q.getByRole("button", { name: "Modelo Aparelho", exact: true }).count()) === 1,
+        "a tabela causal aparece NA tela dos cartões, sob as colunas, com os rótulos curtos do Figma",
+      );
+      await semRolagemLateral("cartoes-separados");
       await registrar(p, "cartoes-separados", {
-        titulo: "Dados Fornecidos × Dados Observados",
-        mostra: "Escolha de Trilha e Nome e Turma em Fornecidos (2); horário, sinal, IP e aparelho em Observados (4).",
-        prova: "O que o estudante digitou × o que o sistema gravou sozinho — a cadeia causal começa no dado observado.",
+        titulo: "Dados Fornecidos × Dados Observados — a Tabela Causal",
+        mostra: "Fornecidos (2) e Observados (4) com os rótulos curtos do Figma, e a Tabela Causal sob as colunas, sem botão de concluir.",
+        prova: "O sexto cartão fecha a classificação; o servidor decide se a cadeia causal aparece — a tela não sabe a coluna certa.",
         inteira: true,
       });
-      const classificou = await postDo(/\/assistente-invisivel\/cartoes$/, () => q.getByRole("button", { name: "Concluir Classificação" }).click());
-      r.exigir(
-        classificou.corpo?.passo === "algoritmo" && classificou.corpo?.classificacao?.completa === true && classificou.corpo?.classificacao?.cadeiaCausal === true,
-        "a classificação completa abre a tabela causal (o servidor decide: `cadeiaCausal`)",
-      );
 
       // ═══ ESTUDANTE: E5, as etapas do algoritmo ════════════════════════════
-      await q.getByText("Tabela Causal: Horário (Dado Observado) → Cansaço Presumido (Inferência) → Reforço Básico (Decisão Restritiva).").waitFor({ timeout: 15_000 });
       const abriuPainel = await postDo(/\/assistente-invisivel\/algoritmo\/abrir$/, () =>
         q.getByRole("button", { name: /\[Opcional \/ Aprofundamento\] Ver etapas de processamento do assistente/ }).click(),
       );
@@ -615,6 +676,11 @@ await suite(
       }
       r.exigir(JSON.stringify(marcou?.corpo?.algoritmo?.marcados) === "[2,3,4]", `os passos 2, 3 e 4 marcados no servidor (${JSON.stringify(marcou?.corpo?.algoritmo?.marcados)})`);
       await q.getByText("Otimização: de 5 para 2 passos essenciais").waitFor({ timeout: 5000 });
+      r.exigir(
+        (await q.getByText("[Opcional / Aprofundamento] Decomposição EM13CO03", { exact: true }).count()) === 1 &&
+          (await q.getByRole("checkbox", { name: /Passo 2: Checar relógio \(Inferência dispensável\)$/ }).count()) === 1,
+        "marcado, o painel vira “Decomposição EM13CO03” e os passos ganham os rótulos curtos do Figma",
+      );
       /* O passo 4 marcado leva "(Ação enviesada)" — o Figma —, mas quem diz qual é o enviesado é o SERVIDOR
          (`algoritmo.enviesados`, só dos já marcados): o bundle não carrega o gabarito do algoritmo. */
       const enviesados = marcou?.corpo?.algoritmo?.enviesados ?? [];
@@ -627,7 +693,7 @@ await suite(
       );
       await registrar(p, "etapas-do-algoritmo", {
         titulo: "Ver etapas de processamento do assistente",
-        mostra: "Os 5 passos do algoritmo com 2 e 3 marcados como inferência dispensável, o 4 como ação enviesada e “Otimização: de 5 para 2 passos essenciais”.",
+        mostra: "“Decomposição EM13CO03”: os 5 passos com os rótulos curtos, 2 e 3 como inferência dispensável, o 4 como ação enviesada e “Otimização: de 5 para 2 passos essenciais”.",
         prova: "Opcional (EM13CO03): a tela não sabe quais passos sobram — a conta é do estudante, a régua é do servidor.",
         inteira: true,
       });
@@ -649,11 +715,20 @@ await suite(
           (await q.getByRole("radio", { name: /^Critério 3A: .*\[Ativo\]$/ }).count()) === 1,
         "a configuração no ar é B-B-A, com “[Ativo]”",
       );
+      r.exigir((await q.getByText("Etapa 5: Banco de Regras", { exact: true }).count()) === 1, "a barra diz “Etapa 5: Banco de Regras”, como o Figma");
       /* O 1B MANTIDO (o horário de acesso) e o 2C: equidade parcial. */
       await q.getByRole("radio", { name: /^Critério 2C:/ }).click();
+      /* "Critérios alterados" (o Figma): cada função resume no critério escolhido. */
+      r.exigir(
+        (await q.getByRole("radio", { name: /^Critério 2A:/ }).count()) === 0 &&
+          (await q.getByRole("radio", { name: /^Critério 1B:/ }).count()) === 1 &&
+          (await q.getByRole("radio", { name: /^Critério 1A:/ }).count()) === 0,
+        "depois da escolha, cada função mostra só o critério escolhido (o resumo do Figma)",
+      );
+      await semRolagemLateral("criterios-1b-mantido");
       await registrar(p, "criterios-1b-mantido", {
         titulo: "O banco de critérios — o 1B mantido",
-        mostra: "As três funções em 3 opções cada; o estudante troca só a função 2 (2C) e mantém o 1B (horário de acesso).",
+        mostra: "Os critérios resumidos depois da escolha: 1B mantido, 2C e 3A — cada função com o critério escolhido e “Trocar critério”.",
         prova: "O que está no ar leva “[Ativo]”: é o que o sistema roda, não uma dica.",
         inteira: true,
       });
@@ -679,6 +754,10 @@ await suite(
       r.exigir(revisou.corpo?.passo === "criterios", "“Revisar Critérios” volta ao banco");
       await q.getByRole("radio", { name: /^Critério 1C:/ }).waitFor({ timeout: 10_000 });
       await q.getByRole("radio", { name: /^Critério 1C:/ }).click();
+      /* O resumo mostra o 2C já escolhido; se não estiver, "Trocar critério" reabre a função 2. */
+      if ((await q.getByRole("radio", { name: /^Critério 2C:/ }).count()) === 0) {
+        await q.getByRole("button", { name: "Trocar o critério da Função 2 (Dúvidas)" }).click();
+      }
       if (!(await q.getByRole("radio", { name: /^Critério 2C:/ }).isChecked())) await q.getByRole("radio", { name: /^Critério 2C:/ }).click();
       const segundo = await postDo(/\/assistente-invisivel\/criterios$/, () => q.getByRole("button", { name: "Executar Novo Teste de Homologação" }).click());
       r.exigir(
@@ -687,6 +766,11 @@ await suite(
       );
       await q.getByText("Equidade Homologada").first().waitFor({ timeout: 10_000 });
       await q.getByText("Homologação Aprovada: critérios equitativos ativos. Beatriz acessou o nível Avançado e Thiago manteve dúvidas liberadas.").waitFor({ timeout: 5000 });
+      /* E5-ALU-04: o botão do resultado fica à vista (antes do efeito no chat). */
+      r.exigir(
+        await q.getByRole("button", { name: "Avançar para Homologação e Transparência" }).evaluate((b) => b.getBoundingClientRect().bottom <= window.innerHeight),
+        "“Avançar para Homologação e Transparência” fica à vista, sem rolar (o efeito no chat vem depois)",
+      );
       await registrar(p, "homologacao-aprovada", {
         titulo: "Equidade Homologada",
         mostra: "“Homologação Aprovada”, “Nenhum estudante foi restrito por horário ou oscilação técnica” e o novo teste no UnooriaAI.",
@@ -706,10 +790,13 @@ await suite(
       // ═══ PROFESSOR: a comparação e a publicação ═══════════════════════════
       await esperarNaApi(prof, `${daTurma}/painel`, (c) => c?.resumo?.criterioExercicios?.c >= 1, { oQue: "o painel contar o critério 1C" });
       await painel.locator("[data-projecao-de-solucoes]").waitFor({ timeout: 20_000 });
-      await prof.waitForFunction(
-        (u) => new RegExp(`Último reteste de cada ${u}`).test(document.querySelector("[data-projecao-de-solucoes]")?.textContent ?? ""),
-        unidade,
-        { timeout: 20_000 },
+      /* 1.0.4: o gráfico tem SÓ as duas barras do Figma, 1A e 1C (o 1B não entra). */
+      const barras = painel.locator("[data-criterios-1a-1c] [role=progressbar]");
+      r.exigir(
+        (await barras.count()) === 2 &&
+          (await barras.nth(0).getAttribute("aria-label")) === "Critério 1A (Autonomia / Livre Escolha)" &&
+          (await barras.nth(1).getAttribute("aria-label")) === "Critério 1C (Progressão por Acertos)",
+        "o gráfico 1A × 1C tem só as duas barras do Figma",
       );
       r.exigir((await painel.locator("[data-avisos-discretos]").count()) === 0, "quem revisou e homologou NÃO entra nos Avisos Discretos");
       await painel.locator("[data-projecao-de-solucoes]").scrollIntoViewIfNeeded();
@@ -719,6 +806,14 @@ await suite(
         prova: "O professor projeta o contraste; os Avisos Discretos listariam só quem avançou mantendo regras restritivas.",
       });
       await liberar("debate-2");
+      /* E5-PROF-01 "pausado": os dois botões do Figma, o da pausa já feita desabilitado. */
+      await painel.locator('[data-acao="pausa-feita"]').waitFor({ timeout: 10_000 });
+      r.exigir(
+        (await painel.locator('[data-acao="pausa-feita"]').innerText()).trim() === "Pausar para Comparação" &&
+          (await painel.locator('[data-acao="pausa-feita"]').isDisabled()) &&
+          (await painel.locator('[data-acao="fase-publicar"]').count()) === 1,
+        "na pausa, “Pausar para Comparação” fica à vista e desabilitado, ao lado de “Liberar Publicação e Transparência”",
+      );
       await q.getByText("Comparação de soluções no quadro com o professor (5 min).").first().waitFor({ timeout: 20_000 });
       await registrar(p, "comparacao-no-quadro", {
         titulo: "Pausa para Mediação — a comparação",
@@ -739,6 +834,19 @@ await suite(
       await q.getByText(ESPERA).first().waitFor({ state: "hidden", timeout: 10_000 });
       const pagina = q.getByRole("switch", { name: /Página Pública de Transparência do UnooriaAI/ });
       r.exigir(!(await pagina.isChecked()), "a página de transparência nasce DESLIGADA");
+      /* O guia do Figma: os blocos 2–4 esmaecidos e desabilitados até o bloco 1 ser escolhido. */
+      r.exigir(
+        (await q.getByRole("radio", { name: BLOCOS_CERTOS[1], exact: true }).isDisabled()) &&
+          !(await q.getByRole("radio", { name: BLOCOS_CERTOS[0], exact: true }).isDisabled()) &&
+          (await q.getByText("▶ Comece aqui", { exact: true }).count()) === 1,
+        "o guia: “▶ Comece aqui” no bloco 1 e os blocos 2–4 desabilitados até ele ser escolhido",
+      );
+      await semRolagemLateral("comunicado-guia");
+      await registrar(p, "comunicado-guia", {
+        titulo: "Etapa 6 — o guia do comunicado",
+        mostra: "A página pública desligada, o bloco 1 com a borda de destaque e “▶ Comece aqui”, e os blocos 2–4 esmaecidos.",
+        prova: "O comunicado se monta em ordem: o problema primeiro; os outros blocos acendem depois dele.",
+      });
       await pagina.dispatchEvent("click");
       r.exigir(await pagina.isChecked(), "o estudante liga a página de transparência");
       for (const opcao of BLOCOS_CERTOS) await q.getByRole("radio", { name: opcao, exact: true }).click();
@@ -747,9 +855,14 @@ await suite(
         montado.includes("1. Problema:") && montado.includes("restringindo acessos automaticamente...") && montado.includes("4. LGPD:"),
         "com os 4 blocos escolhidos, o comunicado aparece montado, com os trechos escolhidos",
       );
+      r.exigir(
+        (await q.getByRole("switch", { name: /Página Pública de Transparência do UnooriaAI/ }).isVisible()) === false &&
+          (await q.getByText("Revisar página e blocos", { exact: true }).count()) === 1,
+        "“blocos preenchidos”: a página e os blocos se recolhem e fica o comunicado montado, como o Figma",
+      );
       await registrar(p, "comunicado-montado", {
         titulo: "Etapa 6 — Publicar",
-        mostra: "A página pública ligada e os 4 blocos do comunicado: o problema, a inferência indevida, a regra corrigida e a salvaguarda LGPD.",
+        mostra: "O comunicado montado (o problema, a inferência indevida, a regra corrigida e a salvaguarda LGPD) e “Publicar…”; a página e os blocos recolhidos.",
         prova: "Publicar é sempre habilitado (só bloco em branco tem aviso): um aviso de bloco “desconexo” entregaria o gabarito.",
         inteira: true,
       });

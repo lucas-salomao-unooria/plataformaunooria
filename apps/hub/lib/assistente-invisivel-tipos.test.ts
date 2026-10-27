@@ -21,8 +21,12 @@ import {
   ROTULO_DA_DISCIPLINA,
   TEMA,
   TOPICOS,
+  ETIQUETA_DO_MOMENTO,
+  PAUSA_FEITA,
+  acoesDoMomento,
   avisoDiscreto,
   codigoDosCriterios,
+  momentoDoPainel,
   idDaAtividade,
   mudouAEvidencia,
   problemasDoRecorte,
@@ -146,6 +150,37 @@ describe("a curadoria", () => {
 });
 
 describe("a condução", () => {
+  const resumo = (retestes: number, publicaram: number) => ({ criterioExercicios: { a: retestes, b: 0, c: 0 }, publicaram });
+
+  test("cada fase desenha o quadro do Figma do seu momento", () => {
+    expect(momentoDoPainel("simulacao", resumo(0, 0))).toBe("simulacao");
+    expect(momentoDoPainel("debate-1", resumo(0, 0))).toBe("telas-travadas");
+    /* E4-PROF-01 "liberado": a bancada acabou de abrir — sem projeção e sem os botões da E5. */
+    expect(momentoDoPainel("explicar", resumo(0, 0))).toBe("bancada-liberada");
+    expect(acoesDoMomento("explicar", "bancada-liberada")).toEqual([]);
+    /* Com reteste na sala, o E5-PROF-01: a projeção e os botões. */
+    expect(momentoDoPainel("explicar", resumo(2, 0))).toBe("projecao");
+    expect(acoesDoMomento("explicar", "projecao").map((a) => a.para)).toEqual(["debate-2", "publicar"]);
+    expect(momentoDoPainel("debate-2", resumo(2, 0))).toBe("projecao-pausada");
+    /* E5-PROF-01 "liberado" até a primeira publicação; o relatório final depois. */
+    expect(momentoDoPainel("publicar", resumo(2, 0))).toBe("publicacao-liberada");
+    expect(momentoDoPainel("publicar", resumo(2, 1))).toBe("relatorio");
+  });
+
+  test("na pausa, o botão dela fica à vista e não pede transição nenhuma", () => {
+    expect(PAUSA_FEITA["debate-1"]?.rotulo).toBe("Travar Telas da Turma");
+    expect(PAUSA_FEITA["debate-2"]?.rotulo).toBe("Pausar para Comparação");
+    /* O botão ativo da pausa continua sendo só o de seguir — {para} sempre à frente. */
+    expect(ACOES_DA_FASE["debate-1"].map((a) => a.para)).toEqual(["explicar"]);
+    expect(ACOES_DA_FASE["debate-2"].map((a) => a.para)).toEqual(["publicar"]);
+  });
+
+  test("a etiqueta não tem o jargão 'Handoff' do Figma (ADR-91)", () => {
+    for (const t of Object.values(ETIQUETA_DO_MOMENTO)) expect(t).not.toMatch(/handoff/i);
+    expect(ETIQUETA_DO_MOMENTO["telas-travadas"]).toBe("Mediação 1: 8 minutos");
+    expect(ETIQUETA_DO_MOMENTO["bancada-liberada"]).toBe("Etapa 5 Destravada");
+  });
+
   test("o aviso discreto diz qual critério restritivo ficou", () => {
     expect(avisoDiscreto({ avancouComVies: false, criterios: { exercicios: "b", duvidas: "b", sugestoes: "a" } })).toBeNull();
     expect(avisoDiscreto({ avancouComVies: true, criterios: { exercicios: "b", duvidas: "a", sugestoes: "a" } })).toBe(

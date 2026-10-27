@@ -1188,6 +1188,27 @@ pela regra da 0.2.23 (\adrr{ADR-187}) as 16 subiram um \emph{patch}, inclusive
 a \cd{app-70}, a \cd{exp02ef1b} e a \cd{exp02em1b-v0}, que saíram idênticas
 (Seção~\ref{sec:ds-versao-unica}).
 
+\paragraph{A 1.0.4: duas lacunas de MEDIDA em 375\,px (\adrr{ADR-190}).} A
+conferência dos 63 estados contra o Figma achou duas peças do pacote que não
+cabem numa tela de celular: o \cd{Stepper} sempre desenha o glifo de cada
+etapa, e o menor tamanho (\cd{sm}, rótulo de 14\,px) passava de 440\,px com
+quatro etapas --- a página inteira rolava para o lado; e o \cd{PuzzleBlock}
+encaixado tem rótulo em caixa alta de 16\,px com \cd{overflow-wrap:
+anywhere}, que numa vaga de cerca de 100\,px partia \enquote{AVANÇADA} em
+\enquote{AVANÇAD/A}. O pedido foi ao \cd{storybook-unooria} e entrou no
+\cd{master} (\#27, versão 0.2.24): \cd{Stepper size="xs"} com
+\cd{showIcons=\{false\}} e \cd{PuzzleBlock size="sm"} (alvo de 44\,px, caixa
+normal, quebra só entre palavras). A publicação no npm é do CI, e o CI da
+conta estava parado por cobrança no dia; a experiência não esperou: usa a
+prop que já existe (\cd{showConnector=\{false\}}) e faz o resto por duas
+\textbf{compensações marcadas} em \arq{estilos/globals.css}, com as mesmas
+medidas do pacote e o comentário que diz quando morrem. Por não ter subido o
+DS, a regra da \adrr{ADR-187} não se aplicou: só a \cd{exp01em1b} subiu
+(1.0.4). A tabela das fichas (E4-ALU-03) não é lacuna: o \cd{Table} já tem
+o modo declarativo (\cd{Table.Row}, \cd{Table.Cell}); a compensação é só de
+medida (recuo de 6\,px, cabeçalho em duas linhas) para caber na folha de
+341\,px.
+
 \subsection{Avisos que ficaram obsoletos}
 
 \begin{nota}

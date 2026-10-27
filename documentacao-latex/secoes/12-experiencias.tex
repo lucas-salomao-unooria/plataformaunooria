@@ -1638,7 +1638,7 @@ auxiliares das duas moram em \arq{scripts/e2e/lib/\B{}enigma-capa.mjs}.
 \label{sec:exp01em1b}
 
 \textbf{1ª série EM, unidade 1 (\enquote{Dados que viram decisões}), seções
-\cd{unooria} e \cd{unooriaai}, experiência 1.0.3, porta 5188.} Desde
+\cd{unooria} e \cd{unooriaai}, experiência 1.0.4, porta 5188.} Desde
 2026-10-26 (\adrr{ADR-185}), vinda da esteira de produto (one-pager v1.5 do
 PO), com o Figma de 63 telas como referência de tela e de \emph{copy}. Módulo
 da api: \arq{assistente-\B{}invisivel} (prefixo \rota{/assistente-\B{}invisivel},
@@ -1672,8 +1672,9 @@ professor aprovou (\arq{lib/roteiro.ts}).
 \textbf{E1} Desafiar & A Zara apresenta a comissão; \enquote{Abrir Módulo de
   Teste} só vale depois de \enquote{Liberar Início dos Testes}.\\
 \zebra \textbf{E2} Funções & Três \cd{Collapse} (Exercícios, Dúvidas,
-  Sugestões) com a prévia do UnooriaAI; \enquote{Ir para Bateria de Testes}
-  só acende com uma função aberta.\\
+  Sugestões) com a prévia do UnooriaAI; a função vista ganha a marca de visto e,
+  recolhida, o resumo do Figma sob o título; \enquote{Ir para Bateria de
+  Testes} só acende com uma função aberta.\\
 \textbf{E3} Aposta & As três fichas (nome, idade, \enquote{[Fornecido no
   cadastro]}, Trilha Avançada) e a aposta em \cd{RadioGroup}: (A) todos
   Avançado, (B) só alguns, (C) todos Básico. \enquote{Disparar Simulação} é o
@@ -1682,23 +1683,36 @@ professor aprovou (\arq{lib/roteiro.ts}).
   \enquote{Liberar Início da Simulação}.\\
 \zebra \textbf{E4} Resultado & As três sessões no UnooriaAI (\cd{ChatBubble},
   \cd{AssistantCard}, \cd{Composer} bloqueado), com os avisos de sistema da
-  Beatriz e do Thiago; o confronto com a PRÓPRIA aposta (o texto inteiro da
-  opção, a fala da Zara e o medidor da turma); as fichas de auditoria num
-  \cd{BottomSheet} (Formulário, Observado, Ação do Sistema) e
+  Beatriz e do Thiago (o card da trilha do Lucas diz \enquote{Acesso pleno
+  concedido\ldots}); o confronto com a PRÓPRIA aposta (a citação do Figma, a
+  fala da Zara e o medidor da turma); as fichas de auditoria num
+  \cd{BottomSheet} (Formulário, Observado, Ação do Sistema), que CABEM em
+  375\,px, com fio nas linhas da Beatriz e do Thiago, e
   \enquote{Concluir Inspeção de Metadados}. Depois dela, a \textbf{Trava 1}
   (\enquote{Aguardando autorização da mediação docente\ldots}).\\
 \textbf{E5} Explicar & Os seis cartões entre Dados Fornecidos e Dados
-  Observados (incompleto vale, com aviso; completo mostra a tabela causal); o
+  Observados, com os rótulos curtos do Figma quando colocados; não há botão de
+  concluir: o SEXTO cartão fecha a classificação (incompleta, a tela avisa) e
+  a tabela causal aparece na MESMA tela, que fica à vista
+  \cd{LEITURA\_\B{}DA\_\B{}TABELA\_\B{}MS} (6\,s) antes do painel seguinte; o
   painel OPCIONAL \enquote{[Opcional / Aprofundamento] Ver etapas de
-  processamento do assistente}, com cinco passos e \enquote{Pular Etapa}; o
-  banco de critérios 3$\times$3, com a configuração B-B-A no ar (1B, 2B e 3A
-  marcados \enquote{[Ativo]}); \enquote{Executar Novo Teste de Homologação} e
+  processamento do assistente} (marcado um passo, \enquote{Decomposição
+  EM13CO03}, com os rótulos curtos), com cinco passos e \enquote{Pular
+  Etapa}; o banco de critérios 3$\times$3 (\enquote{Etapa 5: Banco de
+  Regras}), com a configuração B-B-A no ar (1B, 2B e 3A marcados
+  \enquote{[Ativo]}), que resume no critério escolhido de cada função depois
+  da primeira escolha (\enquote{Trocar critério} reabre a função);
+  \enquote{Executar Novo Teste de Homologação} e
   o resultado: \enquote{Homologação Aprovada} ou \enquote{Alerta de Viés
   Mantido}, com \enquote{Revisar Critérios} / \enquote{Avançar para
-  Publicação}. Depois do avanço, a \textbf{Trava 2}.\\
+  Publicação}, à vista antes do efeito no chat. Depois do avanço, a
+  \textbf{Trava 2}.\\
 \zebra \textbf{E6} Publicar & O \cd{Toggle} da página de transparência
   (nasce DESLIGADO), os quatro blocos do comunicado, de duas opções cada
-  (\cd{RadioGroup}, com \enquote{Comece aqui} no bloco 1) e \enquote{Publicar
+  (\cd{RadioGroup}; o bloco 1 com a borda de destaque e \enquote{Comece
+  aqui}, os blocos 2--4 esmaecidos e desabilitados até ele ser escolhido);
+  com os quatro escolhidos, a tela vira o comunicado montado (a página e os
+  blocos recolhem em \enquote{Revisar página e blocos}) e \enquote{Publicar
   Transparência e Comunicado}, sempre habilitado (aviso só para bloco em
   branco): o \textbf{LATCH 2}, que conclui. Depois, o certificado com a
   salvaguarda LGPD, a síntese e o desafio extra (Casos Extremos), que
@@ -1796,7 +1810,9 @@ dentro de telas da escola (a prévia da E2, o efeito do reteste na E5) moram em
 ponte do clone (\adrr{ADR-117}, \adrr{ADR-173}). \arq{src/contrato.test.ts}
 prende uma ponte por arquivo e a seção de cada tela. A barra de etapas
 (\enquote{Etapa 1: Desafiar} a \enquote{Etapa 6: Publicar}) só indica, não
-navega.
+navega, e é só de TEXTO, como o Figma: o rótulo inteiro na etapa atual, sem
+glifo nem conector, para caber em 343\,px (\adrr{ADR-190}). Nenhuma tela do
+estudante rola para o lado.
 
 \subsection{A fila de envio é em memória}
 
@@ -1874,8 +1890,10 @@ fica para a api; o hub não tem botão próprio (o Figma não tem). A F3
 As telas de condução seguem os templates da \adrr{ADR-182}. O preparo
 (\arq{atividades/\B{}nova/\B{}criar-\B{}assistente-\B{}invisivel.tsx}) é o E0: o recorte
 (\enquote{Usar Banco Padrão da Rede} ou \enquote{Gerar Cenários de Teste com
-IA}), a curadoria item a item (\enquote{Editar Texto}, que dá o Badge
-\enquote{Editado pelo professor}, e \enquote{Regenerar Este Item}),
+IA}, com o texto \enquote{Criando exercícios e diálogos temáticos no
+UnooriaAI\ldots} à vista durante a geração), a curadoria item a item
+(\enquote{Editar Texto}, que dá a etiqueta \enquote{Item Customizado} e o
+Badge \enquote{Editado pelo professor}, e \enquote{Regenerar Este Item}),
 \enquote{Aprovar Pacote Homologado} e \enquote{Liberar Atividade para a
 Turma}. A aba Aula ao vivo
 (\arq{resultados/\B{}painel-\B{}da-\B{}aula-\B{}assistente-\B{}invisivel.tsx}, \enquote{Painel
@@ -1886,9 +1904,21 @@ simulações concluídas, a Projeção de Soluções 1A $\times$ 1C, os
 \enquote{Avisos Discretos} de quem avançou mantendo 1B ou 2B, quem publicou e
 com a página ativa), as perguntas do roteiro no momento delas e os botões da
 fase (\cd{ACOES\_DA\_FASE}, que o teste confere contra \cd{PROXIMAS\_FASES}
-da api). O Relatório Formativo Final (E6-PROF-01) traz a homologação, a matriz
-BNCC (\% Atingiu; a EM13CO03 como \% Participou), os níveis por estudante e
-os comunicados montados; \enquote{Exportar Relatório de Homologação Ética} é
+da api). Desde a 1.0.4 (\adrr{ADR-190}) o painel desenha o QUADRO do Figma de
+cada momento (\cd{momentoDoPainel}): telas travadas mostra o título
+\enquote{Telas Travadas}, o texto do Figma e os DOIS botões, o da pausa à
+vista e desabilitado (\cd{PAUSA\_FEITA}, que nunca envia \cd{\{para\}}); a
+bancada recém-liberada (\enquote{Etapa 5 Destravada}) mostra só a
+confirmação e as apostas consolidadas, sem a projeção nem os botões da E5,
+que chegam com o primeiro reteste; a projeção 1A $\times$ 1C tem só as duas
+barras do quadro (o 1B fica nos Avisos Discretos); e a publicação liberada
+mostra só a confirmação até a primeira publicação, quando entra o relatório.
+A etiqueta \enquote{Mediação Handoff 1: 8 Minutos} do Figma fica
+\enquote{Mediação 1: 8 minutos}: \enquote{Handoff} é jargão em inglês
+(\adrr{ADR-91}). O Relatório Formativo Final (E6-PROF-01) traz a
+homologação, a matriz BNCC (\% Atingiu; a EM13CO03 como \% Participou), os
+níveis por estudante (só quem já tem nível, sem \enquote{Não avaliado}, que
+continua no painel de habilidades) e os comunicados montados; \enquote{Exportar Relatório de Homologação Ética} é
 a versão de impressão (\cd{BotaoImprimir} com a folha
 \arq{relatorio-de-homologacao.css}; o PDF sai do navegador). O guia
 (\arq{lib/entre-redes/\B{}guias/\B{}exp01em1b.ts}) traz os tempos da aula de 50
@@ -1897,20 +1927,28 @@ assistente usa horário e conexão) e o material vivo. O podcast é FIXO
 (\arq{podcast.ts}, \adrr{ADR-150}): o roteiro literal do \S{}11 do
 one-pager, com o Alex e a Sam, para depois da missão.
 
-\subsection{Sem compensação local do DS}
+\subsection{As compensações locais do DS}
 
 A 1.0.0 compensava cinco peças que o pacote não tinha; a 1.0.1 usa as que o
 DS publicou na 0.2.22 (Seção~\ref{sec:ds-lacunas-exp01em1b}): \cd{PuzzleBlock}
 com \cd{selected}, a vaga do \cd{PuzzleTrack} com \cd{onSlotActivate}, o
 \cd{Certificate} e o \cd{SessionDivider}; e o \cd{Collapse} fechado já era
-\cd{inert}. Três textos que o Figma não deu e a tela
-precisou: \enquote{Concluir Classificação}, \enquote{Colocar em Dados
-Fornecidos/Observados} e \enquote{Novo teste no UnooriaAI}.
+\cd{inert}. A 1.0.4 (\adrr{ADR-190}) voltou a ter DUAS compensações
+MARCADAS, de medida, em \arq{estilos/globals.css}: a barra de etapas só de
+texto (sem o glifo do \cd{Stepper}, rótulo de 12\,px) e o cartão colocado
+compacto (14\,px, caixa normal, quebra só entre palavras). As duas imitam o
+\cd{Stepper size="xs" showIcons=\{false\}} e o \cd{PuzzleBlock size="sm"}
+que o DS 0.2.24 traz (storybook-unnoria \#27), e morrem quando o pacote
+chegar ao npm. As fichas cabem em 375\,px pela medida das células (recuo de
+6\,px, cabeçalho em duas linhas). Textos que o Figma não deu e a tela
+precisou: \enquote{Colocar em Dados Fornecidos/Observados}, \enquote{Novo
+teste no UnooriaAI}, \enquote{Trocar critério} e \enquote{Revisar página e
+blocos}; \enquote{Concluir Classificação} saiu na 1.0.4.
 
 \subsection*{A suíte de ponta a ponta}
 
 \arq{scripts/e2e/estudante/\B{}16-assistente-\B{}invisivel.mjs} é o caminho inteiro
-com IA REAL (Vertex), em 35 passos: a professora recorta a aula, GERA o pacote,
+com IA REAL (Vertex), em 47 passos (com a rodada da equipe de um computador): a professora recorta a aula, GERA o pacote,
 edita um item, regenera outro, aprova e libera a atividade para a turma; no
 Painel ao Vivo, as cinco liberações e as duas pausas andam só para a frente
 (\enquote{Liberar Início da Simulação} só com 100\% das apostas). O
