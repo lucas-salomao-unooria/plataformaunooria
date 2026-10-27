@@ -22,37 +22,47 @@ export const VERSAO_DO_INSTRUMENTO = "1.0.0";
 
 // ──────────────────────────────────────────── vocabulários (CHECK na migration)
 
-/** O componente curricular do recorte (E0-PROF-02, "Disciplina Escolar"). */
+/**
+ * O componente curricular do recorte (E0-PROF-02, "Disciplina Escolar"): TODA a
+ * Formação Geral Básica da 1ª série (`curriculo/componentes.ts#componentesDoAno("1EM")`,
+ * na ordem e com os rótulos do catálogo), mais Computação (o complemento de
+ * 2022 à BNCC) e o projeto interdisciplinar no fim — a regra que o #223 deu às
+ * missões (a 2ª série faz igual, `efeito-amplificador/conteudo.ts`). Os slugs
+ * são os do catálogo SEM o sufixo `-em`. `tests/assistente-invisivel-regras.spec.ts`
+ * confere a lista e os rótulos contra o catálogo.
+ */
 export const DISCIPLINAS = [
   "lingua-portuguesa",
+  "lingua-inglesa",
+  "arte",
+  "educacao-fisica",
   "matematica",
   "biologia",
-  "quimica",
   "fisica",
-  "historia",
-  "geografia",
+  "quimica",
   "filosofia",
+  "geografia",
+  "historia",
   "sociologia",
-  "arte",
-  "lingua-inglesa",
-  "educacao-fisica",
+  "computacao",
   "projeto-interdisciplinar",
 ] as const;
 export type Disciplina = (typeof DISCIPLINAS)[number];
 
 export const ROTULO_DA_DISCIPLINA: Readonly<Record<Disciplina, string>> = {
-  "lingua-portuguesa": "Língua Portuguesa",
+  "lingua-portuguesa": "Língua Portuguesa e suas Literaturas",
+  "lingua-inglesa": "Língua Inglesa",
+  arte: "Arte",
+  "educacao-fisica": "Educação Física",
   matematica: "Matemática",
   biologia: "Biologia",
-  quimica: "Química",
   fisica: "Física",
-  historia: "História",
-  geografia: "Geografia",
+  quimica: "Química",
   filosofia: "Filosofia",
+  geografia: "Geografia",
+  historia: "História",
   sociologia: "Sociologia",
-  arte: "Arte",
-  "lingua-inglesa": "Língua Inglesa",
-  "educacao-fisica": "Educação Física",
+  computacao: "Computação",
   "projeto-interdisciplinar": "Projeto Interdisciplinar",
 };
 

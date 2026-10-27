@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { componentesDoAno } from "../src/curriculo/componentes";
 import { join } from "node:path";
 import { z } from "zod";
 import {
@@ -7,6 +8,7 @@ import {
   CARTOES,
   COLUNA_DO_CARTAO,
   DISCIPLINAS,
+  ROTULO_DA_DISCIPLINA,
   FASES,
   FUNCOES,
   ITENS_DO_PACOTE,
@@ -406,5 +408,16 @@ describe("os vocabulários do código são os dos CHECKs da migration", () => {
     expect(sql).toContain(`"blocos_corretos" BETWEEN 0 AND ${BLOCOS.length}`);
     expect(sql).toContain(`"cartoes_acertos" BETWEEN 0 AND ${CARTOES.length}`);
     expect(BLOCOS.every((b: Bloco) => OPCOES_DO_BLOCO[b].length === 2)).toBe(true);
+  });
+});
+
+describe("a disciplina do recorte é a Formação Geral Básica da 1ª série (o catálogo), mais Computação", () => {
+  const semSufixo = (slug: string) => slug.replace(/-em$/, "");
+  test("a lista é cada componente de componentesDoAno(\"1EM\") e computacao, na ordem do catálogo, e o projeto no fim", () => {
+    expect([...DISCIPLINAS]).toEqual([...componentesDoAno("1EM").map((c) => semSufixo(c.slug)), "computacao", "projeto-interdisciplinar"]);
+  });
+  test("o rótulo é o do catálogo", () => {
+    for (const c of componentesDoAno("1EM")) expect(ROTULO_DA_DISCIPLINA[semSufixo(c.slug) as (typeof DISCIPLINAS)[number]]).toBe(c.rotulo);
+    expect(ROTULO_DA_DISCIPLINA.computacao).toBe("Computação");
   });
 });

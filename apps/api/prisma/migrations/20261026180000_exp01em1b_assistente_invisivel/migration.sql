@@ -142,7 +142,7 @@ ALTER TABLE "exp01em1b_sessoes" ADD CONSTRAINT "exp01em1b_sessoes_escola_id_paco
 
 ALTER TABLE "exp01em1b_pacotes"
   ADD CONSTRAINT "exp01em1b_pacotes_disciplina_check"
-    CHECK ("disciplina" IN ('lingua-portuguesa', 'matematica', 'biologia', 'quimica', 'fisica', 'historia', 'geografia', 'filosofia', 'sociologia', 'arte', 'lingua-inglesa', 'educacao-fisica', 'projeto-interdisciplinar')),
+    CHECK ("disciplina" IN ('lingua-portuguesa', 'lingua-inglesa', 'arte', 'educacao-fisica', 'matematica', 'biologia', 'fisica', 'quimica', 'filosofia', 'geografia', 'historia', 'sociologia', 'computacao', 'projeto-interdisciplinar')),
   ADD CONSTRAINT "exp01em1b_pacotes_origem_check" CHECK ("origem" IN ('padrao', 'ia')),
   ADD CONSTRAINT "exp01em1b_pacotes_conteudo_check" CHECK (jsonb_typeof("conteudo_json") = 'object'),
   ADD CONSTRAINT "exp01em1b_pacotes_topicos_check" CHECK (cardinality("topicos") BETWEEN 3 AND 5),
