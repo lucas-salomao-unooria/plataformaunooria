@@ -66,7 +66,7 @@ export function Classificacao({ ctx }: { ctx: Contexto }) {
                 theme="light"
                 slots={[
                   ...nestes.map((c) => (
-                    <PuzzleBlock key={c.id} label={c.rotulo} state="placed" theme="light" onClick={() => devolver(c.id)} />
+                    <PuzzleBlock key={c.id} label={TEXTOS.e5.rotuloCurto[c.id] ?? c.rotulo} state="placed" theme="light" onClick={() => devolver(c.id)} />
                   )),
                   null,
                 ]}
