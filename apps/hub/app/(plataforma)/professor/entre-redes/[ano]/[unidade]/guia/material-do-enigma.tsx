@@ -6,7 +6,8 @@ import { CenaDoEnigma } from "../resultados/cena-do-enigma";
 /**
  * O material de O Enigma da Capa da Rádio, VIVO (de `GET
  * /enigma-capa/professor/material`): os três pacotes prontos COM o gabarito,
- * para ler antes; a pausa, os três cartões da nomeação e as perguntas da
+ * para ler antes, e os componentes curriculares que a personalização aceita;
+ * a pausa, os três cartões da nomeação e as perguntas da
  * conversa; o critério de cada nível, para o depois. Sem a api, o cartão diz
  * que não carregou — o resto do guia continua servindo.
  */
@@ -30,6 +31,12 @@ export function CenasDoEnigma({ dados, baseDoBundle }: { dados: Material | null;
             <strong>Não projete.</strong> Os círculos são os dois objetos iguais que a criança procura depois da virada;
             o que a visitante diz depende de a ação principal da foto ficar dentro da capa.
           </p>
+          {dados.disciplinas.length > 0 ? (
+            <p data-disciplinas>
+              <strong>Para personalizar com IA, escolha o componente:</strong>{" "}
+              {dados.disciplinas.map((d) => d.rotulo).join(", ")}.
+            </p>
+          ) : null}
           {dados.prontos.map((pronto) => {
             const cena = pronto.conteudo.cena;
             return (
@@ -88,9 +95,6 @@ export function CartoesDoEnigma({ dados }: { dados: Material | null }) {
               <li key={p}>{p}</li>
             ))}
           </ol>
-          <p>
-            <strong>A pergunta-ponte, depois da horta:</strong> {`“${r.ponte}”`}
-          </p>
           <p className="text-unooria-neutral-600">{r.liberar}</p>
         </div>
       </Card>

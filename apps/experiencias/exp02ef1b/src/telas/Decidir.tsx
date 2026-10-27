@@ -25,8 +25,12 @@ const CENTRO: Deslocamento = { x: 0.5, y: 0.5 };
  *    foto" só a desloca, sem zoom, sem alça, sem vazio (`MolduraFixa`).
  * 3. Os dois selos aparecem; a criança ARRASTA um até a foto — ou toca nele,
  *    a alternativa a quem não arrasta (teclado, motricidade). Um selo só.
- * 4. PUBLICAR CAPA acende com foto e selo. LATCH 1: o toque grava no servidor
- *    com o crachá, e não há volta (a rota responde 409 a outra escolha).
+ * 4. PUBLICAR CAPA acende com foto e selo. LATCH 1: o toque grava no servidor,
+ *    e não há volta (a rota responde 409 a outra escolha). O despachante
+ *    mostra o aviso "CAPA PUBLICADA!" antes do feed.
+ *
+ * O título diz o que fazer AGORA (o protótipo, ADR-186): "ESCOLHA 1 FOTO" →
+ * "SELECIONE O SELO" → "CAPA PRONTA!".
  *
  * O que a régua lê (o selo é coerente com a foto? o núcleo ficou na capa?) é
  * decidido na api — a tela não sabe qual selo "combina", e não deve saber.
@@ -94,8 +98,9 @@ export function Decidir({ ctx, aoPublicar }: { ctx: Contexto; aoPublicar: () => 
 
   return (
     <section ref={ref} className="decidir">
-      <p className="assinatura">{preencher(textoDe(sessao.textos, "e3", "assinatura"), { cracha: ctx.cracha?.rotulo ?? "" })}</p>
-      <h1 className="titulo-da-tela">{textoDe(sessao.textos, "e3", "titulo")}</h1>
+      <h1 className="titulo-da-tela">
+        {!foto ? textoDe(sessao.textos, "e3", "titulo") : !selo ? textoDe(sessao.textos, "e3", "tituloSelo") : textoDe(sessao.textos, "e3", "tituloPronta")}
+      </h1>
 
       <div className="decidir__fotos" role="group" aria-label={textoDe(sessao.textos, "e3", "titulo")}>
         {fotos.map((f, i) => (
@@ -127,7 +132,9 @@ export function Decidir({ ctx, aoPublicar }: { ctx: Contexto; aoPublicar: () => 
 
       {foto ? (
         <>
-          <InlineHint>{textoDe(sessao.textos, "e3", "arraste")}</InlineHint>
+          <InlineHint>
+            {textoDe(sessao.textos, "e3", "arraste")} <span className="nota">{textoDe(sessao.textos, "e3", "arrasteNota")}</span>
+          </InlineHint>
           <div ref={molduraRef} className={`decidir__moldura${arraste?.andou ? " decidir__moldura--alvo" : ""}`}>
             <MolduraFixa
               src={src}
@@ -185,7 +192,7 @@ export function Decidir({ ctx, aoPublicar }: { ctx: Contexto; aoPublicar: () => 
       ) : null}
 
       <div className="decidir__acoes">
-        {inativo ? <Personagem quem="bento" fala={textoDe(sessao.textos, "e2", "inatividade")} animado anunciar /> : null}
+        {inativo ? <Personagem fala={textoDe(sessao.textos, "e2", "inatividade")} animado anunciar /> : null}
         <ButtonUnv size="lg" block disabled={!fotoId || !seloId || enviando} onClick={() => void publicar()}>
           {textoDe(sessao.textos, "e3", "publicar")}
         </ButtonUnv>

@@ -134,18 +134,20 @@ export function lente(
 }
 
 /**
- * A REVELAÇÃO (E4, Momento 5): as duas fotos lado a lado, na mesma escala, se
- * fundem na panorâmica. Com `t` = 0 a foto da direita começa onde a da
- * esquerda acaba; com `t` = 1 ela está na posição dela na panorâmica, e a
- * faixa comum se sobrepõe sem emenda (é a MESMA imagem). A escala nunca muda.
- * Devolve, em unidades da panorâmica, onde a foto da direita começa e a
- * largura total do conjunto.
+ * O SLIDER DE COMPARAÇÃO (E4, ADR-186): sobre a mesma área, de um lado da alça
+ * o LUGAR INTEIRO, do outro só a SUA FOTO (o resto apagado) — como a prévia
+ * de quem remove o fundo de uma imagem. A alça parte do centro e anda para o
+ * lado onde mais coisa ficou de fora da capa: é para lá que o lugar se revela.
  */
-export function revelacao(esquerda: Retangulo, direita: Retangulo, t: number): { inicioDaDireita: number; largura: number } {
-  const separado = esquerda.w;
-  const junto = direita.x - esquerda.x;
-  const inicioDaDireita = separado + (junto - separado) * limitar(t, 0, 1);
-  return { inicioDaDireita, largura: inicioDaDireita + direita.w };
+export function ladoEscondido(capa: Retangulo): "esquerda" | "direita" {
+  const foraAEsquerda = capa.x;
+  const foraADireita = 100 - (capa.x + capa.w);
+  return foraADireita >= foraAEsquerda ? "direita" : "esquerda";
+}
+
+/** A posição da alça (0–100) que conta como "revelou tudo": quase no fim do curso, do lado escondido. */
+export function revelouTudo(posicao: number, lado: "esquerda" | "direita", folga = 4): boolean {
+  return lado === "direita" ? posicao >= 100 - folga : posicao <= folga;
 }
 
 /**
@@ -159,6 +161,19 @@ export function fraseDoFora(espacoCurto: string): string {
   const contracao: Record<string, string> = { a: "na", o: "no", as: "nas", os: "nos" };
   const lugar = m ? `${contracao[m[1]!.toLowerCase()]} ${m[2]}` : `em ${t}`;
   return `Marque ${lugar} o que ficou fora da sua foto.`;
+}
+
+/**
+ * "ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA" — a missão da tela de abertura.
+ * A preposição vem do `espacoCurto` ("a biblioteca" → "DA BIBLIOTECA", "o
+ * museu" → "DO MUSEU"). Espelha `fraseDaMissao` da api.
+ */
+export function fraseDaMissao(espacoCurto: string): string {
+  const t = espacoCurto.trim();
+  const m = /^(a|o|as|os)\s+(.+)$/i.exec(t);
+  const contracao: Record<string, string> = { a: "da", o: "do", as: "das", os: "dos" };
+  const lugar = m ? `${contracao[m[1]!.toLowerCase()]} ${m[2]}` : `de ${t}`;
+  return `ENCONTRE NAS FOTOS 2 OBJETOS ${lugar}`.toUpperCase();
 }
 
 /**

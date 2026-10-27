@@ -100,7 +100,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{exp02ef1b\_pacotes} & Tenant & O Enigma da Capa da Rádio: a cena (a panorâmica, as duas fotos com núcleo e fala da visitante, os selos, os dois objetos com o alvo, o fundo e os marcáveis); é a atividade da evidência\\
 \zebra \cd{exp02ef1b\_gates\_turma} & Tenant & A fase da turma (\cd{aberta}, \cd{virada})\\
 \cd{exp02ef1b\_gates\_historico} & Tenant & Cada LIBERAR VIRADA, com o pacote, a rodada e o professor\\
-\zebra \cd{exp02ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o crachá, a lupa, a capa (latch 1), a busca dos objetos, o que ficou fora, os pares, a segunda foto e o voto (latch 2) --- sem texto livre\\
+\zebra \cd{exp02ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: a entrada, a lupa nos dois objetos, a capa (latch 1), a busca dos objetos, o que ficou fora, os pares e a segunda foto, que conclui --- sem texto livre\\
 \cd{exp02em1b\_v0\_sessoes} & Tenant & Versão anterior (\adrr{ADR-181}): estado da partida da Missão Tempestade\\
 \zebra \cd{exp02em1b\_v0\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
 \cd{exp02em1b\_v0\_marcos} & Tenant & Trilha da decisão\\
@@ -1812,15 +1812,20 @@ Desde 2026-10-22 (\adrr{ADR-181}). Quatro tabelas, todas com \cd{escola\_id}
 \label{sec:dicionario-exp02ef1b}
 
 Desde 2026-10-26 (\adrr{ADR-184}), migração
-\arq{20261026120000\_\B{}exp02ef1b\_\B{}enigma\_\B{}capa}. Quatro tabelas, todas
+\arq{20261026120000\_\B{}exp02ef1b\_\B{}enigma\_\B{}capa}; a 2.0.0
+(\adrr{ADR-186}) na \arq{20261026210000\_\B{}exp02ef1b\_\B{}prototipo}, que tira o
+crachá e o voto da etapa 6, troca a lupa por objeto e alarga a disciplina para
+os componentes do 2º ano. Quatro tabelas, todas
 com \cd{escola\_id} \cd{NOT NULL}, RLS forçada e política por escola; as
 regras estão no \arq{AGENTS.md} do módulo \arq{enigma-capa}. Nenhuma coluna
 guarda texto escrito pela criança.
 
 \begin{itemize}
   \item \cd{exp02ef1b\_pacotes}: \cd{id}, \cd{turma\_id} (FK, cascata),
-    \cd{disciplina} (\cd{lingua-portuguesa} $|$ \cd{ciencias} $|$
-    \cd{historia} $|$ \cd{outra}), \cd{tema}, \cd{palavras} (\cd{TEXT[]}),
+    \cd{disciplina} (os componentes do 2º ano na BNCC ---
+    \cd{lingua-portuguesa} $|$ \cd{arte} $|$ \cd{educacao-fisica} $|$
+    \cd{matematica} $|$ \cd{ciencias} $|$ \cd{geografia} $|$ \cd{historia}
+    $|$ \cd{ensino-religioso} ---, \cd{computacao} $|$ \cd{outra}), \cd{tema}, \cd{palavras} (\cd{TEXT[]}),
     \cd{nota}, \cd{chave\_cena} (\cd{biblioteca} $|$ \cd{horta} $|$
     \cd{museu} $|$ \cd{ia}), \cd{conteudo\_json} (a cena inteira, validada
     pelo Zod; objeto), \cd{origem} (\cd{padrao} $|$ \cd{ia}), \cd{ativo},
@@ -1850,14 +1855,11 @@ guarda texto escrito pela criança.
   para o pacote.\\
 \zebra \cd{turma\_id} & \cd{UUID} & FK para \cd{turmas}; o painel lê por
   turma, pacote e rodada (índice).\\
-\cd{entrou\_em} & \cd{TIMESTAMPTZ} & O crachá: o teto de plausibilidade da
-  lupa é o tempo desde aqui.\\
-\zebra \cd{cracha} & \cd{TEXT} & \emph{CHECK}: \cd{fone-azul} $|$
-  \cd{fone-amarelo} $|$ \cd{microfone-verde} $|$ \cd{gravador-laranja}.\\
-\cd{lupa\_foto1\_ms}, \cd{lupa\_foto2\_ms} & \cd{INTEGER} & O tempo de lupa
-  sobre cada foto, o máximo relatado ($\geq 0$).\\
-\zebra \cd{lupa\_fundo1}, \cd{lupa\_fundo2} & \cd{BOOLEAN} & A lente passou
-  pelo fundo de cada foto; uma vez visto, fica visto.\\
+\cd{entrou\_em} & \cd{TIMESTAMPTZ} & O ABRIR BANCADA: o teto de
+  plausibilidade da lupa é o tempo desde aqui.\\
+\zebra \cd{lupa\_alvo1\_ms}, \cd{lupa\_alvo2\_ms} & \cd{INTEGER} & O tempo
+  de lupa sobre cada um dos dois objetos do fundo, o máximo relatado
+  ($\geq 0$); o piso é 3\,s em cada.\\
 \cd{lupa\_alertas} & \cd{SMALLINT} & Os avanços antes do piso --- o indicador
   da lupa na régua.\\
 \zebra \cd{lupa\_\B{}liberada\_\B{}em} & \cd{TIMESTAMPTZ?} & O piso cumprido.\\
@@ -1887,10 +1889,10 @@ guarda texto escrito pela criança.
   \cd{segunda\_\B{}essencial\_\B{}visivel}, \cd{segunda\_em} & vários & E5: o
   elemento (\cd{mochila} $|$ \cd{parede} $|$ \cd{crianca-lendo}), a posição
   e se a criança lendo ficou visível, juntos; só depois dos pares.\\
-\zebra \cd{transferencia\_\B{}voto}, \cd{concluido\_em} & \cd{TEXT},
-  \cd{TIMESTAMPTZ} & O \textbf{LATCH 2}: o voto (\cd{so-um-pedaco} $|$
-  \cd{mostra-tudo}) e a conclusão juntos, só depois da segunda foto.\\
-\cd{versao\_\B{}instrumento} & \cd{TEXT} & \cd{1.0.0} por padrão.\\
+\zebra \cd{concluido\_em} & \cd{TIMESTAMPTZ?} & O \enquote{Colocar no
+  álbum}: só com a segunda foto.\\
+\cd{versao\_\B{}instrumento} & \cd{TEXT} & \cd{2.0.0} por padrão (as sessões
+  da 1.0.0 guardam a delas).\\
 \bottomrule
 \end{tabularx}
 

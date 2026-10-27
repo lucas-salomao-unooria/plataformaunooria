@@ -1,5 +1,6 @@
 /**
- * O que o hub lê da exp02ef1b (O Enigma da Capa da Rádio, ADR-184) — espelho do
+ * O que o hub lê da exp02ef1b (O Enigma da Capa da Rádio, ADR-184; revisão
+ * 2.0.0, ADR-186) — espelho do
  * Zod de `apps/api/src/enigma-capa/contrato-de-rotas.ts`, que é a fonte da
  * verdade, e dos vocabulários de `conteudo.ts` e `regras/passos.ts` do mesmo
  * módulo.
@@ -10,8 +11,8 @@
  * O que NÃO existe aqui, e cada ausência é uma regra:
  *
  * - **Nenhum nível por estudante.** A linha do painel é o que a criança FEZ
- *   (crachá, lupa, capa, invariantes, o que marcou fora, par, segunda foto,
- *   voto); o nível mora no painel de habilidades (`lib/evidencias.ts`).
+ *   (lupa, capa, invariantes, o que marcou fora, par, segunda foto), pelo
+ *   NOME; o nível mora no painel de habilidades (`lib/evidencias.ts`).
  * - **Nenhum tipo de sessão de estudante.** O lado dele vive no bundle.
  *
  * O GABARITO (núcleo, fala da visitante, selo coerente, alvos dos invariantes,
@@ -25,18 +26,31 @@ export const EXP_ID = "exp02ef1b";
 
 // ─────────────────────────────────────────────────────────────── vocabulários
 
-export const DISCIPLINAS = ["lingua-portuguesa", "ciencias", "historia", "outra"] as const;
-export type Disciplina = (typeof DISCIPLINAS)[number];
+/**
+ * O componente curricular do recorte. A LISTA que a tela oferece vem da api
+ * (`disciplinas` do material e do pacote da turma: todos os do 2º ano, mais
+ * Computação e "Outro componente"), e quem valida o slug é o Zod de lá — por
+ * isso o tipo é `string`. O rótulo abaixo só serve para nomear o componente de
+ * uma atividade JÁ gravada (o histórico, a página da atividade);
+ * `enigma-capa-tipos.test.ts` confere as chaves contra o `DISCIPLINAS` da api.
+ */
+export type Disciplina = string;
 
-export const ROTULO_DA_DISCIPLINA: Record<Disciplina, string> = {
+export const ROTULO_DA_DISCIPLINA: Readonly<Record<string, string>> = {
   "lingua-portuguesa": "Língua Portuguesa",
+  arte: "Arte",
+  "educacao-fisica": "Educação Física",
+  matematica: "Matemática",
   ciencias: "Ciências",
+  geografia: "Geografia",
   historia: "História",
+  "ensino-religioso": "Ensino Religioso",
+  computacao: "Computação",
   outra: "Outro componente",
 };
 
 export function rotuloDaDisciplina(slug: string): string {
-  return (ROTULO_DA_DISCIPLINA as Record<string, string>)[slug] ?? slug;
+  return ROTULO_DA_DISCIPLINA[slug] ?? slug;
 }
 
 export const ORIGENS = ["padrao", "ia"] as const;
@@ -49,16 +63,6 @@ export type ChavePronta = (typeof CHAVES_PRONTAS)[number];
 
 export const FASES = ["aberta", "virada"] as const;
 export type Fase = (typeof FASES)[number];
-
-export const CRACHAS = ["fone-azul", "fone-amarelo", "microfone-verde", "gravador-laranja"] as const;
-export type Cracha = (typeof CRACHAS)[number];
-
-export const ROTULO_DO_CRACHA: Record<Cracha, { rotulo: string; emoji: string }> = {
-  "fone-azul": { rotulo: "FONE AZUL", emoji: "🎧" },
-  "fone-amarelo": { rotulo: "FONE AMARELO", emoji: "⭐" },
-  "microfone-verde": { rotulo: "MICROFONE VERDE", emoji: "🎙️" },
-  "gravador-laranja": { rotulo: "GRAVADOR LARANJA", emoji: "📻" },
-};
 
 export const FOTOS = ["foto-1", "foto-2"] as const;
 export type FotoId = (typeof FOTOS)[number];
@@ -79,12 +83,8 @@ export const ROTULO_DO_ELEMENTO: Record<ElementoDaSegundaFoto, string> = {
   "crianca-lendo": "Criança lendo",
 };
 
-export const VOTOS = ["so-um-pedaco", "mostra-tudo"] as const;
-export type Voto = (typeof VOTOS)[number];
-export const ROTULO_DO_VOTO: Record<Voto, string> = { "so-um-pedaco": "🌿 SÓ UM PEDAÇO", "mostra-tudo": "💥 MOSTRA TUDO" };
-
 export const PASSOS = [
-  "cracha",
+  "inicio",
   "lupa",
   "decidir",
   "feed",
@@ -93,23 +93,21 @@ export const PASSOS = [
   "fora",
   "pares",
   "segunda-foto",
-  "transferencia",
   "concluida",
 ] as const;
 export type Passo = (typeof PASSOS)[number];
 
-/** O passo em palavras do professor (E1…E6 do one-pager), para a folha. */
+/** O passo em palavras do professor (E1…E5), para a folha. */
 export const ROTULO_DO_PASSO: Record<Passo, string> = {
-  cracha: "Escolhendo o crachá",
+  inicio: "No card da missão (E1)",
   lupa: "Na lupa (E2)",
   decidir: "Montando a capa (E3)",
   feed: "Capa publicada",
   invariantes: "Procurando as 2 coisas iguais (E4)",
-  slider: "No slider da cena inteira (E4)",
+  slider: "Comparando com a cena inteira (E4)",
   fora: "Marcando o que ficou fora (E4)",
   pares: "Juntando os pares (E5)",
   "segunda-foto": "Na segunda foto (E5)",
-  transferencia: "Na horta (E6)",
   concluida: "Concluiu",
 };
 
@@ -279,14 +277,13 @@ export interface LinhaDoPainel {
   equipe: { id: string; nome: string; membros: { id: string; nome: string }[] } | null;
   passo: Passo;
   aguardandoVirada: boolean;
-  cracha: Cracha | null;
-  lupa: { foto1Ms: number; foto2Ms: number; alertas: number; liberada: boolean } | null;
+  /** Ms com o centro da lente sobre cada objeto do fundo (`inv-1`, `inv-2`); o piso é 3 s em cada. */
+  lupa: { alvo1Ms: number; alvo2Ms: number; alertas: number; liberada: boolean } | null;
   capa: { fotoId: FotoId; seloId: SeloId; seloCoerente: boolean; visitante: string; nucleoVisivel: boolean } | null;
   invariantes: { encontrados: number; erros: number; ajuda: boolean; errosPosAjuda: number; completo: boolean } | null;
   fora: { itens: { id: string; nome: string }[]; possiveis: number } | null;
   par: { cartas: string[]; motivo: MotivoDoPar; correto: boolean } | null;
   segundaFoto: { elemento: ElementoDaSegundaFoto; essencialVisivel: boolean } | null;
-  voto: Voto | null;
 }
 
 export interface RoteiroDaAula {
@@ -295,7 +292,6 @@ export interface RoteiroDaAula {
   pausa: string;
   cartoes: string[];
   perguntas: string[];
-  ponte: string;
   liberar: string;
 }
 
@@ -311,7 +307,8 @@ export interface PainelDaTurma {
     publicaram: number;
     aguardandoVirada: number;
     concluiram: number;
-    votos: Record<Voto, number>;
+    /** Quantos marcaram ao menos UMA coisa que ficou fora da capa. */
+    marcaramFora: number;
   };
   linhas: LinhaDoPainel[];
   roteiro: RoteiroDaAula;
@@ -320,6 +317,8 @@ export interface PainelDaTurma {
 /** `GET /enigma-capa/professor/material` — o bloco vivo do guia. */
 export interface Material {
   prontos: PacotePronto[];
+  /** Os componentes do recorte, na ordem da api (o 2º ano, Computação e "Outro componente" no fim). */
+  disciplinas: { slug: Disciplina; rotulo: string }[];
   roteiro: RoteiroDaAula;
   cartas: { id: string; descricao: string; atividade: string; cor: string }[];
   habilidades: { codigo: string; rotulo: string; criterios: { atingiu: string; em_processo: string; nao_atingiu: string } }[];
@@ -438,12 +437,12 @@ export function segundosDaLupa(ms: number): string {
  * O que a ficha registra mudou? O painel chama `router.refresh()` quando sim,
  * para o painel de habilidades acompanhar a aula sem F5 (ADR-146). Na
  * exp02ef1b a marca vai na transação de duas jogadas: os invariantes completos
- * (EF02CO01) e o voto da horta (EF02CO05).
+ * (EF02CO01) e o "Pronto" do que ficou fora da foto (EF02CO05).
  */
 export function mudouAEvidencia(antes: PainelDaTurma, depois: PainelDaTurma): boolean {
   const assinatura = (p: PainelDaTurma) =>
     p.linhas
-      .map((l) => `${l.estudanteId}:${l.invariantes?.completo ? 1 : 0}:${l.voto ?? "-"}`)
+      .map((l) => `${l.estudanteId}:${l.invariantes?.completo ? 1 : 0}:${l.fora ? 1 : 0}`)
       .sort()
       .join("|");
   return assinatura(antes) !== assinatura(depois);

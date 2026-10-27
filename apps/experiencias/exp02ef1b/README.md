@@ -3,8 +3,8 @@
 2º ano EF, unidade 1, no clone Unoovista. A criança (7–8 anos) investiga as
 duas fotos da @radio_escola com uma lupa, publica uma capa com foto e selo,
 vê o que a visitante entendeu e, na virada liberada pelo professor, descobre
-que as duas fotos eram o mesmo lugar. ~20 min, 6 etapas (one-pager do PO v1.1;
-ADR-184).
+que as duas fotos eram o mesmo lugar. ~20 min, 5 etapas (one-pager do PO v1.1;
+ADR-184), seguindo o protótipo validado pelo time desde a 2.0.0 (ADR-186).
 
 ## Rodar
 
@@ -27,7 +27,7 @@ professor escolhe o banco padrão, um pacote pronto ou a cena da IA).
 |---|---|
 | Handshake e primeira leitura (`GET /enigma-capa/sessao`) | `src/bootstrap.tsx` |
 | O despachante (passo → tela, gate, fila, 409) | `src/App.tsx` |
-| As telas por etapa | `src/telas/` (Mural, Bancada, Decidir, Feed, Virada, Explicar, Transferencia, Espera) |
+| As telas por etapa | `src/telas/` (Mural, Bancada, Decidir, Publicada, Feed, Virada, Explicar, Concluida, Espera) |
 | Geometria, lupa e fila (puros, testados) | `src/lib/geometria.ts`, `src/lib/lupa.ts`, `src/lib/fila.ts` |
 | Contrato espelhado da api | `src/lib/tipos.ts` |
 | Copy da tela | `src/lib/textos.ts` |
@@ -39,15 +39,14 @@ professor escolhe o banco padrão, um pacote pronto ou a cena da IA).
 |---|---|---|
 | boot / F5 / gate mudou | `GET /enigma-capa/sessao` | — |
 | polling 3 s | `GET /enigma-capa/gate` | — |
-| E1 crachá | `POST /enigma-capa/cracha` | `{ cracha }` |
-| E2 lupa (a cada 4 s e no AVANÇAR) | `POST /enigma-capa/lupa` | `{ foto1Ms, foto2Ms, fundo1, fundo2, avancar }` |
+| E1 ABRIR BANCADA | `POST /enigma-capa/iniciar` | `{}` |
+| E2 lupa (a cada 4 s e no AVANÇAR) | `POST /enigma-capa/lupa` | `{ alvo1Ms, alvo2Ms, avancar }` |
 | E3 PUBLICAR CAPA | `POST /enigma-capa/publicar` | `{ fotoId, seloId, deslocamento }` |
 | E4 toque nos objetos | `POST /enigma-capa/invariantes` | `{ fotoId, x, y }` (panorâmica) |
 | E4 fim do slider | `POST /enigma-capa/slider` | — |
-| E4 Pronto | `POST /enigma-capa/fora` | `{ toques: [{x,y}] }` |
+| E4 Pronto | `POST /enigma-capa/fora` | `{ toques: [{x,y}] }` (1 a 10 alfinetes) |
 | E5 motivo do par | `POST /enigma-capa/pares` | `{ cartas: [id,id], motivo }` |
-| E5 Colocar no álbum | `POST /enigma-capa/segunda-foto` | `{ elemento, deslocamento }` |
-| E6 voto | `POST /enigma-capa/transferencia` | `{ opcao }` |
+| E5 Colocar no álbum (conclui) | `POST /enigma-capa/segunda-foto` | `{ elemento, deslocamento }` |
 
 ## Telemetria
 
@@ -58,6 +57,7 @@ nome ou e-mail.
 |---|---|---|---|
 | `attempted` | `missao:iniciar` | depois do handshake | `resultado: { retomada }` |
 | `progressed` | `etapa:entrar` | a cada passo | `contexto: { passo }` |
+| `interacted` | `lupa:achar` | o anel da lupa encheu sobre um objeto | — |
 | `interacted` | `lupa:alerta` | AVANÇAR antes do piso | — |
 | `interacted` | `aviso:inatividade` | 45 s sem gesto (E2/E3) | `contexto: { passo }` |
 | `interacted` | `capa:publicar` | PUBLICAR CAPA | `resultado: { fotoId }` |
@@ -66,7 +66,7 @@ nome ou e-mail.
 | `interacted` | `fora:marcar` | Pronto | `resultado: { marcas }` |
 | `interacted` | `par:formar` / `album:colocar` | E5 | — |
 | `attempted` | `erro:exibir` | sem sinal / imagem que não carregou | `resultado: { codigo }` |
-| `completed` | `missao:concluida` | o voto da E6 (LATCH 2) | — |
+| `completed` | `missao:concluida` | Colocar no álbum (o fim) | — |
 
 Onde cada medida é LIDA: `exp02ef1b_sessoes` e a rota
 `GET /enigma-capa/turmas/:turmaId/painel` (o painel do professor).

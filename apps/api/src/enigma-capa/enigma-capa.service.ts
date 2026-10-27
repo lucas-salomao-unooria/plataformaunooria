@@ -15,7 +15,6 @@ import { PrismaService } from "../prisma/prisma.service";
 import {
   CARTAS_DOS_PARES,
   CHAVES_PRONTAS,
-  CRACHAS,
   DISCIPLINAS,
   ELEMENTOS_DA_SEGUNDA_FOTO,
   EXP_ID,
@@ -33,23 +32,19 @@ import {
   RECORTE_DA_FOTO,
   ROTEIRO,
   ROTULO_DA_DISCIPLINA,
-  ROTULO_DO_CRACHA,
   ROTULO_DO_ELEMENTO,
   ROTULO_DO_MOTIVO,
-  ROTULO_DO_VOTO,
   SEGUNDA_FOTO,
   TEMPOS,
   TEXTOS,
   TOQUES_FORA_MAX,
-  TRANSFERENCIA,
   VERSAO_DO_INSTRUMENTO,
-  VOTOS,
   conteudoPronto,
+  fraseDaMissao,
   fraseDoFora,
   type ChaveDeCena,
   type ChavePronta,
   type ConteudoDoPacote,
-  type Cracha,
   type Deslocamento,
   type Disciplina,
   type ElementoDaSegundaFoto,
@@ -59,7 +54,6 @@ import {
   type Origem,
   type Ponto,
   type SeloId,
-  type Voto,
 } from "./conteudo";
 import {
   ConteudoBaseSchema,
@@ -75,7 +69,7 @@ import {
   MARCADOR_CO01,
   MARCADOR_CO05,
   grauDaLupa,
-  grauDaTransferencia,
+  grauDoFora,
   grauDoSelo,
   grauDosInvariantes,
   nivelCO01,
@@ -90,7 +84,7 @@ import { FASE_INICIAL, avancarFase, normalizarFase, passoEfetivo, type MarcosDaS
 
 /**
  * Persistência e regras aplicadas da exp02ef1b — O Enigma da Capa da Rádio
- * (ADR-184).
+ * (ADR-184; a revisão 2.0.0, ADR-186).
  *
  * Molde: `efeito-amplificador` (o funil, os locks, o pacote como atividade e a
  * rodada como reaplicação, o gate da turma com histórico, o preparo com IA e
@@ -100,7 +94,9 @@ import { FASE_INICIAL, avancarFase, normalizarFase, passoEfetivo, type MarcosDaS
  * **O gabarito não desce** (regra 3): a cena vai ao estudante sem o núcleo,
  * a fala da visitante, a coerência do selo, os alvos e os marcáveis; quem diz
  * o que um gesto mediu é este serviço, e as marcas entram na transação do
- * gesto (a EF02CO01 quando os invariantes completam, a EF02CO05 no voto).
+ * gesto (a EF02CO01 quando os invariantes completam, a EF02CO05 no "Pronto"
+ * do "o que ficou fora"). A exceção, registrada na ADR-186: os dois alvos
+ * descem em `lupa.alvos` enquanto o passo é `lupa`, para o brilho da lente.
  *
  * **Sem IA na aula**: a única IA é a do preparo do professor
  * (`preparo.service.ts`).
@@ -132,8 +128,8 @@ function marcosDe(s: Sessao | null | undefined): MarcosDaSessao | null {
     panoramicaAberta: s.panoramicaAbertaEm !== null,
     marcouFora: s.foraEm !== null,
     formouPar: s.parEm !== null,
-    segundaFoto: s.segundaEm !== null,
-    concluiu: s.concluidoEm !== null,
+    /* A segunda foto conclui (a 2.0.0 grava `concluido_em` junto com `segunda_em`). */
+    concluiu: s.segundaEm !== null || s.concluidoEm !== null,
   };
 }
 
@@ -201,22 +197,31 @@ function canonico(v: unknown): string {
 
 const limpar = (t: string) => t.replace(/\s+/g, " ").trim();
 
-/** Os textos literais da tela, com o espaço, a hora e o crachá já no lugar. */
-function textosDaTela(c: ConteudoDoPacote | null, cracha: Cracha | null): Record<string, Record<string, string>> {
-  const espaco = c?.cena.espaco.toLocaleUpperCase("pt-BR") ?? "{ESPACO}";
-  const hora = c?.cena.hora ?? "{hora}";
+/**
+ * Os textos literais da tela, com o espaço e a hora já no lugar (e as frases
+ * que dependem do artigo do espaço). `{n}` fica para a tela; sem cena, os
+ * marcadores ficam como estão.
+ */
+function textosDaTela(c: ConteudoDoPacote | null): Record<string, Record<string, string>> {
   const preencher = (t: string) =>
-    t
-      .replace("{ESPACO}", espaco)
-      .replace("{hora}", hora)
-      .replace("{cracha}", cracha ? ROTULO_DO_CRACHA[cracha].rotulo : "{cracha}");
+    c
+      ? t
+          .replaceAll("{ESPACO}", c.cena.espaco.toLocaleUpperCase("pt-BR"))
+          .replaceAll("{espacoCurto}", c.cena.espacoCurto)
+          .replaceAll("{hora}", c.cena.hora)
+      : t;
   const saida: Record<string, Record<string, string>> = {};
   for (const [grupo, frases] of Object.entries(TEXTOS)) {
     saida[grupo] = Object.fromEntries(Object.entries(frases).map(([k, v]) => [k, preencher(v)]));
   }
-  if (c) saida.e4!.fora = fraseDoFora(c.cena.espacoCurto);
+  if (c) {
+    saida.e1!.missao = fraseDaMissao(c.cena.espacoCurto);
+    saida.e4!.fora = fraseDoFora(c.cena.espacoCurto);
+  }
   return saida;
 }
+
+const DISCIPLINAS_DO_RECORTE = DISCIPLINAS.map((slug) => ({ slug, rotulo: ROTULO_DA_DISCIPLINA[slug] }));
 
 function prontos() {
   return CHAVES_PRONTAS.map((chave) => {
@@ -231,7 +236,6 @@ const ROTEIRO_DO_PAINEL = {
   pausa: ROTEIRO.pausa,
   cartoes: [...ROTEIRO.cartoes],
   perguntas: [...ROTEIRO.perguntas],
-  ponte: ROTEIRO.ponte,
   liberar: ROTEIRO.liberar,
 };
 
@@ -263,7 +267,6 @@ export class EnigmaCapaService {
       const ctx = await this.contextoDaTurma(tx, escolaId, turmaId);
       const sessao = ctx.pacote ? await this.sessaoDe(tx, escolaId, estudanteId, ctx.pacote) : null;
       const c = ctx.pacote?.conteudo ?? null;
-      const cracha = ehDe(CRACHAS, sessao?.cracha) ? sessao.cracha : null;
       return {
         ...this.montarEstado(ctx, sessao),
         cena: c
@@ -290,19 +293,14 @@ export class EnigmaCapaService {
           toquesForaMax: TOQUES_FORA_MAX,
         },
         material: {
-          crachas: CRACHAS.map((id) => ({ id, ...ROTULO_DO_CRACHA[id] })),
           cartas: CARTAS_DOS_PARES.map((carta) => ({ id: carta.id, imagem: { tipo: "bundle" as const, nome: carta.imagem } })),
           motivos: MOTIVOS_DO_PAR.map((id) => ({ id, rotulo: ROTULO_DO_MOTIVO[id] })),
           segundaFoto: {
             imagem: { tipo: "bundle" as const, nome: SEGUNDA_FOTO.imagem },
             elementos: ELEMENTOS_DA_SEGUNDA_FOTO.map((id) => ({ id, rotulo: ROTULO_DO_ELEMENTO[id] })),
           },
-          transferencia: {
-            imagem: { tipo: "bundle" as const, nome: TRANSFERENCIA.imagem },
-            opcoes: VOTOS.map((id) => ({ id, ...ROTULO_DO_VOTO[id] })),
-          },
         },
-        textos: textosDaTela(c, cracha),
+        textos: textosDaTela(c),
         tempos: { ...TEMPOS },
       };
     }, escolaId);
@@ -327,8 +325,8 @@ export class EnigmaCapaService {
 
   // ─────────────────────────────────────────────────────────── jogadas do estudante
 
-  /** E1: o crachá abre a sessão desta rodada. Idempotente: o crachá escolhido fica. */
-  cracha(escolaId: string, estudanteId: string, cracha: Cracha) {
+  /** E1: ABRIR BANCADA abre a sessão desta rodada (`entrou_em` = agora). Idempotente. */
+  iniciar(escolaId: string, estudanteId: string) {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao) => {
       if (sessao) return {};
       await tx.exp02ef1bSessao.createMany({
@@ -339,7 +337,6 @@ export class EnigmaCapaService {
             pacoteId: pacote.id,
             rodada: pacote.rodada,
             turmaId: pacote.turmaId,
-            cracha,
             versaoInstrumento: VERSAO_DO_INSTRUMENTO,
           },
         ],
@@ -350,29 +347,24 @@ export class EnigmaCapaService {
   }
 
   /**
-   * E2: o relato da lupa. Guarda o MÁXIMO (limitado ao tempo desde a entrada);
-   * com `avancar`, confere o piso — cumprido, libera o `decidir`; senão conta
-   * um alerta ("OLHE O FUNDO"). Depois de liberada, devolve o estado.
+   * E2: o relato da lupa — o tempo com a lente sobre cada um dos dois objetos
+   * do fundo. Guarda o MÁXIMO (limitado ao tempo desde a entrada); com
+   * `avancar`, confere o piso — cumprido, libera o `decidir`; senão conta um
+   * alerta ("OLHE O FUNDO"). Depois de liberada, devolve o estado.
    */
   lupa(escolaId: string, estudanteId: string, relato: RelatoDaLupa) {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao) => {
       const s = this.exigirSessao(sessao);
       if (s.lupaLiberadaEm) return { liberado: true, alerta: false };
       const agora = new Date();
-      const nova = acumularLupa(
-        { foto1Ms: s.lupaFoto1Ms, foto2Ms: s.lupaFoto2Ms, fundo1: s.lupaFundo1, fundo2: s.lupaFundo2 },
-        relato,
-        agora.getTime() - s.entrouEm.getTime(),
-      );
+      const nova = acumularLupa({ alvo1Ms: s.lupaAlvo1Ms, alvo2Ms: s.lupaAlvo2Ms }, relato, agora.getTime() - s.entrouEm.getTime());
       const liberado = relato.avancar && pisoCumprido(nova);
       const alerta = relato.avancar && !liberado;
       await tx.exp02ef1bSessao.update({
         where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
         data: {
-          lupaFoto1Ms: nova.foto1Ms,
-          lupaFoto2Ms: nova.foto2Ms,
-          lupaFundo1: nova.fundo1,
-          lupaFundo2: nova.fundo2,
+          lupaAlvo1Ms: nova.alvo1Ms,
+          lupaAlvo2Ms: nova.alvo2Ms,
           ...(alerta ? { lupaAlertas: Math.min(999, s.lupaAlertas + 1) } : {}),
           ...(liberado ? { lupaLiberadaEm: agora } : {}),
         },
@@ -482,9 +474,10 @@ export class EnigmaCapaService {
   }
 
   /**
-   * E4, Momento 5: "Marque n{espaço} o que ficou fora da sua foto." Os toques
-   * viram os marcáveis que ficaram FORA da capa publicada (metade ou mais da
-   * área fora). Só painel — não bloqueia, não entra na régua.
+   * E4, Momento 5: "Marque n{espaço} o que ficou fora da sua foto." + "Pronto".
+   * Os alfinetes viram os marcáveis que ficaram FORA da capa publicada (metade
+   * ou mais da área fora). É o 4º indicador da régua: marca a EF02CO05 (o
+   * foco) na MESMA transação, com a lupa, o selo e os invariantes da sessão.
    */
   marcarFora(escolaId: string, estudanteId: string, toques: readonly Ponto[]) {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao) => {
@@ -496,6 +489,16 @@ export class EnigmaCapaService {
       await tx.exp02ef1bSessao.update({
         where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
         data: { foraToques: toques.map((t) => ({ x: t.x, y: t.y })), foraItens: itens, foraEm: new Date() },
+      });
+      await this.evidencias.marcar(tx, {
+        ...this.marcaDe(escolaId, estudanteId, pacote),
+        marcador: MARCADOR_CO05,
+        status: nivelCO05({
+          lupa: grauDaLupa(s.lupaAlertas),
+          selo: grauDoSelo(s.capaSeloCoerente === true),
+          invariantes: grauDosInvariantes({ ajuda: s.invariantesAjudaEm !== null, errosPosAjuda: s.invariantesErrosPosAjuda }),
+          fora: grauDoFora(itens.length),
+        }),
       });
       return {};
     });
@@ -517,51 +520,22 @@ export class EnigmaCapaService {
     });
   }
 
-  /** E5: a segunda foto — o elemento e a posição na moldura fixa. Só painel. */
+  /** E5: a segunda foto — o elemento e a posição na moldura fixa ("Colocar no álbum"). Só painel; CONCLUI a missão. */
   segundaFoto(escolaId: string, estudanteId: string, elemento: ElementoDaSegundaFoto, deslocamento: Deslocamento) {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao) => {
       const s = this.exigirSessao(sessao);
       if (s.segundaEm) return {};
       if (!s.parEm) throw erroDeJogo("passo-invalido");
+      const agora = new Date();
       await tx.exp02ef1bSessao.update({
         where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
         data: {
           segundaElemento: elemento,
           segundaDeslocamento: { x: deslocamento.x, y: deslocamento.y },
           segundaEssencialVisivel: essencialVisivelNaSegunda(deslocamento),
-          segundaEm: new Date(),
+          segundaEm: agora,
+          concluidoEm: agora,
         },
-      });
-      return {};
-    });
-  }
-
-  /**
-   * E6: o voto — o LATCH 2, que conclui. Marca a EF02CO05 (o foco) na MESMA
-   * transação, com os quatro indicadores da sessão. O mesmo voto de novo é
-   * idempotente; outro, 409.
-   */
-  transferencia(escolaId: string, estudanteId: string, voto: Voto) {
-    return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao) => {
-      const s = this.exigirSessao(sessao);
-      if (s.transferenciaVoto) {
-        if (s.transferenciaVoto === voto) return {};
-        throw erroDeJogo("ja-enviado");
-      }
-      if (!s.segundaEm) throw erroDeJogo("passo-invalido");
-      await tx.exp02ef1bSessao.update({
-        where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
-        data: { transferenciaVoto: voto, concluidoEm: new Date() },
-      });
-      await this.evidencias.marcar(tx, {
-        ...this.marcaDe(escolaId, estudanteId, pacote),
-        marcador: MARCADOR_CO05,
-        status: nivelCO05({
-          lupa: grauDaLupa(s.lupaAlertas),
-          selo: grauDoSelo(s.capaSeloCoerente === true),
-          invariantes: grauDosInvariantes({ ajuda: s.invariantesAjudaEm !== null, errosPosAjuda: s.invariantesErrosPosAjuda }),
-          transferencia: grauDaTransferencia(voto),
-        }),
       });
       return {};
     });
@@ -594,7 +568,7 @@ export class EnigmaCapaService {
         ativo: ativo ? this.paraProfessor(ativo) : null,
         rascunho: rascunho ? this.paraProfessor(rascunho) : null,
         prontos: prontos(),
-        disciplinas: DISCIPLINAS.map((slug) => ({ slug, rotulo: ROTULO_DA_DISCIPLINA[slug] })),
+        disciplinas: DISCIPLINAS_DO_RECORTE,
       };
     }, escolaId);
   }
@@ -881,9 +855,9 @@ export class EnigmaCapaService {
   }
 
   /**
-   * O PAINEL da aula — por estudante (por COMPUTADOR quando há equipe): o
-   * passo, o crachá, a lupa, a capa (foto, selo coerente, visitante), os
-   * invariantes, o "fora", o par, a segunda foto e o voto. O NÍVEL de cada
+   * O PAINEL da aula — por estudante, pelo NOME (por COMPUTADOR quando há
+   * equipe): o passo, a lupa, a capa (foto, selo coerente, visitante), os
+   * invariantes, o "fora" (marcou X de Y), o par e a segunda foto. O NÍVEL de cada
    * habilidade é da evidência (E14), não daqui. Não há texto livre na missão.
    */
   async painel(escolaId: string, turmaId: string, professorId?: string) {
@@ -901,14 +875,11 @@ export class EnigmaCapaService {
         porComputador: mapa.size > 0,
         resumo: {
           unidades: linhas.length,
-          entraram: linhas.filter((l) => l.cracha !== null).length,
+          entraram: linhas.filter((l) => l.lupa !== null).length,
           publicaram: linhas.filter((l) => l.capa !== null).length,
           aguardandoVirada: linhas.filter((l) => l.aguardandoVirada).length,
           concluiram: linhas.filter((l) => l.passo === "concluida").length,
-          votos: {
-            "so-um-pedaco": linhas.filter((l) => l.voto === "so-um-pedaco").length,
-            "mostra-tudo": linhas.filter((l) => l.voto === "mostra-tudo").length,
-          },
+          marcaramFora: linhas.filter((l) => (l.fora?.itens.length ?? 0) >= 1).length,
         },
         linhas,
         roteiro: ROTEIRO_DO_PAINEL,
@@ -916,10 +887,11 @@ export class EnigmaCapaService {
     }, escolaId);
   }
 
-  /** O material do GUIA DA AULA: os prontos COM o gabarito, o roteiro, as cartas e as réguas. Sem tenancy: é catálogo. */
+  /** O material do GUIA DA AULA: os prontos COM o gabarito, as disciplinas, o roteiro, as cartas e as réguas. Sem tenancy: é catálogo. */
   material() {
     return {
       prontos: prontos(),
+      disciplinas: DISCIPLINAS_DO_RECORTE,
       roteiro: ROTEIRO_DO_PAINEL,
       cartas: CARTAS_DOS_PARES.map((c) => ({ id: c.id, descricao: c.descricao, atividade: c.atividade, cor: c.cor })),
       habilidades: FICHA_EXP02EF1B.habilidades.map((h) => ({
@@ -946,15 +918,14 @@ export class EnigmaCapaService {
       preparada: pacote !== null,
       aguardandoVirada: passo === "feed",
       atividade: pacote ? { pacoteId: pacote.id, rodada: pacote.rodada } : null,
-      cracha: s && ehDe(CRACHAS, s.cracha) ? s.cracha : null,
       lupa: s
         ? {
-            foto1Ms: s.lupaFoto1Ms,
-            foto2Ms: s.lupaFoto2Ms,
-            fundo1: s.lupaFundo1,
-            fundo2: s.lupaFundo2,
+            alvo1Ms: s.lupaAlvo1Ms,
+            alvo2Ms: s.lupaAlvo2Ms,
             alertas: s.lupaAlertas,
             liberada: s.lupaLiberadaEm !== null,
+            /* A exceção da ADR-186: o brilho da lente precisa do lugar — só no passo da lupa. */
+            alvos: passo === "lupa" && pacote ? alvosDe(pacote.conteudo) : null,
           }
         : null,
       capa:
@@ -987,8 +958,7 @@ export class EnigmaCapaService {
         s?.segundaEm && ehDe(ELEMENTOS_DA_SEGUNDA_FOTO, s.segundaElemento)
           ? { elemento: s.segundaElemento, deslocamento: lerDeslocamento(s.segundaDeslocamento) }
           : null,
-      transferencia: s && ehDe(VOTOS, s.transferenciaVoto) ? { voto: s.transferenciaVoto } : null,
-      concluido: Boolean(s?.concluidoEm),
+      concluido: passo === "concluida",
     };
   }
 
@@ -1004,8 +974,7 @@ export class EnigmaCapaService {
       equipe: equipe ? { id: equipe.id, nome: equipe.nome, membros: equipe.membros.map((m) => ({ id: m.id, nome: m.nome })) } : null,
       passo,
       aguardandoVirada: passo === "feed",
-      cracha: s && ehDe(CRACHAS, s.cracha) ? s.cracha : null,
-      lupa: s ? { foto1Ms: s.lupaFoto1Ms, foto2Ms: s.lupaFoto2Ms, alertas: s.lupaAlertas, liberada: s.lupaLiberadaEm !== null } : null,
+      lupa: s ? { alvo1Ms: s.lupaAlvo1Ms, alvo2Ms: s.lupaAlvo2Ms, alertas: s.lupaAlertas, liberada: s.lupaLiberadaEm !== null } : null,
       capa:
         s?.capaPublicadaEm && ehDe(FOTOS, s.capaFotoId) && ehDe(["selo-1", "selo-2"] as const, s.capaSeloId)
           ? {
@@ -1037,7 +1006,6 @@ export class EnigmaCapaService {
         s?.segundaEm && ehDe(ELEMENTOS_DA_SEGUNDA_FOTO, s.segundaElemento)
           ? { elemento: s.segundaElemento, essencialVisivel: s.segundaEssencialVisivel === true }
           : null,
-      voto: s && ehDe(VOTOS, s.transferenciaVoto) ? s.transferenciaVoto : null,
     };
   }
 

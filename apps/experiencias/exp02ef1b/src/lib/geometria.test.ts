@@ -4,13 +4,15 @@ import {
   deslocarPorTecla,
   encaixar,
   estiloDaJanela,
+  fraseDaMissao,
   fraseDoFora,
+  ladoEscondido,
   lente,
   pontoNaImagem,
   posicaoNaCaixa,
   proporcaoDaJanela,
   retanguloVisivel,
-  revelacao,
+  revelouTudo,
   urlDaImagem,
 } from "./geometria";
 
@@ -127,12 +129,20 @@ describe("a lupa: ampliação FIXA de 2×", () => {
   });
 });
 
-describe("a revelação: as fotos se fundem sem mudar de escala", () => {
-  test("t = 0, lado a lado; t = 1, a foto 2 no lugar dela na panorâmica (largura 100)", () => {
-    expect(revelacao(FOTO_1, FOTO_2, 0)).toEqual({ inicioDaDireita: 68, largura: 136 });
-    expect(revelacao(FOTO_1, FOTO_2, 1)).toEqual({ inicioDaDireita: 32, largura: 100 });
-    expect(revelacao(FOTO_1, FOTO_2, 0.5).inicioDaDireita).toBeCloseTo(50);
-    expect(revelacao(FOTO_1, FOTO_2, 7)).toEqual({ inicioDaDireita: 32, largura: 100 });
+describe("o slider de comparação: a alça parte do centro e revela o lado escondido", () => {
+  test("o lado escondido é onde mais coisa ficou fora da capa", () => {
+    const capaDaFoto1 = retanguloVisivel(FOTO_1, { x: 0, y: 0.5 }, CAPA); // x 0–54,4
+    const capaDaFoto2 = retanguloVisivel(FOTO_2, { x: 1, y: 0.5 }, CAPA); // x 45,6–100
+    expect(ladoEscondido(capaDaFoto1)).toBe("direita");
+    expect(ladoEscondido(capaDaFoto2)).toBe("esquerda");
+    expect(ladoEscondido(FOTO_2)).toBe("esquerda");
+  });
+
+  test("revelou tudo = a alça no fim do curso, do lado escondido", () => {
+    expect(revelouTudo(50, "direita")).toBe(false);
+    expect(revelouTudo(97, "direita")).toBe(true);
+    expect(revelouTudo(97, "esquerda")).toBe(false);
+    expect(revelouTudo(2, "esquerda")).toBe(true);
   });
 });
 
@@ -142,6 +152,13 @@ describe("os textos com o espaço da cena", () => {
     expect(fraseDoFora("o museu")).toBe("Marque no museu o que ficou fora da sua foto.");
     expect(fraseDoFora("o pátio")).toBe("Marque no pátio o que ficou fora da sua foto.");
     expect(fraseDoFora("Escola Nova")).toBe("Marque em Escola Nova o que ficou fora da sua foto.");
+  });
+
+  test("a missão da abertura: a preposição certa, em caixa alta (espelho da api)", () => {
+    expect(fraseDaMissao("a biblioteca")).toBe("ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA");
+    expect(fraseDaMissao("o museu")).toBe("ENCONTRE NAS FOTOS 2 OBJETOS DO MUSEU");
+    expect(fraseDaMissao("as salas")).toBe("ENCONTRE NAS FOTOS 2 OBJETOS DAS SALAS");
+    expect(fraseDaMissao("Escola Nova")).toBe("ENCONTRE NAS FOTOS 2 OBJETOS DE ESCOLA NOVA");
   });
 
   test("a imagem do bundle é relativa à base (o caminho do bucket muda por versão); a da IA vai como veio", () => {

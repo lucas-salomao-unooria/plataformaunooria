@@ -52,15 +52,26 @@ function handleFalso(): ExperienciaHandle {
 const R = (x: number, y: number, w: number, h: number) => ({ x, y, w, h });
 
 function sessao(passo: Passo, extra: Partial<Estado> = {}): Sessao {
-  const publicada = !["cracha", "lupa", "decidir"].includes(passo);
+  const publicada = !["inicio", "lupa", "decidir"].includes(passo);
   return {
     passo,
-    fase: ["cracha", "lupa", "decidir", "feed"].includes(passo) ? "aberta" : "virada",
+    fase: ["inicio", "lupa", "decidir", "feed"].includes(passo) ? "aberta" : "virada",
     preparada: true,
     aguardandoVirada: passo === "feed",
     atividade: { pacoteId: "p1", rodada: 1 },
-    cracha: passo === "cracha" ? null : "fone-azul",
-    lupa: null,
+    lupa:
+      passo === "lupa"
+        ? {
+            alvo1Ms: 0,
+            alvo2Ms: 0,
+            alertas: 0,
+            liberada: false,
+            alvos: [
+              { id: "inv-1", x: 41, y: 33, r: 8 },
+              { id: "inv-2", x: 60, y: 33, r: 7 },
+            ],
+          }
+        : null,
     capa: publicada
       ? {
           fotoId: "foto-1",
@@ -79,7 +90,6 @@ function sessao(passo: Passo, extra: Partial<Estado> = {}): Sessao {
     fora: null,
     pares: null,
     segundaFoto: null,
-    transferencia: passo === "concluida" ? { voto: "so-um-pedaco" } : null,
     concluido: passo === "concluida",
     cena: {
       chave: "biblioteca",
@@ -112,12 +122,6 @@ function sessao(passo: Passo, extra: Partial<Estado> = {}): Sessao {
       toquesForaMax: 10,
     },
     material: {
-      crachas: [
-        { id: "fone-azul", rotulo: "FONE AZUL", emoji: "🎧" },
-        { id: "fone-amarelo", rotulo: "FONE AMARELO", emoji: "⭐" },
-        { id: "microfone-verde", rotulo: "MICROFONE VERDE", emoji: "🎙️" },
-        { id: "gravador-laranja", rotulo: "GRAVADOR LARANJA", emoji: "📻" },
-      ],
       cartas: ["carta-a", "carta-b", "carta-c", "carta-d"].map((id) => ({ id, imagem: { tipo: "bundle" as const, nome: `fixas/${id}.webp` } })),
       motivos: [
         { id: "atividade", rotulo: "A atividade" },
@@ -131,15 +135,8 @@ function sessao(passo: Passo, extra: Partial<Estado> = {}): Sessao {
           { id: "crianca-lendo", rotulo: "Criança lendo" },
         ],
       },
-      transferencia: {
-        imagem: { tipo: "bundle", nome: "fixas/lagarta.webp" },
-        opcoes: [
-          { id: "so-um-pedaco", rotulo: "SÓ UM PEDAÇO", emoji: "🌿" },
-          { id: "mostra-tudo", rotulo: "MOSTRA TUDO", emoji: "💥" },
-        ],
-      },
     },
-    /* Como a api manda: com o espaço e a hora já no lugar, e o {cracha} por preencher antes do crachá. */
+    /* Como a api manda: com o espaço e a hora já no lugar. */
     textos: { e2: { rotuloDaFoto1: "FOTO 1 — BIBLIOTECA ESCOLAR 14:15", rotuloDaFoto2: "FOTO 2 — BIBLIOTECA ESCOLAR 14:15" } },
     tempos: { toqueLiberadoMs: 3000, inatividadeMs: 45_000, esperaDoProfessorMs: 180_000, pollingMs: 3000 },
     ...extra,
@@ -160,9 +157,10 @@ async function abrir(s: Sessao) {
   });
 }
 
-const texto = () => recipiente?.textContent ?? "";
+/* O `body` inteiro: o aviso (o `BottomSheet` do DS) pode desenhar fora do recipiente. */
+const texto = () => document.body.textContent ?? "";
 const botao = (nome: string) =>
-  Array.from(recipiente?.querySelectorAll<HTMLElement>("button, [role=button]") ?? []).find(
+  Array.from(document.body.querySelectorAll<HTMLElement>("button, [role=button]")).find(
     (b) => (b.getAttribute("aria-label") ?? b.textContent ?? "").includes(nome),
   );
 
@@ -187,46 +185,48 @@ afterEach(async () => {
 
 describe("cada passo do servidor desenha a sua tela, com o texto do PO", () => {
   test.each<[Passo, string[]]>([
-    ["cracha", ["ESCOLHA SEU CRACHÁ"]],
-    ["lupa", ["INVESTIGAR A NOVA CAPA", "FOTO 1 — BIBLIOTECA ESCOLAR 14:15", "AVANÇAR"]],
-    ["decidir", ["POSTAGEM DE: FONE AZUL", "ESCOLHA 1 FOTO", "PUBLICAR CAPA"]],
-    ["feed", ["Na foto, vi a biblioteca!", "POSTAGEM DE: FONE AZUL"]],
-    ["invariantes", ["TOQUE EM 2 COISAS IGUAIS", "SUA FOTO", "OUTRA FOTO"]],
-    ["slider", ["AGORA EU ENTENDI!"]],
-    ["fora", ["ERA O MESMO LUGAR!", "Marque na biblioteca o que ficou fora da sua foto.", "Pronto"]],
+    ["inicio", ["RASCUNHO PENDENTE", "INVESTIGAR A NOVA CAPA", "ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA", "ABRIR BANCADA"]],
+    ["lupa", ["INVESTIGUE COM A LUPA", "0 DE 2 ENCONTRADOS", "FOTO 1 — BIBLIOTECA ESCOLAR 14:15", "AVANÇAR"]],
+    ["decidir", ["ESCOLHA 1 FOTO", "PUBLICAR CAPA"]],
+    ["feed", ["Na foto, vi a biblioteca!"]],
+    ["invariantes", ["TOQUE EM 2 COISAS IGUAIS", "0 DE 2 ENCONTRADOS", "SUA FOTO", "OUTRA FOTO"]],
+    ["slider", ["DESLIZE PARA REVELAR", "AGORA EU ENTENDI!", "SUA FOTO"]],
+    ["fora", ["Marque na biblioteca o que ficou fora da sua foto.", "ARRASTE O ALFINETE", "Pronto"]],
     ["pares", ["Junte duas fotos da mesma atividade."]],
     ["segunda-foto", ["Foto de leitura: o que precisa aparecer?", "Mochila", "Criança lendo", "Colocar no álbum"]],
-    ["transferencia", ["HORTA DA ESCOLA", "A HORTA ACABOU?", "SÓ UM PEDAÇO", "MOSTRA TUDO"]],
-    ["concluida", ["MISSÃO CUMPRIDA!", "SELEÇÃO ENVIADA"]],
+    ["concluida", ["FOTO GUARDADA NO ÁLBUM!", "MISSÃO CUMPRIDA!"]],
   ])("%s", async (passo, esperados) => {
     await abrir(sessao(passo));
     for (const t of esperados) expect(texto()).toContain(t);
   });
 
-  test("lupa reidratada (F5): o mural é pulado — volta direto à bancada", async () => {
+  test("lupa reidratada (F5): volta direto à bancada, sem o card da missão", async () => {
     await abrir(sessao("lupa"));
-    expect(texto()).not.toContain("ESCOLHA SEU CRACHÁ");
+    expect(texto()).not.toContain("ABRIR BANCADA");
   });
 
-  test("sem pacote no ar: a espera, sem o seletor", async () => {
-    await abrir(sessao("cracha", { preparada: false }));
+  test("sem pacote no ar: a espera, só a mensagem", async () => {
+    await abrir(sessao("inicio", { preparada: false }));
     expect(texto()).toContain("AGUARDE O PROFESSOR");
-    expect(texto()).not.toContain("ESCOLHA SEU CRACHÁ");
+    expect(texto()).not.toContain("ABRIR BANCADA");
   });
 });
 
 describe("os gestos que vão à api", () => {
-  test("E1: o crachá só responde depois de 3 s", async () => {
-    vi.useFakeTimers();
-    resposta = { passo: "lupa", cracha: "fone-azul" };
-    await abrir(sessao("cracha"));
-    await act(async () => botao("FONE AZUL")?.click());
-    expect(chamadas).not.toContain("/enigma-capa/cracha");
-    await act(async () => {
-      vi.advanceTimersByTime(3100);
-    });
-    await act(async () => botao("FONE AZUL")?.click());
-    expect(chamadas).toContain("/enigma-capa/cracha");
+  test("E1: ABRIR BANCADA abre a sessão (`POST /iniciar`)", async () => {
+    resposta = { passo: "lupa" };
+    await abrir(sessao("inicio"));
+    await act(async () => botao("ABRIR BANCADA")?.click());
+    expect(chamadas).toContain("/enigma-capa/iniciar");
+  });
+
+  test("E2: AVANÇAR antes de achar os dois objetos abre o aviso OLHE O FUNDO", async () => {
+    resposta = { ...({ liberado: false, alerta: true } as object) };
+    await abrir(sessao("lupa"));
+    await act(async () => botao("AVANÇAR")!.click());
+    expect(chamadas).toContain("/enigma-capa/lupa");
+    expect(texto()).toContain("OLHE O FUNDO");
+    expect(texto()).toContain("VOLTAR À INVESTIGAÇÃO");
   });
 
   test("E3: escolher a foto abre a moldura e os selos; o selo por toque acende PUBLICAR CAPA", async () => {
@@ -238,11 +238,16 @@ describe("os gestos que vão à api", () => {
     expect(texto()).toContain("Arraste a foto");
     await act(async () => botao("CONTAÇÃO DE HISTÓRIAS")!.click());
     expect(publicar().disabled).toBe(false);
+    expect(texto()).toContain("CAPA PRONTA!");
+    resposta = { passo: "feed", aguardandoVirada: true, capa: sessao("feed").capa };
     await act(async () => publicar().click());
     expect(chamadas).toContain("/enigma-capa/publicar");
+    expect(texto()).toContain("CAPA PUBLICADA!");
+    await act(async () => botao("IR PARA O FEED")!.click());
+    expect(texto()).toContain("Na foto, vi a biblioteca!");
   });
 
-  test("E4: o feed segura a visitante 5 s antes do cadeado", async () => {
+  test("E4: o feed segura a visitante 5 s antes do aviso, que é só a mensagem", async () => {
     vi.useFakeTimers();
     await abrir(sessao("feed"));
     expect(texto()).not.toContain("AGUARDE O PROFESSOR");
@@ -255,6 +260,9 @@ describe("os gestos que vão à api", () => {
       vi.advanceTimersByTime(180_000);
     });
     expect(texto()).toContain("O PROFESSOR JÁ VEM!");
+    const aviso = document.body.querySelector(".aviso");
+    expect(aviso).not.toBeNull();
+    expect(aviso!.querySelector("[class*='avatar']")).toBeNull();
   });
 
   test("E4: tocar na foto manda o ponto DA PANORÂMICA", async () => {
@@ -268,14 +276,28 @@ describe("os gestos que vão à api", () => {
     expect(chamadas).toContain("/enigma-capa/invariantes");
   });
 
-  test("E4: o fim do slider abre a panorâmica (`POST /slider`)", async () => {
+  test("E4: a alça parte do centro; no fim do lado escondido, `POST /slider` e A CENA COMPLETA", async () => {
+    resposta = { passo: "fora", panoramicaAberta: true };
     await abrir(sessao("slider"));
-    const slider = recipiente!.querySelector<HTMLInputElement>("input[type=range]")!;
-    const definir = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
-    await act(async () => {
-      definir.call(slider, "100");
-      slider.dispatchEvent(new Event("input", { bubbles: true }));
-    });
+    const alca = recipiente!.querySelector<HTMLElement>("[role=slider]")!;
+    expect(alca.getAttribute("aria-valuenow")).toBe("50");
+    for (let i = 0; i < 10; i++) {
+      await act(async () => alca.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
+    }
     expect(chamadas).toContain("/enigma-capa/slider");
+    expect(texto()).toContain("A CENA COMPLETA");
+    expect(texto()).toContain("ERA O MESMO LUGAR!");
+    await act(async () => botao("AVANÇAR")!.click());
+    expect(texto()).toContain("Marque na biblioteca o que ficou fora da sua foto.");
+  });
+
+  test("E4: o Pronto só acende com um alfinete fincado", async () => {
+    await abrir(sessao("fora"));
+    const pronto = () => botao("Pronto") as HTMLButtonElement;
+    expect(pronto().disabled).toBe(true);
+    await act(async () => botao("ARRASTE O ALFINETE")!.click());
+    expect(pronto().disabled).toBe(false);
+    await act(async () => pronto().click());
+    expect(chamadas).toContain("/enigma-capa/fora");
   });
 });

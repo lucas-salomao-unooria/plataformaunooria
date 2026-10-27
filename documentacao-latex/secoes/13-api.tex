@@ -1307,7 +1307,7 @@ Apêndice~\ref{ap:endpoints}. A Missão Tempestade, versão anterior, continua e
 % gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer.
 
 Desde 2026-10-26 (\adrr{ADR-184}), no módulo \arq{enigma-capa}, no molde de O
-Efeito Amplificador. Vinte e cinco rotas em três \emph{controllers}: onze do
+Efeito Amplificador. Vinte e quatro rotas em três \emph{controllers}: dez do
 estudante (\cd{@Roles("estudante")} na classe e \cd{exigirMissaoLiberada} no
 funil de TODAS, com a disponibilidade junto: 403 \cd{missao-\B{}nao-\B{}liberada} ou
 \cd{recurso-\B{}indisponivel}), treze por turma (\cd{@Roles} por método: as
@@ -1317,9 +1317,9 @@ leciona; turma que ele não leciona é 404) e uma de catálogo. O contrato HTTP 
 hub espelham os tipos dele. Sem atividade no ar, as jogadas respondem 409
 \cd{radio-em-preparo} e a sessão, \cd{preparada: false}. Toda resposta de
 \cd{POST} de estudante É o estado inteiro (as que têm resultado próprio o
-estendem). A turma do estudante sai do \emph{token}, nunca do corpo. Não há
-rota de texto livre, nem Canal B: \rota{/evidencias/\B{}exp02ef1b/\B{}perguntas/*} não
-responde por ela. O podcast é do módulo da plataforma
+estendem). A turma do estudante sai do \emph{token}, nunca do corpo. Nenhuma
+rota recebe texto da criança, e a ficha não tem pergunta: a evidência é 100\%
+ação em tela. O podcast é do módulo da plataforma
 (\rota{/podcast/\B{}exp02ef1b/\B{}turmas/:t/*}, \adrr{ADR-150}).
 
 \begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
@@ -1328,16 +1328,17 @@ responde por ela. O podcast é do módulo da plataforma
 \midrule
 \rota{GET /enigma-capa/sessao} & estudante & O estado (o passo, DERIVADO), a
   cena SEM o gabarito, a \cd{geometria} (recortes, faixa comum, molduras,
-  piso da lupa), o material fixo (crachás, cartas só com id e imagem, segunda
-  foto, horta), os textos literais e os tempos.\\
+  piso da lupa), o material fixo (cartas só com id e imagem, segunda foto),
+  os textos literais e os tempos. No passo da lupa, os dois alvos do fundo
+  (\cd{lupa.alvos}, \adrr{ADR-186}).\\
 \zebra \rota{GET /enigma-capa/gate} & estudante & O \emph{polling} de 3\,s:
   a fase da turma, a rodada, a atividade e o passo, com o instante do
   servidor.\\
-\rota{POST /enigma-capa/cracha} & estudante & E1: o crachá (um de quatro);
-  abre a sessão da rodada. Idempotente.\\
-\zebra \rota{POST /enigma-capa/lupa} & estudante & E2: o relato da lupa (os
-  dois tempos e o fundo das duas fotos). Guarda o máximo, limitado ao tempo
-  desde o crachá; com \cd{avancar}, o piso libera o \cd{decidir}, e sem ele o
+\rota{POST /enigma-capa/iniciar} & estudante & E1: ABRIR BANCADA; abre a
+  sessão da rodada, sem corpo. Idempotente.\\
+\zebra \rota{POST /enigma-capa/lupa} & estudante & E2: o relato da lupa (o
+  tempo sobre cada um dos dois objetos). Guarda o máximo, limitado ao tempo
+  desde a entrada; com \cd{avancar}, o piso libera o \cd{decidir}, e sem ele o
   alerta conta (200, \cd{alerta: true}).\\
 \rota{POST /enigma-capa/publicar} & estudante & E3, \textbf{o LATCH 1}: a
   foto, o selo e o \cd{deslocamento} na moldura, gravados num UPDATE só; o
@@ -1349,23 +1350,20 @@ responde por ela. O podcast é do módulo da plataforma
   depois da virada (409 \cd{virada-nao-liberada}); fora do recorte, 400. No
   quarto achado marca a EF02CO01.\\
 \rota{POST /enigma-capa/slider} & estudante & E4: a panorâmica aberta.\\
-\zebra \rota{POST /enigma-capa/fora} & estudante & E4: até 10 toques na cena
-  inteira; o servidor os converte nos marcáveis que ficaram FORA da capa.
-  Zero toques vale.\\
+\zebra \rota{POST /enigma-capa/fora} & estudante & E4: de 1 a 10 alfinetes na
+  cena inteira; o servidor os converte nos marcáveis que ficaram FORA da capa
+  e marca a EF02CO05.\\
 \rota{POST /enigma-capa/pares} & estudante & E5: as duas cartas e o motivo
   (\cd{atividade} $|$ \cd{roupa}); o acerto é calculado no servidor. Carta
   desconhecida, 400.\\
 \zebra \rota{POST /enigma-capa/\B{}segunda-foto} & estudante & E5: o elemento
   (mochila, parede, criança lendo) e o deslocamento; o servidor calcula se a
-  criança lendo ficou visível.\\
-\rota{POST /enigma-capa/\B{}transferencia} & estudante & E6, \textbf{o LATCH
-  2}: o voto (\cd{so-um-pedaco} $|$ \cd{mostra-tudo}); conclui e marca a
-  EF02CO05. Outro voto depois: 409 \cd{ja-enviado}.\\
+  criança lendo ficou visível. Conclui a missão.\\
 \zebra \rota{GET /enigma-capa/turmas} & prof., gestor & As turmas que o
   professor leciona, com o número de estudantes.\\
 \rota{GET .../turmas/:turmaId/pacote} & prof., gestor & A atividade em
   andamento e o rascunho (COM o gabarito: é o roteiro do professor), os três
-  prontos e as disciplinas.\\
+  prontos e os componentes curriculares do 2º ano.\\
 \zebra \rota{GET .../turmas/:turmaId/rascunho} & prof., gestor & O rascunho
   da turma, com as pendências que faltam para aprovar.\\
 \rota{POST .../turmas/:turmaId/\B{}gerar-conteudo} & \textbf{só professor} &
@@ -1408,10 +1406,11 @@ responde por ela. O podcast é do módulo da plataforma
 \textbf{O gabarito sai só em respostas de PROFESSOR} --- o pacote, o rascunho,
 o detalhe da atividade, o painel e o material do guia. Ao estudante, a cena
 desce sem núcleo, sem a fala da visitante, sem o selo coerente, sem os alvos e
-sem os marcáveis; as duas exceções são o alvo do objeto já achado e os alvos
+sem os marcáveis; as três exceções são os dois alvos no passo da lupa (o
+brilho precisa do lugar), o alvo do objeto já achado na busca e os alvos
 depois da ajuda (Seção~\ref{sec:exp02ef1b}). As duas habilidades são marcadas
-nas transações dos gestos: a EF02CO01 no quarto achado e a EF02CO05 no voto da
-horta.
+nas transações dos gestos: a EF02CO01 no quarto achado e a EF02CO05 no
+\enquote{Pronto} do que ficou fora.
 \end{regra}
 
 \subsection{Jornal da Escola (exp04ef1b)}

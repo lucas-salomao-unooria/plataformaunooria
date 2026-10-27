@@ -15,7 +15,7 @@ export class EnigmaCapaProfessorController {
 
   @Get("material")
   @Contrato({
-    resumo: "Os pacotes prontos COM o gabarito, o roteiro da conversa, as cartas da E5 e as réguas.",
+    resumo: "Os pacotes prontos COM o gabarito, os componentes curriculares do recorte, o roteiro da conversa, as cartas da E5 e as réguas.",
     resposta: MaterialSchema,
   })
   material() {
