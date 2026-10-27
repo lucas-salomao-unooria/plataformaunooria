@@ -15,6 +15,8 @@ import {
   GerarRespostaSchema,
   GerarSchema,
   HomologarSchema,
+  ImagemDoRascunhoRespostaSchema,
+  ImagemDoRascunhoSchema,
   NovaRodadaRespostaSchema,
   NovaRodadaSchema,
   PacoteDaTurmaSchema,
@@ -110,7 +112,7 @@ export class EnigmaCapaTurmasController {
   @Contrato({
     resumo: '"Gerar com IA": o RASCUNHO da cena — o texto e a panorâmica (pré-aula).',
     descricao:
-      "Quota do PERFIL `professor` (regra 5): `temSaldo` ANTES e o que o vendor cobrou (texto e imagem) debitado depois. A saída passa pela mesma régua da homologação. A cena da IA nasce SEM os alvos: o professor toca nos dois objetos (`rascunho/invariantes`). Sem saldo ou com o vendor fora, o rascunho sai do pacote PRONTO da disciplina (`usouIa: false`, `motivo`). Gerar de novo substitui o rascunho. **Não aprova.**",
+      "Quota do PERFIL `professor` (regra 5): `temSaldo` ANTES e o que o vendor cobrou (texto e imagem) debitado depois. A saída passa pela mesma régua da homologação. A cena da IA nasce SEM os alvos: o professor desenha a área dos dois objetos (`rascunho/invariantes`); o rascunho guarda o `pedidoDaImagem`, que ele pode editar (`rascunho/imagem`). Sem saldo ou com o vendor fora, o rascunho sai do pacote PRONTO da disciplina (`usouIa: false`, `motivo`). Gerar de novo substitui o rascunho. **Não aprova.**",
     params: ParamsDaTurmaSchema,
     query: QueryDaEscolaSchema,
     corpo: GerarSchema,
@@ -126,8 +128,9 @@ export class EnigmaCapaTurmasController {
   @HttpCode(200)
   @Roles("professor")
   @Contrato({
-    resumo: '"Toque no {NOME}": o professor marca os dois objetos iguais na panorâmica do rascunho.',
-    descricao: "Coordenadas da panorâmica (0–100). O raio é o padrão da missão. Os dois precisam estar na parte do meio, que aparece nas duas fotos.",
+    resumo: '"Desenhe a área do {NOME}": o professor marca a área de cada um dos dois objetos iguais na panorâmica do rascunho.',
+    descricao:
+      "Retângulos da panorâmica (0–100): o objeto inteiro, do tamanho que ele tiver (ADR-188). Os dois precisam caber na parte do meio, que aparece nas duas fotos, sem se sobrepor, entre o tamanho mínimo e o máximo da missão.",
     params: ParamsDaTurmaSchema,
     query: QueryDaEscolaSchema,
     corpo: AlvosDoRascunhoSchema,
@@ -137,6 +140,27 @@ export class EnigmaCapaTurmasController {
   alvos(@Param("turmaId") turmaId: string, @Query("escolaId") escolaIdPedida: string | undefined, @Body() corpo: unknown, @Req() req: Autenticado) {
     const alvos = corpoDe(AlvosDoRascunhoSchema, corpo, "payload-invalido");
     return this.missao.marcarAlvos(escolaAlvo(req.auth, escolaIdPedida), turmaDoCaminho(turmaId), req.auth.usuarioId, alvos);
+  }
+
+  @Post(":turmaId/rascunho/imagem")
+  @HttpCode(200)
+  @Roles("professor")
+  @Contrato({
+    resumo: '"Gerar a imagem com este pedido": outra imagem para o rascunho gerado por IA, a partir do pedido que o professor editou.',
+    descricao:
+      "Só a IMAGEM: selos, falas e os nomes dos objetos ficam. O `pedido` é a descrição da cena; as regras de segurança e de composição a api acrescenta sempre (ADR-188). Quota do PERFIL `professor` (regra 5), como o `gerar-conteudo`. A imagem nova apaga as áreas desenhadas (`alvos` voltam a `null`). Sem saldo ou com a IA fora, o rascunho volta igual com `usouIa: false` e o `motivo`.",
+    params: ParamsDaTurmaSchema,
+    query: QueryDaEscolaSchema,
+    corpo: ImagemDoRascunhoSchema,
+    resposta: ImagemDoRascunhoRespostaSchema,
+    notas: [
+      NOTA_DO_404 + " A turma e o rascunho são conferidos ANTES de gastar token.",
+      "Pedido fora do tamanho: **400** `payload-invalido`. Rascunho de pacote pronto: **409** `imagem-so-da-ia`. Outro rascunho: **409** `rascunho-desatualizado`.",
+    ],
+  })
+  imagem(@Param("turmaId") turmaId: string, @Query("escolaId") escolaIdPedida: string | undefined, @Body() corpo: unknown, @Req() req: Autenticado) {
+    const pedido = corpoDe(ImagemDoRascunhoSchema, corpo, "payload-invalido");
+    return this.missao.gerarImagem(escolaAlvo(req.auth, escolaIdPedida), turmaDoCaminho(turmaId), req.auth.usuarioId, req.auth.perfil, pedido);
   }
 
   @Post(":turmaId/homologar")

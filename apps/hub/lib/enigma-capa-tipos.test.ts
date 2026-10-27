@@ -11,11 +11,16 @@ import {
   INVARIANTES,
   MOTIVOS_DO_PAR,
   ORIGENS,
+  AREA_DO_ALVO,
   PASSOS,
-  RAIO_PADRAO,
+  PEDIDO_DA_IMAGEM,
   ROTULO_DA_DISCIPLINA,
   SELOS,
-  alvoNaFaixaComum,
+  areaDoArraste,
+  areaDoToque,
+  areasSeSobrepoem,
+  ehArraste,
+  problemasDaArea,
   mudouAEvidencia,
   palavrasDoTexto,
   pontoNaPanoramica,
@@ -66,9 +71,12 @@ describe("o espelho dos vocabulários", () => {
     }
   });
 
-  test("a faixa comum e o raio padrão são os da api", () => {
+  test("a faixa comum, os limites da área e o tamanho do pedido são os da api", () => {
     expect(conteudo).toContain(`FAIXA_COMUM = { de: ${FAIXA_COMUM.de}, ate: ${FAIXA_COMUM.ate} }`);
-    expect(conteudo).toContain(`RAIO_PADRAO = ${RAIO_PADRAO};`);
+    expect(conteudo).toContain(
+      `AREA_DO_ALVO = { minW: ${AREA_DO_ALVO.minW}, minH: ${AREA_DO_ALVO.minH}, maxW: ${AREA_DO_ALVO.maxW}, maxH: ${AREA_DO_ALVO.maxH} }`,
+    );
+    expect(conteudo).toContain(`PEDIDO_DA_IMAGEM = { min: ${PEDIDO_DA_IMAGEM.min}, max: ${PEDIDO_DA_IMAGEM.max} }`);
   });
 });
 
@@ -80,10 +88,26 @@ describe("a curadoria", () => {
     expect(pontoNaPanoramica({ x: 2000, y: -10 }, caixa)).toEqual({ x: 100, y: 0 });
   });
 
-  test("o alvo só vale na faixa que aparece nas duas fotos", () => {
-    expect(alvoNaFaixaComum(50)).toBe(true);
-    expect(alvoNaFaixaComum(36)).toBe(false);
-    expect(alvoNaFaixaComum(64)).toBe(false);
+  test("a área do arraste: em qualquer direção, PRESA à faixa que aparece nas duas fotos", () => {
+    expect(areaDoArraste({ x: 40, y: 20 }, { x: 50, y: 50 })).toEqual({ x: 40, y: 20, w: 10, h: 30 });
+    expect(areaDoArraste({ x: 50, y: 50 }, { x: 40, y: 20 })).toEqual({ x: 40, y: 20, w: 10, h: 30 });
+    /* Arrastou para fora da faixa: a caixa para na borda dela. */
+    expect(areaDoArraste({ x: 20, y: 20 }, { x: 80, y: 40 })).toEqual({ x: 32, y: 20, w: 36, h: 20 });
+  });
+
+  test("um clique vira uma caixa média centrada nele, dentro da faixa", () => {
+    expect(ehArraste({ x: 40, y: 20, w: 0.5, h: 1 })).toBe(false);
+    expect(ehArraste({ x: 40, y: 20, w: 10, h: 1 })).toBe(true);
+    expect(areaDoToque({ x: 50, y: 40 })).toEqual({ x: 45, y: 31, w: 10, h: 18 });
+    expect(areaDoToque({ x: 33, y: 2 })).toEqual({ x: 32, y: 0, w: 10, h: 18 });
+  });
+
+  test("o aviso da área: pequena, grande e sobreposta (a api decide; isto avisa)", () => {
+    expect(problemasDaArea("RELÓGIO", { x: 40, y: 20, w: 10, h: 18 })).toEqual([]);
+    expect(problemasDaArea("RELÓGIO", { x: 40, y: 20, w: 2, h: 18 })[0]).toMatch(/pequena demais/);
+    expect(problemasDaArea("RELÓGIO", { x: 32, y: 0, w: 36, h: 18 })[0]).toMatch(/grande demais/);
+    expect(areasSeSobrepoem({ x: 35, y: 20, w: 10, h: 20 }, { x: 44, y: 20, w: 10, h: 20 })).toBe(true);
+    expect(areasSeSobrepoem({ x: 35, y: 20, w: 10, h: 20 }, { x: 45, y: 20, w: 10, h: 20 })).toBe(false);
   });
 
   test("imagem do bundle precisa da base; a da IA vai como veio", () => {

@@ -7,10 +7,23 @@ import type { Contexto } from "../contexto";
 import { prefereMenosMovimento, useInatividade, useTamanho } from "../hooks/tela";
 import { api } from "../lib/api";
 import { encaixar, lente, limitar, pontoNaImagem, proporcaoDaJanela } from "../lib/geometria";
-import { achados as achadosDe, alvoQueFalta, alvoSob, juntarRelatos, LUPA_VAZIA, msDo, pisoLocal, registrarAmostra, relatoMudou } from "../lib/lupa";
+import {
+  achados as achadosDe,
+  achadosNaFoto,
+  alvoQueFalta,
+  alvoSob,
+  chaveDe,
+  fotoDa,
+  juntarRelatos,
+  LUPA_VAZIA,
+  objetoDa,
+  pisoLocal,
+  registrarAmostra,
+  relatoMudou,
+} from "../lib/lupa";
 import { telemetria } from "../lib/telemetria";
 import { preencher, ROTULOS, textoDe } from "../lib/textos";
-import type { Alvo, FotoId, InvarianteId, Ponto, RelatoDaLupa, Retangulo } from "../lib/tipos";
+import type { Alvo, ChaveDaLupa, FotoId, Ponto, RelatoDaLupa, Retangulo } from "../lib/tipos";
 
 /** O raio da lente, em px: 112 px de diâmetro, maior que um dedo de 7 anos (o alvo ≥ 56 px). */
 const RAIO = 56;
@@ -38,16 +51,19 @@ interface FotoNaTela {
  *
  * As duas fotos brutas, imóveis, e a LUPA circular de ampliação fixa 2× que a
  * criança arrasta. A missão (a tela de abertura disse) é achar os DOIS objetos
- * do fundo. Quando o centro da lente para sobre um deles, a lente BRILHA e o
- * anel em volta dela enche em 3 s ("SEGURE A LUPA AQUI!"); cheio, o objeto
- * ganha o círculo dourado nas duas fotos e o contador anda ("1 DE 2
- * ENCONTRADOS"). Os dois achados: "INVESTIGAÇÃO COMPLETA!" e o AVANÇAR acende.
+ * IGUAIS nas DUAS fotos. Quando o centro da lente para sobre um deles, a lente
+ * BRILHA e o anel em volta dela enche em 3 s ("SEGURE A LUPA AQUI!"); cheio,
+ * o objeto ganha a moldura dourada SÓ NA FOTO em que a lente estava, o rótulo
+ * daquela foto anda ("1 DE 2") e o contador também ("1 DE 4 ENCONTRADOS"). Achar
+ * na foto 1 não acha na foto 2 (2.2.0, ADR-188): a criança investiga as duas.
+ * Os quatro achados: "INVESTIGAÇÃO COMPLETA!" e o AVANÇAR acende.
  *
- * O lugar dos dois objetos desce SÓ neste passo (`estado.lupa.alvos`): o
- * brilho precisa dele. O que a E4 cobra é achá-los NAS DUAS fotos, por toque,
+ * O lugar dos dois objetos — a ÁREA que o professor desenhou, do tamanho do
+ * objeto (ADR-188) — desce SÓ neste passo (`estado.lupa.alvos`): o brilho
+ * precisa dele. O que a E4 cobra é achá-los NAS DUAS fotos, por toque,
  * e isso o servidor continua corrigindo.
  *
- * O piso (3 s em CADA objeto) é medido aqui e decidido na api: o relato vai de
+ * O piso (3 s em CADA objeto, em CADA foto) é medido aqui e decidido na api: o relato vai de
  * tempos em tempos e no toque de AVANÇAR. Antes do piso o botão fica
  * esmaecido mas tocável — o toque precoce é a evidência que a régua lê
  * (`lupa_alertas`): a tela vibra, o aviso "OLHE O FUNDO" abre e, ao voltar, a
@@ -111,18 +127,18 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
       const { x, y, w, h } = f.caixa;
       if (c.x >= x && c.x <= x + w && c.y >= y && c.y <= y + h) {
         const ponto = pontoNaImagem(f.recorte, c.x - x, c.y - y, { w, h });
-        return { foto: f, ponto, alvo: alvoSob(alvosRef.current, ponto, geo.proporcaoDaPanoramica) };
+        return { foto: f, ponto, alvo: alvoSob(alvosRef.current, ponto, geo.margemDoAlvo ?? 1.5, geo.proporcaoDaPanoramica) };
       }
     }
     return null;
   }
 
-  /* ── o cronômetro: a cada amostra, o tempo vai para o objeto sob o centro da lente ── */
-  const inicial: RelatoDaLupa = estado.lupa ? { alvo1Ms: estado.lupa.alvo1Ms, alvo2Ms: estado.lupa.alvo2Ms } : LUPA_VAZIA;
+  /* ── o cronômetro: a cada amostra, o tempo vai para o objeto sob o centro da lente, NAQUELA foto ── */
+  const inicial: RelatoDaLupa = estado.lupa ? { ...LUPA_VAZIA, ...estado.lupa.tempos } : LUPA_VAZIA;
   const lupaRef = useRef<RelatoDaLupa>(inicial);
   const enviadoRef = useRef<RelatoDaLupa>(inicial);
   const [lupa, setLupa] = useState<RelatoDaLupa>(inicial);
-  const [sobreAlvo, setSobreAlvo] = useState<InvarianteId | null>(null);
+  const [sobre, setSobre] = useState<ChaveDaLupa | null>(null);
   const [sobreFoto, setSobreFoto] = useState<FotoId | null>(null);
 
   useEffect(() => {
@@ -133,15 +149,15 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
       ultimo = agora;
       if (document.visibilityState !== "visible") return;
       const s = sob(centroRef.current);
-      const alvo = s?.alvo?.id ?? null;
+      const chave = s?.alvo ? chaveDe(s.alvo.id, s.foto.id) : null;
       const antes = lupaRef.current;
-      lupaRef.current = registrarAmostra(antes, alvo, dt);
-      if (alvo && msDo(antes, alvo) < piso && msDo(lupaRef.current, alvo) >= piso) {
+      lupaRef.current = registrarAmostra(antes, chave, dt);
+      if (chave && antes[chave] < piso && lupaRef.current[chave] >= piso) {
         telemetria.achouNaLupa();
         if (!prefereMenosMovimento()) navigator.vibrate?.(40);
       }
       setLupa(lupaRef.current);
-      setSobreAlvo(alvo);
+      setSobre(chave);
       setSobreFoto(s?.foto.id ?? null);
     }, AMOSTRA_MS);
     return () => window.clearInterval(id);
@@ -229,18 +245,21 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
   const vista = s
     ? lente(s.foto.recorte, { w: s.foto.caixa.w, h: s.foto.caixa.h }, { x: centro.x - s.foto.caixa.x, y: centro.y - s.foto.caixa.y }, RAIO, AMPLIACAO)
     : null;
-  /* O objeto sob a lente ainda não achado: a lente brilha e o anel enche. */
-  const procurando = sobreAlvo && !achados.includes(sobreAlvo) ? sobreAlvo : null;
-  const fracao = procurando ? Math.min(1, msDo(lupa, procurando) / piso) : 0;
-  const naCaixa = (f: FotoNaTela, a: Alvo) => ({
-    x: f.caixa.x + ((a.x - f.recorte.x) / f.recorte.w) * f.caixa.w,
-    y: f.caixa.y + ((a.y - f.recorte.y) / f.recorte.h) * f.caixa.h,
-    r: Math.max(22, (a.r / f.recorte.w) * f.caixa.w),
-  });
-  /* A mãozinha, depois do "OLHE O FUNDO": no objeto que falta, na primeira foto. */
-  const falta = alvoQueFalta(lupa, piso);
-  const alvoDaMao = alertas > 0 && !alertaAberto && falta ? alvos.find((a) => a.id === falta) : undefined;
-  const fotoDaMao = fotos[0];
+  /* O objeto sob a lente, nesta foto, ainda não achado: a lente brilha e o anel enche. */
+  const procurando = sobre && !achados.includes(sobre) ? sobre : null;
+  const fracao = procurando ? Math.min(1, lupa[procurando] / piso) : 0;
+  /** A área do objeto em px dentro da caixa da foto (com um mínimo, para a moldura dourada não sumir). */
+  const naCaixa = (f: FotoNaTela, a: Alvo) => {
+    const w = Math.max(36, (a.w / f.recorte.w) * f.caixa.w);
+    const h = Math.max(36, (a.h / f.recorte.h) * f.caixa.h);
+    const cx = f.caixa.x + ((a.x + a.w / 2 - f.recorte.x) / f.recorte.w) * f.caixa.w;
+    const cy = f.caixa.y + ((a.y + a.h / 2 - f.recorte.y) / f.recorte.h) * f.caixa.h;
+    return { x: cx - w / 2, y: cy - h / 2, w, h, cx, cy };
+  };
+  /* A mãozinha, depois do "OLHE O FUNDO": no objeto que falta, NA FOTO em que ele falta. */
+  const falta = alertas > 0 && !alertaAberto ? alvoQueFalta(lupa, piso) : null;
+  const alvoDaMao = falta ? alvos.find((a) => a.id === objetoDa(falta)) : undefined;
+  const fotoDaMao = falta ? fotos.find((f) => f.id === fotoDa(falta)) : undefined;
 
   return (
     <section className="bancada">
@@ -281,7 +300,10 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
         {fotos.map((f) => (
           <div key={f.id}>
             <p className="bancada__rotulo" style={{ left: f.caixa.x, top: f.caixa.y - ROTULO_H, width: f.caixa.w }}>
-              {f.rotulo}
+              <span className="bancada__rotulo-texto">{f.rotulo}</span>
+              <BadgeUnv variant="neutral" className="bancada__rotulo-contador" data-foto={f.id}>
+                {preencher(textoDe(sessao.textos, "e2", "contadorDaFoto"), { n: String(achadosNaFoto(lupa, piso, f.id)) })}
+              </BadgeUnv>
             </p>
             <Janela
               src={src}
@@ -293,32 +315,24 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
           </div>
         ))}
 
-        {/* O círculo dourado nos objetos já achados, nas duas fotos. */}
-        {fotos.flatMap((f) =>
-          alvos
-            .filter((a) => achados.includes(a.id))
-            .map((a) => {
-              const q = naCaixa(f, a);
-              return (
-                <span
-                  key={`${f.id}-${a.id}`}
-                  className="achado-na-lupa"
-                  aria-hidden="true"
-                  style={{ left: q.x - q.r, top: q.y - q.r, width: q.r * 2, height: q.r * 2 }}
-                />
-              );
-            }),
-        )}
+        {/* A moldura dourada no objeto achado — SÓ na foto em que a lente o achou. */}
+        {achados.flatMap((k) => {
+          const f = fotos.find((x) => x.id === fotoDa(k));
+          const a = alvos.find((x) => x.id === objetoDa(k));
+          if (!f || !a) return [];
+          const q = naCaixa(f, a);
+          return [<span key={k} className="achado-na-lupa" data-achado={k} aria-hidden="true" style={{ left: q.x, top: q.y, width: q.w, height: q.h }} />];
+        })}
 
         {alvoDaMao && fotoDaMao ? (
-          <span key={`mao-${alertas}`} className="bancada__mao" style={{ left: naCaixa(fotoDaMao, alvoDaMao).x, top: naCaixa(fotoDaMao, alvoDaMao).y }}>
+          <span key={`mao-${alertas}-${falta}`} className="bancada__mao" style={{ left: naCaixa(fotoDaMao, alvoDaMao).cx, top: naCaixa(fotoDaMao, alvoDaMao).cy }}>
             <GestureHint gesture="tap" iterations={3} />
           </span>
         ) : null}
 
         {area.w > 0 ? (
           <div
-            className={`lupa${procurando ? " lupa--brilhando" : ""}${sobreAlvo && achados.includes(sobreAlvo) ? " lupa--achou" : ""}`}
+            className={`lupa${procurando ? " lupa--brilhando" : ""}${sobre && achados.includes(sobre) ? " lupa--achou" : ""}`}
             role="img"
             aria-roledescription={ROTULOS.lupa}
             aria-label={ROTULOS.lupaAria}

@@ -78336,11 +78336,37 @@
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "alvo1Ms": {
-                          "type": "integer"
-                        },
-                        "alvo2Ms": {
-                          "type": "integer"
+                        "tempos": {
+                          "type": "object",
+                          "properties": {
+                            "inv-1:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-1:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            }
+                          },
+                          "required": [
+                            "inv-1:foto-1",
+                            "inv-1:foto-2",
+                            "inv-2:foto-1",
+                            "inv-2:foto-2"
+                          ],
+                          "additionalProperties": false
                         },
                         "alertas": {
                           "type": "integer"
@@ -78366,7 +78392,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -78374,7 +78403,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -78382,8 +78412,7 @@
                         }
                       },
                       "required": [
-                        "alvo1Ms",
-                        "alvo2Ms",
+                        "tempos",
                         "alertas",
                         "liberada",
                         "alvos"
@@ -78520,7 +78549,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -78528,7 +78560,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -78552,7 +78585,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -78560,7 +78596,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           }
@@ -79050,6 +79087,9 @@
                         "pisoDaLupaMs": {
                           "type": "integer"
                         },
+                        "margemDoAlvo": {
+                          "type": "number"
+                        },
                         "toquesForaMax": {
                           "type": "integer"
                         }
@@ -79061,6 +79101,7 @@
                         "molduraDaCapa",
                         "segundaFoto",
                         "pisoDaLupaMs",
+                        "margemDoAlvo",
                         "toquesForaMax"
                       ],
                       "additionalProperties": false
@@ -79471,11 +79512,37 @@
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "alvo1Ms": {
-                          "type": "integer"
-                        },
-                        "alvo2Ms": {
-                          "type": "integer"
+                        "tempos": {
+                          "type": "object",
+                          "properties": {
+                            "inv-1:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-1:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            }
+                          },
+                          "required": [
+                            "inv-1:foto-1",
+                            "inv-1:foto-2",
+                            "inv-2:foto-1",
+                            "inv-2:foto-2"
+                          ],
+                          "additionalProperties": false
                         },
                         "alertas": {
                           "type": "integer"
@@ -79501,7 +79568,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -79509,7 +79579,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -79517,8 +79588,7 @@
                         }
                       },
                       "required": [
-                        "alvo1Ms",
-                        "alvo2Ms",
+                        "tempos",
                         "alertas",
                         "liberada",
                         "alvos"
@@ -79655,7 +79725,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -79663,7 +79736,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -79687,7 +79761,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -79695,7 +79772,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           }
@@ -79928,11 +80006,37 @@
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "alvo1Ms": {
-                          "type": "integer"
-                        },
-                        "alvo2Ms": {
-                          "type": "integer"
+                        "tempos": {
+                          "type": "object",
+                          "properties": {
+                            "inv-1:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-1:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            }
+                          },
+                          "required": [
+                            "inv-1:foto-1",
+                            "inv-1:foto-2",
+                            "inv-2:foto-1",
+                            "inv-2:foto-2"
+                          ],
+                          "additionalProperties": false
                         },
                         "alertas": {
                           "type": "integer"
@@ -79958,7 +80062,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -79966,7 +80073,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -79974,8 +80082,7 @@
                         }
                       },
                       "required": [
-                        "alvo1Ms",
-                        "alvo2Ms",
+                        "tempos",
                         "alertas",
                         "liberada",
                         "alvos"
@@ -80112,7 +80219,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -80120,7 +80230,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -80144,7 +80255,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -80152,7 +80266,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           }
@@ -80308,7 +80423,7 @@
           "enigma-capa"
         ],
         "summary": "E2: o relato da lupa — e, com `avancar`, o piso.",
-        "description": "`alvo1Ms`/`alvo2Ms` = os ms com o centro da lente sobre cada um dos dois objetos do fundo (em qualquer das duas fotos). O servidor guarda o MÁXIMO de cada tempo, limitado ao tempo desde a entrada. Com `avancar: true`: 3 s em CADA um dos dois liberam o `decidir` (`liberado: true`); senão o alerta conta (`alerta: true`, 200) — a tela mostra \"OLHE O FUNDO\". Os alertas entram na régua da EF02CO05.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Sem atividade no ar responde **409** `radio-em-preparo` — espera, não bloqueio.\n- Jogada à frente do passo: **409** `passo-invalido` (sem a sessão aberta pelo `iniciar`: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).",
+        "description": "`tempos` = os ms com o centro da lente sobre cada um dos dois objetos do fundo EM CADA foto (`\"inv-1:foto-1\"` … `\"inv-2:foto-2\"`): achar na foto 1 não acha na foto 2 (ADR-188). O servidor guarda o MÁXIMO de cada tempo, limitado ao tempo desde a entrada. Com `avancar: true`: 3 s em CADA um dos quatro liberam o `decidir` (`liberado: true`); senão o alerta conta (`alerta: true`, 200) — a tela mostra \"OLHE O FUNDO\". Os alertas entram na régua da EF02CO05.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Sem atividade no ar responde **409** `radio-em-preparo` — espera, não bloqueio.\n- Jogada à frente do passo: **409** `passo-invalido` (sem a sessão aberta pelo `iniciar`: `sessao-nao-aberta`). Repetir uma jogada já feita devolve o estado atual (200).",
         "security": [
           {
             "token-da-plataforma": []
@@ -80325,23 +80440,44 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "alvo1Ms": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "maximum": 3600000
-                  },
-                  "alvo2Ms": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "maximum": 3600000
+                  "tempos": {
+                    "type": "object",
+                    "properties": {
+                      "inv-1:foto-1": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3600000
+                      },
+                      "inv-1:foto-2": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3600000
+                      },
+                      "inv-2:foto-1": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3600000
+                      },
+                      "inv-2:foto-2": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3600000
+                      }
+                    },
+                    "required": [
+                      "inv-1:foto-1",
+                      "inv-1:foto-2",
+                      "inv-2:foto-1",
+                      "inv-2:foto-2"
+                    ],
+                    "additionalProperties": false
                   },
                   "avancar": {
                     "type": "boolean"
                   }
                 },
                 "required": [
-                  "alvo1Ms",
-                  "alvo2Ms",
+                  "tempos",
                   "avancar"
                 ],
                 "additionalProperties": false
@@ -80412,11 +80548,37 @@
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "alvo1Ms": {
-                          "type": "integer"
-                        },
-                        "alvo2Ms": {
-                          "type": "integer"
+                        "tempos": {
+                          "type": "object",
+                          "properties": {
+                            "inv-1:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-1:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            }
+                          },
+                          "required": [
+                            "inv-1:foto-1",
+                            "inv-1:foto-2",
+                            "inv-2:foto-1",
+                            "inv-2:foto-2"
+                          ],
+                          "additionalProperties": false
                         },
                         "alertas": {
                           "type": "integer"
@@ -80442,7 +80604,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -80450,7 +80615,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -80458,8 +80624,7 @@
                         }
                       },
                       "required": [
-                        "alvo1Ms",
-                        "alvo2Ms",
+                        "tempos",
                         "alertas",
                         "liberada",
                         "alvos"
@@ -80596,7 +80761,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -80604,7 +80772,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -80628,7 +80797,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -80636,7 +80808,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           }
@@ -80913,11 +81086,37 @@
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "alvo1Ms": {
-                          "type": "integer"
-                        },
-                        "alvo2Ms": {
-                          "type": "integer"
+                        "tempos": {
+                          "type": "object",
+                          "properties": {
+                            "inv-1:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-1:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            }
+                          },
+                          "required": [
+                            "inv-1:foto-1",
+                            "inv-1:foto-2",
+                            "inv-2:foto-1",
+                            "inv-2:foto-2"
+                          ],
+                          "additionalProperties": false
                         },
                         "alertas": {
                           "type": "integer"
@@ -80943,7 +81142,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -80951,7 +81153,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -80959,8 +81162,7 @@
                         }
                       },
                       "required": [
-                        "alvo1Ms",
-                        "alvo2Ms",
+                        "tempos",
                         "alertas",
                         "liberada",
                         "alvos"
@@ -81097,7 +81299,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -81105,7 +81310,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -81129,7 +81335,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -81137,7 +81346,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           }
@@ -81301,7 +81511,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -81309,7 +81522,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           }
@@ -81332,7 +81546,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -81340,7 +81557,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           }
@@ -81494,11 +81712,37 @@
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "alvo1Ms": {
-                          "type": "integer"
-                        },
-                        "alvo2Ms": {
-                          "type": "integer"
+                        "tempos": {
+                          "type": "object",
+                          "properties": {
+                            "inv-1:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-1:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            }
+                          },
+                          "required": [
+                            "inv-1:foto-1",
+                            "inv-1:foto-2",
+                            "inv-2:foto-1",
+                            "inv-2:foto-2"
+                          ],
+                          "additionalProperties": false
                         },
                         "alertas": {
                           "type": "integer"
@@ -81524,7 +81768,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -81532,7 +81779,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -81540,8 +81788,7 @@
                         }
                       },
                       "required": [
-                        "alvo1Ms",
-                        "alvo2Ms",
+                        "tempos",
                         "alertas",
                         "liberada",
                         "alvos"
@@ -81678,7 +81925,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -81686,7 +81936,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -81710,7 +81961,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -81718,7 +81972,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           }
@@ -81939,11 +82194,37 @@
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "alvo1Ms": {
-                          "type": "integer"
-                        },
-                        "alvo2Ms": {
-                          "type": "integer"
+                        "tempos": {
+                          "type": "object",
+                          "properties": {
+                            "inv-1:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-1:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            }
+                          },
+                          "required": [
+                            "inv-1:foto-1",
+                            "inv-1:foto-2",
+                            "inv-2:foto-1",
+                            "inv-2:foto-2"
+                          ],
+                          "additionalProperties": false
                         },
                         "alertas": {
                           "type": "integer"
@@ -81969,7 +82250,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -81977,7 +82261,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -81985,8 +82270,7 @@
                         }
                       },
                       "required": [
-                        "alvo1Ms",
-                        "alvo2Ms",
+                        "tempos",
                         "alertas",
                         "liberada",
                         "alvos"
@@ -82123,7 +82407,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -82131,7 +82418,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -82155,7 +82443,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -82163,7 +82454,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           }
@@ -82425,11 +82717,37 @@
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "alvo1Ms": {
-                          "type": "integer"
-                        },
-                        "alvo2Ms": {
-                          "type": "integer"
+                        "tempos": {
+                          "type": "object",
+                          "properties": {
+                            "inv-1:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-1:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            }
+                          },
+                          "required": [
+                            "inv-1:foto-1",
+                            "inv-1:foto-2",
+                            "inv-2:foto-1",
+                            "inv-2:foto-2"
+                          ],
+                          "additionalProperties": false
                         },
                         "alertas": {
                           "type": "integer"
@@ -82455,7 +82773,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -82463,7 +82784,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -82471,8 +82793,7 @@
                         }
                       },
                       "required": [
-                        "alvo1Ms",
-                        "alvo2Ms",
+                        "tempos",
                         "alertas",
                         "liberada",
                         "alvos"
@@ -82609,7 +82930,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -82617,7 +82941,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -82641,7 +82966,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -82649,7 +82977,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           }
@@ -82911,11 +83240,37 @@
                     "lupa": {
                       "type": "object",
                       "properties": {
-                        "alvo1Ms": {
-                          "type": "integer"
-                        },
-                        "alvo2Ms": {
-                          "type": "integer"
+                        "tempos": {
+                          "type": "object",
+                          "properties": {
+                            "inv-1:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-1:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-1": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            },
+                            "inv-2:foto-2": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3600000
+                            }
+                          },
+                          "required": [
+                            "inv-1:foto-1",
+                            "inv-1:foto-2",
+                            "inv-2:foto-1",
+                            "inv-2:foto-2"
+                          ],
+                          "additionalProperties": false
                         },
                         "alertas": {
                           "type": "integer"
@@ -82941,7 +83296,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -82949,7 +83307,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -82957,8 +83316,7 @@
                         }
                       },
                       "required": [
-                        "alvo1Ms",
-                        "alvo2Ms",
+                        "tempos",
                         "alertas",
                         "liberada",
                         "alvos"
@@ -83095,7 +83453,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -83103,7 +83464,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           },
@@ -83127,7 +83489,10 @@
                               "y": {
                                 "type": "number"
                               },
-                              "r": {
+                              "w": {
+                                "type": "number"
+                              },
+                              "h": {
                                 "type": "number"
                               }
                             },
@@ -83135,7 +83500,8 @@
                               "id",
                               "x",
                               "y",
-                              "r"
+                              "w",
+                              "h"
                             ],
                             "additionalProperties": false
                           }
@@ -83776,17 +84142,22 @@
                                             "minimum": 0,
                                             "maximum": 100
                                           },
-                                          "r": {
+                                          "w": {
                                             "type": "number",
-                                            "exclusiveMinimum": true,
                                             "minimum": 0,
-                                            "maximum": 50
+                                            "maximum": 100
+                                          },
+                                          "h": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
                                           }
                                         },
                                         "required": [
                                           "x",
                                           "y",
-                                          "r"
+                                          "w",
+                                          "h"
                                         ],
                                         "additionalProperties": false,
                                         "nullable": true
@@ -83930,6 +84301,10 @@
                           "items": {
                             "type": "string"
                           }
+                        },
+                        "pedidoDaImagem": {
+                          "type": "string",
+                          "nullable": true
                         }
                       },
                       "required": [
@@ -83944,7 +84319,8 @@
                         "aprovadoEm",
                         "ativo",
                         "rodadaAtual",
-                        "pendencias"
+                        "pendencias",
+                        "pedidoDaImagem"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -84255,17 +84631,22 @@
                                             "minimum": 0,
                                             "maximum": 100
                                           },
-                                          "r": {
+                                          "w": {
                                             "type": "number",
-                                            "exclusiveMinimum": true,
                                             "minimum": 0,
-                                            "maximum": 50
+                                            "maximum": 100
+                                          },
+                                          "h": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
                                           }
                                         },
                                         "required": [
                                           "x",
                                           "y",
-                                          "r"
+                                          "w",
+                                          "h"
                                         ],
                                         "additionalProperties": false,
                                         "nullable": true
@@ -84409,6 +84790,10 @@
                           "items": {
                             "type": "string"
                           }
+                        },
+                        "pedidoDaImagem": {
+                          "type": "string",
+                          "nullable": true
                         }
                       },
                       "required": [
@@ -84423,7 +84808,8 @@
                         "aprovadoEm",
                         "ativo",
                         "rodadaAtual",
-                        "pendencias"
+                        "pendencias",
+                        "pedidoDaImagem"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -84718,17 +85104,22 @@
                                               "minimum": 0,
                                               "maximum": 100
                                             },
-                                            "r": {
+                                            "w": {
                                               "type": "number",
-                                              "exclusiveMinimum": true,
                                               "minimum": 0,
-                                              "maximum": 50
+                                              "maximum": 100
+                                            },
+                                            "h": {
+                                              "type": "number",
+                                              "minimum": 0,
+                                              "maximum": 100
                                             }
                                           },
                                           "required": [
                                             "x",
                                             "y",
-                                            "r"
+                                            "w",
+                                            "h"
                                           ],
                                           "additionalProperties": false,
                                           "nullable": true
@@ -85269,17 +85660,22 @@
                                             "minimum": 0,
                                             "maximum": 100
                                           },
-                                          "r": {
+                                          "w": {
                                             "type": "number",
-                                            "exclusiveMinimum": true,
                                             "minimum": 0,
-                                            "maximum": 50
+                                            "maximum": 100
+                                          },
+                                          "h": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
                                           }
                                         },
                                         "required": [
                                           "x",
                                           "y",
-                                          "r"
+                                          "w",
+                                          "h"
                                         ],
                                         "additionalProperties": false,
                                         "nullable": true
@@ -85423,6 +85819,10 @@
                           "items": {
                             "type": "string"
                           }
+                        },
+                        "pedidoDaImagem": {
+                          "type": "string",
+                          "nullable": true
                         }
                       },
                       "required": [
@@ -85437,7 +85837,8 @@
                         "aprovadoEm",
                         "ativo",
                         "rodadaAtual",
-                        "pendencias"
+                        "pendencias",
+                        "pedidoDaImagem"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -85808,17 +86209,22 @@
                                             "minimum": 0,
                                             "maximum": 100
                                           },
-                                          "r": {
+                                          "w": {
                                             "type": "number",
-                                            "exclusiveMinimum": true,
                                             "minimum": 0,
-                                            "maximum": 50
+                                            "maximum": 100
+                                          },
+                                          "h": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
                                           }
                                         },
                                         "required": [
                                           "x",
                                           "y",
-                                          "r"
+                                          "w",
+                                          "h"
                                         ],
                                         "additionalProperties": false,
                                         "nullable": true
@@ -85962,6 +86368,10 @@
                           "items": {
                             "type": "string"
                           }
+                        },
+                        "pedidoDaImagem": {
+                          "type": "string",
+                          "nullable": true
                         }
                       },
                       "required": [
@@ -85976,7 +86386,8 @@
                         "aprovadoEm",
                         "ativo",
                         "rodadaAtual",
-                        "pendencias"
+                        "pendencias",
+                        "pedidoDaImagem"
                       ],
                       "additionalProperties": false
                     },
@@ -86007,7 +86418,7 @@
           "enigma-capa"
         ],
         "summary": "\"Gerar com IA\": o RASCUNHO da cena — o texto e a panorâmica (pré-aula).",
-        "description": "Quota do PERFIL `professor` (regra 5): `temSaldo` ANTES e o que o vendor cobrou (texto e imagem) debitado depois. A saída passa pela mesma régua da homologação. A cena da IA nasce SEM os alvos: o professor toca nos dois objetos (`rascunho/invariantes`). Sem saldo ou com o vendor fora, o rascunho sai do pacote PRONTO da disciplina (`usouIa: false`, `motivo`). Gerar de novo substitui o rascunho. **Não aprova.**\n\n**Papéis:** professor.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe. A turma é conferida ANTES de gastar token.\n- Recorte fora da régua: **400** `preparo-invalido` com `erros`.",
+        "description": "Quota do PERFIL `professor` (regra 5): `temSaldo` ANTES e o que o vendor cobrou (texto e imagem) debitado depois. A saída passa pela mesma régua da homologação. A cena da IA nasce SEM os alvos: o professor desenha a área dos dois objetos (`rascunho/invariantes`); o rascunho guarda o `pedidoDaImagem`, que ele pode editar (`rascunho/imagem`). Sem saldo ou com o vendor fora, o rascunho sai do pacote PRONTO da disciplina (`usouIa: false`, `motivo`). Gerar de novo substitui o rascunho. **Não aprova.**\n\n**Papéis:** professor.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe. A turma é conferida ANTES de gastar token.\n- Recorte fora da régua: **400** `preparo-invalido` com `erros`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -86405,17 +86816,22 @@
                                         "minimum": 0,
                                         "maximum": 100
                                       },
-                                      "r": {
+                                      "w": {
                                         "type": "number",
-                                        "exclusiveMinimum": true,
                                         "minimum": 0,
-                                        "maximum": 50
+                                        "maximum": 100
+                                      },
+                                      "h": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 100
                                       }
                                     },
                                     "required": [
                                       "x",
                                       "y",
-                                      "r"
+                                      "w",
+                                      "h"
                                     ],
                                     "additionalProperties": false,
                                     "nullable": true
@@ -86559,6 +86975,10 @@
                       "items": {
                         "type": "string"
                       }
+                    },
+                    "pedidoDaImagem": {
+                      "type": "string",
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -86573,7 +86993,8 @@
                     "aprovadoEm",
                     "ativo",
                     "rodadaAtual",
-                    "pendencias"
+                    "pendencias",
+                    "pedidoDaImagem"
                   ],
                   "additionalProperties": false
                 }
@@ -86584,8 +87005,8 @@
         "tags": [
           "enigma-capa"
         ],
-        "summary": "\"Toque no {NOME}\": o professor marca os dois objetos iguais na panorâmica do rascunho.",
-        "description": "Coordenadas da panorâmica (0–100). O raio é o padrão da missão. Os dois precisam estar na parte do meio, que aparece nas duas fotos.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe.\n- Fora da régua: **400** `pacote-invalido` com `erros`. Sem rascunho: **404** `rascunho-nao-encontrado`.",
+        "summary": "\"Desenhe a área do {NOME}\": o professor marca a área de cada um dos dois objetos iguais na panorâmica do rascunho.",
+        "description": "Retângulos da panorâmica (0–100): o objeto inteiro, do tamanho que ele tiver (ADR-188). Os dois precisam caber na parte do meio, que aparece nas duas fotos, sem se sobrepor, entre o tamanho mínimo e o máximo da missão.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe.\n- Fora da régua: **400** `pacote-invalido` com `erros`. Sem rascunho: **404** `rascunho-nao-encontrado`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -86623,12 +87044,24 @@
                           "type": "number",
                           "minimum": 0,
                           "maximum": 100
+                        },
+                        "w": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        "h": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100
                         }
                       },
                       "required": [
                         "id",
                         "x",
-                        "y"
+                        "y",
+                        "w",
+                        "h"
                       ],
                       "additionalProperties": false
                     },
@@ -86638,6 +87071,589 @@
                 },
                 "required": [
                   "alvos"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/enigma-capa/turmas/{turmaId}/rascunho/imagem": {
+      "post": {
+        "operationId": "EnigmaCapaTurmasController_imagem",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rascunho": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "disciplina": {
+                          "type": "string",
+                          "enum": [
+                            "lingua-portuguesa",
+                            "arte",
+                            "educacao-fisica",
+                            "matematica",
+                            "ciencias",
+                            "geografia",
+                            "historia",
+                            "ensino-religioso",
+                            "computacao",
+                            "outra"
+                          ]
+                        },
+                        "tema": {
+                          "type": "string"
+                        },
+                        "palavras": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "nota": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "chaveDaCena": {
+                          "type": "string",
+                          "enum": [
+                            "biblioteca",
+                            "horta",
+                            "museu",
+                            "ia"
+                          ]
+                        },
+                        "origem": {
+                          "type": "string",
+                          "enum": [
+                            "padrao",
+                            "ia"
+                          ]
+                        },
+                        "conteudo": {
+                          "type": "object",
+                          "properties": {
+                            "versao": {
+                              "type": "number",
+                              "enum": [
+                                1
+                              ]
+                            },
+                            "cena": {
+                              "type": "object",
+                              "properties": {
+                                "chave": {
+                                  "type": "string",
+                                  "enum": [
+                                    "biblioteca",
+                                    "horta",
+                                    "museu",
+                                    "ia"
+                                  ]
+                                },
+                                "espaco": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 60
+                                },
+                                "espacoCurto": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 40
+                                },
+                                "hora": {
+                                  "type": "string",
+                                  "pattern": "^\\d{2}:\\d{2}$"
+                                },
+                                "imagem": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "tipo": {
+                                          "type": "string",
+                                          "enum": [
+                                            "bundle"
+                                          ]
+                                        },
+                                        "nome": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 120
+                                        }
+                                      },
+                                      "required": [
+                                        "tipo",
+                                        "nome"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "tipo": {
+                                          "type": "string",
+                                          "enum": [
+                                            "url"
+                                          ]
+                                        },
+                                        "url": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 2000
+                                        }
+                                      },
+                                      "required": [
+                                        "tipo",
+                                        "url"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "alt": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 400
+                                },
+                                "fotos": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "enum": [
+                                          "foto-1",
+                                          "foto-2"
+                                        ]
+                                      },
+                                      "recorte": {
+                                        "type": "object",
+                                        "properties": {
+                                          "x": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          },
+                                          "y": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          },
+                                          "w": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          },
+                                          "h": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          }
+                                        },
+                                        "required": [
+                                          "x",
+                                          "y",
+                                          "w",
+                                          "h"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "nucleo": {
+                                        "type": "object",
+                                        "properties": {
+                                          "x": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          },
+                                          "y": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          },
+                                          "w": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          },
+                                          "h": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          }
+                                        },
+                                        "required": [
+                                          "x",
+                                          "y",
+                                          "w",
+                                          "h"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "acao": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 80
+                                      },
+                                      "visitante": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 80
+                                      },
+                                      "seloCoerente": {
+                                        "type": "string",
+                                        "enum": [
+                                          "selo-1",
+                                          "selo-2"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "recorte",
+                                      "nucleo",
+                                      "acao",
+                                      "visitante",
+                                      "seloCoerente"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "minItems": 2,
+                                  "maxItems": 2
+                                },
+                                "selos": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "enum": [
+                                          "selo-1",
+                                          "selo-2"
+                                        ]
+                                      },
+                                      "texto": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 40
+                                      },
+                                      "emoji": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 16
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "texto",
+                                      "emoji"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "minItems": 2,
+                                  "maxItems": 2
+                                },
+                                "invariantes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "enum": [
+                                          "inv-1",
+                                          "inv-2"
+                                        ]
+                                      },
+                                      "nome": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 30
+                                      },
+                                      "alvo": {
+                                        "type": "object",
+                                        "properties": {
+                                          "x": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          },
+                                          "y": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          },
+                                          "w": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          },
+                                          "h": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          }
+                                        },
+                                        "required": [
+                                          "x",
+                                          "y",
+                                          "w",
+                                          "h"
+                                        ],
+                                        "additionalProperties": false,
+                                        "nullable": true
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "nome",
+                                      "alvo"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "minItems": 2,
+                                  "maxItems": 2
+                                },
+                                "fundo": {
+                                  "type": "object",
+                                  "properties": {
+                                    "x": {
+                                      "type": "number",
+                                      "minimum": 0,
+                                      "maximum": 100
+                                    },
+                                    "y": {
+                                      "type": "number",
+                                      "minimum": 0,
+                                      "maximum": 100
+                                    },
+                                    "w": {
+                                      "type": "number",
+                                      "minimum": 0,
+                                      "maximum": 100
+                                    },
+                                    "h": {
+                                      "type": "number",
+                                      "minimum": 0,
+                                      "maximum": 100
+                                    }
+                                  },
+                                  "required": [
+                                    "x",
+                                    "y",
+                                    "w",
+                                    "h"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "marcaveis": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 40
+                                      },
+                                      "nome": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 80
+                                      },
+                                      "area": {
+                                        "type": "object",
+                                        "properties": {
+                                          "x": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          },
+                                          "y": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          },
+                                          "w": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          },
+                                          "h": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          }
+                                        },
+                                        "required": [
+                                          "x",
+                                          "y",
+                                          "w",
+                                          "h"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "nome",
+                                      "area"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "minItems": 1,
+                                  "maxItems": 10
+                                }
+                              },
+                              "required": [
+                                "chave",
+                                "espaco",
+                                "espacoCurto",
+                                "hora",
+                                "imagem",
+                                "alt",
+                                "fotos",
+                                "selos",
+                                "invariantes",
+                                "fundo",
+                                "marcaveis"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "versao",
+                            "cena"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "aprovadoEm": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "ativo": {
+                          "type": "boolean"
+                        },
+                        "rodadaAtual": {
+                          "type": "integer"
+                        },
+                        "pendencias": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "pedidoDaImagem": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "disciplina",
+                        "tema",
+                        "palavras",
+                        "nota",
+                        "chaveDaCena",
+                        "origem",
+                        "conteudo",
+                        "aprovadoEm",
+                        "ativo",
+                        "rodadaAtual",
+                        "pendencias",
+                        "pedidoDaImagem"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "usouIa": {
+                      "type": "boolean"
+                    },
+                    "motivo": {
+                      "type": "string",
+                      "enum": [
+                        "sem-saldo",
+                        "indisponivel"
+                      ],
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "rascunho",
+                    "usouIa",
+                    "motivo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "enigma-capa"
+        ],
+        "summary": "\"Gerar a imagem com este pedido\": outra imagem para o rascunho gerado por IA, a partir do pedido que o professor editou.",
+        "description": "Só a IMAGEM: selos, falas e os nomes dos objetos ficam. O `pedido` é a descrição da cena; as regras de segurança e de composição a api acrescenta sempre (ADR-188). Quota do PERFIL `professor` (regra 5), como o `gerar-conteudo`. A imagem nova apaga as áreas desenhadas (`alvos` voltam a `null`). Sem saldo ou com a IA fora, o rascunho volta igual com `usouIa: false` e o `motivo`.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe. A turma e o rascunho são conferidos ANTES de gastar token.\n- Pedido fora do tamanho: **400** `payload-invalido`. Rascunho de pacote pronto: **409** `imagem-so-da-ia`. Outro rascunho: **409** `rascunho-desatualizado`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rascunhoId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "pedido": {
+                    "type": "string",
+                    "minLength": 40,
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "rascunhoId",
+                  "pedido"
                 ],
                 "additionalProperties": false
               }
@@ -86979,17 +87995,22 @@
                                         "minimum": 0,
                                         "maximum": 100
                                       },
-                                      "r": {
+                                      "w": {
                                         "type": "number",
-                                        "exclusiveMinimum": true,
                                         "minimum": 0,
-                                        "maximum": 50
+                                        "maximum": 100
+                                      },
+                                      "h": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 100
                                       }
                                     },
                                     "required": [
                                       "x",
                                       "y",
-                                      "r"
+                                      "w",
+                                      "h"
                                     ],
                                     "additionalProperties": false,
                                     "nullable": true
@@ -87133,6 +88154,10 @@
                       "items": {
                         "type": "string"
                       }
+                    },
+                    "pedidoDaImagem": {
+                      "type": "string",
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -87147,7 +88172,8 @@
                     "aprovadoEm",
                     "ativo",
                     "rodadaAtual",
-                    "pendencias"
+                    "pendencias",
+                    "pedidoDaImagem"
                   ],
                   "additionalProperties": false
                 }
@@ -87653,11 +88679,37 @@
                           "lupa": {
                             "type": "object",
                             "properties": {
-                              "alvo1Ms": {
-                                "type": "integer"
-                              },
-                              "alvo2Ms": {
-                                "type": "integer"
+                              "tempos": {
+                                "type": "object",
+                                "properties": {
+                                  "inv-1:foto-1": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 3600000
+                                  },
+                                  "inv-1:foto-2": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 3600000
+                                  },
+                                  "inv-2:foto-1": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 3600000
+                                  },
+                                  "inv-2:foto-2": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 3600000
+                                  }
+                                },
+                                "required": [
+                                  "inv-1:foto-1",
+                                  "inv-1:foto-2",
+                                  "inv-2:foto-1",
+                                  "inv-2:foto-2"
+                                ],
+                                "additionalProperties": false
                               },
                               "alertas": {
                                 "type": "integer"
@@ -87667,8 +88719,7 @@
                               }
                             },
                             "required": [
-                              "alvo1Ms",
-                              "alvo2Ms",
+                              "tempos",
                               "alertas",
                               "liberada"
                             ],
@@ -88500,17 +89551,22 @@
                                         "minimum": 0,
                                         "maximum": 100
                                       },
-                                      "r": {
+                                      "w": {
                                         "type": "number",
-                                        "exclusiveMinimum": true,
                                         "minimum": 0,
-                                        "maximum": 50
+                                        "maximum": 100
+                                      },
+                                      "h": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 100
                                       }
                                     },
                                     "required": [
                                       "x",
                                       "y",
-                                      "r"
+                                      "w",
+                                      "h"
                                     ],
                                     "additionalProperties": false,
                                     "nullable": true
@@ -88655,6 +89711,10 @@
                         "type": "string"
                       }
                     },
+                    "pedidoDaImagem": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "rodadas": {
                       "type": "integer"
                     }
@@ -88672,6 +89732,7 @@
                     "ativo",
                     "rodadaAtual",
                     "pendencias",
+                    "pedidoDaImagem",
                     "rodadas"
                   ],
                   "additionalProperties": false
@@ -89095,17 +90156,22 @@
                                               "minimum": 0,
                                               "maximum": 100
                                             },
-                                            "r": {
+                                            "w": {
                                               "type": "number",
-                                              "exclusiveMinimum": true,
                                               "minimum": 0,
-                                              "maximum": 50
+                                              "maximum": 100
+                                            },
+                                            "h": {
+                                              "type": "number",
+                                              "minimum": 0,
+                                              "maximum": 100
                                             }
                                           },
                                           "required": [
                                             "x",
                                             "y",
-                                            "r"
+                                            "w",
+                                            "h"
                                           ],
                                           "additionalProperties": false,
                                           "nullable": true

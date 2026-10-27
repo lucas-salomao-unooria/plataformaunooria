@@ -260,16 +260,29 @@ body {
   -webkit-user-select: none;
 }
 
+/* O rótulo da foto e, à direita, quantos objetos já foram achados NELA ("1 DE 2"):
+   achar numa foto não acha na outra (2.2.0, ADR-188). O texto corta antes do contador. */
 .bancada__rotulo {
   position: absolute;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
   margin: 0;
   height: 28px;
-  line-height: 28px;
   font-size: 13px;
   font-weight: 700;
+}
+
+.bancada__rotulo-texto {
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.bancada__rotulo-contador {
+  flex: none;
 }
 
 .bancada__foto {
@@ -883,12 +896,12 @@ body {
   pointer-events: none;
 }
 
-/* O objeto já achado com a lupa: o círculo dourado, nas duas fotos. */
+/* O objeto já achado com a lupa: a moldura dourada em volta da ÁREA dele, só na foto em que foi achado. */
 .achado-na-lupa {
   position: absolute;
   z-index: 2;
   border: 4px solid var(--exp-dourado);
-  border-radius: 50%;
+  border-radius: var(--unv-radius-m, 12px);
   box-shadow: 0 0 16px 4px color-mix(in srgb, var(--exp-dourado) 60%, transparent);
   pointer-events: none;
 }

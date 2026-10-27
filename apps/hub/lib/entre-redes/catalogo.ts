@@ -1163,7 +1163,7 @@ export const MISSAO_ENIGMA_CAPA: Missao = {
         rotulo: "1 — Desafiar: o card da missão",
         texto:
           "Você conta a aflição do Bento em voz alta. No mural da rádio, a criança vê o card RASCUNHO PENDENTE: " +
-          "INVESTIGAR A NOVA CAPA, com a missão ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA, e toca em ABRIR " +
+          "INVESTIGAR A NOVA CAPA, com a missão ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DA BIBLIOTECA, e toca em ABRIR " +
           "BANCADA.",
       },
       {
@@ -1197,7 +1197,7 @@ export const MISSAO_ENIGMA_CAPA: Missao = {
       },
     ],
     preparo: [
-      "Crie a atividade: USAR BANCO PADRÃO (BIBLIOTECA) em um toque, os pacotes prontos da Horta ou do Museu, ou um espaço da sua disciplina gerado com IA — aí você toca nos dois objetos iguais do fundo antes de aprovar.",
+      "Crie a atividade: USAR BANCO PADRÃO (BIBLIOTECA) em um toque, os pacotes prontos da Horta ou do Museu, ou um espaço da sua disciplina gerado com IA — aí você pode editar o pedido da imagem e desenha a área dos dois objetos iguais do fundo antes de aprovar.",
       "Ponha a atividade em andamento e libere a missão na sala de aula: sem as duas, a criança vê a missão fechada.",
       "Ensaie a frase que você vai repetir em todo arraste: “Você pode mover a foto, mas não mudar o tamanho.”",
       "Não conte que as duas fotos são do mesmo lugar: a virada é a criança descobrir.",

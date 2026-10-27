@@ -164,7 +164,8 @@ export function fraseDoFora(espacoCurto: string): string {
 }
 
 /**
- * "ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA" — a missão da tela de abertura.
+ * "ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DA BIBLIOTECA" — a missão da
+ * tela de abertura (IGUAIS e NAS DUAS FOTOS são o pedido, 2.2.0).
  * A preposição vem do `espacoCurto` ("a biblioteca" → "DA BIBLIOTECA", "o
  * museu" → "DO MUSEU"). Espelha `fraseDaMissao` da api.
  */
@@ -173,7 +174,7 @@ export function fraseDaMissao(espacoCurto: string): string {
   const m = /^(a|o|as|os)\s+(.+)$/i.exec(t);
   const contracao: Record<string, string> = { a: "da", o: "do", as: "das", os: "dos" };
   const lugar = m ? `${contracao[m[1]!.toLowerCase()]} ${m[2]}` : `de ${t}`;
-  return `ENCONTRE NAS FOTOS 2 OBJETOS ${lugar}`.toUpperCase();
+  return `ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS ${lugar}`.toUpperCase();
 }
 
 /**

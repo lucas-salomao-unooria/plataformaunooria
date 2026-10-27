@@ -71,9 +71,10 @@ Preparo da cena & exp02ef1b, \arq{src/enigma-capa/} &
   O texto da cena (o lugar, as duas ações opostas no mesmo minuto, os dois
   objetos fixos da parede, os selos e as falas da visitante) e a panorâmica
   16:9, sobre o tema do professor, com a quota dele. A IA não dá coordenada:
-  o \textbf{professor marca os dois objetos} tocando na imagem antes de
-  aprovar. Sem saldo ou sem provedor, o pacote pronto da disciplina; em sala,
-  nada (\adrr{ADR-184}, Seção~\ref{sec:ia-preparo-exp02ef1b}).\\
+  o \textbf{professor desenha a área dos dois objetos} na imagem antes de
+  aprovar, e pode editar o pedido da imagem e gerar outra (\adrr{ADR-188}).
+  Sem saldo ou sem provedor, o pacote pronto da disciplina; em sala, nada
+  (\adrr{ADR-184}, Seção~\ref{sec:ia-preparo-exp02ef1b}).\\
 \zebra Preparo do pacote & exp01em1b, \arq{src/assistente-\B{}invisivel/} &
   O pacote didático inteiro sobre o recorte do professor (disciplina, tema, de
   3 a 5 tópicos, contexto regional): as duas trilhas, as cinco dúvidas dos
@@ -273,10 +274,13 @@ as duas na quota do perfil \cd{professor} (regra 5: \cd{temSaldo} ANTES,
     do JSON, pedida como \enquote{ilustração}, nunca \enquote{foto}
     (\adrr{ADR-178}), com a atividade 1 na metade esquerda, a 2 na direita, os
     dois objetos exatamente no centro da parede, sem texto escrito, sem logos e
-    com crianças genéricas. Desde a 2.0.0 (\adrr{ADR-186}) o pedido é de uma
-    cena LIMPA, para a criança de 7 anos achar o que procura: paredes lisas,
-    poucos objetos neutros, no máximo duas crianças em cada atividade, e os
-    dois objetos do meio GRANDES, de cor forte e sozinhos na parede. A imagem vai ao \emph{bucket} de mídia da
+    com crianças genéricas. A 2.0.0 (\adrr{ADR-186}) pedia uma cena LIMPA com
+    os dois objetos do meio GRANDES, de cor forte e sozinhos na parede --- e a
+    cena ficou óbvia. Desde a 2.2.0 (\adrr{ADR-188}) o pedido é NEM POLUÍDO
+    NEM ÓBVIO: a cena continua organizada (poucos objetos, no máximo duas
+    crianças em cada atividade), mas os dois objetos são de tamanho médio, com
+    a cor natural deles, e dividem a parede com outros 2 ou 3 objetos comuns
+    daquele espaço. A imagem vai ao \emph{bucket} de mídia da
     experiência (\cd{Assets\B{}Service.\B{}salvar\B{}Midia\B{}De\B{}Experiencia}, 1920$\times$1080
     em \cd{webp}) e o pacote guarda a URL absoluta.
 \end{enumerate}
@@ -285,12 +289,27 @@ as duas na quota do perfil \cd{professor} (regra 5: \cd{temSaldo} ANTES,
 de \emph{layout} (\cd{GEOMETRIA\_\B{}DA\_\B{}CENA\_\B{}GERADA}: os núcleos à esquerda e à
 direita, o fundo no meio, os dois marcáveis que são as próprias ações), e os
 dois alvos nascem \cd{null}. Na curadoria, o professor vê a panorâmica com as
-duas molduras, os selos e as falas, toca em cada objeto (\enquote{Toque no
-\{NOME\}}, \rota{POST .../\B{}rascunho/\B{}invariantes}) e aprova; o banco
-recusa aprovar pacote sem os dois alvos
+duas molduras, os selos e as falas, DESENHA uma caixa em volta de cada objeto
+(\enquote{Desenhe a área do \{NOME\}}, \rota{POST .../\B{}rascunho/\B{}invariantes},
+\adrr{ADR-188}) e aprova; o banco recusa aprovar pacote sem os dois alvos
 (\cd{exp02ef1b\_\B{}pacotes\_\B{}alvos\_\B{}check}). A alternativa --- a IA localizar os
 objetos --- foi descartada: a camada única não lê imagem, e o alvo seria um
 gabarito sem revisão.
+
+\textbf{O pedido da imagem é do professor} (\adrr{ADR-188}). O pedido tem
+duas partes: a DESCRIÇÃO DA CENA (\cd{pedidoDaCena}), que fica no rascunho
+(\cd{exp02ef1b\_\B{}pacotes.\B{}pedido\_\B{}da\_\B{}imagem}) e aparece editável na
+curadoria, e as REGRAS FIXAS (\cd{regrasDaImagem}: ilustração e nunca
+fotografia, 16:9, as duas metades contínuas, os dois objetos uma vez cada no
+terço central, crianças sem rosto identificável, nenhuma pessoa real, nenhum
+texto, nenhum logotipo), que a api acrescenta a TODO pedido e ninguém edita.
+A descrição não é prompt de sistema --- é o que o professor pediu ---, e as
+regras ficam no servidor (regra 2). \enquote{Gerar a imagem com este pedido}
+(\rota{POST .../\B{}rascunho/\B{}imagem}) gera SÓ a imagem, com a mesma quota
+e a mesma cobrança; os textos ficam, e as áreas voltam a \cd{null} (imagem
+nova, objetos em outro lugar). Sem saldo ou com o \emph{vendor} fora, a
+imagem anterior continua e a resposta diz o \cd{motivo}. O pedido não vai
+ao log: é texto do professor.
 
 \textbf{A cobrança} é o que o \emph{vendor} disse que cobrou, nas duas
 chamadas (\cd{aoUsarTokens}); a imagem sem contagem vale

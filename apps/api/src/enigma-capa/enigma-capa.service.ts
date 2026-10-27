@@ -20,6 +20,7 @@ import {
   EXP_ID,
   FAIXA_COMUM,
   FOTOS,
+  MARGEM_DO_ALVO,
   MOLDURA_DA_CAPA,
   MOLDURA_DA_SEGUNDA_FOTO,
   MOTIVOS_DO_PAR,
@@ -28,7 +29,6 @@ import {
   PRONTO_DA_DISCIPLINA,
   PROPORCAO_DA_PANORAMICA,
   PROPORCAO_DA_SEGUNDA_FOTO,
-  RAIO_PADRAO,
   RECORTE_DA_FOTO,
   ROTEIRO,
   ROTULO_DA_DISCIPLINA,
@@ -61,6 +61,7 @@ import {
   type EstadoSchema,
   type GerarSchema,
   type HomologarSchema,
+  type ImagemDoRascunhoSchema,
   type LinhaDoPainelSchema,
 } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
@@ -77,7 +78,7 @@ import {
 } from "./regras/evidencia";
 import { arredondar, essencialVisivelNaSegunda, falaDaVisitante, itensFora, marcaveisFora, retanguloVisivel } from "./regras/geometria";
 import { completa, lerAchados, tocar, type BuscaDaSessao } from "./regras/invariantes";
-import { acumularLupa, pisoCumprido, type RelatoDaLupa } from "./regras/lupa";
+import { acumularLupa, pisoCumprido, type LupaDaSessao, type RelatoDaLupa } from "./regras/lupa";
 import { problemasDoConteudo } from "./regras/pacote";
 import { parCorreto } from "./regras/pares";
 import { FASE_INICIAL, avancarFase, normalizarFase, passoEfetivo, type MarcosDaSessao } from "./regras/passos";
@@ -163,7 +164,17 @@ function buscaDe(s: Sessao): BuscaDaSessao {
 }
 
 function alvosDe(c: ConteudoDoPacote) {
-  return c.cena.invariantes.flatMap((i) => (i.alvo ? [{ id: i.id, x: i.alvo.x, y: i.alvo.y, r: i.alvo.r }] : []));
+  return c.cena.invariantes.flatMap((i) => (i.alvo ? [{ id: i.id, x: i.alvo.x, y: i.alvo.y, w: i.alvo.w, h: i.alvo.h }] : []));
+}
+
+/** Os quatro tempos da lupa (objeto × foto) gravados na sessão. */
+function temposDe(s: Sessao): LupaDaSessao {
+  return {
+    "inv-1:foto-1": s.lupaInv1Foto1Ms,
+    "inv-1:foto-2": s.lupaInv1Foto2Ms,
+    "inv-2:foto-1": s.lupaInv2Foto1Ms,
+    "inv-2:foto-2": s.lupaInv2Foto2Ms,
+  };
 }
 
 /** O alvo dos invariantes já achados (em ao menos uma foto) — não é mais gabarito, e a tela redesenha o dourado. */
@@ -196,6 +207,13 @@ function canonico(v: unknown): string {
 }
 
 const limpar = (t: string) => t.replace(/\s+/g, " ").trim();
+/** O pedido de imagem do professor: as linhas ficam (são parágrafos da cena), os espaços sobrando não. */
+const limparPedido = (t: string) =>
+  t
+    .split(/\n+/)
+    .map((l) => limpar(l))
+    .filter(Boolean)
+    .join("\n");
 
 /**
  * Os textos literais da tela, com o espaço e a hora já no lugar (e as frases
@@ -290,6 +308,7 @@ export class EnigmaCapaService {
           molduraDaCapa: { ...MOLDURA_DA_CAPA },
           segundaFoto: { proporcao: PROPORCAO_DA_SEGUNDA_FOTO, moldura: { ...MOLDURA_DA_SEGUNDA_FOTO } },
           pisoDaLupaMs: PISO_DA_LUPA_MS,
+          margemDoAlvo: MARGEM_DO_ALVO,
           toquesForaMax: TOQUES_FORA_MAX,
         },
         material: {
@@ -348,23 +367,25 @@ export class EnigmaCapaService {
 
   /**
    * E2: o relato da lupa — o tempo com a lente sobre cada um dos dois objetos
-   * do fundo. Guarda o MÁXIMO (limitado ao tempo desde a entrada); com
-   * `avancar`, confere o piso — cumprido, libera o `decidir`; senão conta um
-   * alerta ("OLHE O FUNDO"). Depois de liberada, devolve o estado.
+   * do fundo EM CADA foto (ADR-188). Guarda o MÁXIMO (limitado ao tempo desde a
+   * entrada); com `avancar`, confere o piso — cumprido, libera o `decidir`;
+   * senão conta um alerta ("OLHE O FUNDO"). Depois de liberada, devolve o estado.
    */
   lupa(escolaId: string, estudanteId: string, relato: RelatoDaLupa) {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao) => {
       const s = this.exigirSessao(sessao);
       if (s.lupaLiberadaEm) return { liberado: true, alerta: false };
       const agora = new Date();
-      const nova = acumularLupa({ alvo1Ms: s.lupaAlvo1Ms, alvo2Ms: s.lupaAlvo2Ms }, relato, agora.getTime() - s.entrouEm.getTime());
+      const nova = acumularLupa(temposDe(s), relato.tempos, agora.getTime() - s.entrouEm.getTime());
       const liberado = relato.avancar && pisoCumprido(nova);
       const alerta = relato.avancar && !liberado;
       await tx.exp02ef1bSessao.update({
         where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
         data: {
-          lupaAlvo1Ms: nova.alvo1Ms,
-          lupaAlvo2Ms: nova.alvo2Ms,
+          lupaInv1Foto1Ms: nova["inv-1:foto-1"],
+          lupaInv1Foto2Ms: nova["inv-1:foto-2"],
+          lupaInv2Foto1Ms: nova["inv-2:foto-1"],
+          lupaInv2Foto2Ms: nova["inv-2:foto-2"],
           ...(alerta ? { lupaAlertas: Math.min(999, s.lupaAlertas + 1) } : {}),
           ...(liberado ? { lupaLiberadaEm: agora } : {}),
         },
@@ -600,7 +621,15 @@ export class EnigmaCapaService {
     const chavePronta = PRONTO_DA_DISCIPLINA[limpo.disciplina];
     const conteudo = resultado.conteudo ?? conteudoPronto(chavePronta);
     const dados = resultado.conteudo
-      ? { disciplina: limpo.disciplina, tema: limpo.tema, palavras: [...limpo.palavras], nota: limpo.nota ?? null, chaveCena: "ia" as ChaveDeCena, origem: "ia" as Origem }
+      ? {
+          disciplina: limpo.disciplina,
+          tema: limpo.tema,
+          palavras: [...limpo.palavras],
+          nota: limpo.nota ?? null,
+          chaveCena: "ia" as ChaveDeCena,
+          origem: "ia" as Origem,
+          pedidoDaImagem: resultado.pedido,
+        }
       : {
           disciplina: limpo.disciplina,
           tema: PACOTES_PRONTOS[chavePronta].tema,
@@ -608,6 +637,7 @@ export class EnigmaCapaService {
           nota: null,
           chaveCena: chavePronta as ChaveDeCena,
           origem: "padrao" as Origem,
+          pedidoDaImagem: null,
         };
 
     const rascunho = await this.prisma.comTenancy(async (tx) => {
@@ -629,8 +659,10 @@ export class EnigmaCapaService {
   }
 
   /**
-   * "Toque no RELÓGIO": o professor marca os dois objetos iguais na imagem do
-   * rascunho (raio `RAIO_PADRAO`). Fora da faixa comum, 400 com as frases.
+   * "Desenhe a área do RELÓGIO": o professor marca a ÁREA de cada um dos dois
+   * objetos iguais na imagem do rascunho (ADR-188: o objeto inteiro, do tamanho
+   * que ele tiver). Fora da faixa comum, pequena, grande ou sobreposta: 400
+   * com as frases.
    */
   async marcarAlvos(escolaId: string, turmaId: string, professorId: string, corpo: z.infer<typeof AlvosDoRascunhoSchema>) {
     return this.prisma.comTenancy(async (tx) => {
@@ -642,7 +674,7 @@ export class EnigmaCapaService {
       if (!conteudo) throw erroDeJogo("rascunho-nao-encontrado");
       for (const inv of conteudo.cena.invariantes) {
         const toque = corpo.alvos.find((a) => a.id === inv.id);
-        if (toque) inv.alvo = { x: toque.x, y: toque.y, r: RAIO_PADRAO };
+        if (toque) inv.alvo = arredondar({ x: toque.x, y: toque.y, w: toque.w, h: toque.h });
       }
       const problemas = problemasDoConteudo(conteudo, { exigirAlvos: true });
       if (problemas.length > 0) throw erroDeJogo("pacote-invalido", problemas);
@@ -652,6 +684,57 @@ export class EnigmaCapaService {
       });
       return this.exigirParaProfessor(nova);
     }, escolaId);
+  }
+
+  /**
+   * "Gerar a imagem com este pedido" (ADR-188): o professor editou a descrição
+   * da cena e pede outra imagem — SÓ a imagem; selos, falas e os nomes dos
+   * objetos ficam. Só para a cena gerada por IA (o pronto tem imagem e
+   * geometria casadas). Imagem nova = áreas desenhadas de novo: os alvos
+   * voltam a `null`. Sem saldo ou com a IA fora, nada muda e `usouIa: false`.
+   * A turma e o rascunho são conferidos ANTES de gastar token.
+   */
+  async gerarImagem(escolaId: string, turmaId: string, professorId: string, perfil: Perfil, corpo: z.infer<typeof ImagemDoRascunhoSchema>) {
+    const nomes = await this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      const linha = await tx.exp02ef1bPacote.findFirst({ where: { escolaId, turmaId, aprovadoEm: null } });
+      if (!linha) throw erroDeJogo("rascunho-nao-encontrado");
+      if (linha.id !== corpo.rascunhoId) throw erroDeJogo("rascunho-desatualizado");
+      const conteudo = lerConteudo(linha.conteudoJson);
+      if (!conteudo) throw erroDeJogo("rascunho-nao-encontrado");
+      if (conteudo.cena.chave !== "ia") throw erroDeJogo("imagem-so-da-ia");
+      return conteudo.cena.invariantes.map((i) => i.nome);
+    }, escolaId);
+
+    const pedido = limparPedido(corpo.pedido);
+    const resultado = await this.preparo.gerarImagem(escolaId, professorId, perfil, pedido, nomes);
+
+    const rascunho = await this.prisma.comTenancy(async (tx) => {
+      await this.travarTurma(tx, escolaId, turmaId);
+      const linha = await tx.exp02ef1bPacote.findFirst({ where: { escolaId, turmaId, aprovadoEm: null } });
+      if (!linha) throw erroDeJogo("rascunho-nao-encontrado");
+      /* Outra aba gerou uma cena nova enquanto a imagem era desenhada: a imagem não é dela. */
+      if (linha.id !== corpo.rascunhoId) throw erroDeJogo("rascunho-desatualizado");
+      const conteudo = lerConteudo(linha.conteudoJson);
+      if (!conteudo || conteudo.cena.chave !== "ia") throw erroDeJogo("rascunho-desatualizado");
+      if (!resultado.url) {
+        if (resultado.tokens === 0) return linha;
+        return tx.exp02ef1bPacote.update({ where: { id: linha.id }, data: { iaTokens: { increment: resultado.tokens } } });
+      }
+      conteudo.cena.imagem = { tipo: "url", url: resultado.url };
+      for (const inv of conteudo.cena.invariantes) inv.alvo = null;
+      return tx.exp02ef1bPacote.update({
+        where: { id: linha.id },
+        data: {
+          conteudoJson: conteudo as unknown as Prisma.InputJsonValue,
+          pedidoDaImagem: pedido,
+          iaGeracoes: { increment: 1 },
+          iaTokens: { increment: resultado.tokens },
+        },
+      });
+    }, escolaId);
+
+    return { rascunho: this.exigirParaProfessor(rascunho), usouIa: resultado.url !== null, motivo: resultado.motivo };
   }
 
   /**
@@ -920,8 +1003,7 @@ export class EnigmaCapaService {
       atividade: pacote ? { pacoteId: pacote.id, rodada: pacote.rodada } : null,
       lupa: s
         ? {
-            alvo1Ms: s.lupaAlvo1Ms,
-            alvo2Ms: s.lupaAlvo2Ms,
+            tempos: temposDe(s),
             alertas: s.lupaAlertas,
             liberada: s.lupaLiberadaEm !== null,
             /* A exceção da ADR-186: o brilho da lente precisa do lugar — só no passo da lupa. */
@@ -974,7 +1056,7 @@ export class EnigmaCapaService {
       equipe: equipe ? { id: equipe.id, nome: equipe.nome, membros: equipe.membros.map((m) => ({ id: m.id, nome: m.nome })) } : null,
       passo,
       aguardandoVirada: passo === "feed",
-      lupa: s ? { alvo1Ms: s.lupaAlvo1Ms, alvo2Ms: s.lupaAlvo2Ms, alertas: s.lupaAlertas, liberada: s.lupaLiberadaEm !== null } : null,
+      lupa: s ? { tempos: temposDe(s), alertas: s.lupaAlertas, liberada: s.lupaLiberadaEm !== null } : null,
       capa:
         s?.capaPublicadaEm && ehDe(FOTOS, s.capaFotoId) && ehDe(["selo-1", "selo-2"] as const, s.capaSeloId)
           ? {
@@ -1176,6 +1258,7 @@ export class EnigmaCapaService {
       ativo: linha.ativo,
       rodadaAtual: linha.rodadaAtual,
       pendencias: linha.aprovadoEm ? [] : problemasDoConteudo(conteudo, { exigirAlvos: true }),
+      pedidoDaImagem: linha.pedidoDaImagem,
     };
   }
 

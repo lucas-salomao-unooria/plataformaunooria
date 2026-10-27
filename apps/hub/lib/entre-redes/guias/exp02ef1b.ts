@@ -87,7 +87,7 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
         titulo: "Atividade em andamento e missão liberada",
         texto:
           "USAR BANCO PADRÃO (BIBLIOTECA), um dos pacotes prontos (Horta, Museu) ou um espaço da sua disciplina " +
-          "gerado com IA. Na geração com IA, você toca nos dois objetos iguais do fundo antes de aprovar.",
+          "gerado com IA. Na geração com IA, você vê e pode editar o pedido da imagem, e desenha uma caixa em volta de cada um dos dois objetos iguais do fundo antes de aprovar.",
       },
       {
         titulo: "O painel aberto na sua tela",
@@ -131,14 +131,14 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
         momento: "Acolhimento e apresentação do enigma",
         professor:
           "Conte a aflição do Bento: “O Bento postou uma foto da biblioteca e os ouvintes entenderam tudo errado. " +
-          "Encontre nas fotos os 2 objetos da biblioteca e descubra o mistério da capa!”",
+          "Encontre os 2 objetos iguais nas duas fotos da biblioteca e descubra o mistério da capa!”",
       },
       {
         tempo: "8–10",
         momento: "E1 — o card da missão",
         professor:
           "No mural da rádio, cada criança vê o card RASCUNHO PENDENTE: INVESTIGAR A NOVA CAPA, com a missão " +
-          "ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA. Leia o card com a turma; cada uma toca em ABRIR BANCADA.",
+          "ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DA BIBLIOTECA. Leia o card com a turma; cada uma toca em ABRIR BANCADA.",
       },
       {
         tempo: "10–15",

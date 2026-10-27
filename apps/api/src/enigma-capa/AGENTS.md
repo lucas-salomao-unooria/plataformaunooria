@@ -10,8 +10,9 @@ porta do Vite 5187.
 
 O estudante é repórter mirim da Rádio Escola no **Unoovista**: vê o card
 "RASCUNHO PENDENTE — INVESTIGAR A NOVA CAPA" e toca em **ABRIR BANCADA**
-(`POST /iniciar`, abre a sessão); acha com a lupa os dois objetos do fundo nas
-duas fotos do mesmo minuto (piso: 3 s em cada um); escolhe UMA foto, a enquadra
+(`POST /iniciar`, abre a sessão); acha com a lupa os dois objetos IGUAIS do
+fundo EM CADA UMA das duas fotos do mesmo minuto (piso: 3 s em cada um dos
+quatro — ADR-188); escolhe UMA foto, a enquadra
 numa moldura de tamanho fixo, cola um selo e **publica a capa** (o LATCH). A
 visitante diz só o que o recorte mostrou. O professor conversa e toca em
 **LIBERAR VIRADA**: a tela divide, a criança acha os dois objetos iguais nas
@@ -19,8 +20,8 @@ duas fotos, o slider de comparação revela a cena inteira e ela marca com o
 alfinete o que ficou fora da foto dela (o "Pronto" marca a EF02CO05). Depois a
 E5 — os pares e a segunda foto, que **conclui**. Quatro tabelas:
 `exp02ef1b_pacotes`, `_gates_turma`, `_gates_historico`, `_sessoes`
-(migrações `20261026120000_exp02ef1b_enigma_capa` e
-`20261026210000_exp02ef1b_prototipo`).
+(migrações `20261026120000_exp02ef1b_enigma_capa`,
+`20261026210000_exp02ef1b_prototipo` e `20261027120000_exp02ef1b_areas_e_pedido`).
 
 ## As decisões do Lucas que vencem o one-pager (2026-10-26)
 
@@ -44,9 +45,18 @@ E5 — os pares e a segunda foto, que **conclui**. Quatro tabelas:
   Geografia→Museu, o resto→Biblioteca.
 - **IA desde o lançamento, só no PREPARO**: o banco padrão Biblioteca em 1
   toque, os prontos Horta e Museu, e a cena gerada por tema, que o professor
-  CONFIRMA tocando nos dois objetos. A cena é LIMPA (paredes lisas, poucos
-  objetos, no máximo 2 crianças por atividade, os dois objetos do meio grandes,
-  de cor forte e sozinhos na parede) — no SYSTEM e no pedido de imagem.
+  CONFIRMA desenhando a área dos dois objetos. A cena é NEM POLUÍDA NEM ÓBVIA
+  (ADR-188): organizada, no máximo 2 crianças por atividade, e os dois objetos
+  do meio de tamanho médio, com a cor natural, entre 2 ou 3 objetos comuns —
+  no SYSTEM, no pedido de imagem e nas três cenas prontas. A 2.0.0 pedia os
+  dois GRANDES e SOZINHOS, e a cena ficou óbvia.
+- **O pedido da imagem é do professor** (ADR-188): a DESCRIÇÃO da cena
+  (`prompts.ts#pedidoDaCena`) fica em `pedido_da_imagem` e é editável na
+  curadoria; `POST …/rascunho/imagem` gera SÓ a imagem a partir dela (mesma
+  quota; os alvos voltam a `null`). As REGRAS FIXAS (`regrasDaImagem`:
+  ilustração, 16:9, os objetos no terço central, crianças sem rosto, nenhum
+  texto) são acrescentadas a TODO pedido e não são editáveis nem gravadas —
+  nunca devolva o pedido completo ao hub nem o ponha no log.
 
 ## O que não é óbvio
 
@@ -54,13 +64,17 @@ E5 — os pares e a segunda foto, que **conclui**. Quatro tabelas:
   PANORÂMICA 16:9. As duas fotos SÃO recortes fixos dela
   (`foto-1 = {x:0,w:68}`, `foto-2 = {x:32,w:68}`): uma imagem serve as duas
   fotos e a revelação, e a faixa comum x ∈ [32, 68] aparece nas duas — é lá
-  que os invariantes moram (a régua exige `x − r ≥ 32` e `x + r ≤ 68`). A
+  que os invariantes moram (a régua exige a área inteira em x ∈ [32, 68]). A
   moldura da capa é 80% × 80% da foto; o estudante só a DESLOCA
   (`deslocamento` = fração da folga, 0 a 1), e o servidor deriva o retângulo
   visível. A segunda foto tem moldura própria (55% × 85% de `leitura.webp`,
   4:3), estreita o bastante para PODER cortar a criança.
-- **O alvo é redondo na tela**: o raio é em % da largura e um ponto de altura
-  vale 9/16 de um de largura (`acertaAlvo`). Raio 7 ≈ 44 px no celular.
+- **O alvo é a ÁREA do objeto** (ADR-188): o retângulo `{x, y, w, h}` que o
+  professor desenha. Acerta-se dentro dele com a folga `MARGEM_DO_ALVO` (1,5
+  da largura; na altura, × 16/9 — a mesma distância na tela), que desce em
+  `geometria.margemDoAlvo` para a lupa. A régua: área na faixa, de 3×5 a 30×60
+  (% da panorâmica), sem sobrepor a outra. Era um círculo de raio fixo, e o
+  topo de um objeto alto ficava fora.
 - **A geometria é ANOTAÇÃO das imagens** (`conteudo.ts#PACOTES_PRONTOS`,
   medida pelo líder). Trocou a imagem? Reanote e edite só esse objeto; a suíte
   passa os três prontos pela régua. No Museu o invariante é a PLACA DOURADA, e
@@ -74,18 +88,19 @@ E5 — os pares e a segunda foto, que **conclui**. Quatro tabelas:
   da E5 só com id e imagem. Três exceções: **os dois alvos em `lupa.alvos`
   SÓ enquanto o passo é `lupa`** (ADR-186: o brilho da lente precisa do
   lugar; o que a E4 cobra — achá-los NAS DUAS fotos, por toque — continua
-  corrigido aqui); o alvo do invariante JÁ ACHADO (`invariantes.achados`, sem
-  ele o F5 não redesenha o dourado); e todos os alvos depois da AJUDA (3
+  corrigido aqui); a área do invariante JÁ ACHADO (`invariantes.achados`, sem
+  ela o F5 não redesenha o dourado); e todas depois da AJUDA (3
   erros: o pulso amarelo precisa do lugar).
 - **A lupa é relato da tela, limitado pelo servidor** (`regras/lupa.ts`):
-  `alvo1Ms`/`alvo2Ms` = os ms com o centro da lente sobre `inv-1`/`inv-2`, em
-  qualquer das duas fotos; o servidor guarda o máximo de cada (monótono) e
+  `tempos["inv-1:foto-1"]`… = os ms com o centro da lente sobre cada objeto EM
+  CADA foto (ADR-188: achar na foto 1 não acha na 2; colunas
+  `lupa_inv{1,2}_foto{1,2}_ms`); o servidor guarda o máximo de cada (monótono) e
   nunca mais que o tempo desde a entrada (o ABRIR BANCADA). O avanço sem o
   piso conta um alerta ("OLHE O FUNDO") — é a régua.
 - **A cena gerada pela IA não tem coordenada**: a IA escreve o texto e desenha
   a imagem com o layout que `GEOMETRIA_DA_CENA_GERADA` supõe (atividade 1 à
   esquerda, 2 à direita, os dois objetos no centro da parede); os alvos nascem
-  `null` e o professor os marca (`POST …/rascunho/invariantes`). O CHECK
+  `null` e o professor desenha as áreas (`POST …/rascunho/invariantes`). O CHECK
   `exp02ef1b_pacotes_alvos_check` não deixa um pacote sem alvos ser aprovado
   — e é por isso que `lupa.alvos` nunca falta no ar.
 - **O preparo cobra texto E imagem** (`preparo.service.ts`): `temSaldo`
@@ -105,8 +120,8 @@ E5 — os pares e a segunda foto, que **conclui**. Quatro tabelas:
   rede final.
 - **Os textos DESCEM** (`TEXTOS`, literais do protótipo) já preenchidos:
   `{ESPACO}`, `{espacoCurto}`, `{hora}`, e as duas frases que dependem do
-  artigo do espaço — `e1.missao` (`fraseDaMissao`: "a biblioteca" → "…DA
-  BIBLIOTECA") e `e4.fora` (`fraseDoFora`). `{n}` fica para a tela. A
+  artigo do espaço — `e1.missao` (`fraseDaMissao`: "a biblioteca" → "ENCONTRE
+  OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DA BIBLIOTECA") e `e4.fora` (`fraseDoFora`). `{n}` fica para a tela. A
   experiência tem cópia das duas funções.
 - **A atividade é o PACOTE; a rodada é o "Zerar"** (ADR-130/155), como na
   exp02em1b: aprovar cria a atividade PRONTA; `em-andamento` a põe no ar;
