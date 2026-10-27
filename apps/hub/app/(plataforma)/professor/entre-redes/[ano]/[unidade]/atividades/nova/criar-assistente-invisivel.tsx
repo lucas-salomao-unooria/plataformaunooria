@@ -47,6 +47,9 @@ import {
   type RespostaDoGerar,
 } from "@/lib/assistente-invisivel-tipos";
 
+/** E0-PROF-03 "gerando": o texto do Figma ("UnooriaAI" é o nome do clone e pode aparecer). */
+const TEXTO_GERANDO = "Criando exercícios e diálogos temáticos no UnooriaAI. Isso leva cerca de 10 segundos...";
+
 interface PreparoLido {
   turmaId: string;
   dados: PacoteDaTurma | null;
@@ -369,12 +372,10 @@ export function CriarAssistenteInvisivel({
                       </p>
                     ) : null}
                     {gerando ? (
+                      /* E0-PROF-03 "gerando": o texto do Figma À VISTA, sobre a barra (o `label` do ProgressBar só nomeia a barra). */
                       <div className="flex flex-col gap-2" role="status" data-gerando>
-                        <ProgressBar
-                          indeterminate
-                          label="Criando exercícios e diálogos temáticos no UnooriaAI. Isso leva cerca de 10 segundos..."
-                          valuePosition="none"
-                        />
+                        <p className="text-[14px] leading-snug text-unooria-neutral-800">{TEXTO_GERANDO}</p>
+                        <ProgressBar indeterminate aria-label={TEXTO_GERANDO} valuePosition="none" />
                       </div>
                     ) : null}
                     {contingencia ? (
@@ -685,9 +686,15 @@ function ItemDaCuradoria({
               : ROTULO_DO_ITEM[item]}
           </h3>
           {editado ? (
-            <Badge variant="info" size="sm">
-              Editado pelo professor
-            </Badge>
+            <>
+              {/* E0-PROF-04 "editado": a tag do Figma no cabeçalho do item, junto do selo. */}
+              <Tag variant="neutral" size="sm" pill>
+                Item Customizado
+              </Tag>
+              <Badge variant="info" size="sm">
+                Editado pelo professor
+              </Badge>
+            </>
           ) : null}
         </div>
 

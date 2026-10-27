@@ -10,7 +10,9 @@ import { FUNCOES, type Funcao } from "../lib/tipos";
 /**
  * E2-ALU-01 — Navegar: as três funções do assistente em `Collapse`, cada uma
  * com a descrição LONGA e a prévia estática no UnooriaAI (a peça do clone,
- * `PreviaDoAssistente`). A função vista ganha "✓" no título.
+ * `PreviaDoAssistente`). A função vista ganha "✓" no título e, RECOLHIDA,
+ * o resumo do Figma sob ele (E2-ALU-01 "habilitado"); aberta, vale a
+ * descrição longa do corpo.
  *
  * "Ir para Bateria de Testes" só acende depois de pelo menos UMA função
  * expandida (recolhido → expandido → habilitado). Com equipe, a mesma regra.
@@ -18,9 +20,17 @@ import { FUNCOES, type Funcao } from "../lib/tipos";
 export function Funcoes({ ctx }: { ctx: Contexto }) {
   const { estado, sessao, executar } = ctx;
   const [abertas, setAbertas] = useState<Set<Funcao>>(() => new Set(estado.funcoesAbertas));
+  /** As que estão ABERTAS agora (o resumo só aparece com a função recolhida). */
+  const [abertasAgora, setAbertasAgora] = useState<Set<Funcao>>(() => new Set());
   const [enviando, setEnviando] = useState(false);
 
   function alternar(funcao: Funcao, aberta: boolean) {
+    setAbertasAgora((atual) => {
+      const nova = new Set(atual);
+      if (aberta) nova.add(funcao);
+      else nova.delete(funcao);
+      return nova;
+    });
     if (!aberta) return;
     setAbertas((atual) => (atual.has(funcao) ? atual : new Set(atual).add(funcao)));
   }
@@ -43,6 +53,7 @@ export function Funcoes({ ctx }: { ctx: Contexto }) {
             theme="light"
             titleAs="h2"
             title={abertas.has(f) ? `${TEXTOS.e2.titulos[f]} ✓` : TEXTOS.e2.titulos[f]}
+            subtitle={abertas.has(f) && !abertasAgora.has(f) ? TEXTOS.e2.resumos[f] : undefined}
             onToggle={(aberta) => alternar(f, aberta)}
           >
             <p className="escola__texto">{TEXTOS.e2.descricoes[f]}</p>

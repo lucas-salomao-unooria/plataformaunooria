@@ -21,6 +21,13 @@ import { Simulacao } from "./telas/Simulacao";
 /** A fila em memória tenta de novo neste ritmo enquanto houver jogada pendente. */
 const REENVIO_MS = 3000;
 
+/**
+ * Quanto a tela dos cartões fica, já fechada, depois do sexto cartão — o tempo
+ * de ler a tabela causal que o servidor devolveu (E5-ALU-01 "sem scaffolding")
+ * antes do painel do algoritmo. O Figma não tem botão de concluir.
+ */
+export const LEITURA_DA_TABELA_MS = 6000;
+
 type Falha = "rede" | "sessao" | null;
 
 /**
@@ -34,7 +41,10 @@ type Falha = "rede" | "sessao" | null;
  * fichas e a Trava 2 depois do reteste). A aposta travada à espera de
  * "Liberar Início da Simulação" não é camada: é o próprio estado "travado" da
  * E3 ("Iniciando Simulação de Chat…"). Nenhum estado local segura tela além
- * do passo: marcar passos do algoritmo não resolve o painel (só "Pular Etapa",
+ * do passo — com UMA exceção, de tempo: o sexto cartão fecha a classificação e
+ * a tela dos cartões fica `LEITURA_DA_TABELA_MS` à vista, já fechada, com a
+ * tabela causal (o servidor já está no algoritmo; F5 vai direto a ele).
+ * Marcar passos do algoritmo não resolve o painel (só "Pular Etapa",
  * `POST /algoritmo/concluir`), então o passo não foge da tela no meio.
  */
 export function App({ inicial }: { inicial: Sessao }) {
@@ -43,6 +53,7 @@ export function App({ inicial }: { inicial: Sessao }) {
   const [medidor, setMedidor] = useState<Medidor>(inicial.medidor);
   const [falha, setFalha] = useState<Falha>(null);
   const [tentando, setTentando] = useState(false);
+  const [lendoTabela, setLendoTabela] = useState(false);
   const primeiraVez = useRef(inicial.passo === "boas-vindas");
   const passoAnterior = useRef(inicial.passo);
 
@@ -161,9 +172,24 @@ export function App({ inicial }: { inicial: Sessao }) {
     }
   }, [estado.passo, fila]);
 
+  /* A leitura da tabela causal: a passagem classificação → algoritmo VISTA nesta tela (não a de um F5)
+     segura a tela dos cartões, já fechada, por `LEITURA_DA_TABELA_MS`. Detectada no render (o padrão
+     do React para "o valor anterior"), para o painel do algoritmo não piscar antes; vale também
+     quando a jogada saiu da fila depois de a rede voltar. */
+  const [passoVisto, setPassoVisto] = useState(inicial.passo);
+  if (estado.passo !== passoVisto) {
+    setPassoVisto(estado.passo);
+    if (passoVisto === "classificacao" && estado.passo === "algoritmo") setLendoTabela(true);
+  }
+  useEffect(() => {
+    if (!lendoTabela) return;
+    const id = window.setTimeout(() => setLendoTabela(false), LEITURA_DA_TABELA_MS);
+    return () => window.clearTimeout(id);
+  }, [lendoTabela]);
+
   const naFila = useCallback((chave: string) => fila.tem(chave), [fila]);
   const ctx: Contexto = { sessao, estado, medidor, executar, naFila };
-  const { tela, espera } = escolherTela(ctx, primeiraVez.current);
+  const { tela, espera } = escolherTela(ctx, primeiraVez.current, lendoTabela);
   const chave = `${estado.atividade?.pacoteId ?? "-"}:${estado.atividade?.rodada ?? 0}`;
 
   return (
@@ -179,7 +205,11 @@ export function App({ inicial }: { inicial: Sessao }) {
 }
 
 /** Qual tela desenha o passo, e se a camada de espera vai por cima. Puro de efeito. */
-export function escolherTela(ctx: Contexto, primeiraVez: boolean): { tela: ReactElement; espera: QualEspera | null } {
+export function escolherTela(
+  ctx: Contexto,
+  primeiraVez: boolean,
+  lendoTabela = false,
+): { tela: ReactElement; espera: QualEspera | null } {
   const { estado, sessao } = ctx;
   const p = estado.passo;
   const aguarda = estado.aguardandoProfessor;
@@ -205,6 +235,7 @@ export function escolherTela(ctx: Contexto, primeiraVez: boolean): { tela: React
       if (aguarda) return { tela: <FundoDeEspera etapa={4} equipe={estado.equipe} />, espera: "debate-1" };
       return { tela: <Classificacao ctx={ctx} />, espera: null };
     case "algoritmo":
+      if (lendoTabela && !aguarda) return { tela: <Classificacao ctx={ctx} fechada />, espera: null };
       return { tela: <Algoritmo ctx={ctx} />, espera: aguarda ? (pausa ?? "debate-2") : null };
     case "criterios":
       return { tela: <Criterios ctx={ctx} />, espera: aguarda ? (pausa ?? "debate-2") : null };

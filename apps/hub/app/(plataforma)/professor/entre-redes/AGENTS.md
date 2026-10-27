@@ -263,3 +263,8 @@ Banco Padrão" (E0-PROF-03). A aula são cinco liberações e duas pausas, só p
 só acende com `todosApostaram`, e o painel lista quem falta. O relatório final (E6-PROF-01) imprime
 SOZINHO pelo `BotaoImprimir` com `impressao="relatorio-homologacao"`: a folha
 (`resultados/relatorio-de-homologacao.css`) só vale com a marca no `<html>`.
+**O painel desenha o QUADRO do Figma do momento, não a fase inteira** (`momentoDoPainel`, ADR-190): a fase
+`explicar` sem reteste é o E4-PROF-01 "liberado" (sem projeção e SEM botão — eles chegam com o primeiro
+reteste), e `publicar` sem publicação é o E5-PROF-01 "liberado" (sem o relatório). Na pausa, o botão dela
+fica à vista e desabilitado (`PAUSA_FEITA`): ele NÃO entra em `ACOES_DA_FASE`, que segue só para a frente e
+espelhando a api. "Handoff" do Figma não entra na etiqueta (ADR-91).

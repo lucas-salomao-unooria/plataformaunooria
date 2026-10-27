@@ -458,16 +458,83 @@ export const ACOES_DA_FASE: Record<Fase, { para: Fase; rotulo: string; variante:
   publicar: [],
 };
 
-/** A etiqueta do cabeçalho do painel em cada fase (o `[cabeçalho · tag]` do Figma). */
-export const ETIQUETA_DA_FASE: Record<Fase, string> = {
-  "aguardando-inicio": "Etapa 1: Desafiar",
-  testes: "Etapa 3: Apostas",
-  simulacao: "Mediação 1: 8 minutos",
-  "debate-1": "Mediação 1: 8 minutos",
-  explicar: "Etapa 5 Destravada",
-  "debate-2": "Mediação 2: 5 minutos",
-  publicar: "Etapa 6 Destravada",
+/**
+ * O botão da PAUSA que já aconteceu (E4-PROF-01 e E5-PROF-01 "pausado"): o
+ * Figma desenha os dois botões no estado pausado, e o painel os mantém — o da
+ * pausa fica à vista e DESABILITADO, porque a turma já está nela. Ele nunca
+ * envia nada: a transição `{para}` continua só para a frente e idempotente
+ * (`ACOES_DA_FASE` segue espelhando `PROXIMAS_FASES` da api).
+ */
+export const PAUSA_FEITA: Partial<Record<Fase, { rotulo: string; variante: VarianteDoBotao }>> = {
+  "debate-1": { rotulo: "Travar Telas da Turma", variante: "secondary" },
+  "debate-2": { rotulo: "Pausar para Comparação", variante: "secondary" },
 };
+
+/**
+ * O MOMENTO do painel dentro da fase, que decide o quadro do Figma que ele
+ * desenha. A fase `explicar` cobre dois quadros: logo depois de liberar a
+ * bancada é o E4-PROF-01 "liberado" (as apostas consolidadas, sem botão);
+ * quando a turma já retestou, é o E5-PROF-01 (a projeção 1A × 1C e os botões
+ * da E5). A fase `publicar` também: o E5-PROF-01 "liberado" até a primeira
+ * publicação, e o relatório formativo final (E6-PROF-01) a partir dela.
+ */
+export type MomentoDoPainel =
+  | "inicio"
+  | "apostas"
+  | "simulacao"
+  | "telas-travadas"
+  | "bancada-liberada"
+  | "projecao"
+  | "projecao-pausada"
+  | "publicacao-liberada"
+  | "relatorio";
+
+export function momentoDoPainel(fase: Fase, resumo: Pick<PainelDaTurma["resumo"], "criterioExercicios" | "publicaram">): MomentoDoPainel {
+  const retestaram = OPCOES_DE_CRITERIO.reduce((s, k) => s + resumo.criterioExercicios[k], 0) > 0;
+  switch (fase) {
+    case "aguardando-inicio":
+      return "inicio";
+    case "testes":
+      return "apostas";
+    case "simulacao":
+      return "simulacao";
+    case "debate-1":
+      return "telas-travadas";
+    case "explicar":
+      return retestaram ? "projecao" : "bancada-liberada";
+    case "debate-2":
+      return "projecao-pausada";
+    case "publicar":
+      return resumo.publicaram > 0 ? "relatorio" : "publicacao-liberada";
+  }
+}
+
+/**
+ * A etiqueta do cabeçalho do painel em cada momento (o `[cabeçalho · tag]` do
+ * Figma). O Figma escreve "Mediação Handoff 1: 8 Minutos" e "Mediação Handoff
+ * 2: 5 Minutos"; "Handoff" é jargão de implementação em inglês (ADR-91) e fica
+ * de fora: "Mediação 1: 8 minutos".
+ */
+export const ETIQUETA_DO_MOMENTO: Record<MomentoDoPainel, string> = {
+  inicio: "Etapa 1: Desafiar",
+  apostas: "Etapa 3: Apostas",
+  simulacao: "Mediação 1: 8 minutos",
+  "telas-travadas": "Mediação 1: 8 minutos",
+  "bancada-liberada": "Etapa 5 Destravada",
+  projecao: "Mediação 2: 5 minutos",
+  "projecao-pausada": "Mediação 2: 5 minutos",
+  "publicacao-liberada": "Etapa 6 Destravada",
+  relatorio: "Etapa 6 Destravada",
+};
+
+/**
+ * Os botões de cada momento: os da fase, menos os da E5 enquanto a bancada
+ * acabou de ser liberada (o E4-PROF-01 "liberado" não tem botão).
+ */
+export function acoesDoMomento(fase: Fase, momento: MomentoDoPainel): { para: Fase; rotulo: string; variante: VarianteDoBotao }[] {
+  if (momento === "bancada-liberada") return [];
+  return ACOES_DA_FASE[fase];
+}
 
 /** Percentual inteiro, sem divisão por zero. */
 export function percentual(parte: number, total: number): number {
