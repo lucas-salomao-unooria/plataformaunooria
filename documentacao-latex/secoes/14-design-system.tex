@@ -856,6 +856,18 @@ idênticas. Na 0.2.17 (o \cd{TypingIndicator} e o \cd{senderTone} do Unoochat,
 exp05ef1b, que já subia para a 0.4.0 na mesma frente, e a exp04ef1b, que subiu
 de 2.1.2 para 2.1.3; as outras doze saíram idênticas.
 
+\textbf{Desde a 0.2.23 (\adrr{ADR-187}) a regra mudou}: toda subida do DS
+sobe a versão de TODAS as experiências publicáveis, um \emph{patch} nos três
+lugares, mesmo a que saiu idêntica byte a byte --- decisão do dono do produto,
+para que a versão de cada missão diga sempre o DS com que ela foi construída.
+A única que não sobe de novo é a que já está à frente do \cd{dev}, nunca
+publicada; o \cd{\_template} e os \cd{backup-*} não têm versão publicada. A
+comparação do \cd{dist/} sem os \cd{.map} (\adrr{ADR-142}) continua como
+verificação, mas não decide mais quem sobe. Na 0.2.23 o CSS novo do
+\cd{PuzzleTrack} mudou 13 das 16; as 16 subiram, inclusive a \cd{app-70}
+(1.1.7), a \cd{exp02ef1b} (2.1.1) e a \cd{exp02em1b-v0} (1.5.3), que saíram
+idênticas.
+
 \subsection{O Júri Estadual e o \cd{StoryPoll} da 0.2.12 (exp06ef1b 0.1.0)}
 \label{sec:ds-juri-0211}
 
@@ -1152,6 +1164,9 @@ A vaga do \cd{PuzzleTrack} não era tocável &
 Sem separador de sessão no \cd{unooriaai} &
   \cd{SessionDivider} (\cd{label}) &
   \arq{componentes/\B{}PecasDoAssistente.tsx}\\
+\zebra A vaga vazia do \cd{PuzzleTrack} só mostrava o número (o Figma a escreve) &
+  \cd{showEmptySlotLabel} (0.2.23): o \cd{emptySlotLabel} à vista, no lugar do número &
+  \arq{telas/\B{}Classificacao.tsx}\\
 \bottomrule
 \end{tabularx}
 
@@ -1159,6 +1174,19 @@ Subir para a 0.2.22 mudou o \emph{bundle} de 14 das 16 experiências (o CSS
 e o JS do pacote); as que mudaram subiram um \emph{patch} nos três lugares,
 pela regra da versão única (\adrr{ADR-139}). A \cd{app-70} e a
 \cd{exp02ef1b} saíram idênticas byte a byte e não subiram.
+
+A última linha da tabela veio depois, na 0.2.23 (storybook-unnoria \#26): o
+Figma da E5-ALU-01 escreve a vaga --- \enquote{[Solte o cartão aqui]} no
+andaime e, com um cartão escolhido, a ação \enquote{Colocar em Dados
+Fornecidos/Observados} ---, e o \cd{PuzzleTrack} só mostrava o número, com o
+texto escondido para o leitor de tela. Com \cd{showEmptySlotLabel}, o mesmo
+texto aparece na vaga e continua sendo o nome do botão, sem cópia escondida; a
+linha de \cd{status} do andaime saiu da tela, porque repetia a vaga. A
+exp01em1b foi a 1.0.2. Como a folha da seção \cd{unooria} vai inteira para
+toda experiência que a importa, o CSS novo mudou o \emph{bundle} de 13 das 16;
+pela regra da 0.2.23 (\adrr{ADR-187}) as 16 subiram um \emph{patch}, inclusive
+a \cd{app-70}, a \cd{exp02ef1b} e a \cd{exp02em1b-v0}, que saíram idênticas
+(Seção~\ref{sec:ds-versao-unica}).
 
 \subsection{Avisos que ficaram obsoletos}
 

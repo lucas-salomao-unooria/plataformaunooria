@@ -18,7 +18,7 @@ export const EXP_ID = "exp01em1b";
  * A versão vive em TRÊS lugares: aqui, no `package.json` e no
  * `public/experiencia.json` (`versao.test.ts` compara os três — ADR-84).
  */
-export const EXP_VERSION = "1.0.1";
+export const EXP_VERSION = "1.0.2";
 
 // ─────────────────────────────────────────── vocabulários (espelho de conteudo.ts / passos.ts)
 
