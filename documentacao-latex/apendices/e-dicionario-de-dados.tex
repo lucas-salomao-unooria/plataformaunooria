@@ -101,6 +101,10 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp02ef1b\_gates\_turma} & Tenant & A fase da turma (\cd{aberta}, \cd{virada})\\
 \cd{exp02ef1b\_gates\_historico} & Tenant & Cada LIBERAR VIRADA, com o pacote, a rodada e o professor\\
 \zebra \cd{exp02ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o crachá, a lupa, a capa (latch 1), a busca dos objetos, o que ficou fora, os pares, a segunda foto e o voto (latch 2) --- sem texto livre\\
+\cd{exp01em1b\_\B{}pacotes} & Tenant & O Assistente Invisível: o pacote didático (as duas trilhas, as cinco dúvidas, as cinco respostas do assistente e a leitura), com os itens editados e a contingência; é a atividade da evidência\\
+\zebra \cd{exp01em1b\_\B{}gates\_\B{}turma} & Tenant & A fase da turma (as cinco liberações e as duas pausas do professor)\\
+\cd{exp01em1b\_\B{}gates\_\B{}historico} & Tenant & Cada botão do professor, com o pacote, a rodada, a fase de destino e o professor\\
+\zebra \cd{exp01em1b\_\B{}sessoes} & Tenant & Uma sessão por estudante (ou computador), pacote e rodada: as funções, a aposta (latch 1), a auditoria, os cartões, o painel opcional, os retestes e o Publicar (latch 2) --- sem texto livre\\
 \cd{exp02em1b\_v0\_sessoes} & Tenant & Versão anterior (\adrr{ADR-181}): estado da partida da Missão Tempestade\\
 \zebra \cd{exp02em1b\_v0\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
 \cd{exp02em1b\_v0\_marcos} & Tenant & Trilha da decisão\\
@@ -1891,6 +1895,93 @@ guarda texto escrito pela criança.
   \cd{TIMESTAMPTZ} & O \textbf{LATCH 2}: o voto (\cd{so-um-pedaco} $|$
   \cd{mostra-tudo}) e a conclusão juntos, só depois da segunda foto.\\
 \cd{versao\_\B{}instrumento} & \cd{TEXT} & \cd{1.0.0} por padrão.\\
+\bottomrule
+\end{tabularx}
+
+\section{Tabelas de O Assistente Invisível (exp01em1b)}
+\label{sec:dicionario-exp01em1b}
+
+Desde 2026-10-26 (\adrr{ADR-185}), migração
+\arq{20261026180000\_\B{}exp01em1b\_\B{}assistente\_\B{}invisivel}. Quatro tabelas,
+todas com \cd{escola\_id} \cd{NOT NULL}, RLS forçada e política por escola; as
+regras estão no \arq{AGENTS.md} do módulo \arq{assistente-\B{}invisivel}. Nenhuma
+coluna guarda texto escrito pelo estudante, e o gabarito (as colunas certas
+dos cartões, os passos dispensáveis, os critérios equitativos e a opção certa
+de cada bloco) não está em tabela nenhuma: é fixo, de \arq{conteudo.ts}.
+
+\begin{itemize}
+  \item \cd{exp01em1b\_\B{}pacotes}: \cd{id}, \cd{turma\_id} (FK, cascata),
+    \cd{disciplina} (as treze do EM: \cd{lingua-\B{}portuguesa} $|$
+    \cd{matematica} $|$ \ldots{} $|$ \cd{projeto-\B{}interdisciplinar}),
+    \cd{tema}, \cd{topicos} (\cd{TEXT[]}, de 3 a 5), \cd{contexto} (o
+    contexto regional, opcional), \cd{conteudo\_json} (o pacote inteiro,
+    validado pelo Zod; objeto), \cd{origem} (\cd{padrao} $|$ \cd{ia}),
+    \cd{editados} (\cd{TEXT[]}, contido nos treze itens do pacote: o Badge
+    \enquote{Editado pelo professor}), \cd{contingencia} (só com
+    \cd{origem = padrao}), \cd{ativo}, \cd{rodada\_atual} ($\geq 1$),
+    \cd{aprovado\_em}/\cd{aprovado\_por} (juntos; \cd{ativo} só aprovado),
+    \cd{ia\_geracoes}, \cd{ia\_tokens}. Um em andamento e um rascunho por
+    turma (índices únicos parciais). Único (\cd{escola\_id}, \cd{id}): é o
+    alvo da FK composta das sessões.
+  \item \cd{exp01em1b\_\B{}gates\_\B{}turma}: PK (\cd{escola\_id}, \cd{turma\_id}),
+    \cd{fase} (\cd{aguardando-\B{}inicio} $|$ \cd{testes} $|$ \cd{simulacao} $|$
+    \cd{debate-1} $|$ \cd{explicar} $|$ \cd{debate-2} $|$ \cd{publicar},
+    padrão \cd{aguardando-\B{}inicio}), \cd{atualizado\_em}.
+  \item \cd{exp01em1b\_\B{}gates\_\B{}historico}: \cd{pacote\_id}, \cd{rodada}
+    ($\geq 1$), \cd{fase} (as seis de destino; nunca \cd{aguardando-\B{}inicio}),
+    \cd{professor\_id} (FK para \cd{users}, \cd{SET NULL}) e \cd{em}.
+\end{itemize}
+
+\subsection{\cd{exp01em1b\_sessoes}}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, estudante\_id, pacote\_id, rodada)} & PK composta & Uma
+  sessão por unidade (o estudante, ou quem está logado no computador da
+  equipe), atividade e rodada. \cd{estudante\_id} com FK para \cd{users}
+  (cascata); (\cd{escola\_id}, \cd{pacote\_id}) com FK composta para o
+  pacote. Nasce no primeiro \rota{GET /assistente-\B{}invisivel/sessao} com o
+  pacote no ar: é o que o 100\% da E3 conta.\\
+\zebra \cd{turma\_id} & \cd{UUID} & FK para \cd{turmas}; o painel lê por
+  turma, pacote e rodada (índice).\\
+\cd{entrou\_em}, \cd{iniciado\_em} & \cd{TIMESTAMPTZ} & A sessão aberta, e o
+  \enquote{Abrir Módulo de Teste} (E1).\\
+\zebra \cd{funcoes\_abertas}, \cd{navegou\_em} & \cd{TEXT[]},
+  \cd{TIMESTAMPTZ?} & As funções expandidas (\cd{exercicios} $|$
+  \cd{duvidas} $|$ \cd{sugestoes}) e o \enquote{Ir para Bateria de Testes},
+  só com uma aberta e depois do E1.\\
+\cd{aposta}, \cd{apostada\_em} & \cd{TEXT},
+  \cd{TIMESTAMPTZ?} & O \textbf{LATCH 1}: \cd{a} $|$ \cd{b} $|$ \cd{c} e o
+  carimbo juntos, só depois do E2 (o PQ-01).\\
+\zebra \cd{simulacao\_\B{}concluida\_em}, \cd{fichas\_\B{}abertas\_em},
+  \cd{inspecao\_\B{}concluida\_em} & \cd{TIMESTAMPTZ?} & A E4, uma depois da
+  outra: as três sessões de chat, as fichas abertas (o PQ-02) e a inspeção,
+  depois da qual vem a Trava 1.\\
+\cd{cartoes} (\cd{JSONB}), \cd{cartoes\_acertos}, \cd{cartoes\_completa},
+  \cd{classificada\_em} & vários & E5: a alocação dos seis cartões (objeto),
+  os acertos (0 a 6), se estavam todos alocados e o carimbo, juntos; só
+  depois da inspeção.\\
+\zebra \cd{painel\_\B{}passos\_\B{}aberto\_em}, \cd{passos\_marcados}
+  (\cd{SMALLINT[]}), \cd{algoritmo\_\B{}concluido\_em} & vários & O painel
+  OPCIONAL: abrir (o PQ-04), os passos marcados (contidos em 1 a 5, só com o
+  painel aberto) e o \enquote{Pular Etapa}; só depois dos cartões.\\
+\cd{criterios} (\cd{JSONB}), \cd{retestes}, \cd{equidade\_\B{}no\_\B{}1o\_\B{}reteste},
+  \cd{ultima\_equidade}, \cd{retestado\_em} & vários & O reteste: a
+  configuração do último, a contagem e as duas equidades (\cd{total} $|$
+  \cd{parcial} $|$ \cd{nenhuma}; o PQ-03), juntas com a contagem.\\
+\zebra \cd{revisando}, \cd{avancou\_em}, \cd{avancou\_com\_vies} &
+  \cd{BOOLEAN}, \cd{TIMESTAMPTZ?} & \enquote{Revisar Critérios} (volta ao
+  banco até o próximo reteste) ou o avanço (com o viés mantido, ou não): só
+  depois de um reteste, e nunca os dois.\\
+\cd{pagina\_ativa}, \cd{comunicado} (\cd{JSONB}), \cd{blocos\_corretos},
+  \cd{alinhamento}, \cd{publicada\_em} & vários & O \textbf{LATCH 2}: o
+  \emph{Toggle} da página, os blocos escolhidos, os acertos (0 a 4, o PQ-05),
+  o alinhamento (\cd{pleno} $|$ \cd{incompleto} $|$ \cd{descaracterizado}) e o
+  carimbo, no MESMO \cd{UPDATE}; só depois do avanço. O alinhamento e os
+  acertos vêm do servidor, nunca do cliente.\\
+\zebra \cd{versao\_\B{}instrumento} & \cd{TEXT} & \cd{1.0.0} por padrão.\\
 \bottomrule
 \end{tabularx}
 

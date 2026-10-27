@@ -212,12 +212,12 @@ peça fixa o claro no próprio contêiner (\cd{PostCard theme="light"},
 pacote direto num componente:
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
-\cd{@edu/ui/ds} & \cd{unooria} & plataforma, o robô do grupo de Quem mandou isso? (\cd{PuzzleBlock} e \cd{PuzzleTrack}, \adrr{ADR-177}), a tela da escola do Júri Estadual (\cd{RadioGroup}, \cd{Card}, \cd{AlertBox}; o \cd{PuzzleBlock} e o \cd{PuzzleTrack} da cadeia saíram com a \adrr{ADR-174}), e a redação do Jornal da Escola (com as oito peças da 0.2.8: \cd{NewsCard}, \cd{NewsArticle}, \cd{RevealClue}, \cd{BottomSheet}, \cd{NewspaperPage}, \cd{SpeechBubble}, \cd{PuzzleBlock} e \cd{PuzzleTrack}, mais \cd{NEWS\_MEDIUMS} e \cd{NEWSPAPER\_LAYOUTS})\\
+\cd{@edu/ui/ds} & \cd{unooria} & plataforma, o robô do grupo de Quem mandou isso? (\cd{PuzzleBlock} e \cd{PuzzleTrack}, \adrr{ADR-177}), a tela da escola do Júri Estadual (\cd{RadioGroup}, \cd{Card}, \cd{AlertBox}; o \cd{PuzzleBlock} e o \cd{PuzzleTrack} da cadeia saíram com a \adrr{ADR-174}), e a redação do Jornal da Escola (com as oito peças da 0.2.8: \cd{NewsCard}, \cd{NewsArticle}, \cd{RevealClue}, \cd{BottomSheet}, \cd{NewspaperPage}, \cd{SpeechBubble}, \cd{PuzzleBlock} e \cd{PuzzleTrack}, mais \cd{NEWS\_MEDIUMS} e \cd{NEWSPAPER\_LAYOUTS}), e o módulo escolar de O Assistente Invisível (exp01em1b, \adrr{ADR-185}: \cd{Collapse}, \cd{RadioGroup}, \cd{PuzzleBlock} e \cd{PuzzleTrack}, \cd{BottomSheet} com \cd{Table}, \cd{Checkbox}, \cd{Toggle}, \cd{Stepper}, \cd{Modal})\\
 \cd{@edu/ui/ds-insta} & \cd{instanooria} & o clone da exp01ef1b (com as extensões da 0.2.5, nascidas para a exp07ef1b antes de ela migrar: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer}; e as da 0.2.7: \cd{InlineHint}, \cd{GestureHint} e o \cd{Snackbar} do clone, como \cd{SnackbarInsta})\\
 \cd{@edu/ui/ds-unoovista} & \cd{unoovista} & exp08ef1b (\adrr{ADR-133}), exp07ef1b (\adrr{ADR-135}), exp06ef1b (\adrr{ADR-137}), o feed e os bastidores de O Efeito Amplificador (exp02em1b, \adrr{ADR-181}), O Enigma da Capa da Rádio inteiro (exp02ef1b, \adrr{ADR-184}) e o \cd{PostCard} da gaveta do Jornal (\adrr{ADR-136}); os nomes que colidem com a plataforma saem com o sufixo \cd{Unv} (\cd{ButtonUnv}, \cd{AvatarUnv}, \cd{IconUnv}\ldots)\\
 \cd{@edu/ui/ds-unootube} & \cd{unitube} & backup-exp04ef1b (o UnooTube arquivado, \adrr{ADR-116}: não roda mais)\\
 \cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp08ef4b (a exp02em1b saiu na \adrr{ADR-138})\\
-\cd{@edu/ui/ds-unooriaai} & \cd{unooriaai} & exp02em1b-v0 (\adrr{ADR-138}) e o chat da exp02em1b (\adrr{ADR-181}); o \cd{GPTCard} virou \cd{AssistantCard}, e não há \cd{gptGlyphs}\\
+\cd{@edu/ui/ds-unooriaai} & \cd{unooriaai} & exp02em1b-v0 (\adrr{ADR-138}), o chat da exp02em1b (\adrr{ADR-181}) e a bateria de testes de O Assistente Invisível (exp01em1b, \adrr{ADR-185}), com as peças do assistente nas telas da escola em \arq{PecasDoAssistente.tsx}; o \cd{GPTCard} virou \cd{AssistantCard}, e não há \cd{gptGlyphs}\\
 \cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp06ef2b\\
 \cd{@edu/ui/ds-unoochat} & \cd{unoochat} & exp05ef1b (\adrr{ADR-134}; o \cd{FilterChip} entrou na ponte para o alerta do grupo, \adrr{ADR-177}), o \cd{MessageBubble} da gaveta e do Desafio Final do Jornal (\adrr{ADR-136}) e o do pedido pelo WhatsApp da Missão Tempestade (\adrr{ADR-173})\\
 \end{tabularx}
@@ -1116,6 +1116,38 @@ A nomeação da missão (ENQUADRAMENTO, AUTORIA, O QUE FICOU DE FORA) é ORAL, d
 professor: não há tela da escola, e por isso a seção \cd{unooria} não entra no
 \emph{bundle}. E PUBLICAR CAPA é o botão primário do Unoovista (roxo), não o
 verde do one-pager: cor de ação é do DS.
+
+\subsection{Lacunas abertas em \cd{unooria} e \cd{unooriaai} (exp01em1b 1.0.0)}
+\label{sec:ds-lacunas-exp01em1b}
+
+O Assistente Invisível (\adrr{ADR-185}) usa as DUAS seções: a escola em
+\cd{unooria} e o assistente testado em \cd{unooriaai} (a fronteira é
+\enquote{quem fala}, \adrr{ADR-117}, \adrr{ADR-173}). O Figma de 63 telas é
+um \emph{wireframe} cinza: a cor, a tipografia e os componentes vêm do DS,
+nunca do cinza. Cinco peças estão compensadas no código da experiência,
+marcadas \enquote{(b) COMPENSAÇÃO local --- pedido aberto no
+storybook-unooria}, e saem quando o pacote publicar a peça.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{34mm}X@{}}
+\toprule
+\headrow \thd{Peça} & \thd{Onde} & \thd{A lacuna}\\
+\midrule
+Foco do \cd{Collapse} fechado (\cd{visibility: hidden}) &
+  \arq{estilos/\B{}globals.css} & o corpo fechado continua focável (\cd{inert}
+  pedido)\\
+\zebra Cartão \enquote{selecionado para alocar} (contorno) &
+  \arq{estilos/\B{}globals.css} & o \cd{PuzzleBlock} não tem estado
+  \cd{selected}\\
+Alvo do toque da coluna (\enquote{Colocar em \ldots}) &
+  \arq{telas/\B{}Classificacao.tsx} & a vaga do \cd{PuzzleTrack} não é tocável
+  nem recebe soltura (sem arrastar)\\
+\zebra Certificado (\cd{Card} + \cd{Icon} \enquote{balance} + \cd{Badge}) &
+  \arq{telas/\B{}Concluida.tsx} & não há selo nem certificado no pacote\\
+Separador de sessão no chat (\cd{Divider} + texto) &
+  \arq{componentes/\B{}PecasDoAssistente.tsx} & o \cd{unooriaai} não tem
+  mensagem de sistema nem separador\\
+\bottomrule
+\end{tabularx}
 
 \subsection{Avisos que ficaram obsoletos}
 

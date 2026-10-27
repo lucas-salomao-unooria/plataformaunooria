@@ -2437,6 +2437,15 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   a capa com os sete campos juntos e o voto com o \cd{concluido\_em}, e um
   \emph{CHECK} de ordem por etapa), com RLS forçada e \emph{CHECKs}
   espelhando \arq{conteudo.ts}.\\
+\arq{20261026180000\_\B{}exp01em1b\_\B{}assistente\_\B{}invisivel} & As quatro
+  tabelas de O Assistente Invisível (\adrr{ADR-185}): \cd{exp01em1b\_\B{}pacotes}
+  (o pacote didático que a IA gera e o professor cura, com os itens editados e
+  a contingência; um em andamento e um rascunho por turma, índices únicos
+  parciais), \cd{\_gates\_turma} (as sete fases, das cinco liberações e das
+  duas pausas), \cd{\_gates\_historico} (para onde a turma foi, nunca a fase
+  inicial) e \cd{\_sessoes} (os dois latches, a aposta e o Publicar com os
+  cinco campos juntos, e um \emph{CHECK} de ordem por etapa), com RLS forçada
+  e \emph{CHECKs} espelhando \arq{conteudo.ts}.\\
 \bottomrule
 \end{tabularx}
 
@@ -2505,6 +2514,58 @@ panorâmica, os pares só depois do \enquote{fora}, a segunda foto só depois do
 pares, o voto só depois da segunda foto), e os campos de cada etapa andam
 juntos (\enquote{todos ou nenhum}). O passo da tela é derivado dessas mesmas
 colunas: a jogada fora de ordem que escapasse do serviço seria recusada aqui.
+\end{regra}
+
+\section{As quatro tabelas da exp01em1b}
+\label{sec:tabelas-exp01em1b}
+
+O Assistente Invisível (\adrr{ADR-185}), no desenho de O Enigma da Capa da
+Rádio: todas com \cd{escola\_id NOT NULL}, RLS forçada, política por escola e
+\cd{GRANT} para \cd{app\_runtime}. Os vocabulários (disciplina, origem, fase,
+aposta, funções, itens do pacote, equidade e alinhamento) vivem em
+\arq{assistente-\B{}invisivel/\B{}conteudo.ts} E nos \emph{CHECKs}, e
+\arq{tests/\B{}assistente-\B{}invisivel-\B{}regras.\B{}spec.ts} compara os dois textos.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp01em1b\_\B{}pacotes} & A ATIVIDADE: o pacote didático em \cd{conteudo\_json}
+  (as duas trilhas, as cinco dúvidas, as cinco respostas do assistente e a
+  leitura), o recorte do professor (disciplina, tema, de 3 a 5 tópicos,
+  contexto regional), a \cd{origem} (\cd{padrao} $|$ \cd{ia}), os itens que o
+  professor reescreveu (\cd{editados}, \cd{TEXT[]}), a \cd{contingencia} (o
+  banco padrão que entrou no lugar da IA, só com \cd{origem = padrao}),
+  \cd{ativo}, \cd{rodada\_atual}, a aprovação (carimbo e autor juntos) e o
+  gasto de IA (\cd{ia\_geracoes}, \cd{ia\_tokens}). Um em andamento e um
+  rascunho por turma (índices únicos parciais). O gabarito NÃO está aqui: é
+  fixo, de \arq{conteudo.ts}.\\
+\zebra \cd{exp01em1b\_\B{}gates\_\B{}turma} & A fase da turma, só para a frente:
+  \cd{aguardando-\B{}inicio}, \cd{testes}, \cd{simulacao}, \cd{debate-1},
+  \cd{explicar}, \cd{debate-2}, \cd{publicar}. Chave (escola, turma).\\
+\cd{exp01em1b\_\B{}gates\_\B{}historico} & Cada botão do professor: o pacote, a
+  rodada, a fase de destino (nunca a inicial, que é o \enquote{Zerar}) e o
+  professor (\cd{SET NULL} se a conta sair).\\
+\zebra \cd{exp01em1b\_\B{}sessoes} & Uma linha por (escola, estudante, pacote,
+  rodada), com a turma; o estudante é quem está logado no aparelho (com
+  equipe, o computador). O início e as funções abertas (E1--E2); a aposta e o
+  carimbo (o LATCH 1); a simulação, as fichas e a inspeção (E4); os cartões
+  com os acertos (E5); o painel opcional e os passos marcados; os critérios,
+  os retestes e as duas equidades (a do primeiro e a do último); o revisar e
+  o avanço (com ou sem o viés); e a página, os blocos, os acertos, o
+  alinhamento e o carimbo (o LATCH 2). Sem texto livre.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{A ordem da missão é do banco também.} Cada etapa tem um \emph{CHECK}
+que exige a anterior (a aposta só depois das funções, a simulação só depois
+da aposta, as fichas só depois da simulação, a inspeção só depois das fichas,
+os cartões só depois da inspeção, o painel e o reteste só depois dos cartões,
+o avanço só depois de um reteste e o Publicar só depois do avanço), e os
+campos de cada etapa andam juntos (\enquote{todos ou nenhum}). O passo da
+tela é DERIVADO dessas colunas e da fase da turma (\arq{regras/\B{}passos.ts});
+a fase NÃO muda o passo, só põe a espera por cima dele.
 \end{regra}
 
 \section{As três tabelas da exp01ef1b}

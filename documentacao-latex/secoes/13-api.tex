@@ -1414,6 +1414,144 @@ nas transações dos gestos: a EF02CO01 no quarto achado e a EF02CO05 no voto da
 horta.
 \end{regra}
 
+\subsection{O Assistente Invisível (exp01em1b)}
+\label{sec:api-assistente-invisivel}
+
+% Esta tabela e ESCRITA A MAO; a verdade e o Apendice C (`apendices/c-endpoints.tex`),
+% gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer.
+
+Desde 2026-10-26 (\adrr{ADR-185}), no módulo \arq{assistente-\B{}invisivel}, no
+molde de O Enigma da Capa da Rádio. Trinta e uma rotas em três
+\emph{controllers}: dezesseis do estudante (\cd{@Roles(\B{}"estudante")} na
+classe e \cd{exigirMissaoLiberada} no funil de TODAS, com a disponibilidade
+junto: 403 \cd{missao-\B{}nao-\B{}liberada} ou \cd{recurso-\B{}indisponivel}), catorze por
+turma (\cd{@Roles} por método: as leituras para professor e gestores, as
+escritas só para o professor que leciona; turma que ele não leciona é 404) e
+uma de catálogo. O contrato HTTP é \arq{contrato-\B{}de-\B{}rotas.ts}, em Zod, de
+onde sai o OpenAPI; a experiência e o hub espelham os tipos dele. Sem
+atividade no ar, as jogadas respondem 409 \cd{missao-\B{}em-\B{}preparo}. Toda
+resposta de \cd{POST} de estudante É o estado inteiro (o reteste o estende
+com o resultado). Toda jogada declara o passo dela: à frente, 409
+\cd{passo-\B{}invalido}; no passo certo com a turma travada, 409
+\cd{aguardando-\B{}professor}; já feita, o estado (200). Todo \cd{POST} leva a
+\cd{atividade} do GESTO (\cd{\{pacoteId, rodada\}}, opcional no contrato, que
+a tela sempre manda): diferente da do servidor, 409 \cd{rodada-mudou}, e a
+fila de reenvio não aplica jogada velha na rodada nova. A sessão
+sai trancada por \cd{SELECT \ldots{} FOR UPDATE}. A turma do estudante sai do
+\emph{token}, nunca do corpo. Não há rota de texto livre, nem Canal B, nem IA
+do estudante. O podcast é do módulo da plataforma
+(\rota{/podcast/\B{}exp01em1b/\B{}turmas/:t/*}, \adrr{ADR-150}).
+
+\begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Papel} & \thd{O que faz}\\
+\midrule
+\rota{GET /assistente-\B{}invisivel/sessao} & estudante & O estado (o passo,
+  DERIVADO, e a espera), o pacote no ar (com a \cd{contingencia}), o material
+  fixo SEM o gabarito (as fichas, os avisos de sistema, os cartões, os
+  passos, os critérios e os blocos, só com os rótulos) e o medidor. ABRE a
+  sessão da rodada (idempotente): é o que o 100\% conta.\\
+\zebra \rota{GET /assistente-\B{}invisivel/gate} & estudante & O \emph{polling}
+  de 3\,s: a fase, a rodada, o passo, a espera e o medidor.\\
+\rota{POST /assistente-\B{}invisivel/\B{}iniciar} & estudante & E1 \enquote{Abrir
+  Módulo de Teste}, só com a turma em \cd{testes} ou além.\\
+\zebra \rota{POST /assistente-\B{}invisivel/\B{}navegar} & estudante & E2: as
+  funções expandidas (pelo menos uma) e o \enquote{Ir para Bateria de
+  Testes}.\\
+\rota{POST /assistente-\B{}invisivel/aposta} & estudante & E3, \textbf{o LATCH
+  1}: a aposta (\cd{a} $|$ \cd{b} $|$ \cd{c}). Outra depois: 409
+  \cd{ja-apostou}.\\
+\zebra \rota{POST .../\B{}simulacao/\B{}concluir} & estudante & E4: as três sessões
+  de chat terminaram.\\
+\rota{POST .../\B{}fichas/\B{}abrir} & estudante & E4: \enquote{Abrir Fichas de
+  Auditoria de Acesso} (o PQ-02).\\
+\zebra \rota{POST .../\B{}inspecao/\B{}concluir} & estudante & E4:
+  \enquote{Concluir Inspeção de Metadados}; depois, a Trava 1.\\
+\rota{POST /assistente-\B{}invisivel/\B{}cartoes} & estudante & E5: a alocação dos
+  seis cartões (incompleta vale); devolve se está completa e a tabela causal,
+  nunca a coluna certa.\\
+\zebra \rota{POST .../\B{}algoritmo/\B{}abrir} & estudante & E5: abriu o painel
+  opcional (o PQ-04). Idempotente.\\
+\rota{POST .../\B{}algoritmo/\B{}marcar} & estudante & E5: os passos marcados como
+  dispensáveis, repetível até \enquote{Pular Etapa}; só com o painel
+  aberto.\\
+\zebra \rota{POST .../\B{}algoritmo/\B{}concluir} & estudante & E5 \enquote{Pular
+  Etapa}: sai do painel, tenha marcado ou não.\\
+\rota{POST /assistente-\B{}invisivel/\B{}criterios} & estudante & E5
+  \enquote{Executar Novo Teste de Homologação}: os três critérios; devolve
+  a equidade (\cd{total} $|$ \cd{parcial} $|$ \cd{nenhuma}) e o efeito no
+  chat.\\
+\zebra \rota{POST .../\B{}reteste/\B{}revisar} & estudante & E5 \enquote{Revisar
+  Critérios}: de volta ao banco até o próximo reteste.\\
+\rota{POST .../\B{}reteste/\B{}avancar} & estudante & E5 \enquote{Avançar para
+  Homologação e Transparência} ou \enquote{Avançar para Publicação} (com o
+  viés gravado); depois, a Trava 2.\\
+\zebra \rota{POST /assistente-\B{}invisivel/\B{}publicar} & estudante & E6,
+  \textbf{o LATCH 2}: a página (ligada ou não) e os quatro blocos, num
+  UPDATE só; o servidor corrige o comunicado e marca as quatro habilidades.
+  Outra escolha depois: 409 \cd{ja-publicado}.\\
+\rota{GET /assistente-\B{}invisivel/turmas} & prof., gestor & As turmas que o
+  professor leciona, com o número de estudantes.\\
+\zebra \rota{GET .../turmas/:turmaId/pacotes} & prof., gestor & O PREPARO:
+  a atividade em andamento e o rascunho da curadoria (com os itens editados),
+  e as disciplinas do recorte.\\
+\rota{POST .../turmas/:turmaId/\B{}gerar-conteudo} & \textbf{só professor} &
+  \enquote{Gerar Cenários de Teste com IA}: o rascunho do pacote inteiro, na
+  quota do perfil \cd{professor}; sem saldo ou sem provedor, o banco padrão
+  com \cd{contingencia: true} e o \cd{motivo}.\\
+\zebra \rota{POST .../rascunho/\B{}regenerar} & \textbf{só professor} &
+  \enquote{Regenerar Este Item}: a IA reescreve UM item; 429
+  \cd{sem-saldo-de-ia} ou 503 \cd{ia-indisponivel}, e o rascunho fica.\\
+\rota{POST .../rascunho/\B{}editar} & \textbf{só professor} & \enquote{Editar
+  Texto}: o professor reescreve um item, pela mesma régua; ele ganha o
+  \enquote{Editado pelo professor}.\\
+\zebra \rota{POST .../turmas/:turmaId/\B{}homologar} & \textbf{só professor} &
+  \enquote{Aprovar Pacote Homologado}: o rascunho que o professor VIU
+  (\cd{rascunhoId}) vira atividade pronta, fora do ar.\\
+\rota{POST .../turmas/:turmaId/\B{}banco-padrao} & \textbf{só professor} &
+  \enquote{Usar Banco Padrão da Rede}: aprova e põe no ar o pacote padrão,
+  num toque. Não é contingência.\\
+\zebra \rota{GET .../turmas/:turmaId/\B{}historico} & prof., gestor & As
+  atividades da turma (as aprovadas, com as rodadas e a em andamento) --- o
+  contrário das irmãs, em que essa lista é \cd{/pacotes}.\\
+\rota{GET .../pacotes/:pacoteId} & prof., gestor & UMA atividade inteira,
+  com o pacote e as rodadas, mesmo fora do ar: a aba Conteúdo da atividade
+  que não está em andamento.\\
+\zebra \rota{POST .../pacotes/:pacoteId/\B{}em-andamento} & \textbf{só
+  professor} & \enquote{Liberar Atividade para a Turma}: a atividade em
+  andamento, e a fase volta a \cd{aguardando-\B{}inicio}.\\
+\rota{GET .../turmas/:turmaId/painel} & prof., gestor & A aula ao vivo e o
+  relatório formativo: por estudante (ou por computador, com equipe), o
+  passo, a aposta, os cartões, o painel opcional, os critérios, a equidade, a
+  publicação com o comunicado em texto e os níveis; o resumo (apostas, quem
+  falta, 1A $\times$ 1C, avisos discretos, a matriz BNCC) e o roteiro.\\
+\zebra \rota{POST .../turmas/:turmaId/gate} & \textbf{só professor} & As
+  cinco liberações e as duas pausas (\cd{\{para\}}), só para a frente; para
+  \cd{simulacao} sem 100\% das sessões abertas, 409 \cd{apostas-pendentes}.\\
+\rota{POST .../turmas/:turmaId/\B{}encerrar} & \textbf{só professor} & Quem
+  apostou e não publicou recebe as quatro marcas, sem a publicação. O
+  encerramento da Sala de Aula faz o mesmo pelo gancho; o hub não chama esta
+  rota.\\
+\zebra \rota{POST .../turmas/:turmaId/zerar} & \textbf{só professor} &
+  \enquote{Zerar Turma para Nova Aplicação}: rodada $+1$, a evidência do
+  pacote apagada (\adrr{ADR-155}), as sessões guardadas e a fase de volta a
+  \cd{aguardando-\B{}inicio}.\\
+\rota{GET /assistente-\B{}invisivel/\B{}professor/\B{}material} & prof., gestor & O
+  guia da aula: as quatro perguntas do roteiro, o caso de transferência e os
+  critérios das quatro habilidades. Catálogo, sem \emph{tenancy}
+  (\adrr{ADR-86}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{O gabarito não sai em resposta nenhuma de estudante} --- nem as
+colunas certas dos cartões, nem os passos dispensáveis, nem os critérios
+equitativos, nem a opção certa dos blocos. O alinhamento do comunicado e os
+níveis só vão ao painel do professor. As quatro habilidades são marcadas na
+transação do Publicar, e no encerrar para quem apostou e não publicou
+(Seção~\ref{sec:exp01em1b}).
+\end{regra}
+
 \subsection{Jornal da Escola (exp04ef1b)}
 \label{sec:api-jornal-escola}
 
@@ -1778,6 +1916,9 @@ hub divergiria na primeira revisão de \emph{copy}.
   três pacotes prontos de O Enigma da Capa da Rádio com o gabarito (os alvos,
   os núcleos, as falas da visitante), o roteiro da conversa, as cartas dos
   pares com a atividade e a cor, e os critérios das duas habilidades.\\
+\rota{GET /assistente-\B{}invisivel/\B{}professor/\B{}material} & prof., gestor & As
+  quatro perguntas do roteiro de debate de O Assistente Invisível, o caso de
+  transferência e os critérios das quatro habilidades.\\
 \bottomrule
 \end{tabularx}
 
@@ -1787,14 +1928,17 @@ hub divergiria na primeira revisão de \emph{copy}.
 \rota{/rastro-boato/professor/material},
 \rota{/quem-mandou-isso/professor/material},
 \rota{/jornal-escola/professor/material},
-\rota{/juri-estadual/professor/material} e
-\rota{/enigma-capa/professor/material} não há \cd{escolaId} nem
+\rota{/juri-estadual/professor/material},
+\rota{/enigma-capa/professor/material} e
+\rota{/assistente-\B{}invisivel/professor/material} não há \cd{escolaId} nem
 \emph{tenancy} a aplicar --- o conteúdo é igual para todo contrato, e o que a
 guarda protege é o PAPEL. Por isso vivem em \emph{controller} separado do de
 turmas. \rota{/vila/professor/cartoes} é a exceção: ela recebe \cd{?turmaId=}
 porque a bolha servida depende da série da turma.
 
-As sete devolvem exatamente os campos que o servidor retira antes de a
+Sete delas (a do Assistente Invisível é a exceção: leva só o roteiro e as
+réguas, porque o gabarito da bancada é fixo e o painel já o aplica)
+devolvem exatamente os campos que o servidor retira antes de a
 opção chegar ao estudante (regra inviolável nº 3): o que muda entre as duas
 superfícies é o \textbf{leitor} (\adrr{ADR-86}). No unooGPT isso é mais
 extremo --- a Missão Tempestade não revela nada por \emph{software}, de

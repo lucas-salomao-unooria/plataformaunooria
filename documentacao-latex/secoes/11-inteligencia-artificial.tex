@@ -74,6 +74,15 @@ Preparo da cena & exp02ef1b, \arq{src/enigma-capa/} &
   o \textbf{professor marca os dois objetos} tocando na imagem antes de
   aprovar. Sem saldo ou sem provedor, o pacote pronto da disciplina; em sala,
   nada (\adrr{ADR-184}, Seção~\ref{sec:ia-preparo-exp02ef1b}).\\
+\zebra Preparo do pacote & exp01em1b, \arq{src/assistente-\B{}invisivel/} &
+  O pacote didático inteiro sobre o recorte do professor (disciplina, tema, de
+  3 a 5 tópicos, contexto regional): as duas trilhas, as cinco dúvidas dos
+  três colegas (a do Lucas também), as cinco respostas do assistente e a
+  leitura, com a quota dele; e o \enquote{Regenerar Este Item}, um item por
+  vez. A saída passa pela MESMA régua da homologação, que recusa texto que
+  cite horário ou conexão. Sem saldo ou sem provedor, o banco padrão de Língua
+  Portuguesa; em sala, nada: o chat é roteirizado (\adrr{ADR-185},
+  Seção~\ref{sec:ia-preparo-exp01em1b}).\\
 Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
   As quatro áreas e os quarenta estandes da mostra científica sobre o tema e
   os assuntos do professor (cinco chamadas: as categorias e as quatro áreas em
@@ -291,6 +300,57 @@ Museu), com \cd{usouIa: false}: a aula acontece. O pacote conta
 \cd{ia\_geracoes} e \cd{ia\_tokens}. No painel de custos (\adrr{ADR-161}) a
 chamada aparece como \cd{enigma-capa} (\enquote{O Enigma da Capa da Rádio}, em
 \cd{RECURSOS\_\B{}DE\_\B{}IA}). Na aula não há chamada de IA nenhuma.
+
+\subsection{O preparo de O Assistente Invisível: o pacote inteiro, item por item}
+\label{sec:ia-preparo-exp01em1b}
+
+A única superfície de IA da exp01em1b é o preparo do professor, antes da aula
+(\arq{assistente-\B{}invisivel/\B{}preparo.\B{}service.ts}, \adrr{ADR-185}). Na aula, o
+UnooriaAI que a turma audita é ROTEIRIZADO a partir do pacote que o professor
+aprovou: não há chamada de IA na tela do estudante, nem texto livre. São duas
+chamadas pagas, as duas na quota do perfil \cd{professor} (regra 5:
+\cd{temSaldo} ANTES, \cd{consumir} depois, por tentativa, inclusive as
+recusadas, \adrr{ADR-74}):
+
+\begin{enumerate}
+  \item \textbf{\enquote{Gerar Cenários de Teste com IA}} (\rota{POST
+    /assistente-\B{}invisivel/\B{}turmas/\B{}:turmaId/\B{}gerar-\B{}conteudo}):
+    \cd{generateJson} (\arq{prompts.ts}, teto de 8.000 \emph{tokens} de saída,
+    \adrr{ADR-148}, duas tentativas) sobre o recorte (disciplina, tema de até
+    60 caracteres, de 3 a 5 tópicos, contexto regional de até 120). Devolve
+    o pacote INTEIRO: a Trilha Avançada e o Reforço Básico (título e
+    enunciado), as cinco dúvidas (Lucas, Beatriz e as três do Thiago), as
+    cinco respostas do assistente e a Leitura Recomendada. A dúvida do Lucas
+    e as respostas também são da IA (decisão do Vinicius, 2026-10-26).
+  \item \textbf{\enquote{Regenerar Este Item}} (\rota{POST
+    .../\B{}rascunho/\B{}regenerar}): a IA reescreve UM dos treze itens do
+    rascunho, com o resto do pacote no \emph{prompt} (teto de 4.000), e o
+    serviço devolve o pacote inteiro com o item novo no lugar, já pela régua.
+\end{enumerate}
+
+\textbf{A régua é uma só} (\cd{regras/\B{}pacote.ts\#\B{}problemas\B{}Do\B{}Pacote}),
+para a saída da IA, o regenerar, o \enquote{Editar Texto} do professor e a
+homologação: a forma e os limites do contrato, cinco dúvidas diferentes,
+títulos das trilhas diferentes e \textbf{nenhum texto que cite horário,
+madrugada, noite, conexão, sinal, internet ou rede} --- o pacote não pode
+antecipar a inferência que a turma vai descobrir nas fichas. As fichas dos
+três colegas, os avisos de sistema e a bancada são FIXOS (\arq{conteudo.ts}):
+a IA não os toca, e por isso o caso continua o mesmo em toda disciplina.
+
+\textbf{Sem saldo ou com o \emph{vendor} fora}, a geração devolve o banco
+padrão de Língua Portuguesa (\enquote{Figuras de Linguagem e Ironia na
+Literatura}) com \cd{contingencia: true} e o \cd{motivo} (\cd{sem-saldo}
+$|$ \cd{indisponivel}): o hub mostra a escolha do E0-PROF-03
+(\enquote{Prosseguir com Banco Oficial}, \enquote{Tentar Novamente} /
+\enquote{Usar Banco Padrão}) e a tela do estudante mostra a faixa
+\enquote{Carregando versão de contingência da rede escolar}. O regenerar não
+troca nada: responde 429 \cd{sem-saldo-de-ia} ou 503 \cd{ia-indisponivel}, e o
+rascunho fica como estava. O \enquote{Usar Banco Padrão da Rede} deliberado
+NÃO é contingência. O pacote conta \cd{ia\_geracoes} e \cd{ia\_tokens}; no
+painel de custos (\adrr{ADR-161}) a chamada aparece como
+\cd{assistente-\B{}invisivel} (\enquote{O Assistente Invisível}, em
+\cd{RECURSOS\_\B{}DE\_\B{}IA}). Nada gerado chega à turma sem o \enquote{Aprovar
+Pacote Homologado}.
 
 \section{A camada única}
 
