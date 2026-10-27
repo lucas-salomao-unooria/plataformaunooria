@@ -2,7 +2,7 @@ import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta, contasDe, senhaDemo } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../lib/smoke.mjs";
 import { revelar } from "../lib/abas.mjs";
-import { esperarNaApi, hidratado, idDaTurma, lerApi, primeiroQueAparecer } from "../lib/enigma-capa.mjs";
+import { esperarNaApi, hidratado, idDaTurma, lerApi, postarNaApi, primeiroQueAparecer } from "../lib/enigma-capa.mjs";
 
 /**
  * O ASSISTENTE INVISÍVEL (exp01em1b, 1ª série EM, unidade 1 — ADR-185), das
@@ -90,6 +90,7 @@ await suite(
       "A Trava 2, a página ligada, os 4 blocos certos e a publicação (LATCH 2); o certificado com a salvaguarda",
       "A sessão do estudante não carrega o gabarito (colunas, passos dispensáveis, critérios equitativos, opção certa)",
       "O relatório formativo com as quatro habilidades “Atingiu” e a exportação para impressão",
+      "Com equipe de UM computador (banco padrão, sorteio): “Unooria · Bancada”, a tag da estação, o texto no plural, o painel por computador e as quatro marcas em CADA integrante",
     ],
     comando: "node scripts/e2e/estudante/16-assistente-invisivel.mjs",
   },
@@ -316,365 +317,447 @@ await suite(
       });
     };
 
-    // ═══ ESTUDANTE: a espera e a E1 ═══════════════════════════════════════
     const p = await r.pagina("estudante", { viewport: { width: 412, height: 915 }, mobile: true, deviceScaleFactor: 2 });
     await r.entrar(p, estudante.login, senhaDe(estudante));
-    await p.goto(`${HUB}/exp/${EXP_ID}`, { waitUntil: "domcontentloaded" });
     const q = p.frameLocator("iframe[data-experiencia]");
-    await esperarOuFalharPorHttp(p, q.getByRole("button", { name: "Abrir Módulo de Teste" }), /assistente-invisivel\/sessao/, {
-      timeout: 40_000,
-      oQue: "o boot da missão",
-    });
-    await q.getByText(ESPERA).first().waitFor({ timeout: 10_000 });
-    r.exigir(await q.getByText("Unooria · Comissão", { exact: true }).isVisible(), "o cabeçalho é “Unooria · Comissão” (individual, sem equipe)");
-    await r.registrar(p, "espera-do-inicio", {
-      titulo: "Pausa para Mediação",
-      mostra: "A Zara e o módulo de teste por baixo, e a camada de espera: “Aguardando autorização da mediação docente…”.",
-      prova: "A turma não começa sozinha: o passo é o mesmo, e a camada sai quando o professor libera.",
-    });
-
-    await liberar("testes");
-    await q.getByText(ESPERA).first().waitFor({ state: "hidden", timeout: 20_000 });
-    await r.registrar(p, "boas-vindas", {
-      titulo: "Etapa 1 — Desafiar",
-      mostra: "A Zara (Comissão Estudantil) apresenta o UnooriaAI em teste e o botão “Abrir Módulo de Teste”.",
-      prova: "A liberação chegou pelo polling de 3 s do gate, sem recarregar a tela.",
-    });
     const postDo = (rota, acao, timeout = 30_000) =>
       Promise.all([
         p.waitForResponse((x) => rota.test(new URL(x.url()).pathname) && x.request().method() === "POST", { timeout }),
         acao(),
       ]).then(async ([x]) => ({ status: x.status(), corpo: await x.json().catch(() => null) }));
-    const iniciou = await postDo(/\/assistente-invisivel\/iniciar$/, () => q.getByRole("button", { name: "Abrir Módulo de Teste" }).click());
-    r.exigir(iniciou.status === 200 && iniciou.corpo?.passo === "funcoes" && iniciou.corpo?.equipe === null, "“Abrir Módulo de Teste” leva às funções (passo “funcoes”)");
 
-    // ═══ ESTUDANTE: E2, as funções ════════════════════════════════════════
-    const ir = q.getByRole("button", { name: "Ir para Bateria de Testes" });
-    await ir.waitFor({ timeout: 15_000 });
-    r.exigir(await ir.isDisabled(), "“Ir para Bateria de Testes” nasce apagado: só acende com uma função aberta");
-    for (const funcao of ["Função 1: Apresentar Exercícios", "Função 2: Responder Dúvidas", "Função 3: Sugerir Conteúdos"]) {
-      await q.getByRole("button", { name: new RegExp(`^${funcao}`) }).click();
-      await q.getByRole("button", { name: `${funcao} ✓` }).waitFor({ timeout: 5000 });
-    }
-    r.exigir(await ir.isEnabled(), "com as funções abertas (✓), o botão acende");
-    await r.registrar(p, "tres-funcoes", {
-      titulo: "Etapa 2 — Funções",
-      mostra: "As três funções expandidas, com a descrição longa e a prévia estática do UnooriaAI; cada uma ganhou o ✓.",
-      prova: "O botão só acende depois de uma função aberta (recolhido → expandido → habilitado).",
-      inteira: true,
-    });
-    const navegou = await postDo(/\/assistente-invisivel\/navegar$/, () => ir.click());
-    r.exigir(navegou.corpo?.passo === "aposta" && navegou.corpo?.funcoesAbertas?.length === 3, "as três funções abertas vão ao servidor e o passo vira a aposta");
+    /**
+     * A MISSÃO INTEIRA, das duas pontas: o estudante joga de E1 a E6 e o
+     * professor libera cada fase. Roda duas vezes: individual (`equipe: null`,
+     * o pacote da IA) e com a equipe de UM computador (a projeção, o banco
+     * padrão). Com equipe, a tela é a mesma e muda o que a E13 manda: o
+     * cabeçalho "Unooria · Bancada", a tag da estação e as instruções no plural.
+     *
+     * `passos` (só no caminho da equipe) diz quais prints entram no deck, para
+     * a segunda volta não repetir a primeira tela a tela.
+     */
+    const jogarAMissao = async ({ equipe, duvidaDoLucas, passos }) => {
+      const registrar = (pagina, nome, ficha) =>
+        !equipe
+          ? r.registrar(pagina, nome, ficha)
+          : passos.has(nome)
+            ? r.registrar(pagina, `equipe-${nome}`, { ...ficha, titulo: `Bancada · ${ficha.titulo}` })
+            : Promise.resolve();
+      const unidade = equipe ? "computador" : "estudante";
 
-    // ═══ ESTUDANTE: E3, a aposta (LATCH 1) ════════════════════════════════
-    await q.getByText("Lucas (15 anos)").first().waitFor({ timeout: 15_000 });
-    r.exigir(
-      (await q.getByText("Beatriz (15 anos)").count()) === 1 &&
-        (await q.getByText("Thiago (16 anos)").count()) === 1 &&
-        (await q.getByText("Preferência declarada: Trilha Avançada").count()) === 3,
-      "as três fichas de cadastro (Beatriz, Thiago e Lucas) pedem a Trilha Avançada",
-    );
-    r.exigir(await q.getByRole("button", { name: "Disparar Simulação" }).isDisabled(), "sem aposta, “Disparar Simulação” fica apagado");
-    await q.getByRole("radio", { name: APOSTA_A, exact: true }).click();
-    await r.registrar(p, "a-aposta", {
-      titulo: "Etapa 3 — Aposta",
-      mostra: "As três fichas com a mesma preferência e a aposta (A): “Todos receberão o nível Avançado conforme solicitado no cadastro.”",
-      prova: "A aposta mede a crença de entrada: nada na tela diz que o sistema usa horário ou conexão.",
-      inteira: true,
-    });
-    const apostou = await postDo(/\/assistente-invisivel\/aposta$/, () => q.getByRole("button", { name: "Disparar Simulação" }).click());
-    r.exigir(apostou.status === 200 && apostou.corpo?.aposta === "a" && Boolean(apostou.corpo?.apostadaEm), "a aposta A está gravada (LATCH 1)");
-    await q.getByText("Estado Latch Gravado").first().waitFor({ timeout: 10_000 });
-    r.exigir(
-      (await q.getByText(`Previsão arquivada: ${APOSTA_A}`).count()) === 1 && (await q.getByRole("button", { name: "Iniciando Simulação de Chat..." }).isDisabled()),
-      "“Previsão arquivada” com o texto inteiro da aposta, e “Iniciando Simulação de Chat...” esperando a turma",
-    );
-    await r.registrar(p, "previsao-arquivada", {
-      titulo: "Estado Latch Gravado",
-      mostra: "A previsão arquivada de forma definitiva e o botão “Iniciando Simulação de Chat...” desabilitado.",
-      prova: "LATCH 1: a aposta não volta. A simulação só começa quando 100% das sessões abertas apostaram.",
-    });
-
-    // ═══ PROFESSOR: 100% das apostas e a simulação ════════════════════════
-    const painelNaApi = await esperarNaApi(prof, `${daTurma}/painel`, (c) => c?.resumo?.todosApostaram === true, {
-      oQue: "o painel contar 100% das apostas",
-    });
-    r.exigir(painelNaApi.resumo.apostas.a >= 1 && painelNaApi.resumo.faltamApostar.length === 0, `100% das sessões abertas apostaram (${painelNaApi.resumo.sessoes} sessão(ões); faltam: nenhuma)`);
-    await prof.locator('[data-acao="fase-simulacao"]:not([disabled])').waitFor({ timeout: 20_000 });
-    await painel.getByText("Status da Condução: Apostas Registradas").waitFor({ timeout: 10_000 });
-    await r.registrar(prof, "apostas-registradas", {
-      titulo: "Distribuição das Apostas da Sala",
-      mostra: "As barras A, B e C, “Apostas registradas pela turma” em 100% e o “Liberar Início da Simulação” aceso.",
-      prova: "O botão só acende com 100% das sessões abertas: quem abriu e saiu segura a turma, e o painel diz quem falta.",
-    });
-    await liberar("simulacao");
-
-    // ═══ ESTUDANTE: E4, a simulação, o confronto e as fichas ══════════════
-    const concluiuSimulacao = p.waitForResponse(
-      (x) => /\/assistente-invisivel\/simulacao\/concluir$/.test(new URL(x.url()).pathname) && x.request().method() === "POST",
-      { timeout: 90_000 },
-    );
-    await q.getByText("Aviso de Sistema: Identificamos o seu ritmo de estudos e direcionamos você para o Reforço Básico").first().waitFor({ timeout: 40_000 });
-    r.exigir((await q.getByText(DUVIDA_EDITADA).count()) >= 1, "a dúvida do Lucas no chat é a que o professor editou");
-    await r.registrar(p, "sessao-da-beatriz", {
-      titulo: "UnooriaAI — Sessão de Teste 2/3: Beatriz",
-      mostra: "O Lucas recebe a Trilha Avançada; a Beatriz (23h45) recebe o aviso de sistema e o Reforço Básico.",
-      prova: "A conversa é ROTEIRIZADA a partir do pacote aprovado: não há IA na tela do estudante, e o Composer fica bloqueado.",
-    });
-    await q.getByText("Sessões 2/3 e 3/3 Concluídas").first().waitFor({ timeout: 40_000 });
-    r.exigir(
-      (await q.getByText("Aviso de Sistema: Limite de interações atingido para a sua sessão. Retorne amanhã").count()) === 1,
-      "o Thiago (sinal instável) recebe o limite de interações na terceira dúvida",
-    );
-    await r.registrar(p, "sessoes-concluidas", {
-      titulo: "Sessões 2/3 e 3/3 Concluídas",
-      mostra: "A sessão do Thiago: duas respostas e, na terceira dúvida, “Limite de interações atingido”.",
-      prova: "Os três pediram a mesma coisa; só o que o sistema observou mudou.",
-    });
-    const simulacao = await concluiuSimulacao;
-    r.exigir(simulacao.status() === 200, "a simulação concluída vai ao servidor depois da pausa para ler");
-
-    const confronto =
-      "Você previu: 'Todos receberão o nível Avançado conforme solicitado no cadastro'. No entanto, Beatriz e Thiago foram barrados. Por que o formulário que eles preencheram não foi respeitado?";
-    await q.getByText(confronto, { exact: true }).waitFor({ timeout: 15_000 });
-    r.exigir((await q.getByText(/^Na sua turma:/).count()) === 0, "com menos de 3 apostas, o medidor da turma não aparece");
-    await r.registrar(p, "confronto", {
-      titulo: "Etapa 4 — Flagrante da Triagem",
-      mostra: "O confronto nominal com a aposta A (o texto inteiro, entre aspas) e a Zara: “Precisamos abrir essas fichas.”",
-      prova: "A aposta gravada volta como espelho: o estudante previu o cadastro respeitado, e o cadastro não foi.",
-    });
-    const abriuFichas = await postDo(/\/assistente-invisivel\/fichas\/abrir$/, () => q.getByRole("button", { name: "Abrir Fichas de Auditoria de Acesso" }).click());
-    r.exigir(abriuFichas.corpo?.passo === "fichas", "“Abrir Fichas de Auditoria de Acesso” abre as fichas (passo “fichas”)");
-    const folha = q.getByRole("dialog", { name: "Fichas de Auditoria de Acesso" });
-    await folha.waitFor({ timeout: 10_000 });
-    const textoDasFichas = (await folha.innerText()).replace(/\s+/g, " ");
-    r.exigir(
-      textoDasFichas.includes("23h45 · Banda larga") &&
-        textoDasFichas.includes("08h30 · Sinal instável") &&
-        textoDasFichas.includes("Inferência: Acesso noturno / Possível cansaço e baixo rendimento → Rebaixar para Básico") &&
-        textoDasFichas.includes("Inferência: Risco de sobrecarga e lentidão → Limitar a 2 mensagens") &&
-        textoDasFichas.includes("Resultado: Avançado"),
-      "as fichas mostram o horário e a conexão observados, a inferência e a ação de cada perfil (o Lucas sem inferência)",
-    );
-    await r.registrar(p, "fichas-de-auditoria", {
-      titulo: "Fichas de Auditoria de Acesso",
-      mostra: "Estudante | Formulário | Observado | Ação do Sistema: Lucas avançado; Beatriz rebaixada pelo acesso noturno; Thiago limitado pelo sinal.",
-      prova: "As fichas não são gabarito: são a revelação que a mecânica mostra — o formulário igual, o observado diferente.",
-    });
-    const inspecionou = await postDo(/\/assistente-invisivel\/inspecao\/concluir$/, () => folha.getByRole("button", { name: "Concluir Inspeção de Metadados" }).click());
-    r.exigir(inspecionou.corpo?.passo === "classificacao" && inspecionou.corpo?.aguardandoProfessor === true, "“Concluir Inspeção de Metadados” leva à Trava 1 (a bancada espera o professor)");
-    await q.getByText(ESPERA).first().waitFor({ timeout: 10_000 });
-    await q.getByText("Fichas de Auditoria Técnicas em segundo plano...").first().waitFor({ state: "attached", timeout: 10_000 });
-    await r.registrar(p, "trava-1", {
-      titulo: "A Trava 1",
-      mostra: "As fichas em segundo plano e a camada “Aguardando autorização da mediação docente…”.",
-      prova: "A Trava 1 vem DEPOIS das fichas (decisão do Vinicius): a turma debate com o que acabou de ver.",
-    });
-
-    // ═══ PROFESSOR: travar as telas e liberar a bancada ═══════════════════
-    await esperarNaApi(prof, `${daTurma}/painel`, (c) => c?.resumo?.simulacoesConcluidas >= 1, { oQue: "o painel contar a simulação concluída" });
-    await liberar("debate-1");
-    await painel.locator('[data-pergunta="2"]').waitFor({ timeout: 10_000 });
-    await r.registrar(prof, "telas-travadas", {
-      titulo: "Status da Condução: Telas Travadas",
-      mostra: "As apostas da sala, quem concluiu as 3 sessões e as perguntas 1 e 2 do roteiro de debate.",
-      prova: "“Travar Telas da Turma” vale para todo mundo da Etapa 4, inclusive quem ainda está nas fichas.",
-    });
-    await q.getByText("Roda de conversa coletiva em andamento com o professor (8 min).").first().waitFor({ timeout: 20_000 });
-    await r.registrar(p, "roda-de-conversa", {
-      titulo: "Pausa para Mediação — a roda de conversa",
-      mostra: "A camada de espera com “Roda de conversa coletiva em andamento com o professor (8 min).”",
-      prova: "A pausa é a FASE da turma, não o passo do estudante: o polling do gate a trouxe sozinho.",
-    });
-    await liberar("explicar");
-
-    // ═══ ESTUDANTE: E5, os cartões ════════════════════════════════════════
-    await q.getByText("Arraste ou toque nos cartões para separar os dados fornecidos pelo estudante dos dados técnicos observados pela plataforma.").waitFor({ timeout: 20_000 });
-    await q.getByText(ESPERA).first().waitFor({ state: "hidden", timeout: 10_000 });
-    const bandeja = q.locator(".bandeja");
-    r.exigir((await bandeja.getByText("Cartão 1", { exact: true }).count()) === 1, "com nada colocado, o 1º cartão leva a etiqueta “Cartão 1” (o andaime)");
-    for (const [i, cartao] of CARTOES.entries()) {
-      await bandeja.getByRole("button", { name: cartao.rotulo }).click();
-      await q.getByRole("button", { name: `Colocar em ${cartao.coluna}` }).click();
-      if (i === 2) {
-        await q.getByText(/A classificação dos dados da sessão ainda não foi concluída/).first().waitFor({ timeout: 5000 });
-        await r.registrar(p, "cartoes-no-meio", {
-          titulo: "Etapa 5 — os cartões, no meio",
-          mostra: "Três cartões colocados (Dados Fornecidos 2, Dados Observados 1) e o aviso de classificação incompleta.",
-          prova: "Por toque: toca o cartão e depois “Colocar em …”. A tela não sabe a coluna certa: manda a alocação, e o servidor decide.",
-          inteira: true,
-        });
+      // ═══ ESTUDANTE: a espera e a E1 ═══════════════════════════════════════
+      await p.goto(`${HUB}/exp/${EXP_ID}`, { waitUntil: "domcontentloaded" });
+      await esperarOuFalharPorHttp(p, q.getByRole("button", { name: "Abrir Módulo de Teste" }), /assistente-invisivel\/sessao/, {
+        timeout: 40_000,
+        oQue: "o boot da missão",
+      });
+      await q.getByText(ESPERA).first().waitFor({ timeout: 10_000 });
+      if (!equipe) {
+        r.exigir(await q.getByText("Unooria · Comissão", { exact: true }).isVisible(), "o cabeçalho é “Unooria · Comissão” (individual, sem equipe)");
+      } else {
+        r.exigir(
+          (await q.getByText("Unooria · Bancada", { exact: true }).first().isVisible()) &&
+            (await q.getByText(`Bancada da Comissão: ${equipe}`, { exact: true }).first().isVisible()),
+          `com equipe, o cabeçalho é “Unooria · Bancada” com a tag “Bancada da Comissão: ${equipe}”`,
+        );
       }
-    }
-    r.exigir((await bandeja.count()) === 0, "os 6 cartões saíram da bandeja");
-    await r.registrar(p, "cartoes-separados", {
-      titulo: "Dados Fornecidos × Dados Observados",
-      mostra: "Escolha de Trilha e Nome e Turma em Fornecidos (2); horário, sinal, IP e aparelho em Observados (4).",
-      prova: "O que o estudante digitou × o que o sistema gravou sozinho — a cadeia causal começa no dado observado.",
-      inteira: true,
-    });
-    const classificou = await postDo(/\/assistente-invisivel\/cartoes$/, () => q.getByRole("button", { name: "Concluir Classificação" }).click());
-    r.exigir(
-      classificou.corpo?.passo === "algoritmo" && classificou.corpo?.classificacao?.completa === true && classificou.corpo?.classificacao?.cadeiaCausal === true,
-      "a classificação completa abre a tabela causal (o servidor decide: `cadeiaCausal`)",
-    );
+      await registrar(p, "espera-do-inicio", {
+        titulo: "Pausa para Mediação",
+        mostra: "A Zara e o módulo de teste por baixo, e a camada de espera: “Aguardando autorização da mediação docente…”.",
+        prova: "A turma não começa sozinha: o passo é o mesmo, e a camada sai quando o professor libera.",
+      });
 
-    // ═══ ESTUDANTE: E5, as etapas do algoritmo ════════════════════════════
-    await q.getByText("Tabela Causal: Horário (Dado Observado) → Cansaço Presumido (Inferência) → Reforço Básico (Decisão Restritiva).").waitFor({ timeout: 15_000 });
-    const abriuPainel = await postDo(/\/assistente-invisivel\/algoritmo\/abrir$/, () =>
-      q.getByRole("button", { name: /\[Opcional \/ Aprofundamento\] Ver etapas de processamento do assistente/ }).click(),
-    );
-    r.exigir(abriuPainel.corpo?.algoritmo?.aberto === true, "abrir o painel opcional vai ao servidor (o PQ-04)");
-    let marcou = null;
-    for (const n of [2, 3, 4]) {
-      const caixa = q.getByRole("checkbox", { name: new RegExp(`Passo ${n}:`) });
-      marcou = await postDo(/\/assistente-invisivel\/algoritmo\/marcar$/, () => caixa.dispatchEvent("click"));
-    }
-    r.exigir(JSON.stringify(marcou?.corpo?.algoritmo?.marcados) === "[2,3,4]", `os passos 2, 3 e 4 marcados no servidor (${JSON.stringify(marcou?.corpo?.algoritmo?.marcados)})`);
-    await q.getByText("Otimização: de 5 para 2 passos essenciais").waitFor({ timeout: 5000 });
-    r.exigir(
-      (await q.getByText(/\(Inferência dispensável\)$/).count()) === 3 && (await q.getByText(/\(Essencial\)$/).count()) === 2,
-      "os marcados ganham “(Inferência dispensável)” e os outros “(Essencial)” — o rótulo do estudante, não o gabarito",
-    );
-    await r.registrar(p, "etapas-do-algoritmo", {
-      titulo: "Ver etapas de processamento do assistente",
-      mostra: "Os 5 passos do algoritmo com 2, 3 e 4 marcados como inferência dispensável e “Otimização: de 5 para 2 passos essenciais”.",
-      prova: "Opcional (EM13CO03): a tela não sabe quais passos sobram — a conta é do estudante, a régua é do servidor.",
-      inteira: true,
-    });
-    const pulou = await postDo(/\/assistente-invisivel\/algoritmo\/concluir$/, () => q.getByRole("button", { name: "Pular Etapa" }).click());
-    r.exigir(pulou.corpo?.passo === "criterios" && pulou.corpo?.algoritmo?.concluido === true, "“Pular Etapa” fecha o painel e leva ao banco de critérios");
+      await liberar("testes");
+      await q.getByText(ESPERA).first().waitFor({ state: "hidden", timeout: 20_000 });
+      await registrar(p, "boas-vindas", {
+        titulo: "Etapa 1 — Desafiar",
+        mostra: "A Zara (Comissão Estudantil) apresenta o UnooriaAI em teste e o botão “Abrir Módulo de Teste”.",
+        prova: "A liberação chegou pelo polling de 3 s do gate, sem recarregar a tela.",
+      });
+      const iniciou = await postDo(/\/assistente-invisivel\/iniciar$/, () => q.getByRole("button", { name: "Abrir Módulo de Teste" }).click());
+      r.exigir(
+        iniciou.status === 200 && iniciou.corpo?.passo === "funcoes" && (iniciou.corpo?.equipe?.nome ?? null) === equipe,
+        `“Abrir Módulo de Teste” leva às funções (passo “funcoes”), ${equipe ? `com a sessão da estação “${equipe}”` : "sem equipe"}`,
+      );
 
-    // ═══ ESTUDANTE: E5, os critérios e o reteste ══════════════════════════
-    await q.getByText("Selecione critérios no repositório da rede para reconfigurar as três funções do assistente escolar.").waitFor({ timeout: 15_000 });
-    r.exigir(
-      (await q.getByRole("radio", { name: /^Critério 1B: .*\[Ativo\]$/ }).count()) === 1 &&
-        (await q.getByRole("radio", { name: /^Critério 2B: .*\[Ativo\]$/ }).count()) === 1 &&
-        (await q.getByRole("radio", { name: /^Critério 3A: .*\[Ativo\]$/ }).count()) === 1,
-      "a configuração no ar é B-B-A, com “[Ativo]”",
-    );
-    /* O 1B MANTIDO (o horário de acesso) e o 2C: equidade parcial. */
-    await q.getByRole("radio", { name: /^Critério 2C:/ }).click();
-    await r.registrar(p, "criterios-1b-mantido", {
-      titulo: "O banco de critérios — o 1B mantido",
-      mostra: "As três funções em 3 opções cada; o estudante troca só a função 2 (2C) e mantém o 1B (horário de acesso).",
-      prova: "O que está no ar leva “[Ativo]”: é o que o sistema roda, não uma dica.",
-      inteira: true,
-    });
-    const primeiro = await postDo(/\/assistente-invisivel\/criterios$/, () => q.getByRole("button", { name: "Executar Novo Teste de Homologação" }).click());
-    r.exigir(
-      primeiro.corpo?.passo === "reteste" && primeiro.corpo?.reteste?.equidade !== "total" && primeiro.corpo?.reteste?.beatrizAvancada === false,
-      `com o 1B mantido, o reteste NÃO homologa (equidade “${primeiro.corpo?.reteste?.equidade}”, a Beatriz segue rebaixada)`,
-    );
-    await q.getByText("Alerta de Viés Mantido").first().waitFor({ timeout: 10_000 });
-    r.exigir(
-      (await q.getByText("Atenção: as regras ativas continuam gerando restrições baseadas em dados observados. Revise os critérios no banco antes de aprovar.").count()) === 1 &&
-        (await q.getByRole("button", { name: "Revisar Critérios" }).count()) === 1 &&
-        (await q.getByRole("button", { name: "Avançar para Publicação" }).count()) === 1,
-      "o alerta oferece “Revisar Critérios” e “Avançar para Publicação”",
-    );
-    await r.registrar(p, "alerta-de-vies", {
-      titulo: "Alerta de Viés Mantido",
-      mostra: "O resultado do reteste e o efeito no chat: a Beatriz ainda recebe o Reforço Básico.",
-      prova: "O servidor calcula o reteste; a tela mostra o efeito, nunca o gabarito.",
-      inteira: true,
-    });
-    const revisou = await postDo(/\/assistente-invisivel\/reteste\/revisar$/, () => q.getByRole("button", { name: "Revisar Critérios" }).click());
-    r.exigir(revisou.corpo?.passo === "criterios", "“Revisar Critérios” volta ao banco");
-    await q.getByRole("radio", { name: /^Critério 1C:/ }).waitFor({ timeout: 10_000 });
-    await q.getByRole("radio", { name: /^Critério 1C:/ }).click();
-    if (!(await q.getByRole("radio", { name: /^Critério 2C:/ }).isChecked())) await q.getByRole("radio", { name: /^Critério 2C:/ }).click();
-    const segundo = await postDo(/\/assistente-invisivel\/criterios$/, () => q.getByRole("button", { name: "Executar Novo Teste de Homologação" }).click());
-    r.exigir(
-      segundo.corpo?.reteste?.equidade === "total" && segundo.corpo?.reteste?.beatrizAvancada === true && segundo.corpo?.reteste?.thiagoLivre === true && segundo.corpo?.retestes === 2,
-      "1C/2C: equidade total — a Beatriz avança e o Thiago fica livre (2 retestes)",
-    );
-    await q.getByText("Equidade Homologada").first().waitFor({ timeout: 10_000 });
-    await q.getByText("Homologação Aprovada: critérios equitativos ativos. Beatriz acessou o nível Avançado e Thiago manteve dúvidas liberadas.").waitFor({ timeout: 5000 });
-    await r.registrar(p, "homologacao-aprovada", {
-      titulo: "Equidade Homologada",
-      mostra: "“Homologação Aprovada”, “Nenhum estudante foi restrito por horário ou oscilação técnica” e o novo teste no UnooriaAI.",
-      prova: "EM13CO01: os critérios reutilizados do repositório (1C e 2C) não restringem por dado observado.",
-      inteira: true,
-    });
-    const avancou = await postDo(/\/assistente-invisivel\/reteste\/avancar$/, () => q.getByRole("button", { name: "Avançar para Homologação e Transparência" }).click());
-    r.exigir(avancou.corpo?.passo === "publicacao" && avancou.corpo?.aguardandoProfessor === true, "avançar leva à Trava 2 (a publicação espera o professor)");
-    await q.getByText(ESPERA).first().waitFor({ timeout: 10_000 });
-    await q.getByText("Bancada de Critérios em segundo plano...").first().waitFor({ state: "attached", timeout: 10_000 });
-    await r.registrar(p, "trava-2", {
-      titulo: "A Trava 2",
-      mostra: "A bancada em segundo plano e a camada de espera da mediação docente.",
-      prova: "A publicação só abre depois da comparação 1A × 1C no quadro.",
-    });
+      // ═══ ESTUDANTE: E2, as funções ════════════════════════════════════════
+      const ir = q.getByRole("button", { name: "Ir para Bateria de Testes" });
+      await ir.waitFor({ timeout: 15_000 });
+      r.exigir(await ir.isDisabled(), "“Ir para Bateria de Testes” nasce apagado: só acende com uma função aberta");
+      for (const funcao of ["Função 1: Apresentar Exercícios", "Função 2: Responder Dúvidas", "Função 3: Sugerir Conteúdos"]) {
+        await q.getByRole("button", { name: new RegExp(`^${funcao}`) }).click();
+        await q.getByRole("button", { name: `${funcao} ✓` }).waitFor({ timeout: 5000 });
+      }
+      r.exigir(await ir.isEnabled(), "com as funções abertas (✓), o botão acende");
+      await registrar(p, "tres-funcoes", {
+        titulo: "Etapa 2 — Funções",
+        mostra: "As três funções expandidas, com a descrição longa e a prévia estática do UnooriaAI; cada uma ganhou o ✓.",
+        prova: "O botão só acende depois de uma função aberta (recolhido → expandido → habilitado).",
+        inteira: true,
+      });
+      const navegou = await postDo(/\/assistente-invisivel\/navegar$/, () => ir.click());
+      r.exigir(navegou.corpo?.passo === "aposta" && navegou.corpo?.funcoesAbertas?.length === 3, "as três funções abertas vão ao servidor e o passo vira a aposta");
 
-    // ═══ PROFESSOR: a comparação e a publicação ═══════════════════════════
-    await esperarNaApi(prof, `${daTurma}/painel`, (c) => c?.resumo?.criterioExercicios?.c >= 1, { oQue: "o painel contar o critério 1C" });
-    await painel.locator("[data-projecao-de-solucoes]").waitFor({ timeout: 20_000 });
-    await prof.waitForFunction(() => /Último reteste de cada estudante/.test(document.querySelector("[data-projecao-de-solucoes]")?.textContent ?? ""), null, {
-      timeout: 20_000,
-    });
-    r.exigir((await painel.locator("[data-avisos-discretos]").count()) === 0, "quem revisou e homologou NÃO entra nos Avisos Discretos");
-    await painel.locator("[data-projecao-de-solucoes]").scrollIntoViewIfNeeded();
-    await r.registrar(prof, "projecao-de-solucoes", {
-      titulo: "Projeção de Soluções: 1A × 1C",
-      mostra: "“Critérios Escolhidos pela Sala: 1A × 1C” no último reteste de cada estudante, com o sentido de cada critério.",
-      prova: "O professor projeta o contraste; os Avisos Discretos listariam só quem avançou mantendo regras restritivas.",
-    });
-    await liberar("debate-2");
-    await q.getByText("Comparação de soluções no quadro com o professor (5 min).").first().waitFor({ timeout: 20_000 });
-    await r.registrar(p, "comparacao-no-quadro", {
-      titulo: "Pausa para Mediação — a comparação",
-      mostra: "A camada de espera com “Comparação de soluções no quadro com o professor (5 min).”",
-      prova: "A segunda pausa, opcional, para todo mundo da Etapa 5.",
-    });
-    await liberar("publicar");
+      // ═══ ESTUDANTE: E3, a aposta (LATCH 1) ════════════════════════════════
+      await q.getByText("Lucas (15 anos)").first().waitFor({ timeout: 15_000 });
+      r.exigir(
+        (await q.getByText("Beatriz (15 anos)").count()) === 1 &&
+          (await q.getByText("Thiago (16 anos)").count()) === 1 &&
+          (await q.getByText("Preferência declarada: Trilha Avançada").count()) === 3,
+        "as três fichas de cadastro (Beatriz, Thiago e Lucas) pedem a Trilha Avançada",
+      );
+      r.exigir(await q.getByRole("button", { name: "Disparar Simulação" }).isDisabled(), "sem aposta, “Disparar Simulação” fica apagado");
+      if (equipe) {
+        r.exigir(
+          (await q.getByText("Debatam em equipe e registrem a previsão consensual da estação.", { exact: true }).count()) === 1,
+          "com equipe, a instrução da aposta é no plural: “Debatam em equipe e registrem a previsão consensual da estação.”",
+        );
+      }
+      await q.getByRole("radio", { name: APOSTA_A, exact: true }).click();
+      await registrar(p, "a-aposta", {
+        titulo: "Etapa 3 — Aposta",
+        mostra: "As três fichas com a mesma preferência e a aposta (A): “Todos receberão o nível Avançado conforme solicitado no cadastro.”",
+        prova: "A aposta mede a crença de entrada: nada na tela diz que o sistema usa horário ou conexão.",
+        inteira: true,
+      });
+      const apostou = await postDo(/\/assistente-invisivel\/aposta$/, () => q.getByRole("button", { name: "Disparar Simulação" }).click());
+      r.exigir(apostou.status === 200 && apostou.corpo?.aposta === "a" && Boolean(apostou.corpo?.apostadaEm), "a aposta A está gravada (LATCH 1)");
+      await q.getByText("Estado Latch Gravado").first().waitFor({ timeout: 10_000 });
+      r.exigir(
+        (await q.getByText(`Previsão arquivada: ${APOSTA_A}`).count()) === 1 && (await q.getByRole("button", { name: "Iniciando Simulação de Chat..." }).isDisabled()),
+        "“Previsão arquivada” com o texto inteiro da aposta, e “Iniciando Simulação de Chat...” esperando a turma",
+      );
+      await registrar(p, "previsao-arquivada", {
+        titulo: "Estado Latch Gravado",
+        mostra: "A previsão arquivada de forma definitiva e o botão “Iniciando Simulação de Chat...” desabilitado.",
+        prova: "LATCH 1: a aposta não volta. A simulação só começa quando 100% das sessões abertas apostaram.",
+      });
 
-    // ═══ ESTUDANTE: E6, a página e o comunicado (LATCH 2) ═════════════════
-    await q.getByText("Ative a declaração de transparência e monte o comunicado oficial da comissão escolar articulando os quatro pontos lógicos.").waitFor({ timeout: 20_000 });
-    await q.getByText(ESPERA).first().waitFor({ state: "hidden", timeout: 10_000 });
-    const pagina = q.getByRole("switch", { name: /Página Pública de Transparência do UnooriaAI/ });
-    r.exigir(!(await pagina.isChecked()), "a página de transparência nasce DESLIGADA");
-    await pagina.dispatchEvent("click");
-    r.exigir(await pagina.isChecked(), "o estudante liga a página de transparência");
-    for (const opcao of BLOCOS_CERTOS) await q.getByRole("radio", { name: opcao, exact: true }).click();
-    const montado = (await q.locator(".comunicado").innerText()).replace(/\s+/g, " ");
-    r.exigir(
-      montado.includes("1. Problema:") && montado.includes("restringindo acessos automaticamente...") && montado.includes("4. LGPD:"),
-      "com os 4 blocos escolhidos, o comunicado aparece montado, com os trechos escolhidos",
-    );
-    await r.registrar(p, "comunicado-montado", {
-      titulo: "Etapa 6 — Publicar",
-      mostra: "A página pública ligada e os 4 blocos do comunicado: o problema, a inferência indevida, a regra corrigida e a salvaguarda LGPD.",
-      prova: "Publicar é sempre habilitado (só bloco em branco tem aviso): um aviso de bloco “desconexo” entregaria o gabarito.",
-      inteira: true,
-    });
-    const publicou = await postDo(/\/assistente-invisivel\/publicar$/, () => q.getByRole("button", { name: "Publicar Transparência e Comunicado" }).click());
-    r.exigir(
-      publicou.status === 200 && publicou.corpo?.concluido === true && publicou.corpo?.passo === "concluida" && publicou.corpo?.publicacao?.paginaAtiva === true,
-      "a publicação trava (LATCH 2) e conclui a missão, com a página ativa",
-    );
-    await q.getByText("Certificado de Homologação Ética Escolar").waitFor({ timeout: 15_000 });
-    r.exigir(
-      (await q.getByText("Salvaguarda Ativa: Direito à Explicação e Revisão Humana (LGPD)").count()) === 1 &&
-        (await q.getByText("Cenário de Transferência: Algoritmos no Mercado").count()) === 1,
-      "o certificado traz a salvaguarda ativa e o cenário de transferência",
-    );
-    await r.registrar(p, "certificado", {
-      titulo: "Certificado de Homologação Ética Escolar",
-      mostra: "A Zara, o certificado com a salvaguarda LGPD, o caso do aplicativo de transporte, a síntese e o desafio extra.",
-      prova: "A interface fica congelada em modo leitura: o LATCH 2 já marcou as quatro habilidades no servidor.",
-      inteira: true,
-    });
+      // ═══ PROFESSOR: 100% das apostas e a simulação ════════════════════════
+      const painelNaApi = await esperarNaApi(prof, `${daTurma}/painel`, (c) => c?.resumo?.todosApostaram === true, {
+        oQue: "o painel contar 100% das apostas",
+      });
+      r.exigir(painelNaApi.resumo.apostas.a >= 1 && painelNaApi.resumo.faltamApostar.length === 0, `100% das sessões abertas apostaram (${painelNaApi.resumo.sessoes} sessão(ões); faltam: nenhuma)`);
+      await prof.locator('[data-acao="fase-simulacao"]:not([disabled])').waitFor({ timeout: 20_000 });
+      await painel.getByText("Status da Condução: Apostas Registradas").waitFor({ timeout: 10_000 });
+      await registrar(prof, "apostas-registradas", {
+        titulo: "Distribuição das Apostas da Sala",
+        mostra: "As barras A, B e C, “Apostas registradas pela turma” em 100% e o “Liberar Início da Simulação” aceso.",
+        prova: "O botão só acende com 100% das sessões abertas: quem abriu e saiu segura a turma, e o painel diz quem falta.",
+      });
+      await liberar("simulacao");
 
-    /* Regra 3: o estado do estudante não carrega o gabarito. */
-    const sessao = await lerApi(p, "/assistente-invisivel/sessao");
-    const bruto = JSON.stringify(sessao.corpo ?? {});
-    r.exigir(
-      sessao.status === 200 &&
-        !/"(coluna|colunaCerta|dispensaveis|passosDispensaveis|equitativos|criteriosEquitativos|opcaoCerta|certa|acertos|alinhamento|niveis)"/.test(bruto) &&
-        (sessao.corpo?.material?.cartoes ?? []).every((c) => Object.keys(c).sort().join() === "id,rotulo"),
-      "GET /assistente-invisivel/sessao não traz colunas, passos dispensáveis, critérios equitativos, opção certa, acertos nem níveis",
-    );
+      // ═══ ESTUDANTE: E4, a simulação, o confronto e as fichas ══════════════
+      const concluiuSimulacao = p.waitForResponse(
+        (x) => /\/assistente-invisivel\/simulacao\/concluir$/.test(new URL(x.url()).pathname) && x.request().method() === "POST",
+        { timeout: 90_000 },
+      );
+      await q.getByText("Aviso de Sistema: Identificamos o seu ritmo de estudos e direcionamos você para o Reforço Básico").first().waitFor({ timeout: 40_000 });
+      r.exigir((await q.getByText(duvidaDoLucas).count()) >= 1, `a dúvida do Lucas no chat é a do pacote aprovado (“${duvidaDoLucas.slice(0, 50)}…”)`);
+      await registrar(p, "sessao-da-beatriz", {
+        titulo: "UnooriaAI — Sessão de Teste 2/3: Beatriz",
+        mostra: "O Lucas recebe a Trilha Avançada; a Beatriz (23h45) recebe o aviso de sistema e o Reforço Básico.",
+        prova: "A conversa é ROTEIRIZADA a partir do pacote aprovado: não há IA na tela do estudante, e o Composer fica bloqueado.",
+      });
+      /* Sem equipe, a tag do chat vira “Sessões 2/3 e 3/3 Concluídas” no fim; com equipe ela é sempre “Bancada: {estação}”. */
+      if (equipe) {
+        await q.getByText("Aviso de Sistema: Limite de interações atingido para a sua sessão. Retorne amanhã").first().waitFor({ timeout: 40_000 });
+        r.exigir((await q.getByText(`Bancada: ${equipe}`, { exact: true }).count()) === 1, `com equipe, a tag do UnooriaAI é “Bancada: ${equipe}”`);
+      } else {
+        await q.getByText("Sessões 2/3 e 3/3 Concluídas").first().waitFor({ timeout: 40_000 });
+      }
+      r.exigir(
+        (await q.getByText("Aviso de Sistema: Limite de interações atingido para a sua sessão. Retorne amanhã").count()) === 1,
+        "o Thiago (sinal instável) recebe o limite de interações na terceira dúvida",
+      );
+      await registrar(p, "sessoes-concluidas", {
+        titulo: "Sessões 2/3 e 3/3 Concluídas",
+        mostra: "A sessão do Thiago: duas respostas e, na terceira dúvida, “Limite de interações atingido”.",
+        prova: "Os três pediram a mesma coisa; só o que o sistema observou mudou.",
+      });
+      const simulacao = await concluiuSimulacao;
+      r.exigir(simulacao.status() === 200, "a simulação concluída vai ao servidor depois da pausa para ler");
+
+      const confronto =
+        "Você previu: 'Todos receberão o nível Avançado conforme solicitado no cadastro'. No entanto, Beatriz e Thiago foram barrados. Por que o formulário que eles preencheram não foi respeitado?";
+      await q.getByText(confronto, { exact: true }).waitFor({ timeout: 15_000 });
+      r.exigir((await q.getByText(/^Na sua turma:/).count()) === 0, "com menos de 3 apostas, o medidor da turma não aparece");
+      await registrar(p, "confronto", {
+        titulo: "Etapa 4 — Flagrante da Triagem",
+        mostra: "O confronto nominal com a aposta A (o texto inteiro, entre aspas) e a Zara: “Precisamos abrir essas fichas.”",
+        prova: "A aposta gravada volta como espelho: o estudante previu o cadastro respeitado, e o cadastro não foi.",
+      });
+      const abriuFichas = await postDo(/\/assistente-invisivel\/fichas\/abrir$/, () => q.getByRole("button", { name: "Abrir Fichas de Auditoria de Acesso" }).click());
+      r.exigir(abriuFichas.corpo?.passo === "fichas", "“Abrir Fichas de Auditoria de Acesso” abre as fichas (passo “fichas”)");
+      const folha = q.getByRole("dialog", { name: "Fichas de Auditoria de Acesso" });
+      await folha.waitFor({ timeout: 10_000 });
+      const textoDasFichas = (await folha.innerText()).replace(/\s+/g, " ");
+      r.exigir(
+        textoDasFichas.includes("23h45 · Banda larga") &&
+          textoDasFichas.includes("08h30 · Sinal instável") &&
+          textoDasFichas.includes("Inferência: Acesso noturno / Possível cansaço e baixo rendimento → Rebaixar para Básico") &&
+          textoDasFichas.includes("Inferência: Risco de sobrecarga e lentidão → Limitar a 2 mensagens") &&
+          textoDasFichas.includes("Resultado: Avançado"),
+        "as fichas mostram o horário e a conexão observados, a inferência e a ação de cada perfil (o Lucas sem inferência)",
+      );
+      await registrar(p, "fichas-de-auditoria", {
+        titulo: "Fichas de Auditoria de Acesso",
+        mostra: "Estudante | Formulário | Observado | Ação do Sistema: Lucas avançado; Beatriz rebaixada pelo acesso noturno; Thiago limitado pelo sinal.",
+        prova: "As fichas não são gabarito: são a revelação que a mecânica mostra — o formulário igual, o observado diferente.",
+      });
+      const inspecionou = await postDo(/\/assistente-invisivel\/inspecao\/concluir$/, () => folha.getByRole("button", { name: "Concluir Inspeção de Metadados" }).click());
+      r.exigir(inspecionou.corpo?.passo === "classificacao" && inspecionou.corpo?.aguardandoProfessor === true, "“Concluir Inspeção de Metadados” leva à Trava 1 (a bancada espera o professor)");
+      await q.getByText(ESPERA).first().waitFor({ timeout: 10_000 });
+      await q.getByText("Fichas de Auditoria Técnicas em segundo plano...").first().waitFor({ state: "attached", timeout: 10_000 });
+      await registrar(p, "trava-1", {
+        titulo: "A Trava 1",
+        mostra: "As fichas em segundo plano e a camada “Aguardando autorização da mediação docente…”.",
+        prova: "A Trava 1 vem DEPOIS das fichas (decisão do Vinicius): a turma debate com o que acabou de ver.",
+      });
+
+      // ═══ PROFESSOR: travar as telas e liberar a bancada ═══════════════════
+      await esperarNaApi(prof, `${daTurma}/painel`, (c) => c?.resumo?.simulacoesConcluidas >= 1, { oQue: "o painel contar a simulação concluída" });
+      await liberar("debate-1");
+      await painel.locator('[data-pergunta="2"]').waitFor({ timeout: 10_000 });
+      await registrar(prof, "telas-travadas", {
+        titulo: "Status da Condução: Telas Travadas",
+        mostra: "As apostas da sala, quem concluiu as 3 sessões e as perguntas 1 e 2 do roteiro de debate.",
+        prova: "“Travar Telas da Turma” vale para todo mundo da Etapa 4, inclusive quem ainda está nas fichas.",
+      });
+      await q.getByText("Roda de conversa coletiva em andamento com o professor (8 min).").first().waitFor({ timeout: 20_000 });
+      await registrar(p, "roda-de-conversa", {
+        titulo: "Pausa para Mediação — a roda de conversa",
+        mostra: "A camada de espera com “Roda de conversa coletiva em andamento com o professor (8 min).”",
+        prova: "A pausa é a FASE da turma, não o passo do estudante: o polling do gate a trouxe sozinho.",
+      });
+      await liberar("explicar");
+
+      // ═══ ESTUDANTE: E5, os cartões ════════════════════════════════════════
+      await q
+        .getByText(
+          equipe
+            ? "Arraste ou toque nos cartões para separar dados fornecidos de dados observados."
+            : "Arraste ou toque nos cartões para separar os dados fornecidos pelo estudante dos dados técnicos observados pela plataforma.",
+          { exact: true },
+        )
+        .waitFor({ timeout: 20_000 });
+      if (equipe) {
+        r.exigir(
+          (await q.getByText("Toque para Selecionar e Alocar", { exact: true }).count()) === 1,
+          "com equipe, a bancada traz a instrução no plural e “Toque para Selecionar e Alocar”",
+        );
+      }
+      await q.getByText(ESPERA).first().waitFor({ state: "hidden", timeout: 10_000 });
+      const bandeja = q.locator(".bandeja");
+      r.exigir((await bandeja.getByText("Cartão 1", { exact: true }).count()) === 1, "com nada colocado, o 1º cartão leva a etiqueta “Cartão 1” (o andaime)");
+      for (const [i, cartao] of CARTOES.entries()) {
+        await bandeja.getByRole("button", { name: cartao.rotulo }).click();
+        await q.getByRole("button", { name: `Colocar em ${cartao.coluna}` }).click();
+        if (i === 2) {
+          await q.getByText(/A classificação dos dados da sessão ainda não foi concluída/).first().waitFor({ timeout: 5000 });
+          await registrar(p, "cartoes-no-meio", {
+            titulo: "Etapa 5 — os cartões, no meio",
+            mostra: "Três cartões colocados (Dados Fornecidos 2, Dados Observados 1) e o aviso de classificação incompleta.",
+            prova: "Por toque: toca o cartão e depois “Colocar em …”. A tela não sabe a coluna certa: manda a alocação, e o servidor decide.",
+            inteira: true,
+          });
+        }
+      }
+      r.exigir((await bandeja.count()) === 0, "os 6 cartões saíram da bandeja");
+      await registrar(p, "cartoes-separados", {
+        titulo: "Dados Fornecidos × Dados Observados",
+        mostra: "Escolha de Trilha e Nome e Turma em Fornecidos (2); horário, sinal, IP e aparelho em Observados (4).",
+        prova: "O que o estudante digitou × o que o sistema gravou sozinho — a cadeia causal começa no dado observado.",
+        inteira: true,
+      });
+      const classificou = await postDo(/\/assistente-invisivel\/cartoes$/, () => q.getByRole("button", { name: "Concluir Classificação" }).click());
+      r.exigir(
+        classificou.corpo?.passo === "algoritmo" && classificou.corpo?.classificacao?.completa === true && classificou.corpo?.classificacao?.cadeiaCausal === true,
+        "a classificação completa abre a tabela causal (o servidor decide: `cadeiaCausal`)",
+      );
+
+      // ═══ ESTUDANTE: E5, as etapas do algoritmo ════════════════════════════
+      await q.getByText("Tabela Causal: Horário (Dado Observado) → Cansaço Presumido (Inferência) → Reforço Básico (Decisão Restritiva).").waitFor({ timeout: 15_000 });
+      const abriuPainel = await postDo(/\/assistente-invisivel\/algoritmo\/abrir$/, () =>
+        q.getByRole("button", { name: /\[Opcional \/ Aprofundamento\] Ver etapas de processamento do assistente/ }).click(),
+      );
+      r.exigir(abriuPainel.corpo?.algoritmo?.aberto === true, "abrir o painel opcional vai ao servidor (o PQ-04)");
+      let marcou = null;
+      for (const n of [2, 3, 4]) {
+        const caixa = q.getByRole("checkbox", { name: new RegExp(`Passo ${n}:`) });
+        marcou = await postDo(/\/assistente-invisivel\/algoritmo\/marcar$/, () => caixa.dispatchEvent("click"));
+      }
+      r.exigir(JSON.stringify(marcou?.corpo?.algoritmo?.marcados) === "[2,3,4]", `os passos 2, 3 e 4 marcados no servidor (${JSON.stringify(marcou?.corpo?.algoritmo?.marcados)})`);
+      await q.getByText("Otimização: de 5 para 2 passos essenciais").waitFor({ timeout: 5000 });
+      r.exigir(
+        (await q.getByText(/\(Inferência dispensável\)$/).count()) === 3 && (await q.getByText(/\(Essencial\)$/).count()) === 2,
+        "os marcados ganham “(Inferência dispensável)” e os outros “(Essencial)” — o rótulo do estudante, não o gabarito",
+      );
+      await registrar(p, "etapas-do-algoritmo", {
+        titulo: "Ver etapas de processamento do assistente",
+        mostra: "Os 5 passos do algoritmo com 2, 3 e 4 marcados como inferência dispensável e “Otimização: de 5 para 2 passos essenciais”.",
+        prova: "Opcional (EM13CO03): a tela não sabe quais passos sobram — a conta é do estudante, a régua é do servidor.",
+        inteira: true,
+      });
+      const pulou = await postDo(/\/assistente-invisivel\/algoritmo\/concluir$/, () => q.getByRole("button", { name: "Pular Etapa" }).click());
+      r.exigir(pulou.corpo?.passo === "criterios" && pulou.corpo?.algoritmo?.concluido === true, "“Pular Etapa” fecha o painel e leva ao banco de critérios");
+
+      // ═══ ESTUDANTE: E5, os critérios e o reteste ══════════════════════════
+      await q
+        .getByText(
+          equipe
+            ? "Debatam e escolham as regras de governança para as funções do assistente."
+            : "Selecione critérios no repositório da rede para reconfigurar as três funções do assistente escolar.",
+          { exact: true },
+        )
+        .waitFor({ timeout: 15_000 });
+      r.exigir(
+        (await q.getByRole("radio", { name: /^Critério 1B: .*\[Ativo\]$/ }).count()) === 1 &&
+          (await q.getByRole("radio", { name: /^Critério 2B: .*\[Ativo\]$/ }).count()) === 1 &&
+          (await q.getByRole("radio", { name: /^Critério 3A: .*\[Ativo\]$/ }).count()) === 1,
+        "a configuração no ar é B-B-A, com “[Ativo]”",
+      );
+      /* O 1B MANTIDO (o horário de acesso) e o 2C: equidade parcial. */
+      await q.getByRole("radio", { name: /^Critério 2C:/ }).click();
+      await registrar(p, "criterios-1b-mantido", {
+        titulo: "O banco de critérios — o 1B mantido",
+        mostra: "As três funções em 3 opções cada; o estudante troca só a função 2 (2C) e mantém o 1B (horário de acesso).",
+        prova: "O que está no ar leva “[Ativo]”: é o que o sistema roda, não uma dica.",
+        inteira: true,
+      });
+      const primeiro = await postDo(/\/assistente-invisivel\/criterios$/, () => q.getByRole("button", { name: "Executar Novo Teste de Homologação" }).click());
+      r.exigir(
+        primeiro.corpo?.passo === "reteste" && primeiro.corpo?.reteste?.equidade !== "total" && primeiro.corpo?.reteste?.beatrizAvancada === false,
+        `com o 1B mantido, o reteste NÃO homologa (equidade “${primeiro.corpo?.reteste?.equidade}”, a Beatriz segue rebaixada)`,
+      );
+      await q.getByText("Alerta de Viés Mantido").first().waitFor({ timeout: 10_000 });
+      r.exigir(
+        (await q.getByText("Atenção: as regras ativas continuam gerando restrições baseadas em dados observados. Revise os critérios no banco antes de aprovar.").count()) === 1 &&
+          (await q.getByRole("button", { name: "Revisar Critérios" }).count()) === 1 &&
+          (await q.getByRole("button", { name: "Avançar para Publicação" }).count()) === 1,
+        "o alerta oferece “Revisar Critérios” e “Avançar para Publicação”",
+      );
+      await registrar(p, "alerta-de-vies", {
+        titulo: "Alerta de Viés Mantido",
+        mostra: "O resultado do reteste e o efeito no chat: a Beatriz ainda recebe o Reforço Básico.",
+        prova: "O servidor calcula o reteste; a tela mostra o efeito, nunca o gabarito.",
+        inteira: true,
+      });
+      const revisou = await postDo(/\/assistente-invisivel\/reteste\/revisar$/, () => q.getByRole("button", { name: "Revisar Critérios" }).click());
+      r.exigir(revisou.corpo?.passo === "criterios", "“Revisar Critérios” volta ao banco");
+      await q.getByRole("radio", { name: /^Critério 1C:/ }).waitFor({ timeout: 10_000 });
+      await q.getByRole("radio", { name: /^Critério 1C:/ }).click();
+      if (!(await q.getByRole("radio", { name: /^Critério 2C:/ }).isChecked())) await q.getByRole("radio", { name: /^Critério 2C:/ }).click();
+      const segundo = await postDo(/\/assistente-invisivel\/criterios$/, () => q.getByRole("button", { name: "Executar Novo Teste de Homologação" }).click());
+      r.exigir(
+        segundo.corpo?.reteste?.equidade === "total" && segundo.corpo?.reteste?.beatrizAvancada === true && segundo.corpo?.reteste?.thiagoLivre === true && segundo.corpo?.retestes === 2,
+        "1C/2C: equidade total — a Beatriz avança e o Thiago fica livre (2 retestes)",
+      );
+      await q.getByText("Equidade Homologada").first().waitFor({ timeout: 10_000 });
+      await q.getByText("Homologação Aprovada: critérios equitativos ativos. Beatriz acessou o nível Avançado e Thiago manteve dúvidas liberadas.").waitFor({ timeout: 5000 });
+      await registrar(p, "homologacao-aprovada", {
+        titulo: "Equidade Homologada",
+        mostra: "“Homologação Aprovada”, “Nenhum estudante foi restrito por horário ou oscilação técnica” e o novo teste no UnooriaAI.",
+        prova: "EM13CO01: os critérios reutilizados do repositório (1C e 2C) não restringem por dado observado.",
+        inteira: true,
+      });
+      const avancou = await postDo(/\/assistente-invisivel\/reteste\/avancar$/, () => q.getByRole("button", { name: "Avançar para Homologação e Transparência" }).click());
+      r.exigir(avancou.corpo?.passo === "publicacao" && avancou.corpo?.aguardandoProfessor === true, "avançar leva à Trava 2 (a publicação espera o professor)");
+      await q.getByText(ESPERA).first().waitFor({ timeout: 10_000 });
+      await q.getByText("Bancada de Critérios em segundo plano...").first().waitFor({ state: "attached", timeout: 10_000 });
+      await registrar(p, "trava-2", {
+        titulo: "A Trava 2",
+        mostra: "A bancada em segundo plano e a camada de espera da mediação docente.",
+        prova: "A publicação só abre depois da comparação 1A × 1C no quadro.",
+      });
+
+      // ═══ PROFESSOR: a comparação e a publicação ═══════════════════════════
+      await esperarNaApi(prof, `${daTurma}/painel`, (c) => c?.resumo?.criterioExercicios?.c >= 1, { oQue: "o painel contar o critério 1C" });
+      await painel.locator("[data-projecao-de-solucoes]").waitFor({ timeout: 20_000 });
+      await prof.waitForFunction(
+        (u) => new RegExp(`Último reteste de cada ${u}`).test(document.querySelector("[data-projecao-de-solucoes]")?.textContent ?? ""),
+        unidade,
+        { timeout: 20_000 },
+      );
+      r.exigir((await painel.locator("[data-avisos-discretos]").count()) === 0, "quem revisou e homologou NÃO entra nos Avisos Discretos");
+      await painel.locator("[data-projecao-de-solucoes]").scrollIntoViewIfNeeded();
+      await registrar(prof, "projecao-de-solucoes", {
+        titulo: "Projeção de Soluções: 1A × 1C",
+        mostra: "“Critérios Escolhidos pela Sala: 1A × 1C” no último reteste de cada estudante, com o sentido de cada critério.",
+        prova: "O professor projeta o contraste; os Avisos Discretos listariam só quem avançou mantendo regras restritivas.",
+      });
+      await liberar("debate-2");
+      await q.getByText("Comparação de soluções no quadro com o professor (5 min).").first().waitFor({ timeout: 20_000 });
+      await registrar(p, "comparacao-no-quadro", {
+        titulo: "Pausa para Mediação — a comparação",
+        mostra: "A camada de espera com “Comparação de soluções no quadro com o professor (5 min).”",
+        prova: "A segunda pausa, opcional, para todo mundo da Etapa 5.",
+      });
+      await liberar("publicar");
+
+      // ═══ ESTUDANTE: E6, a página e o comunicado (LATCH 2) ═════════════════
+      await q
+        .getByText(
+          equipe
+            ? "Revisem em equipe os 4 blocos da cadeia causal antes de publicar."
+            : "Ative a declaração de transparência e monte o comunicado oficial da comissão escolar articulando os quatro pontos lógicos.",
+          { exact: true },
+        )
+        .waitFor({ timeout: 20_000 });
+      await q.getByText(ESPERA).first().waitFor({ state: "hidden", timeout: 10_000 });
+      const pagina = q.getByRole("switch", { name: /Página Pública de Transparência do UnooriaAI/ });
+      r.exigir(!(await pagina.isChecked()), "a página de transparência nasce DESLIGADA");
+      await pagina.dispatchEvent("click");
+      r.exigir(await pagina.isChecked(), "o estudante liga a página de transparência");
+      for (const opcao of BLOCOS_CERTOS) await q.getByRole("radio", { name: opcao, exact: true }).click();
+      const montado = (await q.locator(".comunicado").innerText()).replace(/\s+/g, " ");
+      r.exigir(
+        montado.includes("1. Problema:") && montado.includes("restringindo acessos automaticamente...") && montado.includes("4. LGPD:"),
+        "com os 4 blocos escolhidos, o comunicado aparece montado, com os trechos escolhidos",
+      );
+      await registrar(p, "comunicado-montado", {
+        titulo: "Etapa 6 — Publicar",
+        mostra: "A página pública ligada e os 4 blocos do comunicado: o problema, a inferência indevida, a regra corrigida e a salvaguarda LGPD.",
+        prova: "Publicar é sempre habilitado (só bloco em branco tem aviso): um aviso de bloco “desconexo” entregaria o gabarito.",
+        inteira: true,
+      });
+      const publicou = await postDo(/\/assistente-invisivel\/publicar$/, () => q.getByRole("button", { name: "Publicar Transparência e Comunicado" }).click());
+      r.exigir(
+        publicou.status === 200 && publicou.corpo?.concluido === true && publicou.corpo?.passo === "concluida" && publicou.corpo?.publicacao?.paginaAtiva === true,
+        "a publicação trava (LATCH 2) e conclui a missão, com a página ativa",
+      );
+      await q.getByText("Certificado de Homologação Ética Escolar").waitFor({ timeout: 15_000 });
+      r.exigir(
+        (await q.getByText("Salvaguarda Ativa: Direito à Explicação e Revisão Humana (LGPD)").count()) === 1 &&
+          (await q.getByText("Cenário de Transferência: Algoritmos no Mercado").count()) === 1,
+        "o certificado traz a salvaguarda ativa e o cenário de transferência",
+      );
+      if (equipe) {
+        r.exigir(
+          (await q.getByText(`Bancada da Comissão: ${equipe} Homologada`, { exact: true }).count()) === 1 &&
+            (await q.getByText("Zara (Equipe de Bancada)").count()) >= 1,
+          `com equipe, o certificado traz “Bancada da Comissão: ${equipe} Homologada” e a Zara fala à equipe`,
+        );
+      }
+      await registrar(p, "certificado", {
+        titulo: "Certificado de Homologação Ética Escolar",
+        mostra: "A Zara, o certificado com a salvaguarda LGPD, o caso do aplicativo de transporte, a síntese e o desafio extra.",
+        prova: "A interface fica congelada em modo leitura: o LATCH 2 já marcou as quatro habilidades no servidor.",
+        inteira: true,
+      });
+
+      /* Regra 3: o estado do estudante não carrega o gabarito. */
+      const sessao = await lerApi(p, "/assistente-invisivel/sessao");
+      const bruto = JSON.stringify(sessao.corpo ?? {});
+      r.exigir(
+        sessao.status === 200 &&
+          !/"(coluna|colunaCerta|dispensaveis|passosDispensaveis|equitativos|criteriosEquitativos|opcaoCerta|certa|acertos|alinhamento|niveis)"/.test(bruto) &&
+          (sessao.corpo?.material?.cartoes ?? []).every((c) => Object.keys(c).sort().join() === "id,rotulo"),
+        "GET /assistente-invisivel/sessao não traz colunas, passos dispensáveis, critérios equitativos, opção certa, acertos nem níveis",
+      );
+    };
+
+    await jogarAMissao({ equipe: null, duvidaDoLucas: DUVIDA_EDITADA, passos: null });
 
     // ═══ PROFESSOR: o relatório formativo e a exportação ══════════════════
     const niveisDe = (c) => c?.linhas?.find((l) => l.nome === estudante.nome)?.niveis ?? null;
@@ -753,6 +836,156 @@ await suite(
       titulo: "As habilidades da BNCC",
       mostra: `As quatro habilidades da missão para ${estudante.nome}, todas “Atingiu”.`,
       prova: "100% Canal A: as quatro marcam juntas no LATCH 2, pelo que o estudante fez. Caminho do preparo nesta corrida: " + (caminho === "ia" ? "IA real." : "banco padrão (IA fora)."),
+      inteira: true,
+    });
+
+    // ═══ COM EQUIPE: um computador só, a turma inteira na bancada (E13) ═══
+    /* A projeção: o professor cria uma SEGUNDA atividade, agora com "Usar Banco
+       Padrão da Rede" (sem gastar IA) e "Sortear as equipes" com 1 computador —
+       a turma toda numa estação. O estudante logado joga pela estação; a marca
+       do LATCH 2 vai a CADA integrante. */
+    await prof.goto(`${FICHA}/atividades/nova?turmaId=${turmaId}`, { waitUntil: "domcontentloaded" });
+    await prof.locator("[data-assistente-de-atividade]").waitFor({ timeout: 60_000 });
+    const recorteDaEquipe = prof.locator("[data-passo-conteudo] [data-recorte-da-aula]");
+    await esperarOuFalharCedo(recorteDaEquipe, prof.locator(ALERTA_DE_ERRO), { timeout: 30_000, oQue: "o preparo da segunda atividade" });
+    const usarPadrao = recorteDaEquipe.locator('[data-acao="usar-banco-padrao"]');
+    await hidratado(prof, usarPadrao);
+    const respostaDoPadrao = prof.waitForResponse(
+      (x) => /\/banco-padrao$/.test(new URL(x.url()).pathname) && x.request().method() === "POST",
+      { timeout: 30_000 },
+    );
+    await usarPadrao.click();
+    const padrao = await respostaDoPadrao;
+    const corpoDoPadrao = await padrao.json().catch(() => null);
+    const atividadeDaEquipe = corpoDoPadrao?.atividade?.pacoteId ?? null;
+    if (!r.exigir(padrao.status() === 200 && Boolean(atividadeDaEquipe), `“Usar Banco Padrão da Rede” aprova e põe no ar o pacote padrão num toque (HTTP ${padrao.status()})`)) return;
+    await esperarOuFalharCedo(prof.locator('[data-passo-conteudo] [data-fase="liberacao"]'), prof.locator(ALERTA_DE_ERRO), {
+      timeout: 20_000,
+      oQue: "a liberação do banco padrão",
+    });
+    await prof.locator('[data-acao="continuar-criacao"]:not([disabled])').click();
+    await prof.getByRole("radio", { name: "Sortear as equipes", exact: true }).click();
+    const computadores = prof.getByRole("spinbutton", { name: "Quantos computadores vocês vão usar?" });
+    await hidratado(prof, computadores);
+    for (let i = 0; i < 80 && Number(await computadores.getAttribute("aria-valuenow")) > 1; i += 1) {
+      await prof.getByRole("button", { name: "Um computador a menos" }).click();
+      await prof.waitForTimeout(40);
+    }
+    r.exigir(Number(await computadores.getAttribute("aria-valuenow")) === 1, "o sorteio fica com 1 computador para a turma inteira");
+    await r.registrar(prof, "equipe-um-computador", {
+      titulo: "Com equipe: um computador para a turma",
+      mostra: "O passo Equipes da criação: “Sortear as equipes” com 1 computador — a turma inteira numa estação, a projeção.",
+      prova: "A equipe é da atividade (ADR-130): a mesma turma pode sentar diferente em cada aula.",
+    });
+    await prof.locator('[data-acao="continuar-criacao"]:not([disabled])').click();
+    const revisaoDaEquipe = prof.locator("[data-revisao-da-criacao]");
+    await revisaoDaEquipe.waitFor({ timeout: 10_000 });
+    r.exigir((await revisaoDaEquipe.innerText()).includes("Sortear as equipes · 1 computador"), "a revisão diz “Sortear as equipes · 1 computador”");
+    const noArDaEquipe = prof.getByLabel("Pôr esta atividade no ar agora");
+    if (!(await noArDaEquipe.isChecked())) await noArDaEquipe.dispatchEvent("click");
+    await prof.locator('[data-acao="criar-atividade"]').click();
+    const depoisDeCriar = await primeiroQueAparecer(
+      {
+        painel: prof.locator("[data-painel-da-aula]"),
+        aviso: prof.locator('[data-acao="abrir-atividade-criada"]'),
+        falha: prof.locator(ALERTA_DE_ERRO),
+      },
+      { timeout: 60_000, oQue: "liberar a atividade com equipe" },
+    );
+    if (depoisDeCriar !== "painel") {
+      const texto = (await prof.locator("[data-revisao-da-criacao]").innerText().catch(() => "")).replace(/\s+/g, " ");
+      r.exigir(false, `a atividade com equipe foi liberada sem aviso (a tela disse: “${texto.slice(0, 300)}”)`);
+      return;
+    }
+    const doPadrao = (await lerApi(prof, `${daTurma}/pacotes/${atividadeDaEquipe}`)).corpo;
+    r.exigir(
+      (await lerApi(prof, `${daTurma}/historico`)).corpo?.emAndamento?.pacoteId === atividadeDaEquipe && doPadrao?.origem === "padrao",
+      `a atividade em andamento é a do banco padrão (“${doPadrao?.tema}”)`,
+    );
+    const montagem = (await lerApi(prof, `/equipes/turma/${turmaId}/missao/${EXP_ID}/atividade/${atividadeDaEquipe}`)).corpo;
+    const estacao = montagem?.equipes?.[0] ?? null;
+    const integrantes = estacao?.membros ?? [];
+    if (
+      !r.exigir(
+        montagem?.equipes?.length === 1 && integrantes.length >= 2 && integrantes.some((m) => m.nome === estudante.nome),
+        `uma equipe só (“${estacao?.nome}”), com ${integrantes.length} integrantes, ${estudante.nome} entre eles`,
+      )
+    )
+      return;
+
+    /* Estado de ONTEM: o mesmo pacote padrão é reusado nesta turma; se ele já foi jogado, a rodada nova começa limpa (o "Zerar").
+       Sessão em "boas-vindas" não conta: a tela do estudante, ainda aberta na missão, relê a sessão quando a atividade troca
+       — e o primeiro GET /sessao já abre a sessão da estação (é desenho, não resto de ontem). */
+    const antes = (await lerApi(prof, `${daTurma}/painel`)).corpo;
+    if (antes?.fase !== "aguardando-inicio" || (antes?.linhas ?? []).some((l) => l.passo !== "boas-vindas")) {
+      const zerou = await postarNaApi(prof, `${daTurma}/zerar`, { rodada: antes?.atividade?.rodada ?? 1 });
+      r.ressalva(`o pacote padrão já tinha sido jogado nesta turma (fase ${antes?.fase}): zerado para a rodada ${zerou.corpo?.atividade?.rodada} (HTTP ${zerou.status})`);
+      await prof.reload({ waitUntil: "domcontentloaded" });
+    }
+    await revelar(prof, prof.locator("[data-painel-da-aula]"));
+    await prof.locator('[data-painel-da-aula][data-fase-da-turma="aguardando-inicio"]').waitFor({ timeout: 30_000 });
+
+    await jogarAMissao({
+      equipe: estacao.nome,
+      duvidaDoLucas: doPadrao.conteudo.duvidas.lucas,
+      passos: new Set(["espera-do-inicio", "a-aposta", "sessoes-concluidas", "cartoes-no-meio", "comunicado-montado", "certificado"]),
+    });
+
+    /* O painel por COMPUTADOR e a marca em CADA integrante. */
+    const painelDaEquipe = await esperarNaApi(prof, `${daTurma}/painel`, (c) => c?.linhas?.[0]?.niveis != null, {
+      oQue: "os níveis da estação no painel",
+    });
+    const linhaDaEstacao = painelDaEquipe.linhas?.[0];
+    r.exigir(
+      painelDaEquipe.porComputador === true &&
+        painelDaEquipe.linhas.length === 1 &&
+        linhaDaEstacao?.equipe?.nome === estacao.nome &&
+        linhaDaEstacao?.equipe?.membros?.length === integrantes.length &&
+        linhaDaEstacao?.passo === "concluida",
+      `o painel conta por computador: UMA linha, a da estação “${estacao.nome}” (${linhaDaEstacao?.equipe?.membros?.length} integrantes), concluída`,
+    );
+    const nv = linhaDaEstacao?.niveis ?? {};
+    r.exigir(
+      nv.co20 === "atingiu" && nv.co01 === "atingiu" && nv.co18 === "atingiu" && nv.co03 === "atingiu",
+      `as quatro habilidades da estação: CO20 ${nv.co20}, CO01 ${nv.co01}, CO18 ${nv.co18}, CO03 ${nv.co03}`,
+    );
+    const evidenciaDaEquipe = (await lerApi(prof, `/evidencias/turma/${turmaId}/missao/${EXP_ID}/atividade/${atividadeDaEquipe}`)).corpo;
+    const CODIGOS = ["EM13CO20", "EM13CO01", "EM13CO18", "EM13CO03"];
+    const statusNaEvidencia = (nome, codigo) => {
+      const e = evidenciaDaEquipe?.estudantes?.find((x) => x.nome === nome);
+      return Object.values(e?.porRodada ?? {}).map((rodada) => rodada?.[codigo]?.status).find(Boolean) ?? null;
+    };
+    const semAs4 = integrantes.filter((m) => !CODIGOS.every((c) => statusNaEvidencia(m.nome, c) === "atingiu"));
+    r.exigir(
+      semAs4.length === 0,
+      `a evidência (E14) dá as quatro “atingiu” a CADA um dos ${integrantes.length} integrantes${
+        semAs4.length ? ` (faltou em: ${semAs4.slice(0, 5).map((m) => m.nome).join(", ")}${semAs4.length > 5 ? "…" : ""})` : ""
+      }`,
+    );
+
+    await prof.reload({ waitUntil: "domcontentloaded" });
+    const folhaDaEquipe = prof.locator("[data-folha]");
+    await revelar(prof, folhaDaEquipe);
+    await folhaDaEquipe.waitFor({ timeout: 30_000 });
+    const textoDaFolha = await folhaDaEquipe.innerText();
+    r.exigir(
+      textoDaFolha.includes("Contado por computador") && textoDaFolha.includes(estacao.nome) && textoDaFolha.includes("Estudante ou equipe"),
+      "a folha avisa que conta por computador e mostra a estação como linha (“Estudante ou equipe”)",
+    );
+    const relatorioDaEquipe = prof.locator("[data-relatorio-final]");
+    await revelar(prof, relatorioDaEquipe);
+    const linhaNoRelatorio = relatorioDaEquipe.locator("[data-niveis-por-estudante]").getByRole("row").filter({ hasText: estacao.nome });
+    await linhaNoRelatorio.first().waitFor({ timeout: 15_000 });
+    r.exigir(
+      ((await linhaNoRelatorio.first().innerText()).match(/Atingiu/g) ?? []).length === 4 &&
+        (await relatorioDaEquipe.getByText("Com equipe, o nível do computador vai para cada integrante.").count()) === 1,
+      "o relatório traz a estação com as quatro “Atingiu” e avisa que o nível vai para cada integrante",
+    );
+    await folhaDaEquipe.scrollIntoViewIfNeeded();
+    await r.registrar(prof, "equipe-painel-por-computador", {
+      titulo: "Com equipe: o painel por computador",
+      mostra: `A folha e o relatório com UMA linha, a da estação “${estacao.nome}” (${integrantes.length} integrantes), e as quatro “Atingiu”.`,
+      prova: "A sessão é do computador; a marca do LATCH 2 vai a cada integrante da equipe na evidência (E14).",
       inteira: true,
     });
   },
