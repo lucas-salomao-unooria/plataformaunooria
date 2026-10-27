@@ -83,16 +83,18 @@ export function rotuloCurtoDaArea(area: Area): string {
   return `Área ${area.slice(-1).toUpperCase()}`;
 }
 
-/** As disciplinas do preparo, na ordem da api. A missão é transversal. */
+/** As disciplinas do preparo, na ordem da api: todo o 6º ano, Computação e o projeto. A missão é transversal. */
 export const DISCIPLINAS = [
   "lingua-portuguesa",
-  "ciencias",
-  "historia",
-  "geografia",
-  "matematica",
   "arte",
   "educacao-fisica",
   "lingua-inglesa",
+  "matematica",
+  "ciencias",
+  "geografia",
+  "historia",
+  "ensino-religioso",
+  "computacao",
   "projeto-interdisciplinar",
 ] as const;
 export type Disciplina = (typeof DISCIPLINAS)[number];
@@ -100,13 +102,15 @@ export type Disciplina = (typeof DISCIPLINAS)[number];
 /** `Record` exaustivo: disciplina nova na api sem rótulo aqui é erro de compilação (e o teste compara as chaves). */
 export const ROTULO_DA_DISCIPLINA: Record<Disciplina, string> = {
   "lingua-portuguesa": "Língua Portuguesa",
-  ciencias: "Ciências",
-  historia: "História",
-  geografia: "Geografia",
-  matematica: "Matemática",
   arte: "Arte",
   "educacao-fisica": "Educação Física",
   "lingua-inglesa": "Língua Inglesa",
+  matematica: "Matemática",
+  ciencias: "Ciências",
+  geografia: "Geografia",
+  historia: "História",
+  "ensino-religioso": "Ensino Religioso",
+  computacao: "Computação",
   "projeto-interdisciplinar": "Projeto interdisciplinar",
 };
 

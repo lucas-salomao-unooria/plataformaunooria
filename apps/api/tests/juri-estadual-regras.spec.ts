@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { componentePorSlug, componentesDoAno } from "../src/curriculo/componentes";
 import { FICHA_EXP06EF1B } from "../src/evidencias/fichas/exp06ef1b";
 import {
   CATEGORIAS_DO_BANCO_PADRAO,
@@ -31,6 +32,7 @@ import { contarPalavras, problemasDoPacote } from "../src/juri-estadual/invarian
 import { JuriEstadualService } from "../src/juri-estadual/juri-estadual.service";
 import { JuriEstadualTurmasController } from "../src/juri-estadual/juri-estadual-turmas.controller";
 import {
+  ROTULO_DA_DISCIPLINA,
   SCHEMA_DO_PREPARO,
   SYSTEM_DO_PREPARO,
   promptDaArea,
@@ -112,6 +114,7 @@ import {
 import { postPublico, projetoDaGaleria } from "../src/juri-estadual/regras/publico";
 import {
   AREAS,
+  DISCIPLINAS,
   IDS_DE_PROJETO,
   IDS_DE_PROJETO_LEGADOS,
   POSTS_NO_FEED,
@@ -1016,5 +1019,23 @@ describe("os textos literais e os tetos (melhoria 5)", () => {
     expect(RevisaoDoVotoSchema.safeParse({ acao: "manter" }).success).toBe(true);
     expect(RevisaoDoVotoSchema.safeParse({ acao: "trocar", projetoId: "proj-b1" }).success).toBe(true);
     expect(RevisaoDoVotoSchema.safeParse({ acao: "complementar", projetoId: "proj-b1" }).success).toBe(false);
+  });
+});
+
+describe("as disciplinas do preparo: todo o 6º ano da BNCC e Computação", () => {
+  test("a lista CONTÉM cada componente de componentesDoAno(\"6EF\") e computacao, na ordem do catálogo", () => {
+    const esperados = [...componentesDoAno("6EF").map((c) => c.slug), "computacao"];
+    expect(DISCIPLINAS.slice(0, esperados.length)).toEqual(esperados);
+    expect(DISCIPLINAS).toContain("ensino-religioso");
+  });
+  test("o projeto interdisciplinar fica (há linhas gravadas com ele), no fim", () => {
+    expect(DISCIPLINAS.at(-1)).toBe("projeto-interdisciplinar");
+  });
+  test("o rótulo é o do catálogo de componentes", () => {
+    for (const slug of DISCIPLINAS) {
+      const componente = componentePorSlug(slug);
+      if (componente) expect(ROTULO_DA_DISCIPLINA[slug]).toBe(componente.rotulo);
+    }
+    expect(Object.keys(ROTULO_DA_DISCIPLINA).sort()).toEqual([...DISCIPLINAS].sort());
   });
 });

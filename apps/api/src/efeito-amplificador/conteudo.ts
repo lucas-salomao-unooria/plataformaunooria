@@ -19,14 +19,50 @@ export const VERSAO_DO_INSTRUMENTO = "1.0.0";
 
 // ──────────────────────────────────────────── vocabulários (CHECK na migration)
 
-/** O componente curricular do recorte do professor (one-pager §3, "teste das três disciplinas"). */
-export const DISCIPLINAS = ["lingua-portuguesa", "biologia", "historia", "interdisciplinar"] as const;
+/**
+ * O componente curricular do recorte do professor. Nasceu com as três do
+ * one-pager (§3, "teste das três disciplinas") e cobre hoje TODA a Formação
+ * Geral Básica da 2ª série (`curriculo/componentes.ts#componentesDoAno("2EM")`,
+ * na ordem do catálogo), mais Computação (o complemento de 2022 à BNCC) e o
+ * projeto interdisciplinar no fim — migração
+ * `20261026230000_componentes_bncc_nas_missoes`. Os slugs são os do catálogo
+ * SEM o sufixo `-em` (`lingua-portuguesa`, e não `lingua-portuguesa-em`):
+ * eram os gravados, e só se ACRESCENTA — um CHECK mais estreito quebraria a
+ * migração. `tests/efeito-amplificador-regras.spec.ts` confere slug e rótulo.
+ */
+export const DISCIPLINAS = [
+  "lingua-portuguesa",
+  "lingua-inglesa",
+  "arte",
+  "educacao-fisica",
+  "matematica",
+  "biologia",
+  "fisica",
+  "quimica",
+  "filosofia",
+  "geografia",
+  "historia",
+  "sociologia",
+  "computacao",
+  "interdisciplinar",
+] as const;
 export type Disciplina = (typeof DISCIPLINAS)[number];
 
+/** Os rótulos do catálogo de componentes, os do EM (LDB art. 35-D). */
 export const ROTULO_DA_DISCIPLINA: Readonly<Record<Disciplina, string>> = {
-  "lingua-portuguesa": "Língua Portuguesa",
-  biologia: "Biologia / Ciências da Natureza",
-  historia: "História / Ciências Humanas",
+  "lingua-portuguesa": "Língua Portuguesa e suas Literaturas",
+  "lingua-inglesa": "Língua Inglesa",
+  arte: "Arte",
+  "educacao-fisica": "Educação Física",
+  matematica: "Matemática",
+  biologia: "Biologia",
+  fisica: "Física",
+  quimica: "Química",
+  filosofia: "Filosofia",
+  geografia: "Geografia",
+  historia: "História",
+  sociologia: "Sociologia",
+  computacao: "Computação",
   interdisciplinar: "Projeto Interdisciplinar",
 };
 

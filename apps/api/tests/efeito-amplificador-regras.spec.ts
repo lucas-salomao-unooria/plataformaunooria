@@ -1,10 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { componentesDoAno } from "../src/curriculo/componentes";
 import {
   DISCIPLINAS,
   FASES,
   INDICADORES_QUE_COMPROVAM,
   MANCHETES,
+  ROTULO_DA_DISCIPLINA,
   conteudoDoPadrao,
   falaDeAbertura,
   falaDoAssistente,
@@ -335,10 +337,15 @@ describe("o passo e a fase", () => {
 });
 
 describe("os vocabulários do código são os dos CHECKs da migration", () => {
-  const sql = readFileSync(join(__dirname, "../prisma/migrations/20261022130000_exp02em1b_efeito_amplificador/migration.sql"), "utf8");
+  const ler = (pasta: string) => readFileSync(join(__dirname, `../prisma/migrations/${pasta}/migration.sql`), "utf8");
+  const sql = ler("20261022130000_exp02em1b_efeito_amplificador");
+  /* O CHECK da disciplina foi recriado, ampliado, em 20261026230000. */
+  const sqlDaDisciplina = ler("20261026230000_componentes_bncc_nas_missoes");
   const lista = (xs: readonly string[]) => `(${xs.map((x) => `'${x}'`).join(", ")})`;
+  test("disciplina", () => {
+    expect(sqlDaDisciplina).toContain(`"exp02em1b_pacotes_disciplina_check"\n    CHECK ("disciplina" IN ${lista(DISCIPLINAS)})`);
+  });
   test.each([
-    ["disciplina", DISCIPLINAS],
     ["fase", FASES],
     ["manchete", MANCHETES],
   ])("%s", (_nome, valores) => {
@@ -346,5 +353,23 @@ describe("os vocabulários do código são os dos CHECKs da migration", () => {
   });
   test("indicadores", () => {
     expect(sql).toContain(`ARRAY[${INDICADORES_QUE_COMPROVAM.map((i) => `'${i}'`).join(", ")}]`);
+  });
+});
+
+describe("as disciplinas do recorte: a Formação Geral Básica da 2ª série e Computação", () => {
+  /* O catálogo do EM usa `-em` nos slugs que o EF também tem; a missão grava sem o sufixo. */
+  const semSufixo = (slug: string) => slug.replace(/-em$/, "");
+  test("a lista CONTÉM cada componente de componentesDoAno(\"2EM\") e computacao, na ordem do catálogo", () => {
+    const esperados = [...componentesDoAno("2EM").map((c) => semSufixo(c.slug)), "computacao"];
+    expect(DISCIPLINAS.slice(0, esperados.length)).toEqual(esperados);
+  });
+  test("o rótulo é o do catálogo (o do EM)", () => {
+    for (const c of componentesDoAno("2EM")) {
+      expect(ROTULO_DA_DISCIPLINA[semSufixo(c.slug) as (typeof DISCIPLINAS)[number]]).toBe(c.rotulo);
+    }
+    expect(ROTULO_DA_DISCIPLINA.computacao).toBe("Computação");
+  });
+  test("os valores antigos ficam (há linhas gravadas com eles)", () => {
+    expect(DISCIPLINAS).toEqual(expect.arrayContaining(["lingua-portuguesa", "biologia", "historia", "interdisciplinar"]));
   });
 });

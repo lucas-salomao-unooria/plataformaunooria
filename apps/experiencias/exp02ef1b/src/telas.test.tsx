@@ -239,6 +239,7 @@ describe("os gestos que vão à api", () => {
     await act(async () => botao("CONTAÇÃO DE HISTÓRIAS")!.click());
     expect(publicar().disabled).toBe(false);
     expect(texto()).toContain("CAPA PRONTA!");
+    expect(texto()).toContain("Foto enquadrada e selo carimbado!");
     resposta = { passo: "feed", aguardandoVirada: true, capa: sessao("feed").capa };
     await act(async () => publicar().click());
     expect(chamadas).toContain("/enigma-capa/publicar");
