@@ -759,6 +759,12 @@ body {
   color: var(--unv-color-text-secondary, #475157);
 }
 
+/* Depois do "OLHE O FUNDO", a linha de instrução vira a dica da mãozinha. */
+.cabecalho-da-tela .instrucao--dica {
+  font-weight: 800;
+  color: var(--unv-color-action-primary, #716c98);
+}
+
 .titulo-da-tela--frase {
   font-size: 18px;
 }
@@ -856,8 +862,7 @@ body {
   transition: stroke-dashoffset 0.1s linear;
 }
 
-.segure,
-.dica-da-mao {
+.segure {
   position: absolute;
   z-index: 5;
   margin: 0;

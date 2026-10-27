@@ -233,7 +233,7 @@ await suite(
     const textoDoEnigma = (await p.locator("main").textContent()) ?? "";
     r.exigir(
       /ABRIR BANCADA/.test(textoDoEnigma) && /Colocar no álbum/.test(textoDoEnigma) && !/crach|A HORTA ACABOU/i.test(textoDoEnigma),
-      "o guia do Enigma segue a 2.0.0: começa no card (ABRIR BANCADA) e termina no Colocar no álbum, sem crachá nem a etapa da horta",
+      "o guia do Enigma segue a 2.0.0: começa no card (ABRIR BANCADA) e termina no Colocar no álbum",
     );
     await r.registrar(p, "guia-do-enigma-cenas-prontas", {
       titulo: "O Enigma da Capa da Rádio: as cenas prontas, com o gabarito",

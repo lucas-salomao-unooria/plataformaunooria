@@ -254,7 +254,13 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
             textoDe(sessao.textos, "e2", "titulo")
           )}
         </h1>
-        <p className="instrucao">{cumpriu ? textoDe(sessao.textos, "e2", "completaTexto") : textoDe(sessao.textos, "e2", "instrucao")}</p>
+        <p className={`instrucao${alvoDaMao ? " instrucao--dica" : ""}`} aria-live="polite">
+          {cumpriu
+            ? textoDe(sessao.textos, "e2", "completaTexto")
+            : alvoDaMao
+              ? textoDe(sessao.textos, "e2", "mao")
+              : textoDe(sessao.textos, "e2", "instrucao")}
+        </p>
         <BadgeUnv variant="neutral" className="contador" aria-live="polite">
           {preencher(textoDe(sessao.textos, "e2", "contador"), { n: String(achados.length) })}
         </BadgeUnv>
@@ -360,11 +366,6 @@ export function Bancada({ ctx }: { ctx: Contexto }) {
         {procurando ? (
           <p className="segure" style={{ left: centro.x, top: centro.y + ANEL + 8 }}>
             {textoDe(sessao.textos, "e2", "segure")}
-          </p>
-        ) : null}
-        {alvoDaMao ? (
-          <p className="dica-da-mao" style={{ left: area.w / 2, top: 4 }}>
-            {textoDe(sessao.textos, "e2", "mao")}
           </p>
         ) : null}
 

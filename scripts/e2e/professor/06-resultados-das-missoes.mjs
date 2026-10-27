@@ -256,7 +256,7 @@ await suite(
         colunasDoEnigma.some((c) => /^Estudante/.test(c.trim())) &&
           colunasDoEnigma.some((c) => /Marcou fora da foto/.test(c)) &&
           !colunasDoEnigma.some((c) => /crach|horta/i.test(c)),
-        `a folha do Enigma identifica pelo nome e mostra o que ficou fora, sem crachá nem etapa da horta (colunas: ${colunasDoEnigma.join(", ")})`,
+        `a folha do Enigma identifica pelo nome e mostra o que ficou fora (colunas: ${colunasDoEnigma.join(", ")})`,
       );
       await p.locator("[data-folha]").scrollIntoViewIfNeeded();
     }

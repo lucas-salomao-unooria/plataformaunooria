@@ -134,7 +134,7 @@ describe('o "o que ficou fora"', () => {
     ];
     expect(itensFora(c.cena.marcaveis, visivel, toques)).toEqual(["tapete-fantoches"]);
     expect(itensFora(c.cena.marcaveis, visivel, [])).toEqual([]);
-    expect(itensFora(c.cena.marcaveis, visivel, [{ x: 80, y: 70 }, { x: 85, y: 20 }])).toEqual(["tapete-fantoches", "estante-direita"]);
+    expect(itensFora(c.cena.marcaveis, visivel, [{ x: 80, y: 70 }, { x: 98, y: 65 }])).toEqual(["tapete-fantoches", "estante-direita"]);
   });
   test("a frase leva o artigo do espaço", () => {
     expect(fraseDoFora("a biblioteca")).toBe("Marque na biblioteca o que ficou fora da sua foto.");

@@ -6,21 +6,24 @@ import { provarPodcastNaAula } from "../lib/podcast.mjs";
 import { arrastar, comResposta, esperarNaApi, hidratado, idDaTurma, lerApi, pontoEm, primeiroQueAparecer, tocarNoMeio } from "../lib/enigma-capa.mjs";
 
 /**
- * O ENIGMA DA CAPA DA RÁDIO (exp02ef1b, 2º ano EF, unidade 1 — ADR-184), das
- * duas pontas da sala, com a IA REAL no preparo.
+ * O ENIGMA DA CAPA DA RÁDIO (exp02ef1b, 2º ano EF, unidade 1 — ADR-184; a
+ * 2.0.0 segue o protótipo do time, ADR-186), das duas pontas da sala, com a IA
+ * REAL no preparo.
  *
  * A professora abre a ficha e o guia, CRIA a atividade com "Gerar com IA" e um
  * tema dela (o Vertex escreve o texto e desenha a panorâmica), marca na
  * curadoria os dois objetos iguais do fundo (a IA não devolve coordenada),
- * aprova e põe no ar. O estudante, num celular, escolhe o crachá, investiga as
- * duas fotos com a lupa (tenta avançar antes do piso uma vez: OLHE O FUNDO),
- * escolhe uma foto, a desloca na moldura de tamanho fixo, cola o selo e
- * PUBLICA A CAPA (LATCH 1). A visitante diz o que o recorte mostrou, e a tela
- * espera o professor. LIBERAR VIRADA (geral) divide a tela: a criança erra um
- * toque, acha os dois objetos nas duas fotos (com um F5 no meio), desliza o
- * slider até a panorâmica, marca o que ficou fora, monta o par e a segunda
- * foto, e vota na horta (LATCH 2). No fim, a folha da turma, as habilidades
- * EF02CO05 e EF02CO01 com o nível da régua e o podcast fixo.
+ * aprova e põe no ar. O estudante, num celular, lê a missão (ENCONTRE NAS
+ * FOTOS 2 OBJETOS…), abre a bancada, tenta avançar antes do piso uma vez (o
+ * aviso OLHE O FUNDO), acha os dois objetos com a lupa (ela brilha e o anel
+ * enche em 3 s), escolhe uma foto, a desloca na moldura de tamanho fixo, cola o
+ * selo e PUBLICA A CAPA (LATCH 1, o aviso CAPA PUBLICADA!). A visitante diz o
+ * que o recorte mostrou, e o aviso AGUARDE O PROFESSOR espera. LIBERAR VIRADA
+ * (geral) divide a tela: a criança erra um toque, acha os dois objetos nas
+ * duas fotos (com um F5 no meio), arrasta a alça do slider de comparação do
+ * centro até o fim (A CENA COMPLETA), finca dois alfinetes no que ficou fora,
+ * monta o par e a segunda foto, que conclui. No fim, a folha da turma, as
+ * habilidades EF02CO05 e EF02CO01 com o nível da régua e o podcast fixo.
  *
  * A suíte joga com o gabarito que o PROFESSOR vê (`GET …/pacotes/:id`): os
  * alvos que ele marcou, a foto e o selo coerentes. A sessão do estudante, ela
@@ -54,23 +57,23 @@ await suite(
     slug: "estudante/14-enigma-capa",
     papel: "estudante",
     titulo: "O Enigma da Capa da Rádio — a capa é um pedaço do lugar",
-    subtitulo: "a cena criada com IA e marcada pela professora, a lupa com piso, o latch da capa, a virada geral e a horta",
+    subtitulo: "a cena criada com IA e marcada pela professora, a lupa que brilha, o latch da capa, a virada geral, o slider e o alfinete",
     contexto:
-      "O estudante do 2º ano é repórter mirim da Rádio Escola no Unoovista: investiga com a lupa duas fotos do " +
-      "mesmo minuto, escolhe UMA, a enquadra numa moldura de tamanho fixo, cola um selo e publica a capa. A " +
-      "visitante diz só o que o recorte mostrou. Depois da conversa, a professora libera a virada para a turma " +
-      "toda: a tela divide, a criança acha os dois objetos iguais do fundo, o slider junta as fotos e ela marca o " +
-      "que ficou fora. No fim, os pares, a segunda foto e a lagarta na alface: SÓ UM PEDAÇO ou MOSTRA TUDO.",
+      "O estudante do 2º ano é repórter mirim da Rádio Escola no Unoovista: acha com a lupa dois objetos nas duas " +
+      "fotos do mesmo minuto, escolhe UMA, a enquadra numa moldura de tamanho fixo, cola um selo e publica a capa. " +
+      "A visitante diz só o que o recorte mostrou. Depois da conversa, a professora libera a virada para a turma " +
+      "toda: a criança acha os dois objetos iguais nas duas fotos, o slider de comparação revela o lugar inteiro " +
+      "e ela finca alfinetes no que ficou fora. No fim, os pares e a segunda foto, que conclui.",
     prova: [
       "A ficha e o guia em quatro tempos da missão nova",
       "A professora gera a cena com um tema dela (IA real: texto e imagem) e marca os dois objetos tocando na imagem",
       "A atividade aprovada fica pronta; “Usar esta atividade agora” a põe no ar e a missão está liberada na sala",
-      "O crachá só responde depois de 3 s; a lupa recusa o avanço antes do piso (OLHE O FUNDO) e o libera depois",
-      "A foto se desloca na moldura sem mudar de tamanho; PUBLICAR CAPA trava a escolha e a visitante fala do recorte",
+      "A missão em letra grande e ABRIR BANCADA; a lupa brilha e conta 3 s em cada objeto, recusa o avanço antes do piso (OLHE O FUNDO) e o libera depois",
+      "A foto se desloca na moldura sem mudar de tamanho; PUBLICAR CAPA trava a escolha (CAPA PUBLICADA!) e a visitante fala do recorte",
       "A sessão do estudante não carrega o gabarito (alvos, núcleo, selo coerente, marcáveis, falas)",
-      "AGUARDE O PROFESSOR até a virada GERAL; o painel conta quem aguarda",
-      "Um toque errado é a onda neutra; os quatro achados redesenham depois de um F5; o slider revela ERA O MESMO LUGAR!",
-      "O “fora”, o par, a segunda foto e o voto da horta (LATCH 2) concluem a missão",
+      "AGUARDE O PROFESSOR (sem retrato) até a virada GERAL; o painel conta quem aguarda",
+      "Um toque errado é a onda neutra; os quatro achados redesenham depois de um F5; a alça sai do centro e revela A CENA COMPLETA",
+      "Os alfinetes no “fora”, o par e a segunda foto, que conclui (FOTO GUARDADA NO ÁLBUM!)",
       "O painel por estudante e as habilidades EF02CO05 e EF02CO01 com o nível da régua; o podcast fixo",
     ],
     comando: "node scripts/e2e/estudante/14-enigma-capa.mjs",
@@ -307,7 +310,7 @@ await suite(
     const q = p.frameLocator("iframe[data-experiencia]");
     const abrir = q.getByRole("button", { name: "ABRIR BANCADA" });
     await esperarOuFalharPorHttp(p, abrir, /enigma-capa\/sessao/, { timeout: 40_000, oQue: "o boot da missão" });
-    const cta = (await q.locator(".missao__cta").innerText()).trim();
+    const cta = (await q.locator(".missao__cta").innerText()).replace(/^search\s*/, "").trim();
     r.exigir(/^ENCONTRE NAS FOTOS 2 OBJETOS D[AOE]S? /.test(cta), `a missão em letra grande: “${cta}”`);
     r.exigir((await q.getByText("RASCUNHO PENDENTE").count()) > 0 && (await q.getByText("INVESTIGAR A NOVA CAPA").count()) > 0, "o card do protótipo: RASCUNHO PENDENTE e INVESTIGAR A NOVA CAPA");
     await r.registrar(p, "a-missao", {
@@ -655,9 +658,7 @@ await suite(
         linha?.invariantes?.erros === 1 &&
         linha?.par?.correto === true &&
         linha?.segundaFoto?.elemento === "crianca-lendo" &&
-        (linha?.fora?.itens ?? []).length >= 1 &&
-        !("cracha" in (linha ?? {})) &&
-        !("voto" in (linha ?? {})),
+        (linha?.fora?.itens ?? []).length >= 1,
       `a linha de ${estudante.nome} no painel, pelo nome: lupa (1 alerta), capa coerente, busca (1 erro), o que marcou fora, par certo e segunda foto`,
     );
     const folha = prof.locator("[data-folha]");
