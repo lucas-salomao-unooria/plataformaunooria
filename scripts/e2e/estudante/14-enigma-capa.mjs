@@ -272,6 +272,24 @@ await suite(
         inteira: true,
       });
       const imagem = cena.locator("[data-desenho-na-cena]");
+      /* A IA nem sempre põe o objeto na faixa do meio: o arraste em volta de algo FORA dela é recusado, com a saída. */
+      await arrastar(prof, await pontoEm(imagem, 0.08, 0.15), await pontoEm(imagem, 0.24, 0.45), 12);
+      const fora = curadoria.locator("[data-objeto-fora-da-faixa]");
+      await fora.waitFor({ timeout: 5000 });
+      r.exigir(
+        (await fora.innerText()).includes("ficou fora da parte do meio") &&
+          (await fora.locator('[data-acao="gerar-outra-imagem"]').count()) === 1 &&
+          (await curadoria.locator('[data-marcacao="marcando"] [data-alvo]').count()) === 0,
+        "a caixa arrastada fora da faixa do meio NÃO vira área: a tela avisa que o objeto não aparece nas duas fotos e oferece Gerar outra imagem",
+      );
+      await fora.scrollIntoViewIfNeeded();
+      await r.registrar(prof, "objeto-fora-da-faixa", {
+        titulo: "O objeto ficou fora da parte do meio",
+        mostra: "A caixa arrastada na lateral escura não vira área; o aviso diz que o objeto não apareceria nas duas fotos, com Gerar outra imagem e Desenhar de novo.",
+        prova: "O modelo de imagem nem sempre obedece à posição pedida (medido: metade das imagens); o desenho do professor detecta e a correção está a um toque.",
+      });
+      await fora.locator('[data-acao="desenhar-de-novo"]').click();
+      await fora.waitFor({ state: "detached", timeout: 5000 });
       for (const area of AREAS_DA_PROFESSORA) {
         const de = await pontoEm(imagem, area.x / 100, area.y / 100);
         const ate = await pontoEm(imagem, (area.x + area.w) / 100, (area.y + area.h) / 100);
