@@ -761,8 +761,13 @@ await suite(
       await q.getByText("Certificado de Homologação Ética Escolar").waitFor({ timeout: 15_000 });
       r.exigir(
         (await q.getByText("Salvaguarda Ativa: Direito à Explicação e Revisão Humana (LGPD)").count()) === 1 &&
-          (await q.getByText("Cenário de Transferência: Algoritmos no Mercado").count()) === 1,
-        "o certificado traz a salvaguarda ativa e o cenário de transferência",
+          (await q.getByText("Síntese Conceitual da Missão").count()) === 1,
+        "o certificado traz a salvaguarda ativa e a síntese da missão",
+      );
+      /* ADR-189: o card do caso de mercado da Etapa 6 saiu da missão (1.0.3). */
+      r.exigir(
+        (await q.getByText(/Cenário de Transferência|aplicativo de transporte/i).count()) === 0,
+        "o cenário de transferência NÃO aparece mais depois do certificado (ADR-189)",
       );
       if (equipe) {
         r.exigir(
@@ -773,7 +778,7 @@ await suite(
       }
       await registrar(p, "certificado", {
         titulo: "Certificado de Homologação Ética Escolar",
-        mostra: "A Zara, o certificado com a salvaguarda LGPD, o caso do aplicativo de transporte, a síntese e o desafio extra.",
+        mostra: "A Zara, o certificado com a salvaguarda LGPD, a síntese e o desafio extra — sem o card do caso de mercado (ADR-189).",
         prova: "A interface fica congelada em modo leitura: o LATCH 2 já marcou as quatro habilidades no servidor.",
         inteira: true,
       });

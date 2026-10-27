@@ -4,9 +4,9 @@ import type { Material } from "@/lib/assistente-invisivel-tipos";
 /**
  * O material de O Assistente Invisível, VIVO (de `GET
  * /assistente-invisivel/professor/material`): as quatro perguntas do roteiro
- * do PO, cada uma no momento dela, e o caso de transferência, para a mediação;
- * o critério de cada nível das quatro habilidades, para o depois. Sem a api, o
- * cartão diz que não carregou — o resto do guia continua servindo.
+ * do PO, cada uma no momento dela, para a mediação; o critério de cada nível
+ * das quatro habilidades, para o depois. Sem a api, o cartão diz que não
+ * carregou — o resto do guia continua servindo.
  */
 function NaoCarregou() {
   return (
@@ -42,9 +42,6 @@ export function RoteiroDoAssistente({ dados }: { dados: Material | null }) {
               </li>
             ))}
           </ol>
-          <p>
-            <strong>O caso de transferência (Etapa 6):</strong> {dados.roteiro.transferencia}
-          </p>
         </div>
       </Card>
     </div>

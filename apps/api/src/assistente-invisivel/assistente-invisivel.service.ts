@@ -242,7 +242,7 @@ const MATERIAL_FIXO: z.infer<typeof MaterialFixoSchema> = {
   })),
 };
 
-const ROTEIRO_DO_PAINEL = { perguntas: [...ROTEIRO.perguntas], transferencia: ROTEIRO.transferencia };
+const ROTEIRO_DO_PAINEL = { perguntas: [...ROTEIRO.perguntas] };
 
 interface LinhaDaTurma {
   estudanteId: string;

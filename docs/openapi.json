@@ -101389,14 +101389,10 @@
                           },
                           "minItems": 4,
                           "maxItems": 4
-                        },
-                        "transferencia": {
-                          "type": "string"
                         }
                       },
                       "required": [
-                        "perguntas",
-                        "transferencia"
+                        "perguntas"
                       ],
                       "additionalProperties": false
                     }
@@ -101738,14 +101734,10 @@
                           },
                           "minItems": 4,
                           "maxItems": 4
-                        },
-                        "transferencia": {
-                          "type": "string"
                         }
                       },
                       "required": [
-                        "perguntas",
-                        "transferencia"
+                        "perguntas"
                       ],
                       "additionalProperties": false
                     },

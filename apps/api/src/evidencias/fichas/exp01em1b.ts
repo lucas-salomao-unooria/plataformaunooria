@@ -2,9 +2,8 @@ import type { FichaPedagogica } from "./tipos";
 
 /**
  * A FICHA de O ASSISTENTE INVISÍVEL (exp01em1b, 1ª série EM, unidade 1,
- * ADR-185) — versão 1, de 2026-10-26: 100% Canal A, sem pergunta (o one-pager
- * §12a não tem Canal B, e o Vinicius pediu para não haver). Toda habilidade é
- * medida pelo que a comissão FAZ (`assistente-invisivel/regras/evidencia.ts`),
+ * ADR-185) — versão 1, de 2026-10-26: 100% Canal A, sem pergunta. Toda
+ * habilidade é medida pelo que a comissão FAZ (`assistente-invisivel/regras/evidencia.ts`),
  * e as quatro são marcadas JUNTAS no LATCH 2 ("Publicar Transparência e
  * Comunicado"). Quem apostou e não publicou recebe as quatro no "Encerrar" do
  * professor, com a publicação ausente (o padrão "conta ao encerrar", ADR-154).

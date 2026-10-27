@@ -55,12 +55,17 @@ describe("guias da aula", () => {
    * que ainda não descreveu o que viu produz a resposta que o estudante acha
    * que o professor quer ouvir — por isso todo guia precisa das duas pontas.
    *
-   * A exceção, e só ela: O Enigma da Capa da Rádio (exp02ef1b) saiu da 2.0.0 SEM
-   * transferência, por decisão do dono do produto (ADR-186) — nem a etapa na
-   * tela nem o rótulo no guia. A pergunta da vida da criança continua no
-   * debate, como generalização.
+   * As exceções, e só elas, por decisão do dono do produto:
+   * - O Enigma da Capa da Rádio (exp02ef1b) saiu da 2.0.0 SEM transferência
+   *   (ADR-186) — nem a etapa na tela nem o rótulo no guia. A pergunta da vida
+   *   da criança continua no debate, como generalização.
+   * - O Assistente Invisível (exp01em1b) perdeu o caso de transferência da
+   *   Etapa 6 na 1.0.3 (ADR-189, decisão do Lucas em 2026-10-27, no espírito do
+   *   pedido do Vinicius de tirar a transferência e o Canal B) — o card da tela,
+   *   o caso no roteiro da api e a pergunta-ponte do guia. O debate fecha nas
+   *   perguntas 3 e 4 do PO, como generalização.
    */
-  const SEM_TRANSFERENCIA = new Set(["exp02ef1b"]);
+  const SEM_TRANSFERENCIA = new Set(["exp02ef1b", "exp01em1b"]);
   test("todo debate tem retomada e transferência", () => {
     for (const guia of todosOsGuias()) {
       const niveis = new Set(guia.debate.perguntas.map((p) => p.nivel));
