@@ -503,6 +503,13 @@ function ContingenciaDaGeracao({
  * rascunho inteiro — o servidor é quem guarda o que o professor viu, e o
  * "Aprovar Pacote Homologado" manda só o `rascunhoId`.
  */
+const GRUPOS_DA_CURADORIA: ReadonlyArray<{ id: string; colunas: string; pertence: (item: ItemDoPacote) => boolean }> = [
+  { id: "trilhas", colunas: "md:grid-cols-2", pertence: (item) => item === "trilhaAvancada" || item === "reforcoBasico" },
+  { id: "duvidas", colunas: "md:grid-cols-2 xl:grid-cols-3", pertence: (item) => item.startsWith("duvidas.") },
+  { id: "respostas", colunas: "md:grid-cols-2 xl:grid-cols-3", pertence: (item) => item.startsWith("respostas.") },
+  { id: "leitura", colunas: "", pertence: (item) => item === "leitura" },
+];
+
 function Curadoria({
   turmaId,
   rascunho,
@@ -595,31 +602,41 @@ function Curadoria({
           />
         ) : null}
 
-        <div className="flex flex-col gap-3">
-          {ITENS_DO_PACOTE.map((item) => (
-            <ItemDaCuradoria
-              key={item}
-              item={item}
-              rascunho={rascunho}
-              editando={editando === item}
-              travado={travado}
-              regenerando={trabalhando !== null && trabalhando !== "aprovar" && trabalhando.item === item && trabalhando.acao === "regenerar"}
-              salvando={trabalhando !== null && trabalhando !== "aprovar" && trabalhando.item === item && trabalhando.acao === "editar"}
-              erro={erro?.item === item ? erro.erro : null}
-              abrirEdicao={() => {
-                setErro(null);
-                setEditando(item);
-              }}
-              cancelarEdicao={() => setEditando(null)}
-              salvar={(titulo, texto) => salvar(item, titulo, texto)}
-              regenerar={() => void regenerar(item)}
-            />
-          ))}
-        </div>
+        {/* E0-PROF-04: a grade do Figma — as trilhas em 2 colunas, as dúvidas e as respostas em 3, a leitura
+            na largura toda. Cada item cai no grupo dele; a ordem dentro do grupo é a de ITENS_DO_PACOTE. */}
+        {GRUPOS_DA_CURADORIA.map((grupo) => (
+          <div key={grupo.id} className={`grid grid-cols-1 gap-3 ${grupo.colunas}`} data-grupo-da-curadoria={grupo.id}>
+            {ITENS_DO_PACOTE.filter(grupo.pertence).map((item) => (
+              <ItemDaCuradoria
+                key={item}
+                item={item}
+                rascunho={rascunho}
+                editando={editando === item}
+                travado={travado}
+                regenerando={trabalhando !== null && trabalhando !== "aprovar" && trabalhando.item === item && trabalhando.acao === "regenerar"}
+                salvando={trabalhando !== null && trabalhando !== "aprovar" && trabalhando.item === item && trabalhando.acao === "editar"}
+                erro={erro?.item === item ? erro.erro : null}
+                abrirEdicao={() => {
+                  setErro(null);
+                  setEditando(item);
+                }}
+                cancelarEdicao={() => setEditando(null)}
+                salvar={(titulo, texto) => salvar(item, titulo, texto)}
+                regenerar={() => void regenerar(item)}
+              />
+            ))}
+          </div>
+        ))}
 
         {erro && erro.item === null ? <ErroDaApi erro={erro.erro} /> : null}
 
-        <div className="flex flex-wrap items-center gap-3">
+        {/* O Figma põe "Aprovar Pacote Homologado" à direita, fechando a grade; a dica fica à esquerda dele. */}
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <p className="text-[12px] text-unooria-neutral-600">
+            {editando !== null
+              ? "Salve ou cancele a edição aberta para aprovar."
+              : "Aprovado, o pacote vira uma atividade pronta; você escolhe as equipes e libera para a turma."}
+          </p>
           <Button
             variant="primary"
             size="md"
@@ -630,11 +647,6 @@ function Curadoria({
           >
             Aprovar Pacote Homologado
           </Button>
-          <p className="text-[12px] text-unooria-neutral-600">
-            {editando !== null
-              ? "Salve ou cancele a edição aberta para aprovar."
-              : "Aprovado, o pacote vira uma atividade pronta; você escolhe as equipes e libera para a turma."}
-          </p>
         </div>
       </div>
     </Card>
