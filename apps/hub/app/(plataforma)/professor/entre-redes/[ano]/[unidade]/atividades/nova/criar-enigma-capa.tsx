@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button, Card, EmptyState, FeedbackAlert, Icon, ProgressBar, SectionHeader, Selection, Tag, TextArea, TextField } from "@edu/ui/ds";
 import {
@@ -12,20 +12,24 @@ import {
   AVISO_SEM_IA,
   CHAVES_PRONTAS,
   NOTA_MAX,
-  RAIO_PADRAO,
+  PEDIDO_DA_IMAGEM,
   TEMA,
   TEXTO_DA_GERACAO,
-  alvoNaFaixaComum,
+  TEXTO_DA_NOVA_IMAGEM,
+  areasSeSobrepoem,
   caminhoDaTurma as caminhoDaApi,
   erroDaApi,
   marcasDoConteudo,
   palavrasDoTexto,
+  problemasDaArea,
   problemasDoRecorte,
   type ChavePronta,
   type InvarianteId,
   type MarcaNaCena,
   type PacoteDaTurma,
   type PacoteDoProfessor,
+  type Retangulo,
+  type RespostaDaImagem,
   type RespostaDoGerar,
   type SeloDaCena,
 } from "@/lib/enigma-capa-tipos";
@@ -107,12 +111,19 @@ const recorteDoPacote = (p: { disciplina: string; tema: string; palavras: string
  *    fotos...”, e sem saldo ou com a IA fora o rascunho vem do pacote pronto da
  *    disciplina, com o aviso;
  * 3. a **CURADORIA** do rascunho: a panorâmica com as duas molduras, os selos e
- *    as falas (editáveis, o que o §9a permite), e — o passo que só o professor
- *    faz — **“Toque no {NOME} na imagem”** para cada objeto igual, porque a IA
- *    desenha a cena mas não devolve coordenada. Os dois toques vão juntos
- *    (`POST rascunho/invariantes`); “Refazer” apaga e começa de novo; GERAR
- *    NOVAMENTE pede outra cena; “Aprovar” (`POST homologar`) grava a atividade
- *    PRONTA.
+ *    as falas (editáveis, o que o §9a permite), o PEDIDO DA IMAGEM (editável,
+ *    ADR-188: “Gerar a imagem com este pedido” troca só a imagem, `POST
+ *    rascunho/imagem`) e — o passo que só o professor faz — **“Desenhe a área
+ *    do {NOME}”** para cada objeto igual, uma caixa em volta do objeto inteiro,
+ *    porque a IA desenha a cena mas não devolve coordenada. As duas áreas vão
+ *    juntas (`POST rascunho/invariantes`); “Refazer” apaga e começa de novo;
+ *    GERAR NOVAMENTE pede outra cena; “Aprovar” (`POST homologar`) grava a
+ *    atividade PRONTA.
+ *
+ * Toda geração mostra que está trabalhando ONDE o professor está olhando: a
+ * primeira, um quadro animado no lugar da cena; as seguintes, o véu animado em
+ * cima da própria imagem, com o botão em carregamento — a barra lá em cima, sozinha,
+ * ficava fora da tela de quem tinha rolado até a curadoria.
  *
  * O “Criar atividade” do assistente não grava o conteúdo: ele já existe, e o
  * resto (pôr no ar — o “Usar esta atividade agora” — e as equipes) é do
@@ -328,8 +339,8 @@ export function CriarEnigmaCapa({
                       <h3 className="text-[15px] font-semibold text-unooria-neutral-950">Ou gere com IA um espaço da sua disciplina</h3>
                       <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-700">
                         A inteligência artificial desenha a cena e escreve os selos e as falas da visitante.{" "}
-                        <strong>Nada chega à turma sem a sua aprovação</strong> — e você mesmo marca, na imagem, os dois
-                        objetos iguais do fundo.
+                        <strong>Nada chega à turma sem a sua aprovação</strong> — você vê e pode mudar o pedido da imagem,
+                        e desenha na imagem a área dos dois objetos iguais do fundo.
                       </p>
                       <div className="grid gap-4 lg:grid-cols-2">
                         <Selection
@@ -395,6 +406,8 @@ export function CriarEnigmaCapa({
                   </div>
                 </Card>
 
+                {gerando && !rascunho ? <EsperaDaCena /> : null}
+
                 {rascunho ? (
                   <Curadoria
                     key={`${rascunho.id}-${geracao}`}
@@ -402,6 +415,7 @@ export function CriarEnigmaCapa({
                     rascunho={rascunho}
                     baseDoBundle={baseDoBundle}
                     ocupado={ocupado}
+                    gerandoCena={gerando}
                     aoMudarRascunho={setRascunho}
                     gerarNovamente={() => void gerar(turmaId)}
                     aoAprovar={(id) => setGravada({ turmaId, id, resumo: `“${rascunho.tema}” · ${rascunho.conteudo.cena.espaco} · ${rascunho.origem === "ia" ? "gerada com IA e aprovada por você" : "pacote pronto da disciplina"}`, noAr: false })}
@@ -413,6 +427,36 @@ export function CriarEnigmaCapa({
         );
       }}
     />
+  );
+}
+
+/**
+ * A espera da PRIMEIRA geração, no lugar onde a cena vai aparecer: um quadro
+ * 16:9 que pulsa, o ícone da IA e a barra do DS com o texto lúdico do PO. Só a
+ * barra pequena, debaixo do botão, não dizia que era para esperar (ADR-188).
+ * O `animate-pulse` respeita o "reduzir movimento" do sistema.
+ */
+function EsperaDaCena() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  }, []);
+  return (
+    <Card variant="elevated">
+      <div ref={ref} className="flex flex-col gap-3" role="status" aria-live="polite" data-esperando-cena>
+        <SectionHeader title="Preparando a cena" description="A inteligência artificial está escrevendo as duas fotos e desenhando o espaço da escola." />
+        <div
+          className="relative flex w-full flex-col items-center justify-center gap-3 overflow-hidden rounded-lg bg-unooria-neutral-100 motion-safe:animate-pulse"
+          style={{ aspectRatio: "16 / 9" }}
+        >
+          <Icon name="auto_awesome" size={40} />
+          <div className="w-full max-w-sm px-6">
+            <ProgressBar indeterminate label={TEXTO_DA_GERACAO} valuePosition="none" />
+          </div>
+          <p className="text-center text-[12px] text-unooria-neutral-700">Leva até um minuto. Não feche esta página.</p>
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -439,15 +483,16 @@ function ErroDaApi({ erro }: { erro: { mensagem: string; erros: string[] } }) {
 }
 
 /**
- * A CURADORIA do rascunho: a cena, os selos, as falas e a marcação dos dois
- * objetos iguais. A `key` no rascunho remonta a peça a cada geração — as
- * edições e os toques são de UMA cena.
+ * A CURADORIA do rascunho: a cena, o pedido da imagem, os selos, as falas e as
+ * áreas dos dois objetos iguais. A `key` no rascunho remonta a peça a cada
+ * geração — as edições e as áreas são de UMA cena.
  */
 function Curadoria({
   turmaId,
   rascunho,
   baseDoBundle,
   ocupado,
+  gerandoCena,
   aoMudarRascunho,
   gerarNovamente,
   aoAprovar,
@@ -456,6 +501,8 @@ function Curadoria({
   rascunho: PacoteDoProfessor;
   baseDoBundle: string | null;
   ocupado: boolean;
+  /** "GERAR NOVAMENTE" em andamento: a cena inteira está sendo refeita. */
+  gerandoCena: boolean;
   aoMudarRascunho: (r: PacoteDoProfessor) => void;
   gerarNovamente: () => void;
   aoAprovar: (id: string) => void;
@@ -463,58 +510,106 @@ function Curadoria({
   const cena = rascunho.conteudo.cena;
   const jaMarcados = cena.invariantes.every((i) => i.alvo !== null);
   const [marcando, setMarcando] = useState(!jaMarcados);
-  const [toques, setToques] = useState<Partial<Record<InvarianteId, { x: number; y: number }>>>({});
+  const [areas, setAreas] = useState<Partial<Record<InvarianteId, Retangulo>>>({});
   const [selos, setSelos] = useState<SeloDaCena[]>(() => cena.selos.map((s) => ({ ...s })));
   const [falas, setFalas] = useState(() => cena.fotos.map((f) => ({ fotoId: f.id, visitante: f.visitante })));
-  const [enviando, setEnviando] = useState<"marcar" | "aprovar" | null>(null);
+  const [pedido, setPedido] = useState(rascunho.pedidoDaImagem ?? "");
+  const [enviando, setEnviando] = useState<"marcar" | "aprovar" | "imagem" | null>(null);
+  const [imagemSemIa, setImagemSemIa] = useState<"sem-saldo" | "indisponivel" | null>(null);
   const [erro, setErro] = useState<{ mensagem: string; erros: string[] } | null>(null);
+  const cenaRef = useRef<HTMLDivElement>(null);
 
-  const proximo = marcando ? cena.invariantes.find((i) => !toques[i.id]) ?? null : null;
+  const proximo = marcando ? cena.invariantes.find((i) => !areas[i.id]) ?? null : null;
   const marcas: MarcaNaCena[] = marcando
     ? cena.invariantes.flatMap((i) => {
-        const t = toques[i.id];
-        return t ? [{ id: i.id, nome: i.nome, alvo: { ...t, r: RAIO_PADRAO } }] : [];
+        const a = areas[i.id];
+        return a ? [{ id: i.id, nome: i.nome, alvo: a }] : [];
       })
     : marcasDoConteudo(rascunho.conteudo);
-  const foraDaFaixa = marcas.filter((m) => !alvoNaFaixaComum(m.alvo.x, m.alvo.r));
+  const avisosDasAreas = [
+    ...marcas.flatMap((m) => problemasDaArea(m.nome, m.alvo)),
+    ...(marcas.length === 2 && areasSeSobrepoem(marcas[0]!.alvo, marcas[1]!.alvo)
+      ? ["As áreas dos dois objetos se encostam: desenhe uma em volta de cada objeto, sem sobrepor."]
+      : []),
+  ];
   const textosValidos = selos.every((s) => s.texto.trim().length > 0) && falas.every((f) => f.visitante.trim().length > 0);
-  const podeAprovar = !marcando && rascunho.pendencias.length === 0 && textosValidos && !ocupado && enviando === null;
+  const trabalhando = ocupado || enviando !== null;
+  const podeAprovar = !marcando && rascunho.pendencias.length === 0 && textosValidos && !trabalhando;
+  const temPedido = rascunho.pedidoDaImagem !== null;
+  const pedidoValido = pedido.trim().length >= PEDIDO_DA_IMAGEM.min && pedido.trim().length <= PEDIDO_DA_IMAGEM.max;
+  const espera = gerandoCena ? TEXTO_DA_GERACAO : enviando === "imagem" ? TEXTO_DA_NOVA_IMAGEM : null;
 
-  async function enviarToques(completos: Partial<Record<InvarianteId, { x: number; y: number }>>) {
+  /* A espera aparece na imagem: traz a imagem para a vista de quem clicou lá embaixo. */
+  useEffect(() => {
+    if (espera) cenaRef.current?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  }, [espera]);
+
+  async function enviarAreas(completas: Partial<Record<InvarianteId, Retangulo>>) {
     setEnviando("marcar");
     setErro(null);
     try {
-      const alvos = cena.invariantes.map((i) => ({ id: i.id, ...(completos[i.id] as { x: number; y: number }) }));
+      const alvos = cena.invariantes.map((i) => ({ id: i.id, ...(completas[i.id] as Retangulo) }));
       const r = await fetch(`${BFF(turmaId)}/rascunho/invariantes`, { method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ alvos }) });
       const corpo: unknown = await r.json().catch(() => null);
       const novo = r.ok ? rascunhoDaResposta(corpo) : null;
       if (!novo) {
-        setErro(erroDaApi(corpo, "Não deu para gravar as marcações. Toque de novo."));
-        setToques({});
+        setErro(erroDaApi(corpo, "Não deu para gravar as áreas. Desenhe de novo."));
+        setAreas({});
         return;
       }
       setMarcando(false);
-      setToques({});
+      setAreas({});
       aoMudarRascunho(novo);
     } catch {
       setErro({ mensagem: SEM_REDE, erros: [] });
-      setToques({});
+      setAreas({});
     } finally {
       setEnviando(null);
     }
   }
 
-  function tocar(ponto: { x: number; y: number }) {
+  function desenhar(area: Retangulo) {
     if (!proximo || enviando) return;
-    const novos = { ...toques, [proximo.id]: ponto };
-    setToques(novos);
-    if (cena.invariantes.every((i) => novos[i.id])) void enviarToques(novos);
+    const novas = { ...areas, [proximo.id]: area };
+    setAreas(novas);
+    if (cena.invariantes.every((i) => novas[i.id])) void enviarAreas(novas);
   }
 
   function refazer() {
-    setToques({});
+    setAreas({});
     setMarcando(true);
     setErro(null);
+  }
+
+  async function gerarImagem() {
+    setEnviando("imagem");
+    setErro(null);
+    setImagemSemIa(null);
+    try {
+      const r = await fetch(`${BFF(turmaId)}/rascunho/imagem`, {
+        method: "POST",
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ rascunhoId: rascunho.id, pedido: pedido.trim() }),
+      });
+      const corpo: unknown = await r.json().catch(() => null);
+      if (!r.ok) {
+        setErro(erroDaApi(corpo, "Não deu para gerar a imagem agora. A imagem anterior continua."));
+        return;
+      }
+      const resposta = corpo as RespostaDaImagem;
+      if (!resposta.usouIa) {
+        setImagemSemIa(resposta.motivo ?? "indisponivel");
+        return;
+      }
+      /* Imagem nova, áreas novas: as da imagem anterior não valem mais. */
+      setAreas({});
+      setMarcando(true);
+      aoMudarRascunho(resposta.rascunho);
+    } catch {
+      setErro({ mensagem: SEM_REDE, erros: [] });
+    } finally {
+      setEnviando(null);
+    }
   }
 
   async function aprovar() {
@@ -554,43 +649,96 @@ function Curadoria({
               {rascunho.origem === "ia" ? "Gerada com IA" : "Pacote pronto"}
             </Tag>
           }
-          description="Confira a cena, as duas fotos, os selos e o que a visitante diz. Marque os dois objetos iguais do fundo e aprove."
+          description="Confira a cena, as duas fotos, os selos e o que a visitante diz. Desenhe a área dos dois objetos iguais do fundo e aprove."
         />
 
-        <div className="flex flex-col gap-2" data-marcacao={marcando ? "marcando" : "marcada"}>
-          {proximo ? (
-            <p className="text-[15px] font-bold text-unooria-neutral-950" role="status" data-toque-pedido={proximo.id}>
-              {`Toque no ${proximo.nome} na imagem`}
+        <div ref={cenaRef} className="flex flex-col gap-2" data-marcacao={marcando ? "marcando" : "marcada"}>
+          {espera ? (
+            <p className="text-[13px] text-unooria-neutral-700" role="status">
+              Aguarde: a imagem está sendo gerada.
+            </p>
+          ) : proximo ? (
+            <p className="text-[15px] font-bold text-unooria-neutral-950" role="status" data-desenho-pedido={proximo.id}>
+              {`Desenhe a área do ${proximo.nome}: arraste uma caixa em volta do objeto inteiro`}
             </p>
           ) : marcando ? (
-            <p className="text-[13px] text-unooria-neutral-700" role="status">Gravando as marcações…</p>
+            <p className="text-[13px] text-unooria-neutral-700" role="status">Gravando as áreas…</p>
           ) : (
             <p className="text-[13px] text-unooria-neutral-700">
-              Os círculos amarelos são os dois objetos iguais que a criança vai procurar nas duas fotos.
+              As caixas amarelas são os dois objetos iguais que a criança vai procurar nas duas fotos: a lupa acha o
+              objeto em qualquer ponto dentro da caixa.
             </p>
           )}
           <CenaDoEnigma
             conteudo={rascunho.conteudo}
             baseDoBundle={baseDoBundle}
             marcas={marcas}
-            aoTocar={proximo && !enviando ? tocar : undefined}
-            rotuloDoToque={proximo ? `Toque no ${proximo.nome} na imagem` : undefined}
+            aoDesenhar={proximo && !enviando && !ocupado ? desenhar : undefined}
+            rotuloDoDesenho={proximo ? `Desenhe a área do ${proximo.nome} na imagem` : undefined}
+            ocupada={espera}
           />
-          {foraDaFaixa.length > 0 ? (
-            <FeedbackAlert
-              type="warning"
-              description={`${foraDaFaixa.map((m) => m.nome).join(" e ")} ficou fora da faixa do meio, que aparece nas duas fotos. Os dois objetos precisam estar na parede do meio — refaça a marcação ou gere novamente.`}
-            />
-          ) : null}
+          {avisosDasAreas.length > 0 ? <FeedbackAlert type="warning" description={avisosDasAreas.join(" ")} /> : null}
           <div className="flex flex-wrap gap-3">
-            <Button variant="secondary" size="sm" leftIcon={<Icon name="restart_alt" size={18} />} isDisabled={ocupado || enviando !== null} onClick={refazer} data-acao="refazer-marcacao">
-              Refazer as marcações
+            <Button variant="secondary" size="sm" leftIcon={<Icon name="restart_alt" size={18} />} isDisabled={trabalhando} onClick={refazer} data-acao="refazer-marcacao">
+              Refazer as áreas
             </Button>
-            <Button variant="ghost" size="sm" leftIcon={<Icon name="autorenew" size={18} />} isDisabled={ocupado || enviando !== null} onClick={gerarNovamente} data-acao="gerar-novamente">
-              GERAR NOVAMENTE
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={<Icon name="autorenew" size={18} />}
+              isDisabled={trabalhando}
+              isLoading={gerandoCena}
+              onClick={gerarNovamente}
+              data-acao="gerar-novamente"
+            >
+              {gerandoCena ? "GERANDO..." : "GERAR NOVAMENTE"}
             </Button>
           </div>
         </div>
+
+        {temPedido ? (
+          <div className="flex flex-col gap-2 rounded-lg border border-unooria-neutral-200 p-4" data-pedido-da-imagem>
+            <h3 className="text-[15px] font-semibold text-unooria-neutral-950">O pedido da imagem</h3>
+            <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-700">
+              É o texto que desenhou esta cena. Mude o que quiser — mais ou menos objetos na parede, outra atividade, outro
+              jeito do espaço — e gere outra imagem. Os textos (selos e falas) continuam os mesmos, e você desenha as áreas
+              de novo na imagem nova.
+            </p>
+            <TextArea
+              label={`Pedido da imagem (até ${PEDIDO_DA_IMAGEM.max} caracteres)`}
+              rows={8}
+              value={pedido}
+              maxLength={PEDIDO_DA_IMAGEM.max}
+              helperText="A Unooria sempre acrescenta as regras de segurança: ilustração (nunca foto), crianças sem rosto identificável, nenhum texto na imagem e os dois objetos na faixa do meio."
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPedido(e.target.value)}
+            />
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Icon name="auto_awesome" size={18} />}
+                isDisabled={trabalhando || !pedidoValido}
+                isLoading={enviando === "imagem"}
+                onClick={() => void gerarImagem()}
+                data-acao="gerar-imagem-do-pedido"
+              >
+                {enviando === "imagem" ? "Gerando a imagem..." : "Gerar a imagem com este pedido"}
+              </Button>
+              {!pedidoValido ? (
+                <p className="text-[12px] text-unooria-neutral-600">{`O pedido precisa ter de ${PEDIDO_DA_IMAGEM.min} a ${PEDIDO_DA_IMAGEM.max} caracteres.`}</p>
+              ) : null}
+            </div>
+            {imagemSemIa ? (
+              <div data-aviso-sem-ia-imagem={imagemSemIa}>
+                <FeedbackAlert
+                  type="warning"
+                  title={AVISO_SEM_IA[imagemSemIa].titulo}
+                  description="A imagem anterior continua no rascunho. Tente de novo mais tarde, ou aprove esta."
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="grid gap-4 lg:grid-cols-2">
           {cena.fotos.map((foto, i) => {
@@ -652,7 +800,7 @@ function Curadoria({
             Aprovar atividade
           </Button>
           <p className="text-[12px] text-unooria-neutral-600">
-            {marcando ? "Marque os dois objetos iguais para aprovar." : "Aprovada, a atividade fica pronta; você escolhe quando a turma usa."}
+            {marcando ? "Desenhe a área dos dois objetos iguais para aprovar." : "Aprovada, a atividade fica pronta; você escolhe quando a turma usa."}
           </p>
         </div>
       </div>

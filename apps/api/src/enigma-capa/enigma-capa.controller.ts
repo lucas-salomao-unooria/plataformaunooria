@@ -102,7 +102,7 @@ export class EnigmaCapaController {
   @Contrato({
     resumo: "E2: o relato da lupa — e, com `avancar`, o piso.",
     descricao:
-      "`alvo1Ms`/`alvo2Ms` = os ms com o centro da lente sobre cada um dos dois objetos do fundo (em qualquer das duas fotos). O servidor guarda o MÁXIMO de cada tempo, limitado ao tempo desde a entrada. Com `avancar: true`: 3 s em CADA um dos dois liberam o `decidir` (`liberado: true`); senão o alerta conta (`alerta: true`, 200) — a tela mostra \"OLHE O FUNDO\". Os alertas entram na régua da EF02CO05.",
+      "`tempos` = os ms com o centro da lente sobre cada um dos dois objetos do fundo EM CADA foto (`\"inv-1:foto-1\"` … `\"inv-2:foto-2\"`): achar na foto 1 não acha na foto 2 (ADR-188). O servidor guarda o MÁXIMO de cada tempo, limitado ao tempo desde a entrada. Com `avancar: true`: 3 s em CADA um dos quatro liberam o `decidir` (`liberado: true`); senão o alerta conta (`alerta: true`, 200) — a tela mostra \"OLHE O FUNDO\". Os alertas entram na régua da EF02CO05.",
     corpo: LupaSchema,
     resposta: RespostaDaLupaSchema,
     notas: [NOTA_DA_PORTA, NOTA_SEM_PACOTE, NOTA_DO_PASSO],

@@ -154,8 +154,8 @@ fotos (o perfil da Rádio Escola) \textperiodcentered{} uma aula
 
 \textbf{Proposta.} Uma foto mostra só um pedaço do lugar, e duas fotos tiradas
 no mesmo minuto podem contar histórias opostas sem que nenhuma esteja
-mentindo. A criança é repórter mirim da Rádio Escola: acha dois objetos nas
-fotos da biblioteca com a lupa, escolhe uma das fotos, enquadra, publica a
+mentindo. A criança é repórter mirim da Rádio Escola: acha com a lupa os dois
+objetos iguais nas duas fotos da biblioteca, escolhe uma das fotos, enquadra, publica a
 capa e ouve o que a visitante entendeu; depois da conversa com o professor,
 descobre que as duas fotos eram do MESMO lugar e marca o que ficou de fora.
 Cada criança no seu aparelho; não há texto livre, nem pergunta de marcar.
@@ -169,7 +169,12 @@ que o time validou}: cada tela diz o que fazer agora, os avisos do protótipo,
 sem crachá, imagens mais limpas, a lupa que brilha e conta 3 segundos, a
 barra de comparação que parte do meio, o alfinete --- e \textbf{sem a etapa
 da horta}. A antiga H06.16.8 (\enquote{Responder sobre a horta}) saiu com
-ela; o número não volta a ser usado.
+ela; o número não volta a ser usado. No dia seguinte (27 de outubro), mais
+cinco pedidos: a missão diz \textbf{objetos IGUAIS nas DUAS fotos}; a lupa
+conta cada objeto em cada foto, sem marcar a outra sozinha; o professor
+\textbf{desenha a área} de cada objeto em vez de tocar num ponto; o
+\textbf{pedido da imagem} aparece para ele editar, e as imagens deixam de
+ser óbvias; e a geração mostra na própria imagem que é para esperar.
 
 \begin{historia}{H06.16.1}{Preparar a cena da aula}{\pronto}
 \hu{Professor do 2º ano}{escolher o lugar das fotos que a turma vai
@@ -181,15 +186,28 @@ investigar}{dar a aula com a minha disciplina, ou sem preparo nenhum}
     fantoches do outro, o relógio e o cartaz amarelo na parede.
   \item Posso usar, também prontos, a Horta (alfaces de um lado, minhocas do
     outro) ou o Museu (tinteiros de um lado, canetas do outro). As imagens são
-    limpas: paredes lisas, poucas coisas, os dois objetos da parede grandes.
+    organizadas, mas não óbvias: os dois objetos da parede têm tamanho médio e
+    dividem a parede com outras coisas comuns do lugar (uma prateleira, um
+    vaso, uma mochila), e a criança precisa olhar para achá-los.
   \item Ou gero com IA um espaço do meu componente curricular --- qualquer um
     do 2º ano na BNCC (Língua Portuguesa, Arte, Educação Física, Matemática,
     Ciências, Geografia, História, Ensino Religioso), Computação ou outro
     componente: dou o tema, de 3 a 6 palavras e uma nota opcional; a IA
-    escreve a cena e desenha a imagem, limpa. Vejo a cena inteira com as duas
-    fotos marcadas, os selos e o que a visitante vai dizer, e \textbf{toco
-    nos dois objetos iguais} da parede antes de aprovar --- sem os dois, não
-    aprovo. Posso gerar de novo.
+    escreve a cena e desenha a imagem. Enquanto ela trabalha, um quadro
+    animado no lugar da imagem diz que a Rádio Escola está preparando as
+    fotos. Vejo a cena inteira com as duas fotos marcadas, os selos e o que a
+    visitante vai dizer, e \textbf{desenho uma caixa em volta de cada um dos
+    dois objetos iguais} da parede (\enquote{Desenhe a área do RELÓGIO}),
+    do tamanho que o objeto tiver --- a caixa só cabe na parte do meio, que
+    aparece nas duas fotos. Sem as duas áreas, não aprovo.
+  \item Vejo também o \textbf{pedido da imagem}, o texto que a desenhou, e
+    posso mudá-lo (mais coisas na parede, outro jeito do lugar) e gerar outra
+    imagem só com ele: os selos e as falas ficam, e eu desenho as áreas de
+    novo. As regras de segurança --- ilustração e nunca foto, crianças sem
+    rosto, nenhum texto na imagem --- a Unooria acrescenta sempre.
+  \item Ao gerar de novo, a cena inteira ou só a imagem, a própria imagem
+    fica coberta por um véu animado e o botão diz que está gerando: sei que é
+    para esperar.
   \item Nada gerado chega à turma sem a minha aprovação. Sem saldo de IA, ou
     com ela fora do ar, recebo o pacote pronto do componente e a aula
     acontece.
@@ -203,16 +221,19 @@ lupa}{descobrir o mistério da capa da Rádio Escola}
 \begin{itemize}
   \item A primeira tela é um cartão só: RASCUNHO PENDENTE, INVESTIGAR A NOVA
     CAPA, o que aconteceu (\enquote{A capa sobre a biblioteca causou confusão
-    entre os ouvintes.}) e a missão em letra grande: ENCONTRE NAS FOTOS 2
-    OBJETOS DA BIBLIOTECA. Toco em ABRIR BANCADA.
+    entre os ouvintes.}) e a missão em letra grande: ENCONTRE OS 2 OBJETOS
+    IGUAIS NAS DUAS FOTOS DA BIBLIOTECA. Toco em ABRIR BANCADA.
   \item INVESTIGUE COM A LUPA: as duas fotos aparecem com o mesmo lugar e a
     mesma hora no nome. Arrasto a lupa, que aumenta duas vezes. Quando ela
     para em cima de um dos objetos, brilha, e um anel em volta dela enche em
     3 segundos (SEGURE A LUPA AQUI!); cheio, o objeto fica marcado de dourado
-    e o contador sobe (1 DE 2 ENCONTRADOS).
-  \item Com os dois: INVESTIGAÇÃO COMPLETA! e o AVANÇAR acende. Se eu tentar
-    antes, aparece OLHE O FUNDO, a tela vibra e uma mãozinha aponta o que
-    falta --- e isso conta para o professor. Parado por 45 segundos, o Bento
+    \textbf{só na foto em que eu estava}: a outra foto continua por olhar. Cada
+    foto mostra quantos já achei nela (1 DE 2), e o contador sobe (1 DE 4
+    ENCONTRADOS). Para valer, o objeto precisa estar dentro da área que o
+    professor desenhou --- em qualquer ponto dela.
+  \item Com os dois objetos nas duas fotos: INVESTIGAÇÃO COMPLETA! e o
+    AVANÇAR acende. Se eu tentar antes, aparece OLHE O FUNDO, a tela vibra e
+    uma mãozinha aponta o que falta, na foto em que falta --- e isso conta para o professor. Parado por 45 segundos, o Bento
     chama: VAMOS INVESTIGAR?
 \end{itemize}
 \pendencia{o Bento aparece só como balão de fala, sem ilustração.}

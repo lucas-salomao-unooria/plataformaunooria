@@ -22,6 +22,7 @@ export type CodigoErro =
   | "preparo-invalido"
   | "rascunho-nao-encontrado"
   | "rascunho-desatualizado"
+  | "imagem-so-da-ia"
   | "rodada-desatualizada"
   | "payload-invalido"
   | "turma-nao-encontrada"
@@ -40,6 +41,7 @@ export const STATUS: Readonly<Record<CodigoErro, number>> = {
   "preparo-invalido": 400,
   "rascunho-nao-encontrado": 404,
   "rascunho-desatualizado": 409,
+  "imagem-so-da-ia": 409,
   "rodada-desatualizada": 409,
   "payload-invalido": 400,
   "turma-nao-encontrada": 404,
@@ -61,6 +63,7 @@ export const MENSAGENS: Readonly<Record<CodigoErro, string>> = {
   "preparo-invalido": "O recorte da aula não pôde ser usado.",
   "rascunho-nao-encontrado": "Não há rascunho para esta turma. Gere as fotos de novo.",
   "rascunho-desatualizado": "As fotos foram geradas de novo em outra janela. Recarregue a página.",
+  "imagem-so-da-ia": "Só a cena gerada com IA pode ganhar outra imagem. Gere com IA primeiro.",
   "rodada-desatualizada": "A turma já está em outra rodada. Recarregue o painel.",
   "payload-invalido": "Não entendi o que veio da tela.",
   "turma-nao-encontrada": "Turma não encontrada.",

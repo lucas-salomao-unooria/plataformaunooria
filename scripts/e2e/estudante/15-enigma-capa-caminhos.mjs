@@ -175,7 +175,9 @@ await suite(
     r.exigir(painel.fase === "aberta" && painel.resumo.entraram === 0, `a turma começa limpa: fase “aberta”, rodada ${rodada}, ninguém entrou`);
 
     const k = detalhe.conteudo.cena;
-    const alvos = Object.fromEntries(k.invariantes.map((i) => [i.id, i.alvo]));
+    /* As ÁREAS dos objetos (o gabarito que o professor vê) e os CENTROS delas (onde a lente para e a criança toca). */
+    const areas = Object.fromEntries(k.invariantes.map((i) => [i.id, i.alvo]));
+    const alvos = Object.fromEntries(k.invariantes.map((i) => [i.id, { x: i.alvo.x + i.alvo.w / 2, y: i.alvo.y + i.alvo.h / 2 }]));
     const linhaDe = (pn, c) => pn?.linhas?.find((l) => l.nome === c.nome) ?? null;
 
     // ═══ os gestos de uma criança (as duas jogam pelo mesmo caminho) ═══════
@@ -196,8 +198,8 @@ await suite(
     async function cumprirOPiso(p, q) {
       const fotos = q.locator(".bancada__foto");
       await fotos.nth(1).waitFor({ timeout: 15_000 });
-      /* 3 s com o centro da lente sobre CADA objeto: o 1º na foto 1, o 2º na foto 2. */
-      for (const [i, f, inv] of [[0, "foto-1", "inv-1"], [1, "foto-2", "inv-2"]]) {
+      /* 3 s com o centro da lente sobre CADA objeto EM CADA foto (ADR-188): achar na foto 1 não acha na 2. */
+      for (const [i, f, inv] of [[0, "foto-1", "inv-1"], [0, "foto-1", "inv-2"], [1, "foto-2", "inv-1"], [1, "foto-2", "inv-2"]]) {
         const recorte = k.fotos.find((x) => x.id === f).recorte;
         const destino = await pontoEm(fotos.nth(i), (alvos[inv].x - recorte.x) / recorte.w, (alvos[inv].y - recorte.y) / recorte.h);
         const deLente = await pontoEm(q.locator(".lupa"), 0.5, 0.5);
@@ -425,13 +427,13 @@ await suite(
     );
     r.exigir(
       terceiro?.acerto === null && terceiro?.erros === 3 && terceiro?.ajuda === true && terceiro?.alvos?.length === 2 &&
-        terceiro.alvos.every((a) => alvos[a.id] && Math.abs(a.x - alvos[a.id].x) < 0.01 && Math.abs(a.y - alvos[a.id].y) < 0.01),
+        terceiro.alvos.every((a) => areas[a.id] && ["x", "y", "w", "h"].every((c) => Math.abs(a[c] - areas[a.id][c]) < 0.01)),
       `o 3º erro acende a ajuda: ajuda = ${terceiro?.ajuda}, e o servidor manda os alvos (${(terceiro?.alvos ?? []).map((a) => `${a.id} x=${a.x} y=${a.y}`).join("; ")})`,
     );
     const comAjuda = (await lerApi(pb, "/enigma-capa/sessao")).corpo?.invariantes;
     r.exigir(comAjuda?.ajuda === true && comAjuda?.alvos?.length === 2, "o estado da sessão também traz ajuda: true e os dois alvos (um F5 não apaga o pulso)");
-    await qb.locator("circle.pulso-amarelo").nth(3).waitFor({ state: "attached", timeout: 5000 });
-    r.exigir((await qb.locator("circle.pulso-amarelo").count()) === 4, "o pulso amarelo aparece nos dois objetos das duas fotos (4 alvos)");
+    await qb.locator(".pulso-amarelo").nth(3).waitFor({ state: "attached", timeout: 5000 });
+    r.exigir((await qb.locator(".pulso-amarelo").count()) === 4, "o pulso amarelo cobre a ÁREA dos dois objetos nas duas fotos (4 alvos)");
     await r.registrar(pb, "a-ajuda-acende", {
       titulo: "Três erros: a ajuda acende",
       mostra: "Os dois objetos do fundo pulsam em amarelo nas duas fotos, nos lugares que o servidor mandou.",

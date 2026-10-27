@@ -8,11 +8,12 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | Dev | `pnpm --filter @edu/exp02ef1b dev` → **:5187** (`strictPort`) · hub `/exp/exp02ef1b` ou `/dev-embed?src=http://localhost:5187` |
 | DS | UMA seção: `unoovista` (`@edu/ui/ds-unoovista` + `unoovista.css` + `fonts/unoovista.css`) |
 | api | módulo `enigma-capa` (`apps/api/src/enigma-capa/`, prefixo `/enigma-capa`, tabelas `exp02ef1b_*`, ADR-184) |
-| Versão | `2.0.0` nos três lugares (`public/experiencia.json`, `package.json`, `EXP_VERSION` em `src/lib/tipos.ts`) |
+| Versão | `2.2.0` nos três lugares (`public/experiencia.json`, `package.json`, `EXP_VERSION` em `src/lib/tipos.ts`) |
 
-A criança (7–8 anos) lê a missão no mural da @radio_escola ("ENCONTRE NAS
-FOTOS 2 OBJETOS DA BIBLIOTECA"), acha os dois objetos do fundo com a lupa (o
-anel enche em 3 s), publica UMA capa (foto em moldura fixa + selo — o LATCH 1),
+A criança (7–8 anos) lê a missão no mural da @radio_escola ("ENCONTRE OS 2
+OBJETOS IGUAIS NAS DUAS FOTOS DA BIBLIOTECA"), acha os dois objetos do fundo
+com a lupa EM CADA foto (o anel enche em 3 s; achar na foto 1 não marca a 2 —
+ADR-188), publica UMA capa (foto em moldura fixa + selo — o LATCH 1),
 lê a resposta da visitante, espera o professor, e na virada descobre que as
 duas fotos eram o MESMO lugar: os objetos iguais nas duas fotos, o slider de
 comparação que parte do centro, e o alfinete no que ficou fora. Depois, pares
@@ -50,8 +51,9 @@ seção (`componentes/Aviso.tsx`), só com ícone e mensagem.
   marcáveis, sem a atividade/cor das cartas. A tela manda o gesto (o ponto DA
   PANORÂMICA, o deslocamento) e desenha o que volta.
 - **A lupa é medida aqui e decidida lá.** O cronômetro (`lib/lupa.ts`) soma o
-  tempo com o centro da lente sobre CADA objeto (com folga de 1,25× o raio) e
-  relata a cada 4 s e no AVANÇAR; o servidor guarda o máximo e limita ao tempo
+  tempo com o centro da lente sobre CADA objeto EM CADA foto (quatro tempos,
+  `"inv-1:foto-1"`…; ADR-188), dentro da ÁREA que o professor desenhou com a
+  folga `geometria.margemDoAlvo`, e relata a cada 4 s e no AVANÇAR; o servidor guarda o máximo e limita ao tempo
   desde a entrada. O botão esmaecido continua TOCÁVEL: o toque antes do piso é a
   evidência (`lupa_alertas`) — "OLHE O FUNDO", a mãozinha e a vibração.
 - **Fila de envio em MEMÓRIA** (`lib/fila.ts`), nunca `localStorage`: as

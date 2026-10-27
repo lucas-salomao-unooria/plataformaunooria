@@ -318,7 +318,7 @@ export function Virada({ ctx }: { ctx: Contexto }) {
     if (pontos[a]) return pontos[a]!;
     /* Depois de um F5 o toque se perdeu: o servidor devolve o alvo do que já foi achado. */
     const alvo = (busca?.achados ?? []).concat(alvos ?? []).find((x) => a.startsWith(`${x.id}:`));
-    return alvo ? { x: alvo.x, y: alvo.y } : null;
+    return alvo ? { x: alvo.x + alvo.w / 2, y: alvo.y + alvo.h / 2 } : null;
   };
 
   async function tocar(f: FotoId, e: MouseEvent<HTMLDivElement>) {
@@ -417,8 +417,13 @@ export function Virada({ ctx }: { ctx: Contexto }) {
               {alvos
                 ? alvos.flatMap((alvo) =>
                     FOTOS.filter((f) => !encontrados.includes(`${alvo.id}:${f}`)).map((f) => {
+                      /* A ÁREA inteira do objeto pulsa (ADR-188), com um mínimo de 40 px para o dedo. */
                       const q = naCaixa(f, alvo);
-                      return <circle key={`${alvo.id}-${f}`} className="pulso-amarelo" cx={q.x} cy={q.y} r={Math.max(20, raio(alvo.r, f))} />;
+                      const w = Math.max(40, alvo.w * escala);
+                      const h = Math.max(40, (alvo.h / caixa(f).r.h) * caixa(f).h);
+                      const cx = q.x + (alvo.w * escala) / 2;
+                      const cy = q.y + ((alvo.h / caixa(f).r.h) * caixa(f).h) / 2;
+                      return <rect key={`${alvo.id}-${f}`} className="pulso-amarelo" x={cx - w / 2} y={cy - h / 2} width={w} height={h} rx={10} />;
                     }),
                   )
                 : null}

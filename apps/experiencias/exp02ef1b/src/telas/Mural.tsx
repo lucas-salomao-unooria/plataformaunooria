@@ -10,7 +10,7 @@ import { preencher, ROTULOS, textoDe } from "../lib/textos";
  *
  * O mural oficial da @radio_escola com UM card: o rascunho pendente, o que
  * aconteceu ("A capa sobre a biblioteca causou confusão…") e a MISSÃO, em
- * letra grande — "ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA" — e o botão
+ * letra grande — "ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DA BIBLIOTECA" — e o botão
  * ABRIR BANCADA, que abre a sessão (`POST /enigma-capa/iniciar`). Cinco
  * elementos, um só gesto possível.
  *

@@ -126,12 +126,8 @@ export interface Retangulo {
   h: number;
 }
 
-/** Alvo circular: centro na panorâmica, raio em % da LARGURA. */
-export interface Alvo {
-  x: number;
-  y: number;
-  r: number;
-}
+/** A ÁREA de um objeto do fundo: o retângulo que o professor desenha em volta dele (ADR-188). */
+export type Alvo = Retangulo;
 
 /**
  * As duas molduras da panorâmica — as fotos são recortes FIXOS dela, em todo
@@ -144,7 +140,10 @@ export const RECORTE_DA_FOTO: Record<FotoId, Retangulo> = {
 };
 export const FAIXA_COMUM = { de: 32, ate: 68 } as const;
 export const PROPORCAO_DA_PANORAMICA = 16 / 9;
-export const RAIO_PADRAO = 7;
+/** Os limites da área desenhada (espelho de `AREA_DO_ALVO` da api, que decide). */
+export const AREA_DO_ALVO = { minW: 3, minH: 5, maxW: 30, maxH: 60 } as const;
+/** O tamanho do pedido de imagem que o professor edita (espelho de `PEDIDO_DA_IMAGEM` da api). */
+export const PEDIDO_DA_IMAGEM = { min: 40, max: 2000 } as const;
 
 // ─────────────────────────────────────────────────────────────── o pacote
 
@@ -202,6 +201,8 @@ export interface PacoteDoProfessor {
   rodadaAtual: number;
   /** Para o rascunho: o que ainda falta para aprovar (vazio = pode aprovar). */
   pendencias: string[];
+  /** A descrição da cena que desenhou a imagem (só a cena da IA; `null` nos prontos) — editável na curadoria. */
+  pedidoDaImagem: string | null;
 }
 
 export interface PacotePronto {
@@ -232,6 +233,9 @@ export interface RespostaDoGerar {
   usouIa: boolean;
   motivo: "sem-saldo" | "indisponivel" | null;
 }
+
+/** `POST …/turmas/:turmaId/rascunho/imagem` — `usouIa: false` = a imagem anterior ficou. */
+export type RespostaDaImagem = RespostaDoGerar;
 
 export interface AtividadeDaTurma {
   pacoteId: string;
@@ -277,8 +281,8 @@ export interface LinhaDoPainel {
   equipe: { id: string; nome: string; membros: { id: string; nome: string }[] } | null;
   passo: Passo;
   aguardandoVirada: boolean;
-  /** Ms com o centro da lente sobre cada objeto do fundo (`inv-1`, `inv-2`); o piso é 3 s em cada. */
-  lupa: { alvo1Ms: number; alvo2Ms: number; alertas: number; liberada: boolean } | null;
+  /** Ms com o centro da lente sobre cada objeto do fundo EM CADA foto (`"inv-1:foto-1"`…); o piso é 3 s em cada um dos quatro. */
+  lupa: { tempos: Record<`${InvarianteId}:${FotoId}`, number>; alertas: number; liberada: boolean } | null;
   capa: { fotoId: FotoId; seloId: SeloId; seloCoerente: boolean; visitante: string; nucleoVisivel: boolean } | null;
   invariantes: { encontrados: number; erros: number; ajuda: boolean; errosPosAjuda: number; completo: boolean } | null;
   fora: { itens: { id: string; nome: string }[]; possiveis: number } | null;
@@ -363,11 +367,50 @@ export function pontoNaPanoramica(
 }
 
 /**
- * O alvo cabe na faixa comum (aparece nas DUAS fotos)? A régua da api é a que
- * decide (`regras/pacote.ts`); isto só avisa na hora do toque.
+ * A área que o professor está desenhando, a partir dos dois cantos do arraste
+ * (0–100 da panorâmica): normalizada (qualquer direção do arraste) e PRESA à
+ * faixa comum na largura — o objeto precisa aparecer nas DUAS fotos, então a
+ * caixa não sai dela —, com uma casa decimal. A régua da api decide o resto.
  */
-export function alvoNaFaixaComum(x: number, r: number = RAIO_PADRAO): boolean {
-  return x - r >= FAIXA_COMUM.de && x + r <= FAIXA_COMUM.ate;
+export function areaDoArraste(a: { x: number; y: number }, b: { x: number; y: number }): Retangulo {
+  const lim = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+  const um = (v: number) => Math.round(v * 10) / 10;
+  const x1 = lim(Math.min(a.x, b.x), FAIXA_COMUM.de, FAIXA_COMUM.ate);
+  const x2 = lim(Math.max(a.x, b.x), FAIXA_COMUM.de, FAIXA_COMUM.ate);
+  const y1 = lim(Math.min(a.y, b.y), 0, 100);
+  const y2 = lim(Math.max(a.y, b.y), 0, 100);
+  return { x: um(x1), y: um(y1), w: um(x2 - x1), h: um(y2 - y1) };
+}
+
+/**
+ * Um clique sem arraste vira uma caixa de tamanho médio centrada nele (presa à
+ * faixa): o professor que só toca no objeto não fica sem área — e ajusta
+ * desenhando de novo.
+ */
+export function areaDoToque(p: { x: number; y: number }): Retangulo {
+  const w = 10;
+  const h = 18;
+  const x = Math.min(FAIXA_COMUM.ate - w, Math.max(FAIXA_COMUM.de, p.x - w / 2));
+  const y = Math.min(100 - h, Math.max(0, p.y - h / 2));
+  return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, w, h };
+}
+
+/** A área é um arraste de verdade, ou só um clique? (menos que o mínimo nas duas direções = clique) */
+export function ehArraste(r: Retangulo): boolean {
+  return r.w >= AREA_DO_ALVO.minW || r.h >= AREA_DO_ALVO.minH;
+}
+
+/** O que a área desenhada ainda tem de errado, em frases para o professor (a api decide; isto avisa na hora). */
+export function problemasDaArea(nome: string, r: Retangulo): string[] {
+  const p: string[] = [];
+  if (r.w < AREA_DO_ALVO.minW || r.h < AREA_DO_ALVO.minH) p.push(`A área do ${nome} ficou pequena demais: desenhe em volta do objeto inteiro.`);
+  if (r.w > AREA_DO_ALVO.maxW || r.h > AREA_DO_ALVO.maxH) p.push(`A área do ${nome} ficou grande demais: desenhe só em volta do objeto.`);
+  return p;
+}
+
+/** Duas áreas que se sobrepõem fariam o mesmo toque valer pelos dois objetos. */
+export function areasSeSobrepoem(a: Retangulo, b: Retangulo): boolean {
+  return Math.min(a.x + a.w, b.x + b.w) > Math.max(a.x, b.x) && Math.min(a.y + a.h, b.y + b.h) > Math.max(a.y, b.y);
 }
 
 /** O recorte é aceitável para a geração (o mesmo Zod da api: tema 3–60, 3 a 6 palavras de 2 a 20, nota até 200)? */
@@ -410,6 +453,8 @@ export const AVISO_SEM_IA: Record<"sem-saldo" | "indisponivel", { titulo: string
 
 /** A barra lúdica da geração (one-pager §9a, literal). */
 export const TEXTO_DA_GERACAO = "A Rádio Escola está preparando as fotos...";
+/** A mesma espera, quando só a IMAGEM é gerada de novo a partir do pedido editado (ADR-188). */
+export const TEXTO_DA_NOVA_IMAGEM = "A Rádio Escola está desenhando a nova imagem...";
 
 /** A mensagem e a lista `erros` de uma recusa da api (a homologação devolve TODAS as frases da régua). */
 export function erroDaApi(corpo: unknown, padrao: string): { mensagem: string; erros: string[] } {
@@ -448,7 +493,7 @@ export function mudouAEvidencia(antes: PainelDaTurma, depois: PainelDaTurma): bo
   return assinatura(antes) !== assinatura(depois);
 }
 
-/** Um círculo na panorâmica: o alvo de um invariante, com o nome dele. */
+/** Uma área na panorâmica: o alvo de um invariante, com o nome dele. */
 export interface MarcaNaCena {
   id: InvarianteId;
   nome: string;

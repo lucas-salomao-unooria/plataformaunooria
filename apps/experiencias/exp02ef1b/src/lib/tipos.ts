@@ -17,7 +17,7 @@ export const EXP_ID = "exp02ef1b";
  * A versão vive em TRÊS lugares: aqui, no `package.json` e no
  * `public/experiencia.json` (`versao.test.ts` compara os três — ADR-84).
  */
-export const EXP_VERSION = "2.1.1";
+export const EXP_VERSION = "2.2.0";
 
 export type Passo =
   | "inicio"
@@ -62,12 +62,17 @@ export interface Moldura {
   w: number;
   h: number;
 }
+/** A ÁREA de um objeto do fundo (o retângulo que o professor desenhou, 0–100 da panorâmica — ADR-188). */
 export interface Alvo {
   id: InvarianteId;
   x: number;
   y: number;
-  r: number;
+  w: number;
+  h: number;
 }
+
+/** `"inv-1:foto-1"` — um objeto numa foto: a chave dos tempos da lupa (e dos achados da E4). */
+export type ChaveDaLupa = `${InvarianteId}:${FotoId}`;
 
 export type Imagem = { tipo: "bundle"; nome: string } | { tipo: "url"; url: string };
 
@@ -83,8 +88,8 @@ export interface Estado {
   aguardandoVirada: boolean;
   atividade: Atividade | null;
   lupa: {
-    alvo1Ms: number;
-    alvo2Ms: number;
+    /** Os ms com o centro da lente sobre cada objeto EM CADA foto (ADR-188). */
+    tempos: RelatoDaLupa;
     alertas: number;
     liberada: boolean;
     /** Os dois objetos do fundo, SÓ no passo `lupa`: o brilho da lente precisa do lugar (ADR-186). */
@@ -104,7 +109,7 @@ export interface Estado {
     erros: number;
     ajuda: boolean;
     alvos: Alvo[] | null;
-    /** O alvo dos já achados (deixou de ser gabarito): redesenha os círculos depois de um F5. */
+    /** A área dos já achados (deixou de ser gabarito): redesenha os achados depois de um F5. */
     achados: Alvo[];
     completo: boolean;
   } | null;
@@ -135,6 +140,8 @@ export interface Geometria {
   molduraDaCapa: Moldura;
   segundaFoto: { proporcao: number; moldura: Moldura };
   pisoDaLupaMs: number;
+  /** A folga em volta da área do objeto, em % da largura (na vertical, × 16/9) — a mesma do servidor. */
+  margemDoAlvo: number;
   toquesForaMax: number;
 }
 
@@ -189,8 +196,8 @@ export interface RespostaDoToque extends Estado {
   };
 }
 
-/** Os ms com o centro da lente sobre cada objeto do fundo (`inv-1`, `inv-2`), em qualquer das duas fotos. */
-export interface RelatoDaLupa {
-  alvo1Ms: number;
-  alvo2Ms: number;
-}
+/**
+ * Os ms com o centro da lente sobre cada objeto do fundo EM CADA foto: achar o
+ * relógio na foto 1 não acha o relógio da foto 2 (2.2.0, ADR-188).
+ */
+export type RelatoDaLupa = Record<ChaveDaLupa, number>;

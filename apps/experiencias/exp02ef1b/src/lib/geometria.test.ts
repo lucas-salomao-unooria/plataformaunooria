@@ -155,10 +155,10 @@ describe("os textos com o espaço da cena", () => {
   });
 
   test("a missão da abertura: a preposição certa, em caixa alta (espelho da api)", () => {
-    expect(fraseDaMissao("a biblioteca")).toBe("ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA");
-    expect(fraseDaMissao("o museu")).toBe("ENCONTRE NAS FOTOS 2 OBJETOS DO MUSEU");
-    expect(fraseDaMissao("as salas")).toBe("ENCONTRE NAS FOTOS 2 OBJETOS DAS SALAS");
-    expect(fraseDaMissao("Escola Nova")).toBe("ENCONTRE NAS FOTOS 2 OBJETOS DE ESCOLA NOVA");
+    expect(fraseDaMissao("a biblioteca")).toBe("ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DA BIBLIOTECA");
+    expect(fraseDaMissao("o museu")).toBe("ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DO MUSEU");
+    expect(fraseDaMissao("as salas")).toBe("ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DAS SALAS");
+    expect(fraseDaMissao("Escola Nova")).toBe("ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DE ESCOLA NOVA");
   });
 
   test("a imagem do bundle é relativa à base (o caminho do bucket muda por versão); a da IA vai como veio", () => {

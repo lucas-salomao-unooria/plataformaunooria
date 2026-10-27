@@ -21,7 +21,7 @@ import { componentePorSlug } from "../curriculo/componentes";
 export const EXP_ID = "exp02ef1b";
 
 /** Gravada em cada sessão: o histórico se reprocessa pela versão que o mediu. */
-export const VERSAO_DO_INSTRUMENTO = "2.0.0";
+export const VERSAO_DO_INSTRUMENTO = "2.2.0";
 
 // ──────────────────────────────────────────── vocabulários (CHECK na migration)
 
@@ -95,12 +95,12 @@ export interface Ponto {
   y: number;
 }
 
-/** Alvo circular: centro na panorâmica e raio em % da LARGURA (o círculo é redondo na tela). */
-export interface Alvo {
-  x: number;
-  y: number;
-  r: number;
-}
+/**
+ * A ÁREA de um objeto do fundo: o retângulo que o PROFESSOR desenha em volta
+ * dele no preparo (2.2.0, ADR-188). Era um círculo de raio fixo, e objeto maior
+ * que o círculo fazia a lupa "errar" com a lente em cima do objeto certo.
+ */
+export type Alvo = Retangulo;
 
 /** O deslocamento da foto dentro da moldura, como FRAÇÃO da folga: `{0,0}` = canto superior esquerdo. */
 export interface Deslocamento {
@@ -135,11 +135,19 @@ export const PROPORCAO_DA_SEGUNDA_FOTO = 4 / 3;
 export const PROPORCAO_DA_PANORAMICA = 16 / 9;
 
 /**
- * O raio de um invariante marcado pelo professor, em % da largura da
- * panorâmica: 7 ≈ um alvo de 44 px no celular (o toque de uma criança).
+ * Os limites da área que o professor desenha, em % da panorâmica. O mínimo é o
+ * toque de uma criança (3% da largura ≈ 22 px num celular de 375 px, que a
+ * margem do toque completa); o máximo impede que uma caixa do tamanho da
+ * parede deixe a lupa achar o objeto em qualquer lugar.
  */
-export const RAIO_PADRAO = 7;
-export const RAIO = { min: 2, max: 10 } as const;
+export const AREA_DO_ALVO = { minW: 3, minH: 5, maxW: 30, maxH: 60 } as const;
+
+/**
+ * A folga em volta da área, em % da LARGURA (na vertical, convertida pela
+ * proporção 16:9): o centro da lente e o dedo de 7 anos ficam PERTO do objeto,
+ * não exatamente em cima. A tela recebe o número em `geometria.margemDoAlvo`.
+ */
+export const MARGEM_DO_ALVO = 1.5;
 
 /** Metade do núcleo visível: a visitante "viu" a ação da foto (e a 2ª foto "mostra a leitura"). */
 export const NUCLEO_VISIVEL_MINIMO = 0.5;
@@ -153,7 +161,8 @@ export const ERROS_POS_AJUDA_NAO_ATINGIU = 3;
 
 /**
  * O piso da lupa (E2): 3 s com o centro da lente sobre CADA um dos dois
- * objetos do fundo (os invariantes, os mesmos da E4), em qualquer das duas fotos.
+ * objetos do fundo (os invariantes, os mesmos da E4) EM CADA UMA das duas
+ * fotos — quatro achados (2.2.0, ADR-188: achar na foto 1 não acha na 2).
  */
 export const PISO_DA_LUPA_MS = 3000;
 
@@ -167,6 +176,12 @@ export const VISITANTE_MAX_CARACTERES = 60;
 export const TEMA = { min: 3, max: 60 } as const;
 export const PALAVRAS = { min: 3, max: 6, maxCaracteres: 20 } as const;
 export const NOTA_MAX = 200;
+/**
+ * O pedido de imagem que o professor pode editar na curadoria (ADR-188): só a
+ * descrição da cena. As regras fixas (ilustração, crianças sem rosto, nenhum
+ * texto, os objetos na faixa do meio) a api acrescenta sempre, fora dele.
+ */
+export const PEDIDO_DA_IMAGEM = { min: 40, max: 2000 } as const;
 
 // ──────────────────────────────────────────── o pacote
 
@@ -194,9 +209,9 @@ export interface SeloDaCena {
 
 export interface InvarianteDaCena {
   id: InvarianteId;
-  /** CAIXA ALTA ("RELÓGIO") — desce: é o "Toque no RELÓGIO" da curadoria. */
+  /** CAIXA ALTA ("RELÓGIO") — desce: é o "Desenhe a área do RELÓGIO" da curadoria. */
   nome: string;
-  /** Gabarito. `null` na cena da IA até o professor tocar no objeto. */
+  /** Gabarito: a área do objeto. `null` na cena da IA até o professor desenhá-la. */
   alvo: Alvo | null;
 }
 
@@ -249,9 +264,12 @@ const recorte = (id: FotoId): Retangulo => ({ ...RECORTE_DA_FOTO[id] });
  * (§3 "teste das três disciplinas", §9b); a geometria é a ANOTAÇÃO MEDIDA pelo
  * líder sobre `apps/experiencias/exp02ef1b/public/cenas/{chave}.webp`
  * (1920×1080). As imagens foram REFEITAS na 2.0.0 (ADR-186), com a composição
- * limpa que o time pediu, e reanotadas no mesmo dia.
+ * limpa que o time pediu, e de novo na 2.2.0 (ADR-188): limpas ficaram ÓBVIAS
+ * (só os dois objetos na parede), e agora eles são de tamanho médio, entre
+ * outros objetos comuns. Os alvos são as ÁREAS dos objetos (retângulos),
+ * medidas sobre a imagem com grade de 1%.
  *
- * Mexeu numa imagem? Reanote e edite SÓ este objeto: núcleos, alvos, fundo e
+ * Mexeu numa imagem? Reanote e edite SÓ este objeto: núcleos, áreas, fundo e
  * marcáveis. `tests/enigma-capa-regras.spec.ts` passa os três pela régua
  * (alvos dentro da faixa comum, núcleo dentro do recorte, marcáveis na cena).
  *
@@ -274,12 +292,12 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
         espacoCurto: "a biblioteca",
         hora: "14:15",
         imagem: { tipo: "bundle", nome: "cenas/biblioteca.webp" },
-        alt: "A biblioteca da escola inteira: à esquerda, duas crianças lendo numa mesa; à direita, duas crianças contando histórias com fantoches num tapete colorido; na parede lisa do meio, um relógio de moldura vermelha e um cartaz amarelo com um livro.",
+        alt: "A biblioteca da escola inteira: à esquerda, duas crianças lendo numa mesa; à direita, duas crianças contando histórias com fantoches num tapete colorido; na parede do meio, um relógio de moldura vermelha, um cartaz amarelo com um livro, uma prateleira com livros, um vaso de planta e uma mochila pendurada.",
         fotos: [
           {
             id: "foto-1",
             recorte: recorte("foto-1"),
-            nucleo: { x: 11, y: 55, w: 31, h: 37 },
+            nucleo: { x: 12, y: 50, w: 31, h: 40 },
             acao: "Mesa de leitura em silêncio",
             visitante: "Na foto, vi crianças lendo!",
             seloCoerente: "selo-1",
@@ -287,7 +305,7 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
           {
             id: "foto-2",
             recorte: recorte("foto-2"),
-            nucleo: { x: 65, y: 60, w: 27, h: 32 },
+            nucleo: { x: 60, y: 60, w: 26, h: 30 },
             acao: "Tapete com fantoches",
             visitante: "Na foto, vi crianças contando histórias!",
             seloCoerente: "selo-2",
@@ -298,15 +316,15 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
           { id: "selo-2", texto: "CONTAÇÃO DE HISTÓRIAS", emoji: "🎭" },
         ],
         invariantes: [
-          { id: "inv-1", nome: "RELÓGIO", alvo: { x: 41.3, y: 33.5, r: 8 } },
-          { id: "inv-2", nome: "CARTAZ AMARELO", alvo: { x: 60, y: 33.5, r: 7 } },
+          { id: "inv-1", nome: "RELÓGIO", alvo: { x: 45, y: 19.5, w: 10, h: 17.5 } },
+          { id: "inv-2", nome: "CARTAZ AMARELO", alvo: { x: 57, y: 20, w: 10.2, h: 21.2 } },
         ],
-        fundo: { x: 32, y: 15, w: 36, h: 36 },
+        fundo: { x: 32, y: 10, w: 36, h: 35 },
         marcaveis: [
-          { id: "mesa-leitura", nome: "MESA DE LEITURA", area: { x: 10, y: 55, w: 33, h: 40 } },
-          { id: "tapete-fantoches", nome: "TAPETE COM FANTOCHES", area: { x: 55, y: 60, w: 42, h: 37 } },
-          { id: "estante-esquerda", nome: "ESTANTE", area: { x: 0, y: 62, w: 9, h: 30 } },
-          { id: "estante-direita", nome: "ESTANTE", area: { x: 91, y: 62, w: 9, h: 30 } },
+          { id: "mesa-leitura", nome: "MESA DE LEITURA", area: { x: 12, y: 50, w: 32, h: 42 } },
+          { id: "tapete-fantoches", nome: "TAPETE COM FANTOCHES", area: { x: 54, y: 60, w: 39, h: 34 } },
+          { id: "estante-esquerda", nome: "ESTANTE", area: { x: 0, y: 54, w: 16, h: 36 } },
+          { id: "estante-direita", nome: "ESTANTE", area: { x: 84, y: 54, w: 16, h: 36 } },
         ],
       },
     },
@@ -324,12 +342,12 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
         espacoCurto: "a horta",
         hora: "14:15",
         imagem: { tipo: "bundle", nome: "cenas/horta.webp" },
-        alt: "A horta da escola inteira: à esquerda, duas crianças regando um canteiro de alfaces; à direita, duas crianças com minhocas num canteiro de terra escura; no muro liso do meio, um espantalho e um regador vermelho.",
+        alt: "A horta da escola inteira: à esquerda, duas crianças regando um canteiro de alfaces com regadores azuis; à direita, duas crianças com minhocas num canteiro de terra escura; no muro do meio, um espantalho, um regador vermelho pendurado, uma pá, um carrinho de mão e um balde.",
         fotos: [
           {
             id: "foto-1",
             recorte: recorte("foto-1"),
-            nucleo: { x: 6, y: 40, w: 36, h: 58 },
+            nucleo: { x: 5, y: 38, w: 40, h: 56 },
             acao: "Canteiro de alfaces",
             visitante: "Na foto, vi alfaces!",
             seloCoerente: "selo-1",
@@ -337,7 +355,7 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
           {
             id: "foto-2",
             recorte: recorte("foto-2"),
-            nucleo: { x: 62, y: 50, w: 34, h: 48 },
+            nucleo: { x: 59, y: 50, w: 38, h: 46 },
             acao: "Adubação com minhocas",
             visitante: "Na foto, vi minhocas!",
             seloCoerente: "selo-2",
@@ -348,15 +366,15 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
           { id: "selo-2", texto: "TERRA ADUBADA", emoji: "🪱" },
         ],
         invariantes: [
-          { id: "inv-1", nome: "ESPANTALHO", alvo: { x: 47, y: 35, r: 7 } },
-          { id: "inv-2", nome: "REGADOR VERMELHO", alvo: { x: 60.5, y: 37, r: 6 } },
+          { id: "inv-1", nome: "ESPANTALHO", alvo: { x: 34.8, y: 12.8, w: 13.6, h: 29.2 } },
+          { id: "inv-2", nome: "REGADOR VERMELHO", alvo: { x: 48.8, y: 18.6, w: 8.6, h: 14.4 } },
         ],
-        fundo: { x: 32, y: 15, w: 36, h: 45 },
+        fundo: { x: 32, y: 12, w: 36, h: 35 },
         marcaveis: [
-          { id: "canteiro-alfaces", nome: "CANTEIRO DE ALFACES", area: { x: 5, y: 67, w: 37, h: 33 } },
-          { id: "crianca-regando", nome: "CRIANÇAS REGANDO", area: { x: 8, y: 39, w: 32, h: 42 } },
-          { id: "canteiro-terra", nome: "CANTEIRO DE TERRA", area: { x: 60, y: 74, w: 40, h: 26 } },
-          { id: "criancas-minhocas", nome: "CRIANÇAS COM MINHOCAS", area: { x: 65, y: 49, w: 28, h: 34 } },
+          { id: "canteiro-alfaces", nome: "CANTEIRO DE ALFACES", area: { x: 2, y: 50, w: 43, h: 42 } },
+          { id: "crianca-regando", nome: "CRIANÇAS REGANDO", area: { x: 5, y: 36, w: 40, h: 58 } },
+          { id: "canteiro-terra", nome: "CANTEIRO DE TERRA", area: { x: 55, y: 50, w: 43, h: 40 } },
+          { id: "criancas-minhocas", nome: "CRIANÇAS COM MINHOCAS", area: { x: 59, y: 52, w: 38, h: 46 } },
         ],
       },
     },
@@ -374,12 +392,12 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
         espacoCurto: "o museu",
         hora: "14:15",
         imagem: { tipo: "bundle", nome: "cenas/museu.webp" },
-        alt: "O museu da escola inteiro: à esquerda, duas crianças olhando uma vitrine antiga com tinteiros e penas; à direita, duas crianças desenhando numa mesa com canetas coloridas e cadernos; na parede lisa do meio, uma placa dourada e uma janela de madeira.",
+        alt: "O museu da escola inteiro: à esquerda, duas crianças olhando uma vitrine antiga com tinteiros e penas; à direita, duas crianças desenhando numa bancada com canetas coloridas e cadernos; na parede do meio, uma placa dourada, uma janela de madeira, um quadro de montanhas, um vaso antigo e um banco.",
         fotos: [
           {
             id: "foto-1",
             recorte: recorte("foto-1"),
-            nucleo: { x: 1, y: 36, w: 32, h: 56 },
+            nucleo: { x: 2, y: 33, w: 31, h: 60 },
             acao: "Estante com tinteiros e penas",
             visitante: "Na foto, vi tinteiros!",
             seloCoerente: "selo-1",
@@ -387,7 +405,7 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
           {
             id: "foto-2",
             recorte: recorte("foto-2"),
-            nucleo: { x: 69, y: 47, w: 29, h: 43 },
+            nucleo: { x: 69, y: 50, w: 30, h: 46 },
             acao: "Bancada com canetas e cadernos",
             visitante: "Na foto, vi canetas!",
             seloCoerente: "selo-2",
@@ -398,15 +416,15 @@ export const PACOTES_PRONTOS: Readonly<Record<ChavePronta, PacotePronto>> = {
           { id: "selo-2", texto: "TEMPO DE HOJE", emoji: "✏️" },
         ],
         invariantes: [
-          { id: "inv-1", nome: "PLACA DOURADA", alvo: { x: 44, y: 31, r: 7 } },
-          { id: "inv-2", nome: "JANELA DE MADEIRA", alvo: { x: 59.5, y: 31, r: 5.5 } },
+          { id: "inv-1", nome: "PLACA DOURADA", alvo: { x: 35.3, y: 13.6, w: 16.4, h: 18.4 } },
+          { id: "inv-2", nome: "JANELA DE MADEIRA", alvo: { x: 53.8, y: 12.8, w: 11, h: 19.6 } },
         ],
-        fundo: { x: 32, y: 15, w: 36, h: 30 },
+        fundo: { x: 32, y: 10, w: 36, h: 28 },
         marcaveis: [
-          { id: "estante-antiga", nome: "VITRINE ANTIGA", area: { x: 0, y: 35, w: 21, h: 60 } },
-          { id: "criancas-observando", nome: "CRIANÇAS OLHANDO", area: { x: 15, y: 45, w: 19, h: 45 } },
-          { id: "bancada", nome: "MESA COM CANETAS", area: { x: 68, y: 64, w: 30, h: 36 } },
-          { id: "criancas-desenhando", nome: "CRIANÇAS DESENHANDO", area: { x: 77, y: 47, w: 20, h: 40 } },
+          { id: "estante-antiga", nome: "VITRINE ANTIGA", area: { x: 2, y: 33, w: 31, h: 58 } },
+          { id: "criancas-observando", nome: "CRIANÇAS OLHANDO", area: { x: 9, y: 51, w: 23, h: 45 } },
+          { id: "bancada", nome: "MESA COM CANETAS", area: { x: 73, y: 57, w: 27, h: 30 } },
+          { id: "criancas-desenhando", nome: "CRIANÇAS DESENHANDO", area: { x: 69, y: 51, w: 26, h: 45 } },
         ],
       },
     },
@@ -444,8 +462,7 @@ export function conteudoPronto(chave: ChavePronta): ConteudoDoPacote {
  * escreve o texto e desenha a imagem, mas não devolve coordenada: o pedido de
  * imagem (`prompts.ts#pedidoDeImagem`) põe a atividade 1 na metade esquerda, a
  * 2 na direita e os dois objetos na parede do meio. Os alvos nascem `null`: o
- * professor os marca tocando na imagem (`POST …/rascunho/invariantes`), com o
- * raio `RAIO_PADRAO`.
+ * professor desenha a área de cada um na imagem (`POST …/rascunho/invariantes`).
  */
 export const GEOMETRIA_DA_CENA_GERADA = {
   nucleos: { "foto-1": { x: 4, y: 38, w: 38, h: 55 }, "foto-2": { x: 58, y: 38, w: 38, h: 55 } },
@@ -507,14 +524,15 @@ export const TEXTOS = {
     tag: "RASCUNHO PENDENTE",
     titulo: "INVESTIGAR A NOVA CAPA",
     contexto: "A capa sobre {espacoCurto} causou confusão entre os ouvintes.",
-    missao: "ENCONTRE NAS FOTOS 2 OBJETOS {DO_ESPACO}",
+    missao: "ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS {DO_ESPACO}",
     abrir: "ABRIR BANCADA",
   },
   e2: {
     titulo: "INVESTIGUE COM A LUPA",
-    instrucao: "Arraste a lupa pelas duas fotos.",
+    instrucao: "Ache os 2 objetos iguais na FOTO 1 e na FOTO 2. Segure a lupa em cima de cada um.",
     segure: "SEGURE A LUPA AQUI!",
-    contador: "{n} DE 2 ENCONTRADOS",
+    contador: "{n} DE 4 ENCONTRADOS",
+    contadorDaFoto: "{n} DE 2",
     completa: "INVESTIGAÇÃO COMPLETA!",
     completaTexto: "Você observou atentamente as duas fotos e os detalhes da parede!",
     rotuloDaFoto1: "FOTO 1 — {ESPACO} {hora}",
@@ -591,15 +609,17 @@ export function fraseDoFora(espacoCurto: string): string {
 
 /**
  * A missão do card da E1, em CAIXA ALTA, com o artigo contraído do
- * `espacoCurto`: "a biblioteca" → "ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA",
- * "o museu" → "…DO MUSEU", "as salas" → "…DAS SALAS"; sem artigo, "…DE {X}".
- * A tela tem uma cópia (como a de `fraseDoFora`).
+ * `espacoCurto`: "a biblioteca" → "ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS
+ * DA BIBLIOTECA", "o museu" → "…DO MUSEU", "as salas" → "…DAS SALAS"; sem
+ * artigo, "…DE {X}". IGUAIS e NAS DUAS FOTOS são o pedido (2.2.0): "2 objetos"
+ * sozinho deixava a criança procurar dois objetos quaisquer. A tela tem uma
+ * cópia (como a de `fraseDoFora`).
  */
 export function fraseDaMissao(espacoCurto: string): string {
   const t = espacoCurto.trim();
   const m = ARTIGO.exec(t);
   const lugar = m ? `${({ a: "da", o: "do", as: "das", os: "dos" } as Record<string, string>)[m[1]!.toLowerCase()]} ${m[2]}` : `de ${t}`;
-  return `ENCONTRE NAS FOTOS 2 OBJETOS ${lugar}`.toLocaleUpperCase("pt-BR");
+  return `ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS ${lugar}`.toLocaleUpperCase("pt-BR");
 }
 
 /** Os tempos da tela (o one-pager §4 e §7; o 45 s e os 3 min são o "[PARÂMETRO]" sugerido pelo PO). */
@@ -615,7 +635,7 @@ export const TEMPOS = {
 /** O roteiro da conversa: a introdução, a pausa (E4) e as perguntas (§9a e §4 E5). */
 export const ROTEIRO = {
   introducao:
-    "O Bento postou uma foto da biblioteca e os ouvintes entenderam tudo errado. Encontre nas fotos os 2 objetos da biblioteca e descubra o mistério da capa!",
+    "O Bento postou uma foto da biblioteca e os ouvintes entenderam tudo errado. Encontre os 2 objetos iguais nas duas fotos da biblioteca e descubra o mistério da capa!",
   regraDoArraste: "Você pode mover a foto, mas não mudar o tamanho.",
   pausa: "O que a visitante conseguiu conhecer pela foto? O que ficou de fora?",
   cartoes: ["ENQUADRAMENTO", "AUTORIA", "O QUE FICOU DE FORA"],

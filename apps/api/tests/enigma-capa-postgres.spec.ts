@@ -9,6 +9,7 @@ import {
   EstadoSchema,
   GateDoEstudanteSchema,
   GerarRespostaSchema,
+  ImagemDoRascunhoRespostaSchema,
   MaterialSchema,
   PacoteDaTurmaSchema,
   PainelSchema,
@@ -39,7 +40,7 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
  * GERAL (só para a frente), a busca com a ajuda e a EF02CO01, o "o que ficou
  * fora" com a EF02CO05, a segunda foto que conclui, o gabarito ausente da
  * saída do estudante (e a exceção da lupa), o painel, a RLS com a role sem
- * `BYPASSRLS`, os CHECKs da 2.0.0 e o zerar.
+ * `BYPASSRLS`, os CHECKs da 2.2.0 (a lupa por objeto × foto, o pedido de imagem) e o zerar.
  *
  * Os testes dependem da ORDEM: é a aula, na sequência em que ela acontece.
  */
@@ -68,6 +69,7 @@ const CENA_DA_IA: CenaGerada = {
 /** A IA de mentira: escreve a cena e a imagem, ou está fora do ar. */
 let modoDaIa: "escreve" | "falha" = "escreve";
 let chamadasDaIa = 0;
+let ultimoPedidoDeImagem = "";
 const ia = {
   async generateJson<T>(req: AiJsonRequest<T>): Promise<T> {
     expect(req.system).toBe(SYSTEM_DO_PREPARO);
@@ -78,6 +80,7 @@ const ia = {
   },
   async generateImage(prompt: string, opcoes?: AiImagemOpcoes): Promise<Buffer> {
     chamadasDaIa += 1;
+    ultimoPedidoDeImagem = prompt;
     expect(prompt).toMatch(/^Ilustração/);
     expect(opcoes?.proporcao).toBe("16:9");
     opcoes?.aoUsarTokens?.(1300);
@@ -142,16 +145,22 @@ async function nivel(estudanteId: string, marcador: string) {
 const envelhecer = (estudanteId: string) =>
   prisma.exp02ef1bSessao.updateMany({ where: { escolaId: ESCOLA, estudanteId }, data: { entrouEm: new Date(Date.now() - 60_000) } });
 
-const LUPA_CHEIA = { alvo1Ms: 4000, alvo2Ms: 4000, avancar: true };
+/** Os quatro tempos da lupa (objeto × foto). */
+const tempos = (a: number, b: number, c: number, d: number) => ({ "inv-1:foto-1": a, "inv-1:foto-2": b, "inv-2:foto-1": c, "inv-2:foto-2": d });
+const LUPA_CHEIA = { tempos: tempos(4000, 4000, 4000, 4000), avancar: true };
+/* As ÁREAS dos dois objetos (o que desce) e os CENTROS delas (onde a criança toca). */
 const relogio = PACOTES_PRONTOS.biblioteca.conteudo.cena.invariantes[0]!.alvo!;
 const cartaz = PACOTES_PRONTOS.biblioteca.conteudo.cena.invariantes[1]!.alvo!;
+const centro = (a: { x: number; y: number; w: number; h: number }) => ({ x: a.x + a.w / 2, y: a.y + a.h / 2 });
+const noRelogio = centro(relogio);
+const noCartaz = centro(cartaz);
 const LONGE = { x: 10, y: 95 };
 
 /** A criança até a capa publicada (E1–E3). */
 async function ateACapa(estudanteId: string, foto: FotoId, selo: SeloId, alertas = 0) {
   await service.iniciar(ESCOLA, estudanteId);
   await envelhecer(estudanteId);
-  for (let i = 0; i < alertas; i += 1) await service.lupa(ESCOLA, estudanteId, { ...LUPA_CHEIA, alvo2Ms: 0 });
+  for (let i = 0; i < alertas; i += 1) await service.lupa(ESCOLA, estudanteId, { ...LUPA_CHEIA, tempos: tempos(4000, 4000, 4000, 0) });
   await service.lupa(ESCOLA, estudanteId, LUPA_CHEIA);
   return RespostaDoPublicarSchema.parse(await service.publicar(ESCOLA, estudanteId, foto, selo, { x: 0.5, y: 0.5 }));
 }
@@ -160,8 +169,8 @@ async function ateACapa(estudanteId: string, foto: FotoId, selo: SeloId, alertas
 async function daViradaAoFim(estudanteId: string, o: { errosAntes: number; errosDepois: number; fora: Ponto[] }) {
   for (let i = 0; i < o.errosAntes + o.errosDepois; i += 1) await service.tocarInvariante(ESCOLA, estudanteId, "foto-1", LONGE);
   for (const foto of ["foto-1", "foto-2"] as const) {
-    await service.tocarInvariante(ESCOLA, estudanteId, foto, relogio);
-    await service.tocarInvariante(ESCOLA, estudanteId, foto, cartaz);
+    await service.tocarInvariante(ESCOLA, estudanteId, foto, noRelogio);
+    await service.tocarInvariante(ESCOLA, estudanteId, foto, noCartaz);
   }
   await service.abrirPanoramica(ESCOLA, estudanteId);
   await service.marcarFora(ESCOLA, estudanteId, o.fora);
@@ -215,7 +224,7 @@ describe("a porta da sala (ADR-69)", () => {
       () => service.iniciar(ESCOLA, ids.fabi),
       () => service.lupa(ESCOLA, ids.fabi, LUPA_CHEIA),
       () => service.publicar(ESCOLA, ids.fabi, "foto-1", "selo-1", { x: 0.5, y: 0.5 }),
-      () => service.tocarInvariante(ESCOLA, ids.fabi, "foto-1", relogio),
+      () => service.tocarInvariante(ESCOLA, ids.fabi, "foto-1", noRelogio),
       () => service.abrirPanoramica(ESCOLA, ids.fabi),
       () => service.marcarFora(ESCOLA, ids.fabi, [{ x: 80, y: 70 }]),
       () => service.formarPar(ESCOLA, ids.fabi, ["carta-a", "carta-c"], "atividade"),
@@ -262,27 +271,71 @@ describe("o preparo do professor (IA com a quota do perfil professor)", () => {
     expect(r).toMatchObject({ usouIa: true, motivo: null, rascunho: { origem: "ia", chaveDaCena: "ia", aprovadoEm: null } });
     expect(r.rascunho.conteudo.cena.imagem).toEqual({ tipo: "url", url: expect.stringMatching(/^http:\/\/localhost:3001\/assets\/experiencias\/exp02ef1b\/cenas\/.+\.webp$/) });
     expect(r.rascunho.conteudo.cena.invariantes.map((i) => i.alvo)).toEqual([null, null]);
-    expect(r.rascunho.pendencias.join(" ")).toMatch(/Toque no RELÓGIO AZUL/);
+    expect(r.rascunho.pendencias.join(" ")).toMatch(/Desenhe na imagem a área do RELÓGIO AZUL/);
+    /* O pedido de imagem fica no rascunho para o professor ver — SÓ a descrição da cena, sem as regras fixas (ADR-188). */
+    expect(r.rascunho.pedidoDaImagem).toMatch(/^Ilustração/);
+    expect(r.rascunho.pedidoDaImagem).toMatch(/tamanho médio/);
+    expect(r.rascunho.pedidoDaImagem).not.toMatch(/Regras que valem sempre/);
     const linha = await prisma.exp02ef1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turmaA, aprovadoEm: null } });
     expect(linha).toMatchObject({ iaGeracoes: 1, iaTokens: 2200 });
     const uso = await prisma.iaUsoDiario.findFirst({ where: { escolaId: ESCOLA, usuarioId: ids.prof } });
     expect(uso?.tokensUsados).toBe(2200);
   });
 
-  test("sem os alvos, a aprovação recusa; o professor toca nos dois objetos (fora da faixa comum, 400)", async () => {
+  test("o pedido editado: SÓ a imagem muda, as regras fixas vão junto, as áreas voltam a nulo; sem saldo, nada muda", async () => {
+    const { rascunho } = await service.rascunho(ESCOLA, ids.turmaA, ids.prof);
+    const textoAntes = rascunho!.conteudo.cena.selos;
+    const imagemAntes = rascunho!.conteudo.cena.imagem;
+    const pedido = "Ilustração da quadra coberta com crianças jogando vôlei à esquerda e descansando à direita, e um relógio azul e uma bandeira verde na parede do meio.";
+    /* Pedido curto demais: 400, e nenhum token. */
+    const antes = chamadasDaIa;
+    expect(await codigo(() => controller.imagem(ids.turmaA, undefined, { rascunhoId: rascunho!.id, pedido: "curto" }, req(ids.prof)))).toBe("payload-invalido");
+    expect(await codigo(() => controller.imagem(ids.turmaA, undefined, { rascunhoId: "00000000-0000-4000-8000-000000000000", pedido }, req(ids.prof)))).toBe(
+      "rascunho-desatualizado",
+    );
+    expect(chamadasDaIa).toBe(antes);
+    /* Sem saldo: a imagem anterior fica, `usouIa: false`. */
+    const semSaldoR = ImagemDoRascunhoRespostaSchema.parse(await servicoSemSaldo.gerarImagem(ESCOLA, ids.turmaA, ids.prof, "professor", { rascunhoId: rascunho!.id, pedido }));
+    expect(semSaldoR).toMatchObject({ usouIa: false, motivo: "sem-saldo" });
+    expect(semSaldoR.rascunho.conteudo.cena.imagem).toEqual(imagemAntes);
+    expect(chamadasDaIa).toBe(antes);
+    /* Com saldo: a imagem é outra, o pedido é o do professor, os textos ficam, as áreas voltam a nulo. */
+    const ok = ImagemDoRascunhoRespostaSchema.parse(await controller.imagem(ids.turmaA, undefined, { rascunhoId: rascunho!.id, pedido }, req(ids.prof)));
+    expect(ok).toMatchObject({ usouIa: true, motivo: null });
+    expect(ok.rascunho.conteudo.cena.imagem).not.toEqual(imagemAntes);
+    expect(ok.rascunho.pedidoDaImagem).toBe(pedido);
+    expect(ok.rascunho.conteudo.cena.selos).toEqual(textoAntes);
+    expect(ok.rascunho.conteudo.cena.invariantes.map((i) => i.alvo)).toEqual([null, null]);
+    expect(ultimoPedidoDeImagem).toContain(pedido);
+    expect(ultimoPedidoDeImagem).toMatch(/Regras que valem sempre: .*sem rosto identificável/);
+    expect(ultimoPedidoDeImagem).toMatch(/relógio azul e bandeira verde aparecem UMA vez cada/);
+    const linha = await prisma.exp02ef1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turmaA, aprovadoEm: null } });
+    expect(linha).toMatchObject({ iaGeracoes: 2, iaTokens: 3500 });
+  });
+
+  test("sem as áreas, a aprovação recusa; o professor desenha a área de cada objeto (fora da faixa comum, 400)", async () => {
     const { rascunho } = await service.rascunho(ESCOLA, ids.turmaA, ids.prof);
     const r = await recusa(() => controller.homologar(ids.turmaA, undefined, { rascunhoId: rascunho!.id }, req(ids.prof)));
     expect(r).toMatchObject({ status: 400, corpo: { codigo: "pacote-invalido" } });
     const fora = await recusa(() =>
-      controller.alvos(ids.turmaA, undefined, { alvos: [{ id: "inv-1", x: 10, y: 30 }, { id: "inv-2", x: 56, y: 30 }] }, req(ids.prof)),
+      controller.alvos(ids.turmaA, undefined, { alvos: [{ id: "inv-1", x: 10, y: 30, w: 10, h: 20 }, { id: "inv-2", x: 56, y: 30, w: 10, h: 20 }] }, req(ids.prof)),
     );
     expect(fora).toMatchObject({ status: 400, corpo: { codigo: "pacote-invalido" } });
     expect((fora.corpo.erros as string[]).join(" ")).toMatch(/RELÓGIO AZUL precisa estar na parte do meio/);
-    const marcado = await service.marcarAlvos(ESCOLA, ids.turmaA, ids.prof, { alvos: [{ id: "inv-1", x: 42, y: 25 }, { id: "inv-2", x: 58, y: 25 }] });
+    /* Sem o tamanho, a rota recusa a forma. */
+    expect(await codigo(() => controller.alvos(ids.turmaA, undefined, { alvos: [{ id: "inv-1", x: 42, y: 25 }, { id: "inv-2", x: 58, y: 25 }] }, req(ids.prof)))).toBe(
+      "payload-invalido",
+    );
+    const marcado = await service.marcarAlvos(ESCOLA, ids.turmaA, ids.prof, {
+      alvos: [
+        { id: "inv-1", x: 36, y: 15, w: 12, h: 30 },
+        { id: "inv-2", x: 52, y: 20, w: 14, h: 22 },
+      ],
+    });
     expect(marcado.pendencias).toEqual([]);
     expect(marcado.conteudo.cena.invariantes.map((i) => i.alvo)).toEqual([
-      { x: 42, y: 25, r: 7 },
-      { x: 58, y: 25, r: 7 },
+      { x: 36, y: 15, w: 12, h: 30 },
+      { x: 52, y: 20, w: 14, h: 22 },
     ]);
   });
 
@@ -332,14 +385,14 @@ describe("a aula: o ABRIR BANCADA, a lupa e a capa", () => {
     expect(s.textos.e1).toMatchObject({
       tag: "RASCUNHO PENDENTE",
       contexto: "A capa sobre a biblioteca causou confusão entre os ouvintes.",
-      missao: "ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA",
+      missao: "ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DA BIBLIOTECA",
       abrir: "ABRIR BANCADA",
     });
     expect(s.textos.e4?.fora).toBe("Marque na biblioteca o que ficou fora da sua foto.");
     expect(s.textos.e4?.mesmoLugar).toBe("MESMO LUGAR · MESMO MINUTO (14:15)");
     expect(s.textos.e2?.rotuloDaFoto1).toBe("FOTO 1 — BIBLIOTECA ESCOLAR 14:15");
     /* O contador fica para a tela. */
-    expect(s.textos.e2?.contador).toBe("{n} DE 2 ENCONTRADOS");
+    expect(s.textos.e2?.contador).toBe("{n} DE 4 ENCONTRADOS");
     expect(Object.keys(s.textos)).toEqual(["e1", "e2", "e3", "e4", "e5", "erros"]);
     expect(Object.keys(s.material).sort()).toEqual(["cartas", "motivos", "segundaFoto"]);
     const json = JSON.stringify(await service.sessao(ESCOLA, ids.ana));
@@ -349,7 +402,7 @@ describe("a aula: o ABRIR BANCADA, a lupa e a capa", () => {
   test("jogada fora do passo é 409; o ABRIR BANCADA abre a sessão (idempotente) e os dois alvos descem para o brilho da lente", async () => {
     expect(await codigo(service.publicar(ESCOLA, ids.ana, "foto-1", "selo-1", { x: 0.5, y: 0.5 }))).toBe("sessao-nao-aberta");
     const e = EstadoSchema.parse(await service.iniciar(ESCOLA, ids.ana));
-    expect(e).toMatchObject({ passo: "lupa", lupa: { alvo1Ms: 0, alvo2Ms: 0, alertas: 0, liberada: false } });
+    expect(e).toMatchObject({ passo: "lupa", lupa: { tempos: tempos(0, 0, 0, 0), alertas: 0, liberada: false } });
     /* A exceção da ADR-186: no passo da lupa, os DOIS invariantes descem. */
     expect(e.lupa?.alvos).toEqual([
       { id: "inv-1", ...relogio },
@@ -359,22 +412,24 @@ describe("a aula: o ABRIR BANCADA, a lupa e a capa", () => {
     expect(EstadoSchema.parse(await service.iniciar(ESCOLA, ids.ana)).passo).toBe("lupa");
     expect(await prisma.exp02ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).toBe(1);
     const linha = await prisma.exp02ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
-    expect(linha.versaoInstrumento).toBe("2.0.0");
+    expect(linha.versaoInstrumento).toBe("2.2.0");
     expect(await codigo(service.publicar(ESCOLA, ids.ana, "foto-1", "selo-1", { x: 0.5, y: 0.5 }))).toBe("passo-invalido");
   });
 
-  test("a lupa: avançar sem o piso conta o alerta; o tempo é limitado ao da sessão; com 3 s em cada objeto, libera", async () => {
-    const cedo = RespostaDaLupaSchema.parse(await service.lupa(ESCOLA, ids.ana, LUPA_CHEIA));
-    /* A sessão acabou de nascer: os 4 s relatados viram o tempo que passou de verdade. */
+  test("a lupa: avançar sem o piso conta o alerta; o tempo é limitado ao da sessão; com 3 s em cada objeto EM CADA foto, libera", async () => {
+    /* Os dois objetos SÓ na foto 1, e a sessão acabou de nascer: alerta — a foto 2 continua por achar (ADR-188). */
+    const cedo = RespostaDaLupaSchema.parse(await service.lupa(ESCOLA, ids.ana, { tempos: tempos(4000, 0, 4000, 0), avancar: true }));
     expect(cedo).toMatchObject({ liberado: false, alerta: true, lupa: { alertas: 1, liberada: false } });
-    expect(cedo.lupa!.alvo1Ms).toBeLessThan(4000);
+    /* Os 4 s relatados viram o tempo que passou de verdade; a foto 2, nada. */
+    expect(cedo.lupa!.tempos["inv-1:foto-1"]).toBeLessThan(4000);
+    expect(cedo.lupa!.tempos["inv-1:foto-2"]).toBe(0);
     await envelhecer(ids.ana);
-    /* Só um dos dois objetos: o relato fica, sem avançar não há alerta. */
-    const meio = RespostaDaLupaSchema.parse(await service.lupa(ESCOLA, ids.ana, { alvo1Ms: 4000, alvo2Ms: 0, avancar: false }));
-    expect(meio).toMatchObject({ liberado: false, alerta: false, passo: "lupa", lupa: { alvo1Ms: 4000, alertas: 1 } });
+    /* Sem avançar não há alerta: o relato só fica. */
+    const so1 = RespostaDaLupaSchema.parse(await service.lupa(ESCOLA, ids.ana, { tempos: tempos(4000, 0, 4000, 0), avancar: false }));
+    expect(so1).toMatchObject({ liberado: false, alerta: false, passo: "lupa", lupa: { tempos: tempos(4000, 0, 4000, 0), alertas: 1 } });
     const ok = RespostaDaLupaSchema.parse(await service.lupa(ESCOLA, ids.ana, LUPA_CHEIA));
-    expect(ok).toMatchObject({ liberado: true, alerta: false, passo: "decidir", lupa: { alvo1Ms: 4000, alvo2Ms: 4000, alertas: 1, liberada: true, alvos: null } });
-    expect(RespostaDaLupaSchema.parse(await service.lupa(ESCOLA, ids.ana, { ...LUPA_CHEIA, alvo1Ms: 0 }))).toMatchObject({ liberado: true, lupa: { alertas: 1 } });
+    expect(ok).toMatchObject({ liberado: true, alerta: false, passo: "decidir", lupa: { tempos: tempos(4000, 4000, 4000, 4000), alertas: 1, liberada: true, alvos: null } });
+    expect(RespostaDaLupaSchema.parse(await service.lupa(ESCOLA, ids.ana, { ...LUPA_CHEIA, tempos: tempos(0, 0, 0, 0) }))).toMatchObject({ liberado: true, lupa: { alertas: 1 } });
   });
 
   test("PUBLICAR CAPA é o latch: a fala da visitante, a espera da virada; a mesma escolha é idempotente, outra é 409", async () => {
@@ -383,7 +438,7 @@ describe("a aula: o ABRIR BANCADA, a lupa e a capa", () => {
     expect(r.invariantes).toBeNull();
     expect((await service.publicar(ESCOLA, ids.ana, "foto-1", "selo-1", { x: 0, y: 0 })).visitante).toBe("Na foto, vi crianças lendo!");
     expect(await codigo(service.publicar(ESCOLA, ids.ana, "foto-2", "selo-2", { x: 0.5, y: 0.5 }))).toBe("ja-publicado");
-    expect(await codigo(service.tocarInvariante(ESCOLA, ids.ana, "foto-1", relogio))).toBe("virada-nao-liberada");
+    expect(await codigo(service.tocarInvariante(ESCOLA, ids.ana, "foto-1", noRelogio))).toBe("virada-nao-liberada");
     expect(await codigo(service.abrirPanoramica(ESCOLA, ids.ana))).toBe("virada-nao-liberada");
   });
 
@@ -413,15 +468,15 @@ describe("a virada (geral da turma) e a busca dos invariantes", () => {
     expect(erro.toque.achados).toEqual([]);
     expect(await codigo(service.tocarInvariante(ESCOLA, ids.ana, "foto-2", { x: 5, y: 50 }))).toBe("toque-fora-da-foto");
     /* O relógio achado numa foto: o alvo DELE desce (o F5 redesenha o dourado); o do cartaz, não. */
-    const umAchado = RespostaDoToqueSchema.parse(await service.tocarInvariante(ESCOLA, ids.ana, "foto-1", relogio));
+    const umAchado = RespostaDoToqueSchema.parse(await service.tocarInvariante(ESCOLA, ids.ana, "foto-1", noRelogio));
     expect(umAchado.toque.achados).toEqual([{ id: "inv-1", ...relogio }]);
     const depoisDoF5 = SessaoSchema.parse(await service.sessao(ESCOLA, ids.ana));
     expect(depoisDoF5.invariantes).toMatchObject({ encontrados: ["inv-1:foto-1"], achados: [{ id: "inv-1", ...relogio }], alvos: null });
     expect(JSON.stringify(depoisDoF5)).not.toContain(`"x":${cartaz.x},"y":${cartaz.y}`);
     let ultimo = erro;
     for (const foto of ["foto-1", "foto-2"] as const) {
-      await service.tocarInvariante(ESCOLA, ids.ana, foto, relogio);
-      ultimo = RespostaDoToqueSchema.parse(await service.tocarInvariante(ESCOLA, ids.ana, foto, cartaz));
+      await service.tocarInvariante(ESCOLA, ids.ana, foto, noRelogio);
+      ultimo = RespostaDoToqueSchema.parse(await service.tocarInvariante(ESCOLA, ids.ana, foto, noCartaz));
     }
     expect(ultimo.toque).toMatchObject({ acerto: "inv-2", completo: true, erros: 2 });
     expect(ultimo).toMatchObject({ passo: "slider", invariantes: { completo: true, alvos: null } });
@@ -478,13 +533,13 @@ describe("o slider, o fora (a EF02CO05) e a E5, que conclui", () => {
     const p = PainelSchema.parse(await service.painel(ESCOLA, ids.turmaA, ids.prof));
     expect(p.resumo).toMatchObject({ publicaram: 3, aguardandoVirada: 0, concluiram: 3, marcaramFora: 2 });
     expect(p.roteiro.introducao).toBe(
-      "O Bento postou uma foto da biblioteca e os ouvintes entenderam tudo errado. Encontre nas fotos os 2 objetos da biblioteca e descubra o mistério da capa!",
+      "O Bento postou uma foto da biblioteca e os ouvintes entenderam tudo errado. Encontre os 2 objetos iguais nas duas fotos da biblioteca e descubra o mistério da capa!",
     );
     const ana = p.linhas.find((l) => l.estudanteId === ids.ana)!;
     expect(ana).toMatchObject({
       nome: "Ana Teste",
       passo: "concluida",
-      lupa: { alvo1Ms: 4000, alvo2Ms: 4000, alertas: 1, liberada: true },
+      lupa: { tempos: tempos(4000, 4000, 4000, 4000), alertas: 1, liberada: true },
       capa: { fotoId: "foto-1", seloCoerente: true, nucleoVisivel: true },
       invariantes: { encontrados: 4, erros: 2, ajuda: false, completo: true },
       fora: { itens: [{ id: "tapete-fantoches", nome: "TAPETE COM FANTOCHES" }] },
@@ -532,13 +587,13 @@ describe("o banco, a RLS e o zerar", () => {
       }),
     ).rejects.toThrow(/exp02ef1b_sessoes_conclusao_check/);
     await expect(prisma.exp02ef1bSessao.updateMany({ where: onde, data: { invariantesErros: 3 } })).rejects.toThrow(/exp02ef1b_sessoes_invariantes_check/);
-    await expect(prisma.exp02ef1bSessao.updateMany({ where: onde, data: { lupaAlvo1Ms: -1 } })).rejects.toThrow(/exp02ef1b_sessoes_lupa_check/);
+    await expect(prisma.exp02ef1bSessao.updateMany({ where: onde, data: { lupaInv2Foto2Ms: -1 } })).rejects.toThrow(/exp02ef1b_sessoes_lupa_check/);
     await expect(prisma.$executeRawUnsafe(`UPDATE exp02ef1b_pacotes SET disciplina = 'quimica' WHERE escola_id = '${ESCOLA}'`)).rejects.toThrow(
       /exp02ef1b_pacotes_disciplina_check/,
     );
   });
 
-  test("a 2.0.0 no banco: as colunas da sessão são EXATAMENTE estas (a lupa por objeto) e a versão nova é o padrão", async () => {
+  test("a 2.2.0 no banco: as colunas da sessão são EXATAMENTE estas (a lupa por objeto × foto) e a versão nova é o padrão", async () => {
     const colunas = await prisma.$queryRawUnsafe<{ coluna: string; padrao: string | null }[]>(
       `SELECT column_name AS coluna, column_default AS padrao FROM information_schema.columns WHERE table_name = 'exp02ef1b_sessoes'`,
     );
@@ -546,12 +601,16 @@ describe("o banco, a RLS e o zerar", () => {
       [
         "atualizado_em", "capa_deslocamento", "capa_foto_id", "capa_nucleo_visivel", "capa_publicada_em", "capa_selo_coerente", "capa_selo_id",
         "concluido_em", "criado_em", "entrou_em", "escola_id", "estudante_id", "fora_em", "fora_itens", "fora_toques", "invariantes_ajuda_em",
-        "invariantes_concluido_em", "invariantes_encontrados", "invariantes_erros", "invariantes_erros_pos_ajuda", "lupa_alertas", "lupa_alvo1_ms",
-        "lupa_alvo2_ms", "lupa_liberada_em", "pacote_id", "panoramica_aberta_em", "par_cartas", "par_correto", "par_em", "par_motivo", "rodada",
+        "invariantes_concluido_em", "invariantes_encontrados", "invariantes_erros", "invariantes_erros_pos_ajuda", "lupa_alertas", "lupa_inv1_foto1_ms",
+        "lupa_inv1_foto2_ms", "lupa_inv2_foto1_ms", "lupa_inv2_foto2_ms", "lupa_liberada_em", "pacote_id", "panoramica_aberta_em", "par_cartas", "par_correto", "par_em", "par_motivo", "rodada",
         "segunda_deslocamento", "segunda_elemento", "segunda_em", "segunda_essencial_visivel", "turma_id", "versao_instrumento", "visitante_fala",
       ].sort(),
     );
-    expect(colunas.find((c) => c.coluna === "versao_instrumento")?.padrao).toMatch(/'2\.0\.0'/);
+    expect(colunas.find((c) => c.coluna === "versao_instrumento")?.padrao).toMatch(/'2\.2\.0'/);
+    /* O pedido de imagem só existe na cena gerada por IA. */
+    await expect(prisma.$executeRawUnsafe(`UPDATE exp02ef1b_pacotes SET pedido_da_imagem = 'x' WHERE escola_id = '${ESCOLA}' AND chave_cena <> 'ia'`)).rejects.toThrow(
+      /exp02ef1b_pacotes_pedido_check/,
+    );
   });
 
   test("a role SEM BYPASSRLS só enxerga a própria escola", async () => {

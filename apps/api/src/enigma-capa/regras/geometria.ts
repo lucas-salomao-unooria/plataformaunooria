@@ -2,6 +2,7 @@ import {
   ALTURA_POR_LARGURA,
   FAIXA_COMUM,
   FORA_MINIMO,
+  MARGEM_DO_ALVO,
   MOLDURA_DA_CAPA,
   MOLDURA_DA_SEGUNDA_FOTO,
   NUCLEO_VISIVEL_MINIMO,
@@ -78,27 +79,33 @@ export function contemPonto(r: Retangulo, p: Ponto): boolean {
 }
 
 /**
- * O toque acertou o alvo? O raio é em % da LARGURA, e um ponto de altura vale
- * 9/16 de um de largura na panorâmica 16:9 — sem essa correção, o círculo
- * seria um ovo deitado na tela.
+ * A área com a folga do toque: `MARGEM_DO_ALVO` em % da LARGURA dos lados, e
+ * a mesma distância NA TELA em cima e embaixo — um ponto de altura vale 9/16
+ * de um de largura na panorâmica 16:9, então a margem vertical é 16/9 maior.
+ */
+export function areaComFolga(alvo: Alvo, margem: number = MARGEM_DO_ALVO): Retangulo {
+  const my = margem / ALTURA_POR_LARGURA;
+  return { x: alvo.x - margem, y: alvo.y - my, w: alvo.w + 2 * margem, h: alvo.h + 2 * my };
+}
+
+/**
+ * O toque (ou o centro da lente) acertou o objeto? Dentro da ÁREA que o
+ * professor desenhou, com a folga — a área é o objeto inteiro, do tamanho que
+ * ele tiver (2.2.0, ADR-188).
  */
 export function acertaAlvo(alvo: Alvo, p: Ponto): boolean {
-  const dx = p.x - alvo.x;
-  const dy = (p.y - alvo.y) * ALTURA_POR_LARGURA;
-  return dx * dx + dy * dy <= alvo.r * alvo.r;
+  return contemPonto(areaComFolga(alvo), p);
 }
 
-/** O alvo cabe na faixa comum às duas fotos (x − r ≥ 32 e x + r ≤ 68) e na altura da cena. */
+/** A área cabe na faixa comum às duas fotos (x ≥ 32 e x + w ≤ 68) e na altura da cena: o objeto aparece nas DUAS. */
 export function alvoNaFaixaComum(alvo: Alvo): boolean {
-  const ry = alvo.r / ALTURA_POR_LARGURA;
-  return alvo.x - alvo.r >= FAIXA_COMUM.de && alvo.x + alvo.r <= FAIXA_COMUM.ate && alvo.y - ry >= 0 && alvo.y + ry <= 100;
+  const e = 1e-9;
+  return alvo.x >= FAIXA_COMUM.de - e && alvo.x + alvo.w <= FAIXA_COMUM.ate + e && alvo.y >= -e && alvo.y + alvo.h <= 100 + e;
 }
 
-/** Dois alvos sobrepostos fariam o mesmo toque valer pelos dois. */
+/** Duas áreas sobrepostas fariam o mesmo toque valer pelos dois objetos. */
 export function alvosSeparados(a: Alvo, b: Alvo): boolean {
-  const dx = a.x - b.x;
-  const dy = (a.y - b.y) * ALTURA_POR_LARGURA;
-  return Math.sqrt(dx * dx + dy * dy) > a.r + b.r;
+  return areaDe(intersecao(a, b)) === 0;
 }
 
 /**

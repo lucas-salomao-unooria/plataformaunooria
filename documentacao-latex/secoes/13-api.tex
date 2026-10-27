@@ -1370,32 +1370,38 @@ ação em tela. O podcast é do módulo da plataforma
   O preparo com IA (texto + panorâmica 16:9), na quota do perfil
   \cd{professor}; sem saldo ou sem provedor, o pronto da disciplina, com
   \cd{usouIa: false} e o \cd{motivo}.\\
-\zebra \rota{POST .../rascunho/\B{}invariantes} & \textbf{só professor} & Os
-  dois alvos que o professor marcou tocando na panorâmica (raio padrão 7);
-  fora da faixa comum ou sobrepostos, recusados.\\
-\rota{POST .../turmas/:turmaId/\B{}homologar} & \textbf{só professor} &
+\zebra \rota{POST .../rascunho/\B{}invariantes} & \textbf{só professor} & As
+  ÁREAS dos dois objetos, que o professor desenha na panorâmica
+  (\cd{\{x, y, w, h\}}, \adrr{ADR-188}); fora da faixa comum, pequenas,
+  grandes ou sobrepostas, recusadas.\\
+\rota{POST .../rascunho/\B{}imagem} & \textbf{só professor} & \enquote{Gerar
+  a imagem com este pedido}: SÓ a imagem do rascunho da IA, a partir do pedido
+  que o professor editou, com as regras fixas acrescentadas pela api; mesma
+  quota do \cd{gerar-conteudo}; as áreas voltam a \cd{null}. Pronto: 409
+  \cd{imagem-so-da-ia}.\\
+\zebra \rota{POST .../turmas/:turmaId/\B{}homologar} & \textbf{só professor} &
   \enquote{Aprovar}: o rascunho que o professor VIU (\cd{rascunhoId}; outra
   aba que gerou de novo dá 409) vira atividade pronta, com a edição opcional
   dos selos e das falas, pela mesma régua.\\
-\zebra \rota{POST .../turmas/:turmaId/\B{}banco-padrao} & \textbf{só
+\rota{POST .../turmas/:turmaId/\B{}banco-padrao} & \textbf{só
   professor} & Um toque: aprova e põe no ar a Biblioteca, a Horta ou o Museu
   (reusando o mesmo pronto já aprovado na turma, sem tocar no rascunho).\\
-\rota{POST .../turmas/:turmaId/gate} & \textbf{só professor} & LIBERAR
+\zebra \rota{POST .../turmas/:turmaId/gate} & \textbf{só professor} & LIBERAR
   VIRADA (\cd{\{para: "virada"\}}), só para a frente, com o histórico.\\
-\zebra \rota{GET .../turmas/:turmaId/painel} & prof., gestor & Por estudante
+\rota{GET .../turmas/:turmaId/painel} & prof., gestor & Por estudante
   (ou por computador, com equipe), o passo e as escolhas de cada etapa, com
   os sinais da régua; o resumo da turma e o roteiro da conversa.\\
-\rota{POST .../turmas/:turmaId/zerar} & \textbf{só professor} & Rodada $+1$:
+\zebra \rota{POST .../turmas/:turmaId/zerar} & \textbf{só professor} & Rodada $+1$:
   apaga a evidência do pacote (\adrr{ADR-155}), guarda as sessões e devolve a
   fase a \cd{aberta}.\\
-\zebra \rota{GET .../turmas/:turmaId/pacotes} & prof., gestor & A atividade
+\rota{GET .../turmas/:turmaId/pacotes} & prof., gestor & A atividade
   em andamento e o histórico das aprovadas, com as rodadas.\\
-\rota{GET .../pacotes/:pacoteId} & prof., gestor & O detalhe de uma
+\zebra \rota{GET .../pacotes/:pacoteId} & prof., gestor & O detalhe de uma
   atividade, com o gabarito.\\
-\zebra \rota{POST .../pacotes/:pacoteId/\B{}em-andamento} & \textbf{só
+\rota{POST .../pacotes/:pacoteId/\B{}em-andamento} & \textbf{só
   professor} & \enquote{Usar esta atividade agora}: a atividade em andamento
   da turma, e a fase volta a \cd{aberta}. Idempotente.\\
-\rota{GET /enigma-capa/\B{}professor/\B{}material} & prof., gestor & O guia
+\zebra \rota{GET /enigma-capa/\B{}professor/\B{}material} & prof., gestor & O guia
   da aula: os três prontos com o gabarito, o roteiro, as cartas com a
   atividade e a cor, e os critérios da ficha. Catálogo, sem \emph{tenancy}
   (\adrr{ADR-86}).\\

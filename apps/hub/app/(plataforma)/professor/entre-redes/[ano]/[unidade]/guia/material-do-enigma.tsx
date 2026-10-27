@@ -28,7 +28,7 @@ export function CenasDoEnigma({ dados, baseDoBundle }: { dados: Material | null;
       <Card variant="outlined" title="As cenas prontas, com o gabarito — só para você">
         <div className="flex flex-col gap-6 text-[13px] leading-relaxed text-unooria-neutral-800">
           <p>
-            <strong>Não projete.</strong> Os círculos são os dois objetos iguais que a criança procura depois da virada;
+            <strong>Não projete.</strong> As caixas amarelas são os dois objetos iguais que a criança procura depois da virada;
             o que a visitante diz depende de a ação principal da foto ficar dentro da capa.
           </p>
           {dados.disciplinas.length > 0 ? (
