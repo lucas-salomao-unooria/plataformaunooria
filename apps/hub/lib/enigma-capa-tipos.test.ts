@@ -20,6 +20,8 @@ import {
   areaDoToque,
   areasSeSobrepoem,
   ehArraste,
+  fracaoForaDaFaixa,
+  FORA_DA_FAIXA_MAXIMO,
   problemasDaArea,
   mudouAEvidencia,
   palavrasDoTexto,
@@ -93,6 +95,18 @@ describe("a curadoria", () => {
     expect(areaDoArraste({ x: 50, y: 50 }, { x: 40, y: 20 })).toEqual({ x: 40, y: 20, w: 10, h: 30 });
     /* Arrastou para fora da faixa: a caixa para na borda dela. */
     expect(areaDoArraste({ x: 20, y: 20 }, { x: 80, y: 40 })).toEqual({ x: 32, y: 20, w: 36, h: 20 });
+  });
+
+  test("o arraste em volta de um objeto FORA da faixa é medido (a IA nem sempre obedece à posição)", () => {
+    expect(fracaoForaDaFaixa({ x: 40, y: 20 }, { x: 50, y: 50 })).toBe(0);
+    /* Um objeto à esquerda, de 16 a 24: inteiro fora. */
+    expect(fracaoForaDaFaixa({ x: 16, y: 20 }, { x: 24, y: 50 })).toBe(1);
+    /* A janela que passa um pouco da borda (de 60 a 70): 20% fora, aceita. */
+    expect(fracaoForaDaFaixa({ x: 60, y: 20 }, { x: 70, y: 50 })).toBeCloseTo(0.2);
+    expect(fracaoForaDaFaixa({ x: 60, y: 20 }, { x: 70, y: 50 }) > FORA_DA_FAIXA_MAXIMO).toBe(false);
+    /* Metade para fora: recusada. */
+    expect(fracaoForaDaFaixa({ x: 60, y: 20 }, { x: 76, y: 50 }) > FORA_DA_FAIXA_MAXIMO).toBe(true);
+    expect(fracaoForaDaFaixa({ x: 50, y: 20 }, { x: 50, y: 50 })).toBe(0);
   });
 
   test("um clique vira uma caixa média centrada nele, dentro da faixa", () => {

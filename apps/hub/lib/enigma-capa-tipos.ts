@@ -383,6 +383,25 @@ export function areaDoArraste(a: { x: number; y: number }, b: { x: number; y: nu
 }
 
 /**
+ * Quanto do arraste caiu FORA da faixa do meio (0 a 1, na largura). O modelo
+ * de imagem nem sempre põe o objeto onde o pedido manda (medido em 27/10: em
+ * metade das imagens, um dos dois saiu da faixa, com qualquer redação), e o
+ * professor que arrasta em volta dele entrega a informação que a IA não dá:
+ * acima de `FORA_DA_FAIXA_MAXIMO`, o objeto não aparece nas duas fotos, e a
+ * caixa presa à borda marcaria só parede. A tela recusa a área e oferece outra
+ * imagem.
+ */
+export function fracaoForaDaFaixa(a: { x: number; y: number }, b: { x: number; y: number }): number {
+  const x1 = Math.max(0, Math.min(a.x, b.x));
+  const x2 = Math.min(100, Math.max(a.x, b.x));
+  const largura = x2 - x1;
+  if (largura <= 0) return 0;
+  const dentro = Math.max(0, Math.min(x2, FAIXA_COMUM.ate) - Math.max(x1, FAIXA_COMUM.de));
+  return 1 - dentro / largura;
+}
+export const FORA_DA_FAIXA_MAXIMO = 0.25;
+
+/**
  * Um clique sem arraste vira uma caixa de tamanho médio centrada nele (presa à
  * faixa): o professor que só toca no objeto não fica sem área — e ajusta
  * desenhando de novo.
