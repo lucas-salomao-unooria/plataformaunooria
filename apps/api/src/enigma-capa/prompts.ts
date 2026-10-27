@@ -21,8 +21,14 @@ import { problemasDoConteudo } from "./regras/pacote";
  *
  * O prompt de sistema NUNCA vai ao bundle (regra 2). A IA não devolve
  * coordenada: o layout é o gabarito `GEOMETRIA_DA_CENA_GERADA` (a atividade 1
- * à esquerda, a 2 à direita, os dois objetos na parede do meio), e os alvos
- * dos invariantes o professor marca tocando na imagem.
+ * à esquerda, a 2 à direita, os dois objetos na parede do meio), e a área de
+ * cada invariante o professor desenha na imagem.
+ *
+ * O PEDIDO DE IMAGEM tem duas partes (ADR-188): a descrição da cena
+ * (`pedidoDaCena`), que o professor VÊ e pode EDITAR na curadoria — ela não é
+ * prompt de sistema, é o que ele pediu —, e as regras fixas
+ * (`regrasDaImagem`), que a api acrescenta SEMPRE e ninguém edita: a segurança
+ * das crianças e a composição de que a geometria depende.
  */
 
 export const SYSTEM_DO_PREPARO = `Você é o assistente de conteúdo da Unooria para o 2º ano do Ensino Fundamental (crianças de 7 e 8 anos).
@@ -30,9 +36,9 @@ Você escreve a cena de uma missão de leitura de imagens: a rádio da escola pu
 
 A cena é UM espaço da escola (biblioteca, horta, museu, quadra, refeitório, laboratório...) com DUAS atividades opostas acontecendo AO MESMO TEMPO, a poucos passos uma da outra:
 - "atividade1" fica na metade ESQUERDA do espaço; "atividade2" na metade DIREITA. As duas são atividades reais e boas da escola, mas dão impressões opostas (ex.: leitura em silêncio × contação de histórias com fantoches; canteiro de alfaces × adubação com minhocas);
-- na parede (ou no fundo) do MEIO há DOIS objetos fixos e fáceis de reconhecer ("invariantes"): objetos que não mudam de lugar (um relógio de parede, um cartaz colorido sem texto, um espantalho, uma janela de madeira), GRANDES, cada um de uma cor forte e diferente, que contraste com a parede lisa — e SOZINHOS naquela parede.
+- na parede (ou no fundo) do MEIO há DOIS objetos fixos ("invariantes"): objetos que não mudam de lugar (um relógio de parede, um cartaz sem texto, um espantalho, uma janela de madeira), de tamanho MÉDIO e com as cores naturais deles — reconhecíveis quando a criança procura, mas sem chamar mais atenção que o resto. Eles dividem a parede com outros 2 ou 3 objetos comuns daquele espaço (um cabideiro, um vaso de planta, uma prateleira pequena).
 
-A cena é LIMPA, para uma criança de 7 anos achar tudo de primeira: paredes lisas, poucos objetos, nada de decoração, estantes cheias, enfeites ou detalhes de fundo; cada atividade com no máximo 2 crianças, grande e clara.
+A cena é ORGANIZADA, para uma criança de 7 anos: poucos objetos no total, sem amontoados e sem enfeites miúdos; cada atividade com no máximo 2 crianças, grande e clara. Os dois objetos do meio NÃO ficam sozinhos nem enormes: a criança precisa OLHAR para achá-los — e acha.
 
 Para cada atividade escreva:
 - "acao": o que a foto mostra, em até 6 palavras ("Mesa de leitura em silêncio");
@@ -40,7 +46,7 @@ Para cada atividade escreva:
 - "selo": a legenda da foto em CAIXA ALTA, até ${SELO_MAX_PALAVRAS} palavras ("SILÊNCIO PARA LER"), com um emoji;
 - "descricao": como desenhar essa metade da cena (uma frase), com no máximo 2 crianças e poucos objetos.
 "espaco" é o nome do espaço ("Biblioteca Escolar"); "espacoCurto" é o nome com artigo, em minúsculas ("a biblioteca"); "alt" descreve a cena INTEIRA numa frase, para quem não enxerga.
-Cada invariante tem "nome" em CAIXA ALTA, curto ("RELÓGIO", "CARTAZ AMARELO") e "descricao" de como desenhá-lo: grande, de uma cor forte, sem texto escrito.
+Cada invariante tem "nome" em CAIXA ALTA, curto ("RELÓGIO", "CARTAZ AMARELO") e "descricao" de como desenhá-lo: de tamanho médio, com a cor natural dele, sem texto escrito.
 
 Regras gerais: português do Brasil; linguagem simples, para uma criança de 7 anos; nenhuma pessoa, marca ou escola real; nada de violência, medo, comida que uma criança não possa comer, política ou religião; nenhuma das duas atividades é "errada".`;
 
@@ -178,28 +184,55 @@ export function validarSaidaDoPreparo(bruto: unknown): CenaGerada {
   return g;
 }
 
-/** Tira os cercados `<<< >>>` (o tema do professor) e quebras: o pedido de imagem é uma frase só. */
+/** Tira os cercados `<<< >>>` (o tema do professor) e quebras: cada trecho do pedido é uma frase só. */
 const limpo = (t: string) => t.replace(/<<<|>>>/g, "").replace(/\s+/g, " ").trim();
 
 /**
- * O PEDIDO DE IMAGEM (16:9). "Ilustração", NUNCA "foto" (ADR-178: a palavra
- * "foto" puxa o modelo para o fotorrealismo e para rostos de criança
+ * A DESCRIÇÃO DA CENA do pedido de imagem (16:9) — a parte que o professor vê
+ * e edita na curadoria (ADR-188). "Ilustração", NUNCA "foto" (ADR-178: a
+ * palavra "foto" puxa o modelo para o fotorrealismo e para rostos de criança
  * identificáveis). O layout é o que a geometria da cena gerada supõe.
  *
- * A cena é LIMPA (ADR-186): paredes lisas, poucos objetos, as duas atividades
- * grandes e claras (no máximo 2 crianças cada) e os dois objetos da parede do
- * meio GRANDES, de cor forte e contrastante, sozinhos naquela parede — a
- * criança de 7 anos acha com a lupa o que se destaca, não o que se esconde.
+ * NEM POLUÍDA, NEM ÓBVIA (2.2.0): a 2.0.0 pedia os dois objetos do meio
+ * GRANDES, de cor forte e SOZINHOS na parede — a criança achava de relance, e
+ * na busca da virada só havia duas coisas para tocar. Agora eles têm tamanho
+ * médio e a cor deles, e dividem a parede com 2 ou 3 objetos comuns: a cena
+ * continua organizada, mas achar exige olhar.
  */
-export function pedidoDeImagem(g: CenaGerada): string {
+export function pedidoDaCena(g: CenaGerada): string {
   const [i1, i2] = g.invariantes;
-  return `Ilustração digital colorida e LIMPA, plano aberto e panorâmico, proporção 16:9, de ${limpo(g.espaco)} de uma escola, no mesmo instante, com luz clara do começo da tarde.
+  return `Ilustração digital colorida, plano aberto e panorâmico, de ${limpo(g.espaco)} de uma escola, no mesmo instante, com luz clara do começo da tarde.
 
-Metade ESQUERDA da imagem: ${limpo(g.atividade1.descricao)} No máximo 2 crianças, grandes e bem visíveis.
-Metade DIREITA da imagem: ${limpo(g.atividade2.descricao)} No máximo 2 crianças, grandes e bem visíveis.
-Exatamente no CENTRO da imagem, numa parede lisa entre as duas metades, GRANDES, bem visíveis e separados um do outro: ${limpo(i1?.descricao ?? "")}; e ${limpo(i2?.descricao ?? "")}. Os dois objetos têm cores fortes que contrastam com a parede lisa, ficam no terço central da largura, na metade de cima da imagem, SOZINHOS naquela parede, e não se repetem em nenhum outro lugar.
+Metade ESQUERDA da imagem: ${limpo(g.atividade1.descricao)} No máximo 2 crianças, bem visíveis.
+Metade DIREITA da imagem: ${limpo(g.atividade2.descricao)} No máximo 2 crianças, bem visíveis.
+Na parede do MEIO, entre as duas metades: ${limpo(i1?.descricao ?? "")}; e ${limpo(i2?.descricao ?? "")}. Os dois são de tamanho médio, com as cores naturais deles, e dividem a parede com outros 2 ou 3 objetos comuns de ${limpo(g.espacoCurto)} (por exemplo um cabideiro, um vaso de planta ou uma prateleira pequena), sem se destacar mais que eles.
 
-Cena simples: paredes lisas, de uma cor só; poucos objetos; nada de decoração, enfeites, estantes cheias, quadros ou detalhes de fundo além dos dois objetos do centro.
+Cena organizada: paredes de cor clara, poucos objetos no total, sem amontoados nem enfeites miúdos.`;
+}
 
-Regras: crianças genéricas e estilizadas, de costas, de perfil ou de longe, sem rosto identificável; nenhuma pessoa real; nenhum texto escrito, letra ou número em lugar nenhum (nem em cartaz, placa ou livro); nenhum logotipo, marca ou aplicativo; as duas metades contínuas, como um único ambiente, sem moldura nem divisão.`;
+/**
+ * As REGRAS FIXAS do pedido de imagem — acrescentadas pela api a TODO pedido,
+ * o gerado e o que o professor editou, e nunca mostradas como editáveis: a
+ * segurança das crianças (sem rosto identificável, nenhuma pessoa real, nenhum
+ * texto) e a composição de que a geometria depende (as duas metades contínuas,
+ * os dois objetos uma vez cada, na faixa do meio que aparece nas duas fotos).
+ */
+export function regrasDaImagem(nomes: readonly string[]): string {
+  const objetos = nomes.map((n) => limpo(n).toLocaleLowerCase("pt-BR")).filter(Boolean);
+  const meio = objetos.length === 2 ? `${objetos[0]} e ${objetos[1]} aparecem UMA vez cada, no terço central da largura, na metade de cima, e não se repetem em nenhum outro lugar; ` : "";
+  return `Regras que valem sempre: ilustração, nunca fotografia; proporção 16:9; as duas metades contínuas, como um único ambiente, sem moldura nem divisão; ${meio}crianças genéricas e estilizadas, de costas, de perfil ou de longe, sem rosto identificável; nenhuma pessoa real; nenhum texto escrito, letra ou número em lugar nenhum (nem em cartaz, placa ou livro); nenhum logotipo, marca ou aplicativo; nada de violência ou medo.`;
+}
+
+/**
+ * O pedido que vai ao modelo: a descrição (a gerada ou a do professor), com os
+ * cercados tirados e as linhas preservadas, MAIS as regras fixas no fim.
+ */
+export function pedidoDeImagem(descricao: string, nomes: readonly string[]): string {
+  const texto = descricao
+    .replace(/<<<|>>>/g, "")
+    .split(/\n+/)
+    .map((l) => l.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n");
+  return `${texto}\n\n${regrasDaImagem(nomes)}`;
 }

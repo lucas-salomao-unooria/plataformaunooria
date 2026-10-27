@@ -1,10 +1,10 @@
 import {
+  AREA_DO_ALVO,
   CHAVES_PRONTAS,
   FAIXA_COMUM,
   FOTOS,
   INVARIANTES,
   MARCAVEIS,
-  RAIO,
   RECORTE_DA_FOTO,
   SELO_MAX_PALAVRAS,
   SELOS,
@@ -91,16 +91,18 @@ export function problemasDoConteudo(c: ConteudoDoPacote, opcoes: { exigirAlvos: 
     if (!nome) p.push(`Dê um nome ao objeto ${inv.id}.`);
     else if (!caixaAlta(nome)) p.push(`O nome "${nome}" precisa estar em CAIXA ALTA.`);
     if (inv.alvo === null) {
-      if (opcoes.exigirAlvos) p.push(`Toque no ${nome || inv.id} na imagem antes de aprovar.`);
+      if (opcoes.exigirAlvos) p.push(`Desenhe na imagem a área do ${nome || inv.id} antes de aprovar.`);
       continue;
     }
-    if (inv.alvo.r < RAIO.min || inv.alvo.r > RAIO.max) p.push(`O alvo do ${nome || inv.id} tem um tamanho fora do permitido.`);
-    if (!alvoNaFaixaComum(inv.alvo)) {
+    const a = inv.alvo;
+    if (a.w < AREA_DO_ALVO.minW || a.h < AREA_DO_ALVO.minH) p.push(`A área do ${nome || inv.id} ficou pequena demais: desenhe em volta do objeto inteiro.`);
+    if (a.w > AREA_DO_ALVO.maxW || a.h > AREA_DO_ALVO.maxH) p.push(`A área do ${nome || inv.id} ficou grande demais: desenhe só em volta do objeto.`);
+    if (!alvoNaFaixaComum(a)) {
       p.push(`O ${nome || inv.id} precisa estar na parte do meio, que aparece nas duas fotos (entre ${FAIXA_COMUM.de}% e ${FAIXA_COMUM.ate}% da largura).`);
     }
   }
   const [a1, a2] = cena.invariantes.map((i) => i.alvo);
-  if (a1 && a2 && !alvosSeparados(a1, a2)) p.push("Os dois objetos estão colados: toque em cada um no centro dele.");
+  if (a1 && a2 && !alvosSeparados(a1, a2)) p.push("As áreas dos dois objetos se encostam: desenhe uma em volta de cada objeto, sem sobrepor.");
 
   // ── o fundo (a dica da lupa) e os marcáveis
   if (areaDe(cena.fundo) <= 0 || !contemRetangulo(PANORAMICA, cena.fundo)) p.push("O fundo precisa estar dentro da cena.");

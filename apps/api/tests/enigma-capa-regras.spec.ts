@@ -25,7 +25,7 @@ import {
 import { componentesDoAno } from "../src/curriculo/componentes";
 import { ConteudoBaseSchema, ForaSchema, IniciarSchema, LupaSchema, MaterialSchema, PainelSchema, SessaoSchema } from "../src/enigma-capa/contrato-de-rotas";
 import { roteiroDoPodcast } from "../src/enigma-capa/podcast";
-import { conteudoDaCenaGerada, pedidoDeImagem, validarSaidaDoPreparo, type CenaGerada } from "../src/enigma-capa/prompts";
+import { SYSTEM_DO_PREPARO, conteudoDaCenaGerada, pedidoDaCena, pedidoDeImagem, regrasDaImagem, validarSaidaDoPreparo, type CenaGerada } from "../src/enigma-capa/prompts";
 import {
   MARCADOR_CO01,
   MARCADOR_CO05,
@@ -40,6 +40,7 @@ import {
 import {
   acertaAlvo,
   alvoNaFaixaComum,
+  alvosSeparados,
   essencialVisivelNaSegunda,
   falaDaVisitante,
   fracaoDentro,
@@ -47,7 +48,7 @@ import {
   retanguloVisivel,
 } from "../src/enigma-capa/regras/geometria";
 import { tocar, type BuscaDaSessao } from "../src/enigma-capa/regras/invariantes";
-import { acumularLupa, pisoCumprido } from "../src/enigma-capa/regras/lupa";
+import { LUPA_ZERADA, achadosNaLupa, acumularLupa, pisoCumprido } from "../src/enigma-capa/regras/lupa";
 import { problemasDoConteudo } from "../src/enigma-capa/regras/pacote";
 import { parCorreto } from "../src/enigma-capa/regras/pares";
 import { avancarFase, passoEfetivo, type MarcosDaSessao } from "../src/enigma-capa/regras/passos";
@@ -55,7 +56,7 @@ import { FICHA_EXP02EF1B } from "../src/evidencias/fichas/exp02ef1b";
 
 /**
  * O Enigma da Capa da Rádio (exp02ef1b, ADR-184; 2.0.0, ADR-186) SEM banco: a
- * geometria (o recorte visível, o alvo redondo, a faixa comum), a visitante, o
+ * geometria (o recorte visível, a área do objeto com a folga, a faixa comum), a visitante, o
  * "fora", a segunda foto, o piso da lupa, a busca com a ajuda, os pares, o
  * passo, as tabelas-verdade das duas habilidades, a régua do pacote (os três
  * prontos e a saída da IA), as disciplinas, os textos e o espelho dos CHECKs
@@ -77,22 +78,29 @@ describe("a geometria", () => {
     expect(f2.x).toBe(RECORTE_DA_FOTO["foto-2"].x);
   });
 
-  test("o alvo é redondo na TELA: um ponto de altura vale 9/16 de um de largura", () => {
-    const alvo = { x: 50, y: 50, r: 7 };
-    expect(acertaAlvo(alvo, { x: 57, y: 50 })).toBe(true);
-    expect(acertaAlvo(alvo, { x: 57.1, y: 50 })).toBe(false);
-    /* 12 pontos de altura = 6,75 de largura: dentro. */
-    expect(acertaAlvo(alvo, { x: 50, y: 62 })).toBe(true);
-    expect(acertaAlvo(alvo, { x: 50, y: 63 })).toBe(false);
+  test("a área é o objeto INTEIRO, com a folga do toque — o canto de um objeto grande também acerta (ADR-188)", () => {
+    /* Uma estante alta: 10 de largura, 40 de altura. Com o círculo de raio 7 da 2.1.0, o topo dela era "erro". */
+    const alvo = { x: 40, y: 20, w: 10, h: 40 };
+    expect(acertaAlvo(alvo, { x: 45, y: 22 })).toBe(true);
+    expect(acertaAlvo(alvo, { x: 45, y: 58 })).toBe(true);
+    /* A folga é 1,5 de largura dos lados e a mesma distância NA TELA em cima e embaixo (1,5 × 16/9 ≈ 2,67). */
+    expect(acertaAlvo(alvo, { x: 51.5, y: 30 })).toBe(true);
+    expect(acertaAlvo(alvo, { x: 51.6, y: 30 })).toBe(false);
+    expect(acertaAlvo(alvo, { x: 45, y: 62.6 })).toBe(true);
+    expect(acertaAlvo(alvo, { x: 45, y: 62.7 })).toBe(false);
   });
 
-  test("a faixa comum: x − r ≥ 32 e x + r ≤ 68", () => {
-    expect(alvoNaFaixaComum({ x: 39, y: 30, r: 7 })).toBe(true);
-    expect(alvoNaFaixaComum({ x: 61, y: 30, r: 7 })).toBe(true);
-    expect(alvoNaFaixaComum({ x: 38.9, y: 30, r: 7 })).toBe(false);
-    expect(alvoNaFaixaComum({ x: 61.1, y: 30, r: 7 })).toBe(false);
-    /* A altura também: o círculo não pode sair pelo topo. */
-    expect(alvoNaFaixaComum({ x: 50, y: 5, r: 7 })).toBe(false);
+  test("a faixa comum: x ≥ 32 e x + w ≤ 68, dentro da altura da cena", () => {
+    expect(alvoNaFaixaComum({ x: 32, y: 30, w: 14, h: 20 })).toBe(true);
+    expect(alvoNaFaixaComum({ x: 54, y: 30, w: 14, h: 20 })).toBe(true);
+    expect(alvoNaFaixaComum({ x: 31.9, y: 30, w: 14, h: 20 })).toBe(false);
+    expect(alvoNaFaixaComum({ x: 54.1, y: 30, w: 14, h: 20 })).toBe(false);
+    expect(alvoNaFaixaComum({ x: 40, y: 90, w: 10, h: 11 })).toBe(false);
+  });
+
+  test("duas áreas que se sobrepõem não estão separadas; encostadas pela borda, estão", () => {
+    expect(alvosSeparados({ x: 35, y: 20, w: 10, h: 20 }, { x: 44, y: 20, w: 10, h: 20 })).toBe(false);
+    expect(alvosSeparados({ x: 35, y: 20, w: 10, h: 20 }, { x: 45, y: 20, w: 10, h: 20 })).toBe(true);
   });
 
   test("a fração dentro: área nula é zero", () => {
@@ -154,28 +162,36 @@ describe("a segunda foto (E5)", () => {
   });
 });
 
-describe("a lupa (E2): os dois objetos do fundo", () => {
-  const zero = { alvo1Ms: 0, alvo2Ms: 0 };
-  test("guarda o máximo de cada objeto, limitado ao tempo desde a entrada", () => {
-    const a = acumularLupa(zero, { alvo1Ms: 4000, alvo2Ms: 9000 }, 5000);
-    expect(a).toEqual({ alvo1Ms: 4000, alvo2Ms: 5000 });
+describe("a lupa (E2): os dois objetos do fundo, EM CADA foto", () => {
+  const t = (a: number, b: number, c: number, d: number) => ({ "inv-1:foto-1": a, "inv-1:foto-2": b, "inv-2:foto-1": c, "inv-2:foto-2": d });
+  test("guarda o máximo de cada tempo, limitado ao tempo desde a entrada", () => {
+    const a = acumularLupa(LUPA_ZERADA, t(4000, 9000, 0, 100), 5000);
+    expect(a).toEqual(t(4000, 5000, 0, 100));
     /* O relato atrasado não apaga o novo. */
-    expect(acumularLupa(a, { alvo1Ms: 100, alvo2Ms: 100 }, 9000)).toEqual({ alvo1Ms: 4000, alvo2Ms: 5000 });
+    expect(acumularLupa(a, t(100, 100, 100, 50), 9000)).toEqual(t(4000, 5000, 100, 100));
   });
-  test("o piso: 3 s em CADA um dos dois", () => {
-    expect(pisoCumprido({ alvo1Ms: 3000, alvo2Ms: 3000 })).toBe(true);
-    expect(pisoCumprido({ alvo1Ms: 2999, alvo2Ms: 3000 })).toBe(false);
-    expect(pisoCumprido({ alvo1Ms: 9000, alvo2Ms: 0 })).toBe(false);
+  test("achar o objeto na foto 1 NÃO acha na foto 2 (ADR-188)", () => {
+    const so1 = t(3000, 0, 3000, 0);
+    expect(achadosNaLupa(so1)).toEqual(["inv-1:foto-1", "inv-2:foto-1"]);
+    expect(pisoCumprido(so1)).toBe(false);
   });
-  test("o relato é dos dois objetos, não das fotos nem do fundo", () => {
-    expect(LupaSchema.safeParse({ alvo1Ms: 0, alvo2Ms: 0, avancar: false }).success).toBe(true);
-    expect(Object.keys(LupaSchema.shape).sort()).toEqual(["alvo1Ms", "alvo2Ms", "avancar"]);
+  test("o piso: 3 s em CADA um dos quatro (2 objetos × 2 fotos)", () => {
+    expect(pisoCumprido(t(3000, 3000, 3000, 3000))).toBe(true);
+    expect(pisoCumprido(t(3000, 3000, 3000, 2999))).toBe(false);
+    expect(pisoCumprido(t(9000, 9000, 0, 0))).toBe(false);
+  });
+  test("o relato tem os quatro tempos, e só eles", () => {
+    expect(LupaSchema.safeParse({ tempos: t(0, 0, 0, 0), avancar: false }).success).toBe(true);
+    expect(LupaSchema.safeParse({ tempos: { "inv-1:foto-1": 0, "inv-2:foto-1": 0 }, avancar: false }).success).toBe(false);
+    expect(LupaSchema.safeParse({ tempos: { ...t(0, 0, 0, 0), "inv-3:foto-1": 0 }, avancar: false }).success).toBe(false);
+    expect(Object.keys(LupaSchema.shape).sort()).toEqual(["avancar", "tempos"]);
   });
 });
 
 describe("a busca dos invariantes (E4)", () => {
   const invs = biblioteca().cena.invariantes;
-  const [relogio, cartaz] = invs.map((i) => i.alvo!);
+  /* O CENTRO de cada área: é onde a criança toca. */
+  const [relogio, cartaz] = invs.map((i) => ({ x: i.alvo!.x + i.alvo!.w / 2, y: i.alvo!.y + i.alvo!.h / 2 }));
   const vazia: BuscaDaSessao = { encontrados: [], erros: 0, ajuda: false, errosPosAjuda: 0 };
   const aplicar = (b: BuscaDaSessao, foto: "foto-1" | "foto-2", p: { x: number; y: number }) => {
     const r = tocar(b, invs, foto, p);
@@ -316,7 +332,8 @@ describe("a régua (100% Canal A)", () => {
     expect(FICHA_EXP02EF1B.versao).toBe(2);
     expect(FICHA_EXP02EF1B.perguntas).toEqual([]);
     expect(FICHA_EXP02EF1B.habilidades[0]!.marcadores[0]!.rotulo).toBe("A capa da rádio e o que ficou fora");
-    expect(VERSAO_DO_INSTRUMENTO).toBe("2.0.0");
+    /* 2.2.0: a lupa passou a medir cada objeto em cada foto (ADR-188). */
+    expect(VERSAO_DO_INSTRUMENTO).toBe("2.2.0");
   });
 });
 
@@ -335,7 +352,7 @@ describe("a régua do pacote", () => {
 
   test("cobra a mecânica inteira, com TODAS as frases de uma vez", () => {
     const c: ConteudoDoPacote = conteudoPronto("biblioteca");
-    c.cena.invariantes[0]!.alvo = { x: 20, y: 30, r: 7 };
+    c.cena.invariantes[0]!.alvo = { x: 20, y: 30, w: 10, h: 20 };
     c.cena.invariantes[1]!.alvo = null;
     c.cena.selos[0]!.texto = "silêncio para ler bem";
     c.cena.fotos[0]!.visitante = "Vi crianças lendo.";
@@ -343,7 +360,7 @@ describe("a régua do pacote", () => {
     c.cena.fotos[1]!.recorte = { x: 30, y: 0, w: 70, h: 100 };
     const p = problemasDoConteudo(c, { exigirAlvos: true }).join(" | ");
     expect(p).toMatch(/RELÓGIO precisa estar na parte do meio/);
-    expect(p).toMatch(/Toque no CARTAZ AMARELO/);
+    expect(p).toMatch(/Desenhe na imagem a área do CARTAZ AMARELO/);
     expect(p).toMatch(/CAIXA ALTA/);
     expect(p).toMatch(/passa de 3 palavras/);
     expect(p).toMatch(/Na foto, vi …!/);
@@ -356,10 +373,20 @@ describe("a régua do pacote", () => {
     expect(problemasDoConteudo(semAlvos, { exigirAlvos: true })).toHaveLength(2);
   });
 
-  test("dois alvos colados são recusados", () => {
+  test("duas áreas sobrepostas são recusadas", () => {
     const c = conteudoPronto("biblioteca");
-    c.cena.invariantes[1]!.alvo = { x: 46, y: 20, r: 7 };
-    expect(problemasDoConteudo(c, { exigirAlvos: true }).join(" ")).toMatch(/colados/);
+    const a = c.cena.invariantes[0]!.alvo!;
+    c.cena.invariantes[1]!.alvo = { x: a.x + 1, y: a.y + 1, w: 8, h: 10 };
+    expect(problemasDoConteudo(c, { exigirAlvos: true }).join(" ")).toMatch(/se encostam/);
+  });
+
+  test("a área tem tamanho mínimo (o objeto inteiro) e máximo (não a parede toda)", () => {
+    const c = conteudoPronto("biblioteca");
+    c.cena.invariantes[0]!.alvo = { x: 34, y: 20, w: 2, h: 3 };
+    c.cena.invariantes[1]!.alvo = { x: 36, y: 30, w: 31, h: 40 };
+    const p = problemasDoConteudo(c, { exigirAlvos: true }).join(" | ");
+    expect(p).toMatch(/RELÓGIO ficou pequena demais/);
+    expect(p).toMatch(/CARTAZ AMARELO ficou grande demais/);
   });
 });
 
@@ -407,19 +434,35 @@ describe("a saída da IA do preparo", () => {
     expect(() => validarSaidaDoPreparo({ ...boa, atividade1: { ...boa.atividade1, visitante: "Vi crianças." } })).toThrow(/Na foto, vi/);
   });
 
-  test('o pedido de imagem diz "ilustração", nunca "foto", e põe os objetos no centro', () => {
-    const p = pedidoDeImagem(boa);
-    expect(p).toMatch(/^Ilustração/);
-    expect(p).not.toMatch(/\bfoto/i);
-    expect(p).toMatch(/16:9/);
-    expect(p).toMatch(/CENTRO/);
-    expect(p).toMatch(/nenhum texto escrito/);
-    /* A cena LIMPA (ADR-186): parede lisa, poucos objetos, os dois do centro grandes e sozinhos. */
-    expect(p).toMatch(/LIMPA/);
-    expect(p).toMatch(/paredes lisas/);
-    expect(p).toMatch(/No máximo 2 crianças/);
-    expect(p).toMatch(/GRANDES/);
-    expect(p).toMatch(/SOZINHOS naquela parede/);
+  test('a descrição da cena diz "ilustração", nunca "foto", e põe os objetos na parede do meio', () => {
+    const d = pedidoDaCena(boa);
+    expect(d).toMatch(/^Ilustração/);
+    expect(d).not.toMatch(/\bfoto/i);
+    expect(d).toMatch(/parede do MEIO/);
+    expect(d).toMatch(/No máximo 2 crianças/);
+  });
+
+  test("nem poluída, nem óbvia (ADR-188): os dois objetos médios, entre outros objetos comuns — nada de GRANDES e SOZINHOS", () => {
+    const d = pedidoDaCena(boa);
+    expect(d).toMatch(/tamanho médio/);
+    expect(d).toMatch(/outros 2 ou 3 objetos comuns/);
+    expect(d).toMatch(/poucos objetos no total/);
+    expect(d).not.toMatch(/GRANDES|SOZINHOS|cores fortes/);
+    expect(SYSTEM_DO_PREPARO).toMatch(/tamanho MÉDIO/);
+    expect(SYSTEM_DO_PREPARO).not.toMatch(/SOZINHOS naquela parede/);
+  });
+
+  test("as regras fixas vão em TODO pedido — o gerado e o que o professor editou — e não estão na parte editável", () => {
+    const regras = regrasDaImagem(["RELÓGIO", "BANDEIRA VERDE"]);
+    expect(regras).toMatch(/nunca fotografia/);
+    expect(regras).toMatch(/16:9/);
+    expect(regras).toMatch(/sem rosto identificável/);
+    expect(regras).toMatch(/nenhum texto escrito/);
+    expect(regras).toMatch(/relógio e bandeira verde aparecem UMA vez cada, no terço central/);
+    expect(pedidoDaCena(boa)).not.toContain("Regras que valem sempre");
+    /* O professor apagou tudo e pediu outra coisa: as regras vêm do mesmo jeito, no fim. */
+    const editado = pedidoDeImagem("Uma quadra coberta <<<com>>> crianças\n\n  jogando   bola.", ["RELÓGIO", "BANDEIRA VERDE"]);
+    expect(editado).toBe(`Uma quadra coberta com crianças\njogando bola.\n\n${regras}`);
   });
 });
 
@@ -442,11 +485,17 @@ describe("as disciplinas do recorte: todo o 2º ano, Computação e Outro compon
 
 describe("os textos da tela (o protótipo)", () => {
   test("a missão do card leva o artigo contraído do espaço, em CAIXA ALTA", () => {
-    expect(fraseDaMissao("a biblioteca")).toBe("ENCONTRE NAS FOTOS 2 OBJETOS DA BIBLIOTECA");
-    expect(fraseDaMissao("o museu")).toBe("ENCONTRE NAS FOTOS 2 OBJETOS DO MUSEU");
-    expect(fraseDaMissao("as salas")).toBe("ENCONTRE NAS FOTOS 2 OBJETOS DAS SALAS");
-    expect(fraseDaMissao("os corredores")).toBe("ENCONTRE NAS FOTOS 2 OBJETOS DOS CORREDORES");
-    expect(fraseDaMissao("Pátio")).toBe("ENCONTRE NAS FOTOS 2 OBJETOS DE PÁTIO");
+    expect(fraseDaMissao("a biblioteca")).toBe("ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DA BIBLIOTECA");
+    expect(fraseDaMissao("o museu")).toBe("ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DO MUSEU");
+    expect(fraseDaMissao("as salas")).toBe("ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DAS SALAS");
+    expect(fraseDaMissao("os corredores")).toBe("ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DOS CORREDORES");
+    expect(fraseDaMissao("Pátio")).toBe("ENCONTRE OS 2 OBJETOS IGUAIS NAS DUAS FOTOS DE PÁTIO");
+  });
+  test("o CTA pede os 2 objetos IGUAIS nas DUAS fotos, e a lupa conta os quatro achados (ADR-188)", () => {
+    expect(TEXTOS.e1.missao).toMatch(/2 OBJETOS IGUAIS NAS DUAS FOTOS/);
+    expect(TEXTOS.e2.instrucao).toMatch(/FOTO 1 e na FOTO 2/);
+    expect(TEXTOS.e2.contador).toBe("{n} DE 4 ENCONTRADOS");
+    expect(TEXTOS.e2.contadorDaFoto).toBe("{n} DE 2");
   });
   test("os grupos: e1 a e5 e os erros — sem etapa 6", () => {
     expect(Object.keys(TEXTOS)).toEqual(["e1", "e2", "e3", "e4", "e5", "erros"]);
@@ -467,10 +516,10 @@ describe("a saída do estudante não tem lugar para o gabarito", () => {
     expect(Object.keys(SessaoSchema.shape.material.shape.cartas.element.shape).sort()).toEqual(["id", "imagem"]);
     expect(Object.keys(SessaoSchema.shape.material.shape).sort()).toEqual(["cartas", "motivos", "segundaFoto"]);
   });
-  test("o estado e o painel: a lupa é dos dois objetos, o resumo conta quem marcou fora", () => {
-    expect(Object.keys(SessaoSchema.shape.lupa.unwrap().shape).sort()).toEqual(["alertas", "alvo1Ms", "alvo2Ms", "alvos", "liberada"]);
+  test("o estado e o painel: a lupa é dos dois objetos em cada foto, o resumo conta quem marcou fora", () => {
+    expect(Object.keys(SessaoSchema.shape.lupa.unwrap().shape).sort()).toEqual(["alertas", "alvos", "liberada", "tempos"]);
     const linha = PainelSchema.shape.linhas.element.shape;
-    expect(Object.keys(linha.lupa.unwrap().shape).sort()).toEqual(["alertas", "alvo1Ms", "alvo2Ms", "liberada"]);
+    expect(Object.keys(linha.lupa.unwrap().shape).sort()).toEqual(["alertas", "liberada", "tempos"]);
     expect(Object.keys(PainelSchema.shape.resumo.shape)).toContain("marcaramFora");
     expect(Object.keys(PainelSchema.shape.roteiro.shape)).toEqual(["introducao", "regraDoArraste", "pausa", "cartoes", "perguntas", "liberar"]);
   });
@@ -510,5 +559,11 @@ describe("os vocabulários do código são os dos CHECKs das migrations", () => 
   });
   test("o teto de erros antes da ajuda", () => {
     expect(sql).toContain('"invariantes_erros" BETWEEN 0 AND 3');
+  });
+  test("a 2.2.0: as colunas da lupa são as chaves objeto × foto, e o padrão da versão é o do código", () => {
+    const areas = ler("20261027120000_exp02ef1b_areas_e_pedido");
+    for (const k of ["inv1_foto1", "inv1_foto2", "inv2_foto1", "inv2_foto2"]) expect(areas).toContain(`"lupa_${k}_ms" >= 0`);
+    expect(areas).toContain(`SET DEFAULT '${VERSAO_DO_INSTRUMENTO}'`);
+    expect(areas).toContain(`"chave_cena" = 'ia'`);
   });
 });

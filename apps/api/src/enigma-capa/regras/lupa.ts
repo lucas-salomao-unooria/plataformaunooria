@@ -1,13 +1,15 @@
-import { PISO_DA_LUPA_MS } from "../conteudo";
+import { FOTOS, INVARIANTES, PISO_DA_LUPA_MS, type FotoId, type InvarianteId } from "../conteudo";
 
 /**
  * A LUPA (E2): o piso de exploração e a plausibilidade do que a tela relata.
  *
  * A lupa ACHA os dois objetos do fundo (os invariantes, os mesmos da E4,
- * ADR-186): com o centro da lente sobre um deles, a lente brilha e um anel de
- * tempo enche em 3 s; cheio, o objeto fica "achado". O piso é 3 s em CADA um
- * dos dois (`alvo1Ms` = o tempo sobre `inv-1`, em qualquer das duas fotos;
- * `alvo2Ms`, sobre `inv-2`).
+ * ADR-186) EM CADA UMA das duas fotos: com o centro da lente sobre um deles,
+ * a lente brilha e um anel de tempo enche em 3 s; cheio, AQUELE objeto
+ * NAQUELA foto fica "achado". São quatro tempos, um por par objeto × foto,
+ * com a mesma chave dos achados da E4 (`"inv-1:foto-1"`). Até a 2.1.0 era um
+ * tempo por objeto, em qualquer foto — e achar o relógio na foto 1 marcava o
+ * relógio da foto 2, que a criança nem tinha olhado (ADR-188).
  *
  * Quem cronometra é a tela (o servidor não vê o dedo); o servidor GUARDA o
  * máximo (monótono: um relato velho que chega atrasado não apaga o novo) e
@@ -17,22 +19,32 @@ import { PISO_DA_LUPA_MS } from "../conteudo";
  * EF02CO05 (0 = pleno, 1 = parcial, 2+ = ausente).
  */
 
-export interface LupaDaSessao {
-  alvo1Ms: number;
-  alvo2Ms: number;
-}
+/** `"inv-1:foto-1"` — um objeto numa foto. */
+export type ChaveDaLupa = `${InvarianteId}:${FotoId}`;
+export const CHAVES_DA_LUPA: readonly ChaveDaLupa[] = INVARIANTES.flatMap((i) => FOTOS.map((f) => `${i}:${f}` as ChaveDaLupa));
 
-export interface RelatoDaLupa extends LupaDaSessao {
+export type LupaDaSessao = Record<ChaveDaLupa, number>;
+
+export interface RelatoDaLupa {
+  tempos: LupaDaSessao;
   avancar: boolean;
 }
+
+export const LUPA_ZERADA: LupaDaSessao = Object.fromEntries(CHAVES_DA_LUPA.map((k) => [k, 0])) as LupaDaSessao;
 
 /** O novo estado da lupa: o máximo de cada tempo, limitado ao decorrido desde a entrada. */
 export function acumularLupa(atual: LupaDaSessao, relato: LupaDaSessao, decorridoMs: number): LupaDaSessao {
   const teto = Math.max(0, Math.floor(decorridoMs));
   const ms = (antes: number, agora: number) => Math.max(antes, Math.min(teto, Math.floor(agora)));
-  return { alvo1Ms: ms(atual.alvo1Ms, relato.alvo1Ms), alvo2Ms: ms(atual.alvo2Ms, relato.alvo2Ms) };
+  return Object.fromEntries(CHAVES_DA_LUPA.map((k) => [k, ms(atual[k], relato[k])])) as LupaDaSessao;
 }
 
+/** Os pares objeto × foto já achados (3 s ou mais). */
+export function achadosNaLupa(l: LupaDaSessao): ChaveDaLupa[] {
+  return CHAVES_DA_LUPA.filter((k) => l[k] >= PISO_DA_LUPA_MS);
+}
+
+/** O piso: os DOIS objetos achados nas DUAS fotos. */
 export function pisoCumprido(l: LupaDaSessao): boolean {
-  return l.alvo1Ms >= PISO_DA_LUPA_MS && l.alvo2Ms >= PISO_DA_LUPA_MS;
+  return achadosNaLupa(l).length === CHAVES_DA_LUPA.length;
 }

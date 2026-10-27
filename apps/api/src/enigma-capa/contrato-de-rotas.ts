@@ -10,11 +10,13 @@ import {
   MOTIVOS_DO_PAR,
   NOTA_MAX,
   ORIGENS,
+  PEDIDO_DA_IMAGEM,
   PALAVRAS,
   SELOS,
   TEMA,
   TOQUES_FORA_MAX,
 } from "./conteudo";
+import { CHAVES_DA_LUPA } from "./regras/lupa";
 import { PASSOS } from "./regras/passos";
 
 /**
@@ -32,7 +34,7 @@ import { PASSOS } from "./regras/passos";
  *   GET  /enigma-capa/sessao           → SessaoSchema
  *   GET  /enigma-capa/gate             → GateDoEstudanteSchema   (polling 3 s)
  *   POST /enigma-capa/iniciar          IniciarSchema      → EstadoSchema              (ABRIR BANCADA: abre a sessão)
- *   POST /enigma-capa/lupa             LupaSchema         → RespostaDaLupaSchema
+ *   POST /enigma-capa/lupa             LupaSchema         → RespostaDaLupaSchema       (os 4 tempos: objeto × foto)
  *   POST /enigma-capa/publicar         PublicarSchema     → RespostaDoPublicarSchema   (LATCH 1)
  *   POST /enigma-capa/invariantes      ToqueSchema        → RespostaDoToqueSchema      (só depois da virada)
  *   POST /enigma-capa/slider           —                  → EstadoSchema
@@ -71,7 +73,8 @@ import { PASSOS } from "./regras/passos";
 const n100 = z.number().finite().min(0).max(100);
 export const RetanguloSchema = z.object({ x: n100, y: n100, w: n100, h: n100 });
 export const PontoSchema = z.object({ x: n100, y: n100 });
-export const AlvoSchema = z.object({ x: n100, y: n100, r: z.number().finite().positive().max(50) });
+/** A ÁREA de um objeto do fundo, desenhada pelo professor (2.2.0, ADR-188): um retângulo da panorâmica. */
+export const AlvoSchema = RetanguloSchema;
 /** A fração da folga da moldura: `{0,0}` = encostada no canto superior esquerdo, `{1,1}` no inferior direito. */
 export const DeslocamentoSchema = z.object({ x: z.number().finite().min(0).max(1), y: z.number().finite().min(0).max(1) });
 export const ImagemSchema = z.discriminatedUnion("tipo", [
@@ -133,18 +136,21 @@ export type ConteudoDoPacoteDoContrato = z.infer<typeof ConteudoBaseSchema>;
 /** E1: ABRIR BANCADA — abre a sessão desta rodada. Sem corpo (o corpo vazio também vale). */
 export const IniciarSchema = z.object({}).strict();
 
+const ms = z.number().int().min(0).max(3_600_000);
+/** Os quatro tempos da lupa, por objeto × foto: `{ "inv-1:foto-1": ms, … }`. */
+export const TemposDaLupaSchema = z
+  .object(Object.fromEntries(CHAVES_DA_LUPA.map((k) => [k, ms])) as Record<(typeof CHAVES_DA_LUPA)[number], typeof ms>)
+  .strict();
+
 /**
- * E2: o relato da lupa. `alvo1Ms` = os ms ACUMULADOS com o centro da lente
- * sobre o invariante `inv-1` (em qualquer das duas fotos); `alvo2Ms`, sobre
- * `inv-2`. Mande de tempos em tempos (`avancar: false`) e no toque do botão de
- * avançar (`avancar: true`). O servidor guarda o máximo, limita ao tempo desde
- * a entrada e, com `avancar`, confere o piso (3 s em CADA um dos dois).
+ * E2: o relato da lupa. `tempos["inv-1:foto-1"]` = os ms ACUMULADOS com o
+ * centro da lente sobre o invariante `inv-1` DENTRO DA FOTO 1 — achar na foto
+ * 1 não acha na foto 2 (2.2.0, ADR-188). Mande de tempos em tempos
+ * (`avancar: false`) e no toque do botão de avançar (`avancar: true`). O
+ * servidor guarda o máximo, limita ao tempo desde a entrada e, com `avancar`,
+ * confere o piso (3 s em CADA um dos quatro).
  */
-export const LupaSchema = z.object({
-  alvo1Ms: z.number().int().min(0).max(3_600_000),
-  alvo2Ms: z.number().int().min(0).max(3_600_000),
-  avancar: z.boolean(),
-});
+export const LupaSchema = z.object({ tempos: TemposDaLupaSchema, avancar: z.boolean() });
 
 /** E3: PUBLICAR CAPA — a foto, o selo e a posição da foto na moldura. LATCH 1. */
 export const PublicarSchema = z.object({ fotoId: FotoIdSchema, seloId: SeloIdSchema, deslocamento: DeslocamentoSchema });
@@ -167,7 +173,7 @@ export const SegundaFotoSchema = z.object({ elemento: ElementoSchema, deslocamen
 // ─────────────────────────────────────────────────────────── saída (estudante)
 
 const AtividadeSchema = z.object({ pacoteId: z.string(), rodada: z.number().int() });
-const AlvoComIdSchema = z.object({ id: InvarianteIdSchema, x: z.number(), y: z.number(), r: z.number() });
+const AlvoComIdSchema = z.object({ id: InvarianteIdSchema, x: z.number(), y: z.number(), w: z.number(), h: z.number() });
 
 /** O estado da missão do estudante — a resposta de TODO POST de estudante. Allowlist: nada do gabarito. */
 export const EstadoSchema = z.object({
@@ -182,9 +188,8 @@ export const EstadoSchema = z.object({
   /** `null` sem sessão (passo `inicio`). */
   lupa: z
     .object({
-      /** Os ms com o centro da lente sobre `inv-1` e sobre `inv-2` (o máximo relatado, limitado). */
-      alvo1Ms: z.number().int(),
-      alvo2Ms: z.number().int(),
+      /** Os ms com o centro da lente sobre cada objeto em cada foto (o máximo relatado, limitado). */
+      tempos: TemposDaLupaSchema,
       alertas: z.number().int(),
       liberada: z.boolean(),
       /**
@@ -218,7 +223,7 @@ export const EstadoSchema = z.object({
       alvos: z.array(AlvoComIdSchema).nullable(),
       /**
        * O alvo de cada invariante JÁ ACHADO (em ao menos uma foto): deixou de
-       * ser gabarito, e é o que a tela precisa para redesenhar os círculos e as
+       * ser gabarito, e é o que a tela precisa para redesenhar os achados e as
        * linhas douradas depois de um F5. O não achado só desce em `alvos`, com a ajuda.
        */
       achados: z.array(AlvoComIdSchema),
@@ -263,6 +268,8 @@ export const GeometriaSchema = z.object({
   molduraDaCapa: z.object({ w: z.number(), h: z.number() }),
   segundaFoto: z.object({ proporcao: z.number(), moldura: z.object({ w: z.number(), h: z.number() }) }),
   pisoDaLupaMs: z.number().int(),
+  /** A folga em volta da área do objeto, em % da largura (na vertical, × 16/9) — a mesma do servidor. */
+  margemDoAlvo: z.number(),
   toquesForaMax: z.number().int(),
 });
 
@@ -334,12 +341,23 @@ export const GerarSchema = z.object({
   nota: z.string().trim().max(NOTA_MAX).optional().nullable(),
 });
 
-/** O professor toca nos dois objetos iguais na imagem do rascunho (coordenadas da panorâmica). */
+/** O professor desenha a ÁREA de cada um dos dois objetos iguais na imagem do rascunho (retângulos da panorâmica). */
 export const AlvosDoRascunhoSchema = z.object({
   alvos: z
-    .array(z.object({ id: InvarianteIdSchema, x: n100, y: n100 }))
+    .array(z.object({ id: InvarianteIdSchema, x: n100, y: n100, w: n100, h: n100 }))
     .length(2)
-    .refine((a) => new Set(a.map((x) => x.id)).size === 2, "um toque para cada objeto"),
+    .refine((a) => new Set(a.map((x) => x.id)).size === 2, "uma área para cada objeto"),
+});
+
+/**
+ * "Gerar a imagem com este pedido": o professor edita o pedido de imagem do
+ * rascunho gerado por IA e pede outra imagem (ADR-188). `rascunhoId` é o que
+ * ele VIU. O pedido é SÓ a descrição da cena: as regras de segurança e de
+ * composição a api acrescenta sempre (`prompts.ts#REGRAS_DA_IMAGEM`).
+ */
+export const ImagemDoRascunhoSchema = z.object({
+  rascunhoId: z.string().uuid(),
+  pedido: z.string().trim().min(PEDIDO_DA_IMAGEM.min).max(PEDIDO_DA_IMAGEM.max),
 });
 
 /**
@@ -382,6 +400,11 @@ export const PacoteDoProfessorSchema = z.object({
   rodadaAtual: z.number().int(),
   /** Para o rascunho: o que ainda falta para aprovar (vazio = pode aprovar). */
   pendencias: z.array(z.string()),
+  /**
+   * O pedido de imagem que desenhou a cena (só a cena gerada por IA; `null` nos
+   * prontos): o professor o vê e o edita na curadoria. Sem as regras fixas.
+   */
+  pedidoDaImagem: z.string().nullable(),
 });
 
 const ProntoSchema = z.object({ chave: z.enum(CHAVES_PRONTAS), nome: z.string(), disciplina: DisciplinaSchema, tema: z.string(), conteudo: ConteudoBaseSchema });
@@ -398,6 +421,13 @@ export const RascunhoSchema = z.object({ rascunho: PacoteDoProfessorSchema.nulla
 
 export const GerarRespostaSchema = z.object({
   rascunho: PacoteDoProfessorSchema,
+  usouIa: z.boolean(),
+  motivo: z.enum(["sem-saldo", "indisponivel"]).nullable(),
+});
+
+export const ImagemDoRascunhoRespostaSchema = z.object({
+  rascunho: PacoteDoProfessorSchema,
+  /** `false`: sem saldo ou com a IA fora — a imagem anterior ficou, e `motivo` diz por quê. */
   usouIa: z.boolean(),
   motivo: z.enum(["sem-saldo", "indisponivel"]).nullable(),
 });
@@ -433,7 +463,7 @@ export const LinhaDoPainelSchema = z.object({
   passo: PassoSchema,
   /** Publicou e a turma ainda não virou. */
   aguardandoVirada: z.boolean(),
-  lupa: z.object({ alvo1Ms: z.number().int(), alvo2Ms: z.number().int(), alertas: z.number().int(), liberada: z.boolean() }).nullable(),
+  lupa: z.object({ tempos: TemposDaLupaSchema, alertas: z.number().int(), liberada: z.boolean() }).nullable(),
   capa: z
     .object({ fotoId: FotoIdSchema, seloId: SeloIdSchema, seloCoerente: z.boolean(), visitante: z.string(), nucleoVisivel: z.boolean() })
     .nullable(),
@@ -502,3 +532,4 @@ export type LinhaDoPainel = z.infer<typeof LinhaDoPainelSchema>;
 export type PacoteDoProfessor = z.infer<typeof PacoteDoProfessorSchema>;
 export type PacoteDaTurma = z.infer<typeof PacoteDaTurmaSchema>;
 export type GerarResposta = z.infer<typeof GerarRespostaSchema>;
+export type ImagemDoRascunhoResposta = z.infer<typeof ImagemDoRascunhoRespostaSchema>;
