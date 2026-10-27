@@ -79,6 +79,9 @@ export { Modal, AssistantCard, FeatureCard, SettingsRow } from '@unooria/design-
 /** A enquete de escolha única (0.2.19): as perguntas de evidência da exp02em1b (ADR-154). */
 export { ChoicePoll } from '@unooria/design-system/unooriaai';
 
+/** O separador de sessão na conversa (0.2.22): "--- Sessão 2/3: Beatriz (23h45) ---" na bateria de testes da exp01em1b. */
+export { SessionDivider } from '@unooria/design-system/unooriaai';
+
 /**
  * Ícones da seção. `uaiIcons` é o registro (nome → ligadura do Material
  * Symbols) e `uaiIconNames` serve de fonte para o `UaiIconName`.
@@ -94,6 +97,7 @@ export type {
   UaiButtonVariant,
   UaiChoicePollOption,
   UaiChoicePollProps,
+  UaiSessionDividerProps,
   UaiChatBubbleProps,
   UaiChatBubbleRole,
   UaiComposerDockProps,
