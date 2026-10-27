@@ -24,7 +24,7 @@ export const EXP_ID = "exp07ef1b";
  * IMUTÁVEL no bucket, e a divergência já causou bug — o `versao.test.ts`
  * compara os três (ADR-84).
  */
-export const EXP_VERSION = "1.3.1";
+export const EXP_VERSION = "1.3.2";
 
 // ──────────────────────────────────────────────────────────── vocabulário
 

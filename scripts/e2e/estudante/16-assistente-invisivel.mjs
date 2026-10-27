@@ -550,8 +550,34 @@ await suite(
       await q.getByText(ESPERA).first().waitFor({ state: "hidden", timeout: 10_000 });
       const bandeja = q.locator(".bandeja");
       r.exigir((await bandeja.getByText("Cartão 1", { exact: true }).count()) === 1, "com nada colocado, o 1º cartão leva a etiqueta “Cartão 1” (o andaime)");
+      // A vaga vazia mostra o TEXTO (DS 0.2.23, `showEmptySlotLabel`), não só o número.
+      const textoDaVaga = q.locator(".unooria-puzzle-track__socket-text");
+      await textoDaVaga.first().waitFor({ timeout: 5000 });
+      r.exigir(
+        (await textoDaVaga.allTextContents()).every((t) => t === "[Solte o cartão aqui]") && (await textoDaVaga.count()) === 2,
+        "sem cartão escolhido, as duas vagas mostram “[Solte o cartão aqui]”",
+      );
+      await registrar(p, "cartoes-andaime", {
+        titulo: "Etapa 5 — a vaga diz onde soltar",
+        mostra: "As duas colunas vazias, cada uma com a vaga tracejada escrita “[Solte o cartão aqui]”, e o 1º cartão com a etiqueta “Cartão 1”.",
+        prova: "A vaga vazia mostra o texto do Figma, não só o número; à espera, ela não aceita toque (nenhum cartão escolhido).",
+        inteira: true,
+      });
       for (const [i, cartao] of CARTOES.entries()) {
         await bandeja.getByRole("button", { name: cartao.rotulo }).click();
+        if (i === 0) {
+          await q.getByText(`Colocar em ${cartao.coluna}`, { exact: true }).waitFor({ timeout: 5000 });
+          r.exigir(
+            (await textoDaVaga.allTextContents()).join("|") === "Colocar em Dados Fornecidos|Colocar em Dados Observados",
+            "com cartão escolhido, a vaga de cada coluna mostra a ação “Colocar em …”",
+          );
+          await registrar(p, "cartoes-escolhido", {
+            titulo: "Etapa 5 — cartão escolhido",
+            mostra: "Um cartão selecionado na bandeja e as vagas escritas “Colocar em Dados Fornecidos” e “Colocar em Dados Observados”.",
+            prova: "O texto à vista é o próprio nome do botão da vaga: o que se lê é o que o leitor de tela anuncia.",
+            inteira: true,
+          });
+        }
         await q.getByRole("button", { name: `Colocar em ${cartao.coluna}` }).click();
         if (i === 2) {
           await q.getByText(/A classificação dos dados da sessão ainda não foi concluída/).first().waitFor({ timeout: 5000 });

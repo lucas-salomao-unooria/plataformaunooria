@@ -8,7 +8,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | Dev | `pnpm --filter @edu/exp01em1b dev` → **:5188** (`strictPort`) · hub `/exp/exp01em1b` ou `/dev-embed?src=http://localhost:5188` |
 | DS | DUAS seções: `unooria` (`@edu/ui/ds`, a escola) e `unooriaai` (`@edu/ui/ds-unooriaai`, o assistente testado) |
 | api | módulo `assistente-invisivel` (`apps/api/src/assistente-invisivel/`, prefixo `/assistente-invisivel`, tabelas `exp01em1b_*`, ADR-185) |
-| Versão | `1.0.1` nos três lugares (`public/experiencia.json`, `package.json`, `EXP_VERSION` em `src/lib/tipos.ts`) |
+| Versão | `1.0.2` nos três lugares (`public/experiencia.json`, `package.json`, `EXP_VERSION` em `src/lib/tipos.ts`) |
 | Copy | o Figma `9QyrVdEBJZkOS64ZauPfmk` (63 telas), literal em `src/lib/textos.ts` |
 
 A comissão estudantil testa o UnooriaAI com três colegas (Lucas, Beatriz,
@@ -67,6 +67,12 @@ cartão selecionado é `PuzzleBlock selected`; a vaga da coluna é o próprio
 a e2e procura) e `slotsDisabled` enquanto nada está selecionado; o selo é o
 `Certificate`; o separador de sessão do chat é o `SessionDivider` do UnooriaAI.
 Não há compensação local nesta experiência.
+
+Na 1.0.2, com o DS 0.2.23 (storybook-unnoria #26), a vaga vazia passou a
+mostrar o TEXTO, como o Figma desenha (`showEmptySlotLabel`): "[Solte o
+cartão aqui]" enquanto nenhum cartão está escolhido, e "Colocar em Dados
+Fornecidos/Observados" com um escolhido — e o texto à vista é o próprio nome
+do botão. A linha de `status` do andaime saiu: repetia o que a vaga já diz.
 
 Copy que o Figma não deu e a tela precisou: "Concluir Classificação" (o fim da
 E5-ALU-01), "Colocar em Dados Fornecidos/Observados", "Novo teste no UnooriaAI"

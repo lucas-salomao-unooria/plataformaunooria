@@ -386,8 +386,12 @@ describe("os gestos que vão à api", () => {
 
   test("E5-ALU-01: tocar o cartão e a coluna o coloca; o envio vai como está", async () => {
     await abrir(sessao("classificacao"));
+    /* A vaga mostra o texto (DS 0.2.23): o andaime à espera, a ação com cartão escolhido. */
+    const vagas = () => Array.from(document.body.querySelectorAll<HTMLElement>(".unooria-puzzle-track__socket-text")).map((v) => v.textContent);
+    expect(vagas()).toEqual(["[Solte o cartão aqui]", "[Solte o cartão aqui]"]);
     const cartao = botao("Horário de Acesso (23h45)")!;
     await act(async () => cartao.click());
+    expect(vagas()).toEqual(["Colocar em Dados Fornecidos", "Colocar em Dados Observados"]);
     await act(async () => botao("Colocar em Dados Observados")!.click());
     expect(texto()).toContain("Dados Observados (1)");
     expect(texto()).toContain("A classificação dos dados da sessão ainda não foi concluída.");

@@ -1152,6 +1152,9 @@ A vaga do \cd{PuzzleTrack} não era tocável &
 Sem separador de sessão no \cd{unooriaai} &
   \cd{SessionDivider} (\cd{label}) &
   \arq{componentes/\B{}PecasDoAssistente.tsx}\\
+\zebra A vaga vazia do \cd{PuzzleTrack} só mostrava o número (o Figma a escreve) &
+  \cd{showEmptySlotLabel} (0.2.23): o \cd{emptySlotLabel} à vista, no lugar do número &
+  \arq{telas/\B{}Classificacao.tsx}\\
 \bottomrule
 \end{tabularx}
 
@@ -1159,6 +1162,18 @@ Subir para a 0.2.22 mudou o \emph{bundle} de 14 das 16 experiências (o CSS
 e o JS do pacote); as que mudaram subiram um \emph{patch} nos três lugares,
 pela regra da versão única (\adrr{ADR-139}). A \cd{app-70} e a
 \cd{exp02ef1b} saíram idênticas byte a byte e não subiram.
+
+A última linha da tabela veio depois, na 0.2.23 (storybook-unnoria \#26): o
+Figma da E5-ALU-01 escreve a vaga --- \enquote{[Solte o cartão aqui]} no
+andaime e, com um cartão escolhido, a ação \enquote{Colocar em Dados
+Fornecidos/Observados} ---, e o \cd{PuzzleTrack} só mostrava o número, com o
+texto escondido para o leitor de tela. Com \cd{showEmptySlotLabel}, o mesmo
+texto aparece na vaga e continua sendo o nome do botão, sem cópia escondida; a
+linha de \cd{status} do andaime saiu da tela, porque repetia a vaga. A
+exp01em1b foi a 1.0.2. Como a folha da seção \cd{unooria} vai inteira para
+toda experiência que a importa, o CSS novo mudou o \emph{bundle} de 13 das 16:
+as 13 subiram um \emph{patch}; a \cd{app-70}, a \cd{exp02ef1b} e a
+\cd{exp02em1b-v0} saíram idênticas e não subiram.
 
 \subsection{Avisos que ficaram obsoletos}
 
