@@ -2621,9 +2621,9 @@ máquina, e são justamente essas crianças que o debate tenta alcançar.
   \cd{escola\_id}, da FK composta das sessões (\cd{UNIQUE (escola\_id, id)}).\\
 \zebra \cd{turma\_id} & \cd{UUID} & O pacote é \textbf{por turma}: a professora
   escreve a missão em cima do assunto da escola dela. FK em cascata.\\
-\cd{disciplina} & \cd{TEXT} & \emph{CHECK} com os dez componentes curriculares
-  de \arq{catalogo.ts\#DISCIPLINAS} (\cd{letramento-digital} \ldots
-  \cd{ensino-religioso}).\\
+\cd{disciplina} & \cd{TEXT} & \emph{CHECK} com os onze componentes curriculares
+  de \arq{catalogo.ts\#DISCIPLINAS}: os do 5º ano na BNCC, \cd{computacao}
+  (\adrr{ADR-186}), \cd{lingua-inglesa} e \cd{letramento-digital}.\\
 \zebra \cd{tema} & \cd{TEXT} & \emph{CHECK}: \cd{btrim} entre 3 e 60 caracteres e
   até 8 palavras. \textbf{É a frase da Nina} (\enquote{Rolou uma confusão sobre
   \{tema\}}), e o Zod ainda recusa \enquote{atividade}, \enquote{gabarito},

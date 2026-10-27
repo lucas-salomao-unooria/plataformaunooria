@@ -54,12 +54,18 @@ describe("guias da aula", () => {
    * A escada do debate. Perguntar "onde isso acontece na sua vida?" a uma turma
    * que ainda não descreveu o que viu produz a resposta que o estudante acha
    * que o professor quer ouvir — por isso todo guia precisa das duas pontas.
+   *
+   * A exceção, e só ela: O Enigma da Capa da Rádio (exp02ef1b) saiu da 2.0.0 SEM
+   * transferência, por decisão do dono do produto (ADR-186) — nem a etapa na
+   * tela nem o rótulo no guia. A pergunta da vida da criança continua no
+   * debate, como generalização.
    */
+  const SEM_TRANSFERENCIA = new Set(["exp02ef1b"]);
   test("todo debate tem retomada e transferência", () => {
     for (const guia of todosOsGuias()) {
       const niveis = new Set(guia.debate.perguntas.map((p) => p.nivel));
       expect(niveis.has("retomada"), `${guia.expId}: falta retomada`).toBe(true);
-      expect(niveis.has("transferencia"), `${guia.expId}: falta transferência`).toBe(true);
+      expect(niveis.has("transferencia"), `${guia.expId}: transferência`).toBe(!SEM_TRANSFERENCIA.has(guia.expId));
     }
   });
 

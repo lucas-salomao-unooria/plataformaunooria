@@ -68,7 +68,7 @@ async function primeiroQueAparecer(desfechos, { timeout, oQue }) {
 
 /** O recorte que a professora pede à IA — nada do banco padrão. */
 const RECORTE = {
-  disciplina: "Biologia / Ciências da Natureza",
+  disciplina: "Biologia",
   tema: "O sono dos adolescentes e as telas",
   topicos: ["luz azul e melatonina", "privação de sono", "notificações noturnas"],
 };

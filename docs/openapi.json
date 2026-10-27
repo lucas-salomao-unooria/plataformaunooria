@@ -50090,16 +50090,17 @@
                         "disciplina": {
                           "type": "string",
                           "enum": [
-                            "letramento-digital",
                             "lingua-portuguesa",
-                            "matematica",
-                            "ciencias",
-                            "historia",
-                            "geografia",
                             "arte",
                             "educacao-fisica",
+                            "matematica",
+                            "ciencias",
+                            "geografia",
+                            "historia",
+                            "ensino-religioso",
+                            "computacao",
                             "lingua-inglesa",
-                            "ensino-religioso"
+                            "letramento-digital"
                           ]
                         },
                         "tema": {
@@ -50232,16 +50233,17 @@
                         "disciplina": {
                           "type": "string",
                           "enum": [
-                            "letramento-digital",
                             "lingua-portuguesa",
-                            "matematica",
-                            "ciencias",
-                            "historia",
-                            "geografia",
                             "arte",
                             "educacao-fisica",
+                            "matematica",
+                            "ciencias",
+                            "geografia",
+                            "historia",
+                            "ensino-religioso",
+                            "computacao",
                             "lingua-inglesa",
-                            "ensino-religioso"
+                            "letramento-digital"
                           ]
                         },
                         "tema": {
@@ -50460,16 +50462,17 @@
                           "slug": {
                             "type": "string",
                             "enum": [
-                              "letramento-digital",
                               "lingua-portuguesa",
-                              "matematica",
-                              "ciencias",
-                              "historia",
-                              "geografia",
                               "arte",
                               "educacao-fisica",
+                              "matematica",
+                              "ciencias",
+                              "geografia",
+                              "historia",
+                              "ensino-religioso",
+                              "computacao",
                               "lingua-inglesa",
-                              "ensino-religioso"
+                              "letramento-digital"
                             ]
                           },
                           "rotulo": {
@@ -50557,16 +50560,17 @@
                         "disciplina": {
                           "type": "string",
                           "enum": [
-                            "letramento-digital",
                             "lingua-portuguesa",
-                            "matematica",
-                            "ciencias",
-                            "historia",
-                            "geografia",
                             "arte",
                             "educacao-fisica",
+                            "matematica",
+                            "ciencias",
+                            "geografia",
+                            "historia",
+                            "ensino-religioso",
+                            "computacao",
                             "lingua-inglesa",
-                            "ensino-religioso"
+                            "letramento-digital"
                           ]
                         },
                         "tema": {
@@ -50735,16 +50739,17 @@
                   "disciplina": {
                     "type": "string",
                     "enum": [
-                      "letramento-digital",
                       "lingua-portuguesa",
-                      "matematica",
-                      "ciencias",
-                      "historia",
-                      "geografia",
                       "arte",
                       "educacao-fisica",
+                      "matematica",
+                      "ciencias",
+                      "geografia",
+                      "historia",
+                      "ensino-religioso",
+                      "computacao",
                       "lingua-inglesa",
-                      "ensino-religioso"
+                      "letramento-digital"
                     ]
                   },
                   "tema": {
@@ -50814,16 +50819,17 @@
                     "disciplina": {
                       "type": "string",
                       "enum": [
-                        "letramento-digital",
                         "lingua-portuguesa",
-                        "matematica",
-                        "ciencias",
-                        "historia",
-                        "geografia",
                         "arte",
                         "educacao-fisica",
+                        "matematica",
+                        "ciencias",
+                        "geografia",
+                        "historia",
+                        "ensino-religioso",
+                        "computacao",
                         "lingua-inglesa",
-                        "ensino-religioso"
+                        "letramento-digital"
                       ]
                     },
                     "tema": {
@@ -50973,16 +50979,17 @@
                   "disciplina": {
                     "type": "string",
                     "enum": [
-                      "letramento-digital",
                       "lingua-portuguesa",
-                      "matematica",
-                      "ciencias",
-                      "historia",
-                      "geografia",
                       "arte",
                       "educacao-fisica",
+                      "matematica",
+                      "ciencias",
+                      "geografia",
+                      "historia",
+                      "ensino-religioso",
+                      "computacao",
                       "lingua-inglesa",
-                      "ensino-religioso"
+                      "letramento-digital"
                     ]
                   },
                   "tema": {
@@ -51862,16 +51869,17 @@
                           "disciplina": {
                             "type": "string",
                             "enum": [
-                              "letramento-digital",
                               "lingua-portuguesa",
-                              "matematica",
-                              "ciencias",
-                              "historia",
-                              "geografia",
                               "arte",
                               "educacao-fisica",
+                              "matematica",
+                              "ciencias",
+                              "geografia",
+                              "historia",
+                              "ensino-religioso",
+                              "computacao",
                               "lingua-inglesa",
-                              "ensino-religioso"
+                              "letramento-digital"
                             ]
                           },
                           "tema": {
@@ -51984,16 +51992,17 @@
                     "disciplina": {
                       "type": "string",
                       "enum": [
-                        "letramento-digital",
                         "lingua-portuguesa",
-                        "matematica",
-                        "ciencias",
-                        "historia",
-                        "geografia",
                         "arte",
                         "educacao-fisica",
+                        "matematica",
+                        "ciencias",
+                        "geografia",
+                        "historia",
+                        "ensino-religioso",
+                        "computacao",
                         "lingua-inglesa",
-                        "ensino-religioso"
+                        "letramento-digital"
                       ]
                     },
                     "tema": {
@@ -68731,13 +68740,15 @@
                           "type": "string",
                           "enum": [
                             "lingua-portuguesa",
-                            "ciencias",
-                            "historia",
-                            "geografia",
-                            "matematica",
                             "arte",
                             "educacao-fisica",
                             "lingua-inglesa",
+                            "matematica",
+                            "ciencias",
+                            "geografia",
+                            "historia",
+                            "ensino-religioso",
+                            "computacao",
                             "projeto-interdisciplinar"
                           ]
                         },
@@ -69364,13 +69375,15 @@
                           "type": "string",
                           "enum": [
                             "lingua-portuguesa",
-                            "ciencias",
-                            "historia",
-                            "geografia",
-                            "matematica",
                             "arte",
                             "educacao-fisica",
                             "lingua-inglesa",
+                            "matematica",
+                            "ciencias",
+                            "geografia",
+                            "historia",
+                            "ensino-religioso",
+                            "computacao",
                             "projeto-interdisciplinar"
                           ]
                         },
@@ -69500,13 +69513,15 @@
                             "type": "string",
                             "enum": [
                               "lingua-portuguesa",
-                              "ciencias",
-                              "historia",
-                              "geografia",
-                              "matematica",
                               "arte",
                               "educacao-fisica",
                               "lingua-inglesa",
+                              "matematica",
+                              "ciencias",
+                              "geografia",
+                              "historia",
+                              "ensino-religioso",
+                              "computacao",
                               "projeto-interdisciplinar"
                             ]
                           },
@@ -69625,13 +69640,15 @@
                       "type": "string",
                       "enum": [
                         "lingua-portuguesa",
-                        "ciencias",
-                        "historia",
-                        "geografia",
-                        "matematica",
                         "arte",
                         "educacao-fisica",
                         "lingua-inglesa",
+                        "matematica",
+                        "ciencias",
+                        "geografia",
+                        "historia",
+                        "ensino-religioso",
+                        "computacao",
                         "projeto-interdisciplinar"
                       ]
                     },
@@ -70114,13 +70131,15 @@
                           "type": "string",
                           "enum": [
                             "lingua-portuguesa",
-                            "ciencias",
-                            "historia",
-                            "geografia",
-                            "matematica",
                             "arte",
                             "educacao-fisica",
                             "lingua-inglesa",
+                            "matematica",
+                            "ciencias",
+                            "geografia",
+                            "historia",
+                            "ensino-religioso",
+                            "computacao",
                             "projeto-interdisciplinar"
                           ]
                         },
@@ -70215,13 +70234,15 @@
                     "type": "string",
                     "enum": [
                       "lingua-portuguesa",
-                      "ciencias",
-                      "historia",
-                      "geografia",
-                      "matematica",
                       "arte",
                       "educacao-fisica",
                       "lingua-inglesa",
+                      "matematica",
+                      "ciencias",
+                      "geografia",
+                      "historia",
+                      "ensino-religioso",
+                      "computacao",
                       "projeto-interdisciplinar"
                     ]
                   },
@@ -70290,13 +70311,15 @@
                       "type": "string",
                       "enum": [
                         "lingua-portuguesa",
-                        "ciencias",
-                        "historia",
-                        "geografia",
-                        "matematica",
                         "arte",
                         "educacao-fisica",
                         "lingua-inglesa",
+                        "matematica",
+                        "ciencias",
+                        "geografia",
+                        "historia",
+                        "ensino-religioso",
+                        "computacao",
                         "projeto-interdisciplinar"
                       ]
                     },
@@ -70518,13 +70541,15 @@
                     "type": "string",
                     "enum": [
                       "lingua-portuguesa",
-                      "ciencias",
-                      "historia",
-                      "geografia",
-                      "matematica",
                       "arte",
                       "educacao-fisica",
                       "lingua-inglesa",
+                      "matematica",
+                      "ciencias",
+                      "geografia",
+                      "historia",
+                      "ensino-religioso",
+                      "computacao",
                       "projeto-interdisciplinar"
                     ]
                   },
@@ -70734,13 +70759,15 @@
                       "type": "string",
                       "enum": [
                         "lingua-portuguesa",
-                        "ciencias",
-                        "historia",
-                        "geografia",
-                        "matematica",
                         "arte",
                         "educacao-fisica",
                         "lingua-inglesa",
+                        "matematica",
+                        "ciencias",
+                        "geografia",
+                        "historia",
+                        "ensino-religioso",
+                        "computacao",
                         "projeto-interdisciplinar"
                       ]
                     },
@@ -70803,13 +70830,15 @@
                         "type": "string",
                         "enum": [
                           "lingua-portuguesa",
-                          "ciencias",
-                          "historia",
-                          "geografia",
-                          "matematica",
                           "arte",
                           "educacao-fisica",
                           "lingua-inglesa",
+                          "matematica",
+                          "ciencias",
+                          "geografia",
+                          "historia",
+                          "ensino-religioso",
+                          "computacao",
                           "projeto-interdisciplinar"
                         ]
                       },
@@ -75288,8 +75317,18 @@
                           "type": "string",
                           "enum": [
                             "lingua-portuguesa",
+                            "lingua-inglesa",
+                            "arte",
+                            "educacao-fisica",
+                            "matematica",
                             "biologia",
+                            "fisica",
+                            "quimica",
+                            "filosofia",
+                            "geografia",
                             "historia",
+                            "sociologia",
+                            "computacao",
                             "interdisciplinar"
                           ]
                         },
@@ -75499,8 +75538,18 @@
                           "type": "string",
                           "enum": [
                             "lingua-portuguesa",
+                            "lingua-inglesa",
+                            "arte",
+                            "educacao-fisica",
+                            "matematica",
                             "biologia",
+                            "fisica",
+                            "quimica",
+                            "filosofia",
+                            "geografia",
                             "historia",
+                            "sociologia",
+                            "computacao",
                             "interdisciplinar"
                           ]
                         },
@@ -75710,8 +75759,18 @@
                           "type": "string",
                           "enum": [
                             "lingua-portuguesa",
+                            "lingua-inglesa",
+                            "arte",
+                            "educacao-fisica",
+                            "matematica",
                             "biologia",
+                            "fisica",
+                            "quimica",
+                            "filosofia",
+                            "geografia",
                             "historia",
+                            "sociologia",
+                            "computacao",
                             "interdisciplinar"
                           ]
                         },
@@ -75893,8 +75952,18 @@
                             "type": "string",
                             "enum": [
                               "lingua-portuguesa",
+                              "lingua-inglesa",
+                              "arte",
+                              "educacao-fisica",
+                              "matematica",
                               "biologia",
+                              "fisica",
+                              "quimica",
+                              "filosofia",
+                              "geografia",
                               "historia",
+                              "sociologia",
+                              "computacao",
                               "interdisciplinar"
                             ]
                           },
@@ -75983,8 +76052,18 @@
                           "type": "string",
                           "enum": [
                             "lingua-portuguesa",
+                            "lingua-inglesa",
+                            "arte",
+                            "educacao-fisica",
+                            "matematica",
                             "biologia",
+                            "fisica",
+                            "quimica",
+                            "filosofia",
+                            "geografia",
                             "historia",
+                            "sociologia",
+                            "computacao",
                             "interdisciplinar"
                           ]
                         },
@@ -76231,8 +76310,18 @@
                     "type": "string",
                     "enum": [
                       "lingua-portuguesa",
+                      "lingua-inglesa",
+                      "arte",
+                      "educacao-fisica",
+                      "matematica",
                       "biologia",
+                      "fisica",
+                      "quimica",
+                      "filosofia",
+                      "geografia",
                       "historia",
+                      "sociologia",
+                      "computacao",
                       "interdisciplinar"
                     ]
                   },
@@ -76306,8 +76395,18 @@
                       "type": "string",
                       "enum": [
                         "lingua-portuguesa",
+                        "lingua-inglesa",
+                        "arte",
+                        "educacao-fisica",
+                        "matematica",
                         "biologia",
+                        "fisica",
+                        "quimica",
+                        "filosofia",
+                        "geografia",
                         "historia",
+                        "sociologia",
+                        "computacao",
                         "interdisciplinar"
                       ]
                     },
@@ -76535,8 +76634,18 @@
                     "type": "string",
                     "enum": [
                       "lingua-portuguesa",
+                      "lingua-inglesa",
+                      "arte",
+                      "educacao-fisica",
+                      "matematica",
                       "biologia",
+                      "fisica",
+                      "quimica",
+                      "filosofia",
+                      "geografia",
                       "historia",
+                      "sociologia",
+                      "computacao",
                       "interdisciplinar"
                     ]
                   },
@@ -77376,8 +77485,18 @@
                             "type": "string",
                             "enum": [
                               "lingua-portuguesa",
+                              "lingua-inglesa",
+                              "arte",
+                              "educacao-fisica",
+                              "matematica",
                               "biologia",
+                              "fisica",
+                              "quimica",
+                              "filosofia",
+                              "geografia",
                               "historia",
+                              "sociologia",
+                              "computacao",
                               "interdisciplinar"
                             ]
                           },
@@ -77490,8 +77609,18 @@
                       "type": "string",
                       "enum": [
                         "lingua-portuguesa",
+                        "lingua-inglesa",
+                        "arte",
+                        "educacao-fisica",
+                        "matematica",
                         "biologia",
+                        "fisica",
+                        "quimica",
+                        "filosofia",
+                        "geografia",
                         "historia",
+                        "sociologia",
+                        "computacao",
                         "interdisciplinar"
                       ]
                     },
@@ -77834,8 +77963,18 @@
                           "type": "string",
                           "enum": [
                             "lingua-portuguesa",
+                            "lingua-inglesa",
+                            "arte",
+                            "educacao-fisica",
+                            "matematica",
                             "biologia",
+                            "fisica",
+                            "quimica",
+                            "filosofia",
+                            "geografia",
                             "historia",
+                            "sociologia",
+                            "computacao",
                             "interdisciplinar"
                           ]
                         },

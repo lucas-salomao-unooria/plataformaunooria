@@ -20,16 +20,18 @@ import { AREAS, IDS_DE_PROJETO, PROJETOS_POR_AREA, TOTAL_DE_PROJETOS, areaDoProj
  * DELIMITADO e rotulado como dado, sem os delimitadores dentro.
  */
 
-/** O rótulo de cada disciplina, como o professor a leria. */
+/** O rótulo de cada disciplina, como o professor a leria — os do catálogo de componentes (`curriculo/componentes.ts`). */
 export const ROTULO_DA_DISCIPLINA: Record<Disciplina, string> = {
   "lingua-portuguesa": "Língua Portuguesa",
-  ciencias: "Ciências",
-  historia: "História",
-  geografia: "Geografia",
-  matematica: "Matemática",
   arte: "Arte",
   "educacao-fisica": "Educação Física",
   "lingua-inglesa": "Língua Inglesa",
+  matematica: "Matemática",
+  ciencias: "Ciências",
+  geografia: "Geografia",
+  historia: "História",
+  "ensino-religioso": "Ensino Religioso",
+  computacao: "Computação",
   "projeto-interdisciplinar": "Projeto interdisciplinar",
 };
 

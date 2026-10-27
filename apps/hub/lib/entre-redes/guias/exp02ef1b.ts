@@ -226,7 +226,7 @@ export const GUIA_EXP02EF1B: GuiaDaAula = {
         porQue: "Liga O QUE FICOU DE FORA ao que os ouvintes da rádio entenderam.",
       },
       {
-        nivel: "transferencia",
+        nivel: "generalizacao",
         pergunta:
           "Quando tiram uma foto sua na escola em um segundo em que você está bravo, aquela foto mostra como você é o dia inteiro?",
         porQue: "Leva a descoberta para a própria vida da criança.",

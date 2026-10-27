@@ -102,6 +102,12 @@ retenção, e conclui. Quatro tabelas: `exp02em1b_pacotes`, `_gates_turma`,
   `temSaldo` antes e o pago debitado depois (ADR-74); sem saldo ou com o vendor
   fora, o rascunho sai do banco curado. A saída passa pela MESMA régua da
   homologação (`regras/pacote.ts#problemasDoConteudo`).
+- **A disciplina cobre a Formação Geral Básica da 2ª série, mais Computação**
+  (`componentesDoAno("2EM")` + `computacao`, e `interdisciplinar` no fim),
+  com os slugs do catálogo SEM o `-em` (`lingua-portuguesa`, `biologia` e
+  `historia` já estavam gravados assim) e os rótulos do EM. O CHECK foi
+  recriado em `20261026230000_componentes_bncc_nas_missoes`; só se ACRESCENTA
+  valor.
 - **Vocabulário em dois lugares**: disciplina, fase, manchete e indicadores
   estão em `conteudo.ts` e nos CHECKs; `tests/efeito-amplificador-regras.spec.ts`
   compara os textos.

@@ -22,13 +22,39 @@
 
 export const EXP_ID = "exp02em1b";
 
-export const DISCIPLINAS = ["lingua-portuguesa", "biologia", "historia", "interdisciplinar"] as const;
+/** Espelho de `api/src/efeito-amplificador/conteudo.ts`: a FGB da 2ª série, Computação e o projeto. */
+export const DISCIPLINAS = [
+  "lingua-portuguesa",
+  "lingua-inglesa",
+  "arte",
+  "educacao-fisica",
+  "matematica",
+  "biologia",
+  "fisica",
+  "quimica",
+  "filosofia",
+  "geografia",
+  "historia",
+  "sociologia",
+  "computacao",
+  "interdisciplinar",
+] as const;
 export type Disciplina = (typeof DISCIPLINAS)[number];
 
 export const ROTULO_DA_DISCIPLINA: Record<Disciplina, string> = {
-  "lingua-portuguesa": "Língua Portuguesa",
-  biologia: "Biologia / Ciências da Natureza",
-  historia: "História / Ciências Humanas",
+  "lingua-portuguesa": "Língua Portuguesa e suas Literaturas",
+  "lingua-inglesa": "Língua Inglesa",
+  arte: "Arte",
+  "educacao-fisica": "Educação Física",
+  matematica: "Matemática",
+  biologia: "Biologia",
+  fisica: "Física",
+  quimica: "Química",
+  filosofia: "Filosofia",
+  geografia: "Geografia",
+  historia: "História",
+  sociologia: "Sociologia",
+  computacao: "Computação",
   interdisciplinar: "Projeto Interdisciplinar",
 };
 

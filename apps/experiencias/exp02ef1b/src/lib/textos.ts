@@ -37,6 +37,7 @@ export const TEXTOS = {
     titulo: "ESCOLHA 1 FOTO",
     tituloSelo: "SELECIONE O SELO",
     tituloPronta: "CAPA PRONTA!",
+    prontaTexto: "Foto enquadrada e selo carimbado!",
     arraste: "Enquadre a foto",
     arrasteNota: "(Tamanho fixo, sem zoom)",
     publicar: "PUBLICAR CAPA",
@@ -66,6 +67,7 @@ export const TEXTOS = {
   },
   e5: {
     pares: "Junte duas fotos da mesma atividade.",
+    parFormado: "PAR FORMADO!",
     motivo: "O que é parecido?",
     segunda: "Foto de leitura: o que precisa aparecer?",
     arraste: "Enquadre a foto",

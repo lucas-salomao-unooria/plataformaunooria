@@ -1261,7 +1261,7 @@ O que define a missão, tecnicamente:
 \label{sec:exp02ef1b}
 
 \textbf{2º ano EF, unidade 1 (\enquote{Toda imagem tem um autor}), clone
-\cd{unoovista}, experiência 2.0.0, porta 5187.} Desde 2026-10-26
+\cd{unoovista}, experiência 2.1.0, porta 5187.} Desde 2026-10-26
 (\adrr{ADR-184}), vinda da esteira de produto (one-pager v1.1 do PO); a 2.0.0
 segue o protótipo validado pelo time e tira a etapa 6 (\adrr{ADR-186}). Módulo
 da api: \arq{enigma-capa} (prefixo \rota{/enigma-capa}, tabelas
@@ -1345,6 +1345,59 @@ um F5 os pula de propósito. Jogada à frente do passo é 409
 duplo toque e o reenvio da fila são inofensivos; a capa publicada com OUTRA
 escolha responde 409 (\cd{ja-publicado}). Os \emph{CHECKs} de ordem do banco
 são a rede final: cada etapa só grava depois da anterior.
+
+\subsection{Conferência com o protótipo do time}
+\label{sec:exp02ef1b-prototipo}
+
+A 2.0.0 foi conferida quadro a quadro contra o protótipo HTML validado
+(\cd{08-prototipo.html}, 44 estados; os da etapa 6 saíram com ela). Os quadros
+do professor (\cd{E0-PROF-*}, \cd{E4-PROF-01}) são as telas do hub da
+\adrr{ADR-184}; os do estudante estão na tabela.
+
+\begin{tabularx}{\linewidth}{@{}L{26mm}X@{}}
+\toprule
+\headrow \thd{Quadro} & \thd{Na missão}\\
+\midrule
+\cd{E1-ALU-01} & O seletor de crachá saiu (\adrr{ADR-186}).\\
+\zebra \cd{E1-ALU-02} & O card RASCUNHO PENDENTE / INVESTIGAR A NOVA CAPA /
+  ABRIR BANCADA, com a missão em letra grande (\arq{telas/Mural.tsx}).\\
+\cd{E2-ALU-01} & INVESTIGUE COM A LUPA, a mãozinha guia, INVESTIGAÇÃO
+  COMPLETA! e o Bento de inatividade (VAMOS INVESTIGAR?), mais o brilho e o
+  anel de 3\,s que o time pediu (\arq{telas/Bancada.tsx}).\\
+\zebra \cd{E2-SIS-01} & O aviso OLHE O FUNDO com VOLTAR À INVESTIGAÇÃO.\\
+\cd{E3-ALU-01} & ESCOLHA 1 FOTO \seta{} SELECIONE O SELO \seta{} CAPA PRONTA!
+  (\enquote{Foto enquadrada e selo carimbado!}), a moldura \enquote{Enquadre a
+  foto (Tamanho fixo, sem zoom)} e o Bento de inatividade.\\
+\zebra \cd{E3-ALU-02} & O aviso CAPA PUBLICADA! com IR PARA O FEED.\\
+\cd{E4-ALU-01} & A capa no feed e a fala da visitante.\\
+\zebra \cd{E4-ALU-02} & O aviso AGUARDE O PROFESSOR (cadeado e mensagem, sem
+  retrato) e, depois de 3\,min, O PROFESSOR JÁ VEM! com o círculo de
+  respiração.\\
+\cd{E4-ALU-03} & TOQUE EM 2 COISAS IGUAIS, SUA FOTO / OUTRA FOTO, o contador
+  e o pulso da ajuda depois de 3 erros.\\
+\zebra \cd{E4-ALU-04} & DESLIZE PARA REVELAR com a alça das duas setas no
+  centro da imagem (o \emph{slider} de comparação, \cd{role="slider"}), o
+  Bento ERA O MESMO LUGAR! e A CENA COMPLETA.\\
+\cd{E4-ALU-05} & \enquote{Marque na biblioteca o que ficou fora da sua foto.}
+  com o ALFINETE grande e o \enquote{Pronto} que só acende com um alfinete.\\
+\zebra \cd{E4-SIS-01} & A faixa SEM SINAL NA RÁDIO e o CARREGANDO CAPA\ldots{}
+  com TENTAR DE NOVO.\\
+\cd{E5-ALU-01} & Junte duas fotos da mesma atividade. \seta{} PAR FORMADO!, e
+  O que é parecido?\\
+\zebra \cd{E5-ALU-02} & Foto de leitura: o que precisa aparecer?, a moldura e
+  Colocar no álbum \seta{} FOTO GUARDADA NO ÁLBUM! e MISSÃO CUMPRIDA!\\
+\bottomrule
+\end{tabularx}
+
+\textbf{Os desvios, e por quê.} No \cd{E4-ALU-05} o protótipo desenha os
+alvos marcáveis como círculos: na tela eles entregariam a resposta e o
+gabarito ao cliente (regra 3), então a criança finca o alfinete onde achar. O
+\cd{E4-ALU-01} tinha o botão PROSSEGUIR PARA PAUSA, e o one-pager pede a pausa
+sozinha depois de 5\,s: ficou o tempo. No \cd{E5-ALU-01}, escolher o motivo já
+leva à segunda foto, sem o botão intermediário. A frase da cena completa diz
+\enquote{MESMO LUGAR}, e não \enquote{MESMA SALA}, porque a horta e as cenas da
+IA não são salas. A ilustração do Bento continua sem arte: ele fala só pelo
+balão.
 
 \subsection{A geometria: uma imagem, duas fotos}
 
@@ -1526,7 +1579,9 @@ fora, concluíram) e o botão LIBERAR VIRADA. O guia
 (\arq{lib/entre-redes/guias/exp02ef1b.ts}) traz a introdução oral, a frase do
 arraste (\enquote{Você pode mover a foto, mas não mudar o tamanho.}), a pausa
 e os três cartões ENQUADRAMENTO, AUTORIA e O QUE FICOU DE FORA --- a nomeação
-é ORAL, e por isso a seção \cd{unooria} não entra no \emph{bundle}. O podcast
+é ORAL, e por isso a seção \cd{unooria} não entra no \emph{bundle}. O debate do guia termina na generalização: a missão não tem transferência
+(\adrr{ADR-186}), e é a única com essa exceção em
+\arq{lib/entre-redes/guias/index.test.ts}. O podcast
 é FIXO (\arq{podcast.ts}, \adrr{ADR-150}): o roteiro literal do PO, com o
 Bento e a Iara, e os efeitos sonoros na direção de atuação.
 
