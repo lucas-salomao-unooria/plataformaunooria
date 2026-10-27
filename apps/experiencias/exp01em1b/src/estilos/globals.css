@@ -157,17 +157,6 @@ body {
   outline-offset: -2px;
 }
 
-/* (b) COMPENSAÇÃO — o `Collapse` do DS esconde o corpo fechado com
-   `aria-hidden` + `grid-template-rows: 0fr`, e nada disso tira do FOCO: o Tab
-   entraria em controles que o leitor de tela não anuncia (medido na exp-92,
-   ADR registrada em memória do projeto). `visibility: hidden` tira do foco sem
-   tirar do fluxo; o atraso preserva a animação de fechamento do pacote. Morre
-   quando o `Collapse` publicar `inert` (pedido aberto no storybook-unooria). */
-.escola .unooria-collapse__body[aria-hidden="true"] {
-  visibility: hidden;
-  transition: visibility 0s linear 0.3s;
-}
-
 /* E4-ALU-03: a tabela de 4 colunas rola na horizontal dentro do `ScrollBar`. */
 .fichas {
   margin: 0 -4px;
@@ -201,15 +190,6 @@ body {
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-/* (b) COMPENSAÇÃO — o `PuzzleBlock` publica `idle | placed | returned | locked`,
-   e não "selecionado para alocar" (o toque sequencial). O estado vai em
-   `aria-pressed`; aqui só o contorno, com o token da marca. Pedido aberto no
-   storybook-unooria (estado `selected`). */
-.bandeja__selecionado {
-  outline: 2px solid var(--unooria-color-brandnavy-600);
-  outline-offset: 2px;
 }
 
 /* E6-ALU-01 */
@@ -330,19 +310,6 @@ body {
 .uai-rodape {
   padding: 12px 16px 16px;
   border-top: 1px solid var(--uai-border-default);
-}
-
-.uai-separador {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 8px;
-}
-
-.uai-separador__texto {
-  font-size: 12px;
-  color: var(--uai-text-secondary);
-  text-align: center;
 }
 
 /* A peça do assistente dentro de uma tela da escola (E2): um recorte do app,
