@@ -267,7 +267,7 @@ afterEach(async () => {
 
 describe("cada passo do servidor desenha a sua tela, com a copy do Figma", () => {
   test.each<[Passo, string[]]>([
-    ["boas-vindas", ["Unooria · Comissão", "Nossa missão na comissão", "Abrir Módulo de Teste"]],
+    ["boas-vindas", ["Unooria · Comissão", "Você é auditor(a) da Comissão de Tecnologia da nossa escola", "Abrir Módulo de Teste"]],
     ["funcoes", ["Função 1: Apresentar Exercícios", "Função 3: Sugerir Conteúdos", "Ir para Bateria de Testes"]],
     ["aposta", ["Beatriz (15 anos)", "[Fornecido no cadastro]", "Preferência declarada: Trilha Avançada", "Disparar Simulação"]],
     ["simulacao", ["UnooriaAI", "Sessão de Teste 1/3: Lucas"]],
@@ -275,7 +275,7 @@ describe("cada passo do servidor desenha a sua tela, com a copy do Figma", () =>
     ["fichas", ["Relatório Comparativo", "Ação do Sistema", "Inferência: Acesso noturno / Possível cansaço e baixo rendimento → Rebaixar para Básico", "Concluir Inspeção de Metadados"]],
     ["classificacao", ["Dados Fornecidos", "Dados Observados", "Cartão 1", "Cartões da Sessão Técnica:"]],
     ["algoritmo", ["[Opcional / Aprofundamento] Ver etapas de processamento do assistente", "Pular Etapa"]],
-    ["criterios", ["Etapa 5: Banco de Regras", "Função 1 (Exercícios)", "Critério 1B: Ajustar automaticamente pelo horário de acesso [Ativo]", "Critério 3A: Priorizar assuntos escolhidos no cadastro [Ativo]", "Executar Novo Teste de Homologação"]],
+    ["criterios", ["Função 1 (Exercícios)", "Critério 1B: Ajustar automaticamente pelo horário de acesso [Ativo]", "Critério 3A: Priorizar assuntos escolhidos no cadastro [Ativo]", "Executar Novo Teste de Homologação"]],
     ["reteste", ["Equidade Homologada", "Beatriz acessou o nível Avançado", "Resposta à Beatriz.", "Avançar para Homologação e Transparência"]],
     ["publicacao", ["Página Pública de Transparência do UnooriaAI", "▶ Comece aqui", "Publicar Transparência e Comunicado"]],
     ["concluida", ["Certificado de Homologação Ética Escolar", "Salvaguarda Ativa: Direito à Explicação e Revisão Humana (LGPD)", "Pular Desafio Extra e Encerrar"]],
@@ -324,12 +324,12 @@ describe("cada passo do servidor desenha a sua tela, com a copy do Figma", () =>
     expect(document.body.querySelector(".fichas .unooria-scrollbar")).toBeNull();
   });
 
-  test("a barra de etapas é só de texto: rótulo na atual, sem conector", async () => {
-    await abrir(sessao("funcoes"));
-    const barra = document.body.querySelector<HTMLElement>(".escola__etapas")!;
-    const rotulos = Array.from(barra.querySelectorAll(".unooria-step__label")).map((r) => r.textContent);
-    expect(rotulos).toEqual(["Etapa 1", "Etapa 2: Funções", "Etapa 3", "Etapa 4"]);
-    expect(barra.querySelector(".unooria-stepper__connector-horizontal")).toBeNull();
+  /* Pedido do PO ao validar a 1.0.4 ("tirar esses steps"): nenhuma tela do estudante tem barra de etapas. */
+  test.each<Passo>(["boas-vindas", "funcoes", "aposta", "classificacao", "criterios", "publicacao"])("sem barra de etapas: %s", async (passo) => {
+    await abrir(sessao(passo));
+    expect(document.body.querySelector(".unooria-stepper")).toBeNull();
+    expect(document.body.querySelector('nav[aria-label="Etapas da missão"]')).toBeNull();
+    expect(texto()).not.toMatch(/Etapa \d: /);
   });
 
   test("E5-ALU-04: os botões do resultado vêm antes do efeito no chat", async () => {
@@ -352,7 +352,8 @@ describe("cada passo do servidor desenha a sua tela, com a copy do Figma", () =>
 
   test("a aposta travada espera a turma: 'Previsão arquivada' e 'Iniciando Simulação de Chat...'", async () => {
     await abrir(sessao("simulacao", { fase: "testes", aguardandoProfessor: true, aposta: "a" }));
-    expect(texto()).toContain("Estado Latch Gravado");
+    /* Sem a etiqueta "Estado Latch Gravado" (pedido do PO; "latch" é jargão em inglês, ADR-91). */
+    expect(texto()).not.toMatch(/latch/i);
     expect(texto()).toContain("Previsão arquivada: Todos receberão o nível Avançado conforme solicitado no cadastro.");
     expect(texto()).toContain("Iniciando Simulação de Chat...");
   });

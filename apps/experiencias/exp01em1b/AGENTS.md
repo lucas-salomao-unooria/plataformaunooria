@@ -91,7 +91,7 @@ texto e o cartão colocado compacto foram, na 1.0.4, duas compensações de
 MEDIDA no CSS; com o DS 0.2.24 no npm (storybook-unnoria #27) viraram as
 props `Stepper size="xs" showIcons={false}` (`componentes/Casca.tsx`) e
 `PuzzleBlock size="sm"` (o cartão colocado, `telas/Classificacao.tsx`), e os
-dois blocos saíram. Uma regra que vale para as compensações que restam: a
+dois blocos saíram — e a barra inteira saiu depois, a pedido do PO (abaixo). Uma regra que vale para as compensações que restam: a
 folha do componente é injetada DEPOIS da nossa, então os seletores levam uma
 classe a mais — sem ela a compensação some calada.
 
@@ -133,3 +133,12 @@ prop de centralizar) e o respiro de cima é a prop `padding` do `ModalBody`;
 "Avançar para Homologação e Transparência" é `Button size="md"`; o
 placeholder do `Composer` é UMA linha e virou o texto curto ("Entrada
 bloqueada nos testes...", "Relatório de auditoria gerado...").
+
+## Os ajustes do PO na 1.0.5 (ao validar a 1.0.4 em dev)
+
+O pedido do PO vale mais que o Figma. **Não há barra de etapas** em nenhuma
+tela do estudante (o `Stepper` saiu; `contrato.test.ts` o recusa de volta).
+**Não há etiqueta "Estado Latch Gravado"**: "latch" é jargão em inglês
+(ADR-91) — o termo fica só no código e na api. **A abertura diz o papel**:
+"Você é auditor(a) da Comissão de Tecnologia da nossa escola" na fala da
+Zara (`TEXTOS.e1.fala`).

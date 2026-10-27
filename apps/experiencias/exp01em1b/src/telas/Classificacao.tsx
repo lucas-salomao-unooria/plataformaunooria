@@ -79,7 +79,7 @@ export function Classificacao({ ctx, fechada = false }: { ctx: Contexto; fechada
   }
 
   return (
-    <Casca etapas={{ atual: 5, janela: [3, 4, 5, 6] }} equipe={estado.equipe}>
+    <Casca equipe={estado.equipe}>
       <p className="escola__instrucao">{estado.equipe ? TEXTOS.e5.instrucaoDaEquipe : TEXTOS.e5.instrucao}</p>
       <div className="trilhas">
         {COLUNAS.map((coluna) => {

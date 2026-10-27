@@ -96,10 +96,6 @@ body {
   font-size: 16px;
 }
 
-.escola__etapas {
-  min-width: 0;
-}
-
 .escola__instrucao,
 .escola__texto,
 .escola__dica,
@@ -280,9 +276,9 @@ body {
 
 /* E5-ALU-01: as duas colunas lado a lado; o `PuzzleTrack` quebra as vagas sozinho. */
 
-/* A barra de etapas só de texto e o cartão colocado compacto são PROPS do DS
-   desde a 0.2.24 (`Stepper size="xs" showIcons={false}` e `PuzzleBlock
-   size="sm"`, storybook-unnoria #27): as duas compensações da 1.0.4 saíram. */
+/* O cartão colocado compacto é PROP do DS desde a 0.2.24 (`PuzzleBlock
+   size="sm"`, storybook-unnoria #27): a compensação da 1.0.4 saiu. A barra de
+   etapas não existe mais (1.0.5, pedido do PO). */
 .trilhas {
   display: grid;
   grid-template-columns: 1fr 1fr;

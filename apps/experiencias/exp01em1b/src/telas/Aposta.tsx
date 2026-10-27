@@ -26,8 +26,7 @@ const INATIVIDADE_MS = 60_000;
  *
  * E3-SIS-01: com o pacote na reserva (`pacote.contingencia`), a faixa FINA
  * "Carregando versão de contingência da rede escolar" no topo e o cabeçalho
- * do Figma — "Unooria · Homologação" com a tag "Pacote Padrão" — no lugar da
- * barra de etapas, e o cartão "Fichas Cadastrais Carregadas (Banco Oficial)".
+ * do Figma — "Unooria · Homologação" com a tag "Pacote Padrão" —, e o cartão "Fichas Cadastrais Carregadas (Banco Oficial)".
  */
 export function Aposta({ ctx }: { ctx: Contexto }) {
   const { estado, sessao, executar } = ctx;
@@ -93,9 +92,6 @@ export function ApostaTravada({ ctx, aposta }: { ctx: Contexto; aposta?: ApostaI
       <Card variant="outlined">
         <CardContent>
           <div className="escola__pilha-curta">
-            <Tag variant="brand" size="sm" leftIcon="lock">
-              {TEXTOS.e3.latch}
-            </Tag>
             <p className="escola__destaque">{TEXTOS.e3.arquivada(texto)}</p>
             <p className="escola__texto">{TEXTOS.e3.definitiva}</p>
           </div>
@@ -109,11 +105,12 @@ export function ApostaTravada({ ctx, aposta }: { ctx: Contexto; aposta?: ApostaI
 }
 
 /**
- * A moldura da E3: a barra de etapas; na contingência (E3-SIS-01), a faixa no
- * topo e o cabeçalho "Unooria · Homologação" + "Pacote Padrão" no lugar dela.
+ * A moldura da E3: nada, fora da contingência (sem barra de etapas desde a
+ * 1.0.5, pedido do PO); na contingência (E3-SIS-01), a faixa no topo e o
+ * cabeçalho "Unooria · Homologação" + "Pacote Padrão".
  */
-function moldura(sessao: Sessao): Pick<CascaProps, "cabecalho" | "etapas" | "faixa"> {
-  if (!sessao.pacote?.contingencia) return { etapas: { atual: 3, janela: [2, 3, 4, 5] } };
+function moldura(sessao: Sessao): Pick<CascaProps, "cabecalho" | "faixa"> {
+  if (!sessao.pacote?.contingencia) return {};
   return {
     faixa: <AlertBox variant="info" device="mobile" theme="light" icon={false} className="faixa-de-contingencia" title={TEXTOS.e3.contingencia} />,
     cabecalho: { titulo: TEXTOS.e6.cabecalho, tag: TEXTOS.e3.pacotePadrao },

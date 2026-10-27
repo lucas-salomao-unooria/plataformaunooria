@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ScrollBar, SpeechBubble, Stepper, Tag } from "@edu/ui/ds";
+import { ScrollBar, SpeechBubble, Tag } from "@edu/ui/ds";
 import { TEXTOS } from "../lib/textos";
 
 /**
@@ -12,26 +12,22 @@ import { TEXTOS } from "../lib/textos";
  * estação) ele vira "Unooria · Bancada" + "Bancada da Comissão: {estação}",
  * em QUALQUER tela — a mesma tela do individual, sem cortar conteúdo.
  *
- * A barra de etapas é o `Stepper` do DS e só INDICA (não navega): uma janela
- * de etapas como no Figma ("Etapa 1 · Etapa 2: Funções · Etapa 3 · Etapa 4"),
- * só de TEXTO e sem conector, para caber em 343px sem rolar a página para o
- * lado. O rótulo da etapa atual pode mudar por tela (a Etapa 5 é
- * "Reconstruir" nos cartões e "Banco de Regras" nos critérios, como o Figma).
+ * NÃO há barra de etapas (1.0.5): o PO (Vinicius) pediu para tirá-la ao
+ * validar a 1.0.4 em dev, e o pedido dele vale mais que o Figma. Não a
+ * recoloque — o teste `telas.test.tsx` cobra que nenhuma tela a desenha.
  *
  * A rolagem é o `ScrollBar` do DS: aqui a seção É a `unooria`.
  */
 export interface CascaProps {
-  /** O cabeçalho do módulo; ausente nas telas que só têm a barra de etapas. */
+  /** O cabeçalho do módulo; ausente nas telas que não o têm no Figma. */
   cabecalho?: { titulo: string; tag?: string };
-  /** A barra de etapas: a etapa atual, a janela de etapas que aparece e, se a tela pede, o rótulo da atual. */
-  etapas?: { atual: number; janela: number[]; rotulo?: string };
   /** Uma faixa ACIMA do cabeçalho (a de contingência da E3-SIS-01). */
   faixa?: ReactNode;
   equipe: { nome: string } | null;
   children: ReactNode;
 }
 
-export function Casca({ cabecalho, etapas, faixa, equipe, children }: CascaProps) {
+export function Casca({ cabecalho, faixa, equipe, children }: CascaProps) {
   const topo = equipe ? { titulo: TEXTOS.geral.bancada, tag: TEXTOS.geral.tagDaEquipe(equipe.nome) } : cabecalho;
   return (
     <ScrollBar className="escola" height="100%" autoHide theme="light">
@@ -47,28 +43,9 @@ export function Casca({ cabecalho, etapas, faixa, equipe, children }: CascaProps
             )}
           </header>
         )}
-        {etapas && <BarraDeEtapas atual={etapas.atual} janela={etapas.janela} rotulo={etapas.rotulo} />}
         {children}
       </div>
     </ScrollBar>
-  );
-}
-
-/**
- * A barra só de texto do Figma: `Stepper size="xs"` com `showIcons={false}` e
- * sem conector (DS 0.2.24, storybook-unnoria #27) — quatro etapas em 343px.
- * Até a 0.2.23 era uma compensação no CSS.
- */
-function BarraDeEtapas({ atual, janela, rotulo }: { atual: number; janela: number[]; rotulo?: string }) {
-  const steps = janela.map((n) => ({
-    id: n,
-    label: n === atual ? `Etapa ${n}: ${rotulo ?? TEXTOS.etapas[n]}` : `Etapa ${n}`,
-    status: n < atual ? ("completed" as const) : n === atual ? ("selected" as const) : ("default" as const),
-  }));
-  return (
-    <nav aria-label="Etapas da missão" className="escola__etapas">
-      <Stepper steps={steps} currentStep={janela.indexOf(atual)} size="xs" showIcons={false} showConnector={false} clickable={false} />
-    </nav>
   );
 }
 

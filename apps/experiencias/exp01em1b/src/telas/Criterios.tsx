@@ -44,7 +44,7 @@ export function Criterios({ ctx }: { ctx: Contexto }) {
   }
 
   return (
-    <Casca etapas={{ atual: 5, janela: [4, 5, 6], rotulo: TEXTOS.e5.etapaDosCriterios }} equipe={estado.equipe}>
+    <Casca equipe={estado.equipe}>
       <p className="escola__instrucao">{estado.equipe ? TEXTOS.e5.instrucaoCriteriosDaEquipe : TEXTOS.e5.instrucaoCriterios}</p>
       {!estado.classificacao?.completa && <AlertBox variant="warning" device="mobile" theme="light" description={TEXTOS.e5.incompleta} />}
       {sessao.material.criterios.map((grupo) => {

@@ -42,7 +42,7 @@ export function Funcoes({ ctx }: { ctx: Contexto }) {
   }
 
   return (
-    <Casca etapas={{ atual: 2, janela: [1, 2, 3, 4] }} equipe={estado.equipe}>
+    <Casca equipe={estado.equipe}>
       <p className="escola__instrucao">{TEXTOS.e2.instrucao}</p>
       <div className="escola__lista">
         {FUNCOES.map((f) => (

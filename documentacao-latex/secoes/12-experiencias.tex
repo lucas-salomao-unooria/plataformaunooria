@@ -1669,7 +1669,9 @@ professor aprovou (\arq{lib/roteiro.ts}).
 \toprule
 \headrow \thd{Etapa} & \thd{Na tela, e o que o servidor guarda}\\
 \midrule
-\textbf{E1} Desafiar & A Zara apresenta a comissão; \enquote{Abrir Módulo de
+\textbf{E1} Desafiar & A Zara apresenta a comissão e o papel do estudante
+  (\enquote{Você é auditor(a) da Comissão de Tecnologia da nossa escola},
+  pedido do PO na 1.0.5); \enquote{Abrir Módulo de
   Teste} só vale depois de \enquote{Liberar Início dos Testes}.\\
 \zebra \textbf{E2} Funções & Três \cd{Collapse} (Exercícios, Dúvidas,
   Sugestões) com a prévia do UnooriaAI; a função vista ganha a marca de visto e,
@@ -1678,8 +1680,8 @@ professor aprovou (\arq{lib/roteiro.ts}).
 \textbf{E3} Aposta & As três fichas (nome, idade, \enquote{[Fornecido no
   cadastro]}, Trilha Avançada) e a aposta em \cd{RadioGroup}: (A) todos
   Avançado, (B) só alguns, (C) todos Básico. \enquote{Disparar Simulação} é o
-  \textbf{LATCH 1} (\enquote{Previsão arquivada}, \enquote{Estado Latch
-  Gravado}); a tela espera em \enquote{Iniciando Simulação de Chat\ldots} até
+  \textbf{LATCH 1} (\enquote{Previsão arquivada}; a etiqueta \enquote{Estado
+  Latch Gravado} saiu na 1.0.5, pedido do PO: jargão em inglês, \adrr{ADR-91}); a tela espera em \enquote{Iniciando Simulação de Chat\ldots} até
   \enquote{Liberar Início da Simulação}.\\
 \zebra \textbf{E4} Resultado & As três sessões no UnooriaAI (\cd{ChatBubble},
   \cd{AssistantCard}, \cd{Composer} bloqueado), com os avisos de sistema da
@@ -1808,10 +1810,11 @@ A escola é \cd{unooria} (\cd{@edu/ui/ds}); a bateria de testes
 dentro de telas da escola (a prévia da E2, o efeito do reteste na E5) moram em
 \arq{componentes/\B{}PecasDoAssistente.tsx}, o único outro arquivo que importa a
 ponte do clone (\adrr{ADR-117}, \adrr{ADR-173}). \arq{src/contrato.test.ts}
-prende uma ponte por arquivo e a seção de cada tela. A barra de etapas
-(\enquote{Etapa 1: Desafiar} a \enquote{Etapa 6: Publicar}) só indica, não
-navega, e é só de TEXTO, como o Figma: o rótulo inteiro na etapa atual, sem
-glifo nem conector, para caber em 343\,px (\adrr{ADR-190}). Nenhuma tela do
+prende uma ponte por arquivo e a seção de cada tela. NÃO há barra de etapas
+desde a 1.0.5: a 1.0.4 tinha a barra só de texto do Figma (\enquote{Etapa 1:
+Desafiar} a \enquote{Etapa 6: Publicar}), e o PO (Vinicius), ao validá-la em
+\cd{dev}, pediu para tirá-la --- o pedido dele vale mais que o Figma; o
+\cd{contrato.test.ts} recusa o \cd{Stepper} de volta. Nenhuma tela do
 estudante rola para o lado. O AVISO DE SISTEMA do chat (a Beatriz rebaixada,
 o Thiago limitado, na bateria e no efeito do reteste) não é uma fala do
 assistente: desde a 1.0.5 é o \cd{FeatureCard} do \cd{unooriaai}, com
