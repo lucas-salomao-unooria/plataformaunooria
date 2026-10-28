@@ -1638,7 +1638,7 @@ auxiliares das duas moram em \arq{scripts/e2e/lib/\B{}enigma-capa.mjs}.
 \label{sec:exp01em1b}
 
 \textbf{1ª série EM, unidade 1 (\enquote{Dados que viram decisões}), seções
-\cd{unooria} e \cd{unooriaai}, experiência 1.0.4, porta 5188.} Desde
+\cd{unooria} e \cd{unooriaai}, experiência 1.0.5, porta 5188.} Desde
 2026-10-26 (\adrr{ADR-185}), vinda da esteira de produto (one-pager v1.5 do
 PO), com o Figma de 63 telas como referência de tela e de \emph{copy}. Módulo
 da api: \arq{assistente-\B{}invisivel} (prefixo \rota{/assistente-\B{}invisivel},
@@ -1669,7 +1669,9 @@ professor aprovou (\arq{lib/roteiro.ts}).
 \toprule
 \headrow \thd{Etapa} & \thd{Na tela, e o que o servidor guarda}\\
 \midrule
-\textbf{E1} Desafiar & A Zara apresenta a comissão; \enquote{Abrir Módulo de
+\textbf{E1} Desafiar & A Zara apresenta a comissão e o papel do estudante
+  (\enquote{Você é auditor(a) da Comissão de Tecnologia da nossa escola},
+  pedido do PO na 1.0.5); \enquote{Abrir Módulo de
   Teste} só vale depois de \enquote{Liberar Início dos Testes}.\\
 \zebra \textbf{E2} Funções & Três \cd{Collapse} (Exercícios, Dúvidas,
   Sugestões) com a prévia do UnooriaAI; a função vista ganha a marca de visto e,
@@ -1678,8 +1680,8 @@ professor aprovou (\arq{lib/roteiro.ts}).
 \textbf{E3} Aposta & As três fichas (nome, idade, \enquote{[Fornecido no
   cadastro]}, Trilha Avançada) e a aposta em \cd{RadioGroup}: (A) todos
   Avançado, (B) só alguns, (C) todos Básico. \enquote{Disparar Simulação} é o
-  \textbf{LATCH 1} (\enquote{Previsão arquivada}, \enquote{Estado Latch
-  Gravado}); a tela espera em \enquote{Iniciando Simulação de Chat\ldots} até
+  \textbf{LATCH 1} (\enquote{Previsão arquivada}; a etiqueta \enquote{Estado
+  Latch Gravado} saiu na 1.0.5, pedido do PO: jargão em inglês, \adrr{ADR-91}); a tela espera em \enquote{Iniciando Simulação de Chat\ldots} até
   \enquote{Liberar Início da Simulação}.\\
 \zebra \textbf{E4} Resultado & As três sessões no UnooriaAI (\cd{ChatBubble},
   \cd{AssistantCard}, \cd{Composer} bloqueado), com os avisos de sistema da
@@ -1808,11 +1810,18 @@ A escola é \cd{unooria} (\cd{@edu/ui/ds}); a bateria de testes
 dentro de telas da escola (a prévia da E2, o efeito do reteste na E5) moram em
 \arq{componentes/\B{}PecasDoAssistente.tsx}, o único outro arquivo que importa a
 ponte do clone (\adrr{ADR-117}, \adrr{ADR-173}). \arq{src/contrato.test.ts}
-prende uma ponte por arquivo e a seção de cada tela. A barra de etapas
-(\enquote{Etapa 1: Desafiar} a \enquote{Etapa 6: Publicar}) só indica, não
-navega, e é só de TEXTO, como o Figma: o rótulo inteiro na etapa atual, sem
-glifo nem conector, para caber em 343\,px (\adrr{ADR-190}). Nenhuma tela do
-estudante rola para o lado.
+prende uma ponte por arquivo e a seção de cada tela. NÃO há barra de etapas
+desde a 1.0.5: a 1.0.4 tinha a barra só de texto do Figma (\enquote{Etapa 1:
+Desafiar} a \enquote{Etapa 6: Publicar}), e o PO (Vinicius), ao validá-la em
+\cd{dev}, pediu para tirá-la --- o pedido dele vale mais que o Figma; o
+\cd{contrato.test.ts} recusa o \cd{Stepper} de volta. Nenhuma tela do
+estudante rola para o lado. O AVISO DE SISTEMA do chat (a Beatriz rebaixada,
+o Thiago limitado, na bateria e no efeito do reteste) não é uma fala do
+assistente: desde a 1.0.5 é o \cd{FeatureCard} do \cd{unooriaai}, com
+\enquote{Aviso de Sistema:} em negrito e a borda forte do Figma, porque a
+seção não tem mensagem de sistema (o \cd{ChatBubble} só conhece \cd{user} e
+\cd{assistant}); a fala de roteiro é do tipo \cd{aviso} em
+\arq{lib/roteiro.ts}.
 
 \subsection{A fila de envio é em memória}
 
@@ -1911,7 +1920,11 @@ vista e desabilitado (\cd{PAUSA\_FEITA}, que nunca envia \cd{\{para\}}); a
 bancada recém-liberada (\enquote{Etapa 5 Destravada}) mostra só a
 confirmação e as apostas consolidadas, sem a projeção nem os botões da E5,
 que chegam com o primeiro reteste; a projeção 1A $\times$ 1C tem só as duas
-barras do quadro (o 1B fica nos Avisos Discretos); e a publicação liberada
+barras do quadro (o 1B fica nos Avisos Discretos); desde a 1.0.5 os Avisos
+Discretos são um cartão neutro AO LADO do quadro, fora do bloco projetado
+(\cd{data-projecao-\B{}de-solucoes}), como no Figma --- antes eram um alerta
+laranja dentro do quadro, que levava ao projetor o nome de quem manteve a
+regra restritiva; e a publicação liberada
 mostra só a confirmação até a primeira publicação, quando entra o relatório.
 A etiqueta \enquote{Mediação Handoff 1: 8 Minutos} do Figma fica
 \enquote{Mediação 1: 8 minutos}: \enquote{Handoff} é jargão em inglês
@@ -1933,17 +1946,41 @@ A 1.0.0 compensava cinco peças que o pacote não tinha; a 1.0.1 usa as que o
 DS publicou na 0.2.22 (Seção~\ref{sec:ds-lacunas-exp01em1b}): \cd{PuzzleBlock}
 com \cd{selected}, a vaga do \cd{PuzzleTrack} com \cd{onSlotActivate}, o
 \cd{Certificate} e o \cd{SessionDivider}; e o \cd{Collapse} fechado já era
-\cd{inert}. A 1.0.4 (\adrr{ADR-190}) voltou a ter DUAS compensações
-MARCADAS, de medida, em \arq{estilos/globals.css}: a barra de etapas só de
-texto (sem o glifo do \cd{Stepper}, rótulo de 12\,px) e o cartão colocado
-compacto (14\,px, caixa normal, quebra só entre palavras). As duas imitam o
-\cd{Stepper size="xs" showIcons=\{false\}} e o \cd{PuzzleBlock size="sm"}
-que o DS 0.2.24 traz (storybook-unnoria \#27), e morrem quando o pacote
-chegar ao npm. As fichas cabem em 375\,px pela medida das células (recuo de
+\cd{inert}. A 1.0.4 (\adrr{ADR-190}) teve DUAS compensações de medida em
+\arq{estilos/globals.css}, a barra de etapas só de texto e o cartão colocado
+compacto; com o DS 0.2.24 no npm elas viraram as props \cd{Stepper
+size="xs" showIcons=\{false\}} e \cd{PuzzleBlock size="sm"}
+(storybook-unnoria \#27), e os dois blocos saíram. As fichas cabem em 375\,px pela medida das células (recuo de
 6\,px, cabeçalho em duas linhas). Textos que o Figma não deu e a tela
 precisou: \enquote{Colocar em Dados Fornecidos/Observados}, \enquote{Novo
 teste no UnooriaAI}, \enquote{Trocar critério} e \enquote{Revisar página e
 blocos}; \enquote{Concluir Classificação} saiu na 1.0.4.
+
+A 1.0.5 (\adrr{ADR-190}, complementada) fechou as nove divergências que uma
+segunda conferência completa achou, com quatro compensações MARCADAS
+\enquote{(b)} em \arq{estilos/globals.css}, cada uma com o pedido ao
+\cd{storybook-unooria} no comentário: o aviso de sistema deitado na linha,
+com a borda forte (\cd{.aviso-de-sistema}; o pedido é um \cd{ChatBubble
+role="system"}); a ficha cadastral compacta (\cd{.ficha}, só o recuo do
+\cd{Card}, com nome e etiqueta numa linha --- a pergunta e \enquote{Disparar
+Simulação} cabem em 375$\times$812); a faixa fina de contingência no topo
+(\cd{.faixa-de-contingencia}, o \cd{AlertBox} sem ícone, de ponta a ponta;
+o pedido é uma variante de faixa); e o vão sob o título do \cd{Collapse}
+recolhido (um \emph{defeito} do DS: o \cd{gap} da raiz sobra com o corpo
+fechado; o ajuste que o pacote precisa é \cd{gap: 0} com o \cd{Collapse} fechado). As
+janelas de pausa, rede e sessão continuam a folha que sobe da base (o
+\cd{Modal} do DS não tem prop de centralizar), com o respiro de cima pela
+prop \cd{padding} do \cd{ModalBody}. \enquote{Avançar para Homologação e
+Transparência} é o \cd{Button md}, que mantém o recuo do DS. O placeholder
+do \cd{Composer} é uma linha: virou o texto curto (\enquote{Entrada
+bloqueada nos testes\ldots}, \enquote{Relatório de auditoria
+gerado\ldots}). No hub, o recorte da aula é uma coluna só (os placeholders
+inteiros) e, no 503, \enquote{Tentar Novamente} é \cd{outline} (o
+\cd{secondary} do DS também é cheio). E o \cd{DispositivoFrame} do hub, que
+serve a TODAS as experiências, recorta com \cd{overflow: clip} no lugar de
+\cd{hidden}: a caixa com \cd{hidden} continuava área de rolagem e o foco de
+teclado num botão do fim da tela a rolava, escondendo o topo do aparelho sem
+jeito de voltar.
 
 \subsection*{A suíte de ponta a ponta}
 

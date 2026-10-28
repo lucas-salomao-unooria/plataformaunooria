@@ -22,20 +22,15 @@ export const TEXTOS = {
     carregando: "Abrindo o módulo de homologação…",
     erroDeAbertura: "Não foi possível abrir o módulo de homologação agora. Feche e abra a missão de novo.",
   },
-  /** A barra de etapas (Stepper do DS, só indica a posição). */
-  etapas: {
-    1: "Desafiar",
-    2: "Funções",
-    3: "Aposta",
-    4: "Resultado",
-    5: "Reconstruir",
-    6: "Publicar",
-  } as Record<number, string>,
   e1: {
     cabecalho: "Unooria · Comissão",
     tagPrimeiraVez: "1EM · Homologação",
     tagPadrao: "Módulo de Teste",
-    fala: "\"Oi! A escola colocou o UnooriaAI em teste. Nossa missão na comissão é testar as três funções com colegas da turma e ver se ele cumpre o cadastro.\"",
+    /**
+     * O PAPEL do estudante na abertura (pedido do PO ao validar a 1.0.4): ele
+     * é auditor(a) da Comissão de Tecnologia da escola dele.
+     */
+    fala: "\"Oi! Você é auditor(a) da Comissão de Tecnologia da nossa escola. A escola colocou o UnooriaAI em teste, e nossa missão é testar as três funções com colegas da turma e ver se ele cumpre o cadastro.\"",
     instrucao: "Abra o módulo de teste para iniciar a auditoria da comissão escolar.",
     abrir: "Abrir Módulo de Teste",
   },
@@ -79,7 +74,6 @@ export const TEXTOS = {
     pergunta: "Com base nas informações cadastradas pelos estudantes, qual será o nível liberado pelo assistente no teste?",
     dica: "Para iniciar a homologação, registre a previsão da comissão sobre o resultado dos estudantes.",
     disparar: "Disparar Simulação",
-    latch: "Estado Latch Gravado",
     arquivada: (texto: string) => `Previsão arquivada: ${texto}`,
     definitiva: "A previsão foi registrada de forma definitiva no servidor da comissão.",
     iniciando: "Iniciando Simulação de Chat...",
@@ -99,8 +93,17 @@ export const TEXTOS = {
     separadorThiago: "--- Sessão 3/3: Thiago (Sinal Instável) ---",
     boasVindasLucas: "Olá, Lucas! Seja bem-vindo à plataforma.",
     aviso: (texto: string) => `Aviso de Sistema: ${texto}`,
-    bloqueada: "Entrada bloqueada durante a execução da bateria de testes...",
-    concluida: "Sessões concluídas. Relatório de auditoria gerado...",
+    /** O rótulo em negrito da caixa do aviso (E4-ALU-01); o espaço no fim separa o corpo na leitura. */
+    avisoRotulo: "Aviso de Sistema: ",
+    /**
+     * O placeholder do `Composer` é UMA linha (é um `input`): o texto longo do
+     * Figma ("…durante a execução da bateria de testes…", "Sessões concluídas.
+     * Relatório…") saía cortado no meio da palavra em 375px. O texto curto
+     * diz o mesmo em ~30 caracteres (1.0.5); "Sessões concluídas" já está no
+     * selo do topo ("Sessões 2/3 e 3/3 Concluídas").
+     */
+    bloqueada: "Entrada bloqueada nos testes...",
+    concluida: "Relatório de auditoria gerado...",
     enviar: "Enviar",
   },
   e4: {
@@ -164,8 +167,6 @@ export const TEXTOS = {
     cartao1: "Cartão 1",
     /** (b) COMPENSAÇÃO de copy: o Figma não nomeia o alvo do toque nem o fechamento (ver AGENTS.md). */
     colocarEm: (rotulo: string) => `Colocar em ${rotulo}`,
-    /** Etapa 5 da barra: "Reconstruir" nos cartões (E5-ALU-01), "Banco de Regras" nos critérios (E5-ALU-03). */
-    etapaDosCriterios: "Banco de Regras",
     /* O cartão JÁ COLOCADO usa o rótulo curto do Figma (E5-ALU-01 "sem scaffolding"): na coluna estreita, o longo quebrava a palavra no meio. */
     rotuloCurto: {
       "trilha-avancada": "Trilha Avançada",

@@ -344,17 +344,16 @@ await suite(
      * a segunda volta não repetir a primeira tela a tela.
      */
     const jogarAMissao = async ({ equipe, duvidaDoLucas, passos }) => {
-      /* 1.0.4: nenhuma tela do estudante rola para o lado — nem a barra de etapas, nem a página. */
+      /* 1.0.4: nenhuma tela do estudante rola para o lado. 1.0.5: e nenhuma tem barra de etapas (pedido do PO). */
       const semRolagemLateral = async (onde) => {
         const m = await q.locator("body").evaluate(() => {
-          const barra = document.querySelector(".escola__etapas");
           return {
             pagina: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-            barra: barra ? barra.scrollWidth - barra.clientWidth : 0,
-            temBarra: Boolean(barra),
+            temBarra: Boolean(document.querySelector(".unooria-stepper")),
           };
         });
-        r.exigir(m.pagina <= 1 && m.barra <= 1, `${onde}: nada rola para o lado (página ${m.pagina}px, barra de etapas ${m.temBarra ? `${m.barra}px` : "—"})`);
+        r.exigir(m.pagina <= 1, `${onde}: nada rola para o lado (página ${m.pagina}px)`);
+        r.exigir(!m.temBarra, `${onde}: sem barra de etapas`);
       };
       const registrar = (pagina, nome, ficha) =>
         !equipe
@@ -443,13 +442,14 @@ await suite(
       });
       const apostou = await postDo(/\/assistente-invisivel\/aposta$/, () => q.getByRole("button", { name: "Disparar Simulação" }).click());
       r.exigir(apostou.status === 200 && apostou.corpo?.aposta === "a" && Boolean(apostou.corpo?.apostadaEm), "a aposta A está gravada (LATCH 1)");
-      await q.getByText("Estado Latch Gravado").first().waitFor({ timeout: 10_000 });
+      await q.getByText(`Previsão arquivada: ${APOSTA_A}`).first().waitFor({ timeout: 10_000 });
+      r.exigir((await q.getByText(/latch/i).count()) === 0, "sem a etiqueta “Estado Latch Gravado” (pedido do PO; jargão em inglês, ADR-91)");
       r.exigir(
         (await q.getByText(`Previsão arquivada: ${APOSTA_A}`).count()) === 1 && (await q.getByRole("button", { name: "Iniciando Simulação de Chat..." }).isDisabled()),
         "“Previsão arquivada” com o texto inteiro da aposta, e “Iniciando Simulação de Chat...” esperando a turma",
       );
       await registrar(p, "previsao-arquivada", {
-        titulo: "Estado Latch Gravado",
+        titulo: "Previsão arquivada",
         mostra: "A previsão arquivada de forma definitiva e o botão “Iniciando Simulação de Chat...” desabilitado.",
         prova: "LATCH 1: a aposta não volta. A simulação só começa quando 100% das sessões abertas apostaram.",
       });
@@ -715,7 +715,7 @@ await suite(
           (await q.getByRole("radio", { name: /^Critério 3A: .*\[Ativo\]$/ }).count()) === 1,
         "a configuração no ar é B-B-A, com “[Ativo]”",
       );
-      r.exigir((await q.getByText("Etapa 5: Banco de Regras", { exact: true }).count()) === 1, "a barra diz “Etapa 5: Banco de Regras”, como o Figma");
+      r.exigir((await q.locator(".unooria-stepper").count()) === 0, "sem barra de etapas (pedido do PO ao validar a 1.0.4)");
       /* O 1B MANTIDO (o horário de acesso) e o 2C: equidade parcial. */
       await q.getByRole("radio", { name: /^Critério 2C:/ }).click();
       /* "Critérios alterados" (o Figma): cada função resume no critério escolhido. */

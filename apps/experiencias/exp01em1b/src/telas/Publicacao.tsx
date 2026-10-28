@@ -101,7 +101,7 @@ export function Publicacao({ ctx }: { ctx: Contexto }) {
   );
 
   return (
-    <Casca etapas={{ atual: 6, janela: [4, 5, 6] }} equipe={estado.equipe}>
+    <Casca equipe={estado.equipe}>
       <p className="escola__instrucao">{estado.equipe ? TEXTOS.e6.instrucaoDaEquipe : TEXTOS.e6.instrucao}</p>
       {montado ? (
         <Card variant="outlined" className="cartao-destaque">

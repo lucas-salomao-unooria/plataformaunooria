@@ -14,7 +14,7 @@ export const EXP_ID = "exp02em1b";
  * Amplificador: a Missão Tempestade (1.x) mora em `exp02em1b-v0` (ADR-181), e o
  * caminho do bucket da 2.x nunca encosta no dela.
  */
-export const EXP_VERSION = "2.0.2";
+export const EXP_VERSION = "2.0.3";
 
 export type Passo = "abertura" | "conversa" | "feed" | "explicar" | "concluida";
 export type Fase = "aberta" | "debate" | "explicar";

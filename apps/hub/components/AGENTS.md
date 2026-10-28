@@ -84,6 +84,13 @@ Storybook e telas soltas. Dentro da plataforma quem desenha o aparelho é o hub,
 em `components/DispositivoFrame.tsx`, dirigido pelo `viewport` do manifesto — a
 casca do clone por dentro dela desenharia dois aparelhos, um dentro do outro.
 
+**O `DispositivoFrame` recorta com `overflow: clip`, nunca `hidden`** (as
+duas camadas; exp01em1b 1.0.5, ADR-190). `hidden` recorta mas continua área
+de rolagem, e o navegador a rola sozinho para mostrar um foco: navegando por
+teclado, o foco num botão no fim da tela da experiência rolava a caixa e
+escondia o topo do aparelho, sem barra e sem jeito de voltar. Nada depende
+dessa rolagem — quem rola é o conteúdo DENTRO do iframe.
+
 ## Altura de tela cheia: `.tela-cheia`, nunca subtração do header
 
 A página do professor que embeda experiência e **não** rola

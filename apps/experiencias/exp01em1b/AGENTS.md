@@ -8,7 +8,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | Dev | `pnpm --filter @edu/exp01em1b dev` → **:5188** (`strictPort`) · hub `/exp/exp01em1b` ou `/dev-embed?src=http://localhost:5188` |
 | DS | DUAS seções: `unooria` (`@edu/ui/ds`, a escola) e `unooriaai` (`@edu/ui/ds-unooriaai`, o assistente testado) |
 | api | módulo `assistente-invisivel` (`apps/api/src/assistente-invisivel/`, prefixo `/assistente-invisivel`, tabelas `exp01em1b_*`, ADR-185) |
-| Versão | `1.0.4` nos três lugares (`public/experiencia.json`, `package.json`, `EXP_VERSION` em `src/lib/tipos.ts`) |
+| Versão | `1.0.5` nos três lugares (`public/experiencia.json`, `package.json`, `EXP_VERSION` em `src/lib/tipos.ts`) |
 | Copy | o Figma `9QyrVdEBJZkOS64ZauPfmk` (63 telas), literal em `src/lib/textos.ts` |
 
 A comissão estudantil testa o UnooriaAI com três colegas (Lucas, Beatriz,
@@ -86,16 +86,14 @@ do professor (api, painel e guia da aula). Não o recoloque.
 
 ## A 1.0.4: as telas alinhadas ao Figma (ADR-190)
 
-Uma conferência dos 63 estados contra o Figma. **Duas compensações MARCADAS**
-voltaram, em `estilos/globals.css`, ambas de MEDIDA: a barra de etapas só de
-texto (`.escola__etapas`: sem o glifo do `Stepper`, rótulo de 12 px) e o
-cartão colocado compacto (`.trilhas`: 14 px, caixa normal, quebra só entre
-palavras). Elas imitam o `Stepper size="xs" showIcons={false}` e o
-`PuzzleBlock size="sm"` do DS 0.2.24 (storybook-unnoria #27, no `master`; a
-publicação no npm esperava o CI). **Quando a 0.2.24 estiver no npm, troque
-pelas props e apague os dois blocos** (e a ADR-187 sobe todas as
-experiências). A folha do componente é injetada DEPOIS da nossa, então os
-seletores levam uma classe a mais — sem ela a compensação some calada.
+Uma conferência dos 63 estados contra o Figma. A barra de etapas só de
+texto e o cartão colocado compacto foram, na 1.0.4, duas compensações de
+MEDIDA no CSS; com o DS 0.2.24 no npm (storybook-unnoria #27) viraram as
+props `Stepper size="xs" showIcons={false}` (`componentes/Casca.tsx`) e
+`PuzzleBlock size="sm"` (o cartão colocado, `telas/Classificacao.tsx`), e os
+dois blocos saíram — e a barra inteira saiu depois, a pedido do PO (abaixo). Uma regra que vale para as compensações que restam: a
+folha do componente é injetada DEPOIS da nossa, então os seletores levam uma
+classe a mais — sem ela a compensação some calada.
 
 O que a 1.0.4 mudou, e a suíte 16 cobra: nenhuma tela do estudante rola para
 o lado; as fichas cabem em 375 px (o `Table` declarativo, fio nas linhas com
@@ -109,3 +107,38 @@ Copy que o Figma não deu e a tela precisou: "Colocar em Dados
 Fornecidos/Observados", "Novo teste no UnooriaAI" (o título do efeito do
 reteste), "Trocar critério" e "Revisar página e blocos". "Concluir
 Classificação" saiu na 1.0.4.
+
+## A 1.0.5: a segunda conferência (ADR-190, complementada)
+
+Nove divergências fechadas. **Quatro compensações marcadas "(b)"** em
+`estilos/globals.css`, cada uma com o pedido ao `storybook-unooria` no
+comentário — apague quando o pacote trouxer:
+
+- `.aviso-de-sistema`: o AVISO DE SISTEMA do chat é o `FeatureCard` do
+  `unooriaai`, deitado na linha e com a borda forte (`--uai-border-strong`).
+  A seção não tem mensagem de sistema; pedido: `ChatBubble role="system"`.
+  A fala de roteiro é `tipo: "aviso"` (`lib/roteiro.ts`), nunca
+  `"assistente"` — o teste cobra.
+- `.ficha`: a ficha cadastral da E3 é o `Card` SEM `CardHeader` (que põe a
+  etiqueta acima do título), com recuo de 12/16 px. A pergunta e "Disparar
+  Simulação" cabem em 375×812.
+- `.faixa-de-contingencia`: o `AlertBox` sem ícone, sem sombra e de ponta a
+  ponta (E3-SIS-01). Pedido: uma variante de faixa.
+- `.unooria-collapse` fechado com `gap: 0`: DEFEITO do DS (o `gap` da raiz
+  sobra com o corpo fechado, o vão sob o título recolhido). Pedido: o
+  pacote zerar o `gap` do fechado.
+
+Sem CSS: as janelas continuam a folha que sobe da base (o `Modal` não tem
+prop de centralizar) e o respiro de cima é a prop `padding` do `ModalBody`;
+"Avançar para Homologação e Transparência" é `Button size="md"`; o
+placeholder do `Composer` é UMA linha e virou o texto curto ("Entrada
+bloqueada nos testes...", "Relatório de auditoria gerado...").
+
+## Os ajustes do PO na 1.0.5 (ao validar a 1.0.4 em dev)
+
+O pedido do PO vale mais que o Figma. **Não há barra de etapas** em nenhuma
+tela do estudante (o `Stepper` saiu; `contrato.test.ts` o recusa de volta).
+**Não há etiqueta "Estado Latch Gravado"**: "latch" é jargão em inglês
+(ADR-91) — o termo fica só no código e na api. **A abertura diz o papel**:
+"Você é auditor(a) da Comissão de Tecnologia da nossa escola" na fala da
+Zara (`TEXTOS.e1.fala`).

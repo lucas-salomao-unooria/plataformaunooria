@@ -37,7 +37,7 @@ export const GUIA_EXP01EM1B: GuiaDaAula = {
       titulo: "Não diga que o assistente usa horário e conexão",
       texto:
         "A aposta da Etapa 3 mede o que a turma acredita antes de ver o resultado. Na abertura, apresente só o papel " +
-        "de comissão de auditoria e as três funções do assistente.",
+        "de cada um, auditor(a) da Comissão de Tecnologia da escola, e as três funções do assistente.",
     },
     {
       tom: "info",

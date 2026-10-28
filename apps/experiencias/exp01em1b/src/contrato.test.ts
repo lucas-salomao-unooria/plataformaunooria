@@ -62,6 +62,16 @@ describe("sem IA e sem texto livre", () => {
   });
 });
 
+describe("o que o PO tirou ao validar a 1.0.4 não volta", () => {
+  test("nem a barra de etapas (o Stepper) nem o jargão \"latch\" num texto da tela", () => {
+    for (const [arquivo, texto] of fonte) {
+      expect({ arquivo, casou: /\bStepper\b/.test(texto) }).toEqual({ arquivo, casou: false });
+    }
+    const textos = readFileSync("src/lib/textos.ts", "utf8");
+    expect(/"[^"\n]*latch[^"\n]*"/i.test(semComentarios(textos))).toBe(false);
+  });
+});
+
 describe("cada tela fala pela sua seção do DS", () => {
   const pontesDe = (texto: string) => [...texto.matchAll(/from "@edu\/ui\/([\w-]+)"/g)].map((m) => m[1]);
 

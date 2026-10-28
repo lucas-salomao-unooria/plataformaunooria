@@ -88,7 +88,14 @@ export function DispositivoFrame({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        overflow: "hidden",
+        // `clip`, não `hidden` (as duas camadas): `hidden` RECORTA mas continua
+        // sendo área de rolagem, e o navegador a rola sozinho para mostrar um
+        // foco. Navegando por TECLADO, o foco num botão no fim da tela da
+        // experiência (o iframe tem 812px e, em escala, sobra para fora da
+        // área) rolava esta caixa e escondia o topo do aparelho — sem barra e
+        // sem jeito de voltar. `clip` recorta igual e não rola: nada aqui
+        // depende dessa rolagem (quem rola é o conteúdo DENTRO do iframe).
+        overflow: "clip",
         background: "#fafafa",
       }}
     >
@@ -99,7 +106,7 @@ export function DispositivoFrame({
           transform: expandido ? "none" : `scale(${escala})`,
           transformOrigin: "center center",
           flexShrink: 0,
-          overflow: "hidden",
+          overflow: "clip",
           background: "#fff",
           // `outline`, não `border`: o preflight do Tailwind põe
           // `box-sizing: border-box` em tudo, e 1px de borda comeria 2px do
