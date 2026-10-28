@@ -186,7 +186,6 @@ export function Conversa({
           className="uai-fechamento"
         >
           <Modal.Body className="uai-fechamento__corpo">
-            <blockquote className="uai-fechamento__previa">{previa.paragrafos.map((p) => p.texto).join(" ")}</blockquote>
             <p id="manchete-guia" className="uai-fechamento__guia">
               {TEXTOS.manchete.guia}
             </p>
