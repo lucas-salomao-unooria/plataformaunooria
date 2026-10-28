@@ -8,18 +8,20 @@ import { revelar } from "../lib/abas.mjs";
  * das duas pontas da sala.
  *
  * A professora CRIA a atividade pelo assistente do hub, com um tema DELA,
- * escrito pela IA REAL (o Vertex, antes da aula — a única IA da missão),
- * faz a curadoria, homologa ("Homologar Conteúdo") e põe no ar ("Iniciar
- * Atividade com a Turma"). O estudante abre a pauta no UnooriaAI e conversa
- * com a ÁRVORE DE INTENÇÕES do servidor — sem IA na aula: as três sugestões
- * são a copy, perguntar a fonte só pergunta (o "sim" corrige) e o TC-03
- * corrige autoria e privacidade de uma vez. Ele aprova a prévia, exporta,
+ * escrito pela IA REAL (o Vertex, antes da aula: o pacote e as reações do
+ * feed), faz a curadoria, homologa ("Homologar Conteúdo") e põe no ar
+ * ("Iniciar Atividade com a Turma"). O estudante abre a pauta no UnooriaAI e
+ * conversa com a ÁRVORE DE INTENÇÕES do servidor — a IA só traduz o pedido
+ * que ela não entende (ADR-192): a pergunta da fonte vai com as palavras do
+ * estudante, perguntar só pergunta (o "sim" corrige) e o TC-03 corrige autoria
+ * e privacidade de uma vez. Ele aprova a prévia, exporta,
  * escolhe a manchete e publica (definitivo); o relógio salta até 02h30 e o
  * feed da madrugada abre, com a instrução do moderador (TC-10) FORA do
  * aparelho, no hub. Ele fixa o aviso de cuidado, mexe na Configuração da
  * Publicação e usa a Central de Apoio. A professora pausa as telas e avança a
- * turma para o Explicar; o estudante aponta um cartão, conclui e lê a
- * transcrição do podcast. No fim, o painel de habilidades.
+ * turma para o Explicar; o estudante aponta um cartão, conclui, lê a
+ * devolutiva e a transcrição do podcast. No fim, o painel de habilidades com
+ * a devolutiva de cada um.
  *
  * Os nomes (instituto, colega, autoria), o recorte, as manchetes e os
  * comentários vêm do pacote que a IA escreveu, lido da api COM o gabarito (o
@@ -84,6 +86,7 @@ const COPY = {
   selo: "Missão concluída",
   transcricao: "Ler a transcrição",
   transcricaoTitulo: "Transcrição do episódio",
+  devolutiva: ["Sua devolutiva", "Cuidado com a saúde", "Fontes e dados", "Autoria e privacidade", "Proteção e apoio"],
 };
 
 async function lerApi(p, caminho) {
@@ -135,7 +138,7 @@ await suite(
     slug: "estudante/04-efeito-amplificador",
     papel: "estudante",
     titulo: "O Efeito Amplificador — o post, a madrugada e os bastidores",
-    subtitulo: "a atividade criada com IA antes da aula, o UnooriaAI sem IA na aula, o feed das 02h30 e os dois botões da professora",
+    subtitulo: "a atividade criada com IA antes da aula, o UnooriaAI pela árvore (e a IA só no que ela não entende), o feed que reage ao post, os dois botões da professora e a devolutiva",
     contexto:
       "O estudante é o moderador do perfil do grêmio: cria com o UnooriaAI o post da campanha, audita o rascunho — " +
       "uma fonte inventada, um trecho copiado e um colega exposto — e publica no Unoovista. O relógio salta até " +
@@ -144,14 +147,16 @@ await suite(
     prova: [
       "A professora cria a atividade com um tema próprio, o Vertex escreve o pacote (origem ia), ela homologa e põe no ar",
       "O estudante vê a pauta do pacote e abre o UnooriaAI com as três sugestões da copy",
-      "Perguntar a fonte NÃO corrige o dado; o “sim” corrige; o TC-03 corrige autoria e privacidade — sem IA na aula",
+      "O pedido que a árvore não entende vai ao classificador de IA, que o traduz para a intenção da fonte — e a fala continua a do banco curado",
+      "Perguntar a fonte NÃO corrige o dado; o “sim” corrige; o TC-03 corrige autoria e privacidade",
       "A prévia mostra as pendências; aprovar, exportar e publicar com uma das três manchetes é definitivo",
       "O relógio salta até 02h30 e o feed da madrugada abre sem barra de abas, com o TC-10 FORA do aparelho",
+      "O feed reage ao post DESTE estudante: quem amplifica traz o texto da variante da manchete e do trecho; os relatos de saúde não mudam",
       "Aviso de cuidado com o motivo de saúde, as chaves da publicação, a denúncia e o relato à escola",
       "A sessão do estudante não carrega o gabarito (categoria do comentário, nós do rascunho)",
       "O painel de condução tem os quatro cartões; a pausa congela a tela; o avanço abre os bastidores",
-      "A conclusão traz a transcrição do podcast e nenhuma transferência (sem diário, sem reflexão)",
-      "O painel de habilidades mostra EM13CO24, EM13CO14, EM13CO26 e EM13CO08 com o nível do estudante",
+      "A conclusão traz a devolutiva escrita com IA, a transcrição do podcast e nenhuma transferência (sem diário, sem reflexão)",
+      "O painel de habilidades mostra EM13CO24, EM13CO14, EM13CO26 e EM13CO08 com o nível do estudante — e a devolutiva dele",
     ],
     comando: "node scripts/e2e/estudante/04-efeito-amplificador.mjs",
   },
@@ -299,7 +304,8 @@ await suite(
     /**
      * Uma fala ao UnooriaAI — pela sugestão (toque) ou pelo campo (texto).
      * Espera a resposta do POST e devolve o estado que a api mandou; a fala da
-     * árvore tem de aparecer na tela. Sem IA na aula: a resposta é imediata.
+     * árvore tem de aparecer na tela. A IA só entra no que a árvore não
+     * entende, com teto de 5 s no servidor: a resposta nunca passa do SDK.
      */
     const falar = async ({ sugestao, texto }) => {
       const resposta = p.waitForResponse(
@@ -326,15 +332,21 @@ await suite(
     await r.registrar(p, "rascunho-gerado", {
       titulo: "O rascunho gerado",
       mostra: "A primeira proposta do UnooriaAI e o botão Prévia do Post no topo do app.",
-      prova: "A resposta é da árvore de intenções do servidor, sem IA na aula: o rascunho é o do pacote homologado.",
+      prova: "A resposta é da árvore de intenções do servidor: o rascunho é o do pacote homologado.",
     });
 
-    const m2 = await falar({ sugestao: COPY.sugestoes[1] });
+    /* O pedido da fonte com as palavras do estudante — nenhum gatilho da árvore casa: é a IA (ADR-192) que o entende. */
+    const m2 = await falar({ texto: "quem garante que esse número é verdadeiro?" });
     const pend2 = m2.estado?.previa?.pendencias;
     r.exigir(
       m2.status === 200 && m2.fala.includes(k.fonteInventada) && m2.fala.endsWith("Deseja que eu atualize a prévia?"),
-      `perguntar a fonte nomeia “${k.fonteInventada}” e OFERECE atualizar a prévia`,
+      `a pergunta livre vira a intenção da fonte pelo classificador de IA: a fala nomeia “${k.fonteInventada}” e OFERECE atualizar a prévia (“${m2.fala.slice(0, 80)}”)`,
     );
+    await r.registrar(p, "pedido-livre-entendido", {
+      titulo: "O pedido com as palavras do estudante",
+      mostra: "“quem garante que esse número é verdadeiro?” — e a resposta do UnooriaAI sobre o instituto sem registro oficial.",
+      prova: "Nenhum gatilho da árvore casa com a frase: o classificador de IA a traduz para a intenção da fonte, e a fala continua a do banco curado.",
+    });
     r.exigir(pend2?.fonte === true, "perguntar a fonte NÃO corrige o dado (a pendência da fonte continua)");
     await q.getByRole("button", { name: new RegExp(COPY.previa) }).click();
     await q.getByText(COPY.pendencias.fonte, { exact: true }).waitFor({ timeout: 10_000 });
@@ -422,10 +434,22 @@ await suite(
     await q.getByText(`“${k.recorte}”`, { exact: true }).waitFor({ timeout: 10_000 });
     await q.getByText(COPY.metrica, { exact: true }).waitFor({ timeout: 10_000 });
     const comentariosNaTela = await q.locator(".unv-comentarios li, .unv-comentarios [class*='list-item']").count();
+    const REAGEM = ["anonimo_agressivo", "engajamento"];
+    const deSaude = k.comentarios.find((c) => !REAGEM.includes(c.tipo));
     r.exigir(
-      (await q.getByText(k.comentarios[0].texto, { exact: true }).count()) >= 1,
-      `os comentários da madrugada do pacote aparecem (${comentariosNaTela} na lista)`,
+      Boolean(deSaude) && (await q.getByText(deSaude.texto, { exact: true }).count()) >= 1,
+      `os relatos de saúde do pacote aparecem como estão (${comentariosNaTela} comentários na lista)`,
     );
+    /* O feed reage ao post DESTE estudante (ADR-192): a neutra, e o recorte viralizou (ele corrigiu o dado). */
+    const variante = k.reacoes?.["neutra.recorte"];
+    r.exigir(Boolean(variante), "o pacote escrito pela IA traz as reações ao post (seis variantes)");
+    const reagem = k.comentarios.filter((c) => REAGEM.includes(c.tipo));
+    const noFeed = new Map((publicada.corpo?.feed?.comentarios ?? []).map((c) => [c.id, c.texto]));
+    r.exigir(
+      reagem.length > 0 && reagem.every((c) => noFeed.get(c.id) === variante?.[c.id]),
+      `quem amplifica traz o texto da variante “neutra · o recorte viralizou” (${reagem.map((c) => c.autor).join(", ")})`,
+    );
+    await q.getByText(variante?.[reagem[0]?.id] ?? "—", { exact: true }).waitFor({ timeout: 10_000 });
     r.exigir((await q.locator(".unv-tab-bar, [role='tablist']").count()) === 0, "o feed da madrugada não tem barra de abas");
 
     /* O TC-10 é chrome do HUB: o aside fica na página, fora do iframe, com o tema destacado. */
@@ -570,6 +594,20 @@ await suite(
     });
     await q.getByRole("button", { name: COPY.concluir, exact: true }).click();
     await q.getByRole("heading", { name: COPY.selo }).waitFor({ timeout: 15_000 });
+    /* A devolutiva (ADR-192): corre contra o erro — "falhou" aparece na hora, a espera não é cega. */
+    const devolutivaNaTela = q.locator("[data-devolutiva='pronta'], [data-devolutiva='falhou']");
+    await devolutivaNaTela.first().waitFor({ timeout: 20_000 });
+    r.exigir((await devolutivaNaTela.first().getAttribute("data-devolutiva")) === "pronta", "a devolutiva carrega na conclusão");
+    const blocos = q.locator("[data-devolutiva='pronta'] [data-habilidade]");
+    r.exigir((await blocos.count()) === 4, `a devolutiva tem um parágrafo por habilidade (${await blocos.count()})`);
+    for (const t of COPY.devolutiva) await q.getByText(t, { exact: true }).waitFor({ timeout: 5_000 });
+    const textoDaDevolutiva = await q.locator("[data-devolutiva='pronta']").innerText();
+    r.exigir(!/\b(nota|n[ií]vel|atingiu|em processo)\b/i.test(textoDaDevolutiva), "a devolutiva não diz nível nem nota: a régua é do professor");
+    await r.registrar(p, "devolutiva", {
+      titulo: "A devolutiva do estudante",
+      mostra: "Sua devolutiva: cuidado com a saúde, fontes e dados, autoria e privacidade, proteção e apoio — o que ele fez e um próximo passo.",
+      prova: "Escrita a partir dos fatos que a régua já leu (nunca do texto do estudante), sem nível nem nota; gerada uma vez e gravada.",
+    });
     await q.getByText(COPY.transcricao, { exact: true }).click();
     await q.getByText(COPY.transcricaoTitulo, { exact: true }).waitFor({ timeout: 10_000 });
     const podcast = publicada.corpo?.textos?.podcast;
@@ -605,11 +643,32 @@ await suite(
     const textoDasHabilidades = await habilidades.innerText();
     for (const codigo of CODIGOS) r.exigir(textoDasHabilidades.includes(codigo), `o painel de habilidades traz ${codigo}`);
     r.exigir(textoDasHabilidades.includes(estudante.nome), `o painel de habilidades traz ${estudante.nome}`);
+    const devolutivas = (await lerApi(prof, `/efeito-amplificador/turmas/${turmaId}/pacotes/${atividadeId}/devolutivas`)).corpo;
+    const dele = devolutivas?.devolutivas?.find((d) => d.nome === estudante.nome);
+    r.exigir(dele?.origem === "ia", `o professor lê a devolutiva do estudante, escrita com IA (origem ${dele?.origem})`);
+    r.exigir(
+      Boolean(dele) && textoDaDevolutiva.includes(dele.habilidades.EM13CO24),
+      "é a MESMA devolutiva que o estudante leu",
+    );
     await r.registrar(prof, "habilidades-da-bncc", {
       titulo: "As habilidades da BNCC",
-      mostra: "EM13CO24, EM13CO14, EM13CO26 e EM13CO08, com o nível que a régua deu ao estudante.",
+      mostra: "EM13CO24, EM13CO14, EM13CO26 e EM13CO08, com o nível que a régua deu ao estudante, os critérios — e, abaixo, a devolutiva de cada um.",
       prova: "Só Canal A: tudo foi medido pelo que o estudante fez — o aviso, a auditoria, o direito digital e a proteção.",
       inteira: true,
+    });
+
+    /* A devolutiva de cada um é um Collapse fechado: abre o deste estudante e fotografa logo depois de vê-la aberta. */
+    const cartaoDele = prof.locator(`[data-devolutiva-do-estudante="${dele?.estudanteId ?? "—"}"]`);
+    await revelar(prof, cartaoDele);
+    await cartaoDele.getByRole("button").first().click();
+    const daDevolutiva = cartaoDele.getByText(dele?.habilidades?.EM13CO14 ?? "—", { exact: true });
+    await daDevolutiva.waitFor({ state: "visible", timeout: 10_000 });
+    await cartaoDele.scrollIntoViewIfNeeded();
+    r.exigir(await daDevolutiva.isVisible(), "a devolutiva aparece na aba Habilidades, abaixo dos critérios");
+    await r.registrar(prof, "devolutiva-no-painel", {
+      titulo: "A devolutiva de cada estudante, para o professor",
+      mostra: "Abaixo dos critérios, a devolutiva que o estudante leu ao concluir, com a etiqueta “Escrita com IA”.",
+      prova: "É o mesmo texto da tela do estudante; quem concluiu sem ela vê a do modelo da Unooria.",
     });
   },
 );
