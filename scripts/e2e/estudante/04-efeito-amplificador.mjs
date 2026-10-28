@@ -11,9 +11,9 @@ import { revelar } from "../lib/abas.mjs";
  * escrito pela IA REAL (o Vertex, antes da aula: o pacote e as reações do
  * feed), faz a curadoria, homologa ("Homologar Conteúdo") e põe no ar
  * ("Iniciar Atividade com a Turma"). O estudante abre a pauta no UnooriaAI e
- * conversa com a ÁRVORE DE INTENÇÕES do servidor — a IA só traduz o pedido
- * que ela não entende (ADR-192): a pergunta da fonte vai com as palavras do
- * estudante, perguntar só pergunta (o "sim" corrige) e o TC-03 corrige autoria
+ * conversa com o servidor — a IA lê o pedido PRIMEIRO e o traduz para a
+ * árvore de intenções, que é a reserva (ADR-193): a pergunta da fonte vai com
+ * as palavras do estudante, perguntar só pergunta (o "sim" corrige) e o TC-03 corrige autoria
  * e privacidade de uma vez. Ele aprova a prévia, exporta,
  * escolhe a manchete e publica (definitivo); o relógio salta até 02h30 e o
  * feed da madrugada abre, com a instrução do moderador (TC-10) FORA do
@@ -138,7 +138,7 @@ await suite(
     slug: "estudante/04-efeito-amplificador",
     papel: "estudante",
     titulo: "O Efeito Amplificador — o post, a madrugada e os bastidores",
-    subtitulo: "a atividade criada com IA antes da aula, o UnooriaAI pela árvore (e a IA só no que ela não entende), o feed que reage ao post, os dois botões da professora e a devolutiva",
+    subtitulo: "a atividade criada com IA antes da aula, o UnooriaAI com a IA lendo primeiro (e a árvore de reserva), o feed que reage ao post, os dois botões da professora e a devolutiva",
     contexto:
       "O estudante é o moderador do perfil do grêmio: cria com o UnooriaAI o post da campanha, audita o rascunho — " +
       "uma fonte inventada, um trecho copiado e um colega exposto — e publica no Unoovista. O relógio salta até " +
@@ -147,7 +147,7 @@ await suite(
     prova: [
       "A professora cria a atividade com um tema próprio, o Vertex escreve o pacote (origem ia), ela homologa e põe no ar",
       "O estudante vê a pauta do pacote e abre o UnooriaAI com as três sugestões da copy",
-      "O pedido que a árvore não entende vai ao classificador de IA, que o traduz para a intenção da fonte — e a fala continua a do banco curado",
+      "A pergunta com as palavras do estudante vai ao classificador de IA, que o traduz para a intenção da fonte — e a fala continua a do banco curado",
       "Perguntar a fonte NÃO corrige o dado; o “sim” corrige; o TC-03 corrige autoria e privacidade",
       "A prévia mostra as pendências; aprovar, exportar e publicar com uma das três manchetes é definitivo",
       "O relógio salta até 02h30 e o feed da madrugada abre sem barra de abas, com o TC-10 FORA do aparelho",
@@ -345,7 +345,7 @@ await suite(
     await r.registrar(p, "pedido-livre-entendido", {
       titulo: "O pedido com as palavras do estudante",
       mostra: "“quem garante que esse número é verdadeiro?” — e a resposta do UnooriaAI sobre o instituto sem registro oficial.",
-      prova: "Nenhum gatilho da árvore casa com a frase: o classificador de IA a traduz para a intenção da fonte, e a fala continua a do banco curado.",
+      prova: "A IA lê primeiro e traduz a frase para a intenção da fonte (nenhum gatilho da árvore casa com ela); a fala continua a do banco curado.",
     });
     r.exigir(pend2?.fonte === true, "perguntar a fonte NÃO corrige o dado (a pendência da fonte continua)");
     await q.getByRole("button", { name: new RegExp(COPY.previa) }).click();
