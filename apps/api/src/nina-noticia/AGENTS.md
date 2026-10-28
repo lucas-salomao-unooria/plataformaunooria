@@ -13,9 +13,11 @@ professora: "Liberar Filtro" (`aposta → filtro`) e "Liberar Inspeção" (`filt
 inspecao`), mais Pausar/Retomar (flag `pausada`) e Zerar (nova rodada, ADR-155).
 Tabelas `exp03ef1b_*` (pacotes, gates_turma, gates_historico, sessoes).
 
-**Hoje a pasta tem só a FUNDAÇÃO** — o contrato puro, sem controller, service
-nem Prisma. Quem implementar o resto segue o desenho do Júri
-(`src/juri-estadual/`) e a spec da frente.
+O desenho é o do Júri (`src/juri-estadual/`): `nina-noticia.service.ts` (o
+funil, os locks, o gate, o painel), `preparo.service.ts` (o texto com IA),
+`midia.service.ts` (as imagens do pacote), `banco-padrao-imagens.service.ts`
+(as do banco, do `admin`) e três controllers por papel (estudante, turmas,
+banco padrão). Migração `20261028180000_exp03ef1b_nina_noticia`.
 
 **A espinha é contrato com a experiência e o hub**: `vocabulario.ts`,
 `conteudo.ts`, `banco-padrao.ts`, `invariantes.ts`, `erros.ts`,
@@ -54,9 +56,56 @@ espelhos dessas listas; mudar a forma aqui sem avisar quebra os dois.
   (`PROIBIDO_NA_LINHA_DO_PAINEL`, com teste). A escolha da E2 só no agregado.
 - **Sem Canal B e sem podcast** nesta frente (spec §0.1 e §0.9).
 
+## O funil e os dois relógios (o que quebra se você esquecer)
+
+- **Toda jogada passa por `jogar`**: `garantirSessao` (escola, `exigirMissaoLiberada`
+  — disponibilidade E liberação —, turma, gate, sessão criada com o lock POR
+  ESTUDANTE antes da leitura) → lock COMPARTILHADO da turma com o gate RELIDO
+  (rodada trocada = 409 `rodada-mudou`) → pausada = 409 `turma-pausada` →
+  `exigirPasso` (`podeAgir`). Os botões da professora, o zerar, o homologar e o
+  pôr no ar pegam o lock EXCLUSIVO. Rota nova de estudante que não passar por
+  `jogar` (ou pelo `sessao`/`gate`) fura a porta da sala.
+- **Os latches** (escolha, ficha, carimbos de cada etapa, reparo) têm três
+  trancas: o lock por estudante, o `WHERE` com o estado anterior no `updateMany`
+  e o CHECK. Concluído de novo = o código `*-ja-*`; os "avanços" (selos, filtro
+  depois do certo, ficha aberta, rotina válida, concluir, `POST passo`) são
+  idempotentes e devolvem o estado.
+- **A semente é `id + rodada`** (`regras/ordem.ts#sementeDaSessao`), sem coluna:
+  o zerar abre outra linha e sorteia tudo de novo. O banco grava SUPORTES,
+  ETIQUETAS e BLOCOS, nunca o id opaco.
+- **O gate**: `etapa` + `pausada`, com um carimbo por portão e `pausada_em`
+  (CHECKs amarram os dois). Histórico append-only com `acao`
+  `liberar|pausar|retomar|zerar` e quem apertou (`professor_id`, SET NULL).
+- **O estudante não vê ficha antes do passo `ficha` EFETIVO**: quem confrontou
+  e espera a "Liberar Inspeção" tem o gravado `ficha` e o efetivo `omissao` —
+  `sessao.ficha` continua `null`.
+
+## O preparo e as imagens
+
+- **A IA escreve só texto** (`prompts.ts`, uma chamada): `pacoteDaIa` passa o
+  texto pelo `TextosGeradosSchema`, põe a estrutura por cima e só aceita com
+  `problemasDoPacote` vazio — reprovado, LANÇA e o provider regera. A
+  homologação aplica `aplicarEstrutura` de novo antes de gravar; a LEITURA
+  também (pacote torto sai com as fichas do servidor).
+- **Fallback é da ROTA** (`gerar-conteudo`): sem saldo ou IA fora → 200 com o
+  banco padrão, `usouIa: false`, `motivo` e as imagens do banco. Quota do
+  perfil `professor` (`temSaldo` antes, o pago por tentativa depois); a medição
+  é do `MedidorDeProvider`, recurso `nina-noticia` em `RECURSOS_DE_IA`.
+- **Oito imagens, dois donos** (`regras/imagens.ts`): as do PACOTE (`mural`,
+  `portal`, `telao`, `cartaz`), da professora, com quota e as duas fases de
+  aprovação (ADR-146); as CENAS FIXAS (`caso-a`, `caso-b`, `extra-1`,
+  `extra-2`), só do `admin` (`POST /nina-noticia/banco-padrao/imagens`, sem
+  quota, atribuição `nina-noticia-banco-padrao`). O arquivo é o hash do PEDIDO
+  (`feira/<hash>.webp`): o que existe no bucket entra de graça; o refeito leva
+  variação no nome. O pacote recebe as cenas fixas na criação e no `gerar-midia`
+  — se o `admin` gerar DEPOIS, o pacote já aprovado fica sem elas (ilustração
+  local) até outro pacote.
+- **As telas da professora só veem as quatro do pacote** (`imagensDoPacote`): o
+  `z.record` do contrato recusa outra chave.
+
 ## A evidência (E14) — `regras/evidencia.ts`
 
-Ficha `evidencias/fichas/exp03ef1b.ts` versão 1 (a escrever), só ação:
+Ficha `evidencias/fichas/exp03ef1b.ts` versão 1, só ação:
 `inspecao` EF15CO08 (no `POST ficha`: certo de primeira e sem o pulso =
 atingiu), `carimbos` EF03CO01 (no `POST carimbos` da E6; a UNIFORMIDADE vence:
 uniforme = não atingiu; K3 ✔ e K5 ? e ≥ 5 de 6 = atingiu), `rotina` EF03CO02 (≤ 2
@@ -68,3 +117,10 @@ tentativas contando a válida), `reparo` EF03CO03 e `previsao` EF15CO01 (os dois
 - `tests/nina-noticia-regras.spec.ts` — SEM banco: banco padrão e régua,
   gabaritos, filtro, latch da escolha, reparo, rotina (500 sementes), níveis,
   passos e gate, painel, allowlist do contrato e disciplinas contra o catálogo.
+- `tests/nina-noticia-postgres.spec.ts` — a aula na ordem: porta da sala, banco
+  padrão no ar, sessão sem gabarito, latch (inclusive concorrente), portões e
+  pausa, filtro que conta, ficha, carimbos, reparo certo/errado, rotina, fim, as
+  cinco marcas, painel, CHECKs comparados ao vocabulário, RLS e zerar.
+- `tests/nina-noticia-midia.spec.ts` — SEM banco, com IA FALSA (só aqui): o
+  preparo, a régua que regera, o fallback, as imagens do pacote e as do banco
+  (guarda de `admin` e a atribuição no painel de custos).
