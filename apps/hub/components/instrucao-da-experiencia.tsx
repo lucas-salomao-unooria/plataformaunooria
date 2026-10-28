@@ -13,9 +13,9 @@ import type { InstrucaoDaExperiencia } from "@/lib/instrucao-da-experiencia";
  *
  * É chrome do HUB (fora do iframe), então vale o DS da plataforma: `Card` e
  * `ScrollBar` (o texto é longo e, em tela estreita, não pode empurrar o
- * aparelho para fora). O realce do destaque é COMPENSAÇÃO LOCAL marcada: o DS
- * não publica um "texto realçado" (marca-texto) — o `Tag` é controle, não
- * trecho de frase —, então é um `<mark>` com o token `warning` do DS.
+ * aparelho para fora). O destaque é só NEGRITO (`<strong>`): o marca-texto
+ * amarelo de antes confundia o estudante (pedido do Lucas, 2026-10-28), e
+ * negrito não pede compensação nenhuma do DS.
  */
 export function InstrucaoDaExperiencia({ instrucao }: { instrucao: InstrucaoDaExperiencia }) {
   return (
@@ -29,13 +29,7 @@ export function InstrucaoDaExperiencia({ instrucao }: { instrucao: InstrucaoDaEx
           <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
             {instrucao.antes}
             {instrucao.destaque ? (
-              <mark
-                className="rounded px-1 font-semibold text-unooria-neutral-950"
-                // Compensação: sem "marca-texto" no DS; o token é o `warning-100` da plataforma.
-                style={{ background: "var(--unooria-color-warning-100, #fff3c4)" }}
-              >
-                {instrucao.destaque}
-              </mark>
+              <strong className="font-bold text-unooria-neutral-950">{instrucao.destaque}</strong>
             ) : null}
             {instrucao.depois}
           </p>

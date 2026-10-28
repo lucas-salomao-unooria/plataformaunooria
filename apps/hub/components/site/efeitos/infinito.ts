@@ -3,10 +3,14 @@
  * Corpo literal pelas razões do cabeçalho de `atmosfera.ts`.
  *
  * A única figura reconhecível na cena é amostrada do PRÓPRIO logo já embutido
- * na página (`.brand img`), pixel a pixel: não há asset remoto, não há WebGL e
- * não há contorno desenhado à mão em lugar nenhum. É por isso que o módulo
- * espera o `load` da imagem antes de iniciar — sem os pixels não existe figura,
- * e o `catch` esconde os palcos em vez de deixar um canvas preto na página.
+ * na página, pixel a pixel: não há asset remoto, não há WebGL e não há contorno
+ * desenhado à mão em lugar nenhum. É por isso que o módulo espera o `load` da
+ * imagem antes de iniciar — sem os pixels não existe figura, e o `catch`
+ * esconde os palcos em vez de deixar um canvas preto na página.
+ *
+ * O logo amostrado é o do RODAPÉ (`.footer-brand img`), desde a versão final do
+ * material (2026-10-28): o cabeçalho passou a mostrar a marca do ENTRE REDES, e
+ * o infinito é da Unooria — amostrar o cabeçalho formaria outra figura.
  */
 type Particula = {
   x: number; y: number; z: number;
@@ -32,7 +36,7 @@ type Cena = {
 
 export function iniciarInfinito(): () => void {
   const primary = document.getElementById("brand-infinity") as HTMLCanvasElement | null;
-  const logo = document.querySelector(".brand img") as HTMLImageElement | null;
+  const logo = document.querySelector(".footer-brand img") as HTMLImageElement | null;
   if (!primary || !logo) return () => {};
 
   const corte = new AbortController();

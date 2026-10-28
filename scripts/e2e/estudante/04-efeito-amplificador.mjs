@@ -20,7 +20,7 @@ import { revelar } from "../lib/abas.mjs";
  * aparelho, no hub. Ele fixa o aviso de cuidado, mexe na Configuração da
  * Publicação e usa a Central de Apoio. A professora pausa as telas e avança a
  * turma para o Explicar; o estudante aponta um cartão, conclui, lê a
- * devolutiva e o cartão do podcast (a transcrição é só da professora). No fim,
+ * devolutiva (o podcast é só da professora, tocado em aula). No fim,
  * o painel de habilidades com
  * a devolutiva de cada um.
  *
@@ -157,7 +157,8 @@ await suite(
       "A sessão do estudante não carrega o gabarito (categoria do comentário, nós do rascunho)",
       "O painel de condução tem os quatro cartões; a pausa congela a tela; o avanço abre os bastidores",
       "O controle da missão (pausar e avançar) fica no TOPO do painel da professora, antes dos quatro cartões",
-      "A conclusão traz a devolutiva escrita com IA e o cartão do podcast, sem a transcrição (é só da professora) e sem transferência",
+      "A conclusão traz o selo e a devolutiva escrita com IA — sem o podcast (é da professora, tocado em aula) e sem transferência",
+      "O modal da manchete traz só as três opções, sem a prévia do post; o destaque da instrução é negrito, sem marca-texto",
       "O painel de habilidades mostra EM13CO24, EM13CO14, EM13CO26 e EM13CO08 com o nível do estudante — e a devolutiva dele",
     ],
     comando: "node scripts/e2e/estudante/04-efeito-amplificador.mjs",
@@ -407,10 +408,11 @@ await suite(
     r.exigir((await radios.count()) === 3, `o Fechamento Editorial traz as três manchetes (${await radios.count()})`);
     const publicar = fechamento.getByRole("button", { name: COPY.publicar, exact: true });
     r.exigir(await publicar.isDisabled(), "o Publicar no Unoovista só acende depois de escolher a manchete");
+    r.exigir((await fechamento.locator("blockquote").count()) === 0, "o modal da manchete não repete a prévia do post");
     await radios.filter({ hasText: k.manchetes.neutra }).click();
     await r.registrar(p, "fechamento-editorial", {
       titulo: "O Fechamento Editorial da Campanha",
-      mostra: "As três manchetes do pacote — neutra, construtiva, sensacionalista — com a neutra escolhida, e o Publicar no Unoovista.",
+      mostra: "As três manchetes do pacote — neutra, construtiva, sensacionalista — com a neutra escolhida, e o Publicar no Unoovista; sem a prévia (quem quiser revê-la fecha o modal).",
       prova: "A aposta: a manchete mais equilibrada, esperando uma circulação construtiva.",
     });
 
@@ -460,8 +462,8 @@ await suite(
     const textoDoAside = (await aside.innerText()).replace(/\s+/g, " ");
     r.exigir(textoDoAside.startsWith(COPY.tc10), "a instrução do moderador (TC-10) está no hub, ao lado do aparelho");
     r.exigir(
-      (await aside.locator("mark").innerText()).trim() === RECORTE.tema,
-      `o tema da professora vem destacado na instrução (“${RECORTE.tema}”)`,
+      (await aside.locator("strong").innerText()).trim() === RECORTE.tema && (await aside.locator("mark").count()) === 0,
+      `o tema da professora vem em negrito na instrução, sem marca-texto (“${RECORTE.tema}”)`,
     );
     r.exigir((await q.getByText(COPY.tc10).count()) === 0, "o TC-10 NÃO está dentro do aparelho (iframe)");
     const caixaDoAside = await aside.boundingBox();
@@ -613,10 +615,11 @@ await suite(
       mostra: "Sua devolutiva: cuidado com a saúde, fontes e dados, autoria e privacidade, proteção e apoio — o que ele fez e um próximo passo.",
       prova: "Escrita a partir dos fatos que a régua já leu (nunca do texto do estudante), sem nível nem nota; gerada uma vez e gravada.",
     });
-    await q.getByText(COPY.podcast, { exact: true }).waitFor({ timeout: 10_000 });
     r.exigir(
-      (await q.getByText(COPY.transcricao, { exact: true }).count()) === 0 && publicada.corpo?.textos?.podcast === undefined,
-      "a transcrição do podcast NÃO está na tela do estudante, nem na sessão dele (é só da professora)",
+      (await q.getByText(COPY.podcast, { exact: false }).count()) === 0 &&
+        (await q.getByText(COPY.transcricao, { exact: true }).count()) === 0 &&
+        publicada.corpo?.textos?.podcast === undefined,
+      "o podcast NÃO está na tela do estudante — nem o cartão, nem a transcrição, nem na sessão (é só da professora)",
     );
     const textoFinal = await q.locator("body").innerText();
     r.exigir(
@@ -625,8 +628,8 @@ await suite(
       "sem caso de transferência: nem “streaming de áudio”, nem Diário de Bordo, nem campo de reflexão",
     );
     await r.registrar(p, "missao-concluida", {
-      titulo: "Missão concluída, com o podcast",
-      mostra: "O selo, a devolutiva e o cartão do podcast O Algoritmo Não Dorme, tocado em aula pela professora.",
+      titulo: "Missão concluída, com a devolutiva",
+      mostra: "O selo e a devolutiva; o podcast O Algoritmo Não Dorme é tocado em aula pela professora.",
       prova: "A transferência saiu (ADR-191) e a transcrição é só da professora (ADR-194): o fim é somente leitura.",
     });
     const fim = (await lerApi(p, "/efeito-amplificador/sessao")).corpo;

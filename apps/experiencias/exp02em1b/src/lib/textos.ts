@@ -2,7 +2,7 @@
  * Só o que a TELA escreve — a copy revisada da esteira (`06-copy-strings-revisada`),
  * literal, em pt-BR, com a chave ao lado. O conteúdo que muda com a turma (a
  * pauta, o rascunho, as manchetes, os comentários, as falas do UnooriaAI, os
- * bastidores, o podcast) vem da api, do pacote que o professor homologou:
+ * bastidores) vem da api, do pacote que o professor homologou:
  * corrigir uma palavra dele não pode exigir republicar o bundle.
  *
  * Marcas: `[PROTÓTIPO]` = o texto está no protótipo aprovado e não no 06;
@@ -145,9 +145,6 @@ export const TEXTOS = {
     app: "Unoovista", // a barra do app no fim (no protótipo, o título era o da tela da transferência, que saiu)
     selo: "Missão concluída", // [PROPOSTA] — o selo (o 06 diz "Missão concluída." dentro da frase abaixo)
     arquivada: "Missão concluída. Suas respostas foram arquivadas junto ao comitê do grêmio.", // e6.narrativa.missao_arquivada
-    podcast: "Podcast: O Algoritmo Não Dorme", // e6.rotulo.player_podcast_titulo
-    apresentacao: "Apresentado por Alex e Sam · 3:30 min", // [PROTÓTIPO]
-    emAula: "O episódio é tocado em aula pelo professor.", // [PROPOSTA]
     devolutiva: "Sua devolutiva", // [PROPOSTA] — o cartão da devolutiva (ADR-192)
     devolutivaApoio: "O que você fez na missão, e um próximo passo para cada parte.", // [PROPOSTA]
     devolutivaCarregando: "Preparando a sua devolutiva...", // [PROPOSTA]

@@ -19,7 +19,7 @@ export const EXP_ID = "exp02em1b";
  * conclusão; a 2.3.0 (ADR-193) põe o classificador para ler PRIMEIRO, com a
  * árvore como reserva (a tela não muda).
  */
-export const EXP_VERSION = "2.3.1";
+export const EXP_VERSION = "2.3.2";
 
 export type Passo = "abertura" | "conversa" | "feed" | "explicar" | "concluida";
 export type Fase = "exploracao" | "pausa" | "explicar";

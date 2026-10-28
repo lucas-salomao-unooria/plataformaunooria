@@ -56,17 +56,17 @@ await suite(
        repassa este cabeçalho à api, que o usa só como chave de cota.
        203.0.113.0/24 é a faixa que a RFC 5737 reserva para documentação. */
     await visitante.setExtraHTTPHeaders({ "x-forwarded-for": `203.0.113.${1 + (Date.now() % 250)}` });
-    await visitante.goto(`${HUB}/#cadastro`, { waitUntil: "domcontentloaded" });
-    const convite = visitante.locator("#cadastro [data-abrir-cadastro]");
+    await visitante.goto(`${HUB}/#contato`, { waitUntil: "domcontentloaded" });
+    const convite = visitante.locator("#contato [data-abrir-cadastro]");
     await convite.waitFor({ timeout: 30_000 });
 
     /* Portão de hidratação: em dev o HTML do servidor chega antes do bundle, e
-       nem o clique que ABRE a janela existe antes disso — quem liga os três
-       convites é o `efeitos/navegacao.ts`, num `useEffect`. Sem o portão, o
+       nem o clique que ABRE a janela existe antes disso — quem liga o
+       convite é o `efeitos/navegacao.ts`, num `useEffect`. Sem o portão, o
        primeiro clique cai no vazio e a suíte reprova um produto que funciona. */
     await visitante.waitForFunction(
       () => {
-        const botao = document.querySelector("#cadastro [data-abrir-cadastro]");
+        const botao = document.querySelector("#contato [data-abrir-cadastro]");
         return botao && Object.keys(botao).some((k) => k.startsWith("__react"));
       },
       null,
@@ -112,7 +112,7 @@ await suite(
       travada: document.body.classList.contains("locked"),
       confirmacao: document.querySelector("#cadastro-confirmado").innerText.trim(),
       nomeVazio: document.querySelector("#lead-name").value === "",
-      conviteSumiu: document.querySelector("#cadastro [data-abrir-cadastro]") === null,
+      conviteSumiu: document.querySelector("#contato [data-abrir-cadastro]") === null,
     }));
     r.exigir(!depoisDoEnvio.janelaAberta, "a janela fecha sozinha ao enviar");
     r.exigir(!depoisDoEnvio.travada, "e a rolagem da página volta");
