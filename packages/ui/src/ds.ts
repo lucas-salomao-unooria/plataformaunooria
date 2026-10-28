@@ -94,6 +94,11 @@ export {
   Table,
   Pagination,
   ListSectionItem,
+  /**
+   * 0.2.25: a régua de um valor com os rótulos visíveis das pontas — a régua
+   * do eixo Y no laudo da exp03em1b (E5).
+   */
+  Slider,
 } from '@unooria/design-system';
 
 /**
