@@ -1,0 +1,21 @@
+{
+  "id": "exp03em1b",
+  "nome": "O Porta-Voz dos Dados",
+  "versao": "1.0.0",
+  "produto": "entre-redes",
+  "series": [
+    "3EM"
+  ],
+  "unidade": 1,
+  "publico": "estudante",
+  "viewport": {
+    "largura": 375,
+    "altura": 812
+  },
+  "capabilities": [
+    "telemetria",
+    "progresso",
+    "ia",
+    "avaliacao"
+  ]
+}

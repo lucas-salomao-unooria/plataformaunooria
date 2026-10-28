@@ -46,6 +46,7 @@ export const RECURSOS_DE_IA: Record<string, { chave: string; nome: string }> = {
   /* As imagens do banco padrão do Júri, geradas pelo `admin` fora de turma: custo da plataforma (atribuição explícita). */
   "juri-estadual-banco-padrao": { chave: "juri-estadual-banco-padrao", nome: "O Júri Estadual — imagens do banco padrão" },
   "manifesto-ia": { chave: "manifesto-ia", nome: "O Manifesto da IA" },
+  "porta-voz-dos-dados": { chave: "porta-voz-dos-dados", nome: "O Porta-Voz dos Dados" },
   posts: { chave: "unoovista", nome: "Unoovista — O Conteúdo que não chegou" },
   runs: { chave: "unoovista", nome: "Unoovista — O Conteúdo que não chegou" },
   planejamento: { chave: "planejamento", nome: "Planejamento de ensino" },

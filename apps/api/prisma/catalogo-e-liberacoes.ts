@@ -190,6 +190,8 @@ export const LIBERACOES_DE_DEMO: Array<{ turma: string; expIds: string[] }> = [
   // A 1ª série EM: O Assistente Invisível (ADR-185).
   { turma: "1EM-A", expIds: ["exp01em1b"] },
   { turma: "2EM-A", expIds: ["exp02em1b"] },
+  // A 3ª série EM: O Porta-Voz dos Dados (ADR-198).
+  { turma: "3EM-A", expIds: ["exp03em1b"] },
 ];
 
 export async function semearLiberacoes(
