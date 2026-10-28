@@ -3,8 +3,10 @@ import { PrismaClient } from "@prisma/client";
 import type { AiJsonRequest, AiProvider } from "../src/ai/provider";
 import { QuotaService } from "../src/ai/quota.service";
 import type { AuthClaims } from "../src/auth/claims";
-import { EXP_ID, PACOTE_PADRAO, conteudoDoPadrao } from "../src/efeito-amplificador/conteudo";
+import { CHAVES_DAS_REACOES, EXP_ID, PACOTE_PADRAO, conteudoDoPadrao } from "../src/efeito-amplificador/conteudo";
 import {
+  DevolutivaSchema,
+  DevolutivasDaAtividadeSchema,
   EstadoSchema,
   GateDoEstudanteSchema,
   GerarRespostaSchema,
@@ -14,7 +16,10 @@ import {
 } from "../src/efeito-amplificador/contrato-de-rotas";
 import { EfeitoAmplificadorTurmasController } from "../src/efeito-amplificador/efeito-amplificador-turmas.controller";
 import { EfeitoAmplificadorService } from "../src/efeito-amplificador/efeito-amplificador.service";
+import { IaDaAulaDaExp02em1bService } from "../src/efeito-amplificador/ia-da-aula.service";
 import { PreparoDaExp02em1bService } from "../src/efeito-amplificador/preparo.service";
+import { SCHEMA_DA_DEVOLUTIVA, SCHEMA_DO_CLASSIFICADOR } from "../src/efeito-amplificador/prompts-da-aula";
+import { SCHEMA_DAS_REACOES } from "../src/efeito-amplificador/prompts";
 import { EquipesService } from "../src/equipes/equipes.service";
 import { EvidenciasService } from "../src/evidencias/evidencias.service";
 import { PrismaService } from "../src/prisma/prisma.service";
@@ -23,16 +28,18 @@ import { criarRoleDeRuntime, urlDeRuntime } from "./role-de-runtime";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * O Efeito Amplificador 2.1.0 (exp02em1b, ADR-191) no Postgres: o que só o
- * banco responde.
+ * O Efeito Amplificador 2.2.0 (exp02em1b, ADR-191 e ADR-192) no Postgres: o
+ * que só o banco responde.
  *
  * A porta da sala em TODA rota de estudante, a missão que nasce vazia, o
- * preparo com a quota (e o 404 antes de gastar token), a régua da homologação,
- * o caminho curto do banco padrão, a aula SEM IA (a árvore de intenções), o
- * LATCH com as marcas da EM13CO14 e da EM13CO26 na MESMA transação, o gabarito
- * ausente da saída do estudante, o aviso de cuidado e as proteções do feed
- * (EM13CO24 e EM13CO08), a pausa, os bastidores, o painel de quatro cartões
- * sem o texto do menor, a RLS com a role sem `BYPASSRLS` e o zerar.
+ * preparo com a quota (e o 404 antes de gastar token) e as reações do feed, a
+ * régua da homologação, o caminho curto do banco padrão, a árvore de
+ * intenções, o LATCH com as marcas da EM13CO14 e da EM13CO26 na MESMA
+ * transação, o gabarito ausente da saída do estudante, o aviso de cuidado e as
+ * proteções do feed (EM13CO24 e EM13CO08), a pausa, os bastidores, a
+ * devolutiva (do estudante e do professor), o painel de quatro cartões sem o
+ * texto do menor, a RLS com a role sem `BYPASSRLS`, o zerar — e a IA da aula
+ * (o classificador e o feed que reage ao post), que nunca muda a régua.
  *
  * Os testes dependem da ORDEM: é a aula, na sequência em que ela acontece.
  */
@@ -45,14 +52,47 @@ const ESCOLAS = [ESCOLA, OUTRA_ESCOLA];
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
 const runtime = new PrismaService({ datasources: { db: { url: urlDeRuntime(URL) } } }) as PrismaService & PrismaClient;
 
-/** A IA de mentira — SÓ a do preparo: escreve o banco padrão no formato do modelo, ou falha. A aula não chama IA. */
-let modoDaIa: "escreve" | "falha" = "escreve";
+/**
+ * A IA de mentira, por USO (o schema pedido diz qual): o pacote do preparo
+ * (o banco padrão no formato do modelo), as reações do feed, o classificador
+ * do chat e a devolutiva. Cada uso escreve, falha ou demora.
+ */
+type Modo = "escreve" | "falha" | "demora";
+let modoDaIa: Modo = "escreve";
+let modoDoClassificador: Modo = "escreve";
+let intencaoDoClassificador = "auditar_fontes";
+let modoDaDevolutiva: Modo = "escreve";
 let chamadasDaIa = 0;
+const contagem = { pacote: 0, reacoes: 0, classificador: 0, devolutiva: 0 };
+const REAGEM = ["c2", "c4", "c6"];
+const reacoesDeMentira = () =>
+  CHAVES_DAS_REACOES.map((chave) => ({
+    chave,
+    comentarios: REAGEM.map((id) => ({ id, texto: `Reação de ${id} ao post ${chave} que viralizou na madrugada` })),
+  }));
+const BLOCO = "Você fez escolhas sobre o post e elas tiveram efeito na rede. Isso importa porque o que circula de madrugada alcança muita gente. Da próxima vez, revise com calma antes de publicar.";
+const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const ia = {
   async generateJson<T>(req: AiJsonRequest<T>): Promise<T> {
     chamadasDaIa += 1;
-    if (modoDaIa === "falha") throw new Error("vendor fora do ar");
-    req.aoUsarTokens?.(900);
+    const uso =
+      req.responseSchema === SCHEMA_DAS_REACOES
+        ? "reacoes"
+        : req.responseSchema === SCHEMA_DO_CLASSIFICADOR
+          ? "classificador"
+          : req.responseSchema === SCHEMA_DA_DEVOLUTIVA
+            ? "devolutiva"
+            : "pacote";
+    contagem[uso] += 1;
+    const modo = uso === "classificador" ? modoDoClassificador : uso === "devolutiva" ? modoDaDevolutiva : modoDaIa;
+    if (modo === "demora") await esperar(400);
+    if (modo === "falha") throw new Error("vendor fora do ar");
+    req.aoUsarTokens?.(uso === "pacote" || uso === "reacoes" ? 900 : 60);
+    if (uso === "reacoes") return req.validar({ variantes: reacoesDeMentira() });
+    if (uso === "classificador") return req.validar({ intencao: intencaoDoClassificador, confianca: 0.92 });
+    if (uso === "devolutiva") {
+      return req.validar({ habilidades: ["EM13CO24", "EM13CO14", "EM13CO26", "EM13CO08"].map((codigo) => ({ codigo, texto: BLOCO })) });
+    }
     const c = conteudoDoPadrao();
     return req.validar({ ...c, rascunho: c.rascunho.map((p) => ({ ...p, no: p.no ?? "" })) });
   },
@@ -62,11 +102,27 @@ const equipes = new EquipesService(prisma);
 const evidencias = new EvidenciasService(prisma, equipes);
 const quota = new QuotaService(prisma);
 const preparo = new PreparoDaExp02em1bService(ia, quota);
-const service = new EfeitoAmplificadorService(prisma, evidencias, preparo);
+/* Os prazos encurtados: a corrida se prova com a IA "demorando" 400 ms. */
+const iaDaAula = new IaDaAulaDaExp02em1bService(ia, quota, { classificar: 150, devolutiva: 150 });
+const service = new EfeitoAmplificadorService(prisma, evidencias, preparo, iaDaAula);
 const controller = new EfeitoAmplificadorTurmasController(service);
 evidencias.onModuleInit();
 
-const ids = { turmaA: "", turmaB: "", turmaC: "", turmaVizinha: "", prof: "", profB: "", ana: "", bia: "", caio: "", fabi: "", vizinho: "" };
+const ids = {
+  turmaA: "",
+  turmaB: "",
+  turmaC: "",
+  turmaVizinha: "",
+  prof: "",
+  profB: "",
+  ana: "",
+  bia: "",
+  caio: "",
+  dani: "",
+  edu: "",
+  fabi: "",
+  vizinho: "",
+};
 const TEXTO_DE_MENOR = "Reescreva removendo os nomes pessoais e citando o autor original";
 
 async function limpar() {
@@ -132,6 +188,8 @@ beforeAll(async () => {
   ids.ana = await pessoa(ESCOLA, ids.turmaA, "ea.ana", "Ana Teste");
   ids.bia = await pessoa(ESCOLA, ids.turmaA, "ea.bia", "Bia Teste");
   ids.caio = await pessoa(ESCOLA, ids.turmaA, "ea.caio", "Caio Teste");
+  ids.dani = await pessoa(ESCOLA, ids.turmaB, "ea.dani", "Dani Teste");
+  ids.edu = await pessoa(ESCOLA, ids.turmaB, "ea.edu", "Edu Teste");
   ids.fabi = await pessoa(ESCOLA, ids.turmaC, "ea.fabi", "Fabi Teste");
   ids.vizinho = await pessoa(OUTRA_ESCOLA, ids.turmaVizinha, "ea.vizinho", "Vizinho Teste");
   ids.prof = await pessoa(ESCOLA, null, "ea.marta", "Marta Teste", "professor");
@@ -167,6 +225,7 @@ describe("a porta da sala (ADR-69)", () => {
       () => service.abrirExplicar(ESCOLA, ids.fabi),
       () => service.apontarEvidencia(ESCOLA, ids.fabi, "retencao"),
       () => service.concluir(ESCOLA, ids.fabi),
+      () => service.devolutiva(ESCOLA, ids.fabi),
     ]) {
       expect(await recusa(chamada)).toMatchObject({ status: 403, corpo: { codigo: "missao-nao-liberada" } });
     }
@@ -201,7 +260,7 @@ describe("o preparo do professor", () => {
     expect(chamadasDaIa).toBe(antes);
   });
 
-  test("gerar com IA grava UM rascunho (origem ia), conta a geração e debita a quota do professor", async () => {
+  test("gerar com IA grava UM rascunho (origem ia), com as reações do feed, conta a geração e debita a quota do professor", async () => {
     const r = GerarRespostaSchema.parse(
       await service.gerar(ESCOLA, ids.turmaA, ids.prof, "professor", {
         disciplina: "biologia",
@@ -212,7 +271,9 @@ describe("o preparo do professor", () => {
     expect(r).toMatchObject({ usouIa: true, motivo: null, rascunho: { origem: "ia", tema: "Impacto das Telas no Sono", aprovadoEm: null } });
     expect(r.rascunho.conteudo.pauta.orientacoes.length).toBeGreaterThanOrEqual(2);
     const linha = await prisma.exp02em1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turmaA, aprovadoEm: null } });
-    expect(linha).toMatchObject({ iaGeracoes: 1, iaTokens: 900 });
+    /* Duas chamadas pagas (o pacote e as reações), uma geração. */
+    expect(linha).toMatchObject({ iaGeracoes: 1, iaTokens: 1800 });
+    expect(Object.keys(r.rascunho.conteudo.reacoes ?? {}).sort()).toEqual([...CHAVES_DAS_REACOES].sort());
     expect(await prisma.iaUsoDiario.count({ where: { escolaId: ESCOLA, usuarioId: ids.prof } })).toBeGreaterThan(0);
   });
 
@@ -222,6 +283,34 @@ describe("o preparo do professor", () => {
     modoDaIa = "escreve";
     expect(r).toMatchObject({ usouIa: false, motivo: "indisponivel", rascunho: { origem: "padrao", tema: PACOTE_PADRAO.tema } });
     expect(await prisma.exp02em1bPacote.count({ where: { escolaId: ESCOLA, turmaId: ids.turmaA, aprovadoEm: null } })).toBe(1);
+  });
+
+  test("as reações falhando não derrubam o pacote: ele sai da IA, sem reações", async () => {
+    const antes = contagem.reacoes;
+    const original = ia.generateJson.bind(ia);
+    (ia as { generateJson: AiProvider["generateJson"] }).generateJson = (async (r: AiJsonRequest<unknown>) => {
+      if (r.responseSchema === SCHEMA_DAS_REACOES) {
+        contagem.reacoes += 1;
+        r.aoUsarTokens?.(300);
+        throw new Error("saída recusada");
+      }
+      return original(r);
+    }) as AiProvider["generateJson"];
+    const r = GerarRespostaSchema.parse(
+      await service.gerar(ESCOLA, ids.turmaA, ids.prof, "professor", { disciplina: "biologia", tema: "Telas e sono", assuntos: ["a1", "b2", "c3"] }),
+    );
+    (ia as { generateJson: AiProvider["generateJson"] }).generateJson = original;
+    expect(contagem.reacoes).toBe(antes + 1);
+    expect(r).toMatchObject({ usouIa: true, rascunho: { origem: "ia" } });
+    expect(r.rascunho.conteudo.reacoes).toBeUndefined();
+  });
+
+  test("a homologação cobra a régua das reações: o colega exposto numa reação é recusado", async () => {
+    const corpo = corpoDoPadrao();
+    const reacoes = Object.fromEntries(CHAVES_DAS_REACOES.map((k) => [k, { c2: "Todo mundo sabe que foi o Gabriel Mendes do 2º C que começou essa briga" }]));
+    const r = await recusa(() => controller.homologar(ids.turmaA, undefined, { ...corpo, conteudo: { ...corpo.conteudo, reacoes } }, req(ids.prof)));
+    expect(r).toMatchObject({ status: 400, corpo: { codigo: "pacote-invalido" } });
+    expect((r.corpo.erros as string[]).join(" ")).toMatch(/não pode expor o colega/);
   });
 
   test("a homologação cobra a régua inteira (400 pacote-invalido com TODAS as frases)", async () => {
@@ -251,7 +340,7 @@ describe("o preparo do professor", () => {
   });
 });
 
-describe("a aula: o UnooriaAI sem IA e o latch", () => {
+describe("a aula: o UnooriaAI pela árvore e o latch", () => {
   test("a sessão traz a pauta do pacote, a boas-vindas e as três sugestões da copy", async () => {
     const s = SessaoSchema.parse(await service.sessao(ESCOLA, ids.ana));
     expect(s.textos.pauta?.titulo).toBe("Campanha Convivência Escolar e Celular");
@@ -405,6 +494,45 @@ describe("o feed da madrugada, a pausa e os bastidores", () => {
   });
 });
 
+describe("a devolutiva (ADR-192)", () => {
+  test("antes de concluir: 409 missao-nao-concluida", async () => {
+    expect(await codigo(service.devolutiva(ESCOLA, ids.caio))).toBe("missao-nao-concluida");
+  });
+
+  test("a Ana concluiu: a IA redige, a devolutiva é gravada UMA vez e a quota do estudante é debitada", async () => {
+    const antes = contagem.devolutiva;
+    const r = DevolutivaSchema.parse(await service.devolutiva(ESCOLA, ids.ana));
+    expect(r.devolutiva.origem).toBe("ia");
+    expect(Object.keys(r.devolutiva.habilidades).sort()).toEqual(["EM13CO08", "EM13CO14", "EM13CO24", "EM13CO26"]);
+    expect(r.titulos.EM13CO24).toBe("Cuidado com a saúde");
+    const de_novo = DevolutivaSchema.parse(await service.devolutiva(ESCOLA, ids.ana));
+    expect(de_novo.devolutiva.geradaEm).toBe(r.devolutiva.geradaEm);
+    expect(contagem.devolutiva).toBe(antes + 1);
+    expect(await prisma.iaUsoDiario.count({ where: { escolaId: ESCOLA, usuarioId: ids.ana } })).toBeGreaterThan(0);
+  });
+
+  test("a Bia, com a IA fora: o modelo curado responde pelos fatos dela (nada feito)", async () => {
+    modoDaDevolutiva = "falha";
+    const r = DevolutivaSchema.parse(await service.devolutiva(ESCOLA, ids.bia));
+    modoDaDevolutiva = "escreve";
+    expect(r.devolutiva.origem).toBe("modelo");
+    expect(r.devolutiva.habilidades.EM13CO14).toMatch(/sem que a fonte fosse perguntada/);
+    expect(r.devolutiva.habilidades.EM13CO08).toMatch(/nenhuma proteção foi acionada/);
+  });
+
+  test("o professor lê as devolutivas de quem concluiu — sem o texto do menor; a turma que não leciona é 404", async () => {
+    const ativo = PacoteDaTurmaSchema.parse(await service.pacoteDaTurma(ESCOLA, ids.turmaA, ids.prof)).ativo!;
+    const r = DevolutivasDaAtividadeSchema.parse(await service.devolutivas(ESCOLA, ids.turmaA, ids.prof, ativo.id));
+    expect(r.devolutivas.map((d) => [d.nome, d.origem])).toEqual([
+      ["Ana Teste", "ia"],
+      ["Bia Teste", "modelo"],
+    ]);
+    expect(r.habilidades).toEqual(["EM13CO24", "EM13CO14", "EM13CO26", "EM13CO08"]);
+    expect(JSON.stringify(r)).not.toContain(TEXTO_DE_MENOR);
+    expect(await recusa(service.devolutivas(ESCOLA, ids.turmaA, ids.profB, ativo.id))).toMatchObject({ status: 404 });
+  });
+});
+
 describe("o painel e a RLS", () => {
   test("os quatro cartões: a lousa é agregada; a folha diz passo, manchete e tempo parado — nunca o chat", async () => {
     const p = PainelSchema.parse(await service.painel(ESCOLA, ids.turmaA, ids.prof));
@@ -443,5 +571,91 @@ describe("o painel e a RLS", () => {
     expect(await prisma.exp02em1bSessao.count({ where: { escolaId: ESCOLA, turmaId: ids.turmaA } })).toBe(3);
     expect(SessaoSchema.parse(await service.sessao(ESCOLA, ids.ana)).passo).toBe("abertura");
     expect(await codigo(service.novaRodada(ESCOLA, ids.turmaA, ids.prof, 5))).toBe("rodada-desatualizada");
+  });
+});
+
+describe("a IA da aula não muda a régua (ADR-192)", () => {
+  let pacoteDaB = "";
+
+  test("a turma B põe no ar um pacote da IA, com as reações do feed", async () => {
+    const gerado = GerarRespostaSchema.parse(
+      await service.gerar(ESCOLA, ids.turmaB, ids.profB, "professor", { disciplina: "biologia", tema: "Telas e sono", assuntos: ["a1", "b2", "c3"] }),
+    );
+    const { rascunho } = gerado;
+    const homologado = await controller.homologar(
+      ids.turmaB,
+      undefined,
+      { disciplina: rascunho.disciplina, tema: rascunho.tema, assuntos: rascunho.assuntos, contexto: rascunho.contexto, origem: "ia", conteudo: rascunho.conteudo },
+      req(ids.profB),
+    );
+    pacoteDaB = homologado.id;
+    expect((await service.colocarEmAndamento(ESCOLA, ids.turmaB, ids.profB, pacoteDaB)).mudou).toBe(true);
+    await service.entrar(ESCOLA, ids.dani);
+    await service.entrar(ESCOLA, ids.edu);
+    await service.mensagem(ESCOLA, ids.dani, "criar rascunho");
+  });
+
+  test("a mensagem que a árvore não entende vai ao classificador: a fala é a do 01e, e a sessão grava quem classificou", async () => {
+    const antes = contagem.classificador;
+    const e = EstadoSchema.parse(await service.mensagem(ESCOLA, ids.dani, "quem garante que esse número é verdadeiro?"));
+    expect(contagem.classificador).toBe(antes + 1);
+    expect(ultima(e)).toMatch(/não possui registro oficial[\s\S]*Deseja que eu atualize a prévia\?$/);
+    const linha = await prisma.exp02em1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.dani } });
+    const falas = linha.conversa as Array<{ papel: string; intencao?: string; classificador?: string }>;
+    expect(falas.filter((f) => f.papel === "estudante").map((f) => [f.intencao, f.classificador])).toEqual([
+      ["gerar_rascunho_inicial", "arvore"],
+      ["auditar_fontes", "ia"],
+    ]);
+  });
+
+  test("o que a árvore entende NÃO vai à IA", async () => {
+    const antes = contagem.classificador;
+    await service.mensagem(ESCOLA, ids.edu, "criar rascunho");
+    expect(contagem.classificador).toBe(antes);
+  });
+
+  test("IA fora ou lenta: vale a árvore (fora do tema), e a prévia não muda", async () => {
+    modoDoClassificador = "falha";
+    const falhou = EstadoSchema.parse(await service.mensagem(ESCOLA, ids.edu, "quem garante que esse número é verdadeiro?"));
+    modoDoClassificador = "demora";
+    const lenta = EstadoSchema.parse(await service.mensagem(ESCOLA, ids.edu, "quem garante que esse número é verdadeiro?"));
+    modoDoClassificador = "escreve";
+    for (const e of [falhou, lenta]) {
+      expect(ultima(e)).toMatch(/^Como assistente editorial do grêmio/);
+      expect(e.previa?.pendencias).toEqual({ fonte: true, autoria: true, privacidade: true });
+    }
+  });
+
+  test("a IA não dá crédito sozinha: o classificador que devolve fora_do_tema não marca o pedido da fonte", async () => {
+    intencaoDoClassificador = "fora_do_tema";
+    await service.mensagem(ESCOLA, ids.edu, "e aí, tudo certo com isso?");
+    intencaoDoClassificador = "auditar_fontes";
+    await service.publicar(ESCOLA, ids.edu, "construtiva");
+    expect(await nivel(ids.edu, "auditoria_fontes")).toBe("nao_atingiu");
+  });
+
+  test("o feed reage ao post DE CADA UM: só o texto de quem amplifica muda; saúde, autores, horários e o perfil suspeito são os mesmos", async () => {
+    const dani = EstadoSchema.parse(await service.publicar(ESCOLA, ids.dani, "sensacionalista"));
+    const edu = EstadoSchema.parse(await service.sessao(ESCOLA, ids.edu));
+    /* A Dani perguntou a fonte e não aceitou a troca: o dado ficou, e viralizou. O Edu não corrigiu nada: também o dado. */
+    expect(dani.publicacao?.trechoPincado).toContain("DataBrasil 2026");
+    const porId = (e: typeof dani) => new Map((e.feed?.comentarios ?? []).map((c) => [c.id, c]));
+    const d = porId(dani);
+    const u = porId(edu);
+    expect(d.get("c2")?.texto).toBe("Reação de c2 ao post sensacionalista.dado que viralizou na madrugada");
+    expect(u.get("c2")?.texto).toBe("Reação de c2 ao post construtiva.dado que viralizou na madrugada");
+    for (const id of ["c1", "c3", "c5"]) expect(d.get(id)).toEqual(u.get(id));
+    for (const id of ["c1", "c2", "c3", "c4", "c5", "c6"]) {
+      expect([d.get(id)?.autor, d.get(id)?.horario]).toEqual([u.get(id)?.autor, u.get(id)?.horario]);
+    }
+    expect(dani.feed?.perfilSuspeito).toEqual(edu.feed?.perfilSuspeito);
+    expect(JSON.stringify(dani)).not.toMatch(/"tipo":|saude_fisica|anonimo_agressivo/);
+  });
+
+  test("com o feed variando, a régua é a mesma: o aviso de saúde é atingiu, outro motivo é em processo", async () => {
+    await service.avisoDeCuidado(ESCOLA, ids.dani, "saude_usuarios");
+    await service.avisoDeCuidado(ESCOLA, ids.edu, "fonte_duvidosa");
+    expect(await nivel(ids.dani, "moderacao_saude")).toBe("atingiu");
+    expect(await nivel(ids.edu, "moderacao_saude")).toBe("em_processo");
   });
 });

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  CHAVES_DAS_REACOES,
   COMENTARIOS_POR_PACOTE,
   DESTINOS_DO_RELATO,
   DISCIPLINAS,
@@ -16,6 +17,7 @@ import {
   TEMA,
   TIPOS_DE_COMENTARIO,
 } from "./conteudo";
+import { HABILIDADES_DA_DEVOLUTIVA, ORIGENS_DA_DEVOLUTIVA } from "./regras/devolutiva";
 import { problemasDoConteudo } from "./regras/pacote";
 import { ETAPAS, PASSOS } from "./regras/passos";
 
@@ -103,6 +105,10 @@ export const ConteudoBaseSchema = z.object({
     sensacionalista: texto(MANCHETE_MAX_CARACTERES),
   }),
   comentarios: z.array(ComentarioDoFeedSchema).length(COMENTARIOS_POR_PACOTE),
+  /** As reações ao post do estudante, por variante e por comentário (ADR-192). A régua está em `regras/reacoes.ts`. */
+  reacoes: z
+    .record(z.enum(CHAVES_DAS_REACOES as [string, ...string[]]), z.record(ComentarioIdSchema, z.string().trim().min(5).max(300)))
+    .optional(),
 });
 
 export const ConteudoDoPacoteSchema = ConteudoBaseSchema.superRefine((c, ctx) => {
@@ -322,6 +328,38 @@ export const MaterialSchema = z.object({
       codigo: z.string(),
       rotulo: z.string(),
       criterios: z.object({ atingiu: z.string(), em_processo: z.string(), nao_atingiu: z.string() }),
+    }),
+  ),
+});
+
+// ─────────────────────────────────────────────────────────── a devolutiva (ADR-192)
+
+const HabilidadeDaDevolutivaSchema = z.enum(HABILIDADES_DA_DEVOLUTIVA);
+const TextosDaDevolutivaSchema = z.record(HabilidadeDaDevolutivaSchema, z.string());
+
+/** A devolutiva da conclusão, para o estudante: um parágrafo por habilidade, sem nível. */
+export const DevolutivaSchema = z.object({
+  devolutiva: z.object({
+    origem: z.enum(ORIGENS_DA_DEVOLUTIVA),
+    habilidades: TextosDaDevolutivaSchema,
+    geradaEm: z.string(),
+  }),
+  titulos: TextosDaDevolutivaSchema,
+});
+
+/** As devolutivas de uma atividade, para a aba Habilidades do professor. */
+export const DevolutivasDaAtividadeSchema = z.object({
+  habilidades: z.array(HabilidadeDaDevolutivaSchema),
+  titulos: TextosDaDevolutivaSchema,
+  devolutivas: z.array(
+    z.object({
+      estudanteId: z.string(),
+      nome: z.string(),
+      equipe: z.string().nullable(),
+      rodada: z.number().int(),
+      concluidoEm: z.string().nullable(),
+      origem: z.enum(ORIGENS_DA_DEVOLUTIVA),
+      habilidades: TextosDaDevolutivaSchema,
     }),
   ),
 });

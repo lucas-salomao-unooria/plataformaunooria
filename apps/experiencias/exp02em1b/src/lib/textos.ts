@@ -150,6 +150,11 @@ export const TEXTOS = {
     emAula: "O episódio é tocado em aula pelo professor.", // [PROPOSTA]
     transcricao: "Ler a transcrição", // [PROPOSTA]
     transcricaoTitulo: "Transcrição do episódio", // [PROPOSTA]
+    devolutiva: "Sua devolutiva", // [PROPOSTA] — o cartão da devolutiva (ADR-192)
+    devolutivaApoio: "O que você fez na missão, e um próximo passo para cada parte.", // [PROPOSTA]
+    devolutivaCarregando: "Preparando a sua devolutiva...", // [PROPOSTA]
+    devolutivaFalhou: "Não deu para carregar a sua devolutiva agora.", // [PROPOSTA]
+    devolutivaDeNovo: "Tentar de novo", // [PROPOSTA]
   },
 
   erroDeAbertura: "Não deu para abrir agora. Tente de novo em instantes.", // [2.0.x]

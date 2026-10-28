@@ -3949,6 +3949,10 @@ model Exp02em1bSessao {
   indicadores       String[]  @default([])
   ultimoNaoComprova Boolean   @default(false) @map("ultimo_nao_comprova")
   concluidoEm       DateTime? @map("concluido_em") @db.Timestamptz(6)
+  /// A devolutiva da conclusão (ADR-192), gerada uma vez: {origem: "ia"|"modelo",
+  /// habilidades: {EM13CO24, EM13CO14, EM13CO26, EM13CO08}, geradaEm}. Sai dos
+  /// FATOS da sessão, nunca do texto do estudante; o professor a lê no painel.
+  devolutiva        Json?
 
   versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
 

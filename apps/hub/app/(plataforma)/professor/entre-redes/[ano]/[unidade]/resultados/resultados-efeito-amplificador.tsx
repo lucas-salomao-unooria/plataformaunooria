@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { dataHora } from "@edu/sdk";
-import { Badge, Card, EmptyState, FeedbackAlert, SectionHeader, Tag } from "@edu/ui/ds";
+import { Badge, Card, Collapse, EmptyState, FeedbackAlert, SectionHeader, Tag } from "@edu/ui/ds";
 import { AbasDaAtividade } from "@/components/atividades/abas-da-atividade";
 import { UsarEstaAtividade } from "@/components/atividades/usar-esta-atividade";
 import { EquipesDaAtividade } from "@/components/equipes/equipes-da-ficha";
@@ -15,12 +15,17 @@ import { rotaDaMissao, type Missao } from "@/lib/entre-redes/catalogo";
 import { painelDeHabilidades } from "@/lib/evidencias-servidor";
 import { podcastDaAtividade } from "@/lib/podcast-servidor";
 import {
+  CHAVES_DAS_REACOES,
   ROTULO_DA_MANCHETE,
+  ROTULO_DA_ORIGEM_DA_DEVOLUTIVA,
+  ROTULO_DA_REACAO,
   ROTULO_DO_NO,
   ROTULO_DO_TIPO,
   MANCHETES,
   caminhoDaTurma,
+  reage,
   rotuloDaDisciplina,
+  type DevolutivasDaAtividade,
   type PacoteDetalhe,
   type PacotesDaTurmaEfeito,
   type PainelDaTurma,
@@ -45,7 +50,8 @@ const ROTULO_DA_ORIGEM = { ia: "Gerado com IA e homologado por você", padrao: "
  * condução ao vivo (E4-PROF-01: Pausar Telas para Debate, Avançar Turma para
  * Explicar) só no em andamento, o "Zerar", o podcast e o relatório pós-aula
  * (E6-PROF-01), que é a aba Habilidades: o painel da evidência (F14.7) já é a
- * matriz estudante × habilidade com os três níveis, e não se duplica. Sem
+ * matriz estudante × habilidade com os três níveis, e não se duplica; abaixo
+ * dele, a devolutiva que cada estudante leu ao concluir (2.2.0, ADR-192). Sem
  * reflexão: a transferência da Etapa 6 está fora desta versão.
  *
  * Painel, botões e "Zerar" operam SEMPRE no pacote em andamento (a api não
@@ -95,15 +101,20 @@ export async function ResultadosEfeitoAmplificador({
   const emAndamento = detalhe?.ativo === true;
   const tituloDoEmAndamento = historico.find((h) => h.ativo)?.tema ?? null;
 
-  const [painel, sala, habilidades, podcast] =
+  const jogada = detalhe ? detalhe.rodadas > 0 || emAndamento : false;
+  const [painel, sala, habilidades, podcast, devolutivas] =
     detalhe && atividadeId
       ? await Promise.all([
           emAndamento ? apiDoServidor<PainelDaTurma>(`${base}/painel`) : Promise.resolve(null),
           podeConduzir ? salaDaTurma(turma) : Promise.resolve(null),
-          detalhe.rodadas > 0 || emAndamento ? painelDeHabilidades(turma, EXP_ID, atividadeId) : Promise.resolve(null),
+          jogada ? painelDeHabilidades(turma, EXP_ID, atividadeId) : Promise.resolve(null),
           podcastDaAtividade(EXP_ID, turma, atividadeId),
+          /* A devolutiva de cada estudante (ADR-192). Falha = `null`, e a seção some sem derrubar a aba. */
+          jogada
+            ? apiDoServidor<DevolutivasDaAtividade>(`${base}/pacotes/${encodeURIComponent(atividadeId)}/devolutivas`)
+            : Promise.resolve(null),
         ])
-      : [null, null, null, null];
+      : [null, null, null, null, null];
 
   /* A atividade que o painel conta é a EM ANDAMENTO da turma; se outra aba trocou entre as duas leituras, ele não aparece. */
   const atividadeDoPainel = painel?.atividade && painel.atividade.pacoteId === detalhe?.id ? painel.atividade : null;
@@ -318,21 +329,27 @@ export async function ResultadosEfeitoAmplificador({
                  painel mostra as rodadas e o resultado. Invisível sem ficha
                  (`temFicha: false`), e só o `professor` confirma e ajusta: a
                  coordenação lê. */
-              habilidades?.temFicha ? (
+              habilidades?.temFicha || devolutivas ? (
                 <div className="flex flex-col gap-3" data-habilidades-efeito-amplificador>
-                  <SectionHeader
-                    title="Matriz Consolidada de Evidências (CO24, CO14, CO26, CO08)"
-                    description="O relatório da turma: o nível de cada estudante nas quatro habilidades da missão, registrado pelo que ele fez."
-                  />
-                  <PainelDeHabilidades
-                    key={`habilidades-${turma}-${detalhe.id}`}
-                    turmaId={turma}
-                    expId={EXP_ID}
-                    atividadeId={detalhe.id}
-                    inicial={habilidades}
-                    podeEditar={podeConduzir}
-                    rodadaEmAndamento={emAndamento ? detalhe.rodadaAtual : null}
-                  />
+                  {habilidades?.temFicha ? (
+                    <>
+                      <SectionHeader
+                        title="Matriz Consolidada de Evidências (CO24, CO14, CO26, CO08)"
+                        description="O relatório da turma: o nível de cada estudante nas quatro habilidades da missão, registrado pelo que ele fez."
+                      />
+                      <PainelDeHabilidades
+                        key={`habilidades-${turma}-${detalhe.id}`}
+                        turmaId={turma}
+                        expId={EXP_ID}
+                        atividadeId={detalhe.id}
+                        inicial={habilidades}
+                        podeEditar={podeConduzir}
+                        rodadaEmAndamento={emAndamento ? detalhe.rodadaAtual : null}
+                      />
+                    </>
+                  ) : null}
+                  {/* No MESMO painel dos critérios: o professor lê o nível e o que o estudante leu sobre ele. */}
+                  {devolutivas ? <DevolutivasDosEstudantes dados={devolutivas} /> : null}
                 </div>
               ) : null
             }
@@ -398,10 +415,95 @@ function PacoteDaCampanha({ pacote }: { pacote: PacoteDetalhe }) {
                 </Tag>
               </span>
               <span>{com.texto}</span>
+              {/* As reações ao post (ADR-192): só nos pacotes gerados na 2.2.0 em diante, e só nas vozes que amplificam. */}
+              {c.reacoes && reage(com.tipo) ? (
+                <Collapse title="As seis reações ao post" size="sm" variant="bordered">
+                  <div className="flex flex-col gap-2 pt-1" data-reacoes-do-comentario={com.id}>
+                    <p className="text-[12px] text-unooria-neutral-600">
+                      Este comentário muda conforme a manchete e o trecho que viralizaram no post de cada estudante. Sem
+                      texto numa variante, vale o de cima.
+                    </p>
+                    <dl className="flex flex-col gap-2">
+                      {CHAVES_DAS_REACOES.map((chave) => (
+                        <div key={chave} className="flex flex-col gap-0.5">
+                          <dt className="text-[12px] font-semibold text-unooria-neutral-500">{ROTULO_DA_REACAO[chave]}</dt>
+                          <dd>{c.reacoes?.[chave]?.[com.id]?.trim() || "—"}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                </Collapse>
+              ) : null}
             </li>
           ))}
         </ul>
       </div>
+    </div>
+  );
+}
+
+/**
+ * A DEVOLUTIVA de cada estudante (ADR-192): o parágrafo por habilidade que ele
+ * leu ao concluir. Nominal, como o resto da aba. Um `Collapse` por estudante,
+ * fechado: são quatro parágrafos cada, e a turma inteira aberta empurraria a
+ * aba para longe. O corpo é só texto — nada focável dentro do `aria-hidden`
+ * do `Collapse` fechado (a lacuna do DS que a curadoria compensa).
+ */
+function DevolutivasDosEstudantes({ dados }: { dados: DevolutivasDaAtividade }) {
+  const variasRodadas = new Set(dados.devolutivas.map((d) => d.rodada)).size > 1;
+  return (
+    <div className="mt-4 flex flex-col gap-3" data-devolutivas>
+      <SectionHeader
+        title="Devolutiva de cada estudante"
+        description="A devolutiva que o estudante leu ao concluir, escrita a partir do que ele fez. Quem concluiu sem ela vê a do modelo da Unooria."
+      />
+      {dados.devolutivas.length === 0 ? (
+        <EmptyState
+          variant="no-data"
+          size="md"
+          bordered
+          fullWidth
+          title="Ninguém concluiu ainda"
+          description="A devolutiva de cada estudante aparece aqui quando ele concluir a missão."
+        />
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {dados.devolutivas.map((d) => {
+            const detalhes = [
+              d.equipe ? `Equipe ${d.equipe}` : null,
+              variasRodadas ? `Rodada ${d.rodada}` : null,
+              d.concluidoEm ? `concluiu em ${dataHora(d.concluidoEm)}` : null,
+            ].filter(Boolean);
+            return (
+              <li key={`${d.estudanteId}-${d.rodada}`} data-devolutiva-do-estudante={d.estudanteId}>
+                <Collapse
+                  title={d.nome}
+                  description={detalhes.length > 0 ? detalhes.join(" · ") : undefined}
+                  headerExtra={
+                    <Tag variant={d.origem === "ia" ? "info" : "neutral"} size="sm" pill>
+                      {ROTULO_DA_ORIGEM_DA_DEVOLUTIVA[d.origem]}
+                    </Tag>
+                  }
+                  size="sm"
+                  variant="bordered"
+                >
+                  <div className="flex flex-col gap-3 pt-1 text-[13px] leading-relaxed text-unooria-neutral-800">
+                    {dados.habilidades.map((h) => (
+                      <div key={h} className="flex flex-col gap-0.5">
+                        <p className="flex flex-wrap items-baseline gap-2">
+                          <strong className="text-unooria-neutral-950">{dados.titulos[h] ?? h}</strong>
+                          <span className="text-[12px] text-unooria-neutral-500">{h}</span>
+                        </p>
+                        <p>{d.habilidades[h]?.trim() || "—"}</p>
+                      </div>
+                    ))}
+                  </div>
+                </Collapse>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

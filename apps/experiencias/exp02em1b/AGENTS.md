@@ -8,7 +8,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | Dev | `pnpm --filter @edu/exp02em1b dev` → :5178 · hub `/exp/exp02em1b` |
 | DS | duas seções de clone: `unooriaai` (`@edu/ui/ds-unooriaai`, E1–E3) e `unoovista` (`@edu/ui/ds-unoovista`, E3-SIS-01 a E6) |
 | api | módulo `efeito-amplificador` (`apps/api/src/efeito-amplificador/AGENTS.md`) |
-| Versões | 2.x é esta missão (ADR-181); a 2.1.0 é a revisão do PO (ADR-191); a Missão Tempestade (1.x) é `exp02em1b-v0` |
+| Versões | 2.x é esta missão (ADR-181); a 2.1.0 é a revisão do PO (ADR-191); a 2.2.0 traz a IA sem mexer na régua (ADR-192); a Missão Tempestade (1.x) é `exp02em1b-v0` |
 
 O estudante abre a pauta do grêmio no UnooriaAI, pede o rascunho, audita a
 prévia, escolhe a manchete e publica no Unoovista (o latch), vive a madrugada
@@ -28,11 +28,20 @@ versão, por decisão do PO: a transferência da Etapa 6 e o Canal B.
 
 ## O que não é óbvio
 
-- **Sem IA na aula (ADR-191).** O chat responde pela árvore de intenções do
-  servidor; a tela manda o texto e desenha o que volta. Por isso toda rota usa
-  o timeout PADRÃO do SDK — o teto de 45 s da 2.0.x morreu com a IA, e o teste
-  reprova `timeoutMs` em `lib/api.ts`. Da mensagem só sai o TAMANHO para a
-  telemetria; o `prompt_tipo` do EVT-001 é classificado no servidor.
+- **A IA da aula mora no servidor, e perde em silêncio (ADR-192).** O chat
+  responde pela árvore de intenções; o que ela não entende vai a um
+  classificador de IA com teto de 5 s, e a devolutiva tem teto de 7 s. A tela
+  manda o texto e desenha o que volta — por isso toda rota usa o timeout
+  PADRÃO do SDK (10 s), e o teste reprova `timeoutMs` em `lib/api.ts`. Da
+  mensagem só sai o TAMANHO para a telemetria; o `prompt_tipo` do EVT-001 é
+  classificado no servidor.
+- **O feed é o do post DESTE estudante.** Os comentários que amplificam (a conta
+  anônima, o engajamento) chegam no texto da variante da manchete e do trecho
+  que viralizou; a escolha é do servidor e a tela não sabe que existe variante.
+- **A devolutiva** (E6, `CartaoDaDevolutiva` em `Conclusao.tsx`) pede
+  `POST /devolutiva` uma vez ao abrir a conclusão: "preparando", "pronta" (os
+  quatro blocos, `data-devolutiva`/`data-habilidade` são contrato da e2e) ou
+  "falhou", com "Tentar de novo". Sem nível nem nota na tela.
 - **O TC-10 é do HUB, fora do aparelho.** Em toda tela da Etapa 4 (o feed, as
   folhas, o diálogo, o relato e a pausa por cima dele) o App publica
   `enviarEstado({ instrucao })` com o `{ antes, destaque, depois }` que a api
@@ -77,4 +86,6 @@ versão, por decisão do PO: a transferência da Etapa 6 e o Canal B.
 para:", a autoria de Nico, "Enquanto a turma conclui...", "Apresentado por Alex
 e Sam · 3:30 min") e `[PROPOSTA]` (em nenhum dos dois — validar com o PO: o
 banner do aviso para fonte e ofensivo, o estado da chave, o selo do fim, a
-legenda do gráfico, a linha do podcast em aula e a alça da transcrição).
+legenda do gráfico, a linha do podcast em aula, a alça da transcrição e o
+cartão da devolutiva; os títulos e o modelo da devolutiva estão na api,
+`regras/devolutiva.ts`).

@@ -9,6 +9,10 @@
  * Fora desta versão, por decisão do dono do produto: o Canal B e a
  * transferência da Etapa 6 (o caso do streaming de áudio).
  *
+ * A 2.2.0 (ADR-192) traz a IA de volta SEM mexer na régua: o classificador do
+ * chat (só o que a árvore não entende, e a fala continua a do 01e), as reações
+ * do feed escritas no preparo e a devolutiva da conclusão.
+ *
  * Puro — sem Nest e sem Prisma. A experiência e o hub têm espelhos destas
  * listas; mudar a forma aqui sem avisar quebra os dois.
  */
@@ -16,7 +20,7 @@
 export const EXP_ID = "exp02em1b";
 
 /** Gravada em cada sessão: o histórico se reprocessa pela versão que o mediu. */
-export const VERSAO_DO_INSTRUMENTO = "2.1.0";
+export const VERSAO_DO_INSTRUMENTO = "2.2.0";
 
 // ──────────────────────────────────────────── vocabulários (CHECK na migration)
 
@@ -130,6 +134,27 @@ export interface ComentarioDoFeed {
   texto: string;
 }
 
+/**
+ * O trecho do post que viralizou (`regras/previa.ts#trechoPincado`): a
+ * estatística inventada, se ficou, ou o recorte. Com a manchete, decide qual
+ * VARIANTE de reação o feed mostra (ADR-192).
+ */
+export const TRECHOS_VIRAIS = ["dado", "recorte"] as const;
+export type TrechoViral = (typeof TRECHOS_VIRAIS)[number];
+
+/** `${manchete}.${trecho}` — as seis variantes do post que o feed pode ter recebido. */
+export type ChaveDaReacao = `${Manchete}.${TrechoViral}`;
+export const CHAVES_DAS_REACOES: readonly ChaveDaReacao[] = MANCHETES.flatMap((m) => TRECHOS_VIRAIS.map((t) => `${m}.${t}` as const));
+
+/**
+ * As vozes que REAGEM ao post do estudante: as que amplificam (a conta anônima
+ * e o engajamento) citam a manchete e o trecho que viralizou. Os relatos de
+ * saúde ficam FIXOS — são o estímulo da EM13CO24, e o estímulo medido é o
+ * mesmo para a turma inteira (ADR-192). O tipo, o autor e o horário de cada
+ * comentário também não variam: a variante troca só o TEXTO.
+ */
+export const TIPOS_QUE_REAGEM: readonly TipoDeComentario[] = ["anonimo_agressivo", "engajamento"];
+
 export interface PautaDoGremio {
   titulo: string;
   descricao: string;
@@ -161,6 +186,13 @@ export interface ConteudoDoPacote {
   recorte: string;
   manchetes: Record<Manchete, string>;
   comentarios: ComentarioDoFeed[];
+  /**
+   * As reações ao post DO estudante (ADR-192): por variante, o texto de cada
+   * comentário que reage (`TIPOS_QUE_REAGEM`), pelo id. Ausente (o banco
+   * padrão, o 01e literal, e todo pacote da 2.1.0) = o feed é o mesmo para
+   * todos. O que faltar numa variante cai no texto de `comentarios`.
+   */
+  reacoes?: Partial<Record<ChaveDaReacao, Record<string, string>>>;
 }
 
 /** O banco curado padrão: "Convivência Escolar e Celular" (01e, literal). */
@@ -276,9 +308,10 @@ export const SUGESTOES_DE_PROMPT = [
 ] as const;
 
 /**
- * As intenções do chat — a ÁRVORE DE INTENÇÕES do 01e, no servidor e sem IA
- * (PRD RNF-012 e §17.4: nenhuma chamada de IA durante a aula). A lista é
- * FECHADA e decide o que muda na prévia:
+ * As intenções do chat — a ÁRVORE DE INTENÇÕES do 01e, no servidor. A lista é
+ * FECHADA e decide o que muda na prévia; desde a 2.2.0 (ADR-192) a IA só
+ * TRADUZ para ela a mensagem que a árvore não entendeu, e a fala continua a do
+ * 01e:
  *
  * - `auditar_fontes` só PERGUNTA (a fala termina em "Deseja que eu atualize a
  *   prévia?"); quem corrige a estatística é o "sim" (`substituir_dado`) ou a
