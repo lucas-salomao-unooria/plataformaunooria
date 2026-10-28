@@ -30,6 +30,7 @@ import { JornalEscolaModule } from "./jornal-escola/jornal-escola.module";
 import { PodcastModule } from "./podcast/podcast.module";
 import { JuriEstadualModule } from "./juri-estadual/juri-estadual.module";
 import { EfeitoAmplificadorModule } from "./efeito-amplificador/efeito-amplificador.module";
+import { PortaVozDosDadosModule } from "./porta-voz-dos-dados/porta-voz-dos-dados.module";
 import { EnigmaCapaModule } from "./enigma-capa/enigma-capa.module";
 import { AssistenteInvisivelModule } from "./assistente-invisivel/assistente-invisivel.module";
 import { SalasModule } from "./salas/salas.module";
@@ -92,6 +93,7 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     JornalEscolaModule,
     JuriEstadualModule,
     EfeitoAmplificadorModule,
+    PortaVozDosDadosModule,
     EnigmaCapaModule,
     AssistenteInvisivelModule,
     FotoContaModule,
