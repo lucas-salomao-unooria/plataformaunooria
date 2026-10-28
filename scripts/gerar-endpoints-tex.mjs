@@ -41,6 +41,8 @@ function escapar(texto) {
     .replace(/§/g, "\\S{}")
     .replace(/→/g, "\\seta{}")
     .replace(/⇒/g, "\\implica{}")
+    .replace(/⇔/g, "\\ensuremath{\\Leftrightarrow}")
+    .replace(/▶/g, "\\ensuremath{\\blacktriangleright}")
     .replace(/…/g, "\\ldots{}");
 }
 
