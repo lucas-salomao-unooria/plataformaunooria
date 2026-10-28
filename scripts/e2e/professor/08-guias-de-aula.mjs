@@ -139,6 +139,23 @@ const GUIAS = [
     bncc: "EM13CO20",
   },
   {
+    rota: "/professor/entre-redes/3-serie/unidade-1/guia",
+    missao: "O Porta-Voz dos Dados · 3ª série EM",
+    /* Os três blocos vivos vêm de `GET /porta-voz-dos-dados/professor/material`
+       (ADR-198): o banco padrão com a perícia e o GABARITO (só o professor o
+       vê — o estudante recebe os cartões sem rótulo), o laudo do Explicar com
+       o fator na forma corrigida pelo PO ("≈ 6,3", nunca 6,37) e o critério de
+       cada nível das seis habilidades. */
+    vivo: [
+      /O banco padrão — “Vigilância Sanitária da Água”, e a perícia com o gabarito/,
+      /O distorcido · motivo: escala/,
+      /O laudo do Explicar — Fator de Mentira ≈ 6,3/,
+      /O critério de cada nível \(registrado pelo que o estudante faz\)/,
+    ],
+    ausente: [/6,37/],
+    bncc: "EM13CO12",
+  },
+  {
     rota: "/professor/entre-redes/vila-do-lume/guia",
     missao: "Vila do Lume · transversal",
     vivo: [/não foi um colega de verdade/i],
@@ -177,7 +194,7 @@ await suite(
       "O professor abre o guia na véspera para preparar e na hora para conduzir. Ele é o mesmo " +
       "documento em toda missão — mudam o conteúdo e os blocos que vêm de fonte viva.",
     prova: [
-      "As oito missões desta lista têm guia, e nenhuma cai em 404",
+      "As nove missões desta lista têm guia, e nenhuma cai em 404",
       "As nove seções aparecem na mesma ordem em todas, divididas em quatro tempos (abas)",
       "Cada tempo mostra só as seções dele",
       "Cada guia traz a habilidade da BNCC Computação com o código",
@@ -298,6 +315,30 @@ await suite(
       mostra: "As quatro perguntas do PO, cada uma com o momento da aula em que entra — e só elas (ADR-189).",
       prova: "O bloco é vivo (GET /assistente-invisivel/professor/material): a pergunta do guia é a mesma que o painel da aula projeta.",
     });
+
+    /* A missão da 3ª série (exp03em1b, ADR-198) — tela nova, passo novo: a
+       perícia com o gabarito, que só o professor vê. Volta ao guia do
+       Assistente depois, para os passos dos tempos seguirem como eram. */
+    await p.goto(`${HUB}/professor/entre-redes/3-serie/unidade-1/guia`, { waitUntil: "domcontentloaded" });
+    await esperarOuFalharCedo(p.locator("h1", { hasText: "Guia da aula" }), p.locator(ALERTA_DE_ERRO), {
+      oQue: "o guia do Porta-Voz dos Dados",
+      timeout: 30_000,
+    });
+    const gabaritoDoPortaVoz = p.locator(".guia-bloco", { hasText: "A perícia técnica: os dois cartões eleitorais" }).first();
+    await revelar(p, gabaritoDoPortaVoz);
+    const textoDoGabarito = (await gabaritoDoPortaVoz.textContent()) ?? "";
+    r.exigir(
+      /Cartão Eleitoral B[\s\S]*O distorcido · motivo: escala/.test(textoDoGabarito) && /Cartão Eleitoral A[\s\S]*Sem distorção/.test(textoDoGabarito),
+      "o guia do Porta-Voz dá o gabarito da perícia: o cartão B é o distorcido, pela escala; o A não",
+    );
+    await gabaritoDoPortaVoz.getByText("A perícia técnica: os dois cartões eleitorais").scrollIntoViewIfNeeded();
+    await r.registrar(p, "guia-do-porta-voz-gabarito", {
+      titulo: "O Porta-Voz dos Dados: o banco padrão e a perícia com o gabarito",
+      mostra: "A tabela 95 → 94 → 92 → 88 do banco padrão, a nota técnica e os dois cartões eleitorais, com o distorcido marcado.",
+      prova: "O bloco é vivo (GET /porta-voz-dos-dados/professor/material): o gabarito fica com o professor — o estudante recebe os cartões sem rótulo.",
+    });
+    await p.goto(`${HUB}/professor/entre-redes/1-serie/unidade-1/guia`, { waitUntil: "domcontentloaded" });
+    await p.locator("h1", { hasText: "Guia da aula" }).waitFor({ timeout: 30_000 });
 
     await abrirAba(p, "Conduzir");
     await r.registrar(p, "guia-tempo-conduzir", {

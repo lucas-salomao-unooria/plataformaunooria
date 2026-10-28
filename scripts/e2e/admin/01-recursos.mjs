@@ -79,6 +79,7 @@ await suite(
       "A janela de versão mostra o histórico publicado e diz quando a experiência está em rollback",
       "O histórico registra cada mudança com o motivo e o nome de quem a fez — e sem UPDATE possível",
       "A REDE lê o histórico dela em /admin/recursos, e não alcança nenhuma escrita (403)",
+      "O Porta-Voz dos Dados (exp03em1b) aparece no Entre Redes e DESLIGA na escola: a rota do estudante responde 403 recurso-indisponivel, e herdar devolve o acesso",
       "As imagens do banco padrão do Júri Estadual: a tela do admin com o progresso “X de 40”, uma aba por área — e o professor recebe 403",
     ],
     comando: "node scripts/e2e/admin/01-recursos.mjs",
@@ -307,6 +308,66 @@ await suite(
         `· motivo presente: ${motivoNaTabela}`,
       inteira: true,
     });
+
+    // ── a missão mais nova DESLIGA (exp03em1b, ADR-198) ─────────────────
+    /* Regra 8 inteira para O Porta-Voz dos Dados: entrar no painel não basta —
+       ela tem de DESLIGAR. Desligada na escola, o funil das rotas do estudante
+       (`exigirMissaoLiberada` → `exigirRecursoDisponivel`) responde 403
+       `recurso-indisponivel` mesmo com a missão liberada na sala; herdar de
+       volta devolve o acesso. Feito DEPOIS da conta do histórico, que mede as
+       duas mudanças do produto. A sonda vai por `page.request`: um 403 esperado
+       no console pintaria a suíte de vermelho pelo próprio sucesso. */
+    const linhaDoPortaVoz = cartao(p, "Entre Redes").locator("li").filter({ hasText: "exp03em1b" });
+    r.exigir(
+      (await linhaDoPortaVoz.count()) === 1 &&
+        (await linhaDoPortaVoz.innerText()).includes("O Porta-Voz dos Dados") &&
+        (await linhaDoPortaVoz.locator("button[role=combobox]").count()) === 1,
+      "O Porta-Voz dos Dados (exp03em1b) aparece dentro do Entre Redes, com o interruptor “Neste escopo”",
+    );
+    const estudanteTerceiraEM = conta("estudante", { turma: "3EM-A" });
+    const pe = await r.pagina("estudante 3EM");
+    await r.entrar(pe, estudanteTerceiraEM.login, estudanteTerceiraEM.senha || senhaDemo());
+    const sessaoDoPortaVoz = async () => {
+      const resp = await pe.request.get(`${HUB}/api/plataforma/porta-voz-dos-dados/sessao`);
+      return { status: resp.status(), codigo: (await resp.json().catch(() => null))?.codigo ?? null };
+    };
+    const antesDeDesligar = await sessaoDoPortaVoz();
+
+    await p.bringToFront();
+    await p.waitForTimeout(400);
+    await escolher(p, linhaDoPortaVoz, "Neste escopo", "Desligado");
+    const modalDaMissao = p.locator(".unooria-modal-overlay").last();
+    await modalDaMissao.locator("textarea").waitFor({ timeout: 15_000 });
+    await modalDaMissao.locator("textarea").fill(MOTIVO);
+    await p.waitForTimeout(400);
+    await modalDaMissao.getByRole("button", { name: "Desligar" }).click();
+    await esperarOuFalharCedo(
+      linhaDoPortaVoz.getByText(/desligad/i),
+      p.locator(ALERTA_DE_ERRO),
+      { timeout: 30_000, oQue: "o desligamento do Porta-Voz dos Dados na escola" },
+    );
+    const desligada = await sessaoDoPortaVoz();
+    r.exigir(
+      desligada.status === 403 && desligada.codigo === "recurso-indisponivel",
+      `desligada na escola, a rota do estudante da 3EM-A responde 403 recurso-indisponivel (${desligada.status} ${desligada.codigo ?? ""}; antes: ${antesDeDesligar.status})`,
+    );
+    await linhaDoPortaVoz.scrollIntoViewIfNeeded();
+    await r.registrar(p, "porta-voz-desligado", {
+      titulo: "O Porta-Voz dos Dados desliga nesta escola",
+      mostra: "A linha da exp03em1b dentro do Entre Redes com o interruptor em Desligado e a explicação do estado.",
+      prova:
+        "Experiência nova nasce com interruptor (regra 8): desligada, o estudante recebe 403 recurso-indisponivel " +
+        "no funil da missão, mesmo com ela liberada na sala — a disponibilidade é PRÉ-CONDIÇÃO da liberação.",
+      detalhe: `GET /porta-voz-dos-dados/sessao: ${antesDeDesligar.status} antes, ${desligada.status} desligada`,
+    });
+
+    await escolher(p, linhaDoPortaVoz, "Neste escopo", "Herda de cima");
+    await linhaDoPortaVoz.getByText(/desligad/i).waitFor({ state: "detached", timeout: 30_000 });
+    const religada = await sessaoDoPortaVoz();
+    r.exigir(
+      religada.status === antesDeDesligar.status,
+      `herdando de novo, a rota do estudante volta ao que era (${religada.status})`,
+    );
 
     // ── o mesmo histórico, do lado da REDE ──────────────────────────────
     /* A assimetria da ADR-88 medida nas duas direções, com a conta do
