@@ -8,7 +8,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | Dev | `pnpm --filter @edu/exp02em1b dev` → :5178 · hub `/exp/exp02em1b` |
 | DS | duas seções de clone: `unooriaai` (`@edu/ui/ds-unooriaai`, E1–E3) e `unoovista` (`@edu/ui/ds-unoovista`, E3-SIS-01 a E6) |
 | api | módulo `efeito-amplificador` (`apps/api/src/efeito-amplificador/AGENTS.md`) |
-| Versões | 2.x é esta missão (ADR-181); a 2.1.0 é a revisão do PO (ADR-191); a 2.2.0 traz a IA sem mexer na régua (ADR-192); a Missão Tempestade (1.x) é `exp02em1b-v0` |
+| Versões | 2.x é esta missão (ADR-181); a 2.1.0 é a revisão do PO (ADR-191); a 2.2.0 traz a IA sem mexer na régua (ADR-192); a 2.3.0 põe a IA para ler o chat primeiro (ADR-193); a Missão Tempestade (1.x) é `exp02em1b-v0` |
 
 O estudante abre a pauta do grêmio no UnooriaAI, pede o rascunho, audita a
 prévia, escolhe a manchete e publica no Unoovista (o latch), vive a madrugada
@@ -29,8 +29,9 @@ versão, por decisão do PO: a transferência da Etapa 6 e o Canal B.
 ## O que não é óbvio
 
 - **A IA da aula mora no servidor, e perde em silêncio (ADR-192).** O chat
-  responde pela árvore de intenções; o que ela não entende vai a um
-  classificador de IA com teto de 5 s, e a devolutiva tem teto de 7 s. A tela
+  manda a mensagem a um classificador de IA (teto de 5 s), que lê primeiro;
+  a árvore de intenções é a reserva e responde sozinha as três sugestões e o
+  "sim" da oferta (ADR-193). A devolutiva tem teto de 7 s. A tela
   manda o texto e desenha o que volta — por isso toda rota usa o timeout
   PADRÃO do SDK (10 s), e o teste reprova `timeoutMs` em `lib/api.ts`. Da
   mensagem só sai o TAMANHO para a telemetria; o `prompt_tipo` do EVT-001 é

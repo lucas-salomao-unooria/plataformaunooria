@@ -1,15 +1,15 @@
 # exp02em1b — O Efeito Amplificador
 
 Missão da 2ª série do Ensino Médio, unidade 1 ("Como os algoritmos decidem por
-nós?"), versão 2.2.0 (ADR-191, ADR-192). O estudante é moderador do perfil do grêmio:
+nós?"), versão 2.3.0 (ADR-191 a ADR-193). O estudante é moderador do perfil do grêmio:
 abre a pauta no UnooriaAI, pede o rascunho e o audita (dado inventado, trecho
 sem crédito, colega exposto), escolhe a manchete e publica no Unoovista. O
 algoritmo pinça um trecho e entrega o post de madrugada — para todo mundo,
 qualquer que seja o texto. No feed ele fixa um aviso de cuidado, ajusta a
 Configuração da Publicação e usa a Central de Apoio; depois do debate, aponta
 nos bastidores os indicadores da retenção e conclui, com a devolutiva do que
-fez. A IA não decide nada que a régua mede: ela entende o pedido que a árvore
-de intenções do chat não entende, escreve no preparo as reações do feed ao
+fez. A IA não decide nada que a régua mede: ela lê o pedido do chat e o
+traduz para a árvore de intenções, escreve no preparo as reações do feed ao
 post de cada um e redige a devolutiva a partir dos fatos.
 
 ```bash
