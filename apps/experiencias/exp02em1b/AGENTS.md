@@ -61,9 +61,11 @@ versão, por decisão do PO: a transferência da Etapa 6 e o Canal B.
   sozinha: é o que FECHA o feed. A espera ativa (E5-ALU-02) é estado local do
   "Avançar"; um F5 volta aos cartões. A pausa do professor é uma camada por
   cima de qualquer tela, e o que está embaixo fica `inert`.
-- **O podcast é do professor.** O fim mostra só o cartão, sem player nem
-  transcrição (ADR-194): o áudio toca em aula, e a transcrição fica na página
-  da atividade, para o professor.
+- **O podcast é do professor.** O fim não mostra nada dele (ADR-196): nem
+  player, nem cartão, nem transcrição — o áudio toca em aula, e a transcrição
+  fica na página da atividade, para o professor.
+- **O modal da manchete (E3-ALU-01) não repete a prévia** (ADR-196): ela
+  saía cortada pelo teto de altura, e quem quer revê-la fecha o modal.
 - **A versão vive em três lugares** (`versao.test.ts`).
 
 ## Lacunas do DS (compensações marcadas no código)
@@ -88,6 +90,6 @@ versão, por decisão do PO: a transferência da Etapa 6 e o Canal B.
 para:", a autoria de Nico, "Enquanto a turma conclui...", "Apresentado por Alex
 e Sam · 3:30 min") e `[PROPOSTA]` (em nenhum dos dois — validar com o PO: o
 banner do aviso para fonte e ofensivo, o estado da chave, o selo do fim, a
-legenda do gráfico, a linha do podcast em aula e o
+legenda do gráfico e o
 cartão da devolutiva; os títulos e o modelo da devolutiva estão na api,
 `regras/devolutiva.ts`).

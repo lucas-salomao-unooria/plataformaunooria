@@ -8,7 +8,7 @@ import { HABILIDADES_DA_DEVOLUTIVA, type RespostaDaDevolutiva } from "../lib/tip
  * E6-ALU-02 — o fim, em somente leitura (seção `unoovista`, claro): o selo e a
  * devolutiva.
  *
- * O podcast não aparece aqui (2.3.2, ADR-195): é do professor, que o toca em
+ * O podcast não aparece aqui (2.3.2, ADR-196): é do professor, que o toca em
  * aula depois do debate, com a transcrição na página da atividade.
  *
  * A DEVOLUTIVA (ADR-192): um parágrafo por habilidade, que o servidor gera
