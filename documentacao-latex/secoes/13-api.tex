@@ -1282,7 +1282,7 @@ voto e da revelação aberta pela turma. A turma do estudante é
 \label{sec:api-efeito-amplificador}
 
 Desde 2026-10-22 (\adrr{ADR-181}; a 2.1.0, \adrr{ADR-191}; a 2.2.0,
-\adrr{ADR-192}), no módulo \arq{efeito-amplificador}, no molde de Quem mandou
+\adrr{ADR-192}; a 2.3.0, \adrr{ADR-193}), no módulo \arq{efeito-amplificador}, no molde de Quem mandou
 isso?: doze rotas do estudante em \rota{/efeito-amplificador/*}, as do PRD
 (\cd{@Roles("estudante")} na classe e \cd{exigirMissaoLiberada} no funil de
 TODAS) --- \cd{sessao}, \cd{gate}, \cd{entrar}, \cd{chat/mensagem},
@@ -1292,9 +1292,9 @@ TODAS) --- \cd{sessao}, \cd{gate}, \cd{entrar}, \cd{chat/mensagem},
 pacote, \cd{gerar-conteudo}, \cd{homologar}, \cd{banco-padrao}, \cd{gate}
 com \cd{\{etapa\}}, \cd{painel}, \cd{zerar}, a lista e o detalhe das
 atividades, as \cd{devolutivas} de uma atividade e o \cd{em-andamento}) e o
-material do guia. \rota{POST /efeito-amplificador/chat/mensagem} responde pela
-árvore de intenções, no servidor; só o que ela não entende vai ao classificador
-de IA (quota do \cd{estudante}, teto de 5\,s). \rota{POST .../devolutiva}
+material do guia. \rota{POST /efeito-amplificador/chat/mensagem} manda a mensagem PRIMEIRO ao
+classificador de IA (\adrr{ADR-193}; quota do \cd{estudante}, teto de 5\,s),
+com a árvore de intenções como reserva. \rota{POST .../devolutiva}
 redige, uma vez, a devolutiva da conclusão (quota do \cd{estudante}, teto de
 7\,s; sem IA, o modelo curado). \rota{POST .../gerar-conteudo} é o preparo,
 com a quota do perfil \cd{professor}: o pacote e as reações do feed. As quatro habilidades são
