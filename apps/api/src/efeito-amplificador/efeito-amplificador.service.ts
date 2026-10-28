@@ -14,11 +14,13 @@ import { logger } from "../observabilidade/logger";
 import { PrismaService } from "../prisma/prisma.service";
 import {
   BOAS_VINDAS,
+  CHAVES_DAS_REACOES,
   DISCIPLINAS,
   ENTREGA_POR_HORARIO,
   EXP_ID,
   INDICADORES,
   INSTRUCOES_DO_GATILHO,
+  INTENCOES,
   MANCHETES,
   MAX_CARACTERES_DA_MENSAGEM,
   MENSAGENS_NO_CHAT,
@@ -43,6 +45,7 @@ import {
 import { ConteudoBaseSchema, type EstadoSchema, type HomologarSchema } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
 import { roteiroDoPodcast } from "./podcast";
+import { IaDaAulaDaExp02em1bService } from "./ia-da-aula.service";
 import { PreparoDaExp02em1bService, type MotivoDoPadrao } from "./preparo.service";
 import {
   MARCADOR_CO08,
@@ -54,8 +57,19 @@ import {
   nivelCO24,
   nivelCO26,
 } from "./regras/evidencia";
+import {
+  HABILIDADES_DA_DEVOLUTIVA,
+  TITULO_DA_HABILIDADE,
+  devolutivaDoModelo,
+  fatosDaDevolutiva,
+  lerDevolutiva,
+  type Devolutiva,
+  type FatosDaDevolutiva,
+  type HabilidadeDaDevolutiva,
+} from "./regras/devolutiva";
 import { aplicarSeguranca, fixarAviso, lerFeed, perfilSuspeito, type AcaoDeSeguranca, type FeedDaSessao } from "./regras/feed";
 import { classificar } from "./regras/intencoes";
+import { chaveDaReacao, comentariosDaVariante, trechoViral } from "./regras/reacoes";
 import {
   FASE_INICIAL,
   avancarFase,
@@ -85,8 +99,10 @@ import {
  * rodada como reaplicação). Toda query leva `escola_id` no `where` ALÉM da RLS
  * que o `comTenancy` arma (regra 1, defesa em profundidade).
  *
- * **Sem IA na aula** (PRD RNF-012, §17.4): o UnooriaAI é a árvore de intenções
- * do 01e, no servidor; a única IA da missão é o preparo do professor.
+ * **A IA não decide o que a régua lê** (ADR-192): o UnooriaAI é a árvore de
+ * intenções do 01e, no servidor, e a IA só traduz para ela a mensagem que a
+ * árvore não entendeu; as reações do feed vêm escritas do preparo; a
+ * devolutiva da conclusão redige a partir dos fatos já gravados.
  *
  * **O gabarito não desce.** O comentário vai sem a categoria de saúde e o
  * parágrafo sem o nó: quem diz o que um gesto mediu é este serviço, e as
@@ -120,6 +136,7 @@ const CAMPOS_DA_SESSAO = {
   explicarEm: true,
   indicadores: true,
   concluidoEm: true,
+  devolutiva: true,
   atualizadoEm: true,
 } satisfies Prisma.Exp02em1bSessaoSelect;
 
@@ -135,6 +152,8 @@ interface FalaGravada {
   papel: "estudante" | "assistente";
   texto: string;
   intencao?: Intencao;
+  /** Quem traduziu a mensagem em intenção (ADR-192): a árvore do 01e ou, no que ela não entendeu, a IA. */
+  classificador?: "arvore" | "ia";
   em: string;
 }
 
@@ -144,7 +163,15 @@ function lerConversa(bruto: Prisma.JsonValue): FalaGravada[] {
     if (typeof f !== "object" || f === null || Array.isArray(f)) return [];
     const o = f as Record<string, unknown>;
     if ((o.papel !== "estudante" && o.papel !== "assistente") || typeof o.texto !== "string") return [];
-    return [{ papel: o.papel, texto: o.texto, em: typeof o.em === "string" ? o.em : "" }];
+    return [
+      {
+        papel: o.papel,
+        texto: o.texto,
+        ...(typeof o.intencao === "string" && (INTENCOES as readonly string[]).includes(o.intencao) ? { intencao: o.intencao as Intencao } : {}),
+        ...(o.classificador === "arvore" || o.classificador === "ia" ? { classificador: o.classificador } : {}),
+        em: typeof o.em === "string" ? o.em : "",
+      },
+    ];
   });
 }
 
@@ -181,6 +208,10 @@ function assinatura(c: { disciplina: string; tema: string; assuntos: readonly st
     [k.fonteInventada, k.colega, k.fonteOriginal, k.recorte],
     MANCHETES.map((m) => k.manchetes[m]),
     k.comentarios.map((x) => [x.id, x.autor, x.horario, x.tipo, x.texto]),
+    CHAVES_DAS_REACOES.map((chave) => {
+      const r = k.reacoes?.[chave];
+      return r ? Object.keys(r).sort().map((id) => [id, r[id]]) : null;
+    }),
   ]);
 }
 
@@ -219,6 +250,7 @@ export class EfeitoAmplificadorService {
     private readonly prisma: PrismaService,
     private readonly evidencias: EvidenciasService,
     private readonly preparo: PreparoDaExp02em1bService,
+    private readonly iaDaAula: IaDaAulaDaExp02em1bService,
   ) {}
 
   // ─────────────────────────────────────────────────────────── leituras
@@ -298,13 +330,40 @@ export class EfeitoAmplificadorService {
    * Uma mensagem ao UnooriaAI (API-003) — a árvore de intenções, no servidor:
    * a prévia muda pela INTENÇÃO, da lista fechada. Até `MENSAGENS_NO_CHAT`; a
    * quinta leva o aviso do limite junto.
+   *
+   * A IA (ADR-192) só entra quando a árvore NÃO entende a mensagem: ela a
+   * traduz para uma intenção da mesma lista, e a fala continua a do 01e. Três
+   * tempos, para a IA não segurar transação nem lock durante segundos: a
+   * LEITURA (funil, porta, limite e a árvore, sem gravar), a IA fora da
+   * transação, e a GRAVAÇÃO no funil de sempre. Se a sessão andou no meio
+   * (outra mensagem, o professor pausou ou zerou), a IA descreve um estado
+   * velho — e vale a árvore sobre o estado de agora.
    */
-  mensagem(escolaId: string, estudanteId: string, texto: string) {
+  async mensagem(escolaId: string, estudanteId: string, texto: string) {
+    const antes = await this.prisma.comTenancy(async (tx) => {
+      const { turmaId } = await this.estudanteDaEscola(tx, escolaId, estudanteId);
+      const ctx = await this.contextoDaTurma(tx, escolaId, turmaId);
+      if (!ctx.pacote) throw erroDeJogo("campanha-em-preparo");
+      const s = this.exigirConversaAberta(await this.sessaoDe(tx, escolaId, estudanteId, ctx.pacote), ctx.fase);
+      if (s.mensagensEnviadas >= MENSAGENS_NO_CHAT) throw erroDeJogo("limite-do-chat");
+      const previa = lerPrevia(s.previa, ctx.pacote.conteudo.rascunho);
+      return { pacote: ctx.pacote, sessao: s, arvore: classificar(texto, ctx.pacote.conteudo, previa.ofertaDeSubstituicao) };
+    }, escolaId);
+
+    const daIa =
+      antes.arvore === "fora_do_tema"
+        ? await this.iaDaAula.classificar(escolaId, estudanteId, { mensagem: texto, tema: antes.pacote.tema, conteudo: antes.pacote.conteudo })
+        : null;
+
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
       const s = this.exigirConversaAberta(sessao, fase);
       if (s.mensagensEnviadas >= MENSAGENS_NO_CHAT) throw erroDeJogo("limite-do-chat");
       const previa = lerPrevia(s.previa, pacote.conteudo.rascunho);
-      const intencao = classificar(texto, pacote.conteudo, previa.ofertaDeSubstituicao);
+      const arvore = classificar(texto, pacote.conteudo, previa.ofertaDeSubstituicao);
+      const mesmoEstado =
+        pacote.id === antes.pacote.id && pacote.rodada === antes.pacote.rodada && s.atualizadoEm.getTime() === antes.sessao.atualizadoEm.getTime();
+      const peloClassificador = arvore === "fora_do_tema" && daIa !== null && mesmoEstado;
+      const intencao: Intencao = peloClassificador ? daIa : arvore;
 
       let nova: Previa = previa;
       let fala: Parameters<typeof falaDoAssistente>[0] = intencao;
@@ -320,7 +379,13 @@ export class EfeitoAmplificadorService {
       const enviadas = s.mensagensEnviadas + 1;
       const conversa: FalaGravada[] = [
         ...lerConversa(s.conversa),
-        { papel: "estudante", texto: texto.slice(0, MAX_CARACTERES_DA_MENSAGEM), intencao, em: agora },
+        {
+          papel: "estudante",
+          texto: texto.slice(0, MAX_CARACTERES_DA_MENSAGEM),
+          intencao,
+          classificador: peloClassificador ? "ia" : "arvore",
+          em: agora,
+        },
         { papel: "assistente", texto: falaDoAssistente(fala, pacote.conteudo, pacote.tema), em: agora },
         ...(enviadas >= MENSAGENS_NO_CHAT
           ? [{ papel: "assistente" as const, texto: falaDoAssistente("limite", pacote.conteudo, pacote.tema), em: agora }]
@@ -452,7 +517,86 @@ export class EfeitoAmplificadorService {
     });
   }
 
+  /**
+   * A DEVOLUTIVA da conclusão (ADR-192) — gerada UMA vez e gravada na sessão.
+   * Sai dos fatos que a régua já lê, nunca do texto do estudante; a IA
+   * redige, e sem ela (sem saldo, lenta, recusada) o modelo curado responde.
+   * Mesmos três tempos da mensagem: a IA fora da transação, e quem gravou
+   * primeiro vence (duas abas não geram duas).
+   */
+  async devolutiva(escolaId: string, estudanteId: string): Promise<{ devolutiva: Devolutiva; titulos: Record<HabilidadeDaDevolutiva, string> }> {
+    const titulos = { ...TITULO_DA_HABILIDADE };
+    const antes = await this.prisma.comTenancy(async (tx) => {
+      const { turmaId } = await this.estudanteDaEscola(tx, escolaId, estudanteId);
+      const ctx = await this.contextoDaTurma(tx, escolaId, turmaId);
+      if (!ctx.pacote) throw erroDeJogo("campanha-em-preparo");
+      const sessao = await this.sessaoDe(tx, escolaId, estudanteId, ctx.pacote);
+      if (!sessao?.concluidoEm) throw erroDeJogo("missao-nao-concluida");
+      return { pacote: ctx.pacote, sessao };
+    }, escolaId);
+
+    const gravada = lerDevolutiva(antes.sessao.devolutiva);
+    if (gravada) return { devolutiva: gravada, titulos };
+
+    const fatos = this.fatosDaSessao(antes.pacote, antes.sessao);
+    const manchete = ehManchete(antes.sessao.manchete) ? antes.pacote.conteudo.manchetes[antes.sessao.manchete] : null;
+    const daIa = await this.iaDaAula.redigirDevolutiva(escolaId, estudanteId, { tema: antes.pacote.tema, manchete, fatos });
+    const nova: Devolutiva = {
+      origem: daIa ? "ia" : "modelo",
+      habilidades: daIa ?? devolutivaDoModelo(fatos),
+      geradaEm: new Date().toISOString(),
+    };
+
+    const devolutiva = await this.prisma.comTenancy(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`exp02em1b:${escolaId}:${estudanteId}`}, 0))`;
+      const chave = this.chave(escolaId, estudanteId, antes.pacote);
+      const atual = await tx.exp02em1bSessao.findUnique({ where: { escolaId_estudanteId_pacoteId_rodada: chave }, select: { devolutiva: true } });
+      const ja = lerDevolutiva(atual?.devolutiva ?? null);
+      if (ja || !atual) return ja ?? nova;
+      await tx.exp02em1bSessao.update({ where: { escolaId_estudanteId_pacoteId_rodada: chave }, data: { devolutiva: nova as unknown as Prisma.InputJsonValue } });
+      return nova;
+    }, escolaId);
+    return { devolutiva, titulos };
+  }
+
   // ─────────────────────────────────────────────────────── o professor
+
+  /**
+   * As DEVOLUTIVAS de uma atividade (ADR-192), para a aba Habilidades: uma por
+   * estudante que concluiu, de toda rodada. Quem concluiu sem a devolutiva
+   * gravada (fechou a aba antes; ou concluiu na 2.1.0) recebe a do MODELO,
+   * calculada na hora e não gravada — o professor vê o mesmo critério.
+   */
+  async devolutivas(escolaId: string, turmaId: string, professorId: string | undefined, pacoteId: string) {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      const linha = await this.pacoteAprovadoDaTurma(tx, escolaId, turmaId, pacoteId);
+      const conteudo = lerConteudo(linha.conteudoJson);
+      if (!conteudo) throw erroDeJogo("atividade-nao-encontrada");
+      const pacote: PacoteDaTurma = { id: linha.id, turmaId, tema: linha.tema, conteudo, rodada: linha.rodadaAtual };
+      const sessoes = await tx.exp02em1bSessao.findMany({
+        where: { escolaId, turmaId, pacoteId: linha.id, concluidoEm: { not: null } },
+        select: { estudanteId: true, rodada: true, estudante: { select: { displayName: true } }, ...CAMPOS_DA_SESSAO },
+        orderBy: [{ rodada: "desc" }],
+      });
+      const equipes = await mapaDeEquipes(tx, escolaId, turmaId, EXP_ID, linha.id);
+      const itens = sessoes.map((s) => {
+        const gravada = lerDevolutiva(s.devolutiva);
+        const devolutiva: Devolutiva = gravada ?? { origem: "modelo", habilidades: devolutivaDoModelo(this.fatosDaSessao(pacote, s)), geradaEm: "" };
+        return {
+          estudanteId: s.estudanteId,
+          nome: s.estudante.displayName,
+          equipe: equipes.get(s.estudanteId)?.nome ?? null,
+          rodada: s.rodada,
+          concluidoEm: s.concluidoEm?.toISOString() ?? null,
+          origem: devolutiva.origem,
+          habilidades: devolutiva.habilidades,
+        };
+      });
+      itens.sort((a, b) => b.rodada - a.rodada || a.nome.localeCompare(b.nome, "pt-BR"));
+      return { habilidades: [...HABILIDADES_DA_DEVOLUTIVA], titulos: { ...TITULO_DA_HABILIDADE }, devolutivas: itens };
+    }, escolaId);
+  }
 
   /** O pacote da turma: o em andamento, o rascunho e o banco padrão — COM o gabarito (é o roteiro do professor). */
   async pacoteDaTurma(escolaId: string, turmaId: string, professorId?: string) {
@@ -736,6 +880,11 @@ export class EfeitoAmplificadorService {
     const feed = sessao?.publicadaEm ? lerFeed(sessao.feed) : null;
     const estaPausada = pausada(passo, ctx.fase);
     const suspeito = pacote ? perfilSuspeito(pacote.conteudo.comentarios) : null;
+    /* A variante do feed é a do post que ESTE estudante publicou (ADR-192): só o texto de quem reage muda. */
+    const variante =
+      pacote && sessao?.publicadaEm && ehManchete(sessao.manchete)
+        ? chaveDaReacao(sessao.manchete, trechoViral(pacote.conteudo, sessao.trechoPincado))
+        : null;
     return {
       passo,
       etapa: etapaDoContrato(passo, { pausada: estaPausada, previaAprovada: previa?.aprovada ?? false, avisoFixado: feed?.aviso != null }),
@@ -769,7 +918,7 @@ export class EfeitoAmplificadorService {
       feed:
         pacote && feed
           ? {
-              comentarios: pacote.conteudo.comentarios.map((c) => ({ id: c.id, autor: c.autor, horario: c.horario, texto: c.texto })),
+              comentarios: comentariosDaVariante(pacote.conteudo, variante).map((c) => ({ id: c.id, autor: c.autor, horario: c.horario, texto: c.texto })),
               perfilSuspeito: suspeito ? { comentarioId: suspeito.id, autor: suspeito.autor, horario: suspeito.horario } : null,
               aviso: feed.aviso,
               contaPrivada: feed.contaPrivada,
@@ -847,6 +996,20 @@ export class EfeitoAmplificadorService {
       if (g.status === "atingiu" || g.status === "em_processo" || g.status === "nao_atingiu") matriz[h][g.status] += g._count._all;
     }
     return matriz;
+  }
+
+  /** Os fatos da devolutiva: a prévia publicada e o feed — os mesmos que a régua lê. */
+  private fatosDaSessao(pacote: PacoteDaTurma, sessao: LinhaDaSessao): FatosDaDevolutiva {
+    const rascunho = pacote.conteudo.rascunho;
+    const previa = lerPrevia(sessao.previa, rascunho);
+    return fatosDaDevolutiva({
+      manchete: ehManchete(sessao.manchete) ? sessao.manchete : null,
+      pediuFonte: previa.pediuFonte,
+      dadoResolvido: noResolvido(previa, rascunho, "alucinacao"),
+      plagioResolvido: noResolvido(previa, rascunho, "plagio"),
+      lgpdResolvido: noResolvido(previa, rascunho, "lgpd"),
+      feed: lerFeed(sessao.feed),
+    });
   }
 
   /** As Etapas 1 a 3 aceitam jogada: sessão aberta, antes do latch e sem a pausa do professor. */

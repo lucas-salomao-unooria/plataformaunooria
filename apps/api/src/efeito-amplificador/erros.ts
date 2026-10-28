@@ -19,6 +19,7 @@ export type CodigoErro =
   | "comentario-desconhecido"
   | "aviso-ja-fixado"
   | "explicar-nao-liberado"
+  | "missao-nao-concluida"
   | "pacote-nao-aprovado"
   | "pacote-invalido"
   | "preparo-invalido"
@@ -38,6 +39,7 @@ export const STATUS: Readonly<Record<CodigoErro, number>> = {
   "comentario-desconhecido": 400,
   "aviso-ja-fixado": 409,
   "explicar-nao-liberado": 409,
+  "missao-nao-concluida": 409,
   "pacote-nao-aprovado": 409,
   "pacote-invalido": 400,
   "preparo-invalido": 400,
@@ -60,6 +62,7 @@ export const MENSAGENS: Readonly<Record<CodigoErro, string>> = {
   "comentario-desconhecido": "Esse comentário não está mais na publicação.",
   "aviso-ja-fixado": "A publicação já tem um aviso de cuidado fixado.",
   "explicar-nao-liberado": "Aguardando a liberação do orientador do grêmio para avançar...",
+  "missao-nao-concluida": "Conclua a missão para ver a sua devolutiva.",
   // As de PROFESSOR, lidas no hub.
   "pacote-nao-aprovado": "Homologue e coloque um pacote no ar para esta turma antes.",
   "pacote-invalido": "O pacote não pôde ser homologado.",

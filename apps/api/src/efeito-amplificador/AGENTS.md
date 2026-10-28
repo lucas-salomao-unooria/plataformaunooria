@@ -5,7 +5,8 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 Missão da 2ª série do EM, unidade 1. A **2.1.0** (ADR-191) segue a revisão do
 PO (`artefatos_exp02em1b`, 2026-10-27: o PRD 2.1.0, o banco `01e`, a copy `06`
 e o protótipo de 32 estados) e SUPERA as decisões da 2.0.x (ADR-181) no que é
-desta missão. O código `exp02em1b` continua dela; a Missão Tempestade é
+desta missão. A **2.2.0** (ADR-192) traz a IA de volta SEM mexer na régua: o
+classificador do chat, as reações do feed e a devolutiva. O código `exp02em1b` continua dela; a Missão Tempestade é
 `exp02em1b-v0` (módulo `unoogpt`), no ar e fora do catálogo.
 
 O estudante é o comunicador do grêmio: pede o post ao **UnooriaAI**, audita o
@@ -16,7 +17,8 @@ TODOS, e o feed vira crise. Ele modera (o aviso de cuidado com o motivo, a
 Configuração da Publicação) e busca apoio (a Central: denúncia e relato). O
 professor pausa as telas, conduz o debate e libera os **bastidores** (Etapa 5);
 o estudante conclui (o latch 2) e lê o podcast. Quatro tabelas, as mesmas da
-2.0.x (`20261022130000`), alteradas por `20261028120000_exp02em1b_2_1_0`.
+2.0.x (`20261022130000`), alteradas por `20261028120000_exp02em1b_2_1_0` e
+`20261028150000_exp02em1b_devolutiva` (a coluna da devolutiva).
 
 ## Fora desta versão (decisão do dono do produto)
 
@@ -25,13 +27,45 @@ A transferência da Etapa 6 (o caso do streaming de áudio, o diário de bordo e
 
 ## O que não é óbvio
 
-- **A aula NÃO chama IA** (PRD RNF-012 e §17.4). O UnooriaAI é a árvore de
-  intenções do 01e (`regras/intencoes.ts`): minúsculas, sem acento, lista
-  FECHADA, precedência (a revisão ampla antes de tudo; autoria + LGPD juntas são
-  o direito digital inteiro; a fonte antes de aprovar e de gerar), mais os
-  gatilhos que vêm do pacote (o instituto, o primeiro nome do colega, as
-  palavras da autoria). A IA da 2.0.x (quota do estudante, guardrails,
-  corrida de 12 s) saiu com a `conversa.service.ts`.
+- **A IA nunca decide o que a régua lê** (ADR-192; supera o RNF-012 do PRD
+  nesta missão). O UnooriaAI é a árvore de intenções do 01e
+  (`regras/intencoes.ts`): minúsculas, sem acento, lista FECHADA, precedência
+  (a revisão ampla antes de tudo; autoria + LGPD juntas são o direito digital
+  inteiro; a fonte antes de aprovar e de gerar), mais os gatilhos do pacote.
+  **Só o `fora_do_tema` da árvore vai à IA** (`ia-da-aula.service.ts`), que o
+  traduz para uma intenção da MESMA lista (sem `substituir_dado`, que é estado;
+  confiança < 0,7 = fora do tema); a fala continua a do 01e. Três tempos em
+  `mensagem()`: a leitura com a árvore, a IA FORA da transação, a gravação —
+  sessão que andou no meio = vale a árvore. A fala grava `classificador:
+  "arvore" | "ia"`.
+- **A IA da aula corre e perde em silêncio.** Quota do perfil `estudante`
+  (`temSaldo` antes, débito por tentativa), rate limit por usuário, uma
+  tentativa só, tetos de 5 s (classificar) e 7 s (devolutiva) — o SDK da
+  experiência desiste em 10 s e a rota ainda lê e grava. Perdeu = árvore ou
+  modelo, nunca erro na tela. `scripts/medir-classificador-exp02em1b.ts` mede o
+  caminho de produção num conjunto-ouro com o Vertex real (em 2026-10-28: a IA
+  acertou 57/57 e deu zero falso crédito; os 6 erros eram da árvore).
+- **O feed reage ao post de cada um, e o estímulo é o mesmo** (`regras/reacoes.ts`).
+  O preparo faz uma SEGUNDA chamada (`SYSTEM_DAS_REACOES`) e grava
+  `conteudo.reacoes[manchete.trecho][comentarioId]`; o trecho é `dado` se a
+  estatística viralizou, `recorte` se não. A variante troca SÓ o texto de quem
+  AMPLIFICA (`anonimo_agressivo`, `engajamento`): os relatos de saúde (o
+  estímulo da CO24), o autor, o horário, o tipo e o perfil suspeito (a CO08)
+  são os do pacote em toda variante. Reação a comentário de saúde é ignorada no
+  feed. Sem `reacoes` (o banco padrão, que é o 01e literal, e todo pacote da
+  2.1.0) o feed é o mesmo para todos. Duas réguas: a da homologação é tolerante
+  (o professor muda o tipo de um comentário), a da IA exige as seis variantes e
+  texto que muda com o post. As reações falhando não derrubam o pacote.
+- **A devolutiva** (`regras/devolutiva.ts`, `POST /devolutiva`): um parágrafo
+  por habilidade, gerado UMA vez na conclusão e gravado em
+  `exp02em1b_sessoes.devolutiva`. Sai dos FATOS que a régua já lê, pelas mesmas
+  funções de `evidencia.ts` — nunca do texto do estudante —, com "o que se
+  observa" de cada habilidade (sem isso a IA cobrou ação que a habilidade não
+  pede). A régua da IA recusa palavra da avaliação ("nível", "atingiu"),
+  comparação com colegas e elogio onde nada foi feito; recusou = o modelo
+  curado (`devolutivaDoModelo`, [PROPOSTA], testado em 384 combinações). O
+  professor a lê em `GET /turmas/:turmaId/pacotes/:pacoteId/devolutivas`, e
+  quem concluiu sem ela recebe a do modelo calculada na hora.
 - **Perguntar a fonte não corrige.** A fala da fonte termina em "Deseja que
   eu atualize a prévia?" e só o "sim" logo depois (ou a revisão ampla)
   corrige. A EM13CO14 mede as duas coisas: atingiu = as duas; a revisão ampla
@@ -76,16 +110,17 @@ A transferência da Etapa 6 (o caso do streaming de áudio, o diário de bordo e
   dois num toque, sem IA (o caminho curto); `zerar` apaga a evidência do pacote
   e guarda as sessões.
 - **O texto do estudante no chat é texto livre de menor**: fica em
-  `_sessoes.conversa` para o F5 e não vai a painel, telemetria nem log. O
+  `_sessoes.conversa` para o F5, vai ao classificador como DADO delimitado
+  (nunca à devolutiva) e não vai a painel, telemetria nem log. O
   painel dá por computador o passo, a manchete e o tempo parado; a lousa
   (`resumo`) é só agregada, com a matriz das quatro habilidades.
 - **O podcast é FIXO** (`podcast.ts`, o one-pager §11 literal) e é do
   PROFESSOR (o áudio, ADR-150); a sessão do estudante leva só a transcrição,
   para a tela de conclusão.
-- **A IA do preparo** (`preparo.service.ts`, a ÚNICA da missão): quota do
-  perfil `professor`, `temSaldo` antes e o pago debitado depois (ADR-74); sem
-  saldo ou com o vendor fora, o rascunho sai do banco curado. A saída passa pela
-  MESMA régua da homologação.
+- **A IA do preparo** (`preparo.service.ts`): quota do perfil `professor`,
+  `temSaldo` antes e o pago debitado depois (ADR-74); sem saldo ou com o vendor
+  fora, o rascunho sai do banco curado. A saída passa pela MESMA régua da
+  homologação.
 - **O comentário aceita 300 caracteres na forma e 280 na régua**: a forma é
   larga para o pacote da 2.0.x continuar legível; a homologação cobra o PRD.
 - **Migração que mexe em DADO destas tabelas tira o `FORCE` da RLS dentro da
@@ -102,9 +137,12 @@ A transferência da Etapa 6 (o caso do streaming de áudio, o diário de bordo e
 - `tests/efeito-amplificador-regras.spec.ts` — sem banco: o banco 01e e os
   textos-chave, a régua do pacote, a árvore de intenções, a prévia, o trecho
   pinçado, as tabelas-verdade das quatro habilidades, o feed, o passo e a etapa,
-  e o espelho dos CHECKs.
+  o espelho dos CHECKs, as variantes e as duas réguas das reações, o
+  classificador e a devolutiva.
 - `tests/efeito-amplificador-postgres.spec.ts` — a porta da sala em toda rota
   de estudante, o preparo com quota, a homologação, a aula sem IA, o latch com
   as marcas, o gabarito ausente, o aviso e as proteções, a pausa, os bastidores,
   o painel de quatro cartões sem o texto do menor, a RLS com a role sem
-  `BYPASSRLS`, o CHECK do gate e o zerar.
+  `BYPASSRLS`, o CHECK do gate e o zerar — e a 2.2.0: as reações no preparo,
+  o classificador (acerto, falha, prazo), o feed que reage com a régua igual e
+  a devolutiva do estudante e do professor.

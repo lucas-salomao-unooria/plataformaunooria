@@ -6,6 +6,7 @@ import { rateLimit } from "../comum/rate-limit";
 import { Contrato } from "../openapi/contrato";
 import {
   AvisoDeCuidadoSchema,
+  DevolutivaSchema,
   EstadoSchema,
   EvidenciaSchema,
   GateDoEstudanteSchema,
@@ -40,13 +41,14 @@ const NOTA_DO_FEED =
   "Só depois do Publicar (**409** `nao-publicado`) e antes dos bastidores (**409** `explicar-nao-liberado`). Grava e marca o que o feed já alcançou (vale a melhor).";
 
 /**
- * Rotas do ESTUDANTE da exp02em1b — O Efeito Amplificador 2.1.0 (ADR-191), as
- * do PRD §12.
+ * Rotas do ESTUDANTE da exp02em1b — O Efeito Amplificador 2.2.0 (ADR-191,
+ * ADR-192), as do PRD §12 mais a devolutiva.
  *
  * O gabarito fica no servidor: o cliente manda o que o estudante escreveu,
  * escolheu ou tocou, e é o servidor que decide o que aquilo mediu (regra 3).
  * A identidade — inclusive a TURMA — sai do token e do banco. A guarda de
- * liberação está no FUNIL do service, não aqui. Sem IA na aula.
+ * liberação está no FUNIL do service, não aqui. A IA da aula (o classificador
+ * do chat e a devolutiva) não decide nada que a régua lê.
  */
 @Controller("efeito-amplificador")
 @UseGuards(OidcGuard, RolesGuard)
@@ -89,9 +91,9 @@ export class EfeitoAmplificadorController {
   @Post("chat/mensagem")
   @HttpCode(200)
   @Contrato({
-    resumo: "Uma mensagem ao UnooriaAI (API-003): a árvore de intenções, no servidor e sem IA.",
+    resumo: "Uma mensagem ao UnooriaAI (API-003): a árvore de intenções, no servidor; a IA só no que ela não entende.",
     descricao:
-      "A prévia muda pela INTENÇÃO, de uma lista fechada: perguntar a fonte só pergunta (o \"sim\" à oferta corrige), o pedido de crédito e o de tirar o nome corrigem cada um o seu nó. O texto do estudante é de menor: fica na sessão e não vai a painel, telemetria nem log.",
+      "A prévia muda pela INTENÇÃO, de uma lista fechada: perguntar a fonte só pergunta (o \"sim\" à oferta corrige), o pedido de crédito e o de tirar o nome corrigem cada um o seu nó. A mensagem que a árvore não entende vai ao classificador de IA (ADR-192, quota do estudante, teto de 5 s), que devolve uma intenção da MESMA lista; a fala continua a do banco de conteúdo. Sem IA (sem saldo, lenta, recusada), vale a árvore. O texto do estudante é de menor: fica na sessão e não vai a painel, telemetria nem log.",
     corpo: MensagemSchema,
     resposta: EstadoSchema,
     notas: [NOTA_DA_PORTA, NOTA_SEM_PACOTE, NOTA_DA_PAUSA, "Depois da 5ª: **409** `limite-do-chat`. Depois do Publicar: **409** `ja-publicado`."],
@@ -197,5 +199,22 @@ export class EfeitoAmplificadorController {
   concluir(@Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
     return this.missao.concluir(req.auth.escolaId, req.auth.usuarioId);
+  }
+
+  @Post("devolutiva")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "A devolutiva da conclusão (ADR-192): um parágrafo por habilidade, gerado uma vez.",
+    descricao:
+      "Sai dos FATOS da sessão (os mesmos que a régua lê), nunca do texto do estudante, e não diz nível nem nota. A IA redige (quota do estudante, teto de 7 s); sem ela, o modelo curado responde (`origem: \"modelo\"`). A primeira gravada vale: chamar de novo devolve a mesma.",
+    resposta: DevolutivaSchema,
+    notas: [NOTA_DA_PORTA, "Antes de concluir: **409** `missao-nao-concluida`."],
+  })
+  devolutiva(@Req() req: Autenticado) {
+    /* O teto PADRÃO: o contador é UM por estudante para todas as rotas, e o polling do gate (3 s) já passa de 20 por
+       minuto — a e2e pegou 429 aqui. O custo tem as suas travas: a devolutiva é gerada uma vez, e a IA da aula tem o
+       limite próprio (`ia-da-aula.service.ts`). */
+    limitar(req.auth.usuarioId);
+    return this.missao.devolutiva(req.auth.escolaId, req.auth.usuarioId);
   }
 }

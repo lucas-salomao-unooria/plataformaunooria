@@ -73043,8 +73043,8 @@
         "tags": [
           "efeito-amplificador"
         ],
-        "summary": "Uma mensagem ao UnooriaAI (API-003): a árvore de intenções, no servidor e sem IA.",
-        "description": "A prévia muda pela INTENÇÃO, de uma lista fechada: perguntar a fonte só pergunta (o \"sim\" à oferta corrige), o pedido de crédito e o de tirar o nome corrigem cada um o seu nó. O texto do estudante é de menor: fica na sessão e não vai a painel, telemetria nem log.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Sem pacote no ar responde **409** `campanha-em-preparo` — espera, não bloqueio.\n- Com as telas pausadas pelo professor: **409** `telas-pausadas`.\n- Depois da 5ª: **409** `limite-do-chat`. Depois do Publicar: **409** `ja-publicado`.",
+        "summary": "Uma mensagem ao UnooriaAI (API-003): a árvore de intenções, no servidor; a IA só no que ela não entende.",
+        "description": "A prévia muda pela INTENÇÃO, de uma lista fechada: perguntar a fonte só pergunta (o \"sim\" à oferta corrige), o pedido de crédito e o de tirar o nome corrigem cada um o seu nó. A mensagem que a árvore não entende vai ao classificador de IA (ADR-192, quota do estudante, teto de 5 s), que devolve uma intenção da MESMA lista; a fala continua a do banco de conteúdo. Sem IA (sem saldo, lenta, recusada), vale a árvore. O texto do estudante é de menor: fica na sessão e não vai a painel, telemetria nem log.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Sem pacote no ar responde **409** `campanha-em-preparo` — espera, não bloqueio.\n- Com as telas pausadas pelo professor: **409** `telas-pausadas`.\n- Depois da 5ª: **409** `limite-do-chat`. Depois do Publicar: **409** `ja-publicado`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -76529,6 +76529,114 @@
         "x-acesso": "token"
       }
     },
+    "/efeito-amplificador/devolutiva": {
+      "post": {
+        "operationId": "EfeitoAmplificadorController_devolutiva",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "devolutiva": {
+                      "type": "object",
+                      "properties": {
+                        "origem": {
+                          "type": "string",
+                          "enum": [
+                            "ia",
+                            "modelo"
+                          ]
+                        },
+                        "habilidades": {
+                          "type": "object",
+                          "required": [
+                            "EM13CO24",
+                            "EM13CO14",
+                            "EM13CO26",
+                            "EM13CO08"
+                          ],
+                          "properties": {
+                            "EM13CO24": {
+                              "type": "string"
+                            },
+                            "EM13CO14": {
+                              "type": "string"
+                            },
+                            "EM13CO26": {
+                              "type": "string"
+                            },
+                            "EM13CO08": {
+                              "type": "string"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "geradaEm": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "origem",
+                        "habilidades",
+                        "geradaEm"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "titulos": {
+                      "type": "object",
+                      "required": [
+                        "EM13CO24",
+                        "EM13CO14",
+                        "EM13CO26",
+                        "EM13CO08"
+                      ],
+                      "properties": {
+                        "EM13CO24": {
+                          "type": "string"
+                        },
+                        "EM13CO14": {
+                          "type": "string"
+                        },
+                        "EM13CO26": {
+                          "type": "string"
+                        },
+                        "EM13CO08": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "devolutiva",
+                    "titulos"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "efeito-amplificador"
+        ],
+        "summary": "A devolutiva da conclusão (ADR-192): um parágrafo por habilidade, gerado uma vez.",
+        "description": "Sai dos FATOS da sessão (os mesmos que a régua lê), nunca do texto do estudante, e não diz nível nem nota. A IA redige (quota do estudante, teto de 7 s); sem ela, o modelo curado responde (`origem: \"modelo\"`). A primeira gravada vale: chamar de novo devolve a mesma.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Antes de concluir: **409** `missao-nao-concluida`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
     "/efeito-amplificador/turmas/{turmaId}/pacote": {
       "get": {
         "operationId": "EfeitoAmplificadorTurmasController_pacote",
@@ -76788,6 +76896,68 @@
                               },
                               "minItems": 6,
                               "maxItems": 6
+                            },
+                            "reacoes": {
+                              "type": "object",
+                              "required": [
+                                "neutra.dado",
+                                "neutra.recorte",
+                                "construtiva.dado",
+                                "construtiva.recorte",
+                                "sensacionalista.dado",
+                                "sensacionalista.recorte"
+                              ],
+                              "properties": {
+                                "neutra.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "neutra.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "construtiva.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "construtiva.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "sensacionalista.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "sensacionalista.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                }
+                              },
+                              "additionalProperties": false
                             }
                           },
                           "required": [
@@ -77036,6 +77206,68 @@
                               },
                               "minItems": 6,
                               "maxItems": 6
+                            },
+                            "reacoes": {
+                              "type": "object",
+                              "required": [
+                                "neutra.dado",
+                                "neutra.recorte",
+                                "construtiva.dado",
+                                "construtiva.recorte",
+                                "sensacionalista.dado",
+                                "sensacionalista.recorte"
+                              ],
+                              "properties": {
+                                "neutra.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "neutra.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "construtiva.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "construtiva.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "sensacionalista.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "sensacionalista.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                }
+                              },
+                              "additionalProperties": false
                             }
                           },
                           "required": [
@@ -77273,6 +77505,68 @@
                               },
                               "minItems": 6,
                               "maxItems": 6
+                            },
+                            "reacoes": {
+                              "type": "object",
+                              "required": [
+                                "neutra.dado",
+                                "neutra.recorte",
+                                "construtiva.dado",
+                                "construtiva.recorte",
+                                "sensacionalista.dado",
+                                "sensacionalista.recorte"
+                              ],
+                              "properties": {
+                                "neutra.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "neutra.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "construtiva.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "construtiva.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "sensacionalista.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "sensacionalista.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                }
+                              },
+                              "additionalProperties": false
                             }
                           },
                           "required": [
@@ -77604,6 +77898,68 @@
                               },
                               "minItems": 6,
                               "maxItems": 6
+                            },
+                            "reacoes": {
+                              "type": "object",
+                              "required": [
+                                "neutra.dado",
+                                "neutra.recorte",
+                                "construtiva.dado",
+                                "construtiva.recorte",
+                                "sensacionalista.dado",
+                                "sensacionalista.recorte"
+                              ],
+                              "properties": {
+                                "neutra.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "neutra.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "construtiva.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "construtiva.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "sensacionalista.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "sensacionalista.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                }
+                              },
+                              "additionalProperties": false
                             }
                           },
                           "required": [
@@ -77974,6 +78330,68 @@
                           },
                           "minItems": 6,
                           "maxItems": 6
+                        },
+                        "reacoes": {
+                          "type": "object",
+                          "required": [
+                            "neutra.dado",
+                            "neutra.recorte",
+                            "construtiva.dado",
+                            "construtiva.recorte",
+                            "sensacionalista.dado",
+                            "sensacionalista.recorte"
+                          ],
+                          "properties": {
+                            "neutra.dado": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 300
+                              }
+                            },
+                            "neutra.recorte": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 300
+                              }
+                            },
+                            "construtiva.dado": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 300
+                              }
+                            },
+                            "construtiva.recorte": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 300
+                              }
+                            },
+                            "sensacionalista.dado": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 300
+                              }
+                            },
+                            "sensacionalista.recorte": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 300
+                              }
+                            }
+                          },
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -78247,6 +78665,68 @@
                         },
                         "minItems": 6,
                         "maxItems": 6
+                      },
+                      "reacoes": {
+                        "type": "object",
+                        "required": [
+                          "neutra.dado",
+                          "neutra.recorte",
+                          "construtiva.dado",
+                          "construtiva.recorte",
+                          "sensacionalista.dado",
+                          "sensacionalista.recorte"
+                        ],
+                        "properties": {
+                          "neutra.dado": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string",
+                              "minLength": 5,
+                              "maxLength": 300
+                            }
+                          },
+                          "neutra.recorte": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string",
+                              "minLength": 5,
+                              "maxLength": 300
+                            }
+                          },
+                          "construtiva.dado": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string",
+                              "minLength": 5,
+                              "maxLength": 300
+                            }
+                          },
+                          "construtiva.recorte": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string",
+                              "minLength": 5,
+                              "maxLength": 300
+                            }
+                          },
+                          "sensacionalista.dado": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string",
+                              "minLength": 5,
+                              "maxLength": 300
+                            }
+                          },
+                          "sensacionalista.recorte": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string",
+                              "minLength": 5,
+                              "maxLength": 300
+                            }
+                          }
+                        },
+                        "additionalProperties": false
                       }
                     },
                     "required": [
@@ -79340,6 +79820,68 @@
                           },
                           "minItems": 6,
                           "maxItems": 6
+                        },
+                        "reacoes": {
+                          "type": "object",
+                          "required": [
+                            "neutra.dado",
+                            "neutra.recorte",
+                            "construtiva.dado",
+                            "construtiva.recorte",
+                            "sensacionalista.dado",
+                            "sensacionalista.recorte"
+                          ],
+                          "properties": {
+                            "neutra.dado": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 300
+                              }
+                            },
+                            "neutra.recorte": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 300
+                              }
+                            },
+                            "construtiva.dado": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 300
+                              }
+                            },
+                            "construtiva.recorte": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 300
+                              }
+                            },
+                            "sensacionalista.dado": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 300
+                              }
+                            },
+                            "sensacionalista.recorte": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 300
+                              }
+                            }
+                          },
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -79392,6 +79934,179 @@
         ],
         "summary": "UMA atividade, inteira e COM o gabarito.",
         "description": "**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/efeito-amplificador/turmas/{turmaId}/pacotes/{pacoteId}/devolutivas": {
+      "get": {
+        "operationId": "EfeitoAmplificadorTurmasController_devolutivas",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pacoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "habilidades": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "EM13CO24",
+                          "EM13CO14",
+                          "EM13CO26",
+                          "EM13CO08"
+                        ]
+                      }
+                    },
+                    "titulos": {
+                      "type": "object",
+                      "required": [
+                        "EM13CO24",
+                        "EM13CO14",
+                        "EM13CO26",
+                        "EM13CO08"
+                      ],
+                      "properties": {
+                        "EM13CO24": {
+                          "type": "string"
+                        },
+                        "EM13CO14": {
+                          "type": "string"
+                        },
+                        "EM13CO26": {
+                          "type": "string"
+                        },
+                        "EM13CO08": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "devolutivas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "estudanteId": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "equipe": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "rodada": {
+                            "type": "integer"
+                          },
+                          "concluidoEm": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "origem": {
+                            "type": "string",
+                            "enum": [
+                              "ia",
+                              "modelo"
+                            ]
+                          },
+                          "habilidades": {
+                            "type": "object",
+                            "required": [
+                              "EM13CO24",
+                              "EM13CO14",
+                              "EM13CO26",
+                              "EM13CO08"
+                            ],
+                            "properties": {
+                              "EM13CO24": {
+                                "type": "string"
+                              },
+                              "EM13CO14": {
+                                "type": "string"
+                              },
+                              "EM13CO26": {
+                                "type": "string"
+                              },
+                              "EM13CO08": {
+                                "type": "string"
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "estudanteId",
+                          "nome",
+                          "equipe",
+                          "rodada",
+                          "concluidoEm",
+                          "origem",
+                          "habilidades"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "habilidades",
+                    "titulos",
+                    "devolutivas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "efeito-amplificador"
+        ],
+        "summary": "As devolutivas de uma atividade (ADR-192): a de cada estudante que concluiu, de toda rodada.",
+        "description": "A aba Habilidades as mostra ao lado dos critérios. Quem concluiu sem a devolutiva gravada recebe a do modelo curado, calculada na hora (`origem: \"modelo\"`).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe.",
         "security": [
           {
             "token-da-plataforma": []
@@ -79710,6 +80425,68 @@
                               },
                               "minItems": 6,
                               "maxItems": 6
+                            },
+                            "reacoes": {
+                              "type": "object",
+                              "required": [
+                                "neutra.dado",
+                                "neutra.recorte",
+                                "construtiva.dado",
+                                "construtiva.recorte",
+                                "sensacionalista.dado",
+                                "sensacionalista.recorte"
+                              ],
+                              "properties": {
+                                "neutra.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "neutra.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "construtiva.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "construtiva.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "sensacionalista.dado": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                },
+                                "sensacionalista.recorte": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 300
+                                  }
+                                }
+                              },
+                              "additionalProperties": false
                             }
                           },
                           "required": [
