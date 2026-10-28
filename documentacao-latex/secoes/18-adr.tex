@@ -245,6 +245,7 @@ que a cercam.
 \adrr{ADR-192} & O Efeito Amplificador 2.2.0: a IA volta sem mexer na régua --- o classificador do que a árvore de intenções não entende, as reações do feed ao post de cada estudante (escritas no preparo) e a devolutiva da conclusão, que o professor lê na aba Habilidades & 2026-10-28 & Aceita; supera em parte a \adrr{ADR-191} (a aula sem IA); superada em parte pela \adrr{ADR-193}\\
 \zebra \adrr{ADR-193} & O Efeito Amplificador 2.3.0: a IA lê o chat PRIMEIRO e a árvore de intenções vira a reserva, com três caminhos que nunca vão à IA (o \enquote{sim} da oferta, as sugestões da copy e a guarda de injeção) & 2026-10-28 & Aceita; supera em parte a \adrr{ADR-192} (a ordem do classificador)\\
 \adrr{ADR-194} & O Efeito Amplificador 2.3.1: a transcrição do podcast sai da tela do estudante e fica só na do professor; o episódio é tocado em aula & 2026-10-28 & Aceita; supera em parte a \adrr{ADR-191}\\
+\zebra \adrr{ADR-195} & A versão final do site ENTRE REDES entra como porte, com o \enquote{Entrar}, os links legais e o cadastro da plataforma acrescentados ao pacote & 2026-10-28 & Aceita; continua a \adrr{ADR-107}\\
 \bottomrule
 \end{tabularx}
 
@@ -17936,3 +17937,61 @@ episódio pela missão. A experiência sobe para 2.3.1.
 
 \textbf{Gatilho.} O PO pedir o episódio disponível ao estudante depois da
 aula.
+
+% ---------------------------------------------------------------------------
+\section{ADR-195 --- A versão final do site ENTRE REDES: porte do pacote, com três acréscimos}
+\label{adr:site-versao-final}
+
+\textbf{Data.} 2026-10-28. \textbf{Status.} Aceita. \textbf{Continua} a
+\adrr{ADR-107}: o site público segue sendo PORTE, e o cadastro segue passando
+pela api.
+
+\begin{especificacao}{Contexto}
+O material do site voltou na versão final (\arq{entre-redes-site-final.html}),
+como da Revisão 19: uma exportação deste próprio site, agora com 24 blocos de
+estilo empilhados, a arte embutida em base64 e três comportamentos novos
+(o carrossel das missões, a imagem ampliada que cabe na tela e o folhear das
+páginas dos livros). O desenho mudou por inteiro: hero com os livros, seção dos
+materiais do estudante, as missões num carrossel animado, os oito territórios
+com ícones, e quinze seções onde havia treze. Três peças do site no ar NÃO
+estão no pacote: o \enquote{Entrar} do cabeçalho e os links da Política de
+Privacidade e dos Termos de Uso no rodapé --- e a janela do cadastro do pacote
+é uma prévia, que responde \enquote{acesse o site da Unooria} em vez de enviar.
+\end{especificacao}
+
+\textbf{Decisão.} O pacote entra como porte, com a mesma régua da
+\adrr{ADR-107}: a marcação é a do HTML (a árvore que o navegador monta --- o
+material deixa um \cd{div} aberto, e o porte o fecha no mesmo ponto em que o
+navegador fecha), a folha é a das 24 camadas, na ordem e no texto do pacote, e
+os scripts viram efeitos montados pelo palco. Sobre isso, TRÊS acréscimos, todos
+marcados no código: o \enquote{Entrar} ao lado do \enquote{Explorar}, os dois
+links legais no rodapé e a janela de cadastro da plataforma no lugar da prévia
+--- aberta pelo único convite que sobrou, o do fechamento. O infinito de
+estrelas passa a amostrar o logo da Unooria no rodapé, porque o cabeçalho
+passou a mostrar a marca do ENTRE REDES. A arte embutida sai do base64 e vira
+arquivo, em webp e com nome descritivo; a da jornada dos Anos Iniciais é a
+mesma que já estava no repositório e não foi trocada.
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Publicar o pacote tal como veio.} O site perderia o caminho de
+    quem já tem conta e o acesso às páginas legais a partir da raiz, e o
+    cadastro deixaria de chegar à api --- o formulário da prévia não envia.
+  \item \textbf{Reescrever a folha em menos camadas.} Fundir as 23 camadas do
+    redesenho mudaria quem vence quem por ordem e especificidade, e o defeito
+    apareceria como layout, sem erro. A conferência por medida exige a folha do
+    pacote.
+\end{itemize}
+
+\textbf{Consequências.} A folha tem cerca de \num{130} KB, contra \num{31} KB
+antes, e é minificada como veio, uma regra de topo por linha. A conferência
+desta versão deu o mesmo topo e a mesma altura, ao pixel, para as quinze
+seções, em \num{390} e \num{1440} px, e diferença zero no texto do \cd{main};
+o que difere é só o rodapé, que no celular fica \num{128} px mais alto com os
+links legais. Os efeitos da poeira e do campo do hero, desligados desde a
+Revisão 19, perderam também os seus \cd{canvas} na marcação.
+
+\textbf{Gatilho.} O próximo pacote do material: a conferência por medida se
+refaz contra ele (\arq{apps/hub/components/site/AGENTS.md}).
+
