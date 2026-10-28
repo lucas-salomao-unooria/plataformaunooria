@@ -2436,6 +2436,11 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \cd{fonteOriginal} e os comentários sem \emph{handle}, com o horário
   \enquote{02h40} e as categorias do PRD ---, com a asserção no fim. Nenhuma
   tabela nova; as sessões e as marcas ficam como estão.\\
+\arq{20261028150000\_\B{}exp02em1b\_\B{}devolutiva} & O Efeito Amplificador
+  2.2.0 (\adrr{ADR-192}): a coluna \cd{devolutiva} (JSONB nulo) em
+  \cd{exp02em1b\_sessoes}. Só estrutura --- nenhuma linha muda, então a RLS
+  forçada não pede o \cd{NO FORCE} da migração anterior. As reações do feed
+  moram no \cd{conteudo\_json} do pacote, sem coluna.\\
 \zebra \arq{20261026120000\_\B{}exp02ef1b\_\B{}enigma\_\B{}capa} & As quatro
   tabelas de O Enigma da Capa da Rádio (\adrr{ADR-184}): \cd{exp02ef1b\_pacotes}
   (\cd{chave\_cena}; um em andamento e um rascunho por turma, índices únicos

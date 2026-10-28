@@ -21,6 +21,7 @@ import {
   PacotesDaTurmaSchema,
   PainelSchema,
   ParamsDaTurmaSchema,
+  DevolutivasDaAtividadeSchema,
   ParamsDoPacoteSchema,
   QueryDaEscolaSchema,
 } from "./contrato-de-rotas";
@@ -188,6 +189,21 @@ export class EfeitoAmplificadorTurmasController {
   @Contrato({ resumo: "UMA atividade, inteira e COM o gabarito.", params: ParamsDoPacoteSchema, query: QueryDaEscolaSchema, resposta: PacoteDetalheSchema, notas: [NOTA_DO_404] })
   pacoteDetalhe(@Param("turmaId") turmaId: string, @Param("pacoteId") pacoteId: string, @Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
     return this.missao.pacote(escolaAlvo(req.auth, escolaIdPedida), turmaDoCaminho(turmaId), professorDoToken(req.auth), pacoteDoCaminho(pacoteId));
+  }
+
+  @Get(":turmaId/pacotes/:pacoteId/devolutivas")
+  @Roles("professor", ...GESTORES)
+  @Contrato({
+    resumo: "As devolutivas de uma atividade (ADR-192): a de cada estudante que concluiu, de toda rodada.",
+    descricao:
+      "A aba Habilidades as mostra ao lado dos critérios. Quem concluiu sem a devolutiva gravada recebe a do modelo curado, calculada na hora (`origem: \"modelo\"`).",
+    params: ParamsDoPacoteSchema,
+    query: QueryDaEscolaSchema,
+    resposta: DevolutivasDaAtividadeSchema,
+    notas: [NOTA_DO_404],
+  })
+  devolutivas(@Param("turmaId") turmaId: string, @Param("pacoteId") pacoteId: string, @Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
+    return this.missao.devolutivas(escolaAlvo(req.auth, escolaIdPedida), turmaDoCaminho(turmaId), professorDoToken(req.auth), pacoteDoCaminho(pacoteId));
   }
 
   @Post(":turmaId/pacotes/:pacoteId/em-andamento")

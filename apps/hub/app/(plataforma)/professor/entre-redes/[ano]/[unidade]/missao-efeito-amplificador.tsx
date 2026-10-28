@@ -6,7 +6,7 @@ import type { TurmaDoProfessor } from "@/lib/turmas";
 import { AtividadesDaMissao } from "./atividades-da-missao";
 
 /**
- * Corpo de O EFEITO AMPLIFICADOR (2ª série · Unidade 1, ADR-181; 2.1.0, ADR-191).
+ * Corpo de O EFEITO AMPLIFICADOR (2ª série · Unidade 1, ADR-181; 2.1.0, ADR-191; 2.2.0, ADR-192).
  *
  * **Existe porque a ausência dele é MUDA**: sem ramo no despachante de
  * `page.tsx`, a missão cairia no corpo do Instanooria. O
@@ -15,8 +15,9 @@ import { AtividadesDaMissao } from "./atividades-da-missao";
  * Abre com o fato que muda a condução: **sem uma atividade em andamento a
  * missão não abre** (o tema dela entra na pauta do grêmio e nas falas do
  * UnooriaAI), e os dois botões da aula são seus. As equipes (E13) são de cada
- * atividade. Na aula não há IA: o UnooriaAI responde por uma lista fechada de
- * intenções, e a única IA é a do seu preparo.
+ * atividade. Na aula, o UnooriaAI responde por uma lista fechada de intenções, e
+ * a IA (2.2.0) só entende o pedido que a lista não entendeu e redige a
+ * devolutiva — a régua não lê nenhuma das duas.
  */
 export function MissaoEfeitoAmplificador({
   ano,
@@ -51,14 +52,16 @@ export function MissaoEfeitoAmplificador({
           <p>
             <strong className="text-unooria-neutral-950">Nenhum problema do rascunho chega marcado.</strong> O
             UnooriaAI escreve com segurança e cortesia; a estatística inventada, o trecho copiado e o colega exposto
-            só aparecem para quem pergunta. Não há mascote nem aviso dizendo “cuidado, isso viola a LGPD”. E não há
-            IA na aula: o assistente responde por uma lista fechada de intenções, igual para todos.
+            só aparecem para quem pergunta. Não há mascote nem aviso dizendo “cuidado, isso viola a LGPD”. O
+            assistente responde por uma lista fechada de intenções, igual para todos; a IA só entra para entender um
+            pedido que a lista não entendeu, e a resposta continua a do banco curado.
           </p>
           <p>
-            <strong className="text-unooria-neutral-950">O feed não muda com o texto.</strong> Qualquer manchete,
+            <strong className="text-unooria-neutral-950">A entrega não muda com o texto.</strong> Qualquer manchete,
             qualquer cuidado: a rede pinça uma frase e entrega o post de madrugada para todo mundo. É essa
             uniformidade que desmonta a culpa individual no debate — por isso o painel mostra a Distribuição
-            Horária Coletiva.
+            Horária Coletiva. Num pacote gerado com IA, as contas anônimas e o engajamento citam a manchete e o
+            trecho que viralizaram no post de cada um; os relatos de saúde são os mesmos para todos.
           </p>
           <p>
             As ferramentas de proteção ficam à mão — a Configuração da Publicação no card do post e a Central de
@@ -66,7 +69,7 @@ export function MissaoEfeitoAmplificador({
             mede. O Publicar e os seus dois botões não voltam.
           </p>
           <p className="text-[13px] text-unooria-neutral-500">
-            O que o estudante escreve ao UnooriaAI fica só no aparelho dele: nem você nem a coordenação o leem. As
+            O que o estudante escreve ao UnooriaAI não vai a painel: nem você nem a coordenação o leem. As
             quatro habilidades são registradas pelo que ele FAZ, no painel de habilidades da atividade.
           </p>
         </>

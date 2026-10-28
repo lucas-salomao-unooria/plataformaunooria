@@ -1,5 +1,5 @@
 /**
- * O que o hub lê da exp02em1b (O Efeito Amplificador 2.1.0, ADR-191) — espelho do Zod
+ * O que o hub lê da exp02em1b (O Efeito Amplificador 2.2.0, ADR-191 e ADR-192) — espelho do Zod
  * de `apps/api/src/efeito-amplificador/contrato-de-rotas.ts`, que é a fonte da
  * verdade, e dos vocabulários de `conteudo.ts` do mesmo módulo.
  *
@@ -107,6 +107,41 @@ export const ROTULO_DO_TIPO: Record<TipoDeComentario, string> = {
   engajamento: "Engajamento",
 };
 
+/**
+ * O FEED QUE REAGE AO POST (ADR-192): o trecho do post que viralizou — a
+ * estatística inventada (o estudante não a corrigiu) ou o recorte do pacote.
+ * Com a manchete, decide a VARIANTE de reação que o estudante vê.
+ */
+export const TRECHOS_VIRAIS = ["dado", "recorte"] as const;
+export type TrechoViral = (typeof TRECHOS_VIRAIS)[number];
+
+/** `${manchete}.${trecho}` — as seis variantes (a mesma derivação de `conteudo.ts` da api). */
+export type ChaveDaReacao = `${Manchete}.${TrechoViral}`;
+export const CHAVES_DAS_REACOES: readonly ChaveDaReacao[] = MANCHETES.flatMap((m) => TRECHOS_VIRAIS.map((t) => `${m}.${t}` as const));
+
+/**
+ * Os comentários que REAGEM ao post: os que amplificam. Os relatos de saúde
+ * ficam FIXOS — são o estímulo da EM13CO24, igual para a turma inteira.
+ */
+export const TIPOS_QUE_REAGEM: readonly TipoDeComentario[] = ["anonimo_agressivo", "engajamento"];
+
+export function reage(tipo: TipoDeComentario): boolean {
+  return TIPOS_QUE_REAGEM.includes(tipo);
+}
+
+const ROTULO_DO_TRECHO: Record<TrechoViral, string> = {
+  dado: "a estatística viralizou",
+  recorte: "o recorte viralizou",
+};
+
+/** O rótulo de cada variante para o professor: "Manchete neutra · a estatística viralizou". */
+export const ROTULO_DA_REACAO: Record<ChaveDaReacao, string> = Object.fromEntries(
+  CHAVES_DAS_REACOES.map((chave) => {
+    const [m, t] = chave.split(".") as [Manchete, TrechoViral];
+    return [chave, `Manchete ${ROTULO_DA_MANCHETE[m].toLowerCase()} · ${ROTULO_DO_TRECHO[t]}`];
+  }),
+) as Record<ChaveDaReacao, string>;
+
 /** O mínimo de cada categoria que a régua da api cobra (espelho de `regras/pacote.ts`). */
 export const MINIMOS_DOS_COMENTARIOS: Readonly<Partial<Record<TipoDeComentario, number>>> = {
   saude_fisica: 2,
@@ -187,6 +222,12 @@ export interface ConteudoDoPacote {
   recorte: string;
   manchetes: Record<Manchete, string>;
   comentarios: ComentarioDoFeed[];
+  /**
+   * As reações ao post DO estudante (ADR-192): por variante, o texto de cada
+   * comentário que reage, pelo id. AUSENTE no banco padrão e em todo pacote da
+   * 2.1.0 — a tela funciona sem ele, e o feed é o mesmo para todos.
+   */
+  reacoes?: Partial<Record<ChaveDaReacao, Record<string, string>>>;
 }
 
 export interface PacoteDoProfessor {
@@ -280,6 +321,37 @@ export interface Material {
   habilidades: { codigo: string; rotulo: string; criterios: { atingiu: string; em_processo: string; nao_atingiu: string } }[];
 }
 
+/**
+ * A DEVOLUTIVA da conclusão (ADR-192): um parágrafo por habilidade, escrito a
+ * partir do que o estudante fez. A ordem e o título vêm da resposta (`titulos`,
+ * espelho de `regras/devolutiva.ts#TITULO_DA_HABILIDADE`).
+ */
+export const HABILIDADES_DA_DEVOLUTIVA = ["EM13CO24", "EM13CO14", "EM13CO26", "EM13CO08"] as const;
+export type HabilidadeDaDevolutiva = (typeof HABILIDADES_DA_DEVOLUTIVA)[number];
+
+export const ORIGENS_DA_DEVOLUTIVA = ["ia", "modelo"] as const;
+export type OrigemDaDevolutiva = (typeof ORIGENS_DA_DEVOLUTIVA)[number];
+
+export const ROTULO_DA_ORIGEM_DA_DEVOLUTIVA: Record<OrigemDaDevolutiva, string> = {
+  ia: "Escrita com IA",
+  modelo: "Modelo da Unooria",
+};
+
+/** A resposta de `GET turmas/:turmaId/pacotes/:pacoteId/devolutivas` (`DevolutivasDaAtividadeSchema`). */
+export interface DevolutivasDaAtividade {
+  habilidades: HabilidadeDaDevolutiva[];
+  titulos: Partial<Record<HabilidadeDaDevolutiva, string>>;
+  devolutivas: {
+    estudanteId: string;
+    nome: string;
+    equipe: string | null;
+    rodada: number;
+    concluidoEm: string | null;
+    origem: OrigemDaDevolutiva;
+    habilidades: Partial<Record<HabilidadeDaDevolutiva, string>>;
+  }[];
+}
+
 // ─────────────────────────────────────────────────────────────── os caminhos
 
 export function caminhoDaTurma(turmaId: string): string {
@@ -338,6 +410,22 @@ export function erroDaApi(corpo: unknown, padrao: string): { mensagem: string; e
     mensagem: typeof mensagem === "string" && mensagem ? mensagem : padrao,
     erros: Array.isArray(erros) ? erros.filter((e): e is string => typeof e === "string") : [],
   };
+}
+
+/**
+ * A curadoria escreve uma reação: o texto vazio TIRA a entrada (e a variante
+ * que ficou vazia), porque o Zod da api recusa reação com menos de 5
+ * caracteres — e a ausência já é o que o feed sabe ler (cai no texto do
+ * comentário).
+ */
+export function comReacao(c: ConteudoDoPacote, chave: ChaveDaReacao, comentarioId: string, texto: string): ConteudoDoPacote {
+  const textos = { ...(c.reacoes?.[chave] ?? {}) };
+  if (texto.trim()) textos[comentarioId] = texto;
+  else delete textos[comentarioId];
+  const reacoes = { ...(c.reacoes ?? {}) };
+  if (Object.keys(textos).length > 0) reacoes[chave] = textos;
+  else delete reacoes[chave];
+  return { ...c, reacoes };
 }
 
 /** Os tópicos da aula: um por linha, sem linha vazia. */

@@ -9,6 +9,7 @@ import {
   PAUTA,
   type ConteudoDoPacote,
 } from "../conteudo";
+import { problemasDasReacoes } from "./reacoes";
 
 /**
  * A RÉGUA DO PACOTE — a mesma para o banco padrão, para a saída da IA (o
@@ -18,7 +19,8 @@ import {
  * O que ela garante é a MECÂNICA da missão, que não muda com o tema (PRD §12.2,
  * a camada fixa): a pauta, os três nós no rascunho com a correção de cada um, o
  * recorte que sobrevive à correção, as três manchetes e os seis comentários da
- * madrugada com os relatos de saúde e as contas invasivas.
+ * madrugada com os relatos de saúde e as contas invasivas — e, quando o
+ * pacote as tem, as reações ao post do estudante (ADR-192).
  */
 
 const palavras = (t: string) => t.trim().split(/\s+/).filter(Boolean).length;
@@ -123,6 +125,7 @@ export function problemasDoConteudo(c: ConteudoDoPacote): string[] {
     if (!horarioDeMadrugada(com.horario)) p.push(`O comentário de ${com.autor || com.id} precisa ser de madrugada (entre 01h00 e 03h30).`);
     if (com.texto.length > COMENTARIO_MAX_CARACTERES) p.push(`O comentário de ${com.autor || com.id} passa de ${COMENTARIO_MAX_CARACTERES} caracteres.`);
   }
+  p.push(...problemasDasReacoes(c));
   return [...new Set(p)];
 }
 

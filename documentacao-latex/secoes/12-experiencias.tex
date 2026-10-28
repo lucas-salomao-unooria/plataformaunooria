@@ -841,26 +841,30 @@ Tomou o código da Missão Tempestade, que virou \cd{exp02em1b-v0} (abaixo).
 Duas seções do design system: o \textbf{UnooriaAI} (\cd{unooriaai}) nas Etapas
 1 a 3, do briefing ao Publicar, e o \textbf{Unoovista} (\cd{unoovista}) nas
 Etapas 4 a 6, do feed da madrugada à conclusão. Módulo da api:
-\arq{efeito-amplificador}; experiência 2.1.0.
+\arq{efeito-amplificador}; experiência 2.2.0, que traz a IA de volta sem
+mexer na régua (\adrr{ADR-192}).
 
 \begin{destaque}
 O estudante cuida do texto e a rede entrega de madrugada do mesmo jeito: o
 alcance não depende do cuidado, porque a rede otimiza tempo de tela.
 \end{destaque}
 
-\subsection{O UnooriaAI da aula é a árvore de intenções, sem IA}
+\subsection{O UnooriaAI da aula é a árvore de intenções; a IA só no que ela não entende}
 
-A aula não chama IA (PRD, RNF-012): o UnooriaAI é a árvore de intenções do
-banco de conteúdo, no servidor (\arq{regras/intencoes.ts}: minúsculas, sem
-acento, sem pontuação, lista fechada com precedência e os gatilhos que vêm do
-pacote). A conversa abre com a boas-vindas da copy e as três sugestões ---
+O UnooriaAI é a árvore de intenções do banco de conteúdo, no servidor
+(\arq{regras/intencoes.ts}: minúsculas, sem acento, sem pontuação, lista
+fechada com precedência e os gatilhos que vêm do pacote). Desde a 2.2.0
+(\adrr{ADR-192}), a mensagem que a árvore não entende vai a um classificador de
+IA (\arq{ia-da-aula.service.ts}), que a traduz para uma intenção da MESMA lista
+--- a fala continua a do banco, e a prévia muda pela intenção. Quota do
+estudante, teto de 5\,s, confiança mínima de 0,7; sem IA, vale a árvore. A conversa abre com a boas-vindas da copy e as três sugestões ---
 \enquote{Criar rascunho informativo sobre o tema}, \enquote{Qual a fonte dessa
 pesquisa?} e \enquote{Reescreva removendo os nomes pessoais e citando o autor
 original}. Perguntar a fonte só pergunta: a fala termina em \enquote{Deseja
 que eu atualize a prévia?}, e só o \enquote{sim} logo depois (ou a revisão
 ampla) corrige a estatística. O pedido de crédito e o de tirar o nome corrigem
-cada um o seu nó; juntos, os dois. Até 5 mensagens. A única IA da missão é a
-do preparo do professor, com a quota dele e curadoria.
+cada um o seu nó; juntos, os dois. Até 5 mensagens. O preparo do professor
+escreve, com a quota dele e curadoria, o pacote e as reações do feed.
 
 \subsection{A prévia, a manchete e o latch}
 
@@ -883,7 +887,10 @@ O feed segue o protótipo revisado: o card do post com \enquote{Em alta na
 madrugada}, a métrica das 4.820 impressões e o aviso de metadados, os botões
 \enquote{Fixar aviso de cuidado} (a folha com os três motivos) e
 \enquote{Configuração da Publicação} (conta privada e restringir comentários),
-os seis comentários e a barra fixa \enquote{Central de Apoio} (denunciar o
+os seis comentários --- os que amplificam (a conta anônima e o engajamento)
+no texto da variante do post DESTE estudante, a manchete e o trecho que
+viralizou, escrita no preparo; os relatos de saúde, iguais para todos --- e a
+barra fixa \enquote{Central de Apoio} (denunciar o
 perfil suspeito, com confirmação, e encaminhar um relato escolhendo o
 comentário e a equipe). A EM13CO24 é o motivo do aviso: saúde atinge; outro
 motivo, ou restringir comentários, fica em processo. A EM13CO08 conta as três
@@ -894,7 +901,9 @@ pico. O gate da turma é \cd{exploracao}, \cd{pausa} (as telas congelam e as
 jogadas respondem 409) e \cd{explicar}, só para a frente. Nos bastidores, os
 dois cartões (o pico entre 01h00 e 03h30 e a retenção de 42 minutos) abrem a
 citação de Nico e não travam o avanço; a espera ativa mostra a entrega por
-faixa horária, e a conclusão traz o podcast em texto (o áudio é do
+faixa horária, e a conclusão traz a devolutiva --- um parágrafo por
+habilidade, escrito a partir do que o estudante fez, sem nível nem nota, que o
+professor lê na aba Habilidades --- e o podcast em texto (o áudio é do
 professor). A abertura dos bastidores fecha o feed e marca o
 \enquote{não atingiu} de quem nada fez.
 

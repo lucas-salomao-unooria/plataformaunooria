@@ -1066,8 +1066,10 @@ export const MISSAO_EFEITO_AMPLIFICADOR: Missao = {
     duracao: "1 aula de 50 min (25 min em tela, 25 min fora da tela)",
     formato:
       "Dois aplicativos da Unooria: o UnooriaAI, o assistente editorial, para criar e auditar o post, e o " +
-      "Unoovista, a rede social, para a repercussão de madrugada e os bastidores da entrega. Na aula não há " +
-      "IA: o assistente responde por uma lista fechada de intenções; a IA só entra no seu preparo.",
+      "Unoovista, a rede social, para a repercussão de madrugada e os bastidores da entrega. Na aula, o " +
+      "assistente responde por uma lista fechada de intenções, e a IA só entra para entender o pedido que " +
+      "essa lista não entendeu (a resposta continua a do banco curado). As reações do feed vêm escritas no " +
+      "seu preparo, e a devolutiva final é redigida a partir do que o estudante fez; a régua não muda.",
     atos: [
       {
         rotulo: "1 — Desafiar: a pauta do grêmio",
@@ -1108,7 +1110,7 @@ export const MISSAO_EFEITO_AMPLIFICADOR: Missao = {
     ],
     preparo: [
       "Escolha o recorte: o pacote padrão oficial (Convivência Escolar e Celular, um toque) ou um tema da sua disciplina gerado com IA.",
-      "Se gerar com IA, revise o pacote inteiro antes de homologar: nada da IA chega à turma sem a sua curadoria.",
+      "Se gerar com IA, revise o pacote inteiro antes de homologar, inclusive as reações do feed: nada do pacote chega à turma sem a sua curadoria.",
       "Coloque a atividade em andamento: sem ela o estudante entra e vê uma tela de espera.",
       "Não conte que a aula é sobre algoritmo ou economia da atenção: a missão mede o que a turma faz sem esse aviso.",
       "Deixe o projetor pronto: o painel mostra a Distribuição Horária Coletiva da turma, sem nomes, para o debate.",

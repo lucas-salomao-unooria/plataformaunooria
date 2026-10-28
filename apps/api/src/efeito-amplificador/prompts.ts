@@ -1,16 +1,21 @@
 import type { AiJsonSchema } from "../ai/provider";
 import {
+  CHAVES_DAS_REACOES,
   COMENTARIO_PALAVRAS,
   COMENTARIOS_POR_PACOTE,
   MANCHETE_MAX_CARACTERES,
+  MANCHETES,
   PARAGRAFO_MAX_PALAVRAS,
   PAUTA,
   ROTULO_DA_DISCIPLINA,
+  TIPOS_QUE_REAGEM,
+  TRECHOS_VIRAIS,
   type ConteudoDoPacote,
   type Disciplina,
 } from "./conteudo";
 import { ConteudoBaseSchema } from "./contrato-de-rotas";
 import { problemasDoConteudo } from "./regras/pacote";
+import { problemasDaGeracaoDeReacoes, textoDoTrecho } from "./regras/reacoes";
 
 /**
  * O contrato com o gerador do PREPARO DOCENTE — a ÚNICA superfície de IA da
@@ -23,6 +28,10 @@ import { problemasDoConteudo } from "./regras/pacote";
  * nós, a correção de cada um, o recorte, as manchetes e os comentários com os
  * relatos de saúde e as contas invasivas — sai garantida pela RÉGUA
  * (`problemasDoConteudo`) no `validar`: fora dela, a tentativa é regerada.
+ *
+ * Desde a 2.2.0 (ADR-192) o preparo faz uma SEGUNDA chamada, as reações ao
+ * post do estudante (`SYSTEM_DAS_REACOES`), sobre o pacote já validado. A
+ * IA da aula (o classificador e a devolutiva) está em `prompts-da-aula.ts`.
  */
 
 export const SYSTEM_DO_PREPARO = `Você é o motor pedagógico da missão "O Efeito Amplificador" para o 2º ano do Ensino Médio (estudantes de 15 a 17 anos).
@@ -138,4 +147,89 @@ export function validarSaidaDoPreparo(bruto: unknown): ConteudoDoPacote {
   const problemas = problemasDoConteudo(lido.data);
   if (problemas.length > 0) throw new Error(problemas.join(" "));
   return lido.data;
+}
+
+// ─────────────────────────────────────────────────────────── as reações (ADR-192)
+
+const ROTULO_DA_MANCHETE_NO_PROMPT = { neutra: "neutra", construtiva: "construtiva", sensacionalista: "sensacionalista" } as const;
+const PAPEL_QUE_REAGE = {
+  anonimo_agressivo: "conta anônima invasiva que inflama o atrito",
+  engajamento: "alguém que polariza a discussão",
+} as const;
+
+export const SYSTEM_DAS_REACOES = `Você escreve as reações de um feed de rede social simulado, numa atividade escolar do 2º ano do Ensino Médio.
+O post da campanha do grêmio viralizou de madrugada: o algoritmo destacou um TRECHO do texto e o mostrou com a MANCHETE que o estudante escolheu. Existem seis versões possíveis do post (três manchetes × dois trechos destacados). Cada estudante vê a versão que publicou.
+
+Para CADA versão, reescreva os comentários indicados para que REAJAM àquela versão: citem, ironizem ou distorçam a manchete ou o trecho destacado. A ideia é o estudante perceber que o algoritmo amplificou a escolha DELE.
+
+Regras:
+- Mantenha o papel de cada comentário: a conta anônima inflama o atrito (sem ameaça, sem expor ninguém pelo nome); o engajamento polariza a discussão.
+- O texto muda de uma versão para outra: um comentário com o mesmo texto nas seis versões não é reação.
+- Não fale de saúde (insônia, dor, ansiedade): os relatos de saúde são outros comentários e não mudam.
+- Nunca escreva o nome do colega citado no rascunho.
+- De ${COMENTARIO_PALAVRAS.min} a 30 palavras, na fala de adolescentes, português do Brasil, sem palavrão; nenhuma pessoa, marca, aplicativo ou rede social reais (nada de TikTok, WhatsApp, Instagram); nada de armas, violência, sexo, drogas, política partidária ou religião.
+- Não inclua introduções nem markdown fora do JSON.`;
+
+export function promptDasReacoes(c: ConteudoDoPacote): string {
+  const quemReage = c.comentarios.filter((x) => TIPOS_QUE_REAGEM.includes(x.tipo));
+  const manchetes = MANCHETES.map((m) => `- ${ROTULO_DA_MANCHETE_NO_PROMPT[m]}: "${c.manchetes[m]}"`).join("\n");
+  const trechos = TRECHOS_VIRAIS.map((t) => `- ${t}: "${textoDoTrecho(c, t)}"`).join("\n");
+  const comentarios = quemReage
+    .map((x) => `- ${x.id} · ${x.autor} · ${PAPEL_QUE_REAGE[x.tipo as keyof typeof PAPEL_QUE_REAGE]} · hoje: "${x.texto}"`)
+    .join("\n");
+  return `AS MANCHETES:
+${manchetes}
+
+OS TRECHOS QUE O ALGORITMO PODE TER DESTACADO:
+${trechos}
+
+OS COMENTÁRIOS QUE REAGEM (id · autor · papel · texto de hoje):
+${comentarios}
+
+O COLEGA QUE NUNCA PODE SER NOMEADO: ${c.colega}
+
+Devolva as seis versões, com as chaves ${CHAVES_DAS_REACOES.map((k) => `"${k}"`).join(", ")} (manchete.trecho), e em cada uma o texto de TODOS os comentários acima, pelo id.`;
+}
+
+export const SCHEMA_DAS_REACOES: AiJsonSchema = {
+  type: "object",
+  required: ["variantes"],
+  properties: {
+    variantes: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["chave", "comentarios"],
+        properties: {
+          chave: { type: "string", enum: [...CHAVES_DAS_REACOES] },
+          comentarios: {
+            type: "array",
+            items: { type: "object", required: ["id", "texto"], properties: { id: STRING, texto: STRING } },
+          },
+        },
+      },
+    },
+  },
+};
+
+/** Seis variantes de dois a quatro comentários: ~1.000 tokens escritos, com a folga do raciocínio (ADR-148). */
+export const MAX_TOKENS_DAS_REACOES = 8_000;
+
+/** A forma (mapa `chave → id → texto`) e a régua ESTRITA da geração (`problemasDaGeracaoDeReacoes`). */
+export function validarSaidaDasReacoes(bruto: unknown, conteudo: ConteudoDoPacote): NonNullable<ConteudoDoPacote["reacoes"]> {
+  const b = (bruto ?? {}) as Record<string, unknown>;
+  const reacoes: Record<string, Record<string, string>> = {};
+  for (const v of Array.isArray(b.variantes) ? b.variantes : []) {
+    const o = (v ?? {}) as Record<string, unknown>;
+    if (typeof o.chave !== "string") continue;
+    const textos: Record<string, string> = {};
+    for (const c of Array.isArray(o.comentarios) ? o.comentarios : []) {
+      const x = (c ?? {}) as Record<string, unknown>;
+      if (typeof x.id === "string" && typeof x.texto === "string") textos[x.id] = x.texto.replace(/\s+/g, " ").trim();
+    }
+    reacoes[o.chave] = textos;
+  }
+  const problemas = problemasDaGeracaoDeReacoes({ ...conteudo, reacoes });
+  if (problemas.length > 0) throw new Error(problemas.join(" "));
+  return reacoes as NonNullable<ConteudoDoPacote["reacoes"]>;
 }
