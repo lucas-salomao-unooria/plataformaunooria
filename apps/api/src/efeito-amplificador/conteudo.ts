@@ -10,8 +10,9 @@
  * transferência da Etapa 6 (o caso do streaming de áudio).
  *
  * A 2.2.0 (ADR-192) traz a IA de volta SEM mexer na régua: o classificador do
- * chat (só o que a árvore não entende, e a fala continua a do 01e), as reações
- * do feed escritas no preparo e a devolutiva da conclusão.
+ * chat (a fala continua a do 01e), as reações
+ * do feed escritas no preparo e a devolutiva da conclusão. A 2.3.0 (ADR-193)
+ * põe a IA para ler o chat PRIMEIRO, com a árvore como reserva.
  *
  * Puro — sem Nest e sem Prisma. A experiência e o hub têm espelhos destas
  * listas; mudar a forma aqui sem avisar quebra os dois.
@@ -20,7 +21,7 @@
 export const EXP_ID = "exp02em1b";
 
 /** Gravada em cada sessão: o histórico se reprocessa pela versão que o mediu. */
-export const VERSAO_DO_INSTRUMENTO = "2.2.0";
+export const VERSAO_DO_INSTRUMENTO = "2.3.0";
 
 // ──────────────────────────────────────────── vocabulários (CHECK na migration)
 
@@ -309,9 +310,9 @@ export const SUGESTOES_DE_PROMPT = [
 
 /**
  * As intenções do chat — a ÁRVORE DE INTENÇÕES do 01e, no servidor. A lista é
- * FECHADA e decide o que muda na prévia; desde a 2.2.0 (ADR-192) a IA só
- * TRADUZ para ela a mensagem que a árvore não entendeu, e a fala continua a do
- * 01e:
+ * FECHADA e decide o que muda na prévia. Desde a 2.3.0 (ADR-193) a IA lê a
+ * mensagem PRIMEIRO e a TRADUZ para esta lista; a árvore é a reserva (e decide
+ * sozinha o "sim" da oferta e as três sugestões). A fala continua a do 01e:
  *
  * - `auditar_fontes` só PERGUNTA (a fala termina em "Deseja que eu atualize a
  *   prévia?"); quem corrige a estatística é o "sim" (`substituir_dado`) ou a

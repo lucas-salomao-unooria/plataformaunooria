@@ -15,10 +15,11 @@ export const EXP_ID = "exp02em1b";
  * caminho do bucket da 2.x nunca encosta no dela. A 2.1.0 é a revisão do PO
  * (ADR-191): a árvore de intenções no chat, a gaveta da prévia, o feed com a
  * Central de Apoio. A 2.2.0 (ADR-192) traz a IA sem mexer na régua: o
- * classificador do que a árvore não entende, o feed que reage ao post de cada
- * um e a devolutiva da conclusão.
+ * classificador do chat, o feed que reage ao post de cada um e a devolutiva da
+ * conclusão; a 2.3.0 (ADR-193) põe o classificador para ler PRIMEIRO, com a
+ * árvore como reserva (a tela não muda).
  */
-export const EXP_VERSION = "2.2.0";
+export const EXP_VERSION = "2.3.0";
 
 export type Passo = "abertura" | "conversa" | "feed" | "explicar" | "concluida";
 export type Fase = "exploracao" | "pausa" | "explicar";

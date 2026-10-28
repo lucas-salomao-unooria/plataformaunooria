@@ -6,7 +6,8 @@ Missão da 2ª série do EM, unidade 1. A **2.1.0** (ADR-191) segue a revisão d
 PO (`artefatos_exp02em1b`, 2026-10-27: o PRD 2.1.0, o banco `01e`, a copy `06`
 e o protótipo de 32 estados) e SUPERA as decisões da 2.0.x (ADR-181) no que é
 desta missão. A **2.2.0** (ADR-192) traz a IA de volta SEM mexer na régua: o
-classificador do chat, as reações do feed e a devolutiva. O código `exp02em1b` continua dela; a Missão Tempestade é
+classificador do chat, as reações do feed e a devolutiva. A **2.3.0**
+(ADR-193) põe o classificador para ler PRIMEIRO, com a árvore como reserva. O código `exp02em1b` continua dela; a Missão Tempestade é
 `exp02em1b-v0` (módulo `unoogpt`), no ar e fora do catálogo.
 
 O estudante é o comunicador do grêmio: pede o post ao **UnooriaAI**, audita o
@@ -32,19 +33,31 @@ A transferência da Etapa 6 (o caso do streaming de áudio, o diário de bordo e
   (`regras/intencoes.ts`): minúsculas, sem acento, lista FECHADA, precedência
   (a revisão ampla antes de tudo; autoria + LGPD juntas são o direito digital
   inteiro; a fonte antes de aprovar e de gerar), mais os gatilhos do pacote.
-  **Só o `fora_do_tema` da árvore vai à IA** (`ia-da-aula.service.ts`), que o
-  traduz para uma intenção da MESMA lista (sem `substituir_dado`, que é estado;
-  confiança < 0,7 = fora do tema); a fala continua a do 01e. Três tempos em
-  `mensagem()`: a leitura com a árvore, a IA FORA da transação, a gravação —
-  sessão que andou no meio = vale a árvore. A fala grava `classificador:
-  "arvore" | "ia"`.
+  **A IA lê PRIMEIRO e a árvore é a reserva** (ADR-193, `rotaDaMensagem` e
+  `decidirIntencao` em `regras/intencoes.ts`): a IA traduz a mensagem para uma
+  intenção da MESMA lista (sem `substituir_dado`); confiança < 0,7, lenta, sem
+  saldo ou recusada = vale a árvore. **Três caminhos nunca vão à IA**: o "sim"
+  logo depois da oferta (`estado`), as três sugestões da copy tocadas como
+  estão (`sugestao` — o TC-03 corrige as duas coisas sempre) e o texto que
+  tenta mandar no classificador (`guarda`: nome de intenção com sublinhado,
+  "ignore as instruções"; vira fora do tema — a árvore o leria pela palavra
+  "fonte"). Palavra solta como "confiança" NÃO é guarda: "essa fonte é de
+  confiança?" é pedido legítimo. Três tempos em `mensagem()`: a leitura com a
+  rota, a IA FORA da transação, a gravação — sessão que andou no meio = vale
+  a árvore. A fala grava `classificador: "ia" | "arvore" | "guarda"` e, quando
+  a IA discordou da árvore, `arvore` (o dado do piloto sobre onde ela lia
+  errado). A fala continua a do 01e.
 - **A IA da aula corre e perde em silêncio.** Quota do perfil `estudante`
   (`temSaldo` antes, débito por tentativa), rate limit por usuário, uma
   tentativa só, tetos de 5 s (classificar) e 7 s (devolutiva) — o SDK da
   experiência desiste em 10 s e a rota ainda lê e grava. Perdeu = árvore ou
   modelo, nunca erro na tela. `scripts/medir-classificador-exp02em1b.ts` mede o
-  caminho de produção num conjunto-ouro com o Vertex real (em 2026-10-28: a IA
-  acertou 57/57 e deu zero falso crédito; os 6 erros eram da árvore).
+  caminho de produção num conjunto-ouro com o Vertex real. Na 2.2.0 (árvore
+  primeiro): a IA 57/57, os 6 erros eram da árvore. Na 2.3.0 (IA primeiro, 89
+  frases): 88/89 e 89/89 em duas rodadas, zero falso crédito nas duas; a IA
+  divergiu da árvore em 45 e acertou as 45. Errar um pedido de revisão para
+  fora do tema ainda acontece (a IA não é determinística): custa o estudante
+  reformular, nunca um crédito.
 - **O feed reage ao post de cada um, e o estímulo é o mesmo** (`regras/reacoes.ts`).
   O preparo faz uma SEGUNDA chamada (`SYSTEM_DAS_REACOES`) e grava
   `conteudo.reacoes[manchete.trecho][comentarioId]`; o trecho é `dado` se a

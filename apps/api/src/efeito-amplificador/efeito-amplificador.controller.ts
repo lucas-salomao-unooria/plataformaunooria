@@ -91,9 +91,9 @@ export class EfeitoAmplificadorController {
   @Post("chat/mensagem")
   @HttpCode(200)
   @Contrato({
-    resumo: "Uma mensagem ao UnooriaAI (API-003): a árvore de intenções, no servidor; a IA só no que ela não entende.",
+    resumo: "Uma mensagem ao UnooriaAI (API-003): a IA lê primeiro, a árvore de intenções é a reserva.",
     descricao:
-      "A prévia muda pela INTENÇÃO, de uma lista fechada: perguntar a fonte só pergunta (o \"sim\" à oferta corrige), o pedido de crédito e o de tirar o nome corrigem cada um o seu nó. A mensagem que a árvore não entende vai ao classificador de IA (ADR-192, quota do estudante, teto de 5 s), que devolve uma intenção da MESMA lista; a fala continua a do banco de conteúdo. Sem IA (sem saldo, lenta, recusada), vale a árvore. O texto do estudante é de menor: fica na sessão e não vai a painel, telemetria nem log.",
+      "A prévia muda pela INTENÇÃO, de uma lista fechada: perguntar a fonte só pergunta (o \"sim\" à oferta corrige), o pedido de crédito e o de tirar o nome corrigem cada um o seu nó. A mensagem vai PRIMEIRO ao classificador de IA (ADR-193; quota do estudante, teto de 5 s, confiança mínima de 0,7), que devolve uma intenção da MESMA lista; a fala continua a do banco de conteúdo. Sem IA (sem saldo, lenta, insegura), vale a árvore. Nunca vão à IA: o \"sim\" logo depois da oferta (é estado), as três sugestões da copy (exatas) e o texto que tenta mandar no classificador (a guarda: fora do tema). O texto do estudante é de menor: fica na sessão e não vai a painel, telemetria nem log.",
     corpo: MensagemSchema,
     resposta: EstadoSchema,
     notas: [NOTA_DA_PORTA, NOTA_SEM_PACOTE, NOTA_DA_PAUSA, "Depois da 5ª: **409** `limite-do-chat`. Depois do Publicar: **409** `ja-publicado`."],
