@@ -3,6 +3,8 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
+import { GATILHOS_DO_GUIA, ROTEIRO_DO_GUIA } from "./entre-redes/guias/exp03ef1b";
+
 import {
   ACOES_DO_GATE,
   CAMPOS,
@@ -154,6 +156,11 @@ describe("a mediação é a da api, frase por frase", () => {
       expect(conteudo).toContain(`"${cuidado}"`);
     }
     for (const gatilho of GATILHOS_DE_CONDUCAO) expect(conteudo).toContain(`"${gatilho}"`);
+  });
+
+  test("a cópia do guia da aula é o espelho, frase por frase", () => {
+    expect(ROTEIRO_DO_GUIA).toEqual(ROTEIRO_DE_MEDIACAO);
+    expect(GATILHOS_DO_GUIA).toEqual(GATILHOS_DE_CONDUCAO);
   });
 
   test("cada momento da turma tem o seu gatilho", () => {

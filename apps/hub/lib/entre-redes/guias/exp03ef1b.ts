@@ -1,4 +1,3 @@
-import { GATILHOS_DE_CONDUCAO, ROTEIRO_DE_MEDIACAO } from "../../nina-noticia-tipos";
 import type { GuiaDaAula } from "./tipos";
 
 /**
@@ -10,15 +9,39 @@ import type { GuiaDaAula } from "./tipos";
  * Não dá para saber); o reparo que monta a ficha inteira. Sem Canal B e sem
  * podcast nesta frente.
  *
- * As três perguntas do debate e os gatilhos de condução vêm do espelho
- * (`lib/nina-noticia-tipos.ts`), que o teste confere frase por frase contra a
- * api: a cópia escrita à mão aqui seria a que diverge.
+ * As três perguntas do debate e os gatilhos de condução são CÓPIA do espelho
+ * (`lib/nina-noticia-tipos.ts`), e não import: o gerador da base da Ajuda
+ * carrega os guias direto pelo Node, que só apaga `import type` — um import de
+ * valor quebra a carga (`scripts/gerar-base-da-ajuda.mjs`). Quem impede a cópia
+ * de divergir é `nina-noticia-tipos.test.ts`, que a confere frase por frase.
  */
-const [PERGUNTA_DA_BUSCA, PERGUNTA_DA_LACUNA, PERGUNTA_DA_ROTINA] = ROTEIRO_DE_MEDIACAO as [
-  (typeof ROTEIRO_DE_MEDIACAO)[number],
-  (typeof ROTEIRO_DE_MEDIACAO)[number],
-  (typeof ROTEIRO_DE_MEDIACAO)[number],
-];
+export const ROTEIRO_DO_GUIA = [
+  {
+    pergunta: "Nesta busca do jornal, o computador olhou a foto como nós olhamos ou consultou os campos da ficha?",
+    cuidado:
+      "Destacar que este filtro consulta campos cadastrados e que a máquina não adivinhou a imagem; não generalizar dizendo que o computador nunca reconhece imagens, pois outros sistemas possuem visão computacional.",
+  },
+  {
+    pergunta:
+      "Se a ficha do computador não tem o dia de um evento anotado, podemos dizer que aquele evento nunca aconteceu ou que a reportagem é mentirosa? Qual é a diferença entre uma mentira e uma informação que está faltando?",
+    cuidado: "Consolidar que ausência de dado em um cadastro é uma lacuna que exige investigação, e não falsidade.",
+  },
+  {
+    pergunta:
+      "Por que é importante criar passos automáticos (algoritmos) com uma condição de parada clara quando temos muitas informações para conferir?",
+    cuidado:
+      "Evidenciar que rotinas automáticas poupam esforço humano em grandes acervos, mas precisam saber a hora exata de parar.",
+  },
+] as const;
+
+export const GATILHOS_DO_GUIA = [
+  "Verifique se todas as duplas clicaram no cadeado 'Travar Escolha' antes de autorizar o uso do filtro.",
+  "A notícia do telão desapareceu: congele a sala no botão 'Pausar Turma' e faça a provocação coletiva antes de liberar a Etapa 4.",
+  "Clique em 'Liberar Inspeção' para abrir as fichas técnicas nas telas dos estudantes.",
+] as const;
+
+const [PERGUNTA_DA_BUSCA, PERGUNTA_DA_LACUNA, PERGUNTA_DA_ROTINA] = ROTEIRO_DO_GUIA;
+const GATILHOS_DE_CONDUCAO = GATILHOS_DO_GUIA;
 
 export const GUIA_EXP03EF1B: GuiaDaAula = {
   expId: "exp03ef1b",
