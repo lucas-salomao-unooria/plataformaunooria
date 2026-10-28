@@ -255,22 +255,6 @@ body {
   gap: 12px;
 }
 
-.uai-fechamento__previa {
-  /* Item de flex dentro do modal com teto de altura: sem isto ele ENCOLHE, e a linha seguinte
-     aparece cortada sob a reticência do clamp. */
-  flex-shrink: 0;
-  display: -webkit-box;
-  margin: 0;
-  padding: 10px 12px;
-  border-left: 3px solid var(--uai-border-default, #e5e5e5);
-  color: var(--uai-text-secondary, #555);
-  font-size: 13px;
-  line-height: 1.4;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
 .uai-fechamento__guia,
 .uai-fechamento__audiencia {
   margin: 0;

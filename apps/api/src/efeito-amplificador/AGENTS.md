@@ -17,7 +17,7 @@ corre até 02h30, o algoritmo pinça um trecho e entrega de madrugada para
 TODOS, e o feed vira crise. Ele modera (o aviso de cuidado com o motivo, a
 Configuração da Publicação) e busca apoio (a Central: denúncia e relato). O
 professor pausa as telas, conduz o debate e libera os **bastidores** (Etapa 5);
-o estudante conclui (o latch 2) e lê o podcast. Quatro tabelas, as mesmas da
+o estudante conclui (o latch 2) e lê a devolutiva. Quatro tabelas, as mesmas da
 2.0.x (`20261022130000`), alteradas por `20261028120000_exp02em1b_2_1_0` e
 `20261028150000_exp02em1b_devolutiva` (a coluna da devolutiva).
 
