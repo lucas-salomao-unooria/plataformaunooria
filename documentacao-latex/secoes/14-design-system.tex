@@ -1277,8 +1277,30 @@ regra proíbe, quando a seção da plataforma já os publica.
 
 O que nenhuma das duas seções tem é compensação local marcada
 \enquote{(b) COMPENSAÇÃO --- sem par no DS}, montada só com os tokens delas
-(nada de cor \emph{hex} inventada). A lista, com a lacuna de cada uma, entra
-aqui quando a tela da experiência fechar.
+(nada de cor \emph{hex} inventada). Um teste da experiência
+(\arq{separacao.test.ts}) prova a fronteira: \arq{app/jornal/} só importa a
+\cd{@edu/ui/ds-unoojornal}, \arq{app/mecanica/} só a \cd{@edu/ui/ds}, e as
+telas e o comum não importam DS nenhum. As compensações, com a lacuna de cada
+uma:
+
+\begin{itemize}
+  \item \arq{comum/icone.tsx}: os ícones da missão (os campos, os carimbos, os
+    blocos) em SVG desenhado como máscara em \cd{currentColor} --- nenhuma das
+    duas seções tem esses glifos; o pino no rodapé do \cd{ArticleCard} usa a
+    mesma técnica no CSS.
+  \item \arq{jornal/reportagem.tsx}: o selo posicionado sobre o rodapé do
+    \cd{ArticleCard} e a moldura cheia ou tracejada (a notícia que sumiu) ---
+    o cartão não aceita selo nem estado de ausência.
+  \item \arq{jornal/quadro.tsx}, \arq{jornal/ferramentas.tsx} e
+    \arq{jornal/painel.tsx}: o quadro do jornal, as três ferramentas do caso
+    novo e as colunas do Painel da Investigação --- grade e medida, sem
+    controle novo.
+  \item \arq{mecanica/meta.tsx} (as molduras da Meta de Nina),
+    \arq{mecanica/figura.tsx} (a figura do cartão de carimbo), o vidro da
+    escolha travada e \arq{mecanica/espera.tsx} (a barra fixa da espera).
+  \item No CSS: alvos de 64 px, o \cd{Card} sem o teto de 398 px, as três
+    vagas da caixa lado a lado, o recuo da esteira e a altura da foto do telão.
+\end{itemize}
 
 \subsection{Avisos que ficaram obsoletos}
 
