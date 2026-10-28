@@ -71925,62 +71925,13 @@
                             "esperaAtiva"
                           ],
                           "additionalProperties": false
-                        },
-                        "podcast": {
-                          "type": "object",
-                          "properties": {
-                            "titulo": {
-                              "type": "string"
-                            },
-                            "blocos": {
-                              "type": "array",
-                              "items": {
-                                "type": "object",
-                                "properties": {
-                                  "titulo": {
-                                    "type": "string"
-                                  },
-                                  "falas": {
-                                    "type": "array",
-                                    "items": {
-                                      "type": "object",
-                                      "properties": {
-                                        "quem": {
-                                          "type": "string"
-                                        },
-                                        "texto": {
-                                          "type": "string"
-                                        }
-                                      },
-                                      "required": [
-                                        "quem",
-                                        "texto"
-                                      ],
-                                      "additionalProperties": false
-                                    }
-                                  }
-                                },
-                                "required": [
-                                  "titulo",
-                                  "falas"
-                                ],
-                                "additionalProperties": false
-                              }
-                            }
-                          },
-                          "required": [
-                            "titulo",
-                            "blocos"
-                          ],
-                          "additionalProperties": false
                         }
                       },
                       "required": [
                         "pauta",
                         "boasVindas",
                         "sugestoes",
-                        "explicar",
-                        "podcast"
+                        "explicar"
                       ],
                       "additionalProperties": false
                     }

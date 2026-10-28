@@ -207,7 +207,29 @@ export function PainelDaAulaEfeitoAmplificador({
 
   return (
     <div className="flex flex-col gap-6" data-painel-da-aula>
-      <SectionHeader title="Painel de Condução em Tempo Real" description={`${rotuloDaEtapa(painel.etapa)} · ${r.publicaram} de ${r.unidades} publicaram no Unoovista`} />
+      {/* O controle da missão vem PRIMEIRO, como nas outras missões (o Enigma, o Assistente Invisível): no
+          fim da página, depois dos quatro cartões, o professor achava que os botões não existiam. */}
+      <Card variant="elevated">
+        <div className="flex flex-col gap-4" data-controle-da-missao>
+          <SectionHeader title="Painel de Condução em Tempo Real" description={`${rotuloDaEtapa(painel.etapa)} · ${r.publicaram} de ${r.unidades} publicaram no Unoovista`} />
+          {podeConduzir ? (
+            <div className="flex flex-col items-start gap-2">
+              <div className="flex flex-wrap gap-3" data-botoes-da-aula>
+                <Button variant="outline" size="md" isDisabled={etapa !== "exploracao"} onClick={() => setConfirmando("pausa")}>
+                  {CONFIRMACAO.pausa.botao}
+                </Button>
+                <Button variant="primary" size="md" isDisabled={etapa === "explicar"} onClick={() => setConfirmando("explicar")}>
+                  {CONFIRMACAO.explicar.botao}
+                </Button>
+              </div>
+              <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
+                {etapa === "explicar" ? painel.roteiro.instrucoes.liberar : painel.roteiro.instrucoes.pausar}
+              </p>
+            </div>
+          ) : null}
+          {erro ? <FeedbackAlert type="error" description={erro} /> : null}
+        </div>
+      </Card>
 
       {/* Um cartão por linha: a coluna do professor tem ~770 px, e em meia coluna o gráfico das dez
           faixas cortava as últimas e as tabelas cortavam a última coluna. */}
@@ -307,10 +329,7 @@ export function PainelDaAulaEfeitoAmplificador({
 
       <Card variant="outlined">
         <div className="flex flex-col gap-3" data-roteiro>
-          <SectionHeader
-            title="Roteiro de Perguntas do Debate"
-            description={etapa === "explicar" ? painel.roteiro.instrucoes.liberar : painel.roteiro.instrucoes.pausar}
-          />
+          <SectionHeader title="Roteiro de Perguntas do Debate" description="Para a roda, com as telas pausadas." />
           <ol className="flex list-decimal flex-col gap-2 pl-5 text-[14px] leading-relaxed text-unooria-neutral-800">
             {painel.roteiro.perguntas.map((p) => (
               <li key={p}>{p}</li>
@@ -319,17 +338,6 @@ export function PainelDaAulaEfeitoAmplificador({
         </div>
       </Card>
 
-      {podeConduzir ? (
-        <div className="flex flex-wrap justify-end gap-3" data-botoes-da-aula>
-          <Button variant="outline" size="md" isDisabled={etapa !== "exploracao"} onClick={() => setConfirmando("pausa")}>
-            {CONFIRMACAO.pausa.botao}
-          </Button>
-          <Button variant="primary" size="md" isDisabled={etapa === "explicar"} onClick={() => setConfirmando("explicar")}>
-            {CONFIRMACAO.explicar.botao}
-          </Button>
-        </div>
-      ) : null}
-      {erro ? <FeedbackAlert type="error" description={erro} /> : null}
 
       <Modal isOpen={confirmando !== null} onClose={() => !enviando && setConfirmando(null)} size="sm" theme="light" aria-labelledby={idDoTitulo}>
         <ModalHeader showCloseButton={false}>

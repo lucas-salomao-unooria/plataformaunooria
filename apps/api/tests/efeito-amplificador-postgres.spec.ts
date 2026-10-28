@@ -355,7 +355,8 @@ describe("a aula: o UnooriaAI pela árvore e o latch", () => {
       "Qual a fonte dessa pesquisa?",
       "Reescreva removendo os nomes pessoais e citando o autor original",
     ]);
-    expect(s.textos.podcast.blocos).toHaveLength(5);
+    /* A transcrição do podcast é só do professor (2.3.1): o episódio é tocado em aula. */
+    expect(s.textos).not.toHaveProperty("podcast");
   });
 
   test("antes do rascunho, pedir a fonte responde que ainda não há rascunho — e a prévia não muda", async () => {
