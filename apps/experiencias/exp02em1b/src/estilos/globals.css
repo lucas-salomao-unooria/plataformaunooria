@@ -549,22 +549,6 @@ body {
   text-align: center;
 }
 
-/* Espaço para a alça da transcrição, que fica sobre o pé da tela. */
-.unv-tela--conclusao .unv-rolagem {
-  padding-bottom: 72px;
-}
-
-.unv-transcricao {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.unv-transcricao__fala {
-  margin: 6px 0 0;
-  font-size: 14px;
-  line-height: 1.5;
-}
 
 /* E3-SIS-01 — o salto do relógio. */
 .relogio {

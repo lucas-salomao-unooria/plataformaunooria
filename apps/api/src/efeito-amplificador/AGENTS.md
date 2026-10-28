@@ -128,8 +128,8 @@ A transferência da Etapa 6 (o caso do streaming de áudio, o diário de bordo e
   painel dá por computador o passo, a manchete e o tempo parado; a lousa
   (`resumo`) é só agregada, com a matriz das quatro habilidades.
 - **O podcast é FIXO** (`podcast.ts`, o one-pager §11 literal) e é do
-  PROFESSOR (o áudio, ADR-150); a sessão do estudante leva só a transcrição,
-  para a tela de conclusão.
+  PROFESSOR (o áudio e a transcrição, ADR-150 e ADR-194): a sessão do
+  estudante não leva nada do podcast — o episódio é tocado em aula.
 - **A IA do preparo** (`preparo.service.ts`): quota do perfil `professor`,
   `temSaldo` antes e o pago debitado depois (ADR-74); sem saldo ou com o vendor
   fora, o rascunho sai do banco curado. A saída passa pela MESMA régua da

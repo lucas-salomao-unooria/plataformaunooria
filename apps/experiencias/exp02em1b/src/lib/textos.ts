@@ -148,8 +148,6 @@ export const TEXTOS = {
     podcast: "Podcast: O Algoritmo Não Dorme", // e6.rotulo.player_podcast_titulo
     apresentacao: "Apresentado por Alex e Sam · 3:30 min", // [PROTÓTIPO]
     emAula: "O episódio é tocado em aula pelo professor.", // [PROPOSTA]
-    transcricao: "Ler a transcrição", // [PROPOSTA]
-    transcricaoTitulo: "Transcrição do episódio", // [PROPOSTA]
     devolutiva: "Sua devolutiva", // [PROPOSTA] — o cartão da devolutiva (ADR-192)
     devolutivaApoio: "O que você fez na missão, e um próximo passo para cada parte.", // [PROPOSTA]
     devolutivaCarregando: "Preparando a sua devolutiva...", // [PROPOSTA]

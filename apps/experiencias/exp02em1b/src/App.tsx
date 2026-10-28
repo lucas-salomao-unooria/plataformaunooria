@@ -126,7 +126,7 @@ export function App({ inicial }: { inicial: Sessao }) {
   } else if (estado.passo === "explicar") {
     tela = <Explicar estado={estado} textos={sessao.textos.explicar} semRede={semRede} executar={executar} />;
   } else {
-    tela = <Conclusao podcast={sessao.textos.podcast} semRede={semRede} />;
+    tela = <Conclusao semRede={semRede} />;
   }
 
   return (

@@ -20,7 +20,8 @@ import { revelar } from "../lib/abas.mjs";
  * aparelho, no hub. Ele fixa o aviso de cuidado, mexe na Configuração da
  * Publicação e usa a Central de Apoio. A professora pausa as telas e avança a
  * turma para o Explicar; o estudante aponta um cartão, conclui, lê a
- * devolutiva e a transcrição do podcast. No fim, o painel de habilidades com
+ * devolutiva e o cartão do podcast (a transcrição é só da professora). No fim,
+ * o painel de habilidades com
  * a devolutiva de cada um.
  *
  * Os nomes (instituto, colega, autoria), o recorte, as manchetes e os
@@ -85,7 +86,7 @@ const COPY = {
   concluir: "Concluir missão",
   selo: "Missão concluída",
   transcricao: "Ler a transcrição",
-  transcricaoTitulo: "Transcrição do episódio",
+  podcast: "Podcast: O Algoritmo Não Dorme",
   devolutiva: ["Sua devolutiva", "Cuidado com a saúde", "Fontes e dados", "Autoria e privacidade", "Proteção e apoio"],
 };
 
@@ -155,7 +156,8 @@ await suite(
       "Aviso de cuidado com o motivo de saúde, as chaves da publicação, a denúncia e o relato à escola",
       "A sessão do estudante não carrega o gabarito (categoria do comentário, nós do rascunho)",
       "O painel de condução tem os quatro cartões; a pausa congela a tela; o avanço abre os bastidores",
-      "A conclusão traz a devolutiva escrita com IA, a transcrição do podcast e nenhuma transferência (sem diário, sem reflexão)",
+      "O controle da missão (pausar e avançar) fica no TOPO do painel da professora, antes dos quatro cartões",
+      "A conclusão traz a devolutiva escrita com IA e o cartão do podcast, sem a transcrição (é só da professora) e sem transferência",
       "O painel de habilidades mostra EM13CO24, EM13CO14, EM13CO26 e EM13CO08 com o nível do estudante — e a devolutiva dele",
     ],
     comando: "node scripts/e2e/estudante/04-efeito-amplificador.mjs",
@@ -547,9 +549,12 @@ await suite(
       r.exigir((await painel.locator(`[${cartao}]`).count()) === 1, `o painel de condução tem o cartão [${cartao}]`);
     }
     await painel.locator("[data-monitor-de-ritmo]").getByText(estudante.nome).first().waitFor({ timeout: 20_000 });
+    const yDoControle = (await prof.locator("[data-botoes-da-aula]").boundingBox())?.y ?? Infinity;
+    const yDoPrimeiroCartao = (await prof.locator("[data-balanco-editorial]").boundingBox())?.y ?? -Infinity;
+    r.exigir(yDoControle < yDoPrimeiroCartao, "o controle da missão (Pausar / Avançar) vem no topo, antes dos cartões");
     await r.registrar(prof, "painel-de-conducao", {
       titulo: "O Painel de Condução em Tempo Real",
-      mostra: "Balanço Editorial, Distribuição Horária Coletiva, Monitor de Ritmo e Inatividade e a Matriz Consolidada de Evidências — e os dois botões da aula.",
+      mostra: "No topo, os dois botões da aula e a instrução do momento; abaixo, Balanço Editorial, Distribuição Horária Coletiva, Monitor de Ritmo e Inatividade e a Matriz Consolidada de Evidências.",
       prova: "A lousa é agregada (sem nomes); o monitor é nominal, mas só mostra o passo e a manchete, nunca o chat.",
       inteira: true,
     });
@@ -608,11 +613,11 @@ await suite(
       mostra: "Sua devolutiva: cuidado com a saúde, fontes e dados, autoria e privacidade, proteção e apoio — o que ele fez e um próximo passo.",
       prova: "Escrita a partir dos fatos que a régua já leu (nunca do texto do estudante), sem nível nem nota; gerada uma vez e gravada.",
     });
-    await q.getByText(COPY.transcricao, { exact: true }).click();
-    await q.getByText(COPY.transcricaoTitulo, { exact: true }).waitFor({ timeout: 10_000 });
-    const podcast = publicada.corpo?.textos?.podcast;
-    const primeiraFala = podcast?.blocos?.[0]?.falas?.[0]?.texto ?? "";
-    r.exigir(Boolean(primeiraFala) && (await q.getByText(primeiraFala, { exact: false }).count()) >= 1, "a transcrição do podcast aparece na tela");
+    await q.getByText(COPY.podcast, { exact: true }).waitFor({ timeout: 10_000 });
+    r.exigir(
+      (await q.getByText(COPY.transcricao, { exact: true }).count()) === 0 && publicada.corpo?.textos?.podcast === undefined,
+      "a transcrição do podcast NÃO está na tela do estudante, nem na sessão dele (é só da professora)",
+    );
     const textoFinal = await q.locator("body").innerText();
     r.exigir(
       !/streaming de áudio|Diário de Bordo/i.test(textoFinal) &&
@@ -621,8 +626,8 @@ await suite(
     );
     await r.registrar(p, "missao-concluida", {
       titulo: "Missão concluída, com o podcast",
-      mostra: "O selo, o cartão do podcast O Algoritmo Não Dorme e a transcrição do episódio aberta.",
-      prova: "A transferência saiu desta versão (ADR-191): o fim é somente leitura, e o áudio é tocado em aula pelo professor.",
+      mostra: "O selo, a devolutiva e o cartão do podcast O Algoritmo Não Dorme, tocado em aula pela professora.",
+      prova: "A transferência saiu (ADR-191) e a transcrição é só da professora (ADR-194): o fim é somente leitura.",
     });
     const fim = (await lerApi(p, "/efeito-amplificador/sessao")).corpo;
     r.exigir(fim?.concluido === true && fim?.passo === "concluida", `a sessão fecha concluída (passo ${fim?.passo})`);
@@ -656,6 +661,11 @@ await suite(
       prova: "Só Canal A: tudo foi medido pelo que o estudante fez — o aviso, a auditoria, o direito digital e a proteção.",
       inteira: true,
     });
+
+    /* A transcrição do podcast é SÓ da professora (ADR-194): ela fica na aba Podcast da atividade. */
+    const transcricaoDaProfessora = prof.locator('[data-acao="ler-transcricao"]');
+    await revelar(prof, transcricaoDaProfessora);
+    r.exigir((await transcricaoDaProfessora.count()) >= 1, "a transcrição do podcast está na página da atividade, para a professora");
 
     /* A devolutiva de cada um é um Collapse fechado: abre o deste estudante e fotografa logo depois de vê-la aberta. */
     const cartaoDele = prof.locator(`[data-devolutiva-do-estudante="${dele?.estudanteId ?? "—"}"]`);
