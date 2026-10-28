@@ -256,6 +256,9 @@ body {
 }
 
 .uai-fechamento__previa {
+  /* Item de flex dentro do modal com teto de altura: sem isto ele ENCOLHE, e a linha seguinte
+     aparece cortada sob a reticência do clamp. */
+  flex-shrink: 0;
   display: -webkit-box;
   margin: 0;
   padding: 10px 12px;
@@ -406,6 +409,15 @@ body {
 .unv-tela .unv-item-longo .unv-list-item__subtitle {
   white-space: normal;
   overflow: visible;
+}
+
+/* (b) COMPENSAÇÃO — o título do `TopBar` do DS é `nowrap` + `ellipsis`, mas a
+   caixa é `display: flex`: a reticência não aparece e o título longo da api
+   ("Bastidores da Distribuição: Relatório Analítico") era CORTADO no meio da
+   palavra em 375 px. Aqui ele quebra linha. Morre quando o DS quebrar (ou
+   reticenciar de verdade) o título. */
+.unv-tela .unv-top-bar__title {
+  white-space: normal;
 }
 
 /* A barra fixa do pé com a Central de Apoio (protótipo `barra-central-apoio`). */

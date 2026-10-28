@@ -65,7 +65,7 @@ const CONFIRMACAO: Readonly<Record<EtapaDoGate, { botao: string; titulo: string;
 
 /* As cores do DS (dataviz da plataforma): a madrugada em destaque, o resto do dia apagado. */
 const COR_DESTAQUE = UNOORIA_DATAVIZ_PALETTE[4];
-const COR_NEUTRA = UNOORIA_DATAVIZ_PALETTE[2];
+const COR_NEUTRA = UNOORIA_DATAVIZ_PALETTE[3];
 const COR_DAS_MANCHETES = [UNOORIA_DATAVIZ_PALETTE[0], UNOORIA_DATAVIZ_PALETTE[6], UNOORIA_DATAVIZ_PALETTE[8]] as const;
 
 type Linha = PainelDaTurma["linhas"][number];
@@ -209,7 +209,9 @@ export function PainelDaAulaEfeitoAmplificador({
     <div className="flex flex-col gap-6" data-painel-da-aula>
       <SectionHeader title="Painel de Condução em Tempo Real" description={`${rotuloDaEtapa(painel.etapa)} · ${r.publicaram} de ${r.unidades} publicaram no Unoovista`} />
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      {/* Um cartão por linha: a coluna do professor tem ~770 px, e em meia coluna o gráfico das dez
+          faixas cortava as últimas e as tabelas cortavam a última coluna. */}
+      <div className="grid gap-4">
         <Card variant="elevated">
           <div className="flex flex-col gap-3" data-balanco-editorial>
             <SectionHeader title="Balanço Editorial da Turma" />
@@ -248,8 +250,10 @@ export function PainelDaAulaEfeitoAmplificador({
               subtitle={r.publicaram > 0 ? `${r.percentualNoturno}% das publicações com pico entre 01h00 e 03h30` : "A mesma curva para toda publicação"}
               data={r.entrega.map((e) => ({
                 label: e.faixa,
-                value: e.impressoes,
-                color: FAIXAS_DA_MADRUGADA.includes(e.faixa) ? COR_DESTAQUE : COR_NEUTRA,
+                /* `values` + `colors`, e não `value` + `color`: o `BarChart` do DS (0.2.24) aceita
+                   `color` no tipo do ponto e o ignora — só a forma de várias barras pinta a barra. */
+                values: [e.impressoes],
+                colors: [FAIXAS_DA_MADRUGADA.includes(e.faixa) ? COR_DESTAQUE : COR_NEUTRA],
               }))}
               yAxisLabels={eixoDaEscala(maiorEntrega)}
               height={200}

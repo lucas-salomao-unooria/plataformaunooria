@@ -348,7 +348,11 @@ export function Feed({ estado, semRede, executar }: { estado: Estado; semRede: b
               leading={<IconUnv name="share" />}
               title={TEXTOS.central.encaminhar}
               subtitle={TEXTOS.central.subtitulo}
-              onClick={() => setCentral("relato")}
+              onClick={() => {
+                /* O eco da denúncia some ao abrir o relato: o aviso passageiro cobria a escolha da equipe. */
+                setEco(null);
+                setCentral("relato");
+              }}
             />
             <ButtonUnv variant="secondary" block onClick={() => setFolha(null)}>
               {TEXTOS.central.fechar}

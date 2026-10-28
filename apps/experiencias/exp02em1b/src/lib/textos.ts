@@ -142,6 +142,7 @@ export const TEXTOS = {
 
   // ── E6 — o fim (Unoovista)
   conclusao: {
+    app: "Unoovista", // a barra do app no fim (no protótipo, o título era o da tela da transferência, que saiu)
     selo: "Missão concluída", // [PROPOSTA] — o selo (o 06 diz "Missão concluída." dentro da frase abaixo)
     arquivada: "Missão concluída. Suas respostas foram arquivadas junto ao comitê do grêmio.", // e6.narrativa.missao_arquivada
     podcast: "Podcast: O Algoritmo Não Dorme", // e6.rotulo.player_podcast_titulo

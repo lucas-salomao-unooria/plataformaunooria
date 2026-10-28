@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, lazy, useCallback, useState } from "react";
+import { Suspense, lazy, useCallback, useState, type CSSProperties } from "react";
 import { signOut } from "next-auth/react";
 import { AlertBox } from "@edu/ui/ds";
 import { instrucaoDoEstado } from "@/lib/instrucao-da-experiencia";
@@ -141,13 +141,29 @@ export function ExpHost(props: {
           IRMÃO que entra antes da área do aparelho — a área continua no mesmo
           lugar da árvore e o iframe não remonta; o `DispositivoFrame` mede a
           área que sobra pelo ResizeObserver dele. */}
-      <div className="flex min-h-0 flex-1 flex-col lg:flex-row-reverse" style={{ background: "#fafafa" }}>
+      <div
+        className={`flex min-h-0 flex-1 flex-col lg:flex-row-reverse ${instrucao && viewport ? "lg:justify-center lg:gap-2" : ""}`}
+        style={{ background: "#fafafa" }}
+      >
         {instrucao ? (
           <Suspense fallback={null}>
             <InstrucaoDaExperiencia instrucao={instrucao} />
           </Suspense>
         ) : null}
-        <div style={{ flex: 1, minHeight: 0, minWidth: 0, position: "relative" }}>
+        {/* Com a instrução ao lado (tela larga), a área do aparelho tem a largura DELE (mais a
+            folga do `DispositivoFrame`) e o par fica centralizado: com `flex: 1`, o aparelho se
+            centrava na área inteira e a instrução ia parar na borda da janela, longe dele. Só a
+            classe muda — o elemento é o mesmo, e o iframe não remonta. */}
+        <div
+          className={instrucao && viewport ? "lg:!w-[var(--area-do-aparelho)] lg:!flex-none" : undefined}
+          style={{
+            flex: 1,
+            minHeight: 0,
+            minWidth: 0,
+            position: "relative",
+            ...(viewport ? ({ "--area-do-aparelho": `${viewport.largura + 48}px` } as CSSProperties) : {}),
+          }}
+        >
           {erro ? (
             <div
               data-testid="erro-da-experiencia"

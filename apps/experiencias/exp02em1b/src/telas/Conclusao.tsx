@@ -16,7 +16,7 @@ import type { Sessao } from "../lib/tipos";
 export function Conclusao({ podcast, semRede }: { podcast: Sessao["textos"]["podcast"]; semRede: boolean }) {
   return (
     <main className="unv-tela unv-tela--conclusao" data-unv-theme="light">
-      <TopBar variant="plain" title={TEXTOS.conclusao.selo} />
+      <TopBar variant="plain" title={TEXTOS.conclusao.app} />
       {semRede && (
         <InlineHint tone="friction" role="alert">
           {TEXTOS.feed.conexao}

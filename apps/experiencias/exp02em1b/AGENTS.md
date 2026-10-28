@@ -65,6 +65,7 @@ versão, por decisão do PO: a transferência da Etapa 6 e o Canal B.
 | `unoovista` sem glifo de pausa, relógio e áudio | E4-SIS-01, E3-SIS-01, E6 | `lock`, `activity` (ligadura `history`) e `comment` |
 | `unoovista` sem cartão selecionável | E5-ALU-01 | `ListItem` com `aria-pressed`, borda do token e `check` |
 | `ListItem` de altura fixa e `nowrap` | comentários, opções | `.unv-item-longo` (só altura e quebra) |
+| título do `TopBar` em `nowrap` numa caixa `flex` (a reticência não aparece: corta no meio da palavra) | E5-ALU-01 (o título longo da api) | `.unv-tela .unv-top-bar__title` quebra linha |
 | `unooriaai` sem faixa de aviso | E2-SIS-01 (`FaixaDeConexao.tsx`) | leiaute `.uai-faixa` + `Icon` do DS |
 | `unooriaai` sem cartão de rádio | E3-ALU-01 | `Tag` do DS (estado `selected`) com `role="radio"` e quebra de linha |
 | `Modal` da `unooriaai` sem teto de altura | E3-ALU-01 | `.uai-fechamento` com `max-height` e rolagem |
