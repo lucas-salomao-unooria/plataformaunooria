@@ -99,8 +99,8 @@ const PREFIXOS_PERMITIDOS = [
      turma que a tinha liberado. As guardas de papel estão na api. */
   "unoogpt",
   /* exp02em1b (O Efeito Amplificador, ADR-181): o preparo do pacote (gerar,
-     homologar, banco padrão), os dois botões da condução (Pausar Telas, Liberar
-     Etapa 5) e o "Zerar Turma" são client-side — o professor aperta no meio da
+     homologar, banco padrão), os dois botões da condução (Pausar Telas para
+     Debate, Avançar Turma para Explicar) e o "Zerar Turma" são client-side — o professor aperta no meio da
      aula e as telas andam pelo polling delas. As guardas de papel estão na api
      (`@Roles("professor")` na escrita). */
   "efeito-amplificador",

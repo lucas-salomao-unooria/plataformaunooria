@@ -1,5 +1,5 @@
 /**
- * O que o hub lê da exp02em1b (O Efeito Amplificador, ADR-181) — espelho do Zod
+ * O que o hub lê da exp02em1b (O Efeito Amplificador 2.1.0, ADR-191) — espelho do Zod
  * de `apps/api/src/efeito-amplificador/contrato-de-rotas.ts`, que é a fonte da
  * verdade, e dos vocabulários de `conteudo.ts` do mesmo módulo.
  *
@@ -8,14 +8,15 @@
  *
  * O que NÃO existe aqui, e cada ausência é uma regra:
  *
- * - **Nenhum nível por estudante nem o chat dele.** A linha do painel é passo e
- *   manchete; o nível mora no painel de habilidades (`lib/evidencias.ts`), e o
- *   que o estudante escreveu ao UnooriaAI é texto de menor e não sai da api.
+ * - **Nenhum nível por estudante nem o chat dele.** A linha do painel é passo,
+ *   manchete e tempo parado; a matriz do painel é só CONTAGEM por nível; o
+ *   nível de cada estudante mora no painel de habilidades (`lib/evidencias.ts`),
+ *   e o que o estudante escreveu ao UnooriaAI é texto de menor e não sai da api.
  * - **Nenhum tipo de sessão de estudante.** O lado dele vive no bundle.
  *
- * O GABARITO (o nó de cada parágrafo, a categoria de cada comentário e o
- * `comprova` dos indicadores) aparece aqui porque só rota de PROFESSOR o
- * devolve: é o roteiro da curadoria e do guia.
+ * O GABARITO (o nó de cada parágrafo e a categoria de cada comentário)
+ * aparece aqui porque só rota de PROFESSOR o devolve: é o roteiro da curadoria
+ * e do guia.
  *
  * Puro: o painel ao vivo e a criação da atividade são client components.
  */
@@ -68,10 +69,18 @@ export type Origem = (typeof ORIGENS)[number];
 export const NOS = ["alucinacao", "plagio", "lgpd"] as const;
 export type No = (typeof NOS)[number];
 
+/** As etiquetas dos três nós na curadoria (copy `prof.curadoria.tag_*`, literal). */
 export const ROTULO_DO_NO: Record<No, string> = {
-  alucinacao: "Dado inventado (EM13CO14)",
-  plagio: "Trecho copiado sem crédito (EM13CO26)",
-  lgpd: "Colega exposto — LGPD (EM13CO26)",
+  alucinacao: "Nó 1: Fato x Alucinação",
+  plagio: "Nó 2: Direito Autoral",
+  lgpd: "Nó 3: Privacidade / LGPD",
+};
+
+/** A habilidade que cada nó mede — o que o professor procura no rascunho. */
+export const HABILIDADE_DO_NO: Record<No, string> = {
+  alucinacao: "EM13CO14",
+  plagio: "EM13CO26",
+  lgpd: "EM13CO26",
 };
 
 export const MANCHETES = ["neutra", "construtiva", "sensacionalista"] as const;
@@ -83,17 +92,34 @@ export const ROTULO_DA_MANCHETE: Record<Manchete, string> = {
   sensacionalista: "Sensacionalista",
 };
 
-export const TIPOS_DE_COMENTARIO = ["saude_fisica", "saude_mental", "risco_seguranca", "neutro"] as const;
+/**
+ * A categoria de cada comentário da madrugada — GABARITO (não desce ao
+ * estudante). O pacote precisa de dois de saúde física, um de saúde mental e
+ * duas contas anônimas agressivas (`MINIMOS_DOS_COMENTARIOS`).
+ */
+export const TIPOS_DE_COMENTARIO = ["saude_fisica", "saude_mental", "anonimo_agressivo", "engajamento"] as const;
 export type TipoDeComentario = (typeof TIPOS_DE_COMENTARIO)[number];
 
 export const ROTULO_DO_TIPO: Record<TipoDeComentario, string> = {
   saude_fisica: "Saúde física",
   saude_mental: "Saúde mental",
-  risco_seguranca: "Conta invasiva",
-  neutro: "Neutro",
+  anonimo_agressivo: "Conta anônima agressiva",
+  engajamento: "Engajamento",
 };
 
-export const FASES = ["aberta", "debate", "explicar"] as const;
+/** O mínimo de cada categoria que a régua da api cobra (espelho de `regras/pacote.ts`). */
+export const MINIMOS_DOS_COMENTARIOS: Readonly<Partial<Record<TipoDeComentario, number>>> = {
+  saude_fisica: 2,
+  saude_mental: 1,
+  anonimo_agressivo: 2,
+};
+
+/**
+ * O GATE da turma (o `etapa` do contrato), que só anda para a frente:
+ * `exploracao` → `pausa` ("Pausar Telas para Debate") → `explicar` ("Avançar
+ * Turma para Explicar"). O nome da lista é o da api (`FASES` em `conteudo.ts`).
+ */
+export const FASES = ["exploracao", "pausa", "explicar"] as const;
 export type Fase = (typeof FASES)[number];
 
 export const PASSOS = ["abertura", "conversa", "feed", "explicar", "concluida"] as const;
@@ -103,8 +129,27 @@ export const ROTULO_DO_PASSO: Record<Passo, string> = {
   abertura: "Ainda não entrou",
   conversa: "No UnooriaAI",
   feed: "No feed da madrugada",
-  explicar: "Nos bastidores (Etapa 5)",
+  explicar: "Nos bastidores (Explicar)",
   concluida: "Concluiu",
+};
+
+/** Os tetos do pacote (espelho de `conteudo.ts`). */
+export const PAUTA = { titulo: 80, descricao: 250, orientacao: 120, orientacoes: { min: 2, max: 4 } } as const;
+export const COMENTARIOS_POR_PACOTE = 6;
+export const MANCHETE_MAX_CARACTERES = 80;
+
+/** As faixas da madrugada (01h00–03h59): o pico que a Distribuição Horária Coletiva destaca. */
+export const FAIXAS_DA_MADRUGADA: readonly string[] = ["01h–02h", "02h–03h", "03h–04h"];
+
+/** As quatro habilidades da Matriz Consolidada de Evidências, na ordem da copy (`prof.painel.matriz_bncc`). */
+export const HABILIDADES_DA_MATRIZ = ["EM13CO24", "EM13CO14", "EM13CO26", "EM13CO08"] as const;
+export type HabilidadeDaMatriz = (typeof HABILIDADES_DA_MATRIZ)[number];
+
+export const ROTULO_DA_HABILIDADE: Record<HabilidadeDaMatriz, string> = {
+  EM13CO24: "EM13CO24 (Saúde)",
+  EM13CO14: "EM13CO14 (Fontes)",
+  EM13CO26: "EM13CO26 (Direito digital)",
+  EM13CO08: "EM13CO08 (Segurança)",
 };
 
 // ─────────────────────────────────────────────────────────────── o pacote
@@ -118,18 +163,27 @@ export interface ParagrafoDoRascunho {
 
 export interface ComentarioDoFeed {
   id: string;
+  /** O nome que o feed mostra — de colega ("Clara") ou de conta ("user_89412"). */
   autor: string;
-  handle: string;
+  /** "02h40", entre 01h00 e 03h30. */
   horario: string;
   tipo: TipoDeComentario;
   texto: string;
 }
 
+export interface PautaDoGremio {
+  titulo: string;
+  descricao: string;
+  orientacoes: string[];
+}
+
 export interface ConteudoDoPacote {
+  pauta: PautaDoGremio;
   rascunho: ParagrafoDoRascunho[];
   fonteInventada: string;
   colega: string;
-  veiculo: string;
+  /** A autoria do trecho copiado sem crédito. */
+  fonteOriginal: string;
   recorte: string;
   manchetes: Record<Manchete, string>;
   comentarios: ComentarioDoFeed[];
@@ -171,30 +225,49 @@ export interface PacoteDetalhe extends PacoteDoProfessor {
   rodadas: number;
 }
 
+/** A resposta de `banco-padrao` e de `pacotes/:id/em-andamento`. */
 export interface EmAndamento {
   atividade: { pacoteId: string; rodada: number };
-  fase: Fase;
+  etapa: Fase;
   mudou: boolean;
+}
+
+/** A resposta de `POST gate`. */
+export interface GateDaTurma {
+  etapa: Fase;
+  atividade: { pacoteId: string; rodada: number };
+  atualizadoEm: string;
+}
+
+export interface ContagemDeNiveis {
+  atingiu: number;
+  em_processo: number;
+  nao_atingiu: number;
 }
 
 export interface PainelDaTurma {
   turma: { id: string; nome: string; serie: string | null };
   atividade: { pacoteId: string; rodada: number; tema: string } | null;
-  fase: Fase | null;
+  etapa: Fase | null;
   porComputador: boolean;
+  /** A lousa: só AGREGADOS, nenhum nome. */
   resumo: {
     unidades: number;
     publicaram: number;
-    picoNaMadrugada: number;
     manchetes: Record<Manchete, number>;
-    entrega: { faixa: string; percentual: number }[];
+    entrega: { faixa: string; impressoes: number }[];
+    percentualNoturno: number;
+    matriz: Record<HabilidadeDaMatriz, ContagemDeNiveis>;
   };
+  /** Monitor de Ritmo e Inatividade: nominal, só o passo, a manchete e o tempo parado. */
   linhas: {
     estudanteId: string;
     nome: string;
     equipe: { id: string; nome: string; membros: { id: string; nome: string }[] } | null;
     passo: Passo;
     manchete: Manchete | null;
+    /** Segundos desde a última jogada (`null` antes de entrar). */
+    segundosInativo: number | null;
   }[];
   roteiro: { perguntas: string[]; instrucoes: { pausar: string; liberar: string } };
 }
@@ -202,7 +275,8 @@ export interface PainelDaTurma {
 export interface Material {
   padrao: PacoteDaTurma["padrao"];
   roteiro: PainelDaTurma["roteiro"];
-  indicadores: { id: string; rotulo: string; comprova: boolean }[];
+  /** Os dois cartões dos bastidores — os dois revelam o critério da rede (sem distrator). */
+  indicadores: { id: string; rotulo: string; texto: string }[];
   habilidades: { codigo: string; rotulo: string; criterios: { atingiu: string; em_processo: string; nao_atingiu: string } }[];
 }
 
@@ -215,28 +289,45 @@ export const CAMINHO_DO_MATERIAL = "/efeito-amplificador/professor/material";
 
 // ─────────────────────────────────────────────────────────────── puro
 
-/** A fase em palavras, para o painel. */
-export function rotuloDaFase(fase: Fase | null): string {
-  if (fase === "debate") return "Telas pausadas para o debate";
-  if (fase === "explicar") return "Etapa 5 liberada";
-  return "Em andamento";
+/** A etapa da turma em palavras, para o painel. */
+export function rotuloDaEtapa(etapa: Fase | null): string {
+  if (etapa === "pausa") return "Telas pausadas para o debate";
+  if (etapa === "explicar") return "Turma no Explicar";
+  return "Turma em exploração";
 }
 
-/** O percentual das publicações com pico de madrugada — 100% sempre que alguém publicou (é a lousa do desmonte da culpa). */
-export function percentualNaMadrugada(r: PainelDaTurma["resumo"]): number | null {
-  return r.publicaram > 0 ? Math.round((r.picoNaMadrugada / r.publicaram) * 100) : null;
+/** O tempo parado do Monitor de Ritmo: "—" antes de entrar, "45 s", "3 min", "1 h 05 min". */
+export function tempoParado(segundos: number | null): string {
+  if (segundos === null || segundos < 0) return "—";
+  if (segundos < 60) return `${segundos} s`;
+  const minutos = Math.floor(segundos / 60);
+  if (minutos < 60) return `${minutos} min`;
+  return `${Math.floor(minutos / 60)} h ${String(minutos % 60).padStart(2, "0")} min`;
 }
 
-/** Por que o rascunho saiu do banco curado — a frase da tela (copy `e0.erro.quota_429`). */
-export const AVISO_SEM_IA: Record<"sem-saldo" | "indisponivel", { titulo: string; descricao: string }> = {
-  "sem-saldo": {
-    titulo: "Limite de cota de inteligência artificial atingido",
-    descricao: "Limite de cota de inteligência artificial atingido para sua escola. Use o Banco Curado Padrão para aplicar a missão agora sem custos.",
-  },
-  indisponivel: {
-    titulo: "Geração com IA indisponível agora",
-    descricao: "O serviço de geração está instável. O Banco Curado Padrão foi carregado para não atrasar a aula.",
-  },
+/** A partir de quanto tempo sem jogada a linha ganha a etiqueta de inatividade (o mesmo minuto da dica da tela). */
+export const INATIVO_A_PARTIR_DE_SEGUNDOS = 60;
+
+/** "02h40" — entre 01h00 e 03h30 (a mesma conta de `regras/pacote.ts#horarioDeMadrugada`). */
+export function horarioDeMadrugada(h: string): boolean {
+  const m = /^(\d{2})h(\d{2})$/.exec(h.trim());
+  if (!m) return false;
+  const minutos = Number(m[1]) * 60 + Number(m[2]);
+  return Number(m[2]) <= 59 && minutos >= 60 && minutos <= 210;
+}
+
+/** Quantos por cento do total, inteiro (0 quando o total é 0). */
+export function percentual(parte: number, total: number): number {
+  return total > 0 ? Math.round((parte / total) * 100) : 0;
+}
+
+/**
+ * Por que o rascunho saiu do banco curado — a frase da tela (copy
+ * `prof.gerando.erro_cota` e `prof.gerando.falha_generica`, literais).
+ */
+export const AVISO_SEM_IA: Record<"sem-saldo" | "indisponivel", string> = {
+  "sem-saldo": "Cota de IA em espera. Atividade liberada imediatamente utilizando o pacote curado oficial.",
+  indisponivel: "Falha temporária na geração. Carregando pacote curado padrão para não interromper a aula.",
 };
 
 /** A mensagem e a lista `erros` de uma recusa da api (a homologação devolve TODAS as frases da régua). */

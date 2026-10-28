@@ -184,3 +184,15 @@ publica.
 `overflow: visible` e `max-height: none` a ele em `@media print`: o guia é feito
 para ser impresso e levado para a sala, e `overflow` recortaria a tabela na
 largura da coluna.
+
+## O chrome do aparelho vem do `exp:estado`, e nunca move o `children`
+
+O `ExpHost` só REAGE ao que a experiência publica — o hub não interpreta
+domínio. Dois chromes hoje: a `MolduraPerdidos` (`fase: "perdidos"`, acima do
+aparelho) e a `InstrucaoDaExperiencia` (`instrucao: { antes, destaque, depois }`,
+o TC-10 da exp02em1b, ADR-191): um aside de 340px à direita do aparelho em tela
+larga (`lg`), acima dele em tela estreita, com o `destaque` realçado. A forma é
+validada pelo Zod em `lib/instrucao-da-experiencia.ts` (com teste); fora dela,
+nada aparece. Os dois carregam por `lazy()`, fora do chunk da casca. Chrome novo
+entra como IRMÃO da área do aparelho, nunca em volta dela: mover o `children`
+do `DispositivoFrame` remonta o iframe, e o estudante perde a sessão.

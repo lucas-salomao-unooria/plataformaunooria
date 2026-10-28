@@ -36,14 +36,17 @@ import { CartaoDoPodcast } from "./podcast-da-aula";
 import { ZerarTurmaEfeitoAmplificador } from "./zerar-turma-efeito-amplificador";
 
 const EXP_ID = "exp02em1b";
-const ROTULO_DA_ORIGEM = { ia: "Gerado com IA e homologado por você", padrao: "Banco Curado Padrão da Unooria" } as const;
+const ROTULO_DA_ORIGEM = { ia: "Gerado com IA e homologado por você", padrao: "Pacote padrão oficial da Unooria" } as const;
 
 /**
- * A PÁGINA DE UMA ATIVIDADE de O EFEITO AMPLIFICADOR (ADR-181, ADR-130) — o
- * pacote homologado, com tudo o que se faz com ele: pô-lo no ar (se está
+ * A PÁGINA DE UMA ATIVIDADE de O EFEITO AMPLIFICADOR (2.1.0, ADR-191; ADR-130) —
+ * o pacote homologado, com tudo o que se faz com ele: pô-lo no ar (se está
  * pronto), o pacote com o gabarito e a liberação na sala, as equipes, a
- * condução ao vivo (Pausar Telas, Liberar Etapa 5) só no em andamento, o
- * "Zerar", o podcast e o painel de habilidades. Molde: a de Quem Mandou Isso?.
+ * condução ao vivo (E4-PROF-01: Pausar Telas para Debate, Avançar Turma para
+ * Explicar) só no em andamento, o "Zerar", o podcast e o relatório pós-aula
+ * (E6-PROF-01), que é a aba Habilidades: o painel da evidência (F14.7) já é a
+ * matriz estudante × habilidade com os três níveis, e não se duplica. Sem
+ * reflexão: a transferência da Etapa 6 está fora desta versão.
  *
  * Painel, botões e "Zerar" operam SEMPRE no pacote em andamento (a api não
  * recebe o pacote neles): por isso só aparecem quando a atividade da página É
@@ -141,8 +144,9 @@ export async function ResultadosEfeitoAmplificador({
         ) : null}
         {emAndamento ? (
           <p className="max-w-3xl text-[14px] leading-relaxed text-unooria-neutral-700">
-            Daqui você pausa as telas para o debate e libera a Etapa 5. A lousa da condução não tem nomes nem
-            níveis, e pode ir ao projetor; <strong>a folha da turma, com os nomes, é só para a sua tela</strong>.
+            Daqui você pausa as telas para o debate e avança a turma para o Explicar. O Balanço Editorial, a
+            Distribuição Horária Coletiva e a Matriz Consolidada não têm nomes, e podem ir ao projetor;{" "}
+            <strong>o Monitor de Ritmo e Inatividade, com os nomes, é só para a sua tela</strong>.
           </p>
         ) : null}
         <p className="flex flex-wrap gap-4 text-[13px] font-semibold">
@@ -308,12 +312,18 @@ export async function ResultadosEfeitoAmplificador({
               <CartaoDoPodcast expId={EXP_ID} turmaId={turma} atividadeId={detalhe.id} podcast={podcast} />
             }
             habilidades={
-              /* EVIDÊNCIA (E14): a atividade é o PACOTE (`atividadeId = pacoteId`);
-                 a rodada é a reaplicação, e o próprio painel mostra as rodadas e o
-                 resultado. Invisível sem ficha (`temFicha: false`), e só o
-                 `professor` confirma e ajusta: a coordenação lê. */
+              /* E6-PROF-01, o relatório pós-aula: a EVIDÊNCIA (E14) já é a matriz
+                 estudante × habilidade com os três níveis. A atividade é o PACOTE
+                 (`atividadeId = pacoteId`); a rodada é a reaplicação, e o próprio
+                 painel mostra as rodadas e o resultado. Invisível sem ficha
+                 (`temFicha: false`), e só o `professor` confirma e ajusta: a
+                 coordenação lê. */
               habilidades?.temFicha ? (
                 <div className="flex flex-col gap-3" data-habilidades-efeito-amplificador>
+                  <SectionHeader
+                    title="Matriz Consolidada de Evidências (CO24, CO14, CO26, CO08)"
+                    description="O relatório da turma: o nível de cada estudante nas quatro habilidades da missão, registrado pelo que ele fez."
+                  />
                   <PainelDeHabilidades
                     key={`habilidades-${turma}-${detalhe.id}`}
                     turmaId={turma}
@@ -338,6 +348,18 @@ function PacoteDaCampanha({ pacote }: { pacote: PacoteDetalhe }) {
   const c = pacote.conteudo;
   return (
     <div className="flex flex-col gap-4 text-[13px] text-unooria-neutral-800">
+      <div className="flex flex-col gap-1">
+        <h3 className="text-[14px] font-semibold text-unooria-neutral-950">A pauta do grêmio</h3>
+        <p>
+          <strong>{c.pauta.titulo}</strong>
+        </p>
+        <p>{c.pauta.descricao}</p>
+        <ul className="list-disc pl-5">
+          {c.pauta.orientacoes.map((o) => (
+            <li key={o}>{o}</li>
+          ))}
+        </ul>
+      </div>
       <div className="flex flex-col gap-2">
         <h3 className="text-[14px] font-semibold text-unooria-neutral-950">O rascunho do UnooriaAI</h3>
         {c.rascunho.map((p) => (
@@ -351,7 +373,8 @@ function PacoteDaCampanha({ pacote }: { pacote: PacoteDetalhe }) {
             {p.corrigido ? <p className="text-unooria-neutral-600">{`Corrigido: ${p.corrigido}`}</p> : null}
           </div>
         ))}
-        <p className="text-unooria-neutral-600">{`A frase que o algoritmo pinça: “${c.recorte}”`}</p>
+        <p className="text-unooria-neutral-600">{`A frase que o algoritmo destaca no feed: “${c.recorte}”`}</p>
+        <p className="text-unooria-neutral-600">{`Fonte inventada: ${c.fonteInventada} · Colega exposto: ${c.colega} · Autoria do trecho copiado: ${c.fonteOriginal}`}</p>
       </div>
       <div className="flex flex-col gap-1">
         <h3 className="text-[14px] font-semibold text-unooria-neutral-950">As manchetes</h3>
@@ -369,7 +392,7 @@ function PacoteDaCampanha({ pacote }: { pacote: PacoteDetalhe }) {
           {c.comentarios.map((com) => (
             <li key={com.id} className="flex flex-col gap-1">
               <span className="flex flex-wrap items-center gap-2">
-                <strong>{`${com.handle} · ${com.horario}`}</strong>
+                <strong>{`${com.autor} · ${com.horario}`}</strong>
                 <Tag variant="neutral" size="sm" pill>
                   {ROTULO_DO_TIPO[com.tipo]}
                 </Tag>
