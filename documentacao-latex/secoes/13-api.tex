@@ -1281,21 +1281,22 @@ voto e da revelação aberta pela turma. A turma do estudante é
 \subsection{O Efeito Amplificador (exp02em1b)}
 \label{sec:api-efeito-amplificador}
 
-Desde 2026-10-22 (\adrr{ADR-181}), no módulo \arq{efeito-amplificador}, no molde
-de Quem mandou isso?: onze rotas do estudante em \rota{/efeito-amplificador/*}
-(\cd{@Roles("estudante")} na classe e \cd{exigirMissaoLiberada} no funil de
-TODAS), onze por turma em \rota{/efeito-amplificador/turmas/:turmaId/*} (o
-pacote, \cd{gerar-conteudo}, \cd{homologar}, \cd{banco-padrao}, \cd{gate},
-\cd{painel}, \cd{zerar}, a lista e o detalhe das atividades e o
-\cd{em-andamento}) e o material do guia. Duas chamadas pagas: \rota{POST
-/efeito-amplificador/mensagem} é a conversa HÍBRIDA (\adrr{ADR-181}) --- a IA,
-com a quota do perfil \cd{estudante}, classifica o pedido numa lista fechada
-de intenções e redige a resposta, o servidor aplica a intenção à prévia, e a
-árvore de intenções responde quando a IA falha; cada fala do assistente traz
-\cd{origem} (\cd{ia} ou \cd{regras}) ---, e \rota{POST .../gerar-conteudo},
-o preparo, com a quota do perfil \cd{professor}. As quatro habilidades são marcadas nas transações dos
-gestos --- o Publicar (EM13CO14 e EM13CO26), as ações do feed e a abertura do
-Explicar (EM13CO24 e EM13CO08) ---, e \rota{/evidencias/exp02em1b/perguntas/*}
+Desde 2026-10-22 (\adrr{ADR-181}; a 2.1.0, \adrr{ADR-191}), no módulo
+\arq{efeito-amplificador}, no molde de Quem mandou isso?: onze rotas do
+estudante em \rota{/efeito-amplificador/*}, as do PRD (\cd{@Roles("estudante")}
+na classe e \cd{exigirMissaoLiberada} no funil de TODAS) --- \cd{sessao},
+\cd{gate}, \cd{entrar}, \cd{chat/mensagem}, \cd{previa}, \cd{publicar},
+\cd{aviso-cuidado}, \cd{seguranca}, \cd{explicar}, \cd{evidencia} e
+\cd{concluir} ---, dez por turma em \rota{/efeito-amplificador/turmas/:turmaId/*}
+(o pacote, \cd{gerar-conteudo}, \cd{homologar}, \cd{banco-padrao}, \cd{gate}
+com \cd{\{etapa\}}, \cd{painel}, \cd{zerar}, a lista e o detalhe das
+atividades e o \cd{em-andamento}) e o material do guia. A aula não chama IA:
+\rota{POST /efeito-amplificador/chat/mensagem} responde pela árvore de
+intenções, no servidor. A única chamada paga é \rota{POST .../gerar-conteudo},
+o preparo, com a quota do perfil \cd{professor}. As quatro habilidades são
+marcadas nas transações dos gestos --- o Publicar (EM13CO14 e EM13CO26), o
+aviso de cuidado e as ações de segurança do feed, e a abertura dos bastidores
+(EM13CO24 e EM13CO08) ---, e \rota{/evidencias/exp02em1b/perguntas/*}
 responde 404: não há Canal B. O catálogo completo está no
 Apêndice~\ref{ap:endpoints}. A Missão Tempestade, versão anterior, continua em
 \rota{/unoogpt/*}.
