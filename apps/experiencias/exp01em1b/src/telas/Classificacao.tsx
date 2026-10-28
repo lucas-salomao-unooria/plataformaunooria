@@ -18,8 +18,8 @@ import { COLUNAS, type Cartao, type ClassificacaoValor, type Coluna } from "../l
  *   cartão está escolhido, e a ação "Colocar em …" com um escolhido — que é
  *   também o nome do botão.
  * - O cartão COLOCADO usa o rótulo curto do Figma ("Trilha Avançada",
- *   "Modelo Aparelho") e quebra só entre palavras (a compensação de `.trilhas`
- *   no CSS, até o `size="sm"` do DS 0.2.24 chegar ao npm).
+ *   "Modelo Aparelho") e quebra só entre palavras: o `PuzzleBlock size="sm"`
+ *   do DS 0.2.24 (até a 0.2.23, uma compensação no CSS).
  * - Com scaffolding: enquanto nada foi colocado, o 1º cartão leva a tag
  *   "Cartão 1". Incompleta: o aviso do PO no fim da tela.
  * - **Não há botão de concluir** (o Figma não tem): a classificação FECHA
@@ -79,7 +79,7 @@ export function Classificacao({ ctx, fechada = false }: { ctx: Contexto; fechada
   }
 
   return (
-    <Casca etapas={{ atual: 5, janela: [3, 4, 5, 6] }} equipe={estado.equipe}>
+    <Casca equipe={estado.equipe}>
       <p className="escola__instrucao">{estado.equipe ? TEXTOS.e5.instrucaoDaEquipe : TEXTOS.e5.instrucao}</p>
       <div className="trilhas">
         {COLUNAS.map((coluna) => {
@@ -96,6 +96,7 @@ export function Classificacao({ ctx, fechada = false }: { ctx: Contexto; fechada
                       key={c.id}
                       label={TEXTOS.e5.rotuloCurto[c.id] ?? c.rotulo}
                       state="placed"
+                      size="sm"
                       aria-disabled={travada || undefined}
                       theme="light"
                       onClick={() => devolver(c.id)}

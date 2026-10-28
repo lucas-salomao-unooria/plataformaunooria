@@ -18,6 +18,10 @@ import { TEXTOS } from "../lib/textos";
  * (`Falas`), dentro da tela da escola, e vem DEPOIS dos botões: o Figma tem
  * só o resultado e os botões, que ficam à vista em 375×812 (antes o efeito os
  * empurrava para baixo da dobra).
+ *
+ * "Avançar para Homologação e Transparência" é o `Button` `md` (1.0.5): no
+ * `lg` (18px) o rótulo tem quase 343px e encostava nas bordas do botão, sem
+ * o recuo; o `md` (16px) é o tamanho do Figma e mantém o recuo do DS.
  */
 export function Reteste({ ctx }: { ctx: Contexto }) {
   const { estado, sessao, executar } = ctx;
@@ -51,7 +55,7 @@ export function Reteste({ ctx }: { ctx: Contexto }) {
         </CardContent>
       </Card>
       {aprovado ? (
-        <Button variant="primary" size="lg" fullWidth isLoading={enviando === "avancar"} onClick={() => void avancar()}>
+        <Button variant="primary" size="md" fullWidth isLoading={enviando === "avancar"} onClick={() => void avancar()}>
           {TEXTOS.e5.avancarAprovado}
         </Button>
       ) : (

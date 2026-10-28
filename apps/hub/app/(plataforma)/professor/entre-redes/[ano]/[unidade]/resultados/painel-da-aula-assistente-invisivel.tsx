@@ -431,8 +431,14 @@ function BlocoDoMomento({ painel, momento }: { painel: PainelDaTurma; momento: M
 
 /**
  * E5-PROF-01 "Projeção de Soluções": o gráfico 1A × 1C (SÓ as duas barras do
- * quadro, o percentual sobre 1A + 1C) e os Avisos Discretos. Antes e depois de
- * pausar, o mesmo texto do Figma; quem muda é o botão da pausa.
+ * quadro, o percentual sobre 1A + 1C) e, AO LADO e FORA do quadro projetado,
+ * os Avisos Discretos. Antes e depois de pausar, o mesmo texto do Figma; quem
+ * muda é o botão da pausa.
+ *
+ * Os avisos são para o PROFESSOR (1.0.5): um cartão neutro, como no Figma, e
+ * não um alerta laranja dentro do quadro — ali eles levavam o nome de quem
+ * manteve a regra restritiva para o projetor, na frente da turma. O
+ * `data-projecao-de-solucoes` marca SÓ o que vai para o quadro.
  */
 function ProjecaoDeSolucoes({ painel }: { painel: PainelDaTurma }) {
   const c = painel.resumo.criterioExercicios;
@@ -443,35 +449,38 @@ function ProjecaoDeSolucoes({ painel }: { painel: PainelDaTurma }) {
   });
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-unooria-neutral-200 p-4" data-projecao-de-solucoes>
-      <SectionHeader title="Projeção de Soluções" />
-      <Status titulo="Comparação de Soluções no Quadro">{INSTRUCAO_DA_MEDIACAO_2}</Status>
-      <div className="flex flex-col gap-3" data-criterios-1a-1c>
-        <h4 className="text-[14px] font-semibold text-unooria-neutral-950">Critérios Escolhidos pela Sala: 1A × 1C</h4>
-        {BARRAS_DO_CRITERIO_1.map((b) => (
-          <div key={b.opcao} className="flex flex-col gap-1">
-            <Barra rotulo={b.rotulo} parte={c[b.opcao]} total={total} />
-            <p className="text-[13px] leading-snug text-unooria-neutral-700">{b.sentido}</p>
-          </div>
-        ))}
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="flex flex-col gap-4 rounded-lg border border-unooria-neutral-200 p-4" data-projecao-de-solucoes>
+        <SectionHeader title="Projeção de Soluções" />
+        <Status titulo="Comparação de Soluções no Quadro">{INSTRUCAO_DA_MEDIACAO_2}</Status>
+        <div className="flex flex-col gap-3" data-criterios-1a-1c>
+          <h4 className="text-[14px] font-semibold text-unooria-neutral-950">Critérios Escolhidos pela Sala: 1A × 1C</h4>
+          {BARRAS_DO_CRITERIO_1.map((b) => (
+            <div key={b.opcao} className="flex flex-col gap-1">
+              <Barra rotulo={b.rotulo} parte={c[b.opcao]} total={total} />
+              <p className="text-[13px] leading-snug text-unooria-neutral-700">{b.sentido}</p>
+            </div>
+          ))}
+        </div>
       </div>
       {avisos.length > 0 ? (
-        <div data-avisos-discretos>
-          <FeedbackAlert
-            type="warning"
-            title="Avisos Discretos"
-            description={
-              <span className="flex flex-col gap-1">
-                <span>{`${painel.porComputador ? "Equipes" : "Estudantes"} que avançaram mantendo regras restritivas:`}</span>
-                <ul className="list-disc pl-5">
-                  {avisos.map((a) => (
-                    <li key={a}>{a}</li>
-                  ))}
-                </ul>
-              </span>
-            }
-          />
-        </div>
+        <aside data-avisos-discretos aria-labelledby="avisos-discretos-titulo">
+          <Card variant="outlined">
+            <div className="flex flex-col gap-2">
+              <h4 id="avisos-discretos-titulo" className="text-[14px] font-semibold text-unooria-neutral-950">
+                Avisos Discretos
+              </h4>
+              <p className="text-[13px] leading-snug text-unooria-neutral-600">
+                {`${painel.porComputador ? "Equipes" : "Estudantes"} que avançaram mantendo regras restritivas:`}
+              </p>
+              <ul className="flex list-disc flex-col gap-1 pl-5 text-[13px] leading-snug text-unooria-neutral-700">
+                {avisos.map((a) => (
+                  <li key={a}>{a}</li>
+                ))}
+              </ul>
+            </div>
+          </Card>
+        </aside>
       ) : null}
     </div>
   );

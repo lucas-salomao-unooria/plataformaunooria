@@ -310,7 +310,10 @@ export function CriarAssistenteInvisivel({
                       }
                       description="Defina a disciplina e o tema semanal para calibrar os exercícios e as dúvidas simuladas no UnooriaAI."
                     />
-                    <div className="grid gap-4 lg:grid-cols-2">
+                    {/* Uma coluna, como o Figma (1.0.5): em duas, o campo tinha ~460px e o
+                        placeholder ("…(máximo de 60 caracteres)...") saía cortado no meio
+                        da palavra — o placeholder de um campo de uma linha não quebra. */}
+                    <div className="flex flex-col gap-4">
                       <Selection
                         label="Disciplina Escolar"
                         placeholder="Selecione o componente curricular oficial da BNCC..."
@@ -478,7 +481,11 @@ function ContingenciaDaGeracao({
           Serviço de geração temporariamente instável. Tente novamente ou utilize o banco padrão curado.
         </p>
         <div className="flex flex-wrap gap-3">
-          <Button variant="secondary" size="md" isDisabled={ocupado} onClick={tentarDeNovo} data-acao="tentar-novamente">
+          {/* A hierarquia do Figma: "Usar Banco Padrão" é a ação principal (cheia) e
+              "Tentar Novamente" a secundária (contorno). O `secondary` do DS também
+              é CHEIO (navy) — os dois saíam com o mesmo peso; o `outline` é o
+              secundário que se vê. */}
+          <Button variant="outline" size="md" isDisabled={ocupado} onClick={tentarDeNovo} data-acao="tentar-novamente">
             Tentar Novamente
           </Button>
           <Button variant="primary" size="md" isDisabled={ocupado} onClick={usarPadrao} data-acao="usar-banco-padrao-503">
@@ -496,6 +503,13 @@ function ContingenciaDaGeracao({
  * rascunho inteiro — o servidor é quem guarda o que o professor viu, e o
  * "Aprovar Pacote Homologado" manda só o `rascunhoId`.
  */
+const GRUPOS_DA_CURADORIA: ReadonlyArray<{ id: string; colunas: string; pertence: (item: ItemDoPacote) => boolean }> = [
+  { id: "trilhas", colunas: "md:grid-cols-2", pertence: (item) => item === "trilhaAvancada" || item === "reforcoBasico" },
+  { id: "duvidas", colunas: "md:grid-cols-2 xl:grid-cols-3", pertence: (item) => item.startsWith("duvidas.") },
+  { id: "respostas", colunas: "md:grid-cols-2 xl:grid-cols-3", pertence: (item) => item.startsWith("respostas.") },
+  { id: "leitura", colunas: "", pertence: (item) => item === "leitura" },
+];
+
 function Curadoria({
   turmaId,
   rascunho,
@@ -588,31 +602,41 @@ function Curadoria({
           />
         ) : null}
 
-        <div className="flex flex-col gap-3">
-          {ITENS_DO_PACOTE.map((item) => (
-            <ItemDaCuradoria
-              key={item}
-              item={item}
-              rascunho={rascunho}
-              editando={editando === item}
-              travado={travado}
-              regenerando={trabalhando !== null && trabalhando !== "aprovar" && trabalhando.item === item && trabalhando.acao === "regenerar"}
-              salvando={trabalhando !== null && trabalhando !== "aprovar" && trabalhando.item === item && trabalhando.acao === "editar"}
-              erro={erro?.item === item ? erro.erro : null}
-              abrirEdicao={() => {
-                setErro(null);
-                setEditando(item);
-              }}
-              cancelarEdicao={() => setEditando(null)}
-              salvar={(titulo, texto) => salvar(item, titulo, texto)}
-              regenerar={() => void regenerar(item)}
-            />
-          ))}
-        </div>
+        {/* E0-PROF-04: a grade do Figma — as trilhas em 2 colunas, as dúvidas e as respostas em 3, a leitura
+            na largura toda. Cada item cai no grupo dele; a ordem dentro do grupo é a de ITENS_DO_PACOTE. */}
+        {GRUPOS_DA_CURADORIA.map((grupo) => (
+          <div key={grupo.id} className={`grid grid-cols-1 gap-3 ${grupo.colunas}`} data-grupo-da-curadoria={grupo.id}>
+            {ITENS_DO_PACOTE.filter(grupo.pertence).map((item) => (
+              <ItemDaCuradoria
+                key={item}
+                item={item}
+                rascunho={rascunho}
+                editando={editando === item}
+                travado={travado}
+                regenerando={trabalhando !== null && trabalhando !== "aprovar" && trabalhando.item === item && trabalhando.acao === "regenerar"}
+                salvando={trabalhando !== null && trabalhando !== "aprovar" && trabalhando.item === item && trabalhando.acao === "editar"}
+                erro={erro?.item === item ? erro.erro : null}
+                abrirEdicao={() => {
+                  setErro(null);
+                  setEditando(item);
+                }}
+                cancelarEdicao={() => setEditando(null)}
+                salvar={(titulo, texto) => salvar(item, titulo, texto)}
+                regenerar={() => void regenerar(item)}
+              />
+            ))}
+          </div>
+        ))}
 
         {erro && erro.item === null ? <ErroDaApi erro={erro.erro} /> : null}
 
-        <div className="flex flex-wrap items-center gap-3">
+        {/* O Figma põe "Aprovar Pacote Homologado" à direita, fechando a grade; a dica fica à esquerda dele. */}
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <p className="text-[12px] text-unooria-neutral-600">
+            {editando !== null
+              ? "Salve ou cancele a edição aberta para aprovar."
+              : "Aprovado, o pacote vira uma atividade pronta; você escolhe as equipes e libera para a turma."}
+          </p>
           <Button
             variant="primary"
             size="md"
@@ -623,11 +647,6 @@ function Curadoria({
           >
             Aprovar Pacote Homologado
           </Button>
-          <p className="text-[12px] text-unooria-neutral-600">
-            {editando !== null
-              ? "Salve ou cancele a edição aberta para aprovar."
-              : "Aprovado, o pacote vira uma atividade pronta; você escolhe as equipes e libera para a turma."}
-          </p>
         </div>
       </div>
     </Card>
