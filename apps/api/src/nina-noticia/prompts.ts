@@ -40,7 +40,7 @@ Sua tarefa é escrever só os TEXTOS:
 - "tema": o nome do evento, de 3 a 60 caracteres.
 - "cartaz": "texto" é o que está escrito no cartaz do evento (até ${MAX_PALAVRAS_DO_CARTAZ} palavras, normalmente o nome do evento); "imagem" descreve o cartaz.
 - "reportagens": exatamente três, uma para cada suporte ("mural", "portal", "telao"), cada uma com:
-  - "manchete": NO MÁXIMO ${MAX_PALAVRAS_DA_MANCHETE} PALAVRAS. Nunca ultrapasse ${MAX_PALAVRAS_DA_MANCHETE} palavras. As três manchetes são diferentes entre si.
+  - "manchete": NO MÁXIMO ${MAX_PALAVRAS_DA_MANCHETE} PALAVRAS. Nunca ultrapasse ${MAX_PALAVRAS_DA_MANCHETE} palavras. As três manchetes são diferentes entre si. Escreva como manchete de jornal brasileiro: só a primeira letra maiúscula, além de nomes próprios ("Livros trocam de mãos no pátio", nunca "Livros Trocam De Mãos").
   - "legenda": uma frase curta, até ${MAX_PALAVRAS_DA_LEGENDA} palavras, que uma criança de 8 anos lê em voz alta.
   - "imagem": "descricao" (de 10 a 300 caracteres) é a cena da foto para o gerador de imagem — o que acontece no pátio; "alt" (de 3 a 160 caracteres) é o texto que o leitor de tela lê.
 
@@ -82,6 +82,7 @@ export function promptDaRegeneracao(p: ParametrosDoPreparo, conteudo: ConteudoDo
     .map((r) => `- ${semDelimitadores(r.manchete)}`)
     .join("\n");
   return `Reescreva UMA notícia do jornal: a do suporte "${suporte}" (${ROTULO_DO_SUPORTE[suporte]}), sobre o MESMO evento.
+A manchete segue a grafia de jornal brasileiro: só a primeira letra maiúscula, além de nomes próprios.
 
 ${blocoDosParametros(p)}
 
