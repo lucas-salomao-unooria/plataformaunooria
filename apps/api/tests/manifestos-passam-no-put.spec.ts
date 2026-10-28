@@ -63,10 +63,7 @@ const pastas = readdirSync(PASTA, { withFileTypes: true })
  * normal; o teste abaixo cobra que uma entrada nova SAIA no dia em que o
  * `package.json` chegar — senão a comparação de versão ficaria desligada.
  */
-const SEM_PACOTE_AINDA = new Set<string>([
-  /* O Porta-Voz dos Dados (ADR-198): a api e a ficha entraram antes da experiência. */
-  "exp03em1b",
-]);
+const SEM_PACOTE_AINDA = new Set<string>([]);
 
 test("há experiências para validar (senão a suíte passaria vazia)", () => {
   expect(pastas.length).toBeGreaterThan(0);

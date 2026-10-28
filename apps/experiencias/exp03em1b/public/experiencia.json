@@ -17,5 +17,12 @@
     "progresso",
     "ia",
     "avaliacao"
-  ]
+  ],
+  "verbos": {
+    "attempted": "entrou na missão",
+    "interacted": "abriu a tabela, o anexo, o compositor ou a perícia, ou sinalizou um cartão",
+    "scored": "publicou o boletim, a errata ou emitiu o parecer",
+    "progressed": "entrou numa etapa",
+    "completed": "concluiu o percurso da missão"
+  }
 }
