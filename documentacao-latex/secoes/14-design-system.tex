@@ -1238,6 +1238,56 @@ mesmo dia, não cobre nenhuma das quatro. O \cd{Modal} também não centraliza n
 folha que sobe da base); o respiro de cima veio da prop \cd{padding} do
 \cd{ModalBody}, sem CSS local.
 
+\subsection{O Porta-Voz dos Dados e as quatro peças da 0.2.25}
+\label{sec:ds-exp03em1b}
+
+O Porta-Voz dos Dados (\adrr{ADR-198}) usa DUAS seções, pela fronteira de
+\enquote{quem fala} (\adrr{ADR-117}): o mensageiro é \cd{unoochat}, em tema
+CLARO como a exp05ef1b (a lista de conversas, o chat do Assistente de Dados, o
+compositor numa \cd{BottomSheet}, o grupo da cidade, a pausa e a perícia); a
+escola é \cd{unooria} (o laudo e a conclusão, com o \cd{ScrollBar} do DS). O
+gráfico e a tabela do boletim são DESENHO --- conteúdo, não controle: um
+componente só (\arq{GraficoDoBoletim.tsx}), pintado com tokens
+\cd{--grafico-*} que cada seção define com os próprios, na prévia, no post, no
+espelho, nos cartões e no laudo. O protótipo era \emph{wireframe} cinza: a
+cor e os componentes vêm do DS.
+
+Por decisão do Lucas, o DS veio primeiro: quatro peças foram pedidas ao
+\cd{storybook-unooria} (PR \#28) e publicadas na versão 0.2.25, e a ponte
+\cd{packages/ui} as expõe.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{40mm}X@{}}
+\toprule
+\headrow \thd{O que faltava} & \thd{O que o DS publicou} & \thd{Onde a exp usa}\\
+\midrule
+Interruptor no \cd{unoochat} (o \cd{Toggle} é da plataforma, outra seção) &
+  \cd{Switch} (\cd{<button role="switch">}, com rótulo e descrição) &
+  as três camadas do compositor; \enquote{Sinalizar para revisão} na
+  perícia\\
+\zebra Um lugar à direita no cabeçalho do chat &
+  \cd{ChatHeader} com \cd{trailing} (os botões de chamada somem) &
+  o chip da cota de publicações, no chat e no grupo\\
+O anexo do chat não era tocável &
+  \cd{MessageBubble.Document} clicável &
+  a nota técnica da E2, que abre a folha\\
+\zebra Régua de um valor na plataforma &
+  \cd{Slider} da \cd{unooria}, com os rótulos das pontas &
+  a régua do eixo (0 a 80) no laudo\\
+\bottomrule
+\end{tabularx}
+
+Sobraram quatro compensações de MEDIDA, marcadas no código e listadas no
+\arq{AGENTS.md} da experiência: o \cd{ListItem} do \cd{unoochat} põe título e
+subtítulo em \cd{nowrap}, e a folha \enquote{Ver dados e fonte} os deixa
+quebrar linha; o \cd{MetricCard} tem teto de 301\,px de largura, e o laudo o
+tira; o \cd{MessageBubble.Document} põe os detalhes na linha do nome (detalhe
+longo some com o nome), e o anexo usa detalhes curtos (\enquote{PDF
+\textperiodcentered{} 42 KB}) com a procedência como legenda do balão; e o
+\cd{ChatHeader} com \cd{trailing} longo encurta o nome do contato, e o chip
+mostra a forma curta do protótipo (\enquote{Publicações: 3/3}), com a longa no
+\cd{aria-label}. Pela regra da \adrr{ADR-187}, subir o DS para a 0.2.25 sobe
+todas as experiências juntas.
+
 \subsection{Avisos que ficaram obsoletos}
 
 \begin{nota}

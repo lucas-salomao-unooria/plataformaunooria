@@ -21,6 +21,8 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria, progresso, ia, avaliacao & \arq{jornal-escola}, \arq{evidencias}\\
 \cd{backup-exp04ef1b} & \cd{4EF} & \textbf{arquivada} &
   telemetria, progresso & \arq{backup-unootube} (sem rotas)\\
+\cd{exp03em1b} & \cd{3EM} & estudante &
+  telemetria, progresso, ia, avaliacao & \arq{porta-voz-\B{}dos-\B{}dados}, \arq{evidencias}\\
 \zebra \cd{exp02em1b} & \cd{2EM} & estudante &
   telemetria, progresso, ia, avaliacao & \arq{efeito-amplificador}, \arq{evidencias}\\
 \cd{exp02em1b-v0} & \cd{2EM} & \textbf{versão anterior} &
@@ -94,6 +96,12 @@ A unidade 1 da 1ª série do Ensino Médio é \textbf{O Assistente Invisível}
 que nasce na 1.0.0, na porta 5188: a primeira missão da 1ª série, com ficha
 pedagógica só pelo que o estudante faz (Seção~\ref{sec:exp01em1b}).
 
+A unidade 1 da 3ª série do Ensino Médio é \textbf{O Porta-Voz dos Dados}
+(\adrr{ADR-198}), no Unoochat (\cd{unoochat}) e na escola (\cd{unooria}),
+que nasce na 1.0.0, na porta 5190: a primeira missão da 3ª série, individual,
+com ficha pedagógica de seis habilidades só pelo que o estudante faz
+(Seção~\ref{sec:exp03em1b}).
+
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{18mm}X@{}}
 \toprule
 \headrow \thd{Experiência} & \thd{Porta em \emph{dev}} & \thd{Onde aparece no hub}\\
@@ -113,6 +121,7 @@ pedagógica só pelo que o estudante faz (Seção~\ref{sec:exp01em1b}).
 \cd{exp06ef1b} & \cd{5185} & \rota{/exp/exp06ef1b}\\
 \zebra \cd{exp02ef1b} & \cd{5187} & \rota{/exp/exp02ef1b} (O Enigma da Capa da Rádio, \cd{strictPort})\\
 \cd{exp01em1b} & \cd{5188} & \rota{/exp/exp01em1b} (O Assistente Invisível, \cd{strictPort})\\
+\zebra \cd{exp03em1b} & \cd{5190} & \rota{/exp/exp03em1b} (O Porta-Voz dos Dados, \cd{strictPort})\\
 \bottomrule
 \end{tabularx}
 
@@ -309,6 +318,12 @@ da missão injeta o que só ela sabe montar:
     quatro habilidades. O componente é
     \arq{guia/\B{}material-\B{}do-\B{}assistente-\B{}invisivel.tsx} (\adrr{ADR-185},
     \adrr{ADR-189}).
+  \item \textbf{exp03em1b} (O Porta-Voz dos Dados) ---
+    \rota{GET /porta-voz-\B{}dos-\B{}dados/\B{}professor/\B{}material} devolve o banco
+    padrão (a tabela e a nota técnica), o roteiro das três perguntas do
+    debate, a série, o laudo, os dois cartões da perícia COM o gabarito e o
+    critério de cada nível das seis habilidades. O componente é
+    \arq{guia/\B{}material-\B{}do-\B{}porta-\B{}voz.tsx} (\adrr{ADR-198}).
   \item \textbf{backup-exp04ef1b} (o UnooTube, arquivado na \adrr{ADR-116}; o
     bloco saiu do guia com ele) --- a tabela dos 21 vídeos, com o \cd{factual} de
     cada um, vinha de \rota{GET /unootube/professor/videos}. A criança de nove
@@ -2031,6 +2046,237 @@ Unooria, com o interruptor). Por baixo, as suítes da api
 \arq{tests/\B{}assistente-\B{}invisivel-\B{}postgres.\B{}spec.ts}, com a RLS sob a
 \emph{role} sem \cd{BYPASSRLS}). O passo de equipe com um computador ainda
 não está na suíte.
+
+% ---------------------------------------------------------------------------
+\section{exp03em1b --- O Porta-Voz dos Dados}
+\label{sec:exp03em1b}
+
+\textbf{3ª série EM, unidade 1 (\enquote{Visualizar dados é contar
+histórias}), seções \cd{unoochat} e \cd{unooria}, experiência 1.0.0, porta
+5190.} Desde 2026-10-28 (\adrr{ADR-198}), vinda da esteira de produto
+(one-pager v2.0 do PO, PRD, banco de conteúdo, \emph{copy} e um protótipo
+\emph{wireframe} de 42 quadros, que dita só disposição e \emph{copy}). Módulo
+da api: \arq{porta-voz-\B{}dos-\B{}dados} (prefixo \rota{/porta-voz-\B{}dos-\B{}dados},
+tabelas \cd{exp03em1b\_*}). Manifesto: \cd{telemetria}, \cd{progresso},
+\cd{ia} e \cd{avaliacao}, \textbf{sem} \cd{permissoes} (não há campo de
+escrever), 375$\times$812, produto \cd{entre-redes}.
+
+\begin{destaque}
+Dois gráficos com os mesmos números verdadeiros e oficiais contam histórias
+opostas: onde o eixo começa, e o que se explica junto, muda o que a
+comunidade entende e como ela reage.
+\end{destaque}
+
+O estudante é o Porta-Voz Oficial de Dados da escola. No Unoochat, o
+Assistente de Dados (um bot DETERMINÍSTICO sobre o pacote homologado, sem IA
+na aula) entrega a tabela de um serviço público --- 95\% \seta{} 94\% \seta{}
+92\% \seta{} 88\% em quatro períodos --- e a nota técnica da subprefeitura,
+que localiza a queda em obras pontuais. Ele escolhe onde o eixo começa (0\%
+ou recortado em 80\%), liga ou não três camadas de texto fixo e publica no
+grupo da cidade (\enquote{Comitê Municipal de Políticas Públicas ---} e o
+recorte do professor). O grupo reage pelo ramo da escala DELE (indiferença com
+o eixo em 0, pânico com o eixo em 80); cerca de 10\,s depois, a Escola
+Estadual Santos Dumont publica a mesma planilha com a escala oposta. O
+professor pausa as telas para o debate e libera a retomada; vêm a errata (ou
+não), o laudo com o Fator de Mentira e a perícia de dois cartões eleitorais,
+que conclui. A missão é \textbf{individual} (fora de
+\cd{EXPERIENCIAS\_\B{}COM\_\B{}EQUIPE}; no hub, \cd{MISSOES\_\B{}SEM\_\B{}EQUIPE}) e tem
+atividade (o pacote).
+
+\subsection{O que o estudante vive}
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}X@{}}
+\toprule
+\headrow \thd{Etapa} & \thd{Na tela, e o que o servidor guarda}\\
+\midrule
+\textbf{E1} Posse & A lista de conversas (o bot com o selo de não lida e o
+  grupo da cidade, em modo de leitura); no chat do Assistente, a posse e
+  \enquote{Iniciar Estruturação de Dados}. A cota de publicações é o chip no
+  \cd{trailing} do \cd{ChatHeader} (\enquote{Publicações: 3/3}).\\
+\zebra \textbf{E2} Dados & A tabela como mídia desenhada (com ampliação), o
+  anexo da nota técnica (o \cd{MessageBubble.Document} tocável abre a folha
+  com o resumo e as seções) e as prévias das duas escalas. Se nada acontece
+  em 90\,s, o Assistente cutuca (o nudge da E2); os horários do chat, do
+  anexo e do nudge são marcos do SERVIDOR.\\
+\textbf{E3} Compositor & A folha sobre o chat: a origem do eixo (dois
+  \cd{Radio}, sem pré-seleção; o publicar fica desabilitado até a escolha) e
+  três \cd{Switch} opcionais --- a explicação da escala (o texto acompanha 0
+  ou 80), a fonte e o contexto ---, com a prévia ao vivo, que é o MESMO
+  gráfico do post. A confirmação (\cd{Dialog}) é que publica: o
+  \textbf{LATCH 1}, a cota de 3 para 2.\\
+\zebra \textbf{E4} Grupo & O post, as três reações do ramo da escala, o
+  post espelho da escola rival (\enquote{Autenticação Criptográfica
+  Idêntica}), o morador confuso e o coordenador do comitê. Com a turma em
+  pausa, o rodapé do grupo é o \cd{AdminOnlyNotice} com o texto da
+  Coordenação, e a rolagem fica livre para o debate.\\
+\textbf{E4b} Errata & Depois da retomada: \enquote{Publicar Errata
+  Corretiva} (o compositor recarrega a 1ª publicação INTEIRA; a cota vai a
+  1) ou \enquote{Avançar sem publicar errata}. A errata entra ABAIXO do
+  original, que fica.\\
+\zebra \textbf{E5} Laudo & Na escola (\cd{unooria}): o Fator de Mentira
+  ($\approx$\,6,3, com a fórmula dobrada --- variação visual de cerca de
+  46,7\% sobre a real de cerca de 7,37\%) e a régua do eixo (\cd{Slider} de 0
+  a 80, com as barras recalculando), e \enquote{Avançar para Perícia
+  Técnica}.\\
+\textbf{E6} Perícia & No canal \enquote{Notícias da Cidade --- Eleições
+  Municipais}: os cartões A e B (com gráfico e título, sem rótulo de
+  gabarito), \enquote{Ver dados e fonte} (a folha com os dados da
+  Secretaria), \enquote{Sinalizar para revisão} (\cd{Switch}) com o motivo
+  (escala, fonte ou título); \enquote{Emitir parecer} ou \enquote{Avançar sem
+  emitir parecer}, que concluem. A conclusão (\cd{unooria}) é o selo, o
+  texto e o modo somente leitura --- sem podcast.\\
+\bottomrule
+\end{tabularx}
+
+O passo é DERIVADO no servidor dos carimbos da sessão e do gate
+(\arq{regras/\B{}passos.ts}): \cd{abertura} \seta{} \cd{dados} \seta{}
+\cd{compositor} \seta{} \cd{feed} \seta{} \cd{errata} \seta{} \cd{laudo}
+\seta{} \cd{pericia} \seta{} \cd{concluida}. Quem publicou fica em \cd{feed}
+até a turma ser liberada; com o gate em \cd{liberada}, vai a \cd{errata}.
+Nada é gate avaliado: o estudante avança sem abrir o anexo, publica sem
+camada, pula a errata e a perícia. O parecer só fica desabilitado com um
+cartão sinalizado SEM motivo (a api o recusa). Na aba que publicou, o feed
+chega em sequência (as reações com \enquote{digitando\ldots}, o espelho cerca
+de 10\,s depois, o conflito e o coordenador); um F5 desenha tudo de uma vez a
+partir de \rota{GET .../sessao}. Ao lado do aparelho, o hub mostra a
+instrução de cada etapa (\cd{exp:estado.\B{}instrucao}); a da pausa vence.
+
+\subsection{O gate da turma, a pausa e a decisão 7}
+
+O professor conduz por dois botões só para a frente
+(\cd{exp03em1b\_\B{}gates\_\B{}turma}, cada mudança em
+\cd{exp03em1b\_\B{}gates\_\B{}historico}): \enquote{Pausar para o debate} e
+\enquote{Liberar Retomada da Turma}, isto é, \cd{exploracao} \seta{}
+\cd{pausa} \seta{} \cd{liberada}. A PAUSA não é passo: é camada sobre qualquer
+passo até a conclusão, e toda jogada de quem não concluiu responde 409
+\cd{telas-\B{}pausadas} enquanto ela dura; a tela relê \rota{GET .../sessao} a
+cada 3\,s. A errata só abre com o gate em \cd{liberada}. \textbf{Quem publica
+DEPOIS da retomada não pausa} (decisão 7 do Lucas): vê a sequência do conflito
+no grupo e segue direto para a oferta da errata, pelo mesmo caminho de quem
+estava no grupo quando a turma foi liberada (\enquote{Abrir mensagem do
+Assistente de Dados}).
+
+\subsection{As publicações e o gabarito no servidor}
+
+Cada publicação confirmada é uma LINHA de \cd{exp03em1b\_\B{}publicacoes}
+(\cd{inicial} $|$ \cd{errata}, única por sessão e tipo): a escala (0 $|$ 80) e
+as três camadas. A 1ª fica no histórico quando a errata sai, e não há
+terceira (\adrr{ADR-198}). Publicar de novo a mesma escolha é idempotente;
+outra, 409 \cd{ja-\B{}publicado}. O que é fixo mora em \arq{conteudo.ts} e nunca
+no pacote: os números da série, o laudo, a escola rival, os cartões da
+perícia e o GABARITO dela (o cartão B, pelo motivo escala). Os cartões descem
+como peças (título, partido, eixo, fonte); a resposta ao parecer não diz se
+acertou; só o material do professor (\rota{GET .../professor/\B{}material})
+traz o gabarito. \arq{src/contrato.test.ts} da experiência cobra a ausência
+no \emph{bundle}.
+
+\subsection{A atividade é o pacote}
+
+O pacote (\cd{exp03em1b\_\B{}pacotes}) é a ATIVIDADE da evidência, e a rodada é
+o \enquote{Zerar}, como nas irmãs (\adrr{ADR-155}). O preparo tem dois
+caminhos: \enquote{Usar Banco Padrão e Liberar} (o banco curado
+\enquote{Vigilância Sanitária da Água}, já homologado, no ar e liberado na
+sala num toque, sem tocar no rascunho) ou o recorte (componente, tema, de 3 a
+6 assuntos, território opcional) com \enquote{Gerar Proposta via IA}, a
+curadoria com edição no lugar e \enquote{Regenerar Item},
+\enquote{Homologar Pacote de Conteúdo} (só aprova) e \enquote{Liberar
+Atividade para a Turma}, que põe o pacote no ar, abre a rodada seguinte se
+ele já rodou e devolve o gate a \cd{exploracao}. Sem saldo ou sem provedor,
+o hub oferece \enquote{Carregar Banco Padrão Curado}
+(Seção~\ref{sec:ia-preparo-exp03em1b}). Sem atividade no ar, a tela é de
+espera. \enquote{Zerar Turma (Reiniciar Atividade)}: rodada $+1$, a evidência
+do pacote apagada, as sessões guardadas.
+
+\subsection{A régua pedagógica: 100\% Canal A, seis habilidades}
+
+A ficha \arq{evidencias/\B{}fichas/\B{}exp03em1b.ts}, versão 1, não tem pergunta
+nem resolvedor de contexto. Toda marca é de AÇÃO, gravada por
+\arq{porta-voz-\B{}dos-\B{}dados} na transação do próprio gesto, com a régua
+pura em \arq{regras/\B{}evidencia.ts}: a EM13CO13 no publicar da 1ª; a
+EM13CO12, a CO21, a CO22 e a CO26 na DECISÃO DA ERRATA (publicar ou pular),
+porque leem o conjunto FINAL e a porta \cd{marcar} guarda a melhor marca; a
+EM13CO14 no parecer (ou no pular). Quem não chega ao gesto fica \enquote{Não
+avaliado}.
+
+\begin{tabularx}{\linewidth}{@{}L{20mm}X X X@{}}
+\toprule
+\headrow \thd{Habilidade} & \thd{Atingiu} & \thd{Em processo} & \thd{Não atingiu}\\
+\midrule
+\textbf{EM13CO12} (foco) & publicação final com eixo em 0 \textbf{e} fonte &
+  eixo em 0 sem fonte, ou eixo em 80 com fonte & eixo em 80 sem fonte\\
+\zebra \textbf{EM13CO13} & abriu a nota técnica antes do compositor e antes
+  do nudge de 90\,s & antes do compositor, depois do nudge & não abriu antes
+  do compositor\\
+\textbf{EM13CO14} & sinalizou só o cartão B, com o motivo escala & B com
+  outro motivo, e/ou A também & não sinalizou o B, ou pulou a perícia\\
+\zebra \textbf{EM13CO21} & explicação da escala ligada já na 1ª (e mantida
+  na errata) & só na errata, ou ligada na 1ª e desligada na errata & nunca\\
+\textbf{EM13CO22} & publicação final com 2 ou 3 camadas & com 1 & com
+  nenhuma\\
+\zebra \textbf{EM13CO26} & 1ª adequada (0 e fonte) sem regressão; ou errata
+  que corrige (80 \seta{} 0, mais fonte ou mais contexto) & errata sem
+  correção real & 1ª inadequada sem errata; ou errata de 0 para 80\\
+\bottomrule
+\end{tabularx}
+
+\begin{decisao}
+\textbf{O caso misto conta como correção} (\adrr{ADR-198}, decisão 4): a
+errata que leva o eixo de 80 para 0 e desliga a fonte atinge a EM13CO26 ---
+o eixo é o centro da missão. E a EM13CO13 é medida pelo aviso de 90\,s e pela
+ordem anexo \seta{} compositor, como no one-pager, e não pela publicação, como
+no PRD.
+\end{decisao}
+
+\subsection{O professor: preparo, aula ao vivo, resultados e guia}
+
+O preparo é \arq{atividades/\B{}nova/\B{}criar-\B{}porta-\B{}voz.tsx} (o
+\enquote{Recorte Pedagógico e Territorial da Missão} e a \enquote{Curadoria
+do Pacote de Conteúdo da Turma}); a missão é a primeira com atividade e SEM
+equipe, e o assistente de criação pula o passo Equipes. A aba Aula ao vivo
+(\arq{resultados/\B{}painel-\B{}da-\B{}aula-\B{}porta-\B{}voz.tsx}, \emph{polling} de
+5\,s) mostra só CONTAGENS para o projetor: estudantes por etapa, pausados, a
+distribuição da escala da 1ª publicação, quem consultou a nota técnica, quem
+publicou a errata ou seguiu sem ela, quem emitiu o parecer, e o roteiro das
+três perguntas do debate; a folha nominal, só para a tela de quem conduz,
+diz o passo e o tempo parado, sem nível nem a escala de ninguém. O em
+andamento é da TURMA (\rota{POST .../em-andamento} com \cd{\{pacoteId\}}). O
+guia (\arq{lib/entre-redes/\B{}guias/\B{}exp03em1b.ts}) traz os tempos da aula
+de 50 minutos, os avisos (sem atividade no ar a missão não abre; não anunciar
+que a aula é sobre gráficos que enganam) e o material vivo
+(\arq{guia/\B{}material-\B{}do-\B{}porta-\B{}voz.tsx}). O podcast é FIXO
+(\arq{podcast.ts}, \adrr{ADR-150}), \enquote{Por Trás do Gráfico: Quem Controla
+o Eixo?}, com o Alex e a Sam, e é SÓ do professor (aba Podcast, com a
+transcrição): a tela do estudante não o menciona (decisão 1).
+
+\subsection{O que saiu do protótipo, e o que o DS ganhou}
+
+Saíram a legenda editorial do post, o aviso de espera do post rival, os
+botões de demonstração, os rótulos que davam o gabarito (\enquote{Gráfico
+Distorcido}, \enquote{Origem 0\% (Corrigido)}), os resumos interpretativos da
+tela congelada e o código de sala (a liberação é por turma,
+\adrr{ADR-69}). O texto segue as correções do PO: $\approx$\,6,3 (nunca 6,37),
+\enquote{renomados} e \enquote{que vocês montaram} no podcast. As quatro
+peças que faltavam ao DS --- o \cd{Switch} do \cd{unoochat}, o \cd{trailing}
+do \cd{ChatHeader}, o documento tocável do \cd{MessageBubble} e o
+\cd{Slider} da \cd{unooria} --- foram pedidas ao \cd{storybook-unooria} e
+publicadas na 0.2.25; as compensações de medida que sobraram estão na
+Seção~\ref{sec:ds-exp03em1b}. Os textos que a tela precisou e o 06 não deu
+estão marcados \enquote{[PROPOSTA]} em \arq{lib/textos.ts}.
+
+\subsection*{As suítes}
+
+Por baixo, as suítes da api: \arq{tests/\B{}porta-\B{}voz-\B{}dos-\B{}dados-\B{}regras.\B{}spec.ts}
+(sem banco: as seis réguas em tabela, o passo e o gate, o parecer, a régua do
+pacote, o banco padrão com as correções do PO, o podcast e o espelho dos
+\emph{CHECKs}) e \arq{tests/\B{}porta-\B{}voz-\B{}dos-\B{}dados-\B{}postgres.\B{}spec.ts} (a
+porta da sala em toda rota de estudante, o preparo com quota, a pausa, a
+errata e a perícia com as marcas, os latches concorrentes, a idempotência e
+a RLS sob a \emph{role} sem \cd{BYPASSRLS}). Na experiência,
+\arq{src/contrato.test.ts} prende a ponte de cada tela e a ausência do
+gabarito e das \emph{fixtures} no \emph{bundle}. A suíte de ponta a ponta com
+IA real (a professora gera o pacote, o estudante publica, a turma pausa e
+retoma, a errata, o laudo e a perícia) está sendo escrita junto com esta
+versão.
 
 % ---------------------------------------------------------------------------
 \section{exp08ef4b --- O Manifesto da IA}

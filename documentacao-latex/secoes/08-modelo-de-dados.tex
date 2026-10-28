@@ -2459,6 +2459,15 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   inicial) e \cd{\_sessoes} (os dois latches, a aposta e o Publicar com os
   cinco campos juntos, e um \emph{CHECK} de ordem por etapa), com RLS forçada
   e \emph{CHECKs} espelhando \arq{conteudo.ts}.\\
+\zebra \arq{20261028190000\_\B{}exp03em1b\_\B{}porta\_\B{}voz\_\B{}dos\_\B{}dados} & As cinco
+  tabelas de O Porta-Voz dos Dados (\adrr{ADR-198}): \cd{exp03em1b\_\B{}pacotes}
+  (um em andamento e um rascunho por turma, índices únicos parciais),
+  \cd{\_gates\_turma} (\cd{exploracao} $|$ \cd{pausa} $|$ \cd{liberada}),
+  \cd{\_gates\_historico} (só \cd{pausa} e \cd{liberada}), \cd{\_sessoes} (os
+  marcos, a cota de 3 a 1 e a perícia em colunas, com um \emph{CHECK} de
+  ordem por etapa) e \cd{\_publicacoes} (uma linha por publicação, única por
+  sessão e tipo), com RLS forçada e \emph{CHECKs} espelhando
+  \arq{conteudo.ts}.\\
 \bottomrule
 \end{tabularx}
 
@@ -2580,6 +2589,57 @@ o avanço só depois de um reteste e o Publicar só depois do avanço), e os
 campos de cada etapa andam juntos (\enquote{todos ou nenhum}). O passo da
 tela é DERIVADO dessas colunas e da fase da turma (\arq{regras/\B{}passos.ts});
 a fase NÃO muda o passo, só põe a espera por cima dele.
+\end{regra}
+
+\section{As cinco tabelas da exp03em1b}
+\label{sec:tabelas-exp03em1b}
+
+O Porta-Voz dos Dados (\adrr{ADR-198}), no desenho de O Efeito Amplificador,
+com uma tabela a mais: as publicações. Todas com \cd{escola\_id NOT NULL}, RLS
+forçada, política por escola e \cd{GRANT} para \cd{app\_runtime}. Os
+vocabulários (disciplina, origem, etapa do gate, tipo, escala e motivo)
+vivem em \arq{porta-\B{}voz-\B{}dos-\B{}dados/\B{}conteudo.ts} E nos \emph{CHECKs}, e
+\arq{tests/\B{}porta-\B{}voz-\B{}dos-\B{}dados-\B{}regras.\B{}spec.ts} compara os dois textos.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp03em1b\_\B{}pacotes} & A ATIVIDADE: a roupagem do tema em
+  \cd{conteudo\_json} (o recorte do grupo, o serviço com os períodos, a nota
+  técnica, os textos das três camadas, as reações dos dois ramos e o pós-Aha),
+  o recorte do professor (disciplina, tema, de 3 a 6 assuntos, território), a
+  \cd{origem} (\cd{ia} $|$ \cd{padrao}), \cd{ativo}, \cd{rodada\_atual}, a
+  homologação (carimbo e autor juntos; só o homologado vai ao ar), o gasto de
+  IA e as vistas do painel. Um em andamento e um rascunho por turma (índices
+  únicos parciais). Os números da série e o gabarito NÃO estão aqui: são
+  fixos, de \arq{conteudo.ts}.\\
+\zebra \cd{exp03em1b\_\B{}gates\_\B{}turma} & O gate da turma, só para a frente:
+  \cd{exploracao}, \cd{pausa}, \cd{liberada}. Chave (escola, turma).\\
+\cd{exp03em1b\_\B{}gates\_\B{}historico} & Cada botão do professor: o pacote, a
+  rodada, a etapa de destino (nunca \cd{exploracao}, que é o \enquote{Zerar}) e
+  o professor (\cd{SET NULL} se a conta sair).\\
+\zebra \cd{exp03em1b\_\B{}sessoes} & Uma linha por (escola, estudante, pacote,
+  rodada), com a turma: os marcos do servidor (chat, anexo, nudge da E2,
+  compositor, perícia), a cota (\cd{slots\_\B{}restantes}), os carimbos da 1ª
+  publicação e da errata (ou do pular), o parecer em colunas (sinalizou e
+  motivo de cada cartão, ou o pular) e a conclusão. Sem texto livre.\\
+\cd{exp03em1b\_\B{}publicacoes} & Uma linha por publicação confirmada
+  (\cd{inicial} $|$ \cd{errata}, única por sessão e tipo): a escala (0 $|$ 80)
+  e as três camadas (\cd{explicacao}, \cd{fonte}, \cd{contexto}). A 1ª fica
+  quando a errata sai --- o DDL do PRD a sobrescrevia (\adrr{ADR-198}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{A cota e a ordem são do banco também.} \cd{slots\_\B{}restantes} vai de
+3 a 1: 3 sem a 1ª publicação, 2 depois dela, 1 só com a errata PUBLICADA (o
+pular não gasta) --- não há terceira. O compositor só depois do chat, a 1ª
+publicação só com o compositor aberto, a errata só depois da 1ª, a perícia só
+depois da errata decidida; o parecer exige o motivo do cartão sinalizado e
+recusa motivo de cartão não sinalizado; e a conclusão é o parecer OU o pular,
+depois da perícia aberta. O passo da tela é DERIVADO dessas colunas e do gate
+(\arq{regras/\B{}passos.ts}).
 \end{regra}
 
 \section{As três tabelas da exp01ef1b}

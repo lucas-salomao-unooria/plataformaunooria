@@ -105,6 +105,11 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp01em1b\_\B{}gates\_\B{}turma} & Tenant & A fase da turma (as cinco liberações e as duas pausas do professor)\\
 \cd{exp01em1b\_\B{}gates\_\B{}historico} & Tenant & Cada botão do professor, com o pacote, a rodada, a fase de destino e o professor\\
 \zebra \cd{exp01em1b\_\B{}sessoes} & Tenant & Uma sessão por estudante (ou computador), pacote e rodada: as funções, a aposta (latch 1), a auditoria, os cartões, o painel opcional, os retestes e o Publicar (latch 2) --- sem texto livre\\
+\cd{exp03em1b\_\B{}pacotes} & Tenant & O Porta-Voz dos Dados: a roupagem do tema (o grupo, o serviço, a nota técnica, as camadas, as reações dos dois ramos e o pós-Aha); é a atividade da evidência\\
+\zebra \cd{exp03em1b\_\B{}gates\_\B{}turma} & Tenant & O gate da turma (\cd{exploracao}, \cd{pausa}, \cd{liberada})\\
+\cd{exp03em1b\_\B{}gates\_\B{}historico} & Tenant & Cada botão do professor, com o pacote, a rodada, a etapa de destino e o professor\\
+\zebra \cd{exp03em1b\_\B{}sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: os marcos do servidor, a cota, a errata e o parecer da perícia --- sem texto livre\\
+\cd{exp03em1b\_\B{}publicacoes} & Tenant & Uma linha por publicação (a 1ª e a errata): a escala e as três camadas\\
 \cd{exp02em1b\_v0\_sessoes} & Tenant & Versão anterior (\adrr{ADR-181}): estado da partida da Missão Tempestade\\
 \zebra \cd{exp02em1b\_v0\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
 \cd{exp02em1b\_v0\_marcos} & Tenant & Trilha da decisão\\
@@ -2004,6 +2009,77 @@ de cada bloco) não está em tabela nenhuma: é fixo, de \arq{conteudo.ts}.
   o alinhamento (\cd{pleno} $|$ \cd{incompleto} $|$ \cd{descaracterizado}) e o
   carimbo, no MESMO \cd{UPDATE}; só depois do avanço. O alinhamento e os
   acertos vêm do servidor, nunca do cliente.\\
+\zebra \cd{versao\_\B{}instrumento} & \cd{TEXT} & \cd{1.0.0} por padrão.\\
+\bottomrule
+\end{tabularx}
+
+\section{Tabelas de O Porta-Voz dos Dados (exp03em1b)}
+\label{sec:dicionario-exp03em1b}
+
+Desde 2026-10-28 (\adrr{ADR-198}), migração
+\arq{20261028190000\_\B{}exp03em1b\_\B{}porta\_\B{}voz\_\B{}dos\_\B{}dados}. Cinco tabelas,
+todas com \cd{escola\_id} \cd{NOT NULL}, RLS forçada e política por escola; as
+regras estão no \arq{AGENTS.md} do módulo \arq{porta-\B{}voz-\B{}dos-\B{}dados}.
+Nenhuma coluna guarda texto escrito pelo estudante, e o gabarito da perícia
+(o cartão distorcido e o motivo) não está em tabela nenhuma: é fixo, de
+\arq{conteudo.ts}.
+
+\begin{itemize}
+  \item \cd{exp03em1b\_\B{}pacotes}: \cd{id}, \cd{turma\_id} (FK, cascata),
+    \cd{disciplina} (as treze componentes do EM e \cd{interdisciplinar}),
+    \cd{tema}, \cd{assuntos} (\cd{TEXT[]}, de 3 a 6), \cd{contexto} (o
+    território, opcional), \cd{conteudo\_json} (a roupagem, validada pelo Zod;
+    objeto), \cd{origem} (\cd{ia} $|$ \cd{padrao}), \cd{ativo},
+    \cd{rodada\_atual} ($\geq 1$), \cd{aprovado\_em}/\cd{aprovado\_por}
+    (juntos; \cd{ativo} só homologado), \cd{preparo\_\B{}iniciado\_em},
+    \cd{ia\_geracoes}, \cd{ia\_tokens}, \cd{painel\_\B{}visto\_em},
+    \cd{painel\_vistas} (contadores $\geq 0$). Um em andamento e um rascunho
+    por turma (índices únicos parciais). Único (\cd{escola\_id}, \cd{id}): é
+    o alvo da FK composta das sessões.
+  \item \cd{exp03em1b\_\B{}gates\_\B{}turma}: PK (\cd{escola\_id}, \cd{turma\_id}),
+    \cd{etapa} (\cd{exploracao} $|$ \cd{pausa} $|$ \cd{liberada}, padrão
+    \cd{exploracao}), \cd{atualizado\_em}.
+  \item \cd{exp03em1b\_\B{}gates\_\B{}historico}: \cd{pacote\_id}, \cd{rodada}
+    ($\geq 1$), \cd{etapa} (\cd{pausa} $|$ \cd{liberada}), \cd{professor\_id}
+    (FK para \cd{users}, \cd{SET NULL}) e \cd{em}.
+  \item \cd{exp03em1b\_\B{}publicacoes}: \cd{id}, a sessão
+    (\cd{estudante\_id}, \cd{pacote\_id}, \cd{rodada}, com FK composta para
+    \cd{exp03em1b\_sessoes}, cascata), \cd{turma\_id}, \cd{tipo}
+    (\cd{inicial} $|$ \cd{errata}), \cd{escala} (0 $|$ 80), \cd{explicacao},
+    \cd{fonte}, \cd{contexto} (\cd{BOOLEAN}) e \cd{publicada\_em}. Única por
+    (escola, estudante, pacote, rodada, tipo).
+\end{itemize}
+
+\subsection{\cd{exp03em1b\_sessoes}}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, estudante\_id, pacote\_id, rodada)} & PK composta & Uma
+  sessão por estudante, atividade e rodada. \cd{estudante\_id} com FK para
+  \cd{users} (cascata); (\cd{escola\_id}, \cd{pacote\_id}) com FK composta para
+  o pacote. Nasce na primeira jogada (\cd{POST}) da rodada; o
+  \rota{GET .../sessao} só lê.\\
+\zebra \cd{turma\_id} & \cd{UUID} & FK para \cd{turmas}; o painel lê por
+  turma, pacote e rodada (índice).\\
+\cd{entrou\_em}, \cd{chat\_aberto\_em}, \cd{anexo\_aberto\_em},
+  \cd{nudge\_e2\_em}, \cd{compositor\_\B{}aberto\_em} & \cd{TIMESTAMPTZ} & Os
+  marcos do SERVIDOR (\rota{POST .../sessao/marco}): é deles que a EM13CO13
+  sai. O compositor só depois do chat.\\
+\zebra \cd{slots\_\B{}restantes} & \cd{SMALLINT} & A cota: 3, 2 depois da 1ª
+  publicação, 1 com a errata publicada.\\
+\cd{publicada\_em}, \cd{errata\_em}, \cd{errata\_pulada} & vários & O
+  \textbf{LATCH 1} (só com o compositor aberto) e a decisão da errata
+  (publicada ou pulada; só depois da 1ª). As escolhas estão em
+  \cd{exp03em1b\_publicacoes}.\\
+\zebra \cd{pericia\_\B{}aberta\_em}, \cd{sinalizou\_a}, \cd{motivo\_a},
+  \cd{sinalizou\_b}, \cd{motivo\_b}, \cd{parecer\_em}, \cd{pulou\_pericia} &
+  vários & A perícia (só depois da errata decidida): cada cartão sinalizado
+  ou não, com o motivo (\cd{escala} $|$ \cd{fonte} $|$ \cd{titulo}) só e
+  sempre no sinalizado; o parecer e o pular nunca juntos.\\
+\cd{concluido\_em} & \cd{TIMESTAMPTZ?} & O latch final: o parecer OU o pular,
+  depois da perícia aberta.\\
 \zebra \cd{versao\_\B{}instrumento} & \cd{TEXT} & \cd{1.0.0} por padrão.\\
 \bottomrule
 \end{tabularx}
