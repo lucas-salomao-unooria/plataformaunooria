@@ -14,6 +14,7 @@ import { CriarEfeitoAmplificador } from "./criar-efeito-amplificador";
 import { CriarEnigmaCapa } from "./criar-enigma-capa";
 import { CriarJornalEscola } from "./criar-jornal-escola";
 import { CriarJuriEstadual } from "./criar-juri-estadual";
+import { CriarNinaNoticia } from "./criar-nina-noticia";
 import { CriarQuemMandou } from "./criar-quem-mandou";
 
 /**
@@ -84,6 +85,8 @@ export default async function NovaAtividadePage({
         <CriarEnigmaCapa {...props} baseDoBundle={await baseDoBundleDaExperiencia(expId)} />
       ) : expId === "exp01em1b" ? (
         <CriarAssistenteInvisivel {...props} />
+      ) : expId === "exp03ef1b" ? (
+        <CriarNinaNoticia {...props} />
       ) : (
         <CriarQuemMandou {...props} />
       )}

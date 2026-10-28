@@ -6,6 +6,7 @@ import {
   MISSAO_EFEITO_AMPLIFICADOR,
   MISSAO_ENIGMA_CAPA,
   MISSAO_MANIFESTO_IA,
+  MISSAO_NINA_NOTICIA,
   MISSAO_FOTO_CONTA,
   MISSAO_JORNAL_DA_ESCOLA,
   MISSAO_JURI_ESTADUAL,
@@ -20,6 +21,7 @@ import { ResultadosAssistenteInvisivel } from "./resultados-assistente-invisivel
 import { ResultadosEfeitoAmplificador } from "./resultados-efeito-amplificador";
 import { ResultadosEnigmaCapa } from "./resultados-enigma-capa";
 import { ResultadosManifestoIa } from "./resultados-manifesto-ia";
+import { ResultadosNinaNoticia } from "./resultados-nina-noticia";
 import { ResultadosFotoConta } from "./resultados-foto-conta";
 import { ResultadosJornalEscola } from "./resultados-jornal-escola";
 import { ResultadosJuriEstadual } from "./resultados-juri-estadual";
@@ -92,6 +94,9 @@ export default async function ResultadosPage({
   }
   if (missao.expId === MISSAO_ASSISTENTE_INVISIVEL.expId) {
     return <ResultadosAssistenteInvisivel missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} separar={separar} />;
+  }
+  if (missao.expId === MISSAO_NINA_NOTICIA.expId) {
+    return <ResultadosNinaNoticia missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} separar={separar} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();

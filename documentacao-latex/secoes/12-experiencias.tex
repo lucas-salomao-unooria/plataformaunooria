@@ -31,25 +31,27 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria, progresso & \arq{foto-conta}\\
 \zebra \cd{exp02ef1b} & \cd{2EF} & estudante &
   telemetria, progresso & \arq{enigma-capa}, \arq{evidencias}\\
-\cd{exp05ef1b} & \cd{5EF} & estudante &
+\cd{exp03ef1b} & \cd{3EF} & estudante &
+  telemetria, progresso, ia, avaliacao, tempo-real & \arq{nina-noticia}, \arq{evidencias}\\
+\zebra \cd{exp05ef1b} & \cd{5EF} & estudante &
   telemetria, progresso, avaliacao & \arq{quem-mandou-isso}\\
-\zebra \cd{exp06ef1b} & \cd{6EF} & estudante &
+\cd{exp06ef1b} & \cd{6EF} & estudante &
   telemetria, progresso, ia, avaliacao & \arq{juri-estadual}, \arq{evidencias}\\
-\cd{exp06ef2b} & \cd{6EF} & estudante &
+\zebra \cd{exp06ef2b} & \cd{6EF} & estudante &
   telemetria, progresso, avaliacao & \arq{rastro-boato}\\
-\zebra \cd{exp07ef1b} & \cd{7EF} & estudante &
+\cd{exp07ef1b} & \cd{7EF} & estudante &
   telemetria, progresso, ia, avaliacao & \arq{a-selecao}, \arq{evidencias}\\
-\cd{exp08ef4b} & \cd{8EF} & estudante &
+\zebra \cd{exp08ef4b} & \cd{8EF} & estudante &
   telemetria, progresso, avaliacao & \arq{manifesto-ia}\\
-\zebra \cd{app-70-vila-do-lume} & \textbf{transversal} & estudante &
+\cd{app-70-vila-do-lume} & \textbf{transversal} & estudante &
   telemetria & \arq{vila}\\
-\cd{app-90-plano-de-aula} & --- & \textbf{professor} &
+\zebra \cd{app-90-plano-de-aula} & --- & \textbf{professor} &
   telemetria, ia & \arq{planos}\\
-\zebra \cd{app-91-bem-estar} & --- & \textbf{professor} &
+\cd{app-91-bem-estar} & --- & \textbf{professor} &
   telemetria, ia & \arq{bemestar}\\
-\cd{app-92-plano-de-ensino} & \textbf{1EF--3EM} & \textbf{professor} &
+\zebra \cd{app-92-plano-de-ensino} & \textbf{1EF--3EM} & \textbf{professor} &
   telemetria, ia & \arq{planejamento}, \arq{curriculo}\\
-\zebra \arq{\_template} & --- & --- & telemetria, progresso & ---\\
+\arq{\_template} & --- & --- & telemetria, progresso & ---\\
 \bottomrule
 \end{tabularx}
 
@@ -89,6 +91,13 @@ no Unoovista, na porta 5187: a primeira missão do 2º ano, com ficha pedagógic
 a criança faz. Nasceu na 1.0.0; a 2.0.0 segue o protótipo validado pelo time
 e tem cinco etapas (\adrr{ADR-186}; Seção~\ref{sec:exp02ef1b}).
 
+A unidade 1 do 3º ano é \textbf{Nina e a Notícia que Desapareceu}
+(\adrr{ADR-197}), no jornal digital da escola (\cd{unoojornal}) com a mecânica
+na seção da plataforma (\cd{unooria}), que nasce na 0.1.0, na porta 5189: a
+primeira missão do 3º ano, com ficha pedagógica só pelo que a criança faz e
+a única com as duas seções do DS na mesma tela, por exceção registrada
+(Seção~\ref{sec:exp03ef1b}).
+
 A unidade 1 da 1ª série do Ensino Médio é \textbf{O Assistente Invisível}
 (\adrr{ADR-185}), na escola (\cd{unooria}) e no UnooriaAI (\cd{unooriaai}),
 que nasce na 1.0.0, na porta 5188: a primeira missão da 1ª série, com ficha
@@ -113,6 +122,7 @@ pedagógica só pelo que o estudante faz (Seção~\ref{sec:exp01em1b}).
 \cd{exp06ef1b} & \cd{5185} & \rota{/exp/exp06ef1b}\\
 \zebra \cd{exp02ef1b} & \cd{5187} & \rota{/exp/exp02ef1b} (O Enigma da Capa da Rádio, \cd{strictPort})\\
 \cd{exp01em1b} & \cd{5188} & \rota{/exp/exp01em1b} (O Assistente Invisível, \cd{strictPort})\\
+\zebra \cd{exp03ef1b} & \cd{5189} & \rota{/exp/exp03ef1b} (Nina e a Notícia que Desapareceu, \cd{strictPort})\\
 \bottomrule
 \end{tabularx}
 
@@ -1656,6 +1666,207 @@ dentro da própria foto e o \enquote{não atingiu} das duas habilidades ao lado
 do \enquote{atingiu} da outra criança, e o zerar (a rodada sobe, a evidência
 da atividade some, a virada fecha e a criança volta ao card da missão). Os
 auxiliares das duas moram em \arq{scripts/e2e/lib/\B{}enigma-capa.mjs}.
+
+% ---------------------------------------------------------------------------
+\section{exp03ef1b --- Nina e a Notícia que Desapareceu}
+\label{sec:exp03ef1b}
+
+\textbf{3º ano EF, unidade 1, clone \cd{unoojornal} (o jornal digital da
+escola) com a mecânica na seção \cd{unooria}, experiência 0.1.0, porta 5189.}
+Desde 2026-10-28 (\adrr{ADR-197}), vinda da esteira de produto e ajustada pelo
+PO no card do Notion em 27 e 28 de outubro. Módulo da api:
+\arq{nina-noticia} (prefixo \rota{/nina-noticia}, tabelas \cd{exp03ef1b\_*}).
+Manifesto: \cd{telemetria}, \cd{progresso}, \cd{avaliacao},
+\cd{tempo-real} e \cd{ia}, permissão \cd{forms}, produto \cd{entre-redes}.
+
+\begin{destaque}
+A busca do computador não olha a foto como nós olhamos: ela consulta os
+campos da ficha --- e o campo vazio faz uma notícia desaparecer.
+\end{destaque}
+
+A criança de 8 a 9 anos, em dupla, ajuda a Nina a achar no jornal da escola
+as três reportagens da feira de livros: o mural impresso, o portal da escola
+e o telão do corredor. As três fotos mostram o pátio; a ficha do telão tem o
+campo Onde VAZIO. Três decisões do Lucas vencem o pedido (\adrr{ADR-197}): o
+DS é híbrido, por exceção registrada; o Canal B (a enquete em quadrinhos)
+saiu; e a turma anda por dois portões da professora, não por passagem
+automática. O PO trocou \enquote{aposta} por \enquote{escolha} em TODA tela
+(o nome interno do passo continua \cd{aposta}), deu aos carimbos as três
+opções à vista (\enquote{É verdade}, \enquote{Não é verdade}, \enquote{Não dá
+para saber}) e fez do reparo a montagem da ficha inteira. Sem podcast nesta
+frente.
+
+\subsection{O que a criança vive: os passos}
+
+O servidor guarda o \cd{passo} e o F5 retoma nele. O passo EFETIVO é o mínimo
+entre o gravado e o teto da etapa da turma (\arq{regras/\B{}passos.ts}); com a
+turma pausada, qualquer passo mostra a tela de pausa.
+
+\begin{tabularx}{\linewidth}{@{}L{26mm}X@{}}
+\toprule
+\headrow \thd{Passo} & \thd{O que acontece}\\
+\midrule
+\cd{galeria} (E1) & Os três cartões do jornal; tocar a foto amplia e tocar o
+  cartaz acende o selo \enquote{Mesma feira}. Com os três selos, Avançar.\\
+\zebra \cd{aposta} (E2) & A escolha: as notícias que a criança acha que a
+  busca \enquote{Onde: Pátio} vai encontrar vão para a caixa;
+  \enquote{Travar Escolha} é o LATCH. Espera o \enquote{Liberar Filtro}.\\
+\cd{filtro} (E3) & As pastilhas Quem, Onde e Quando. Só Onde = Pátio
+  encontra (duas notícias); qualquer outra busca devolve zero, a pastilha
+  Onde pulsa e a tentativa conta.\\
+\zebra \cd{omissao} (E3) & A escolha travada ao lado das duas encontradas e
+  a meta da Nina com a moldura do telão vazia; \enquote{Confrontar e
+  Aguardar Turma} leva à espera do debate, até o \enquote{Liberar
+  Inspeção}.\\
+\cd{ficha} (E4) & A foto do telão e \enquote{Inspecionar Ficha}, que pulsa
+  depois de 15\,s sem abrir; a ficha mostra Quem e Quando preenchidos e
+  Onde vazio.\\
+\zebra \cd{carimbos} (E4) & Três cartões (K1 a K3, o terceiro com negação),
+  cada um com as três opções; sem retorno de acerto.\\
+\cd{reparo} (E4) & A ficha do telão com os três campos vazios e as três
+  etiquetas (Pátio, estudantes, sexta) na bandeja: qualquer etiqueta em
+  qualquer campo, e \enquote{Concluir} com as três postas.\\
+\zebra \cd{desfecho} (E4) & Decidido no servidor: sucesso (o telão volta ao
+  jornal, \enquote{Recuperada}) ou erro explicado (as três notícias como
+  ficariam completas). Os dois com \enquote{Continuar}; nunca \enquote{Tentar
+  de novo}.\\
+\cd{ponte} (E5) & A fala longa da Nina, que liga o reparo à automação.\\
+\zebra \cd{rotina} (E5) & Os sete blocos EMBARALHADOS por sessão na esteira
+  (ENQUANTO, Pegar, SE, ok, SENÃO, revisar, FIM); \enquote{Testar Rotina}
+  conta uma tentativa; a válida simula a pilha de 3 a 0 e a ficha do Clube
+  de Xadrez recebe a bandeira; a inválida diz \enquote{A rotina não para.} e
+  devolve a esteira como estava.\\
+\cd{caso} (E6) & O Festival de Ciências: as três ferramentas e os cartões
+  K4 a K6.\\
+\zebra \cd{fim} (E6) & O Painel da Investigação, somente leitura, com as
+  quatro colunas da própria sessão, e o Desafio Extra, que não grava.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Os dois portões e a pausa são da professora}
+
+A etapa da turma (\cd{exp03ef1b\_gates\_turma}) só anda para a frente:
+\cd{aposta} \seta{} \cd{filtro} (\enquote{Liberar Filtro}) \seta{}
+\cd{inspecao} (\enquote{Liberar Inspeção}); o botão fora de ordem responde 409
+\cd{transicao-de-etapa-invalida}. \enquote{Pausar Turma} e \enquote{Retomar
+Turma} ligam e desligam a flag \cd{pausada}, que congela todas as telas no
+\enquote{Momento de conversar com a turma!} e faz toda jogada responder 409
+\cd{turma-pausada}. Cada clique vai para \cd{exp03ef1b\_gates\_historico}. A
+tela acompanha por \emph{polling} de 3\,s (\rota{GET /nina-noticia/gate}).
+Quem confrontou e espera a inspeção tem o passo gravado \cd{ficha} e o efetivo
+\cd{omissao}: a ficha do telão não desce antes do portão.
+
+\subsection{A estrutura é do servidor; o texto, da IA}
+
+A IA escreve só o TEXTO das três reportagens e os pedidos de imagem.
+\arq{conteudo.ts} (\cd{aplicarEstrutura}) põe a ficha por cima, na geração,
+na homologação e na leitura: os três suportes na ordem, Quem = estudantes e
+Quando = sexta nas três, Onde = pátio no mural e no portal e VAZIO no telão.
+\arq{invariantes.ts} recusa o pacote cuja cena do telão não fala do pátio,
+porque K1 (\enquote{A foto mostra o pátio?}) é verdadeiro. O filtro é
+HONESTO (\arq{regras/\B{}filtro.ts}): booleano por campo, campo vazio nunca
+casa, e os valores de Quem e Quando oferecidos não são os da feira --- é assim
+que \enquote{Quem e Quando devolvem zero} sem mentir no resultado.
+
+\begin{regra}
+\textbf{O gabarito fica no servidor} (regra 3): os seis carimbos, a sequência
+da rotina e a regra do reparo moram em \arq{conteudo.ts} e \arq{regras/}. A
+tela recebe ids OPACOS por sessão (\cd{rp-}, \cd{et-}, \cd{bl-}), sorteados
+pela semente \cd{id + rodada}; a bandeja da rotina nunca sai na ordem certa
+(o teste confere 500 sementes).
+\end{regra}
+
+\subsection{A atividade é o pacote}
+
+O pacote (\cd{exp03ef1b\_pacotes}) é a ATIVIDADE da evidência, e a rodada é o
+\enquote{Zerar Turma} (\adrr{ADR-155}). A professora usa o banco padrão (a
+Feira de Troca de Livros) em um toque, ou gera as três reportagens com IA a
+partir do componente curricular, do tema e do \enquote{Assunto da matéria};
+revisa (edita a manchete, regenera uma notícia, refaz uma imagem, com a do
+telão em destaque) e aprova em duas fases (\adrr{ADR-146}): os textos, depois
+as imagens. Só então o pacote vai ao ar (\emph{CHECK} \cd{ativo} só com as
+imagens aprovadas; um em andamento por turma). Sem saldo ou com a IA fora, o
+banco padrão entra no lugar (\cd{usouIa: false}). As quatro imagens das cenas
+fixas (o caso e o Desafio Extra) são geradas uma vez pelo \cd{admin}, sem
+quota, como as do banco padrão do Júri (Seção~\ref{sec:ia-preparo-exp03ef1b}).
+
+\subsection{A régua pedagógica: 100\% ações em tela}
+
+A ficha \arq{evidencias/\B{}fichas/\B{}exp03ef1b.ts}, versão 1, não tem pergunta
+nem resolvedor. As cinco marcas são de AÇÃO, gravadas por \arq{nina-noticia}
+na transação da própria jogada (\arq{regras/\B{}evidencia.ts}):
+
+\begin{tabularx}{\linewidth}{@{}L{20mm}L{30mm}X@{}}
+\toprule
+\headrow \thd{Habilidade} & \thd{Onde marca} & \thd{A régua}\\
+\midrule
+\textbf{EF15CO08} (foco) & A ficha do telão aberta (\cd{inspecao}) &
+  \cd{atingiu}: Onde = Pátio na primeira busca e a ficha aberta sem o pulso.
+  \cd{em\_processo}: errou o filtro antes, ou precisou do pulso. Sem
+  \cd{nao\_atingiu} automático.\\
+\zebra \textbf{EF03CO01} & Os carimbos do caso novo, com os da E4 já
+  gravados (\cd{carimbos}) & \cd{nao\_atingiu}: os três carimbos de uma
+  etapa iguais (a uniformidade vence). \cd{atingiu}: K3 \enquote{É verdade},
+  K5 \enquote{Não dá para saber} e ao menos 5 de 6. \cd{em\_processo}: o
+  resto.\\
+\textbf{EF03CO02} & A rotina válida (\cd{rotina}) & \cd{atingiu}: até 2
+  testes, contando o certo. \cd{em\_processo}: mais de 2.\\
+\zebra \textbf{EF03CO03} & O reparo (\cd{reparo}) & \cd{atingiu}: Pátio no
+  campo Onde. \cd{em\_processo}: fora dele.\\
+\textbf{EF15CO01} & O reparo (\cd{previsao}) & A escolha travada com o
+  reparo válido (\cd{atingiu}) ou inválido (\cd{em\_processo}); repete, na
+  prática, a EF03CO03 --- pendência com o PO.\\
+\bottomrule
+\end{tabularx}
+
+Quem não chega ao gesto fica \enquote{Não avaliado} --- a ausência de marca
+---, e a equipe recebe a cópia do nível pela regra da plataforma
+(\adrr{ADR-111}): a missão está em \cd{EXPERIENCIAS\_COM\_EQUIPE} e em
+\cd{EXPERIENCIAS\_COM\_ATIVIDADE}.
+
+\subsection{O professor: painel, guia e preparo}
+
+O \enquote{Painel da Sala em Tempo Real} (\emph{polling} de 5\,s) mostra
+quantas equipes estão em cada etapa, as escolhas da Etapa 2 só no agregado e
+dois alertas --- \enquote{equipe em repetição sem parada} (mais de 3 testes
+da rotina sem a válida) e \enquote{carimbos uniformes na equipe} ---, com os
+botões dos portões, da pausa e do zerar. A linha de cada computador diz
+progresso e alertas, NUNCA acerto, escolha nem nível
+(\cd{PROIBIDO\_NA\_LINHA\_DO\_PAINEL}, com teste). O corpo da missão no hub
+(\arq{missao-nina-noticia.tsx}) traz o roteiro de mediação com as três
+perguntas do debate, e o guia (\arq{lib/entre-redes/guias/exp03ef1b.ts}) lê
+as mesmas frases do espelho \arq{lib/nina-noticia-tipos.ts}, conferido contra
+a api no teste. O preparo é \arq{atividades/nova/criar-nina-noticia.tsx}.
+
+\subsection{As duas seções do DS}
+
+O jornal (cabeçalho, cartões, foto ampliada, filtro, selos, aviso sem sinal,
+erro de mídia) é \cd{unoojornal}, pela ponte \cd{@edu/ui/ds-unoojornal}; a
+mecânica (a Nina, a caixa da escolha, os carimbos, as etiquetas, a esteira de
+blocos por toque e a pausa) é \cd{unooria}. É a única missão com essa mistura,
+por exceção registrada (\adrr{ADR-197}, Seção~\ref{sec:ds-hibrido-exp03ef1b});
+o que nenhuma das duas seções tem é compensação local marcada, só com os
+tokens delas.
+
+\subsection{Ausências deliberadas}
+
+\begin{itemize}
+  \item \textbf{Canal B}: nenhuma rota, coluna, tela nem texto da enquete em
+    quadrinhos (\adrr{ADR-197}).
+  \item \textbf{Podcast}: fora desta frente.
+  \item \textbf{Texto livre da criança}: nenhuma rota recebe texto; a
+    evidência é só o que ela faz na tela.
+  \item \textbf{\enquote{Tentar de novo} no reparo}: o erro é explicado, e
+    a missão segue.
+\end{itemize}
+
+\begin{nota}
+A tela do estudante (\arq{apps/experiencias/exp03ef1b}) e a suíte de ponta a
+ponta \arq{scripts/e2e/estudante/\B{}17-nina-noticia.mjs} estavam em escrita
+quando este texto entrou: a descrição acima é o contrato da api e o desenho
+aprovado, e as compensações locais do DS serão listadas aqui quando a tela
+fechar.
+\end{nota}
 
 % ---------------------------------------------------------------------------
 \section{exp01em1b --- O Assistente Invisível}

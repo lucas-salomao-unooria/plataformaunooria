@@ -2,6 +2,7 @@ import type { CoberturasDaTurma } from "../a-selecao-tipos";
 import type { PacotesDaTurmaEfeito } from "../efeito-amplificador-tipos";
 import type { PacotesDaTurmaAssistente } from "../assistente-invisivel-tipos";
 import type { PacotesDaTurmaEnigma } from "../enigma-capa-tipos";
+import type { PacotesDaTurmaNina } from "../nina-noticia-tipos";
 import type { PacotesDaTurma } from "../jornal-escola-tipos";
 import type { PacotesDoJuri } from "../juri-estadual-tipos";
 import type { PacotesDaTurmaQuemMandou } from "../quem-mandou-tipos";
@@ -21,7 +22,7 @@ import type { PacotesDaTurmaQuemMandou } from "../quem-mandou-tipos";
  */
 
 /** As missões com atividade — o mesmo par de `equipes/regras.ts#EXPERIENCIAS_COM_ATIVIDADE` na api. */
-export const MISSOES_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b"] as const;
+export const MISSOES_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b", "exp03ef1b"] as const;
 export type MissaoComAtividade = (typeof MISSOES_COM_ATIVIDADE)[number];
 
 export function temAtividades(expId: string | null | undefined): expId is MissaoComAtividade {
@@ -121,6 +122,8 @@ export function caminhoDoEmAndamento(expId: MissaoComAtividade, turmaId: string,
       return `/enigma-capa/turmas/${t}/pacotes/${a}/em-andamento`;
     case "exp01em1b":
       return `/assistente-invisivel/turmas/${t}/pacotes/${a}/em-andamento`;
+    case "exp03ef1b":
+      return `/nina-noticia/turmas/${t}/pacotes/${a}/em-andamento`;
   }
 }
 
@@ -255,6 +258,23 @@ export function atividadesDoAssistente(p: PacotesDaTurmaAssistente, rotuloDaDisc
     detalhe: [rotuloDaDisciplina(h.disciplina), ORIGEM[h.origem]].join(" · "),
     estado: h.ativo ? "em-andamento" : "pronta",
     criadaEm: h.aprovadoEm,
+    rodadas: h.rodadas,
+  }));
+}
+
+/**
+ * Nina e a Notícia que Desapareceu (ADR-197): o pacote homologado é a
+ * atividade, como no Júri — com a SEGUNDA fase da aprovação (as imagens, ADR-146).
+ * Sem ela a atividade é "Em preparo", e o card não oferece "Usar esta atividade
+ * agora": a api recusaria com 409 `imagens-nao-aprovadas`.
+ */
+export function atividadesDaNina(p: PacotesDaTurmaNina, rotuloDaDisciplina: (slug: string) => string): AtividadeNaLista[] {
+  return p.historico.map((h) => ({
+    id: h.id,
+    titulo: h.tema,
+    detalhe: [rotuloDaDisciplina(h.disciplina), ORIGEM[h.origem]].join(" · "),
+    estado: h.ativo ? "em-andamento" : h.imagensAprovadas ? "pronta" : "em-preparo",
+    criadaEm: h.criadoEm,
     rodadas: h.rodadas,
   }));
 }

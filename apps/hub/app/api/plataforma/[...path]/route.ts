@@ -119,6 +119,14 @@ const PREFIXOS_PERMITIDOS = [
      toca na frente da sala e os aparelhos andam pelo polling do gate (3 s). As
      guardas de papel estão na api (`@Roles("professor")` na escrita). */
   "assistente-invisivel",
+  /* exp03ef1b (Nina e a Notícia que Desapareceu, ADR-197): o preparo (banco
+     padrão, gerar com IA, regenerar uma notícia, homologar, gerar/refazer e
+     aprovar as imagens), o "Usar esta atividade agora", os dois portões da aula
+     (Liberar Filtro, Liberar Inspeção), Pausar/Retomar Turma, o painel relido a
+     cada 5 s e o "Zerar Turma" são client-side — a professora toca na frente da
+     sala e os computadores andam pelo polling do gate (3 s). As guardas de
+     papel estão na api (`@Roles("professor")` na escrita). */
+  "nina-noticia",
   /* exp06ef2b: o gate da aula (abrir a Aula 2, pausar a simulação) e o "zerar
      turma" são client-side — a professora aperta no meio da aula e as 30 telas
      andam na hora, sem recarregar a página. As guardas de papel estão na api
