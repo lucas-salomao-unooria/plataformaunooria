@@ -265,7 +265,7 @@ export const GATILHOS_DE_CONDUCAO: readonly string[] = [
  * brasileira, sem marca, sem texto legível além do cartaz.
  */
 export const ESTILO_DAS_IMAGENS =
-  "Ilustração digital colorida, estilo de livro infantil, traço limpo e luz de dia. Escola pública brasileira, crianças de cerca de 8 anos com diversidade de tons de pele e cabelos, roupas simples sem logotipos. Nenhuma marca, nenhum texto legível além do que for pedido no cartaz. Enquadramento horizontal 4:3.";
+  "Ilustração digital colorida, estilo de livro infantil, traço limpo e luz de dia. Escola pública brasileira, crianças de cerca de 8 anos com diversidade de tons de pele e cabelos, roupas simples sem logotipos. Nenhuma marca, nenhum texto legível além do que for pedido no cartaz. Se aparecer qualquer outra palavra (menu de site, placa, faixa), ela está em português do Brasil, nunca em inglês. Enquadramento horizontal 4:3.";
 
 /**
  * O que cada SUPORTE exige da cena. O do TELÃO é o que segura a missão: a
