@@ -48,7 +48,7 @@ no molde da lista do Instanooria) e o card `components/cartao-atividade.tsx`.
   fim (pôr no ar, montar as equipes) é `lib/entre-redes/criar-atividade.ts`. O
   Instanooria mantém a criação dele (`/professor/atividades/nova`).
 - **A página da atividade** é a `.../resultados` com `?cobertura=` (A Seleção) ou
-  `?pacote=` (Jornal, Quem Mandou, Júri Estadual), e a `/professor/atividades/[id]` no
+  `?pacote=` (Jornal, Quem Mandou, Júri Estadual, Nina), e a `/professor/atividades/[id]` no
   Instanooria. O painel da aula e o zerar só aparecem na EM ANDAMENTO; a pronta
   mostra o "Usar esta atividade agora" — e a EM PREPARO (imagens sem OK), a
   grade de aprovação no lugar dele.
@@ -268,3 +268,35 @@ SOZINHO pelo `BotaoImprimir` com `impressao="relatorio-homologacao"`: a folha
 reteste), e `publicar` sem publicação é o E5-PROF-01 "liberado" (sem o relatório). Na pausa, o botão dela
 fica à vista e desabilitado (`PAUSA_FEITA`): ele NÃO entra em `ACOES_DA_FASE`, que segue só para a frente e
 espelhando a api. "Handoff" do Figma não entra na etiqueta (ADR-91).
+
+## Nina e a Notícia que Desapareceu (exp03ef1b)
+
+Página `resultados/resultados-nina-noticia.tsx`, criação `atividades/nova/criar-nina-noticia.tsx`,
+espelho `lib/nina-noticia-tipos.ts` (o teste lê `vocabulario.ts`, `invariantes.ts`, `conteudo.ts` e
+`contrato-de-rotas.ts` da api como texto; o índice `ROTAS` confere cada rota que o hub chama). Guia
+`lib/entre-redes/guias/exp03ef1b.ts`, sem transferência (o Canal B saiu, spec §0.1) e sem podcast.
+
+- **"aposta" é nome INTERNO** (passo e etapa). Na tela é "escolha" — "Travar Escolha", "Escolhas da
+  Etapa 2" (spec §7.1). O teste do espelho lê as telas desta missão SEM comentários e reprova a
+  palavra fora do literal `"aposta"`.
+- **Preparo no topo, como o Júri**: "Usar Banco Padrão" (`POST banco-padrao`, pronto, sem IA). Ou o
+  recorte com IA: Componente Curricular (`Selection`), Tema do Evento (≤ 60) e **"Assunto da
+  matéria"** (spec §7.2). `gerar-conteudo` é UMA chamada que escreve só o texto das três notícias
+  (cabe no teto do BFF); `usouIa: false` mostra o quadro E0-PROF-03 com o título da falha
+  (`FALHA_DA_GERACAO`) e "Carregar Banco Padrão" — o banco NÃO entra na conferência.
+- **A ESTRUTURA é do servidor**: a conferência (E0-PROF-04) só edita a MANCHETE ("Editar Manchete",
+  ≤ 4 palavras) e regenera UMA notícia ("Regenerar Notícia"); suportes, fichas e lugar não se editam.
+  A do telão vem tracejada, com o Onde vazio de propósito.
+- **Duas fases** (ADR-146): "Homologar Pacote" grava os textos; a grade `resultados/imagens-da-nina.tsx`
+  gera as quatro imagens (as três fotos e o cartaz) em laço (`gerar-midia` por pacote), com a FOTO DO
+  TELÃO em destaque ("confira se o pátio aparece" — K1 é ✔) e "Refazer imagem"; "Aprovar imagens"
+  fecha. Sem a segunda fase é "Em preparo". "Pacote homologado e pronto." e o botão final do
+  assistente vira "Liberar Atividade para a Turma" (`rotuloDoCriar`), que põe no ar E libera na sala.
+- **O painel (E4-PROF-01)**: "Painel da Sala em Tempo Real", polling de 5 s. DOIS portões pelo
+  `proximaEtapa` ("Liberar Filtro", depois "Liberar Inspeção"; `{acao: "liberar", para}`), e
+  "Pausar Turma"/"Retomar Turma" (`{acao: "pausar" | "retomar"}`) — pausada, o painel vira o quadro
+  "Sala pausada" do print 24 e o portão some até retomar. Cartões "Equipes na etapa N" (1–6), "Escolhas
+  da Etapa 2" (só o agregado: 3/2/1 e a que ficou de fora) e "Alertas da sala" (vazio = "Nenhum alerta
+  crítico ativo"); o roteiro de mediação na íntegra; a folha diz etapa, passo e alertas — nunca acerto.
+  `mudouAEvidencia` relê a página quando uma linha passa de `ficha`, `reparo`, `rotina` ou `caso`.
+- **"Zerar Turma"** com diálogo: rodada nova, habilidades apagadas (ADR-155).
