@@ -29,7 +29,8 @@ export const TEXTOS = {
     novaDoAssistente: "Atenção, Porta-Voz: ERRATA TÉCNICA CORRETIVA disponível.", // [PROPOSTA] a prévia da lista na E4b
   },
 
-  cota: (n: number) => `Publicações Oficiais Disponíveis: ${n}/3`, // e1.header.cota_inicial (TC-03) e e4.header.cota_pos_envio (TC-09), unificadas
+  cota: (n: number) => `Publicações Oficiais Disponíveis: ${n}/3`, // e1.header.cota_inicial (TC-03) e e4.header.cota_pos_envio (TC-09), unificadas — nome acessível do chip
+  cotaCurta: (n: number) => `Publicações: ${n}/3`, // [PROTÓTIPO] o chip visível do cabeçalho (E1-ALU-02/E3-ALU-01)
 
   // ── E1-ALU-02 a E2 — o chat do Assistente
   assistente: {

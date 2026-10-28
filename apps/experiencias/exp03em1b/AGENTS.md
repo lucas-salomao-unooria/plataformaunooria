@@ -79,7 +79,7 @@ build troca `import.meta.env.DEV` por `false` e nada disso entra no `dist/`
 | `ListItem` com título e subtítulo em `nowrap` | folha "Ver dados e fonte" (E6-ALU-02) | `.folha .unc-listitem__*` quebra linha |
 | `MetricCard` com `max-width: 301px` | laudo (E5) | `.escola__pilha > .unooria-metric-card` sem teto |
 | `MessageBubble.Document` põe os detalhes na linha do nome (detalhe longo some com o nome) | anexo (E2) | detalhes curtos ("PDF · 42 KB") e a procedência como legenda do balão |
-| `ChatHeader` com `trailing` longo encurta o nome ("Assiste…") | chat e grupo | nenhuma — o chip da cota é decisão 3; o nome inteiro está no `aria` |
+| `ChatHeader` com `trailing` longo encurta o nome ("Assiste…") | chat e grupo | o chip mostra a forma curta do protótipo ("Publicações: 3/3"); a longa (TC-03/TC-09) vai no `aria-label` |
 
 ## Textos fora do 06
 

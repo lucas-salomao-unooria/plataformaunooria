@@ -21,9 +21,20 @@ export function BarraDoAparelho() {
   return <StatusBar time={agora} batteryLabel={TEXTOS.aparelho.bateria} batteryLevel={0.85} showAlert={false} />;
 }
 
-/** A cota no `trailing` do `ChatHeader` (decisão 3): com ele, os botões de chamada somem. */
+/**
+ * A cota no `trailing` do `ChatHeader` (decisão 3): com ele, os botões de chamada somem.
+ * O chip mostra a forma curta do protótipo ("Publicações: 3/3") — a longa
+ * cortava o nome da conversa em 375px ("Assiste…") — e a longa (TC-03/TC-09)
+ * fica no nome acessível.
+ */
 export function ChipDaCota({ restantes }: { restantes: number }) {
-  return <MessageTag icon={<Icon name="document" size={14} tone="inherit" />}>{TEXTOS.cota(restantes)}</MessageTag>;
+  return (
+    <span aria-label={TEXTOS.cota(restantes)}>
+      <MessageTag icon={<Icon name="document" size={14} tone="inherit" />}>
+        <span aria-hidden="true">{TEXTOS.cotaCurta(restantes)}</span>
+      </MessageTag>
+    </span>
+  );
 }
 
 /**
