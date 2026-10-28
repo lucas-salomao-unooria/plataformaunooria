@@ -29,7 +29,8 @@
       "picomatch@>=4.0.0 <4.0.4": "4.0.4",
       "tmp@<0.2.7": "0.2.7",
       "glob@>=10.2.0 <10.5.0": "10.5.0",
-      "ajv@8.12.0": "8.18.0"
+      "ajv@8.12.0": "8.18.0",
+      "@unooria/design-system": "file:/private/tmp/claude-501/-Volumes-Documentos-Unooria-plataforma-unooria/9a598087-37f5-4f60-a8ea-bed625e19aa6/scratchpad/ds-local/unooria-design-system-0.2.24.tgz"
     }
   },
   "devDependencies": {
