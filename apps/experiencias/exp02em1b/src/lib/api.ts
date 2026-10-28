@@ -1,17 +1,16 @@
 import type { ExperienciaHandle } from "@edu/sdk";
-import type { AcaoNoFeed, Estado, Gate, Manchete, Sessao } from "./tipos";
+import type { AcaoDeSeguranca, Estado, Gate, Manchete, MotivoDoAviso, Sessao } from "./tipos";
 
 /**
  * O handle da experiência, num singleton depois do handshake. Toda chamada à
  * api passa por aqui — nunca `fetch` solto: é o SDK que põe o token, renova,
  * aplica timeout e reenvia GET.
  *
- * A MENSAGEM fala com a IA (a conversa híbrida, ADR-181): o servidor corre
- * até 12 s contra o modelo e, perdendo, responde pela árvore. O padrão do SDK
- * (10 s) cortaria a resposta que já vinha — daí o teto próprio, com folga.
+ * Sem IA na aula (ADR-191): o chat responde pela árvore de intenções do
+ * servidor, então toda rota cabe no timeout PADRÃO do SDK. O teto de 45 s da
+ * 2.0.x morreu com a conversa híbrida — devolvê-lo deixaria uma api travada
+ * pendurar a tela meio minuto.
  */
-export const TIMEOUT_DA_MENSAGEM_MS = 45_000;
-
 let handle: ExperienciaHandle | null = null;
 
 export function definirExperiencia(exp: ExperienciaHandle) {
@@ -24,23 +23,33 @@ function exigir(): ExperienciaHandle {
 }
 
 const BASE = "/efeito-amplificador";
+const post = (rota: string, corpo?: unknown) => exigir().api.post<Estado>(`${BASE}/${rota}`, corpo);
 
 export const api = {
   sessao: () => exigir().api.get<Sessao>(`${BASE}/sessao`),
   gate: () => exigir().api.get<Gate>(`${BASE}/gate`),
-  entrar: () => exigir().api.post<Estado>(`${BASE}/entrar`),
-  mensagem: (texto: string) => exigir().api.post<Estado>(`${BASE}/mensagem`, { texto }, { timeoutMs: TIMEOUT_DA_MENSAGEM_MS }),
-  paragrafo: (paragrafoId: string, removido: boolean) => exigir().api.post<Estado>(`${BASE}/paragrafo`, { paragrafoId, removido }),
-  publicar: (manchete: Manchete) => exigir().api.post<Estado>(`${BASE}/publicar`, { manchete }),
-  feed: (acao: AcaoNoFeed) => exigir().api.post<Estado>(`${BASE}/feed`, acao),
-  explicar: () => exigir().api.post<Estado>(`${BASE}/explicar`),
-  indicador: (indicador: string) => exigir().api.post<Estado>(`${BASE}/indicador`, { indicador }),
-  concluir: () => exigir().api.post<Estado>(`${BASE}/concluir`),
+  entrar: () => post("entrar"),
+  mensagem: (texto: string) => post("chat/mensagem", { texto }),
+  previa: (acao: "aprovar" | "revisar") => post("previa", { acao }),
+  publicar: (manchete: Manchete) => post("publicar", { manchete }),
+  avisoDeCuidado: (motivo: MotivoDoAviso) => post("aviso-cuidado", { motivo }),
+  seguranca: (acao: AcaoDeSeguranca) => post("seguranca", acao),
+  explicar: () => post("explicar"),
+  evidencia: (elemento: string) => post("evidencia", { elemento }),
+  concluir: () => post("concluir"),
 };
 
 /** Fecha a missão na plataforma. Sem `score`: a experiência não pontua (regra 3). */
 export function concluirNaPlataforma() {
   exigir().concluir({ dados: {} });
+}
+
+/**
+ * O "chrome" opcional do hub (`exp:estado`). Aqui ele carrega o TC-10: o hub o
+ * desenha FORA do aparelho nas telas da Etapa 4, e um `{}` o retira.
+ */
+export function enviarEstado(estado: Record<string, unknown>) {
+  handle?.enviarEstado(estado);
 }
 
 export function reportarErro(erro: unknown) {
