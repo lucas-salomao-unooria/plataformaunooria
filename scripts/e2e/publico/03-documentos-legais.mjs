@@ -5,7 +5,7 @@ import { HUB, suite } from "../lib/roteiro.mjs";
  *
  * O bug que originou a frente é o mais barato de todos e o mais constrangedor:
  * os links do rodapé da landing eram `href="#"` e não levavam a lugar nenhum.
- * Por isso a suíte começa na landing e CLICA — verificar as páginas por URL
+ * Por isso a suíte começa no site e CLICA — verificar as páginas por URL
  * direta deixaria o defeito original passar intacto.
  *
  * O que o typecheck não pega e esta suíte cobra:
@@ -25,10 +25,9 @@ import { HUB, suite } from "../lib/roteiro.mjs";
  *
  * A api NÃO é necessária: as duas páginas são estáticas e não leem sessão.
  *
- * ATENÇÃO, e está dito em voz alta no roteiro: **a raiz não leva a estas duas
- * páginas desde a ADR-107**. O site público novo veio com o rodapé do material
- * aprovado, sem os links legais, e a decisão foi preservá-lo como está. Quem
- * as alcança é o rodapé da landing anterior; por URL direta elas respondem.
+ * O clique sai da RAIZ: o rodapé do site público ganhou os dois links
+ * (H11.1.2), que o material aprovado não traz — nem a versão final dele
+ * (2026-10-28) —, e eles entram como acréscimo marcado ao porte.
  */
 
 /** Coleta o índice, as seções e as medidas de layout de uma página legal. */
@@ -58,18 +57,15 @@ const RADIOGRAFIA = () => {
  * `/privacidade` e `/termos`.
  */
 async function documento(r, p, { rota, link, titulo, prefixo }) {
-  /* `/landing-anterior`, e não `/`: desde a ADR-107 a raiz é o site de
-     marketing, cujo rodapé — preservado como veio do material aprovado — NÃO
-     linka para as páginas legais. O rodapé que as alcança é o da landing
-     anterior, que continua de pé justamente porque estas duas páginas montam o
-     fundo e a folha dela. O clique continua sendo o objeto do teste: foi um
-     `href="#"` que originou esta suíte, e conferir por URL direta deixaria esse
-     defeito passar intacto. */
-  await p.goto(`${HUB}/landing-anterior`, { waitUntil: "domcontentloaded" });
+  /* A RAIZ, que é por onde a família e a secretaria chegam: o rodapé do site
+     público leva às duas páginas (H11.1.2, acréscimo ao material aprovado). O
+     clique continua sendo o objeto do teste: foi um `href="#"` que originou
+     esta suíte, e conferir por URL direta deixaria esse defeito passar intacto. */
+  await p.goto(`${HUB}/`, { waitUntil: "domcontentloaded" });
   await p.locator("footer").scrollIntoViewIfNeeded();
 
   const ancora = p.locator("footer a", { hasText: link });
-  r.exigir((await ancora.count()) === 1, `o rodapé da landing tem o link “${link}”`);
+  r.exigir((await ancora.count()) === 1, `o rodapé do site tem o link “${link}”`);
   r.exigir(
     (await ancora.getAttribute("href")) === rota,
     `“${link}” aponta para ${rota} — era href="#" e não levava a lugar nenhum`,
@@ -189,7 +185,7 @@ await suite(
     slug: "publico/03-documentos-legais",
     papel: "publico",
     titulo: "Os documentos legais",
-    subtitulo: "privacidade e termos, alcançados pelo rodapé da landing anterior",
+    subtitulo: "privacidade e termos, alcançados pelo rodapé do site público",
     contexto:
       "As duas páginas que a rede, a escola e a família leem antes de aceitar o produto. São públicas, " +
       "não leem sessão e não tocam a api — e até agora os links do rodapé não levavam a lugar nenhum.",
@@ -209,9 +205,6 @@ await suite(
        amostragem de dev/hml (5%) ele aparece em uma corrida a cada vinte, e
        sem esta declaração o smoke do deploy fica vermelho por sorteio. */
     r.provocado(/observabilidade\/v1\/traces/, "o trace do navegador sem sessão: o hub o envia e o BFF recusa com 401 de propósito (instrumentation-client.ts), e o lote é descartado — só aparece quando a sessão cai na amostragem");
-    r.ressalva(
-      "A RAIZ NÃO LEVA A ESTAS PÁGINAS desde a ADR-107: o rodapé do site novo veio do material aprovado, sem os links legais. Quem as alcança é o rodapé de /landing-anterior; por URL direta as duas respondem.",
-    );
     // ── desktop: os dois documentos, cada um a partir do rodapé ──────────
     const p = await r.pagina("desktop", { viewport: { width: 1440, height: 900 } });
 

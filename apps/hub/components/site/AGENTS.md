@@ -11,19 +11,21 @@ por um Worker). O que ele pede daqui não é melhoria — é **continuar sendo o
 
 Por isso, nesta pasta e só nela:
 
-- **`site.css` é cópia integral, mais quatro acréscimos, cada um marcado no
-  arquivo**: a linha da tipografia (`.site-entre-redes{font-family:…}`), o bloco
-  da janela do cadastro, o do "Entrar" e dos links legais (H11.1.2) e o bloco da
-  Revisão 19. Na marcação, os acréscimos também levam comentário
-  `ACRÉSCIMO ao porte` — é o que dizer a quem comparar com o próximo pacote. O da tipografia existe porque o
-  `<body>` do hub traz `font-family` INLINE (layout raiz), e estilo inline vence
-  folha — sem ela o site sai inteiro em system-ui, com o desenho intacto. O
-  sintoma é "a tipografia está diferente", sem nada quebrado para procurar.
+- **`site.css` são as 24 camadas do pacote da versão final (ADR-195), na ORDEM
+  e no TEXTO dele, uma regra de topo por linha, mais UM acréscimo marcado no
+  fim**: o "Entrar" e os links legais (H11.1.2), que o pacote não traz. Fundir
+  ou reordenar camadas muda quem vence quem. A linha da tipografia
+  (`.site-entre-redes{font-family:…}`) já vem DENTRO da camada 00: ela existe
+  porque o `<body>` do hub traz `font-family` INLINE, e sem ela o site sai
+  inteiro em system-ui, com o desenho intacto. Na marcação, os acréscimos levam
+  comentário `ACRÉSCIMO ao porte` — é o que dizer a quem comparar com o
+  próximo pacote.
 - **A marcação de `site-entre-redes.tsx` é 1:1** com o HTML de origem: mesma
   árvore, mesmas classes, mesmos ids, mesma ordem. O CSS casa por classe e por
   id; trocar um `div` por um `section`, agrupar irmãos ou "limpar" uma classe
   aparece como defeito de layout.
-- **`efeitos/*.ts` é porte literal** dos cinco scripts. Eles não leem sessão, não
+- **`efeitos/*.ts` é porte literal** dos scripts do material (os cinco do
+  porte, o campo de estrelas da Revisão 19 e os três da versão final). Eles não leem sessão, não
   chamam a api e não conhecem o DS. O que mudou: viraram funções que devolvem o
   cancelamento, e todo listener nasce preso a um `AbortController` — a página
   desmonta quando alguém vai para `/login`, e `requestAnimationFrame` pendurado
@@ -78,6 +80,24 @@ serializado como `background: 0px 0px`, e as regras do reset do Tailwind que só
 o hub carrega (`.container{width:100%}`, `dialog{padding:0}`,
 `summary{display:list-item}`).
 
+## A VERSÃO FINAL (2026-10-28): o pacote que vem como UM arquivo
+
+`entre-redes-site-final.html`, em `~/Downloads`: a exportação do nosso site
+com tudo embutido — 24 blocos `<style>`, a arte e as fontes em base64 e os
+scripts inline. O primeiro script é o nosso `PalcoDoSite` compilado; compare as
+CONSTANTES (strings e números) com `efeitos/` para achar o que mudou, porque os
+nomes vêm minificados. O que valeu na versão final, e vale para a próxima:
+
+- **Gere a folha e o JSX por script, nunca à mão.** 1.100 linhas de marcação e
+  130 KB de CSS transcritos à mão são o caminho certo para o defeito mudo. O
+  `data:` vira arquivo em `public/site/assets/` pelo HASH do conteúdo (o que
+  já existe é reaproveitado — fontes, artes das jornadas, logo do rodapé).
+- **A árvore que vale é a do NAVEGADOR, não a do texto.** O pacote deixou um
+  `div` aberto em `#curriculo`, que o navegador fecha no `</section>`; o JSX
+  exige o fechamento, e ele vai no MESMO ponto (está comentado). Antes de
+  converter, confira o casamento das tags.
+- **A janela do cadastro do pacote é PRÉVIA** — não envia nada. Fica a nossa.
+
 ## O que o porte prova, e como provar de novo
 
 A conferência não é impressão: o site de origem sobe com
@@ -108,10 +128,13 @@ hoje é o `admin`, em `/unooria/prospeccao`.
 
 ### E desde 2026-09-17 ele abre numa JANELA, não no corpo da página
 
-Pedido do dono do produto. Os três convites do site — o do cabeçalho
-(`.floating-cta`), o do fechamento (`#contato`) e o da seção `#cadastro` — dizem
-**"Quero conhecer a solução"** e abrem o mesmo `<dialog id="cadastro-dialog">`.
-O que saber antes de mexer:
+Pedido do dono do produto. Na versão final sobrou UM convite **"Quero conhecer
+a solução"**, o do fechamento (`#contato`); o do cabeçalho e a seção `#cadastro`
+saíram do desenho. O componente são TRÊS peças: `ConviteDoCadastro` (dentro de
+`.closing-side`), `JanelaDoCadastro` (depois do `</main>`, como no pacote) e o
+`ProvedorDoCadastro`, que divide entre os dois o "já enviou?". A janela NÃO pode
+morar ao lado do convite: a regra `.closing-side .button` do pacote esticaria
+os botões do formulário. O que saber antes de mexer:
 
 - **Quem ABRE a janela é o `efeitos/navegacao.ts`; quem a FECHA no sucesso é o
   componente.** Os outros dois diálogos do site já são operados por lá, e é de
@@ -124,19 +147,17 @@ O que saber antes de mexer:
 - **O id da janela, o atributo que a abre e o rótulo dos convites são
   CONSTANTES exportadas** pelo componente, porque são usados em três arquivos.
   Escritos à mão em cada um, o primeiro erro de digitação vira um botão morto.
-- **DOIS estados, não um com três valores**: `envio` (do formulário) e
-  `confirmado` (da página). Com um só, reabrir a janela depois de um envio —
-  coisa que os outros dois convites permitem — trazia o botão travado em
-  "enviado", sem nada explicando.
-- **Enviar FECHA a janela e deixa a confirmação na página**, no lugar onde o
-  convite da seção estava; se ela ficou fora da tela, o componente rola até lá.
+- **DOIS estados, não um com três valores**: `envio` (do formulário, na
+  janela) e `confirmado` (da página, no provedor). Com um só, reabrir a janela
+  depois de um envio trazia o botão travado em "enviado", sem nada explicando.
+- **Enviar FECHA a janela e deixa a confirmação na página**, no lugar do
+  convite; se ela ficou fora da tela, o componente rola até lá.
   Fechar sem deixar rastro pareceria "sumiu e não aconteceu nada". **No ERRO a
   janela fica aberta**: é ali que a pessoa corrige o campo, e fechar levaria
   embora o que ela digitou.
 - **O CSS da janela reaproveita o do material** (as medidas do `.index-dialog`,
-  a moldura da regra `dialog`, o `.button.outline` do Cancelar). Está num bloco
-  marcado no `site.css` — o segundo dos três acréscimos à folha (o primeiro é a
-  linha da tipografia; o terceiro, a Revisão 19).
+  a moldura da regra `dialog`, o `.button.outline` do Cancelar), e desde a
+  versão final ele já vem dentro da camada 00 do pacote.
 - **Empilhado, "Enviar" fica EM CIMA** (`order:-1` abaixo de 600px). Com o
   Cancelar no topo, o polegar encontra primeiro o botão que descarta o que a
   pessoa acabou de digitar.
@@ -152,19 +173,15 @@ um aceite que ninguém deu.
 fixo, criado pelo próprio efeito (é o único que não tem marcação portada), que
 cobre a janela e responde à rolagem e ao ponteiro.
 
-**Ele substituiu dois.** `atmosfera.ts` (a poeira, em `#ambient-dust`) e
-`estrelas-de-abertura.ts` (o campo do hero, em `#opening-stars`) continuam no
-repositório e os dois `<canvas>` continuam na marcação — **mas a folha os
-esconde e o `palco-do-site.tsx` não os monta**. Animar canvas com
-`display:none` é queimar bateria para desenhar o que ninguém vê.
-
-Desfazer é tirar a linha do CSS e devolver as duas chamadas ao palco. Se um dia
-alguém tirar só a linha do CSS, os canvas aparecem VAZIOS — e é por isso que a
-suíte `publico/01-site` cobra os dois estados: o nó existe **e** está desligado.
+**Ele substituiu dois.** `atmosfera.ts` (a poeira) e `estrelas-de-abertura.ts`
+(o campo do hero) saíram do palco na Revisão 19, e na versão final os dois
+`<canvas>` saíram também da marcação. Os módulos ficam no repositório só como
+referência do desenho anterior: voltar com eles exige devolver o canvas, a
+chamada no palco e a regra da folha.
 
 ## Os assets moram em `public/site/`
 
-`site/assets/*` (webp, png e as três Manrope). Os `src` do JSX e os `url()` das
+`site/assets/*` (webp, o svg da marca do ENTRE REDES e as três Manrope). Os `src` do JSX e os `url()` das
 `@font-face` apontam para lá, e é a única reescrita de caminho do porte.
 
 **Arte que chega depois do porte ganha nome descritivo e vira webp.** A jornada
@@ -173,8 +190,11 @@ dos Anos Iniciais veio na revisão 19 como PNG de 1,7 MB; entrou como
 (230-238 KB), e a anterior saiu do repositório. Os nomes em hash são do
 pipeline de origem — não vale imitá-los para um arquivo que já não vem de lá.
 
-**`<img>` cru, nunca `next/image`, na marca do cabeçalho**: `efeitos/infinito.ts`
-lê a imagem PIXEL A PIXEL para formar o infinito de estrelas. O `next/image`
+**`<img>` cru, nunca `next/image`, no logo do RODAPÉ**: `efeitos/infinito.ts`
+lê a imagem PIXEL A PIXEL para formar o infinito de estrelas. Era o do
+cabeçalho até a versão final, que pôs ali a marca do ENTRE REDES — amostrar o
+cabeçalho formaria outra figura. As páginas dos livros também ficam em `<img>`
+cru: `efeitos/paginas-do-livro.ts` as relê pelo `src`. O `next/image`
 serviria outro arquivo, em outro formato e outro tamanho, e o contorno amostrado
 deixaria de ser o da marca — o `catch` do módulo esconderia os palcos e a seção
-das missões ficaria sem a peça central, sem erro nenhum na tela.
+"Sobre a Unooria" ficaria sem a peça central, sem erro nenhum na tela.

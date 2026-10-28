@@ -15,14 +15,16 @@ import { HUB, suite } from "../lib/roteiro.mjs";
  *  - a Manrope carregada. O `<body>` do hub traz `font-family` INLINE, e estilo
  *    inline vence folha: sem a regra do container o site inteiro sai em
  *    system-ui, com o desenho intacto — defeito que nenhum teste de texto vê;
- *  - os três canvas com contexto e tamanho. O infinito é amostrado do PIXEL do
- *    logo: se a imagem não carregar, o módulo esconde o palco e a seção das
- *    missões perde a peça central, em silêncio;
+ *  - os dois canvas com contexto e tamanho. O infinito é amostrado do PIXEL do
+ *    logo do rodapé: se a imagem não carregar, o módulo esconde o palco e a
+ *    seção "Sobre a Unooria" perde a peça central, em silêncio;
  *  - a revelação ao rolar chegando ao fim (`.reveal` sem `.visible` é conteúdo
  *    invisível para sempre);
- *  - as treze seções do material, na ordem;
+ *  - as quinze seções da versão final do material, na ordem;
+ *  - o carrossel das missões e o folhear das páginas dos livros, que são
+ *    efeito montado DEPOIS da hidratação: a marcação sozinha não anda;
  *  - nada transbordando na largura em celular;
- *  - o diálogo de navegação abrindo e o CTA levando ao cadastro.
+ *  - o diálogo de navegação abrindo e o convite levando ao cadastro.
  *
  * A api NÃO é necessária: o site não lê sessão nem dado nenhum. O formulário de
  * cadastro, que precisa dela, é provado de ponta a ponta em `admin/03-prospeccao`.
@@ -40,10 +42,11 @@ await suite(
     prova: [
       "A raiz sem sessão é o site: nada de redirecionar para o login",
       "A Manrope carrega — o `font-family` inline do hub venceria a folha sem a regra do container",
-      "O campo de estrelas da rolagem e o infinito desenham; os dois canvas antigos ficam desligados",
+      "O campo de estrelas da rolagem e o infinito desenham",
       "A revelação ao rolar termina: nenhum bloco fica invisível para sempre",
+      "O carrossel das missões anda, e os livros se folheiam na imagem ampliada",
       "Nada transborda na largura em 390px, e o diálogo de navegação abre",
-      "Os três convites dizem \"Quero conhecer a solução\" e abrem a MESMA janela, que o Esc fecha",
+      "O convite \"Quero conhecer a solução\" abre a janela do cadastro, que o Esc fecha",
       "O cabeçalho leva ao login e o rodapé à Política de Privacidade e aos Termos de Uso",
       "A landing anterior continua de pé em /landing-anterior — /privacidade e /termos dependem dela",
     ],
@@ -83,51 +86,36 @@ await suite(
       `o h1 desenha em Manrope e não na fonte do sistema (${tipografia.h1})`,
     );
 
-    /* DOIS canvas desde a revisão 19 (2026-09-18): o campo de estrelas ÚNICO,
-       criado pelo efeito e fixo atrás da página inteira, e o infinito da marca.
-       Os dois canvas do material original (`#opening-stars`, o campo do hero, e
-       `#ambient-dust`, a poeira) continuam na marcação e estão DESLIGADOS —
-       escondidos pela folha e não montados pelo palco. */
+    /* DOIS canvas: o campo de estrelas ÚNICO (revisão 19), criado pelo efeito e
+       fixo atrás da página inteira, e o infinito da marca. Os dois do material
+       original (`#opening-stars` e `#ambient-dust`) saíram da marcação na
+       versão final (2026-10-28). */
     const canvas = await p.evaluate(() => {
       const medir = (seletor) => {
         const c = document.querySelector(seletor);
         return c ? { w: c.width, h: c.height, ctx: Boolean(c.getContext("2d")) } : null;
       };
-      return {
-        vivos: { rolagem: medir("#unooria-scroll-stars"), infinito: medir("#brand-infinity") },
-        desligados: ["#opening-stars", "#ambient-dust"].map((s) => {
-          const el = document.querySelector(s);
-          return { seletor: s, existe: Boolean(el), display: el ? getComputedStyle(el).display : null };
-        }),
-      };
+      return { rolagem: medir("#unooria-scroll-stars"), infinito: medir("#brand-infinity") };
     });
-    for (const [nome, medida] of Object.entries(canvas.vivos)) {
+    for (const [nome, medida] of Object.entries(canvas)) {
       r.exigir(
         medida && medida.ctx && medida.w > 0 && medida.h > 0,
         `o canvas "${nome}" tem contexto e tamanho (${medida?.w}×${medida?.h})`,
-      );
-    }
-    for (const antigo of canvas.desligados) {
-      /* Cobra os DOIS estados: o nó continua na marcação (o porte não perdeu
-         nada) e o desenho está desligado (ninguém anima o invisível). */
-      r.exigir(
-        antigo.existe && antigo.display === "none",
-        `"${antigo.seletor}" continua na marcação e está desligado (display: ${antigo.display})`,
       );
     }
 
     const secoes = await p.evaluate(() =>
       Array.from(document.querySelectorAll("main > section")).map((s) => s.id).filter(Boolean),
     );
-    r.exigir(secoes.length === 13, `as ${secoes.length} seções do material estão na página (esperado 13)`);
-    r.exigir(secoes[0] === "inicio" && secoes.at(-1) === "cadastro", "a ordem vai do hero ao cadastro");
+    r.exigir(secoes.length === 15, `as ${secoes.length} seções do material estão na página (esperado 15)`);
+    r.exigir(secoes[0] === "inicio" && secoes.at(-1) === "unooria", "a ordem vai do hero ao \"Sobre a Unooria\"");
 
     await r.registrar(p, "hero", {
       titulo: "A abertura do ENTRE REDES",
-      mostra: "Campo de estrelas, a marca, a chamada sobre a vida que mudou de tela e o convite ao cadastro.",
+      mostra: "Campo de estrelas, a marca do ENTRE REDES, a chamada sobre a vida que mudou de tela e os livros ao lado.",
       prova:
         "É a única tela do produto que existe sem credencial: nada aqui pode depender de sessão, de api ou de dado de estudante.",
-      detalhe: `${secoes.length} seções · Manrope no h1 · estrelas ${canvas.vivos.rolagem?.w}×${canvas.vivos.rolagem?.h}`,
+      detalhe: `${secoes.length} seções · Manrope no h1 · estrelas ${canvas.rolagem?.w}×${canvas.rolagem?.h}`,
     });
 
     // ── o diálogo de navegação ───────────────────────────────────────────
@@ -137,7 +125,7 @@ await suite(
     r.exigir(itens >= 9, `o índice abre com os ${itens} capítulos do site`);
     await r.registrar(p, "indice", {
       titulo: "O índice completo",
-      mostra: "Diálogo modal com as nove seções e as duas subseções, sobre a página escurecida.",
+      mostra: "Diálogo modal com os oito capítulos e a subseção dos materiais do estudante, sobre a página escurecida.",
       prova:
         "É um `<dialog>` nativo com `showModal`: foco preso, Esc fecha e a rolagem da página trava por trás — comportamento que um menu montado à mão não tem de graça.",
       detalhe: `${itens} itens`,
@@ -156,8 +144,8 @@ await suite(
     // ── a revelação ao rolar tem de chegar ao fim ────────────────────────
     /* PASSA POR CADA BLOCO, um a um, com a espera do próprio Playwright — e
        não com um laço de `scrollTo` dentro de um `evaluate`.
-       Quem revela é um `IntersectionObserver`: um salto direto para `#cadastro`
-       deixa 29 blocos do meio sem nunca terem entrado no viewport, e uma
+       Quem revela é um `IntersectionObserver`: um salto direto para o fim
+       deixa os blocos do meio sem nunca terem entrado no viewport, e uma
        varredura por saltos de tela perde os que as imagens `lazy` (230 KB cada)
        empurram para baixo DEPOIS que a rolagem já passou por ali — era vermelho
        em uma corrida e verde na seguinte, sempre com o material de origem
@@ -169,7 +157,7 @@ await suite(
       await blocos.nth(i).scrollIntoViewIfNeeded({ timeout: 10_000 }).catch(() => {});
       await p.waitForTimeout(80);
     }
-    await p.locator("#cadastro").scrollIntoViewIfNeeded();
+    await p.locator("#contato").scrollIntoViewIfNeeded();
     /* Espera ATIVA pelo estado, não um sleep: a transição é de CSS e o tempo
        dela depende da carga da máquina. */
     await p
@@ -191,26 +179,34 @@ await suite(
       `a revelação ao rolar chegou ao fim${pendentes.length ? ` — ficaram: ${pendentes.join(", ")}` : ""}`,
     );
 
-    /* O FORMULÁRIO NÃO ESTÁ MAIS NA PÁGINA (2026-09-17): ele abre numa janela,
-       pelos três convites "Quero conhecer a solução" — o do cabeçalho, o do
-       fechamento e o da seção do cadastro. */
+    /* O FORMULÁRIO NÃO ESTÁ NA PÁGINA: ele abre numa janela. Na versão final do
+       material (2026-10-28) sobrou UM convite "Quero conhecer a solução", o do
+       fechamento (`#contato`) — o do cabeçalho e a seção `#cadastro` saíram. */
     const convites = await p.evaluate(() =>
-      Array.from(document.querySelectorAll("[data-abrir-cadastro]")).map(
-        (b) => b.getAttribute("aria-label") || b.innerText.trim().split("\n")[0],
-      ),
+      Array.from(document.querySelectorAll("[data-abrir-cadastro]")).map((b) => ({
+        rotulo: b.getAttribute("aria-label") || b.innerText.trim().split("\n")[0],
+        secao: b.closest("section")?.id ?? null,
+      })),
     );
-    r.exigir(convites.length === 3, `os três convites do site abrem a mesma janela (${convites.length} encontrados)`);
     r.exigir(
-      convites.every((rotulo) => rotulo.includes("Quero conhecer a solução")),
-      `todos dizem "Quero conhecer a solução" (${convites.join(" · ")})`,
+      convites.length === 1 && convites[0].secao === "contato",
+      `o convite do cadastro mora no fechamento (${convites.map((c) => c.secao).join(" · ") || "nenhum"})`,
     );
-    /* O formulário existe, mas DENTRO da janela: `main #registration-form` não
-       serve para provar isso — o `<dialog>` é filho da seção, então o seletor o
-       encontra de qualquer jeito. O que distingue é o ancestral. */
-    const ondeMoraOForm = await p.evaluate(() => document.querySelector("#registration-form")?.closest("dialog")?.id ?? "solto na página");
-    r.exigir(ondeMoraOForm === "cadastro-dialog", `o formulário mora na janela, não no corpo da página (${ondeMoraOForm})`);
+    r.exigir(
+      convites.every((c) => c.rotulo.includes("Quero conhecer a solução")),
+      `ele diz "Quero conhecer a solução" (${convites.map((c) => c.rotulo).join(" · ")})`,
+    );
+    /* O formulário existe, mas DENTRO da janela — e a janela FORA do
+       `.closing-side`: lá dentro, a regra `.closing-side .button` do material
+       esticaria os botões do formulário. */
+    const ondeMoraOForm = await p.evaluate(() => {
+      const form = document.querySelector("#registration-form");
+      return { janela: form?.closest("dialog")?.id ?? "solto na página", noConvite: Boolean(form?.closest(".closing-side")) };
+    });
+    r.exigir(ondeMoraOForm.janela === "cadastro-dialog", `o formulário mora na janela, não no corpo da página (${ondeMoraOForm.janela})`);
+    r.exigir(!ondeMoraOForm.noConvite, "a janela não mora dentro do bloco do convite");
 
-    await p.locator("#cadastro [data-abrir-cadastro]").click();
+    await p.locator("#contato [data-abrir-cadastro]").click();
     await p.locator("#cadastro-dialog[open]").waitFor({ timeout: 15_000 });
     const janela = await p.evaluate(() => {
       const dialogo = document.querySelector("#cadastro-dialog");
@@ -260,7 +256,66 @@ await suite(
     r.exigir(!depoisDoEsc.aberta, "o Esc fecha a janela do cadastro");
     r.exigir(!depoisDoEsc.travada, "e devolve a rolagem da página");
 
-    /* Sem print de página INTEIRA: o site tem mais de 20.000px de altura e o
+    // ── o carrossel das missões ──────────────────────────────────────────
+    /* O SERVIDOR entrega o primeiro slide ativo e os outros `inert`; quem faz o
+       "Próximo" andar é o `efeitos/carrossel.ts`. Botão que não anda não dá
+       erro nenhum — a prova é o contador e o slide que deixou de ser `inert`. */
+    await p.locator("#missoes").scrollIntoViewIfNeeded();
+    await p.locator("#mission-carousel [data-next]").click();
+    await p
+      .waitForFunction(() => document.querySelector(".carousel-count")?.textContent === "02 / 05", null, { timeout: 10_000 })
+      .catch(() => {});
+    const carrossel = await p.evaluate(() => {
+      const slides = [...document.querySelectorAll("#mission-carousel .content-slide")];
+      const ativo = slides.findIndex((s) => s.classList.contains("is-active"));
+      return {
+        contador: document.querySelector(".carousel-count")?.textContent,
+        ativo,
+        inertes: slides.filter((s) => s.inert).length,
+        ativoInerte: slides[ativo]?.inert ?? null,
+      };
+    });
+    r.exigir(
+      carrossel.contador === "02 / 05" && carrossel.ativo === 1,
+      `o "Próximo" leva ao segundo slide das missões (${carrossel.contador})`,
+    );
+    r.exigir(
+      carrossel.ativoInerte === false && carrossel.inertes === 4,
+      "só o slide da vez fica alcançável pelo teclado — os outros quatro ficam `inert`",
+    );
+    await r.registrar(p, "missoes-carrossel", {
+      titulo: "As missões, uma por vez",
+      mostra: "O segundo slide do carrossel: o UnooTube, com a animação do feed e o botão da tela real.",
+      prova:
+        "O carrossel é efeito montado depois da hidratação: sem ele a página mostra o primeiro slide e os botões não fazem nada, sem erro na tela.",
+      detalhe: `slide ${carrossel.contador}`,
+    });
+
+    // ── os livros, folheados na imagem ampliada ──────────────────────────
+    await p.locator("#livros .material-zoom").first().click();
+    await p.locator("#print-dialog[open]").waitFor({ timeout: 10_000 });
+    await p.locator("#print-dialog .page-next").click();
+    await p
+      .waitForFunction(() => document.querySelector(".page-pager")?.textContent === "Página 2 de 4", null, { timeout: 10_000 })
+      .catch(() => {});
+    const livro = await p.evaluate(() => ({
+      pagina: document.querySelector(".page-pager")?.textContent,
+      titulo: document.querySelector("#print-title")?.textContent,
+      modo: document.querySelector("#print-dialog").classList.contains("is-book"),
+    }));
+    r.exigir(livro.modo && livro.pagina === "Página 2 de 4", `as páginas dos livros se folheiam (${livro.pagina})`);
+    r.exigir(livro.titulo?.includes("investigar"), `o título acompanha a página (${livro.titulo})`);
+    await r.registrar(p, "livros-folhear", {
+      titulo: "As páginas do livro, ampliadas",
+      mostra: "A segunda das quatro páginas de exemplo, com as setas e o contador.",
+      prova:
+        "Só os cartões dos livros ligam o modo de folhear; as telas das missões e as jornadas abrem como imagem única. As páginas são relidas da própria marcação.",
+      detalhe: livro.titulo,
+    });
+    await p.locator("#print-dialog .close-button").click();
+    await p.waitForTimeout(400);
+
+    /* Sem print de página INTEIRA: o site tem mais de 11.000px de altura e o
        Chrome recusa a captura ("Unable to capture screenshot"). O que substitui
        é a medida, que é como o porte se confere de qualquer forma. */
     const medidas = await p.evaluate(() => ({
@@ -301,26 +356,26 @@ await suite(
       larguras.scroll <= larguras.viewport,
       `nada transborda na largura em celular (${larguras.scroll} ≤ ${larguras.viewport})`,
     );
-    /* Quatro itens no cabeçalho do celular: o "Explorar" não pode sair da tela. */
+    /* O "Entrar" divide o canto com o menu: o "Explorar" não pode sair da tela. */
     const menuCabe = await m.evaluate(
       () => document.querySelector(".menu-button").getBoundingClientRect().right <= window.innerWidth,
     );
-    r.exigir(menuCabe, "no celular, o cabeçalho cabe inteiro: Conhecer, Entrar e o menu");
+    r.exigir(menuCabe, "no celular, o cabeçalho cabe inteiro: a marca, o Entrar e o menu");
     await r.registrar(m, "celular-hero", {
       titulo: "O mesmo site no celular",
-      mostra: "Viewport de 390×844: o trilho de capítulos sai, o CTA encurta para 'Cadastro'.",
+      mostra: "Viewport de 390×844: o trilho de capítulos sai, o menu vira só o ícone e os livros descem para baixo do texto.",
       prova:
         "O material foi desenhado da menor tela para cima, e é no telefone que a secretaria abre o link. Transbordo horizontal aqui é o defeito mais comum e o mais invisível no desktop.",
       detalhe: `scrollWidth ${larguras.scroll} / viewport ${larguras.viewport}`,
     });
 
-    await m.locator("#missoes").scrollIntoViewIfNeeded();
+    await m.locator("#unooria").scrollIntoViewIfNeeded();
     await m.waitForTimeout(1500);
-    await r.registrar(m, "celular-missoes", {
-      titulo: "As missões, no celular",
-      mostra: "O infinito de estrelas e os quatro momentos da missão, empilhados.",
+    await r.registrar(m, "celular-unooria", {
+      titulo: "Sobre a Unooria, no celular",
+      mostra: "O texto sobre a Unooria e, abaixo dele, o infinito de estrelas.",
       prova:
-        "O infinito é amostrado do pixel da marca no cabeçalho; num celular o número de partículas cai pela metade, e a figura tem de continuar reconhecível.",
+        "O infinito é amostrado do pixel do logo da Unooria no rodapé; num celular o número de partículas cai pela metade, e a figura tem de continuar reconhecível.",
     });
 
     // ── a landing anterior continua de pé ────────────────────────────────
