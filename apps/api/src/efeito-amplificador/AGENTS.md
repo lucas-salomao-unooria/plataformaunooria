@@ -88,6 +88,11 @@ A transferência da Etapa 6 (o caso do streaming de áudio, o diário de bordo e
   MESMA régua da homologação.
 - **O comentário aceita 300 caracteres na forma e 280 na régua**: a forma é
   larga para o pacote da 2.0.x continuar legível; a homologação cobra o PRD.
+- **Migração que mexe em DADO destas tabelas tira o `FORCE` da RLS dentro da
+  transação** (`NO FORCE` … `FORCE`, o molde de `20261022120000`). Sem
+  `app.escola_id`, o UPDATE do dono não vê linha nenhuma e afeta 0 — passa em
+  banco virgem e no superusuário local, e quebra o primeiro banco com dados no
+  CHECK seguinte. Foi o que derrubou o `migrate` do dev na 2.1.0 (2026-10-28).
 - **Vocabulário em dois lugares**: disciplina, gate, manchete e indicadores
   estão em `conteudo.ts` e nos CHECKs; `tests/efeito-amplificador-regras.spec.ts`
   compara os textos.

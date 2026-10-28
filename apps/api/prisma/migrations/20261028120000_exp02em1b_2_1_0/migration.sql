@@ -14,10 +14,22 @@
 --    da 2.0.x são lidos com tolerância (`lerPrevia`, `lerFeed`), e cada marca
 --    carrega a versão da ficha que a mediu.
 
+-- As três tabelas têm RLS FORÇADA: sem `app.escola_id`, o UPDATE da migração não
+-- enxerga linha nenhuma (afeta 0) e a asserção também — passa em banco virgem e
+-- falha no primeiro banco com dados, no ADD CONSTRAINT. O FORCE sai só dentro
+-- da transação e volta no fim (o molde de 20261022120000). Idempotente: a
+-- primeira execução no dev falhou no meio, e pode ter deixado parte aplicada.
+
+BEGIN;
+
+ALTER TABLE "exp02em1b_gates_turma" NO FORCE ROW LEVEL SECURITY;
+ALTER TABLE "exp02em1b_gates_historico" NO FORCE ROW LEVEL SECURITY;
+ALTER TABLE "exp02em1b_pacotes" NO FORCE ROW LEVEL SECURITY;
+
 -- 1. O gate ------------------------------------------------------------------
 
-ALTER TABLE "exp02em1b_gates_turma" DROP CONSTRAINT "exp02em1b_gates_turma_fase_check";
-ALTER TABLE "exp02em1b_gates_historico" DROP CONSTRAINT "exp02em1b_gates_historico_fase_check";
+ALTER TABLE "exp02em1b_gates_turma" DROP CONSTRAINT IF EXISTS "exp02em1b_gates_turma_fase_check";
+ALTER TABLE "exp02em1b_gates_historico" DROP CONSTRAINT IF EXISTS "exp02em1b_gates_historico_fase_check";
 
 UPDATE "exp02em1b_gates_turma" SET "fase" = 'exploracao' WHERE "fase" = 'aberta';
 UPDATE "exp02em1b_gates_turma" SET "fase" = 'pausa' WHERE "fase" = 'debate';
@@ -67,4 +79,14 @@ BEGIN
   IF EXISTS (SELECT 1 FROM "exp02em1b_pacotes" WHERE NOT ("conteudo_json" ? 'pauta') OR "conteudo_json" ? 'veiculo') THEN
     RAISE EXCEPTION 'exp02em1b 2.1.0: sobrou pacote na forma da 2.0.x';
   END IF;
+  IF EXISTS (SELECT 1 FROM "exp02em1b_gates_turma" WHERE "fase" NOT IN ('exploracao', 'pausa', 'explicar'))
+     OR EXISTS (SELECT 1 FROM "exp02em1b_gates_historico" WHERE "fase" NOT IN ('pausa', 'explicar')) THEN
+    RAISE EXCEPTION 'exp02em1b 2.1.0: sobrou gate com o nome da 2.0.x';
+  END IF;
 END $$;
+
+ALTER TABLE "exp02em1b_gates_turma" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "exp02em1b_gates_historico" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "exp02em1b_pacotes" FORCE ROW LEVEL SECURITY;
+
+COMMIT;
