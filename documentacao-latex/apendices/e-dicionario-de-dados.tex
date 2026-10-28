@@ -1789,7 +1789,8 @@ estudante só recebe os posts que o feed serviu até a galeria abrir
 \section{Tabelas de O Efeito Amplificador (exp02em1b)}
 
 Desde 2026-10-22 (\adrr{ADR-181}); alteradas na 2.1.0 (\adrr{ADR-191},
-migração \arq{20261028120000\_exp02em1b\_2\_1\_0}). Quatro tabelas, todas com \cd{escola\_id}
+migração \arq{20261028120000\_exp02em1b\_2\_1\_0}) e na 2.2.0
+(\adrr{ADR-192}, \arq{20261028150000\_exp02em1b\_devolutiva}). Quatro tabelas, todas com \cd{escola\_id}
 \cd{NOT NULL} e RLS forçada; o detalhe de cada coluna está no
 \arq{schema.prisma} e as regras no \arq{AGENTS.md} do módulo
 \arq{efeito-amplificador}.
@@ -1798,7 +1799,9 @@ migração \arq{20261028120000\_exp02em1b\_2\_1\_0}). Quatro tabelas, todas com 
   \item \cd{exp02em1b\_pacotes}: \cd{disciplina}, \cd{tema}, \cd{assuntos},
     \cd{contexto}, \cd{conteudo\_json} (o pacote inteiro, validado pelo Zod:
     a pauta, o rascunho em parágrafos, os nomes dos três nós, o recorte, as
-    manchetes e os seis comentários com o horário \enquote{02h40}),
+    manchetes, os seis comentários com o horário \enquote{02h40} e, desde a
+    2.2.0, as \cd{reacoes} opcionais: por variante \cd{manchete.trecho}, o
+    texto de cada comentário que amplifica),
     \cd{origem} (\cd{ia} $|$ \cd{padrao}), \cd{ativo}, \cd{rodada\_atual},
     \cd{aprovado\_em}/\cd{aprovado\_por} (juntos), \cd{ia\_geracoes} e
     \cd{ia\_tokens}. Um em andamento e um rascunho por turma.
@@ -1808,13 +1811,17 @@ migração \arq{20261028120000\_exp02em1b\_2\_1\_0}). Quatro tabelas, todas com 
     a rodada e quem apertou.
   \item \cd{exp02em1b\_sessoes}: \cd{conversa} (as falas, em JSONB; o texto
     do estudante é de menor: fica só para o F5 e não vai a painel,
-    telemetria nem log; desde a 2.1.0 nenhuma fala passa por IA),
+    telemetria nem log; desde a 2.2.0 a mensagem que a árvore não entende vai
+    ao classificador de IA como dado, e a fala grava \cd{classificador}),
     \cd{mensagens\_enviadas} (até 5), \cd{previa} (os nós corrigidos, o
     pedido da fonte e a aprovação), o latch (\cd{manchete},
     \cd{texto\_publicado}, \cd{trecho\_pincado}, \cd{publicada\_em}, juntos),
     \cd{feed} (o motivo do aviso, as duas chaves da Configuração da
     Publicação, a denúncia e os relatos), \cd{explicar\_em}, \cd{indicadores}
-    (os cartões apontados nos bastidores) e \cd{concluido\_em}. A coluna
+    (os cartões apontados nos bastidores), \cd{concluido\_em} e
+    \cd{devolutiva} (JSONB nulo, 2.2.0: \cd{origem} \cd{ia} $|$
+    \cd{modelo}, um texto por habilidade e \cd{geradaEm}; gerada uma vez na
+    conclusão, a partir dos fatos da sessão). A coluna
     \cd{ultimo\_nao\_comprova} ficou sem uso na 2.1.0.
 \end{itemize}
 

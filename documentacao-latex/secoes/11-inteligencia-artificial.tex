@@ -60,8 +60,18 @@ Preparo do pacote & exp02em1b, \arq{src/efeito-amplificador/} &
   o colega exposto), a correção de cada um, o recorte, as manchetes e os
   comentários da madrugada, a pauta do grêmio, sobre o tema do professor, com
   a quota dele. A saída passa pela MESMA régua da homologação; sem saldo ou sem
-  provedor, o banco curado. É a ÚNICA IA da missão: a conversa do UnooriaAI em
-  sala é a árvore de intenções, sem IA (\adrr{ADR-191}).\\
+  provedor, o banco curado. Desde a 2.2.0 (\adrr{ADR-192}), uma segunda
+  chamada escreve as reações do feed ao post de cada estudante (seis
+  variantes; só o texto de quem amplifica muda), com régua própria; falhando,
+  o pacote segue sem elas.\\
+\zebra IA da aula & exp02em1b, \arq{src/efeito-amplificador/ia-da-aula.service.ts} &
+  \textbf{Em sala}, com a quota do \emph{estudante} e tetos de 5 e 7\,s
+  (\adrr{ADR-192}). O \textbf{classificador} só recebe o que a árvore de
+  intenções não entende e devolve uma intenção da MESMA lista fechada (a fala
+  continua a do banco); a \textbf{devolutiva} da conclusão redige um parágrafo
+  por habilidade a partir dos fatos que a régua já lê, nunca do texto do
+  estudante. Nenhuma das duas decide o que a régua mede; perdendo a corrida,
+  vale a árvore ou o modelo curado.\\
 Preparo da cena & exp02ef1b, \arq{src/enigma-capa/} &
   O texto da cena (o lugar, as duas ações opostas no mesmo minuto, os dois
   objetos fixos da parede, os selos e as falas da visitante) e a panorâmica
