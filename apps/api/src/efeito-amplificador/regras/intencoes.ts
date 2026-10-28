@@ -1,4 +1,4 @@
-import type { ConteudoDoPacote, Intencao } from "../conteudo";
+import { SUGESTOES_DE_PROMPT, type ConteudoDoPacote, type Intencao } from "../conteudo";
 
 /**
  * O que o estudante pediu ao UnooriaAI — a ÁRVORE DE INTENÇÕES do banco de
@@ -159,6 +159,76 @@ export function classificar(
   if (algum(n, APROVAR)) return "aprovar_previa";
   if (algum(n, GERAR)) return "gerar_rascunho_inicial";
   return "fora_do_tema";
+}
+
+// ─────────────────────────────────────────────────────────── a IA primeiro (ADR-193)
+
+/**
+ * Por onde a mensagem é decidida. Desde a 2.3.0 a IA classifica PRIMEIRO e a
+ * árvore é a reserva — mas três caminhos nunca vão à IA, porque são
+ * determinísticos por desenho:
+ *
+ * - `estado`: o "sim" logo depois da oferta de trocar o dado. É o estado da
+ *   prévia que dá sentido a ele, não o texto;
+ * - `sugestao`: as três sugestões da copy, tocadas como estão. O TC-03 corrige
+ *   autoria E privacidade sempre — é a copy do PO, e a árvore a lê exata;
+ * - `guarda`: texto que tenta mandar no classificador (o nome de uma intenção,
+ *   "ignore as instruções"). Vira fora do tema sem chamar ninguém: a árvore o
+ *   leria pela palavra "fonte" e daria crédito.
+ *
+ * O resto vai à IA (`ia`), com a leitura da árvore guardada como reserva.
+ */
+export type RotaDaMensagem = { tipo: "estado" | "sugestao" | "guarda" | "ia"; arvore: Intencao };
+
+const SUGESTOES_NORMALIZADAS = new Set(SUGESTOES_DE_PROMPT.map(normalizar));
+
+/**
+ * O nome de uma intenção (com o sublinhado: nenhum estudante escreve assim) e
+ * a ordem clássica de quem tenta injetar instrução. Palavras soltas como
+ * "confiança" ou "intenção" NÃO entram: "essa fonte é de confiança?" é um
+ * pedido de fonte legítimo.
+ */
+const INJECAO =
+  /\b(gerar_rascunho_inicial|auditar_[a-z_]+|substituir_dado|revisao_ampla|aprovar_previa|fora_do_tema)\b|\bignor[ae]\w*\s+(as\s+|todas\s+as\s+|suas\s+)?(instruc|regras|ordens)|system prompt|prompt de sistema/;
+
+export function pareceInjecao(texto: string): boolean {
+  return INJECAO.test(texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+}
+
+export function rotaDaMensagem(
+  texto: string,
+  conteudo: Pick<ConteudoDoPacote, "fonteInventada" | "colega" | "fonteOriginal">,
+  ofertaDeSubstituicao: boolean,
+): RotaDaMensagem {
+  const arvore = classificar(texto, conteudo, ofertaDeSubstituicao);
+  if (arvore === "substituir_dado") return { tipo: "estado", arvore };
+  if (SUGESTOES_NORMALIZADAS.has(normalizar(texto))) return { tipo: "sugestao", arvore };
+  if (pareceInjecao(texto)) return { tipo: "guarda", arvore: "fora_do_tema" };
+  return { tipo: "ia", arvore };
+}
+
+/** A leitura do classificador: a intenção e a confiança que ele declarou. */
+export interface LeituraDaIa {
+  intencao: Exclude<Intencao, "substituir_dado">;
+  confianca: number;
+}
+
+/** Abaixo disto a IA não decide: vale a árvore. */
+export const CONFIANCA_MINIMA = 0.7;
+
+/**
+ * A intenção que vale. Fora da rota `ia`, a da árvore (ou a guarda). Na rota
+ * `ia`: a da IA se ela respondeu com confiança; senão — lenta, sem saldo,
+ * recusada, insegura —, a da árvore, como na 2.2.0. `arvore` volta junto para
+ * a sessão guardar as duas leituras quando discordam (a auditoria do piloto).
+ */
+export function decidirIntencao(
+  rota: RotaDaMensagem,
+  ia: LeituraDaIa | null,
+): { intencao: Intencao; classificador: "arvore" | "ia" | "guarda"; arvore: Intencao } {
+  if (rota.tipo === "guarda") return { intencao: "fora_do_tema", classificador: "guarda", arvore: rota.arvore };
+  if (rota.tipo === "ia" && ia && ia.confianca >= CONFIANCA_MINIMA) return { intencao: ia.intencao, classificador: "ia", arvore: rota.arvore };
+  return { intencao: rota.arvore, classificador: "arvore", arvore: rota.arvore };
 }
 
 /** O `prompt_tipo` da telemetria (PRD EVT-001) de cada intenção — o que o KPI-02 conta. */

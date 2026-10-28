@@ -3,7 +3,7 @@ import { AI_PROVIDER, type AiJsonRequest, type AiProvider } from "../ai/provider
 import { QuotaService } from "../ai/quota.service";
 import { rateLimit } from "../comum/rate-limit";
 import { logger } from "../observabilidade/logger";
-import type { ConteudoDoPacote, Intencao } from "./conteudo";
+import type { ConteudoDoPacote } from "./conteudo";
 import {
   MAX_TOKENS_DA_DEVOLUTIVA,
   MAX_TOKENS_DO_CLASSIFICADOR,
@@ -17,6 +17,7 @@ import {
   validarSaidaDoClassificador,
 } from "./prompts-da-aula";
 import type { FatosDaDevolutiva, HabilidadeDaDevolutiva } from "./regras/devolutiva";
+import type { LeituraDaIa } from "./regras/intencoes";
 
 /**
  * Os prazos da IA da aula. O SDK da experiência desiste em 10 s, e a rota
@@ -41,9 +42,9 @@ export type MotivoSemIa = "limite" | "sem-saldo" | "tempo-esgotado" | "saida-inv
  * A IA DURANTE a aula da exp02em1b (ADR-192) — duas chamadas curtas, e nenhuma
  * decide o que a régua lê:
  *
- * - `classificar`: a mensagem que a árvore NÃO entendeu vira uma intenção da
- *   lista fechada (ou `fora_do_tema`). A prévia muda pela intenção e a fala
- *   continua a do 01e;
+ * - `classificar`: a mensagem vira uma intenção da lista fechada, com a
+ *   confiança declarada (desde a 2.3.0, ADR-193, a IA lê PRIMEIRO e a árvore
+ *   é a reserva). A prévia muda pela intenção e a fala continua a do 01e;
  * - `redigirDevolutiva`: o parágrafo de cada habilidade, a partir dos fatos já
  *   gravados — nunca do texto do estudante.
  *
@@ -68,7 +69,7 @@ export class IaDaAulaDaExp02em1bService {
     escolaId: string,
     estudanteId: string,
     contexto: { mensagem: string; tema: string; conteudo: Pick<ConteudoDoPacote, "fonteInventada" | "fonteOriginal" | "colega"> },
-  ): Promise<Exclude<Intencao, "substituir_dado"> | null> {
+  ): Promise<LeituraDaIa | null> {
     const r = await this.correr(escolaId, estudanteId, "classificar", {
       system: SYSTEM_DO_CLASSIFICADOR,
       prompt: promptDoClassificador(contexto),
