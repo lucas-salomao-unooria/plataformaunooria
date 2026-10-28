@@ -143,6 +143,20 @@ const FONTES: Record<ExperienciaComAtividade, FonteDeAtividades> = {
       );
     },
   },
+  /* Nina e a Notícia que Desapareceu (ADR-197): o pacote homologado, como no Júri (nasce homologado). */
+  exp03ef1b: {
+    async emAndamento(tx, escolaId, turmaId) {
+      const ativo = await tx.exp03ef1bPacote.findFirst({
+        where: { escolaId, turmaId, ativo: true },
+        select: { id: true },
+      });
+      return ativo?.id ?? null;
+    },
+    async daTurma(tx, escolaId, turmaId, atividadeId) {
+      if (!UUID_RE.test(atividadeId)) return false;
+      return (await tx.exp03ef1bPacote.count({ where: { id: atividadeId, escolaId, turmaId } })) > 0;
+    },
+  },
   /* O Instanooria escolhe a atividade da criança pela regra do motor — a mesma
      de `POST /runs` e do `boot`. A atividade antiga SEM turma vale para a escola
      inteira, e por isso é "desta turma" também: a montagem dela é por turma. */
