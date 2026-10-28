@@ -1067,8 +1067,8 @@ export const MISSAO_EFEITO_AMPLIFICADOR: Missao = {
     formato:
       "Dois aplicativos da Unooria: o UnooriaAI, o assistente editorial, para criar e auditar o post, e o " +
       "Unoovista, a rede social, para a repercussão de madrugada e os bastidores da entrega. Na aula, o " +
-      "assistente responde por uma lista fechada de intenções, e a IA só entra para entender o pedido que " +
-      "essa lista não entendeu (a resposta continua a do banco curado). As reações do feed vêm escritas no " +
+      "assistente responde por uma lista fechada de intenções: a IA lê o pedido do estudante e o traduz para " +
+      "essa lista (a resposta continua a do banco curado). As reações do feed vêm escritas no " +
       "seu preparo, e a devolutiva final é redigida a partir do que o estudante fez; a régua não muda.",
     atos: [
       {

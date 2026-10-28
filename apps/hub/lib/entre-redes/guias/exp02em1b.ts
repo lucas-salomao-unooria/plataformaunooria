@@ -7,7 +7,8 @@ import type { GuiaDaAula } from "./tipos";
  * debate e "a mesma missão em três aulas"; §11 — o aviso do podcast), com as
  * orientações do PO: sem a etapa de transferência (o diário do Refletir) e sem
  * Canal B. Desde a 2.2.0 a IA entra na aula em dois pontos que a régua não lê:
- * entender o pedido que a árvore do chat não entendeu e redigir a devolutiva.
+ * entender o pedido do estudante no chat (desde a 2.3.0 ela lê primeiro, e a
+ * árvore é a reserva) e redigir a devolutiva.
  *
  * As três últimas perguntas do debate são o TC-22 a TC-24, LITERAIS — as mesmas
  * do roteiro do painel (`ROTEIRO_DO_DEBATE` da api); `efeito-amplificador-tipos.test.ts`
@@ -282,7 +283,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
 
   duvidas: [
     { pergunta: "Por que o post de quem foi cuidadoso também vai para a madrugada?", resposta: "É a virada da missão: a entrega é a mesma para todos, para mostrar que o incentivo é da rede, não de quem escreveu." },
-    { pergunta: "O UnooriaAI é uma IA de verdade na aula?", resposta: "Em parte. Ele responde por uma lista fechada de intenções, igual para todos; a IA só entra para entender um pedido que essa lista não entendeu, e a resposta continua a do banco curado. As reações do feed vêm escritas no seu preparo, e passam pela sua curadoria; no fim, a devolutiva de cada estudante é redigida a partir do que ele fez. Nada disso muda a régua." },
+    { pergunta: "O UnooriaAI é uma IA de verdade na aula?", resposta: "Em parte. Ele responde por uma lista fechada de intenções, igual para todos: a IA lê o pedido do estudante e o traduz para essa lista, e a resposta continua a do banco curado. As três sugestões da tela e o \"sim\" que aceita trocar o dado não passam pela IA. As reações do feed vêm escritas no seu preparo, e passam pela sua curadoria; no fim, a devolutiva de cada estudante é redigida a partir do que ele fez. Nada disso muda a régua." },
     { pergunta: "Por que não há perguntas nem diário no fim?", resposta: "As quatro habilidades são registradas pelo que o estudante faz na missão; a etapa de perguntas e a de transferência (o diário do Refletir) saíram por decisão de produto." },
     { pergunta: "Onde vejo o resultado de cada estudante?", resposta: "Na aba Habilidades da atividade: a matriz de cada estudante nas quatro habilidades, com os três níveis, para você confirmar ou ajustar." },
   ],

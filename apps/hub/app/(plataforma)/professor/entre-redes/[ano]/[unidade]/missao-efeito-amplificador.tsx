@@ -15,9 +15,9 @@ import { AtividadesDaMissao } from "./atividades-da-missao";
  * Abre com o fato que muda a condução: **sem uma atividade em andamento a
  * missão não abre** (o tema dela entra na pauta do grêmio e nas falas do
  * UnooriaAI), e os dois botões da aula são seus. As equipes (E13) são de cada
- * atividade. Na aula, o UnooriaAI responde por uma lista fechada de intenções, e
- * a IA (2.2.0) só entende o pedido que a lista não entendeu e redige a
- * devolutiva — a régua não lê nenhuma das duas.
+ * atividade. Na aula, a IA lê o pedido do estudante e o traduz para uma lista
+ * fechada de intenções (2.3.0; a lista também responde sozinha, como reserva),
+ * e redige a devolutiva — a régua não lê nenhuma das duas.
  */
 export function MissaoEfeitoAmplificador({
   ano,
@@ -53,8 +53,8 @@ export function MissaoEfeitoAmplificador({
             <strong className="text-unooria-neutral-950">Nenhum problema do rascunho chega marcado.</strong> O
             UnooriaAI escreve com segurança e cortesia; a estatística inventada, o trecho copiado e o colega exposto
             só aparecem para quem pergunta. Não há mascote nem aviso dizendo “cuidado, isso viola a LGPD”. O
-            assistente responde por uma lista fechada de intenções, igual para todos; a IA só entra para entender um
-            pedido que a lista não entendeu, e a resposta continua a do banco curado.
+            assistente responde por uma lista fechada de intenções, igual para todos: a IA lê o pedido do estudante e
+            o traduz para essa lista, e a resposta continua a do banco curado. Sem a IA, a lista entende sozinha.
           </p>
           <p>
             <strong className="text-unooria-neutral-950">A entrega não muda com o texto.</strong> Qualquer manchete,
