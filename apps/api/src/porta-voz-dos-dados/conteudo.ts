@@ -171,6 +171,13 @@ export const TEXTOS_DO_CHAT = {
 } as const;
 
 /** O nome FIXO do grupo público; o recorte do professor entra depois dele (TC-02). */
+/**
+ * O moderador do grupo é FIXO: o PO decidiu (refazer de design, 28/10) que o
+ * papel do Coordenador Silva não muda. A IA escreve a fala dele no tema da
+ * aula; o nome e o perfil o servidor impõe ao entregar a sessão.
+ */
+export const COORDENADOR = { autor: "Coordenador Silva", perfil: "Gestor do Comitê de Políticas Públicas" } as const;
+
 export const NOME_DO_GRUPO = "Comitê Municipal de Políticas Públicas";
 
 export function nomeDoGrupo(recorte: string): string {

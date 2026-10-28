@@ -27,6 +27,7 @@ import {
   SERIE_HISTORICA,
   SLOTS_DE_PUBLICACAO,
   TEXTOS_DO_CHAT,
+  COORDENADOR,
   VERSAO_DO_INSTRUMENTO,
   conteudoDoPadrao,
   nomeDoGrupo,
@@ -142,7 +143,10 @@ function parecerDe(s: LinhaDaSessao): Parecer | null {
 /** O conteúdo do `Json` da linha, ou `null` se a forma não bate (linha de outra versão). */
 function lerConteudo(bruto: Prisma.JsonValue): ConteudoDoPacote | null {
   const lido = ConteudoBaseSchema.safeParse(bruto);
-  return lido.success ? (lido.data as ConteudoDoPacote) : null;
+  if (!lido.success) return null;
+  const c = lido.data as ConteudoDoPacote;
+  // O nome e o perfil do Coordenador são fixos (decisão do PO); a IA só escreve a fala.
+  return { ...c, posAha: { ...c.posAha, coordenador: { ...c.posAha.coordenador, ...COORDENADOR } } };
 }
 
 /** JSON com as chaves em ordem: o JSONB reordena, e a comparação crua mentiria. */
