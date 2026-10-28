@@ -4,6 +4,7 @@ import {
   COMENTARIOS_POR_PACOTE,
   MANCHETE_MAX_CARACTERES,
   PARAGRAFO_MAX_PALAVRAS,
+  PAUTA,
   ROTULO_DA_DISCIPLINA,
   type ConteudoDoPacote,
   type Disciplina,
@@ -12,44 +13,48 @@ import { ConteudoBaseSchema } from "./contrato-de-rotas";
 import { problemasDoConteudo } from "./regras/pacote";
 
 /**
- * O contrato com o gerador do PREPARO DOCENTE — a única superfície de IA da
- * exp02em1b, antes da aula e com o professor olhando (one-pager §9a, §14).
+ * O contrato com o gerador do PREPARO DOCENTE — a ÚNICA superfície de IA da
+ * exp02em1b, antes da aula e com o professor olhando (PRD §12.2, ADR-191). A
+ * aula não chama IA: o UnooriaAI é a árvore de intenções sobre o pacote que
+ * este preparo escreveu e o professor homologou.
  *
- * O prompt de sistema NUNCA vai ao bundle (regra 2). A IA da SALA é outra, com
- * a quota do estudante: a conversa híbrida (`prompts-da-conversa.ts`), que
- * redige sobre o pacote que este preparo escreveu e o professor homologou.
- *
- * O modelo escreve o RECHEIO da camada customizável (o tema da campanha); a
- * camada fixa — os três nós, a correção de cada um, o recorte, as manchetes e
- * as duas dimensões de saúde — sai garantida pela RÉGUA (`problemasDoConteudo`)
- * no `validar`: fora dela, a tentativa é regerada.
+ * O prompt de sistema NUNCA vai ao bundle (regra 2). O modelo escreve o RECHEIO
+ * da camada customizável (o tema da campanha); a camada fixa — a pauta, os três
+ * nós, a correção de cada um, o recorte, as manchetes e os comentários com os
+ * relatos de saúde e as contas invasivas — sai garantida pela RÉGUA
+ * (`problemasDoConteudo`) no `validar`: fora dela, a tentativa é regerada.
  */
 
-export const SYSTEM_DO_PREPARO = `Você é o assistente de conteúdo da Unooria para o 2º ano do Ensino Médio (estudantes de 15 a 17 anos).
-Você escreve o pacote de uma missão de letramento digital: um estudante, comunicador do grêmio estudantil, pede a um assistente de IA simulado (o "UnooriaAI") um post para a campanha da escola, audita o rascunho e publica numa rede social simulada (o "Unoovista"), onde o algoritmo amplifica o post de madrugada.
+export const SYSTEM_DO_PREPARO = `Você é o motor pedagógico da missão "O Efeito Amplificador" para o 2º ano do Ensino Médio (estudantes de 15 a 17 anos).
+Um estudante, comunicador do grêmio estudantil, pede a um assistente de IA simulado (o "UnooriaAI") o post da campanha da escola, audita o rascunho e publica numa rede social simulada (o "Unoovista"), onde o algoritmo amplifica o post de madrugada.
 
-O RASCUNHO do assistente soa formal, articulado e prestativo, e DEVE embutir os três nós críticos, cada um num parágrafo próprio:
-a) ALUCINAÇÃO FACTUAL ("alucinacao"): uma estatística alarmista atribuída a um instituto INVENTADO e verossímil (ex.: "Segundo o DataBrasil 2026, 92% dos alunos..."). Nunca um instituto real (IBGE, Datafolha, universidades reais).
-b) VIOLAÇÃO AUTORAL ("plagio"): um trecho literal de uma coluna de um veículo regional fictício, introduzido pelo nome do veículo, SEM aspas e sem crédito ao autor.
-c) VIOLAÇÃO DE LGPD ("lgpd"): o nome completo e a turma de um colega fictício da escola, expondo um caso sensível de saúde (dado pessoal sensível).
-Os outros parágrafos (um ou dois) são texto de ligação, sem nó.
+Gere um pacote JSON estrito com:
 
-Para CADA nó, escreva também "corrigido": a versão que o assistente entrega quando o estudante pede a correção:
-- alucinacao: sem o instituto e sem o número, trocado por uma orientação a partir da experiência da própria escola;
-- plagio: o MESMO trecho entre aspas, creditando o veículo pelo nome;
-- lgpd: sem nome, sem turma e sem diagnóstico, tratando o tema de forma anônima e educativa.
-"recorte" é uma frase de até 120 caracteres que está, literalmente, DENTRO do trecho copiado (no original e no corrigido): a frase mais ambígua, que um algoritmo pinçaria fora de contexto.
+1. A PAUTA institucional do grêmio sobre o tema: "titulo" (até ${PAUTA.titulo} caracteres), "descricao" (até ${PAUTA.descricao}) e de ${PAUTA.orientacoes.min} a ${PAUTA.orientacoes.max} "orientacoes" editoriais curtas.
 
-As três manchetes: "neutra" (equilibrada), "construtiva" (informativa e propositiva) e "sensacionalista" (provocativa, de conflito) — todas críveis, com até ${MANCHETE_MAX_CARACTERES} caracteres.
+2. O RASCUNHO do assistente — formal, articulado e prestativo — em parágrafos, com exatamente três nós críticos, cada um num parágrafo próprio:
+a) "alucinacao": uma estatística alarmante inventada, atribuída a um instituto FICTÍCIO com o ano 2026 (ex.: "Segundo o DataBrasil 2026, 92% dos alunos..."). Nunca um instituto real.
+b) "plagio": uma frase copiada literalmente de um artigo de uma autora ou autor fictício, SEM aspas e sem citação.
+c) "lgpd": o nome completo e a turma de um colega fictício da escola, com um dado sensível ou privado.
+Os outros parágrafos (um a três) são texto de ligação, sem nó.
 
-Os ${COMENTARIOS_POR_PACOTE} comentários do Unoovista são de madrugada (horário entre 01:15 e 03:45, formato "02:40"), com ${COMENTARIO_PALAVRAS.min} a 30 palavras, na fala de adolescentes, sem palavrão:
-- pelo menos um de "saude_fisica" (perda de sono, dor de cabeça, horas rolando a tela sem comer);
-- pelo menos um de "saude_mental" (ansiedade, humilhação, medo de ir à escola);
-- pelo menos um de "risco_seguranca" (conta desconhecida invasiva pedindo contato ou localização, ou perfil de ofertas oportunista);
-- os demais podem ser "neutro" (alguém que percebe a frase recortada fora de contexto).
-Cada comentário tem autor (primeiro nome fictício ou "Conta Desconhecida"), handle (@ em minúsculas, sem espaço), horario, tipo e texto.
+Para CADA nó, escreva "corrigido": a versão que o assistente entrega quando o estudante pede:
+- alucinacao: sem o instituto e sem o número, com uma afirmação geral e verificável;
+- plagio: a MESMA frase entre aspas, com o crédito à autoria (o nome da autora ou autor e onde publicou);
+- lgpd: sem nome, sem turma e sem o dado sensível, tratando o tema de forma coletiva.
+"fonteInventada" é o nome do instituto como aparece na alucinação; "colega", o nome e a turma como aparecem no nó de LGPD; "fonteOriginal", a autoria do trecho copiado (ex.: "Dra. Helena Ramos na Revista Educação & Contemporaneidade (2025)").
+"recorte" é a frase mais ambígua do texto, que um algoritmo pinçaria fora de contexto: ela precisa estar, literalmente, num parágrafo de LIGAÇÃO (que continua no post depois das correções).
 
-Regras gerais: português do Brasil; cada parágrafo com no máximo ${PARAGRAFO_MAX_PALAVRAS} palavras; nenhuma pessoa, marca, escola ou órgão reais; nada de armas, violência explícita, sexo, drogas, política partidária ou religião.`;
+3. A tríade de MANCHETES de capa: "neutra" (equilibrada), "construtiva" (colaborativa, com soluções) e "sensacionalista" (alarmista, de conflito) — todas críveis, com até ${MANCHETE_MAX_CARACTERES} caracteres.
+
+4. Exatamente ${COMENTARIOS_POR_PACOTE} COMENTÁRIOS do feed da madrugada, com horário estritamente entre 01h00 e 03h30 (formato "02h40"), de ${COMENTARIO_PALAVRAS.min} a 30 palavras, na fala de adolescentes, sem palavrão:
+- pelo menos 2 de "saude_fisica" (insônia, dor de cabeça, cansaço visual);
+- pelo menos 1 de "saude_mental" (ansiedade, medo de ir à escola);
+- pelo menos 2 de "anonimo_agressivo" (contas anônimas invasivas inflamando o atrito, com nome de usuário como "user_89412");
+- os demais de "engajamento" (alguém que polariza a discussão).
+Cada comentário tem id, autor (primeiro nome fictício ou nome de usuário), horario, tipo e texto.
+
+Regras gerais: português do Brasil; cada parágrafo com no máximo ${PARAGRAFO_MAX_PALAVRAS} palavras; nenhuma pessoa, marca, escola ou órgão reais; nada de armas, violência explícita, sexo, drogas, política partidária ou religião. Não inclua introduções nem markdown fora do JSON.`;
 
 export function promptDoPreparo(p: { disciplina: Disciplina; tema: string; assuntos: readonly string[]; contexto?: string | null }): string {
   return `Escreva o pacote da missão.
@@ -66,8 +71,13 @@ const STRING = { type: "string" } as const;
 
 export const SCHEMA_DO_PREPARO: AiJsonSchema = {
   type: "object",
-  required: ["rascunho", "fonteInventada", "colega", "veiculo", "recorte", "manchetes", "comentarios"],
+  required: ["pauta", "rascunho", "fonteInventada", "colega", "fonteOriginal", "recorte", "manchetes", "comentarios"],
   properties: {
+    pauta: {
+      type: "object",
+      required: ["titulo", "descricao", "orientacoes"],
+      properties: { titulo: STRING, descricao: STRING, orientacoes: { type: "array", items: STRING } },
+    },
     rascunho: {
       type: "array",
       items: {
@@ -75,15 +85,15 @@ export const SCHEMA_DO_PREPARO: AiJsonSchema = {
         required: ["id", "texto"],
         properties: {
           id: STRING,
-          no: { type: "string", description: 'alucinacao, plagio, lgpd — ou vazio no texto de ligação' },
+          no: { type: "string", description: "alucinacao, plagio, lgpd — ou vazio no texto de ligação" },
           texto: STRING,
           corrigido: { type: "string", description: "Só nos três nós." },
         },
       },
     },
     fonteInventada: { type: "string", description: "O nome do instituto inventado, como aparece na alucinação." },
-    colega: { type: "string", description: "Nome completo e turma do colega exposto, como aparece no nó de LGPD." },
-    veiculo: { type: "string", description: "O nome do veículo copiado, como aparece no plágio." },
+    colega: { type: "string", description: "Nome completo e turma do colega exposto, como aparecem no nó de LGPD." },
+    fonteOriginal: { type: "string", description: "A autoria do trecho copiado: o nome e onde publicou." },
     recorte: STRING,
     manchetes: {
       type: "object",
@@ -94,15 +104,15 @@ export const SCHEMA_DO_PREPARO: AiJsonSchema = {
       type: "array",
       items: {
         type: "object",
-        required: ["id", "autor", "handle", "horario", "tipo", "texto"],
-        properties: { id: STRING, autor: STRING, handle: STRING, horario: STRING, tipo: STRING, texto: STRING },
+        required: ["id", "autor", "horario", "tipo", "texto"],
+        properties: { id: STRING, autor: STRING, horario: STRING, tipo: STRING, texto: STRING },
       },
     },
   },
 };
 
 /**
- * Teto de saída. O pacote escrito fica perto de 1.500 tokens, mas o Gemini 3
+ * Teto de saída. O pacote escrito fica perto de 1.800 tokens, mas o Gemini 3
  * PENSA e o raciocínio conta no mesmo teto (ADR-148): teto apertado devolve
  * `MAX_TOKENS` com o JSON vazio. O teto existe porque JSON truncado não chega
  * como `MAX_TOKENS` legível — chega como `JSON.parse` falhando (ADR-74).

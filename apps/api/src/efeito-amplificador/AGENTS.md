@@ -2,122 +2,104 @@
 
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
-Missão da 2ª série do EM, unidade 1 (ADR-181), vinda da esteira
-(`artefatos_exp02em1b`, 2026-10-22). Ela tomou o código `exp02em1b`; a Missão
-Tempestade que o tinha é `exp02em1b-v0` (módulo `unoogpt`, tabelas
-`exp02em1b_v0_*`), no ar e fora do catálogo.
+Missão da 2ª série do EM, unidade 1. A **2.1.0** (ADR-191) segue a revisão do
+PO (`artefatos_exp02em1b`, 2026-10-27: o PRD 2.1.0, o banco `01e`, a copy `06`
+e o protótipo de 32 estados) e SUPERA as decisões da 2.0.x (ADR-181) no que é
+desta missão. O código `exp02em1b` continua dela; a Missão Tempestade é
+`exp02em1b-v0` (módulo `unoogpt`), no ar e fora do catálogo.
 
-O estudante é comunicador do grêmio: pede o post ao **UnooriaAI**, audita o
+O estudante é o comunicador do grêmio: pede o post ao **UnooriaAI**, audita o
 rascunho (a estatística inventada, o trecho copiado sem crédito, o colega
-exposto), escolhe a manchete e **publica no Unoovista** (o LATCH). O relógio
+exposto), escolhe a manchete e **publica no Unoovista** (o latch 1). O relógio
 corre até 02h30, o algoritmo pinça um trecho e entrega de madrugada para
-TODOS, e o feed vira crise (saúde física, mental e contas invasivas). O
-professor pausa as telas, conduz o debate e libera a **Etapa 5**: a folha de
-bastidores, onde o estudante aponta os dois indicadores que comprovam a
-retenção, e conclui. Quatro tabelas: `exp02em1b_pacotes`, `_gates_turma`,
-`_gates_historico`, `_sessoes` (migração `20261022130000_exp02em1b_efeito_amplificador`).
+TODOS, e o feed vira crise. Ele modera (o aviso de cuidado com o motivo, a
+Configuração da Publicação) e busca apoio (a Central: denúncia e relato). O
+professor pausa as telas, conduz o debate e libera os **bastidores** (Etapa 5);
+o estudante conclui (o latch 2) e lê o podcast. Quatro tabelas, as mesmas da
+2.0.x (`20261022130000`), alteradas por `20261028120000_exp02em1b_2_1_0`.
 
-## As orientações do PO que vencem os artefatos (2026-10-22)
+## Fora desta versão (decisão do dono do produto)
 
-- **SEM a etapa de transferência e SEM o Canal B.** O one-pager previa o
-  diário de bordo (texto livre de menor) e quatro enquetes no `StoryPoll`;
-  saíram os dois. A ficha (`evidencias/fichas/exp02em1b.ts`) é só Canal A, e
-  não há tabela de reflexão.
-- **A abertura do chat é a fala literal** `conteudo.ts#falaDeAbertura`, com o
-  tema do pacote no lugar de "[tema customizado]".
+A transferência da Etapa 6 (o caso do streaming de áudio, o diário de bordo e
+`exp02em1b_reflexoes` do PRD) e o Canal B. A ficha é 100% Canal A.
 
 ## O que não é óbvio
 
-- **O UnooriaAI da aula é HÍBRIDO** (decisão do Lucas, 2026-10-22, ADR-181):
-  a IA ENTENDE e REDIGE, o servidor DECIDE. `conversa.service.ts` pede ao
-  modelo `{intencao, resposta}` — a intenção da lista FECHADA (`INTENCOES`) —,
-  e quem muda a prévia é `aplicarIntencao`, pela intenção, nunca pelo texto:
-  a régua das habilidades continua exata. Quota do perfil `estudante`
-  (`temSaldo` antes, débito por tentativa), uma tentativa, corrida de 12 s, e
-  a chamada FORA da transação (`mensagem` lê, chama a IA e grava; se a sessão
-  andou no meio, a árvore responde sobre o estado de agora). Até 5 mensagens
-  (CHECK); a quinta leva o aviso do limite junto.
-- **Os guardrails são do SERVIDOR** (`prompts-da-conversa.ts#validarSaidaDaConversa`),
-  não só do prompt: intenção fora da lista, resposta vazia, longa, com link
-  ou com palavra que quebra o disfarce é recusada; ao ENTREGAR ou CONFIRMAR o
-  rascunho (e fora do tema) a IA não pode admitir o problema nem nomear o
-  colega — a REGRA DE OURO: o problema só aparece quando o estudante questiona;
-  e a resposta à fonte não pode dizer que já substituiu (só a substituição
-  substitui). Recusou? A árvore responde.
-- **A árvore de intenções é a RESERVA** (`regras/intencoes.ts`, o 01e):
-  minúsculas, sem acento, sem pontuação, lista fechada e PRECEDÊNCIA (a
-  revisão geral antes da LGPD), mais três gatilhos do pacote (cada palavra
-  distintiva do instituto, o primeiro nome do colega e o veículo inteiro). O
-  "sim" só aceita a substituição logo depois da fala da fonte. As falas dela
-  (`falaDoAssistente`) levam o TEMA do professor — as do 01e diziam "celular e
-  convivência" e mentiam em qualquer outro tema.
-- **`duvida_conceitual` só a IA reconhece.** "O que é a LGPD?" RESPONDE ao
-  conceito sem mexer no post; a árvore leva a mesma frase ao ajuste. Sem
-  rascunho, a fala é sempre a do servidor ("ainda não montei o post"): a da
-  IA poderia descrever um post que não existe.
-- **`origem` em cada fala do assistente** (`ia` | `regras`) desce no estado:
-  não é gabarito, e a e2e com IA real cobra `ia`.
-- **Perguntar a fonte não corrige.** A EM13CO14 separa as duas coisas: o
-  pedido (`pediuFonte`) e a correção (a substituição, a revisão geral ou tirar
-  o parágrafo). Atingiu = as duas.
-- **Sem edição livre do texto.** O estudante tira/devolve parágrafos
-  (`POST /paragrafo`) e pede correções ao UnooriaAI; não reescreve frase. Com
-  texto livre, a régua dependeria de uma heurística sobre texto de menor
-  ("ainda expõe o colega?"). Tirar o parágrafo de um nó o RESOLVE para a régua.
-- **Sem a tag "Nome e turma identificados" na prévia.** O handoff a pedia; o
-  one-pager (§6, ausências) proíbe aviso que telegrafe o dilema — vale o
-  one-pager.
-- **O trecho pinçado** (`regras/previa.ts#trechoPincado`), sempre há um: a
-  estatística, se ficou (o erro vira munição); senão o RECORTE do pacote, que a
-  régua obriga a morar no trecho copiado, no original E na correção — por isso
-  o cuidado não o tira do post; senão a manchete. É a virada: o incentivo é da
-  rede, não do texto.
+- **A aula NÃO chama IA** (PRD RNF-012 e §17.4). O UnooriaAI é a árvore de
+  intenções do 01e (`regras/intencoes.ts`): minúsculas, sem acento, lista
+  FECHADA, precedência (a revisão ampla antes de tudo; autoria + LGPD juntas são
+  o direito digital inteiro; a fonte antes de aprovar e de gerar), mais os
+  gatilhos que vêm do pacote (o instituto, o primeiro nome do colega, as
+  palavras da autoria). A IA da 2.0.x (quota do estudante, guardrails,
+  corrida de 12 s) saiu com a `conversa.service.ts`.
+- **Perguntar a fonte não corrige.** A fala da fonte termina em "Deseja que
+  eu atualize a prévia?" e só o "sim" logo depois (ou a revisão ampla)
+  corrige. A EM13CO14 mede as duas coisas: atingiu = as duas; a revisão ampla
+  sem perguntar é "em processo".
+- **O pedido parcial corrige só o seu nó** (`auditar_autoral`,
+  `auditar_lgpd`): é o que deixa existir o "em processo" da EM13CO26. O TC-03
+  corrige os dois.
+- **Sem edição livre do texto, sem tirar parágrafo.** A gaveta aponta as
+  pendências e aprova; exportar NÃO é bloqueado por pendência (o dilema é do
+  estudante). A prévia da 2.0.x (com parágrafo tirado) continua legível:
+  `removido` conta como resolvido.
+- **O recorte sobrevive às correções**: a régua o obriga a morar num parágrafo
+  de ligação (ou num nó, no original E no corrigido). O trecho pinçado é a
+  estatística, se ficou; senão o recorte; senão a manchete — o cuidado do
+  estudante não salva o post. É a virada.
 - **As marcas.** CO14 e CO26 no PUBLICAR, na transação do latch. CO24 e CO08 a
-  cada ação no feed, só o que já foi alcançado (vale a melhor); o "não atingiu"
-  de quem nada fez entra quando o feed FECHA — a abertura do Explicar
+  cada ação no feed, só o já alcançado (vale a melhor); o "não atingiu" de
+  quem nada fez entra quando o feed FECHA — a abertura dos bastidores
   (`POST /explicar`). Quem não chega ao feed fica "Não avaliado".
-- **O gabarito não desce.** O comentário vai sem `tipo` (a categoria de saúde
-  é o que a CO24 lê), o indicador sem `comprova`, o parágrafo sem o nó.
-- **Fases da turma**: `aberta → debate → explicar`, só para a frente; cada
-  mudança vai a `_gates_historico` (EVT-P05). `debate` é a PAUSA: camada sobre
-  qualquer passo (`pausada`), e as jogadas respondem 409 `telas-pausadas`. O
-  passo é derivado (`abertura → conversa → feed → explicar → concluida`).
-- **Arquivar o post exige as métricas abertas** (one-pager §6: não apagar antes
-  de confrontar o gráfico).
-- **O Explicar tem 4 indicadores, 2 que comprovam** (os da copy) e 2 que não
-  (curtidas, alcance da tarde — PROPOSTA, para o clique não ser trivial). O
-  que não comprova acende uma dica; concluir exige os dois. Não é evidência.
-- **A atividade é o PACOTE; a rodada é o "Zerar"** (ADR-130/155), como na
-  exp05ef1b: homologar cria a atividade PRONTA; `em-andamento` a põe no ar;
-  `banco-padrao` faz os dois num toque (o caminho curto do one-pager);
-  `zerar` apaga a evidência do pacote e guarda as sessões.
+- **EM13CO24 é o MOTIVO do aviso**: saúde = atingiu; outro motivo ou
+  restringir comentários = em processo. O aviso é UM: outro motivo depois é
+  409 `aviso-ja-fixado` — trocar depois de ver a reação apagaria a medida.
+- **EM13CO08 conta as três proteções**: uma chave da Configuração da
+  Publicação (privacidade), denunciar o perfil suspeito e ENCAMINHAR um relato
+  (comentário + equipe). Só abrir a Central já é "em processo" (PRD §14.1).
+- **O gabarito não desce.** O comentário vai sem `tipo` e o parágrafo sem o
+  nó. Desce só o `perfilSuspeito` (o nome da conta anônima que comentou
+  primeiro): a tela precisa dizer quem vai denunciar.
+- **O TC-10 vem daqui, com o tema**: `feed.instrucao` = `{antes, destaque,
+  depois}`. A experiência o publica em `exp:estado` e o HUB o desenha FORA do
+  aparelho — dentro dos 375 px ele sufocaria o pico.
+- **O gate da turma**: `exploracao → pausa → explicar`, só para a frente; cada
+  mudança vai a `_gates_historico` (EVT-P05). `pausa` é camada sobre qualquer
+  passo, e as jogadas respondem 409 `telas-pausadas`. O passo é derivado
+  (`abertura → conversa → feed → explicar → concluida`), e a `etapa` do PRD
+  (E1_DESAFIAR … E7_CONCLUIDO) é o mesmo estado com o nome do contrato.
+- **Os bastidores não travam** (PRD RF-007): dois cartões, os dois revelam o
+  critério; apontar abre a citação de Nico e não é evidência; concluir não
+  exige os cartões.
+- **A atividade é o PACOTE; a rodada é o "Zerar"** (ADR-130/155): homologar
+  cria a atividade PRONTA; `em-andamento` a põe no ar; `banco-padrao` faz os
+  dois num toque, sem IA (o caminho curto); `zerar` apaga a evidência do pacote
+  e guarda as sessões.
 - **O texto do estudante no chat é texto livre de menor**: fica em
-  `_sessoes.conversa` para o F5, vai ao modelo CERCADO (`<<< >>>`, como dado) e
-  não vai a painel, telemetria nem log. O painel
-  diz passo e manchete por computador; a lousa (`resumo`) é só agregada.
-- **O podcast é FIXO** (`podcast.ts`): o roteiro do one-pager §11, literal,
-  com as rubricas de trilha que o PO corrigiu; a trilha vai na direção de
-  atuação, não no roteiro. A atividade é o pacote; sem vaga, `padrao` sempre.
-- **A IA do preparo** (`preparo.service.ts`): quota do perfil `professor`,
-  `temSaldo` antes e o pago debitado depois (ADR-74); sem saldo ou com o vendor
-  fora, o rascunho sai do banco curado. A saída passa pela MESMA régua da
-  homologação (`regras/pacote.ts#problemasDoConteudo`).
-- **A disciplina cobre a Formação Geral Básica da 2ª série, mais Computação**
-  (`componentesDoAno("2EM")` + `computacao`, e `interdisciplinar` no fim),
-  com os slugs do catálogo SEM o `-em` (`lingua-portuguesa`, `biologia` e
-  `historia` já estavam gravados assim) e os rótulos do EM. O CHECK foi
-  recriado em `20261026230000_componentes_bncc_nas_missoes`; só se ACRESCENTA
-  valor.
-- **Vocabulário em dois lugares**: disciplina, fase, manchete e indicadores
+  `_sessoes.conversa` para o F5 e não vai a painel, telemetria nem log. O
+  painel dá por computador o passo, a manchete e o tempo parado; a lousa
+  (`resumo`) é só agregada, com a matriz das quatro habilidades.
+- **O podcast é FIXO** (`podcast.ts`, o one-pager §11 literal) e é do
+  PROFESSOR (o áudio, ADR-150); a sessão do estudante leva só a transcrição,
+  para a tela de conclusão.
+- **A IA do preparo** (`preparo.service.ts`, a ÚNICA da missão): quota do
+  perfil `professor`, `temSaldo` antes e o pago debitado depois (ADR-74); sem
+  saldo ou com o vendor fora, o rascunho sai do banco curado. A saída passa pela
+  MESMA régua da homologação.
+- **O comentário aceita 300 caracteres na forma e 280 na régua**: a forma é
+  larga para o pacote da 2.0.x continuar legível; a homologação cobra o PRD.
+- **Vocabulário em dois lugares**: disciplina, gate, manchete e indicadores
   estão em `conteudo.ts` e nos CHECKs; `tests/efeito-amplificador-regras.spec.ts`
   compara os textos.
 
 ## As duas suítes
 
-- `tests/efeito-amplificador-regras.spec.ts` — sem banco: a régua do pacote, a
-  árvore de intenções, a prévia, o trecho pinçado, as tabelas-verdade das
-  quatro habilidades, o feed, o passo e o espelho dos CHECKs.
+- `tests/efeito-amplificador-regras.spec.ts` — sem banco: o banco 01e e os
+  textos-chave, a régua do pacote, a árvore de intenções, a prévia, o trecho
+  pinçado, as tabelas-verdade das quatro habilidades, o feed, o passo e a etapa,
+  e o espelho dos CHECKs.
 - `tests/efeito-amplificador-postgres.spec.ts` — a porta da sala em toda rota
-  de estudante, o preparo com quota, a homologação, o latch com as marcas, o
-  gabarito ausente, a pausa, o Explicar, o painel sem o texto do menor, a RLS
-  com a role sem `BYPASSRLS` e o zerar.
+  de estudante, o preparo com quota, a homologação, a aula sem IA, o latch com
+  as marcas, o gabarito ausente, o aviso e as proteções, a pausa, os bastidores,
+  o painel de quatro cartões sem o texto do menor, a RLS com a role sem
+  `BYPASSRLS`, o CHECK do gate e o zerar.

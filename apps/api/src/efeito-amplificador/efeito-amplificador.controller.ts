@@ -5,13 +5,14 @@ import { Roles, RolesGuard } from "../auth/roles";
 import { rateLimit } from "../comum/rate-limit";
 import { Contrato } from "../openapi/contrato";
 import {
-  AcaoNoFeedSchema,
+  AvisoDeCuidadoSchema,
   EstadoSchema,
+  EvidenciaSchema,
   GateDoEstudanteSchema,
-  IndicadorSchema,
   MensagemSchema,
-  ParagrafoSchema,
+  PreviaSchema,
   PublicarSchema,
+  SegurancaSchema,
   SessaoSchema,
 } from "./contrato-de-rotas";
 import { EfeitoAmplificadorService } from "./efeito-amplificador.service";
@@ -22,7 +23,7 @@ type Autenticado = { auth: AuthClaims };
 /** Por usuário, nunca por IP: a turma inteira sai pelo mesmo NAT da escola. */
 function limitar(usuarioId: string, limite = 120) {
   const r = rateLimit(`exp02em1b:${usuarioId}`, limite, 60_000);
-  if (!r.ok) throw new HttpException({ mensagem: "Calma aí — muitas ações em pouco tempo." }, 429);
+  if (!r.ok) throw new HttpException({ codigo: "muitas-requisicoes", mensagem: "Muitos comandos enviados. Aguarde alguns segundos." }, 429);
 }
 
 function valida<S extends z.ZodTypeAny>(schema: S, corpo: unknown): z.output<S> {
@@ -35,14 +36,17 @@ const NOTA_DA_PORTA =
   "A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).";
 const NOTA_SEM_PACOTE = "Sem pacote no ar responde **409** `campanha-em-preparo` — espera, não bloqueio.";
 const NOTA_DA_PAUSA = "Com as telas pausadas pelo professor: **409** `telas-pausadas`.";
+const NOTA_DO_FEED =
+  "Só depois do Publicar (**409** `nao-publicado`) e antes dos bastidores (**409** `explicar-nao-liberado`). Grava e marca o que o feed já alcançou (vale a melhor).";
 
 /**
- * Rotas do ESTUDANTE da exp02em1b — O Efeito Amplificador (ADR-181).
+ * Rotas do ESTUDANTE da exp02em1b — O Efeito Amplificador 2.1.0 (ADR-191), as
+ * do PRD §12.
  *
  * O gabarito fica no servidor: o cliente manda o que o estudante escreveu,
- * tirou, escolheu ou tocou, e é o servidor que decide o que aquilo mediu
- * (regra 3). A identidade — inclusive a TURMA — sai do token e do banco.
- * A guarda de liberação está no FUNIL do service, não aqui.
+ * escolheu ou tocou, e é o servidor que decide o que aquilo mediu (regra 3).
+ * A identidade — inclusive a TURMA — sai do token e do banco. A guarda de
+ * liberação está no FUNIL do service, não aqui. Sem IA na aula.
  */
 @Controller("efeito-amplificador")
 @UseGuards(OidcGuard, RolesGuard)
@@ -52,20 +56,20 @@ export class EfeitoAmplificadorController {
 
   @Get("sessao")
   @Contrato({
-    resumo: "O estado da missão, a fala de abertura do UnooriaAI e os textos fixos.",
+    resumo: "O estado da missão (API-001), a pauta do grêmio e os textos fixos.",
     descricao:
-      "`passo` é DERIVADO no servidor: `abertura → conversa → feed → explicar → concluida`. `conversa` cobre o chat, a prévia e a escolha da manchete; o Publicar é o latch.\n\n`pausada` é a camada do \"Pausar Telas para Debate\": a tela mostra a espera na voz da ficção. O comentário do feed desce SEM a categoria de saúde, o indicador sem o gabarito.",
+      "`passo` é DERIVADO no servidor: `abertura → conversa → feed → explicar → concluida`; `etapa` é o mesmo estado com o nome do contrato do PRD (`E1_DESAFIAR` … `E7_CONCLUIDO`).\n\n`pausada` é a camada do \"Pausar Telas para Debate\". O comentário do feed desce SEM a categoria de saúde. `feed.instrucao` é o TC-10 com o tema do professor: o hub o desenha ao lado do aparelho.",
     resposta: SessaoSchema,
     notas: [NOTA_DA_PORTA, "Sem pacote no ar: `preparada: false` e a tela é de espera."],
   })
   sessao(@Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
     return this.missao.sessao(req.auth.escolaId, req.auth.usuarioId);
   }
 
   @Get("gate")
   @Contrato({
-    resumo: "A fase da turma e o passo do estudante (polling de 3 s).",
-    descricao: "**Polling HTTP, nunca WebSocket** (ADR-93). `agora` é o instante do SERVIDOR.",
+    resumo: "O polling do gate da turma (API-002, ~3 s): pausa e liberação dos bastidores.",
     resposta: GateDoEstudanteSchema,
     notas: [NOTA_DA_PORTA],
   })
@@ -76,18 +80,18 @@ export class EfeitoAmplificadorController {
 
   @Post("entrar")
   @HttpCode(200)
-  @Contrato({ resumo: '"Iniciar Campanha": abre a sessão desta rodada. Idempotente.', resposta: EstadoSchema, notas: [NOTA_DA_PORTA, NOTA_SEM_PACOTE] })
+  @Contrato({ resumo: '"Abrir UnooriaAI": abre a sessão desta rodada (E1 → E2). Idempotente.', resposta: EstadoSchema, notas: [NOTA_DA_PORTA, NOTA_SEM_PACOTE] })
   entrar(@Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
     return this.missao.entrar(req.auth.escolaId, req.auth.usuarioId);
   }
 
-  @Post("mensagem")
+  @Post("chat/mensagem")
   @HttpCode(200)
   @Contrato({
-    resumo: "Uma mensagem ao UnooriaAI (até 5).",
+    resumo: "Uma mensagem ao UnooriaAI (API-003): a árvore de intenções, no servidor e sem IA.",
     descricao:
-      "A conversa é HÍBRIDA (ADR-181): a IA (quota do perfil `estudante`, até 12 s) classifica o pedido numa lista FECHADA de intenções e redige a resposta; o servidor aplica a intenção à prévia — nunca o texto do modelo — e cobra os guardrails sobre a saída. Sem saldo, com o vendor fora, no prazo estourado ou com a saída recusada, a árvore de intenções responde (lista fechada de gatilhos, sem acento, sem caixa, sem pontuação). Cada fala do assistente traz `origem` (`ia` | `regras`). O pedido da fonte, da correção do dado, do crédito e da anonimização muda a prévia; é o que a EM13CO14 e a EM13CO26 medem no Publicar.\n\nO texto do estudante é texto livre de menor: fica na sessão para o F5, vai ao modelo cercado como dado e não vai a painel, telemetria nem log.",
+      "A prévia muda pela INTENÇÃO, de uma lista fechada: perguntar a fonte só pergunta (o \"sim\" à oferta corrige), o pedido de crédito e o de tirar o nome corrigem cada um o seu nó. O texto do estudante é de menor: fica na sessão e não vai a painel, telemetria nem log.",
     corpo: MensagemSchema,
     resposta: EstadoSchema,
     notas: [NOTA_DA_PORTA, NOTA_SEM_PACOTE, NOTA_DA_PAUSA, "Depois da 5ª: **409** `limite-do-chat`. Depois do Publicar: **409** `ja-publicado`."],
@@ -98,27 +102,25 @@ export class EfeitoAmplificadorController {
     return this.missao.mensagem(req.auth.escolaId, req.auth.usuarioId, texto);
   }
 
-  @Post("paragrafo")
+  @Post("previa")
   @HttpCode(200)
   @Contrato({
-    resumo: "Tira ou devolve um parágrafo da prévia.",
-    descricao: "Tirar o parágrafo de um nó crítico também o RESOLVE para a régua (o dado sai do post, ou o colega sai do post).",
-    corpo: ParagrafoSchema,
+    resumo: '"Aprovar Prévia" ou "Solicitar revisão": os botões da gaveta da prévia.',
+    descricao: "Aprovar não é obrigatório para exportar, e não bloqueia por pendência: o dilema é do estudante, e a régua o mede no Publicar.",
+    corpo: PreviaSchema,
     resposta: EstadoSchema,
-    notas: [NOTA_DA_PORTA, NOTA_DA_PAUSA, "Antes de o UnooriaAI gerar o rascunho: **409** `rascunho-nao-gerado`."],
+    notas: [NOTA_DA_PORTA, NOTA_DA_PAUSA, "Sem rascunho: **409** `rascunho-nao-gerado`."],
   })
-  paragrafo(@Body() corpo: unknown, @Req() req: Autenticado) {
+  previa(@Body() corpo: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
-    const { paragrafoId, removido } = valida(ParagrafoSchema, corpo);
-    return this.missao.paragrafo(req.auth.escolaId, req.auth.usuarioId, paragrafoId, removido);
+    const { acao } = valida(PreviaSchema, corpo);
+    return this.missao.previa(req.auth.escolaId, req.auth.usuarioId, acao);
   }
 
   @Post("publicar")
   @HttpCode(200)
   @Contrato({
-    resumo: '"Publicar no Unoovista" — o latch.',
-    descricao:
-      "Irreversível. Na MESMA transação, as marcas da **EM13CO14** (perguntou a fonte × tirou o dado) e da **EM13CO26** (o crédito × o colega fora do post). O algoritmo pinça o trecho do banner aqui: a estatística, se ficou; senão o recorte do pacote; senão a manchete — sempre há um.",
+    resumo: '"Publicar no Unoovista" (API-004): o latch 1, com a manchete. Marca a EM13CO14 e a EM13CO26.',
     corpo: PublicarSchema,
     resposta: EstadoSchema,
     notas: [NOTA_DA_PORTA, NOTA_DA_PAUSA, "A mesma manchete de novo é idempotente; outra é **409** `ja-publicado`."],
@@ -129,55 +131,68 @@ export class EfeitoAmplificadorController {
     return this.missao.publicar(req.auth.escolaId, req.auth.usuarioId, manchete);
   }
 
-  @Post("feed")
+  @Post("aviso-cuidado")
   @HttpCode(200)
   @Contrato({
-    resumo: "Uma ação no feed da madrugada (Etapa 4).",
-    descricao:
-      "`inspecionar` (abrir um comentário), `metricas`, `moderar` (`restringir` | `aviso` | `arquivar`), `privacidade`, `denunciar` e `ajuda`. Marca a **EM13CO24** e a **EM13CO08** com o que o feed já alcançou (vale a melhor). Arquivar exige as métricas abertas.",
-    corpo: AcaoNoFeedSchema,
+    resumo: '"Fixar aviso de cuidado" com o motivo (API-005): a EM13CO24.',
+    corpo: AvisoDeCuidadoSchema,
     resposta: EstadoSchema,
-    notas: [NOTA_DA_PORTA, NOTA_DA_PAUSA, "Antes do Publicar: **409** `nao-publicado`. Depois de abrir o Explicar, o feed é histórico: **409**."],
+    notas: [NOTA_DA_PORTA, NOTA_DA_PAUSA, NOTA_DO_FEED, "O mesmo motivo de novo é idempotente; outro é **409** `aviso-ja-fixado`."],
   })
-  feed(@Body() corpo: unknown, @Req() req: Autenticado) {
+  avisoDeCuidado(@Body() corpo: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
-    return this.missao.acaoNoFeed(req.auth.escolaId, req.auth.usuarioId, valida(AcaoNoFeedSchema, corpo));
+    const { motivo } = valida(AvisoDeCuidadoSchema, corpo);
+    return this.missao.avisoDeCuidado(req.auth.escolaId, req.auth.usuarioId, motivo);
+  }
+
+  @Post("seguranca")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "As ações de proteção (API-006): a Configuração da Publicação e a Central de Apoio — a EM13CO08.",
+    descricao:
+      "`conta_privada` e `restringir_comentarios` são as chaves da Configuração da Publicação; `abrir_central`, `denunciar_perfil` e `encaminhar_apoio` (um comentário e a equipe) são a Central de Apoio.",
+    corpo: SegurancaSchema,
+    resposta: EstadoSchema,
+    notas: [NOTA_DA_PORTA, NOTA_DA_PAUSA, NOTA_DO_FEED, "Comentário que não é do post: **400** `comentario-desconhecido`."],
+  })
+  seguranca(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    return this.missao.seguranca(req.auth.escolaId, req.auth.usuarioId, valida(SegurancaSchema, corpo));
   }
 
   @Post("explicar")
   @HttpCode(200)
   @Contrato({
-    resumo: "Entra no Explicar (Etapa 5), depois de o professor liberar.",
-    descricao: "Fecha o feed: o que o estudante não fez lá vira \"não atingiu\" na EM13CO24 e na EM13CO08, na mesma transação. Idempotente.",
+    resumo: "Abre os bastidores (Etapa 5) depois que o professor libera. Fecha o feed e marca o \"não atingiu\" de quem não agiu.",
     resposta: EstadoSchema,
-    notas: [NOTA_DA_PORTA, "Antes de o professor liberar: **409** `explicar-nao-liberado`."],
+    notas: [NOTA_DA_PORTA, "Antes da liberação: **409** `explicar-nao-liberado`. Idempotente."],
   })
   explicar(@Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
     return this.missao.abrirExplicar(req.auth.escolaId, req.auth.usuarioId);
   }
 
-  @Post("indicador")
+  @Post("evidencia")
   @HttpCode(200)
   @Contrato({
-    resumo: "Aponta um indicador na folha de bastidores.",
-    descricao: "O gabarito é do servidor: o que comprova fica confirmado; o que não comprova acende `ultimoNaoComprova`. Não é evidência.",
-    corpo: IndicadorSchema,
+    resumo: "Um cartão apontado nos bastidores (EVT-005). Abre a citação de Nico; não é evidência.",
+    corpo: EvidenciaSchema,
     resposta: EstadoSchema,
-    notas: [NOTA_DA_PORTA],
+    notas: [NOTA_DA_PORTA, "Antes dos bastidores: **409** `explicar-nao-liberado`. Idempotente."],
   })
-  indicador(@Body() corpo: unknown, @Req() req: Autenticado) {
+  evidencia(@Body() corpo: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
-    const { indicador } = valida(IndicadorSchema, corpo);
-    return this.missao.apontarIndicador(req.auth.escolaId, req.auth.usuarioId, indicador);
+    const { elemento } = valida(EvidenciaSchema, corpo);
+    return this.missao.apontarEvidencia(req.auth.escolaId, req.auth.usuarioId, elemento);
   }
 
   @Post("concluir")
   @HttpCode(200)
   @Contrato({
-    resumo: "Conclui a missão — exige os dois indicadores que comprovam.",
+    resumo: "O fim (API-007, latch 2): a missão em somente leitura e o podcast na tela.",
+    descricao: "Sem diário: a transferência da Etapa 6 saiu desta versão (ADR-191). Não exige os cartões apontados (PRD RF-007).",
     resposta: EstadoSchema,
-    notas: [NOTA_DA_PORTA, "Sem os dois: **409** `evidencias-incompletas`. Idempotente."],
+    notas: [NOTA_DA_PORTA, "Antes dos bastidores: **409** `explicar-nao-liberado`. Idempotente."],
   })
   concluir(@Req() req: Autenticado) {
     limitar(req.auth.usuarioId);

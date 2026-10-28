@@ -81,9 +81,9 @@ export class EfeitoAmplificadorTurmasController {
   @HttpCode(200)
   @Roles("professor")
   @Contrato({
-    resumo: "Gera com IA o RASCUNHO do pacote (pré-aula).",
+    resumo: "Gera com IA o RASCUNHO do pacote (API-015, pré-aula).",
     descricao:
-      "A chamada de IA do PREPARO, que roda **antes** da aula (a da sala é a conversa híbrida, com a quota do estudante). Quota do PERFIL (regra 5): `temSaldo` ANTES e o que o vendor cobrou debitado depois. A saída passa pela mesma régua da homologação. Sem saldo ou com o vendor fora, o rascunho sai do BANCO CURADO (`usouIa: false`, `motivo`). **Não homologa.**",
+      "A ÚNICA chamada de IA da missão, que roda **antes** da aula (a sala não chama IA, ADR-191). Quota do PERFIL (regra 5): `temSaldo` ANTES e o que o vendor cobrou debitado depois. A saída passa pela mesma régua da homologação. Sem saldo ou com o vendor fora, o rascunho sai do BANCO CURADO (`usouIa: false`, `motivo`). **Não homologa.**",
     params: ParamsDaTurmaSchema,
     query: QueryDaEscolaSchema,
     corpo: GerarSchema,
@@ -99,7 +99,7 @@ export class EfeitoAmplificadorTurmasController {
   @HttpCode(200)
   @Roles("professor")
   @Contrato({
-    resumo: '"Homologar Pacote" — a curadoria humana; o pacote vira uma atividade PRONTA.',
+    resumo: '"Homologar Conteúdo" (API-016) — a curadoria humana; o pacote vira uma atividade PRONTA.',
     descricao:
       "O corpo leva o pacote INTEIRO como o professor o deixou. A régua (os três nós com a correção de cada um, o recorte dentro do trecho copiado, as três manchetes, os seis comentários de madrugada com saúde física, mental e risco) volta inteira em `erros`. Homologar de novo o mesmo é idempotente.",
     params: ParamsDaTurmaSchema,
@@ -132,8 +132,8 @@ export class EfeitoAmplificadorTurmasController {
   @HttpCode(200)
   @Roles("professor")
   @Contrato({
-    resumo: '"Pausar Telas para Debate" e "Liberar Etapa 5".',
-    descricao: "`pausar` → `debate`; `liberar_explicar` → `explicar`. Só para a frente; cada mudança entra no histórico.",
+    resumo: '"Pausar Telas para Debate" e "Avançar Turma para Explicar" (API-010).',
+    descricao: "`pausa` congela as telas; `explicar` abre os bastidores. O gate só anda para a frente (`exploracao → pausa → explicar`); cada mudança entra no histórico.",
     params: ParamsDaTurmaSchema,
     query: QueryDaEscolaSchema,
     corpo: GateSchema,
@@ -141,8 +141,8 @@ export class EfeitoAmplificadorTurmasController {
     notas: [NOTA_DO_404, "Sem pacote no ar: **409** `pacote-nao-aprovado`."],
   })
   gate(@Param("turmaId") turmaId: string, @Query("escolaId") escolaIdPedida: string | undefined, @Body() corpo: unknown, @Req() req: Autenticado) {
-    const { acao } = corpoDe(GateSchema, corpo, "payload-invalido");
-    return this.missao.mudarGate(escolaAlvo(req.auth, escolaIdPedida), turmaDoCaminho(turmaId), req.auth.usuarioId, acao);
+    const { etapa } = corpoDe(GateSchema, corpo, "payload-invalido");
+    return this.missao.mudarGate(escolaAlvo(req.auth, escolaIdPedida), turmaDoCaminho(turmaId), req.auth.usuarioId, etapa);
   }
 
   @Get(":turmaId/painel")
