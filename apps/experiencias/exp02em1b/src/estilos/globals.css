@@ -1,17 +1,14 @@
 /**
- * Estilos locais — só o que o design system não dá: layout da página e as
- * compensações MARCADAS (medida, espaçamento, grade). Botão, campo, diálogo,
- * aba, etiqueta: vêm do pacote pela ponte, nunca daqui.
+ * Estilos locais — só o que o design system não dá: leiaute da página e as
+ * compensações MARCADAS (medida, espaçamento, grade, quebra de linha). Botão,
+ * campo, diálogo, folha, etiqueta, ícone: vêm do pacote pela ponte, nunca daqui.
  *
  * Cor NUNCA se escreve à mão: sai dos tokens da seção que está falando
- * (`--unooria-*` para a plataforma; `--insta-*`, `--uni-*`, `--gpt-*`, `--wa-*`
- * para os clones). Um hexadecimal literal aqui é uma cor que não acompanha o
- * pacote quando ele mudar. Os `var(--x, fallback)` abaixo existem só para a
- * tela não ficar transparente antes de a folha do DS carregar.
+ * (`--uai-*` no UnooriaAI, `--unv-*` no Unoovista). Os `var(--x, fallback)`
+ * existem só para a tela não ficar transparente antes de a folha do DS carregar.
  *
- * Quando a missão tiver um clone, separe as duas famílias por SEÇÃO deste
- * arquivo, como a exp08ef4b faz — a fronteira é "quem está falando", e ela cai na
- * revelação, não no arquivo.
+ * Sobrescrever classe do DS exige DOIS seletores (`.uai-tela .uai-x`): o CSS do
+ * pacote é injetado pelo módulo do componente, DEPOIS deste arquivo.
  */
 
 * {
@@ -27,19 +24,27 @@ body,
 }
 
 body {
-  background: var(--unooria-color-surface-base, #fff);
-  color: var(--unooria-color-text-primary, #22272a);
-  font-family: var(--unooria-font-sans, system-ui, sans-serif);
+  background: var(--uai-bg-primary, #fff);
+  color: var(--uai-text-primary, #1f1f1f);
+  font-family: var(--uai-font-sans, system-ui, sans-serif);
   -webkit-font-smoothing: antialiased;
 }
 
 /* `100%` e não `100dvh`: dentro do iframe, `dvh` se refere à janela do
    navegador, não ao recorte que o hub reservou. */
 .app {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+}
+
+.app__tela {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .app--centrado {
@@ -51,105 +56,48 @@ body {
 
 .esqueleto__topo {
   height: 56px;
-  border-bottom: 1px solid var(--unooria-color-border-default, #cbd4d6);
-}
-
-.cartao {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
-  max-width: 560px;
-}
-
-.cartao__titulo {
-  margin: 0;
-  font-size: 24px;
-}
-
-.cartao__texto {
-  margin: 0;
-  font-size: 15px;
-  color: var(--unooria-color-text-secondary, #536167);
-}
-
-.cartao__acoes {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
+  border-bottom: 1px solid var(--uai-border-default, #e5e5e5);
 }
 
 .aviso {
   margin: 0;
   font-size: 14px;
-  color: var(--unooria-color-text-secondary, #536167);
+  color: var(--uai-text-secondary, #555);
 }
 
-/* ───────────────────────────────────────────────────────────────────────────
- * O Efeito Amplificador (exp02em1b 2.x). Três famílias, separadas por quem fala:
- * `.escola` (seção unooria), `.uai-*` (UnooriaAI) e `.unv-*` (Unoovista). Cor só
- * de token da seção que fala; os `var(--x, fallback)` existem só para a tela
- * não ficar transparente antes de a folha do DS carregar.
- * ─────────────────────────────────────────────────────────────────────────── */
-
-/* As esperas e falhas, na voz da ficção (D0-1, D0-2). */
-.faixa-rede {
-  margin: 0;
-  padding: 8px 16px;
-  font-size: 13px;
-  text-align: center;
-  background: var(--uai-fill-warning, #fff4d6);
-  color: var(--uai-text-primary, #1f1f1f);
-}
-
-.pausa {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: var(--unv-color-overlay-scrim, rgb(0 0 0 / 60%));
-}
-
-.pausa__texto {
-  margin: 0;
-  max-width: 320px;
-  padding: 20px;
-  border-radius: var(--unv-radius-l, 16px);
-  background: var(--unv-color-background-elevated, #fff);
-  color: var(--unv-color-text-primary, #111);
-  font-size: 16px;
-  line-height: 1.4;
-  text-align: center;
-}
-
-/* ── UnooriaAI ─────────────────────────────────────────────────────────── */
+/* ── UnooriaAI (E1–E3) ─────────────────────────────────────────────────── */
 
 .uai-tela {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
   background: var(--uai-bg-primary, #fff);
-  color: var(--uai-text-primary, #111);
+  color: var(--uai-text-primary, #1f1f1f);
   font-family: var(--uai-font-sans, system-ui, sans-serif);
 }
 
+/* A barra do app: uma linha, título à esquerda e a ação à direita. */
 .uai-topo {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 14px 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--uai-border-default, #e5e5e5);
 }
 
+.uai-topo__identidade {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .uai-topo__titulo {
+  margin: 0;
+  font-size: 14px;
   font-weight: 600;
-  font-size: 16px;
 }
 
 .uai-topo__meta {
@@ -157,8 +105,77 @@ body {
   color: var(--uai-text-secondary, #555);
 }
 
-.uai-conversa,
-.uai-previa {
+/* (b) COMPENSAÇÃO — E2-SIS-01: a seção não publica faixa de aviso. Só leiaute. */
+.uai-faixa {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  margin: 0;
+  padding: 8px 16px;
+  font-size: 13px;
+  background: var(--uai-fill-warning, #fff4d6);
+  color: var(--uai-text-primary, #1f1f1f);
+  border-bottom: 2px solid var(--uai-status-warning, #c80);
+}
+
+.uai-corpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+}
+
+.uai-corpo--centrado {
+  justify-content: center;
+}
+
+/* E1-ALU-01 — a pauta. */
+.uai-pauta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.uai-pauta__titulo {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.uai-pauta__texto,
+.uai-pauta__espera {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--uai-text-secondary, #555);
+}
+
+/* O `FeatureCard` nasce centrado (cartão de grade); aqui ele é leitura corrida. */
+.uai-tela .uai-pauta__cartao {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.uai-pauta__descricao {
+  display: block;
+}
+
+.uai-pauta__orientacoes {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.uai-pauta__orientacoes li + li {
+  margin-top: 4px;
+}
+
+/* E2-ALU-01 — o chat. */
+.uai-conversa {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -176,69 +193,122 @@ body {
   border-top: 1px solid var(--uai-border-default, #e5e5e5);
 }
 
-.uai-pilulas {
+.uai-sugestoes {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.uai-nudge {
+/* A dica de inatividade: faixa com fio à esquerda (protótipo, E2-ALU-01 "inatividade 60s"). */
+.uai-dica {
   margin: 0;
-  font-size: 13px;
-  color: var(--uai-text-secondary, #555);
+  padding: 8px 12px;
+  border-left: 3px solid var(--uai-border-brand, #7c3aed);
+  background: var(--uai-fill-4, #f2f2f2);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
-.uai-previa__instrucao,
-.uai-previa__vazia {
+/* E2-ALU-02 — a prévia. */
+.uai-previa__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--uai-border-default, #e5e5e5);
+  border-radius: var(--uai-radius-lg, 12px);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.uai-previa__texto p {
+  margin: 0;
+}
+
+.uai-pendencias {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* O `Badge` é uma linha só (`nowrap`); o aviso da prévia é uma frase inteira. */
+.uai-tela .uai-pendencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: normal;
+  text-align: left;
+}
+
+/* E3-ALU-01 — o Fechamento Editorial. A janela do DS não limita a altura. */
+.uai-tela .uai-fechamento {
+  max-height: calc(100% - 32px);
+  overflow-y: auto;
+}
+
+.uai-fechamento__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.uai-fechamento__previa {
+  /* Item de flex dentro do modal com teto de altura: sem isto ele ENCOLHE, e a linha seguinte
+     aparece cortada sob a reticência do clamp. */
+  flex-shrink: 0;
+  display: -webkit-box;
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--uai-border-default, #e5e5e5);
+  color: var(--uai-text-secondary, #555);
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.uai-fechamento__guia,
+.uai-fechamento__audiencia {
   margin: 0;
   font-size: 14px;
+}
+
+.uai-fechamento__audiencia {
+  font-size: 12px;
   color: var(--uai-text-secondary, #555);
 }
 
-.uai-paragrafo {
+.uai-manchetes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* A `Tag` do DS é uma cápsula de uma linha; a manchete é um cartão de duas. */
+.uai-manchetes .uai-manchete {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--uai-radius-lg, 12px);
+  white-space: normal;
+  text-align: left;
+}
+
+.uai-manchete__conteudo {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
-  padding: 12px;
-  border: 1px solid var(--uai-border-default, #e5e5e5);
-  border-radius: var(--uai-radius-lg, 12px);
 }
 
-.uai-paragrafo--removido {
-  border-style: dashed;
-}
-
-.uai-paragrafo__texto,
-.uai-paragrafo__removido {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.45;
-}
-
-.uai-paragrafo__removido {
-  color: var(--uai-text-tertiary, #888);
-  font-style: italic;
-}
-
-.uai-manchete__declaracao,
-.uai-manchete__audiencia {
-  margin: 0 0 12px;
-  font-size: 14px;
-  color: var(--uai-text-secondary, #555);
-}
-
-.uai-manchete__opcoes {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-/* ── Unoovista ─────────────────────────────────────────────────────────── */
+/* ── Unoovista (E3-SIS-01 a E6) ────────────────────────────────────────── */
 
 .unv-tela {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -254,11 +324,15 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   padding-bottom: 16px;
 }
 
-/* O banner do trecho pinçado: o algoritmo pôs a frase em destaque, fora de contexto. */
+.unv-aviso-fixado {
+  margin: 0 var(--unv-gutter, 16px);
+}
+
+/* O slide do trecho pinçado: o algoritmo pôs a frase em destaque, fora de contexto. */
 .unv-recorte {
   display: flex;
   flex-direction: column;
@@ -274,9 +348,7 @@ body {
 .unv-recorte__selo {
   align-self: flex-start;
   padding: 2px 10px;
-  border-radius: var(--unv-radius-full, 999px);
-  background: var(--unv-color-brand-notification, #e11);
-  color: var(--unv-color-text-on-notification, #fff);
+  border-left: 4px solid var(--unv-color-text-on-media, #fff);
   font-size: 12px;
   font-weight: 600;
 }
@@ -288,8 +360,28 @@ body {
   line-height: 1.3;
 }
 
-.unv-acoes-do-post,
+.unv-post__extras {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 0 var(--unv-gutter, 16px) 12px;
+}
+
+.unv-post__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.unv-post__acoes > * {
+  flex: 1 1 140px;
+}
+
 .unv-comentarios {
+  display: flex;
+  flex-direction: column;
   padding: 0 var(--unv-gutter, 16px);
 }
 
@@ -298,98 +390,277 @@ body {
   font-size: 15px;
 }
 
-.unv-comentarios__aviso,
 .unv-comentario__hora {
   font-size: 12px;
   color: var(--unv-color-text-secondary, #aaa);
 }
 
-/* "ver mais": o comentário fechado mostra duas linhas; abrir é o gesto que a EM13CO24 lê. */
-.unv-comentario__texto--curto {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* O `ListItem` do DS tem altura fixa e título/subtítulo numa linha só (`nowrap`):
+   certo para o menu do perfil, errado para comentário, motivo e opção longa. */
+.unv-tela .unv-item-longo {
+  height: auto;
+  min-height: 64px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  text-align: left;
 }
 
-.unv-tres-pontos {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: var(--unv-touch-target, 44px);
-  min-height: var(--unv-touch-target, 44px);
-  border: 0;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
+.unv-tela .unv-item-longo .unv-list-item__title,
+.unv-tela .unv-item-longo .unv-list-item__subtitle {
+  white-space: normal;
+  overflow: visible;
 }
 
+/* (b) COMPENSAÇÃO — o título do `TopBar` do DS é `nowrap` + `ellipsis`, mas a
+   caixa é `display: flex`: a reticência não aparece e o título longo da api
+   ("Bastidores da Distribuição: Relatório Analítico") era CORTADO no meio da
+   palavra em 375 px. Aqui ele quebra linha. Morre quando o DS quebrar (ou
+   reticenciar de verdade) o título. */
+.unv-tela .unv-top-bar__title {
+  white-space: normal;
+}
+
+/* A barra fixa do pé com a Central de Apoio (protótipo `barra-central-apoio`). */
+.unv-barra-inferior {
+  padding: 10px var(--unv-gutter, 16px) 14px;
+  border-top: 1px solid var(--unv-color-border-bar, #333);
+  background: var(--unv-color-background-primary, #000);
+}
+
+/* O conteúdo das folhas inferiores. */
+.unv-folha {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 8px;
+}
+
+.unv-folha__texto {
+  margin: 0;
+  font-size: 14px;
+  color: var(--unv-color-text-secondary, #aaa);
+}
+
+.unv-folha__bloco {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--unv-color-text-secondary, #aaa);
+}
+
+.unv-radios {
+  display: flex;
+  flex-direction: column;
+}
+
+.unv-suspeito {
+  display: block;
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+/* E5 e E6 — os bastidores e o fim. */
 .unv-explicar {
   padding: 16px var(--unv-gutter, 16px);
 }
 
-.unv-explicar__instrucao,
-.unv-explicar__espera {
+.unv-explicar__instrucao {
   margin: 0;
   font-size: 15px;
+  font-weight: 600;
   line-height: 1.45;
 }
 
-.unv-explicar__espera {
+.unv-explicar__texto {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.unv-explicar__texto--secundario {
   color: var(--unv-color-text-secondary, #555);
   font-size: 13px;
 }
 
 .unv-explicar__indicadores {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
 }
 
-.unv-explicar__conceitos {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* (b) COMPENSAÇÃO — o cartão de indicador apontado: a seção não tem cartão selecionável;
+   o estado vai também no glifo `check` e no `aria-pressed`, nunca só na borda. */
+.unv-tela .unv-indicador {
+  border: 1px solid var(--unv-color-border-default, #ddd);
+}
+
+.unv-tela .unv-indicador[aria-pressed="true"] {
+  border-color: var(--unv-color-action-primary, #7c3aed);
 }
 
 .unv-explicar__citacao {
   margin: 0;
   padding: 12px 16px;
   border-left: 3px solid var(--unv-color-action-primary, #7c3aed);
+}
+
+.unv-explicar__citacao blockquote {
+  margin: 0 0 6px;
   font-style: italic;
+  line-height: 1.45;
+}
+
+.unv-explicar__citacao figcaption {
+  font-size: 12px;
+  color: var(--unv-color-text-secondary, #555);
+}
+
+.unv-explicar__conceitos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .unv-explicar__conceito {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.45;
 }
 
-/* O relógio acelerado (E4-ALU-01). */
+.unv-cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--unv-color-border-default, #ddd);
+  border-radius: var(--unv-radius-l, 16px);
+  background: var(--unv-color-background-elevated, #fff);
+}
+
+.unv-cartao__titulo {
+  margin: 0;
+  font-size: 17px;
+}
+
+.unv-selo {
+  align-items: center;
+  text-align: center;
+}
+
+/* Espaço para a alça da transcrição, que fica sobre o pé da tela. */
+.unv-tela--conclusao .unv-rolagem {
+  padding-bottom: 72px;
+}
+
+.unv-transcricao {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.unv-transcricao__fala {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* E3-SIS-01 — o salto do relógio. */
 .relogio {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 20px;
   height: 100%;
+  padding: 24px;
   background: var(--unv-color-background-primary, #000);
   color: var(--unv-color-text-primary, #fff);
   font-family: var(--unv-font-sans, system-ui, sans-serif);
   transition: background var(--unv-transition-base, 300ms);
 }
 
-.relogio__marco {
+.relogio__circulo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--unv-radius-full, 999px);
+  border: 2px solid var(--unv-color-border-control, #888);
+}
+
+.relogio__marcos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
+  padding: 0;
+  list-style: none;
+}
+
+.relogio__marco {
+  font-size: 13px;
+  color: var(--unv-color-text-secondary, #aaa);
   text-align: center;
 }
 
-/* A curva de entrega: compensação declarada — o Unoovista do DS não publica gráfico. */
+.relogio__marco--pico {
+  padding: 8px 14px;
+  border: 2px solid var(--unv-color-text-primary, #fff);
+  border-radius: var(--unv-radius-m, 12px);
+  color: var(--unv-color-text-primary, #fff);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+/* (b) COMPENSAÇÃO — E4-SIS-01: véu de 60% e caixa central, sem escape (ver `Pausa.tsx`). */
+.pausa {
+  position: absolute;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--unv-color-overlay-scrim, rgb(0 0 0 / 60%));
+}
+
+.pausa__caixa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 310px;
+  padding: 20px;
+  border-radius: var(--unv-radius-l, 16px);
+  background: var(--unv-color-background-elevated, #222);
+  color: var(--unv-color-text-primary, #fff);
+  font-family: var(--unv-font-sans, system-ui, sans-serif);
+  text-align: center;
+}
+
+.pausa__icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--unv-radius-full, 999px);
+  background: var(--unv-color-background-tertiary, #333);
+}
+
+.pausa__texto {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+/* (b) COMPENSAÇÃO — o gráfico da espera ativa: a seção `unoovista` não publica gráfico. */
 .grafico {
   margin: 0;
-  padding: 0 var(--unv-gutter, 16px);
 }
 
 .grafico__titulo {
@@ -409,7 +680,7 @@ body {
 
 .grafico__linha {
   display: grid;
-  grid-template-columns: 76px 1fr 40px;
+  grid-template-columns: 64px 1fr 44px;
   align-items: center;
   gap: 8px;
   font-size: 12px;
@@ -418,7 +689,7 @@ body {
 .grafico__trilho {
   height: 10px;
   border-radius: var(--unv-radius-full, 999px);
-  background: var(--unv-color-background-tertiary, #333);
+  background: var(--unv-color-background-tertiary, #eee);
   overflow: hidden;
 }
 
@@ -429,7 +700,7 @@ body {
 }
 
 .grafico__linha--pico .grafico__barra {
-  background: var(--unv-color-brand-notification, #e11);
+  background: var(--unv-color-action-primary, #7c3aed);
 }
 
 .grafico__valor {
@@ -440,22 +711,4 @@ body {
   .relogio {
     transition: none;
   }
-}
-
-.unv-comentario {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-}
-
-/* "ver mais" com a cara do app imitado: texto secundário, sem caixa. */
-.unv-ver-mais {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--unv-color-text-secondary, #aaa);
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
 }

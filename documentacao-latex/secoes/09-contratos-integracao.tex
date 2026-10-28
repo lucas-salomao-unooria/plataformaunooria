@@ -78,8 +78,14 @@ Duas consequências de o hub SUBSTITUIR o estado inteiro a cada mensagem:
 publicar só o \cd{passo} apagaria a \cd{fase}, então quem publica leva as duas;
 e é a própria troca de fase seguinte que desfaz o estado anterior, sem
 mensagem de ``desligar''. As outras experiências publicam estado
-(\cd{\{ tela \}} na exp04ef1b, \cd{\{ passo, tentativa \}} na exp02em1b) e o hub
-ignora --- o canal é genérico de propósito.
+(\cd{\{ tela \}} na exp04ef1b, \cd{\{ passo, tentativa \}} na exp02em1b-v0) e o hub
+ignora --- o canal é genérico de propósito. O segundo \emph{chrome} é a
+\textbf{instrução ao lado do aparelho} (exp02em1b 2.1.0, \adrr{ADR-191}):
+\cd{\{ instrucao: \{ antes, destaque, depois \} \}}, validado com Zod, desenhado
+pelo hub à direita do \cd{DispositivoFrame} (acima dele em tela estreita), com
+o \cd{destaque} em negrito; sem \cd{instrucao}, nada aparece. O hub não sabe de
+que missão é o texto --- é o TC-10, com o tema do professor, que a api manda
+e a experiência publica nas telas do feed.
 \end{nota}
 
 \subsection{O \emph{handshake}, passo a passo}

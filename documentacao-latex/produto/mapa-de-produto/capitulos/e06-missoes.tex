@@ -2410,33 +2410,36 @@ o podcast fixo é o texto do PO, com voz sintetizada.}
 \feature{F06.15}{O Efeito Amplificador}{\parcial}
 
 \textbf{2ª série EM, Unidade 1} \textperiodcentered{} imita um assistente de
-IA e uma rede social de fotos \textperiodcentered{} uma aula
-\textperiodcentered{} IA só no preparo do professor.
+IA e uma rede social de fotos \textperiodcentered{} uma aula de 50 minutos
+(25 em tela) \textperiodcentered{} IA só no preparo do professor.
 
-\textbf{Proposta.} O estudante é o comunicador do grêmio: cria o post da
-campanha da escola com o assistente, cuida do texto e publica. A rede, mesmo
-assim, destaca uma frase fora de contexto e entrega o post de madrugada para
-todo mundo. A turma descobre que o alcance não depende do cuidado com o texto:
-a rede busca tempo de tela, não verdade nem sono. Substitui a Missão
-Tempestade (\id{F06.8}) na mesma unidade.
+\textbf{Proposta.} O estudante é o moderador do perfil do grêmio: cria o post
+da campanha da escola com o assistente, confere o texto e publica. A rede,
+mesmo assim, destaca uma frase fora de contexto e entrega o post de madrugada
+para todo mundo. A turma descobre que o alcance não depende do cuidado com o
+texto: a rede busca tempo de tela, não verdade nem sono. Substitui a Missão
+Tempestade (\id{F06.8}) na mesma unidade. A versão de outubro de 2026 segue a
+revisão do PO e o protótipo refeito pelo time.
 
 \textbf{Ficaram de fora, por decisão do PO:} a etapa de transferência (o
-diário com um caso novo) e as perguntas de múltipla escolha do fim. As quatro
-habilidades são registradas pelo que o estudante faz.
+diário com o caso do aplicativo de áudio) e as perguntas de múltipla escolha.
+As quatro habilidades são registradas pelo que o estudante faz.
 
 \begin{historia}{H06.15.1}{Preparar o pacote da campanha}{\pronto}
 \hu{Professor da 2ª série do EM}{escolher o conteúdo que a turma vai viver}{dar
 a aula com o tema da minha disciplina, ou sem preparo nenhum}
 \aceite
 \begin{itemize}
-  \item Posso usar o pacote padrão (Convivência Escolar e Celular) ou escrever
-    um tema com 3 a 6 tópicos e gerar o pacote com IA, no meu componente
-    curricular: qualquer um da 2ª série do Ensino Médio na BNCC, Computação ou
-    Projeto Interdisciplinar.
-  \item Leio e edito tudo antes: o rascunho do assistente com os três problemas
-    escondidos, as manchetes e os comentários da madrugada. Nada gerado por IA
-    chega à turma sem eu homologar.
-  \item Sem saldo de IA, recebo o pacote padrão na hora.
+  \item Posso usar o pacote padrão oficial (Convivência Escolar e Celular),
+    em dois toques, ou escrever o tema da campanha (até 60 caracteres) com 3 a
+    6 tópicos e um contexto da escola, e gerar o pacote com IA no meu
+    componente curricular.
+  \item Leio e edito tudo antes: a pauta do grêmio, o rascunho do assistente
+    com os três problemas marcados (fato inventado, trecho sem crédito, dado
+    pessoal exposto), as três manchetes e os seis comentários da madrugada.
+    Nada gerado por IA chega à turma sem eu homologar.
+  \item Sem saldo de IA, ou com a IA fora do ar, recebo o pacote padrão na
+    hora, e a aula acontece.
 \end{itemize}
 \end{historia}
 
@@ -2445,20 +2448,18 @@ a aula com o tema da minha disciplina, ou sem preparo nenhum}
 texto}{publicar algo de que eu possa responder}
 \aceite
 \begin{itemize}
-  \item O assistente abre dizendo: \enquote{Olá, vamos montar seu post para
-    [tema], você pode me pedir para montar o post, questionar minhas fontes e
-    perguntar sobre direito digital. Vamos começar?}
-  \item O assistente é uma IA de verdade: entende o que eu escrever, com as
-    minhas palavras, e responde à altura --- inclusive uma dúvida (\enquote{o
-    que a LGPD protege?}) ou um assunto de fora, quando ele explica e volta à
-    campanha. Quem decide o que muda no post é a plataforma, pelo que eu
-    pedi; se a IA não responder a tempo, o assistente responde do mesmo jeito,
-    com frases prontas sobre o tema da aula.
-  \item O rascunho traz um número de um instituto inventado, um trecho de
-    jornal copiado sem crédito e o nome de um colega com um caso de saúde ---
-    e nada avisa: o assistente só reconhece um problema quando eu questiono.
-    Posso perguntar a fonte, pedir o crédito e a retirada do nome, ou tirar
-    trechos da prévia. São até 5 mensagens.
+  \item Leio a pauta do grêmio e abro o assistente. Ele sugere três pedidos:
+    criar o rascunho, perguntar a fonte da pesquisa e reescrever sem os nomes,
+    citando o autor. Posso usá-los ou escrever com as minhas palavras; são até
+    5 mensagens.
+  \item O rascunho traz um número de um instituto inventado, uma frase copiada
+    sem crédito e o nome de um colega com um caso da escola --- e nada avisa
+    no chat. Quando pergunto a fonte, o assistente admite que o instituto não
+    existe e oferece trocar o dado; troca se eu aceitar.
+  \item A prévia do post mostra o texto e o que ainda está pendente; posso
+    pedir revisão, aprovar e exportar para a rede social.
+  \item O assistente não usa IA durante a aula: responde pelo que eu pedi, com
+    frases do tema da aula, e diz quando o pedido foge da campanha.
 \end{itemize}
 \end{historia}
 
@@ -2467,23 +2468,31 @@ texto}{publicar algo de que eu possa responder}
 e uma sensacionalista e publicar}{ver o post circular na rede}
 \aceite
 \begin{itemize}
-  \item Depois de publicar não dá para voltar.
+  \item A janela do fechamento editorial mostra a prévia, as três manchetes e
+    o compromisso de divulgar com foco informativo. Depois de publicar não dá
+    para voltar.
+  \item O relógio corre de 16h00 até 02h30 da madrugada.
   \item O que ficou no post registra a confiabilidade (EM13CO14) e o direito
     digital (EM13CO26).
 \end{itemize}
 \end{historia}
 
-\begin{historia}{H06.15.4}{Viver a madrugada no feed}{\pronto}
+\begin{historia}{H06.15.4}{Moderar o post na madrugada}{\pronto}
 \hu{Estudante da 2ª série}{ver o que aconteceu com o meu post de madrugada e
 agir}{proteger as pessoas e a mim}
 \aceite
 \begin{itemize}
-  \item O relógio corre de 16h00 até 02h30. A rede destaca uma frase do post e
-    os comentários falam de dor de cabeça, insônia, ansiedade, e há contas
-    invasivas.
-  \item Nos três pontos posso restringir comentários, fixar um aviso, arquivar
-    (depois de ver as métricas), deixar a conta privada, denunciar e abrir a
-    Central de Apoio. Ninguém manda usar: usar é o que conta.
+  \item O feed mostra 02h30, a frase do post \enquote{em alta}, 4.820
+    impressões de madrugada e comentários de dor de cabeça, insônia,
+    ansiedade e contas desconhecidas. Ao lado do celular fica a instrução do
+    moderador, com o tema da aula.
+  \item No post: \enquote{Fixar aviso de cuidado}, escolhendo o motivo, e
+    \enquote{Configuração da Publicação}, com as chaves de conta privada e de
+    restringir comentários. Na barra de baixo, a Central de Apoio: denunciar
+    o perfil suspeito e encaminhar um relato, escolhendo o comentário e a
+    equipe (a da escola ou a da rede).
+  \item Ninguém manda usar: usar é o que conta. O aviso com o motivo de saúde
+    registra a EM13CO24; as três proteções juntas, a EM13CO08.
 \end{itemize}
 \end{historia}
 
@@ -2493,9 +2502,11 @@ a turma}{mostrar que todos os posts foram entregues de madrugada, cuidadosos ou
 não}
 \aceite
 \begin{itemize}
-  \item \enquote{Pausar Telas para Debate} congela todos os aparelhos; a lousa
-    mostra a curva de entrega e as manchetes escolhidas, sem nomes.
-  \item As três perguntas do debate estão na tela. \enquote{Liberar Etapa 5}
+  \item O painel de condução tem quatro cartões: as manchetes da turma, a
+    distribuição por horário (100\% de madrugada), o ritmo de cada computador
+    (com o tempo parado) e a matriz das quatro habilidades.
+  \item \enquote{Pausar Telas para Debate} congela todos os aparelhos; as três
+    perguntas do debate estão na tela. \enquote{Avançar Turma para Explicar}
     leva todos aos bastidores. Os dois botões não voltam.
 \end{itemize}
 \end{historia}
@@ -2505,9 +2516,11 @@ não}
 nome ao que aconteceu: economia da atenção}
 \aceite
 \begin{itemize}
-  \item Entre quatro indicadores, aponto os dois que comprovam (o pico das
-    02h30 e o tempo de tela); a tela então mostra a fala de Nico e três
-    conceitos, e eu concluo.
+  \item Dois cartões --- o horário de pico (01h00 às 03h30) e a retenção de 42
+    minutos --- abrem a fala de Nico; dois conceitos (economia da atenção e
+    metadados) fecham a ideia. Nada trava o avanço.
+  \item Enquanto a turma termina, posso explorar o gráfico da entrega por
+    faixa de horário.
 \end{itemize}
 \end{historia}
 
@@ -2516,14 +2529,28 @@ nome ao que aconteceu: economia da atenção}
 habilidade}{conversar e, se quiser, aplicar de novo}
 \aceite
 \begin{itemize}
-  \item A folha (só na minha tela) diz onde cada um está e a manchete que
-    publicou; o que o estudante escreveu ao assistente não aparece.
+  \item A folha (só na minha tela) diz onde cada um está, a manchete que
+    publicou e há quanto tempo está parado; o que o estudante escreveu ao
+    assistente não aparece.
   \item O painel de habilidades mostra as quatro (EM13CO24, EM13CO14,
-    EM13CO26, EM13CO08), e eu posso ajustar.
+    EM13CO26, EM13CO08) por estudante, e eu posso ajustar.
   \item \enquote{Zerar Turma} abre uma rodada nova com o mesmo pacote.
 \end{itemize}
-\pendencia{a suíte de ponta a ponta e a leitura do PO na plataforma ainda
-faltam; o podcast fixo (Alex e Sam) é o texto do one-pager e espera a voz.}
+\end{historia}
+
+\begin{historia}{H06.15.8}{Concluir com o podcast}{\pronto}
+\hu{Estudante da 2ª série}{encerrar a missão e rever o que aconteceu}{levar a
+ideia da economia da atenção para fora da aula}
+\aceite
+\begin{itemize}
+  \item Ao concluir, a missão fica só para leitura e mostra o podcast
+    \enquote{O Algoritmo Não Dorme} (Alex e Sam) em texto. O áudio, o
+    professor toca para a turma.
+\end{itemize}
+\pendencia{o PO ainda valida os textos que o design propôs (os blocos da
+Central de Apoio, a dica da denúncia, os avisos dos motivos de fonte e de
+ofensa) e a voz do podcast; a chave da Configuração da Publicação é uma
+composição até o design system ter a peça.}
 \end{historia}
 
 \feature{F06.9}{Vila do Lume --- A Noite Longa}{\pronto}

@@ -93,8 +93,8 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp04ef1b\_gates\_turma} & Tenant & A etapa da aula (os dois portões), o pacote e a rodada, por turma\\
 \cd{exp04ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: as pistas abertas e julgadas, as duas edições, o motivo, a Chave montada, a simulação e a transferência --- sem texto livre\\
 \zebra \cd{exp04ef1b\_diagramacoes} & Tenant & O \emph{cache} do layout escolhido pela IA, por pacote e combinação de vagas\\
-\cd{exp02em1b\_pacotes} & Tenant & O Efeito Amplificador: o pacote da campanha (rascunho com os três nós, recorte, manchetes, comentários); é a atividade da evidência\\
-\zebra \cd{exp02em1b\_gates\_turma} & Tenant & A fase da turma (\cd{aberta}, \cd{debate}, \cd{explicar})\\
+\cd{exp02em1b\_pacotes} & Tenant & O Efeito Amplificador: o pacote da campanha (a pauta, o rascunho com os três nós, recorte, manchetes, comentários); é a atividade da evidência\\
+\zebra \cd{exp02em1b\_gates\_turma} & Tenant & O gate da turma (\cd{exploracao}, \cd{pausa}, \cd{explicar})\\
 \cd{exp02em1b\_gates\_historico} & Tenant & Os botões do professor, em ordem (append-only)\\
 \zebra \cd{exp02em1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o chat (texto de menor, só para o F5), a prévia, o latch do Publicar, o feed e a Etapa 5\\
 \cd{exp02ef1b\_pacotes} & Tenant & O Enigma da Capa da Rádio: a cena (a panorâmica, as duas fotos com núcleo e fala da visitante, os selos, os dois objetos com o alvo, o fundo e os marcáveis); é a atividade da evidência\\
@@ -1788,28 +1788,34 @@ estudante só recebe os posts que o feed serviu até a galeria abrir
 
 \section{Tabelas de O Efeito Amplificador (exp02em1b)}
 
-Desde 2026-10-22 (\adrr{ADR-181}). Quatro tabelas, todas com \cd{escola\_id}
+Desde 2026-10-22 (\adrr{ADR-181}); alteradas na 2.1.0 (\adrr{ADR-191},
+migração \arq{20261028120000\_exp02em1b\_2\_1\_0}). Quatro tabelas, todas com \cd{escola\_id}
 \cd{NOT NULL} e RLS forçada; o detalhe de cada coluna está no
 \arq{schema.prisma} e as regras no \arq{AGENTS.md} do módulo
 \arq{efeito-amplificador}.
 
 \begin{itemize}
   \item \cd{exp02em1b\_pacotes}: \cd{disciplina}, \cd{tema}, \cd{assuntos},
-    \cd{contexto}, \cd{conteudo\_json} (o pacote inteiro, validado pelo Zod),
+    \cd{contexto}, \cd{conteudo\_json} (o pacote inteiro, validado pelo Zod:
+    a pauta, o rascunho em parágrafos, os nomes dos três nós, o recorte, as
+    manchetes e os seis comentários com o horário \enquote{02h40}),
     \cd{origem} (\cd{ia} $|$ \cd{padrao}), \cd{ativo}, \cd{rodada\_atual},
     \cd{aprovado\_em}/\cd{aprovado\_por} (juntos), \cd{ia\_geracoes} e
     \cd{ia\_tokens}. Um em andamento e um rascunho por turma.
-  \item \cd{exp02em1b\_gates\_turma}: a \cd{fase}, só para a frente.
+  \item \cd{exp02em1b\_gates\_turma}: a \cd{fase} (\cd{exploracao} $|$
+    \cd{pausa} $|$ \cd{explicar}), só para a frente.
   \item \cd{exp02em1b\_gates\_historico}: cada mudança de fase, com o pacote,
     a rodada e quem apertou.
   \item \cd{exp02em1b\_sessoes}: \cd{conversa} (as falas, em JSONB; o texto
-    do estudante é de menor: vai ao modelo cercado como dado e não vai a
-    painel, telemetria nem log; cada fala do assistente grava a \cd{origem},
-    \cd{ia} ou \cd{regras}, \adrr{ADR-181}), \cd{mensagens\_enviadas} (até 5),
-    \cd{previa}, o latch (\cd{manchete}, \cd{texto\_publicado},
-    \cd{trecho\_pincado}, \cd{publicada\_em}, juntos), \cd{feed},
-    \cd{explicar\_em}, \cd{indicadores} (só os que comprovam) e
-    \cd{concluido\_em}.
+    do estudante é de menor: fica só para o F5 e não vai a painel,
+    telemetria nem log; desde a 2.1.0 nenhuma fala passa por IA),
+    \cd{mensagens\_enviadas} (até 5), \cd{previa} (os nós corrigidos, o
+    pedido da fonte e a aprovação), o latch (\cd{manchete},
+    \cd{texto\_publicado}, \cd{trecho\_pincado}, \cd{publicada\_em}, juntos),
+    \cd{feed} (o motivo do aviso, as duas chaves da Configuração da
+    Publicação, a denúncia e os relatos), \cd{explicar\_em}, \cd{indicadores}
+    (os cartões apontados nos bastidores) e \cd{concluido\_em}. A coluna
+    \cd{ultimo\_nao\_comprova} ficou sem uso na 2.1.0.
 \end{itemize}
 
 \section{Tabelas de O Enigma da Capa da Rádio (exp02ef1b)}

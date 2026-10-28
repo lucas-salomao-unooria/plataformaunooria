@@ -22,7 +22,7 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 \cd{backup-exp04ef1b} & \cd{4EF} & \textbf{arquivada} &
   telemetria, progresso & \arq{backup-unootube} (sem rotas)\\
 \zebra \cd{exp02em1b} & \cd{2EM} & estudante &
-  telemetria & \arq{efeito-amplificador}, \arq{evidencias}\\
+  telemetria, progresso, ia, avaliacao & \arq{efeito-amplificador}, \arq{evidencias}\\
 \cd{exp02em1b-v0} & \cd{2EM} & \textbf{versão anterior} &
   telemetria, ia & \arq{unoogpt}\\
 \zebra \cd{exp01em1b} & \cd{1EM} & estudante &
@@ -833,65 +833,73 @@ a distribuição de \cd{fontesConfiaveis} da turma subir de forma anômala.
 \section{exp02em1b --- O Efeito Amplificador}
 \label{sec:exp02em1b-efeito-amplificador}
 
-Missão da \textbf{2ª série do Ensino Médio, unidade 1}, desde 2026-10-22
-(\adrr{ADR-181}), vinda da esteira de produto. Tomou o código da Missão
-Tempestade, que virou \cd{exp02em1b-v0} (abaixo). Três seções do design system,
-pela regra de \enquote{quem fala}: a escola (\cd{unooria}) na abertura e na
-conclusão, o \textbf{UnooriaAI} (\cd{unooriaai}) do primeiro pedido ao
-Publicar, e o \textbf{Unoovista} (\cd{unoovista}) no feed da madrugada e nos
-bastidores. Módulo da api: \arq{efeito-amplificador}; experiência 2.0.0.
+Missão da \textbf{2ª série do Ensino Médio, unidade 1}. Nasceu em 2026-10-22
+(\adrr{ADR-181}) e foi refeita na \textbf{2.1.0} (\adrr{ADR-191}) pela revisão
+do PO de 2026-10-27: o PRD 2.1.0, o banco de conteúdo, a copy revisada e o
+protótipo de 32 estados (com o Figma), que dita a disposição dos elementos.
+Tomou o código da Missão Tempestade, que virou \cd{exp02em1b-v0} (abaixo).
+Duas seções do design system: o \textbf{UnooriaAI} (\cd{unooriaai}) nas Etapas
+1 a 3, do briefing ao Publicar, e o \textbf{Unoovista} (\cd{unoovista}) nas
+Etapas 4 a 6, do feed da madrugada à conclusão. Módulo da api:
+\arq{efeito-amplificador}; experiência 2.1.0.
 
 \begin{destaque}
 O estudante cuida do texto e a rede entrega de madrugada do mesmo jeito: o
 alcance não depende do cuidado, porque a rede otimiza tempo de tela.
 \end{destaque}
 
-\subsection{O UnooriaAI da aula é híbrido: a IA entende, o servidor decide}
+\subsection{O UnooriaAI da aula é a árvore de intenções, sem IA}
 
-O estudante escreve o que quiser, e o UnooriaAI responde com IA real
-(\arq{conversa.service.ts}, quota do perfil estudante): o modelo devolve a
-INTENÇÃO, de uma lista fechada de nove (gerar o rascunho, questionar a fonte,
-aceitar a troca do dado, proteger o colega, creditar o trecho copiado, revisar
-tudo, ver a prévia, dúvida de conceito, fora do tema), e o TEXTO da resposta.
-Quem muda a prévia é o servidor, pela intenção --- nunca pelo texto ---, e por
-isso a régua das habilidades continua exata. Os guardrails são do servidor
-(\arq{prompts-da-conversa.ts}): intenção fora da lista, resposta longa, com
-link ou com palavra que quebra o disfarce é recusada; ao entregar o rascunho a
-IA não pode admitir o problema nem nomear o colega (a regra de ouro: o
-problema só aparece quando o estudante questiona); e a resposta à fonte não
-pode dizer que já trocou o dado.
+A aula não chama IA (PRD, RNF-012): o UnooriaAI é a árvore de intenções do
+banco de conteúdo, no servidor (\arq{regras/intencoes.ts}: minúsculas, sem
+acento, sem pontuação, lista fechada com precedência e os gatilhos que vêm do
+pacote). A conversa abre com a boas-vindas da copy e as três sugestões ---
+\enquote{Criar rascunho informativo sobre o tema}, \enquote{Qual a fonte dessa
+pesquisa?} e \enquote{Reescreva removendo os nomes pessoais e citando o autor
+original}. Perguntar a fonte só pergunta: a fala termina em \enquote{Deseja
+que eu atualize a prévia?}, e só o \enquote{sim} logo depois (ou a revisão
+ampla) corrige a estatística. O pedido de crédito e o de tirar o nome corrigem
+cada um o seu nó; juntos, os dois. Até 5 mensagens. A única IA da missão é a
+do preparo do professor, com a quota dele e curadoria.
 
-A chamada fica FORA da transação, em corrida de 12\,s, com uma tentativa só.
-Sem saldo, com o vendor fora, no prazo estourado, com a saída recusada ou com
-a sessão que andou no meio, a \textbf{árvore de intenções} responde
-(\arq{regras/intencoes.ts}: minúsculas, sem acento, sem pontuação, gatilhos
-com precedência, mais três que vêm do pacote), com falas que levam o tema do
-professor. Cada fala do assistente grava a \cd{origem} (\cd{ia} ou
-\cd{regras}). Até 5 mensagens. Abre com a fala do PO, com o tema do pacote:
-\enquote{Olá, vamos montar seu post para [tema], você pode me pedir para
-montar o post, questionar minhas fontes e perguntar sobre direito digital.
-Vamos começar?}. A outra IA é a do preparo do professor, com a quota dele e
-curadoria.
+\subsection{A prévia, a manchete e o latch}
 
-\subsection{O Publicar é o latch, e o algoritmo sempre pinça}
+A prévia é feita de parágrafos; três são os nós (alucinação, plágio, LGPD). A
+gaveta \enquote{Prévia do Post} aponta cada nó ainda pendente, com
+\enquote{Solicitar revisão} e \enquote{Aprovar Prévia}; exportar não é
+bloqueado por pendência. Não há edição livre de texto: a régua leria texto de
+menor. \enquote{Exportar para o Unoovista} abre o fechamento editorial: a
+prévia compacta, as três manchetes (neutra, construtiva, sensacionalista) e
+\enquote{Publicar no Unoovista} --- o latch, que grava manchete, texto e trecho
+pinçado num UPDATE só e marca a EM13CO14 e a EM13CO26 na mesma transação. O
+relógio corre de 16h00 a 02h30 em 1,2\,s. O trecho pinçado é a estatística, se
+ficou; senão o recorte do pacote, que a régua obriga a sobreviver às
+correções; senão a manchete. Sempre há um, e a entrega é de madrugada para
+todos.
 
-A prévia é feita de parágrafos; três são os nós (alucinação, plágio, LGPD), e
-cada um se resolve pela correção pedida ao assistente ou tirando o parágrafo.
-Não há edição livre de texto: a régua leria texto de menor. O Publicar grava
-manchete, texto e trecho pinçado num UPDATE só e marca a EM13CO14 e a EM13CO26
-na mesma transação. O trecho pinçado é a estatística, se ficou; senão o recorte
-do pacote, que a régua obriga a morar no trecho copiado e na correção; senão a
-manchete. Sempre há um, e a entrega é de madrugada para todos.
+\subsection{O feed da madrugada, a pausa e os bastidores}
 
-\subsection{O feed, a pausa e a Etapa 5}
+O feed segue o protótipo revisado: o card do post com \enquote{Em alta na
+madrugada}, a métrica das 4.820 impressões e o aviso de metadados, os botões
+\enquote{Fixar aviso de cuidado} (a folha com os três motivos) e
+\enquote{Configuração da Publicação} (conta privada e restringir comentários),
+os seis comentários e a barra fixa \enquote{Central de Apoio} (denunciar o
+perfil suspeito, com confirmação, e encaminhar um relato escolhendo o
+comentário e a equipe). A EM13CO24 é o motivo do aviso: saúde atinge; outro
+motivo, ou restringir comentários, fica em processo. A EM13CO08 conta as três
+proteções (privacidade, denúncia e relato encaminhado). Ao lado do aparelho, o
+hub mostra a instrução fixa do moderador (o TC-10, com o tema do professor):
+a experiência a publica em \cd{exp:estado}, e ela fica fora da viewport do
+pico. O gate da turma é \cd{exploracao}, \cd{pausa} (as telas congelam e as
+jogadas respondem 409) e \cd{explicar}, só para a frente. Nos bastidores, os
+dois cartões (o pico entre 01h00 e 03h30 e a retenção de 42 minutos) abrem a
+citação de Nico e não travam o avanço; a espera ativa mostra a entrega por
+faixa horária, e a conclusão traz o podcast em texto (o áudio é do
+professor). A abertura dos bastidores fecha o feed e marca o
+\enquote{não atingiu} de quem nada fez.
 
-As ações do feed (abrir um comentário, ver métricas, moderar, conta privada,
-denunciar, Central de Apoio) marcam a EM13CO24 e a EM13CO08 com o que já foi
-alcançado; a abertura do Explicar fecha o feed e marca o \enquote{não atingiu}
-de quem nada fez. A fase da turma é \cd{aberta}, \cd{debate} (as telas
-congelam, e as jogadas respondem 409) e \cd{explicar}, só para a frente. Na
-Etapa 5, dois de quatro indicadores comprovam a retenção; o gabarito não
-desce. Sem etapa de transferência e sem Canal B, por decisão do PO.
+Fora desta versão, por decisão do dono do produto: a transferência da Etapa 6
+(o caso do aplicativo de áudio e o diário de bordo) e o Canal B.
 
 A Missão Tempestade, que tinha este código, segue na seção seguinte, como
 versão anterior.

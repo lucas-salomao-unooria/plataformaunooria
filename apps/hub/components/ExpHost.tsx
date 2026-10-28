@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, lazy, useCallback, useState } from "react";
+import { Suspense, lazy, useCallback, useState, type CSSProperties } from "react";
 import { signOut } from "next-auth/react";
 import { AlertBox } from "@edu/ui/ds";
+import { instrucaoDoEstado } from "@/lib/instrucao-da-experiencia";
 import { DispositivoFrame } from "./DispositivoFrame";
 import { ExpFrame } from "./ExpFrame";
 
@@ -10,6 +11,10 @@ import { ExpFrame } from "./ExpFrame";
  *  pode viajar no chunk da casca, legível no DevTools antes da hora. */
 const MolduraPerdidos = lazy(() =>
   import("./moldura-perdidos").then((m) => ({ default: m.MolduraPerdidos })),
+);
+/** A instrução fora do aparelho (`exp:estado { instrucao }`): lazy como a moldura. */
+const InstrucaoDaExperiencia = lazy(() =>
+  import("./instrucao-da-experiencia").then((m) => ({ default: m.InstrucaoDaExperiencia })),
 );
 
 /**
@@ -63,8 +68,10 @@ export function ExpHost(props: {
 
   /**
    * "Chrome" opcional por estado da experiência (`exp:estado`): o hub não
-   * interpreta domínio — só reage ao que a experiência publicar. Hoje o único
-   * chrome é a moldura dos posts perdidos do Instanooria.
+   * interpreta domínio — só reage ao que a experiência publicar. Hoje são dois:
+   * a moldura dos posts perdidos do Instanooria (`fase: "perdidos"`) e a
+   * instrução ao lado do aparelho (`instrucao: { antes, destaque, depois }`,
+   * o TC-10 da exp02em1b — `lib/instrucao-da-experiencia.ts`).
    */
   const [estado, setEstadoBruto] = useState<Record<string, unknown>>({});
   const setEstado = useCallback((novo: Record<string, unknown>) => {
@@ -97,6 +104,8 @@ export function ExpHost(props: {
   /* A moldura fala do feed em cinza: nas tarefas do cinza (`passo: "tarefas"`,
      ADR-167) ela sai, senão o hub diria "estes posts existiam" sobre outra tela. */
   const mostrarMolduraPerdidos = estado.fase === "perdidos" && !expandido && estado.passo !== "tarefas";
+  /* Validada pelo Zod (input externo); fora da forma, nada aparece. */
+  const instrucao = expandido ? null : instrucaoDoEstado(estado);
 
   const onConcluir = useCallback(
     (payload: { score?: number; dados?: Record<string, unknown> }) => {
@@ -127,38 +136,66 @@ export function ExpHost(props: {
           <MolduraPerdidos />
         </Suspense>
       ) : null}
-      <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
-        {erro ? (
-          <div
-            data-testid="erro-da-experiencia"
-            style={{ position: "absolute", inset: 0, zIndex: 2, display: "grid", placeItems: "center", background: "rgba(255,255,255,0.92)", padding: 24 }}
-          >
-            <AlertBox
-              theme="light"
-              variant="error"
-              device="auto"
-              title="A missão travou"
-              description={
-                <>
-                  Algo deu errado dentro da atividade. Recarregue para continuar; se repetir, avise quem
-                  cuida da plataforma e informe o código <code>{erro.hash}</code>.
-                </>
-              }
-              primaryAction={{ label: "Recarregar", onClick: recarregar }}
-            />
-          </div>
+      {/* O PALCO: o aparelho e, quando a experiência pede, a instrução ao lado
+          (à direita em tela larga, acima em tela estreita). A instrução é um
+          IRMÃO que entra antes da área do aparelho — a área continua no mesmo
+          lugar da árvore e o iframe não remonta; o `DispositivoFrame` mede a
+          área que sobra pelo ResizeObserver dele. */}
+      <div
+        className={`flex min-h-0 flex-1 flex-col lg:flex-row-reverse ${instrucao && viewport ? "lg:justify-center lg:gap-2" : ""}`}
+        style={{ background: "#fafafa" }}
+      >
+        {instrucao ? (
+          <Suspense fallback={null}>
+            <InstrucaoDaExperiencia instrucao={instrucao} />
+          </Suspense>
         ) : null}
-        {viewport ? (
-          <DispositivoFrame
-            largura={viewport.largura}
-            altura={viewport.altura}
-            expandido={expandido}
-          >
-            {conteudo}
-          </DispositivoFrame>
-        ) : (
-          conteudo
-        )}
+        {/* Com a instrução ao lado (tela larga), a área do aparelho tem a largura DELE (mais a
+            folga do `DispositivoFrame`) e o par fica centralizado: com `flex: 1`, o aparelho se
+            centrava na área inteira e a instrução ia parar na borda da janela, longe dele. Só a
+            classe muda — o elemento é o mesmo, e o iframe não remonta. */}
+        <div
+          className={instrucao && viewport ? "lg:!w-[var(--area-do-aparelho)] lg:!flex-none" : undefined}
+          style={{
+            flex: 1,
+            minHeight: 0,
+            minWidth: 0,
+            position: "relative",
+            ...(viewport ? ({ "--area-do-aparelho": `${viewport.largura + 48}px` } as CSSProperties) : {}),
+          }}
+        >
+          {erro ? (
+            <div
+              data-testid="erro-da-experiencia"
+              style={{ position: "absolute", inset: 0, zIndex: 2, display: "grid", placeItems: "center", background: "rgba(255,255,255,0.92)", padding: 24 }}
+            >
+              <AlertBox
+                theme="light"
+                variant="error"
+                device="auto"
+                title="A missão travou"
+                description={
+                  <>
+                    Algo deu errado dentro da atividade. Recarregue para continuar; se repetir, avise quem
+                    cuida da plataforma e informe o código <code>{erro.hash}</code>.
+                  </>
+                }
+                primaryAction={{ label: "Recarregar", onClick: recarregar }}
+              />
+            </div>
+          ) : null}
+          {viewport ? (
+            <DispositivoFrame
+              largura={viewport.largura}
+              altura={viewport.altura}
+              expandido={expandido}
+            >
+              {conteudo}
+            </DispositivoFrame>
+          ) : (
+            conteudo
+          )}
+        </div>
       </div>
     </div>
   );

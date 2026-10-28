@@ -1,9 +1,10 @@
 import type { Nivel } from "../../evidencias/regras";
+import type { FeedDaSessao } from "./feed";
 
 /**
- * A RÉGUA do Canal A das quatro habilidades (one-pager §12a, contrato de
- * evidência). Puro: o servidor junta os fatos e chama. Sem Canal B (decisão do
- * PO, 2026-10-22): toda habilidade é medida pelo que o estudante FAZ.
+ * A RÉGUA do Canal A das quatro habilidades (PRD §14.1 e o contrato de
+ * evidência do one-pager §12a, ADR-191). Puro: o servidor junta os fatos e
+ * chama. Toda habilidade é medida pelo que o estudante FAZ.
  *
  * Quem não teve a oportunidade fica "Não avaliado" — a AUSÊNCIA de marca —,
  * nunca "não atingiu": CO14 e CO26 marcam no PUBLICAR; CO24 e CO08 marcam a
@@ -12,8 +13,9 @@ import type { Nivel } from "../../evidencias/regras";
  */
 
 /**
- * EM13CO14 — confiabilidade: PERGUNTOU a fonte E corrigiu/tirou a estatística.
- * Uma das duas: em processo (perguntou e publicou o dado; ou tirou sem checar).
+ * EM13CO14 — confiabilidade: QUESTIONOU a fonte E corrigiu a estatística antes
+ * de exportar. Uma das duas: em processo (perguntou e publicou o dado; ou pediu
+ * a revisão ampla sem checar a origem).
  */
 export function nivelCO14(f: { pediuFonte: boolean; dadoResolvido: boolean }): Nivel {
   if (f.pediuFonte && f.dadoResolvido) return "atingiu";
@@ -21,32 +23,41 @@ export function nivelCO14(f: { pediuFonte: boolean; dadoResolvido: boolean }): N
   return "nao_atingiu";
 }
 
-/** EM13CO26 — direito digital: o crédito ao veículo E o colega fora do post. Um dos dois: em processo. */
+/** EM13CO26 — direito digital: o crédito à autoria E o colega anonimizado. Um dos dois: em processo. */
 export function nivelCO26(f: { plagioResolvido: boolean; lgpdResolvido: boolean }): Nivel {
   const n = Number(f.plagioResolvido) + Number(f.lgpdResolvido);
   return n === 2 ? "atingiu" : n === 1 ? "em_processo" : "nao_atingiu";
 }
 
 /**
- * EM13CO24 (o foco) — saúde: abriu relatos das DUAS dimensões (física e
- * mental) E executou uma moderação. Qualquer combinação intermediária
- * registrada é em processo; nenhuma ação registrada (nem comentário aberto,
- * nem métrica, nem moderação), não atingiu.
+ * EM13CO24 (o foco) — saúde: fixou o aviso de cuidado com o motivo de SAÚDE
+ * ("Conteúdo pode afetar a saúde de quem lê"). Aviso com outro motivo, ou outra
+ * moderação da publicação (restringir comentários) sem aviso: em processo.
+ * Nenhuma ferramenta de moderação: não atingiu.
  */
-export function nivelCO24(f: { fisica: boolean; mental: boolean; moderou: boolean; metricas: boolean }): Nivel {
-  if (f.fisica && f.mental && f.moderou) return "atingiu";
-  if (f.fisica || f.mental || f.moderou || f.metricas) return "em_processo";
+export function nivelCO24(f: Pick<FeedDaSessao, "aviso" | "restringirComentarios">): Nivel {
+  if (f.aviso === "saude_usuarios") return "atingiu";
+  if (f.aviso !== null || f.restringirComentarios) return "em_processo";
   return "nao_atingiu";
 }
 
-/** EM13CO08 — segurança: preservar privacidade, reportar e buscar ajuda, VOLUNTARIAMENTE. Os três: atingiu. */
-export function nivelCO08(f: { privacidade: boolean; denunciou: boolean; ajuda: boolean }): Nivel {
-  const n = Number(f.privacidade) + Number(f.denunciou) + Number(f.ajuda);
-  return n === 3 ? "atingiu" : n >= 1 ? "em_processo" : "nao_atingiu";
+/**
+ * EM13CO08 — segurança: os TRÊS comportamentos protetivos, voluntários —
+ * preservar a privacidade (uma das chaves da Configuração da Publicação),
+ * reportar a suspeita (denunciar o perfil) E encaminhar um relato pela Central
+ * de Apoio (comentário, equipe e envio). Um ou dois, ou só abrir a Central sem
+ * concluir: em processo. Nada: não atingiu.
+ */
+export function nivelCO08(f: Pick<FeedDaSessao, "contaPrivada" | "restringirComentarios" | "abriuCentral" | "denunciou" | "relatos">): Nivel {
+  const privacidade = f.contaPrivada || f.restringirComentarios;
+  const n = Number(privacidade) + Number(f.denunciou) + Number(f.relatos.length > 0);
+  if (n === 3) return "atingiu";
+  if (n >= 1 || f.abriuCentral) return "em_processo";
+  return "nao_atingiu";
 }
 
-/** Os ids dos marcadores da ficha (`evidencias/fichas/exp02em1b.ts`). */
-export const MARCADOR_CO14 = "auditoria-da-fonte";
-export const MARCADOR_CO26 = "direito-digital-no-post";
-export const MARCADOR_CO24 = "cuidado-com-a-saude";
-export const MARCADOR_CO08 = "protecao-na-rede";
+/** Os ids dos marcadores da ficha (`evidencias/fichas/exp02em1b.ts`), os do PRD §14.2. */
+export const MARCADOR_CO14 = "auditoria_fontes";
+export const MARCADOR_CO26 = "direito_digital";
+export const MARCADOR_CO24 = "moderacao_saude";
+export const MARCADOR_CO08 = "protecao_seguranca";

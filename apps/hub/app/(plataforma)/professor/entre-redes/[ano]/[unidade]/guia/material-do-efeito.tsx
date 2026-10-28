@@ -3,7 +3,8 @@ import { MANCHETES, ROTULO_DA_MANCHETE, ROTULO_DO_NO, ROTULO_DO_TIPO, type Mater
 
 /**
  * O material de O Efeito Amplificador, VIVO (de `GET /efeito-amplificador/professor/material`):
- * o pacote padrão COM o gabarito e os indicadores do Explicar, para ler antes;
+ * o pacote padrão COM o gabarito (a pauta do grêmio, os três nós, os
+ * comentários e a categoria de cada um) e os dois indicadores do Explicar, para ler antes;
  * as réguas das quatro habilidades, para o depois. Sem a api, o cartão diz que
  * não carregou — o resto do guia continua servindo.
  */
@@ -21,6 +22,15 @@ export function GabaritoDoEfeito({ dados }: { dados: Material | null }) {
   return (
     <Card variant="outlined" title={`O pacote padrão — “${dados.padrao.nome}”, com o gabarito`}>
       <div className="flex flex-col gap-4 text-[13px] leading-relaxed text-unooria-neutral-800">
+        <div className="flex flex-col gap-1">
+          <strong className="text-unooria-neutral-950">{`A pauta do grêmio: ${c.pauta.titulo}`}</strong>
+          <p>{c.pauta.descricao}</p>
+          <ul className="list-disc pl-5">
+            {c.pauta.orientacoes.map((o) => (
+              <li key={o}>{o}</li>
+            ))}
+          </ul>
+        </div>
         <div className="flex flex-col gap-2">
           {c.rascunho.map((p) => (
             <div key={p.id} className="flex flex-col gap-1">
@@ -33,7 +43,7 @@ export function GabaritoDoEfeito({ dados }: { dados: Material | null }) {
               {p.corrigido ? <p className="text-unooria-neutral-600">{`Quando o estudante pede: ${p.corrigido}`}</p> : null}
             </div>
           ))}
-          <p className="text-unooria-neutral-600">{`A frase que o algoritmo pinça (sobrevive à correção): “${c.recorte}”`}</p>
+          <p className="text-unooria-neutral-600">{`A frase que o algoritmo destaca no feed (sobrevive às correções): “${c.recorte}”`}</p>
         </div>
         <ul className="flex flex-col gap-1">
           {MANCHETES.map((m) => (
@@ -48,15 +58,15 @@ export function GabaritoDoEfeito({ dados }: { dados: Material | null }) {
               <Tag variant="neutral" size="sm" pill>
                 {ROTULO_DO_TIPO[com.tipo]}
               </Tag>{" "}
-              <strong>{`${com.handle} · ${com.horario}`}</strong> {com.texto}
+              <strong>{`${com.autor} · ${com.horario}`}</strong> {com.texto}
             </li>
           ))}
         </ul>
         <div>
-          <strong>Os indicadores da Etapa 5:</strong>
+          <strong>Os indicadores do Explicar (os dois revelam o critério de entrega do algoritmo):</strong>
           <ul className="list-disc pl-5">
             {dados.indicadores.map((i) => (
-              <li key={i.id}>{`${i.rotulo} — ${i.comprova ? "comprova a retenção" : "não comprova (distrator)"}`}</li>
+              <li key={i.id}>{`${i.rotulo}: ${i.texto}`}</li>
             ))}
           </ul>
         </div>

@@ -13,34 +13,36 @@ import { ehUuid } from "../motor/guardas";
 import { logger } from "../observabilidade/logger";
 import { PrismaService } from "../prisma/prisma.service";
 import {
+  BOAS_VINDAS,
   DISCIPLINAS,
   ENTREGA_POR_HORARIO,
   EXP_ID,
   INDICADORES,
-  INDICADORES_QUE_COMPROVAM,
   INSTRUCOES_DO_GATILHO,
   MANCHETES,
-  MENSAGENS_NO_CHAT,
   MAX_CARACTERES_DA_MENSAGEM,
+  MENSAGENS_NO_CHAT,
+  METRICA_NOTURNA,
   PACOTE_PADRAO,
   ROTEIRO_DO_DEBATE,
   ROTULO_DA_DISCIPLINA,
+  SUGESTOES_DE_PROMPT,
   TEXTOS_DO_EXPLICAR,
   VERSAO_DO_INSTRUMENTO,
   conteudoDoPadrao,
-  falaDeAbertura,
   falaDoAssistente,
-  pilulasDoTema,
+  instrucaoDoModerador,
   type ConteudoDoPacote,
   type Disciplina,
   type Fase,
   type Intencao,
   type Manchete,
+  type MotivoDoAviso,
   type Origem,
 } from "./conteudo";
 import { ConteudoBaseSchema, type EstadoSchema, type HomologarSchema } from "./contrato-de-rotas";
-import { ConversaDaExp02em1bService } from "./conversa.service";
 import { erroDeJogo } from "./erros";
+import { roteiroDoPodcast } from "./podcast";
 import { PreparoDaExp02em1bService, type MotivoDoPadrao } from "./preparo.service";
 import {
   MARCADOR_CO08,
@@ -52,35 +54,43 @@ import {
   nivelCO24,
   nivelCO26,
 } from "./regras/evidencia";
-import { aplicarAcao, dimensoesInspecionadas, lerFeed, type AcaoNoFeed, type FeedDaSessao } from "./regras/feed";
+import { aplicarSeguranca, fixarAviso, lerFeed, perfilSuspeito, type AcaoDeSeguranca, type FeedDaSessao } from "./regras/feed";
 import { classificar } from "./regras/intencoes";
-import { FASE_INICIAL, avancarFase, normalizarFase, passoEfetivo, pausada, type MarcosDaSessao } from "./regras/passos";
 import {
-  alternarParagrafo,
+  FASE_INICIAL,
+  avancarFase,
+  etapaDoContrato,
+  normalizarFase,
+  passoEfetivo,
+  pausada,
+  type MarcosDaSessao,
+} from "./regras/passos";
+import {
   aplicarIntencao,
   lerPrevia,
+  marcarAprovacao,
   noResolvido,
   paragrafosVisiveis,
+  pendencias,
   textoPublicado,
   trechoPincado,
   type Previa,
 } from "./regras/previa";
 
 /**
- * Persistência e regras aplicadas da exp02em1b — O Efeito Amplificador (ADR-181).
+ * Persistência e regras aplicadas da exp02em1b — O Efeito Amplificador 2.1.0
+ * (ADR-191).
  *
  * Molde: `quem-mandou-isso` (o funil, os locks, o pacote como atividade e a
  * rodada como reaplicação). Toda query leva `escola_id` no `where` ALÉM da RLS
  * que o `comTenancy` arma (regra 1, defesa em profundidade).
  *
- * **A conversa é híbrida.** O UnooriaAI da aula é a IA real (quota do
- * estudante) que classifica o pedido numa lista FECHADA de intenções e redige a
- * resposta; quem muda a prévia é este serviço, pela intenção. Sem a IA, a
- * árvore de intenções responde. O preparo do professor é a outra IA.
+ * **Sem IA na aula** (PRD RNF-012, §17.4): o UnooriaAI é a árvore de intenções
+ * do 01e, no servidor; a única IA da missão é o preparo do professor.
  *
- * **O gabarito não desce.** O comentário vai sem a categoria de saúde, o
- * indicador sem o `comprova`, o parágrafo sem o nó: quem diz o que um gesto
- * mediu é este serviço, e as marcas entram na transação de cada gesto.
+ * **O gabarito não desce.** O comentário vai sem a categoria de saúde e o
+ * parágrafo sem o nó: quem diz o que um gesto mediu é este serviço, e as
+ * marcas entram na transação de cada gesto.
  */
 
 interface PacoteDaTurma {
@@ -109,7 +119,6 @@ const CAMPOS_DA_SESSAO = {
   feed: true,
   explicarEm: true,
   indicadores: true,
-  ultimoNaoComprova: true,
   concluidoEm: true,
   atualizadoEm: true,
 } satisfies Prisma.Exp02em1bSessaoSelect;
@@ -121,16 +130,11 @@ function marcosDe(s: LinhaDaSessao | null | undefined): MarcosDaSessao | null {
   return { publicou: s.publicadaEm !== null, concluiu: s.concluidoEm !== null };
 }
 
-/**
- * Uma fala gravada no chat. O texto do estudante é de menor: só a sessão o
- * guarda. `origem` diz quem redigiu a fala do assistente — a IA ou a árvore
- * (a reserva) —; não é gabarito, e a e2e com IA real a confere.
- */
+/** Uma fala gravada no chat. O texto do estudante é de menor: só a sessão o guarda. */
 interface FalaGravada {
   papel: "estudante" | "assistente";
   texto: string;
   intencao?: Intencao;
-  origem?: "ia" | "regras";
   em: string;
 }
 
@@ -140,13 +144,12 @@ function lerConversa(bruto: Prisma.JsonValue): FalaGravada[] {
     if (typeof f !== "object" || f === null || Array.isArray(f)) return [];
     const o = f as Record<string, unknown>;
     if ((o.papel !== "estudante" && o.papel !== "assistente") || typeof o.texto !== "string") return [];
-    const origem = o.origem === "ia" || o.origem === "regras" ? o.origem : undefined;
-    return [{ papel: o.papel, texto: o.texto, ...(origem ? { origem } : {}), em: typeof o.em === "string" ? o.em : "" }];
+    return [{ papel: o.papel, texto: o.texto, em: typeof o.em === "string" ? o.em : "" }];
   });
 }
 
 /** As intenções que só RESPONDEM: não mexem na prévia, e cabem antes do rascunho. */
-const SEM_EFEITO_NA_PREVIA: ReadonlySet<Intencao> = new Set(["fora_do_tema", "confirmar_previa", "duvida_conceitual"]);
+const SEM_EFEITO_NA_PREVIA: ReadonlySet<Intencao> = new Set(["fora_do_tema"]);
 
 /** O conteúdo do `Json` da linha, ou `null` se a forma não bate (linha de outra versão). */
 function lerConteudo(bruto: Prisma.JsonValue): ConteudoDoPacote | null {
@@ -173,10 +176,11 @@ function assinatura(c: { disciplina: string; tema: string; assuntos: readonly st
     c.tema,
     [...c.assuntos],
     c.contexto,
+    [k.pauta.titulo, k.pauta.descricao, [...k.pauta.orientacoes]],
     k.rascunho.map((p) => [p.id, p.no, p.texto, p.corrigido ?? ""]),
-    [k.fonteInventada, k.colega, k.veiculo, k.recorte],
+    [k.fonteInventada, k.colega, k.fonteOriginal, k.recorte],
     MANCHETES.map((m) => k.manchetes[m]),
-    k.comentarios.map((x) => [x.id, x.autor, x.handle, x.horario, x.tipo, x.texto]),
+    k.comentarios.map((x) => [x.id, x.autor, x.horario, x.tipo, x.texto]),
   ]);
 }
 
@@ -192,6 +196,17 @@ function padrao() {
 
 const ROTEIRO = { perguntas: [...ROTEIRO_DO_DEBATE], instrucoes: { ...INSTRUCOES_DO_GATILHO } };
 
+/** A transcrição do podcast, para a tela de conclusão (o áudio é do professor, ADR-150). */
+function transcricaoDoPodcast() {
+  return {
+    titulo: "Podcast: O Algoritmo Não Dorme",
+    blocos: roteiroDoPodcast().map((t) => ({ titulo: t.titulo, falas: t.falas.map((f) => ({ quem: f.falante, texto: f.texto })) })),
+  };
+}
+
+const HABILIDADES = ["EM13CO24", "EM13CO14", "EM13CO26", "EM13CO08"] as const;
+type Habilidade = (typeof HABILIDADES)[number];
+
 interface LinhaDaTurma {
   estudanteId: string;
   nome: string;
@@ -204,14 +219,14 @@ export class EfeitoAmplificadorService {
     private readonly prisma: PrismaService,
     private readonly evidencias: EvidenciasService,
     private readonly preparo: PreparoDaExp02em1bService,
-    private readonly conversa: ConversaDaExp02em1bService,
   ) {}
 
   // ─────────────────────────────────────────────────────────── leituras
 
   /**
-   * Boot da experiência — READ-ONLY. Sem pacote no ar, `preparada: false` e a
-   * tela é de espera: a missão NASCE VAZIA (o tema é o que o professor escolheu).
+   * Boot da experiência (API-001) — READ-ONLY. Sem pacote no ar,
+   * `preparada: false` e a tela é de espera: a missão NASCE VAZIA (o tema é o
+   * que o professor escolheu).
    */
   async sessao(escolaId: string, estudanteId: string) {
     return this.prisma.comTenancy(async (tx) => {
@@ -222,34 +237,36 @@ export class EfeitoAmplificadorService {
         ...this.montarEstado(ctx, sessao),
         tema: ctx.pacote?.tema ?? null,
         textos: {
-          abertura: ctx.pacote ? falaDeAbertura(ctx.pacote.tema) : null,
-          pilulas: ctx.pacote ? pilulasDoTema(ctx.pacote.tema) : [],
+          pauta: ctx.pacote ? { ...ctx.pacote.conteudo.pauta, orientacoes: [...ctx.pacote.conteudo.pauta.orientacoes] } : null,
+          boasVindas: BOAS_VINDAS,
+          sugestoes: [...SUGESTOES_DE_PROMPT],
           explicar: {
             titulo: TEXTOS_DO_EXPLICAR.titulo,
             instrucao: TEXTOS_DO_EXPLICAR.instrucao,
-            naoComprova: TEXTOS_DO_EXPLICAR.naoComprova,
             citacao: TEXTOS_DO_EXPLICAR.citacao,
             conceitos: TEXTOS_DO_EXPLICAR.conceitos.map((c) => ({ ...c })),
             esperaAtiva: TEXTOS_DO_EXPLICAR.esperaAtiva,
           },
+          podcast: transcricaoDoPodcast(),
         },
       };
     }, escolaId);
   }
 
-  /** O polling do gate (3 s) — leve, e pelo MESMO funil (regras 7 e 8). */
+  /** O polling do gate (API-002, 3 s) — leve, e pelo MESMO funil (regras 7 e 8). */
   async gate(escolaId: string, estudanteId: string) {
     return this.prisma.comTenancy(async (tx) => {
       const { turmaId } = await this.estudanteDaEscola(tx, escolaId, estudanteId);
       const ctx = await this.contextoDaTurma(tx, escolaId, turmaId);
       const sessao = ctx.pacote ? await this.sessaoDe(tx, escolaId, estudanteId, ctx.pacote) : null;
-      const passo = passoEfetivo(marcosDe(sessao), ctx.fase);
+      const estado = this.montarEstado(ctx, sessao);
       return {
-        fase: ctx.pacote ? ctx.fase : null,
-        passo,
-        pausada: pausada(passo, ctx.fase),
-        preparada: ctx.pacote !== null,
-        atividade: ctx.pacote ? { pacoteId: ctx.pacote.id, rodada: ctx.pacote.rodada } : null,
+        fase: estado.fase,
+        passo: estado.passo,
+        etapa: estado.etapa,
+        pausada: estado.pausada,
+        preparada: estado.preparada,
+        atividade: estado.atividade,
         agora: new Date().toISOString(),
       };
     }, escolaId);
@@ -257,7 +274,7 @@ export class EfeitoAmplificadorService {
 
   // ─────────────────────────────────────────────────────────── mutações
 
-  /** "Iniciar Campanha" — abre a sessão desta rodada. Idempotente. */
+  /** "Abrir UnooriaAI" — abre a sessão desta rodada (E1 → E2). Idempotente. */
   entrar(escolaId: string, estudanteId: string) {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao) => {
       if (sessao) return;
@@ -278,79 +295,35 @@ export class EfeitoAmplificadorService {
   }
 
   /**
-   * Uma mensagem ao UnooriaAI — a conversa HÍBRIDA (ADR-181). A IA entende e
-   * redige (`conversa.service.ts`); o servidor decide: a prévia muda pela
-   * INTENÇÃO, da lista fechada, nunca pelo texto. Até `MENSAGENS_NO_CHAT`; a
+   * Uma mensagem ao UnooriaAI (API-003) — a árvore de intenções, no servidor:
+   * a prévia muda pela INTENÇÃO, da lista fechada. Até `MENSAGENS_NO_CHAT`; a
    * quinta leva o aviso do limite junto.
-   *
-   * Três tempos, para a IA não segurar transação nem lock durante segundos:
-   * a LEITURA (funil, porta e limite, sem gravar), a IA fora da transação, e a
-   * GRAVAÇÃO no funil de sempre. Se a sessão andou no meio (outra mensagem, um
-   * parágrafo tirado, o professor zerou), a resposta da IA descreve um estado
-   * velho — e a árvore responde sobre o estado de agora.
    */
-  async mensagem(escolaId: string, estudanteId: string, texto: string) {
-    const antes = await this.prisma.comTenancy(async (tx) => {
-      const { turmaId } = await this.estudanteDaEscola(tx, escolaId, estudanteId);
-      const ctx = await this.contextoDaTurma(tx, escolaId, turmaId);
-      if (!ctx.pacote) throw erroDeJogo("campanha-em-preparo");
-      const s = this.exigirConversaAberta(await this.sessaoDe(tx, escolaId, estudanteId, ctx.pacote), ctx.fase);
-      if (s.mensagensEnviadas >= MENSAGENS_NO_CHAT) throw erroDeJogo("limite-do-chat");
-      return { pacote: ctx.pacote, sessao: s };
-    }, escolaId);
-
-    const previaLida = lerPrevia(antes.sessao.previa, antes.pacote.conteudo.rascunho);
-    const rascunho = antes.pacote.conteudo.rascunho;
-    const ia = await this.conversa.responder(escolaId, estudanteId, {
-      tema: antes.pacote.tema,
-      conteudo: antes.pacote.conteudo,
-      gerada: previaLida.gerada,
-      resolvidos: {
-        alucinacao: noResolvido(previaLida, rascunho, "alucinacao"),
-        plagio: noResolvido(previaLida, rascunho, "plagio"),
-        lgpd: noResolvido(previaLida, rascunho, "lgpd"),
-      },
-      pediuFonte: previaLida.pediuFonte,
-      historico: lerConversa(antes.sessao.conversa),
-      mensagem: texto,
-    });
-
+  mensagem(escolaId: string, estudanteId: string, texto: string) {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
       const s = this.exigirConversaAberta(sessao, fase);
       if (s.mensagensEnviadas >= MENSAGENS_NO_CHAT) throw erroDeJogo("limite-do-chat");
-      const daIa =
-        ia !== null &&
-        pacote.id === antes.pacote.id &&
-        pacote.rodada === antes.pacote.rodada &&
-        s.atualizadoEm.getTime() === antes.sessao.atualizadoEm.getTime()
-          ? ia
-          : null;
       const previa = lerPrevia(s.previa, pacote.conteudo.rascunho);
-      const intencao = daIa ? daIa.intencao : classificar(texto, pacote.conteudo, previa.ofertaDeSubstituicao);
+      const intencao = classificar(texto, pacote.conteudo, previa.ofertaDeSubstituicao);
 
       let nova: Previa = previa;
       let fala: Parameters<typeof falaDoAssistente>[0] = intencao;
-      if (!previa.gerada && !SEM_EFEITO_NA_PREVIA.has(intencao) && intencao !== "gerar_rascunho") {
+      if (!previa.gerada && !SEM_EFEITO_NA_PREVIA.has(intencao) && intencao !== "gerar_rascunho_inicial") {
         fala = "sem_rascunho";
       } else if (!SEM_EFEITO_NA_PREVIA.has(intencao)) {
         const efeito = aplicarIntencao(previa, pacote.conteudo.rascunho, intencao);
         nova = efeito.previa;
         if (efeito.jaCorrigido) fala = "ja_corrigido";
       }
-      /* Sem rascunho, a fala é a do servidor: a da IA poderia descrever um post que não existe. */
-      const resposta: FalaGravada =
-        daIa && fala !== "sem_rascunho"
-          ? { papel: "assistente", texto: daIa.resposta, origem: "ia", em: "" }
-          : { papel: "assistente", texto: falaDoAssistente(fala, pacote.conteudo, pacote.tema), origem: "regras", em: "" };
 
       const agora = new Date().toISOString();
       const enviadas = s.mensagensEnviadas + 1;
       const conversa: FalaGravada[] = [
         ...lerConversa(s.conversa),
         { papel: "estudante", texto: texto.slice(0, MAX_CARACTERES_DA_MENSAGEM), intencao, em: agora },
-        { ...resposta, em: agora },
+        { papel: "assistente", texto: falaDoAssistente(fala, pacote.conteudo, pacote.tema), em: agora },
         ...(enviadas >= MENSAGENS_NO_CHAT
-          ? [{ papel: "assistente" as const, texto: falaDoAssistente("limite", pacote.conteudo, pacote.tema), origem: "regras" as const, em: agora }]
+          ? [{ papel: "assistente" as const, texto: falaDoAssistente("limite", pacote.conteudo, pacote.tema), em: agora }]
           : []),
       ];
       await tx.exp02em1bSessao.update({
@@ -364,26 +337,25 @@ export class EfeitoAmplificadorService {
     });
   }
 
-  /** Tirar ou devolver um parágrafo da prévia — a mão do estudante. */
-  paragrafo(escolaId: string, estudanteId: string, paragrafoId: string, removido: boolean) {
+  /** "Aprovar Prévia" / "Solicitar revisão" — os botões da gaveta (E2_PREVIA_APROVADA ⇄ E2_NAVEGAR_CHAT). */
+  previa(escolaId: string, estudanteId: string, acao: "aprovar" | "revisar") {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
       const s = this.exigirConversaAberta(sessao, fase);
       const previa = lerPrevia(s.previa, pacote.conteudo.rascunho);
       if (!previa.gerada) throw erroDeJogo("rascunho-nao-gerado");
-      const nova = alternarParagrafo(previa, paragrafoId, removido);
-      if (!nova) throw erroDeJogo("paragrafo-desconhecido");
       await tx.exp02em1bSessao.update({
         where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
-        data: { previa: nova as unknown as Prisma.InputJsonValue },
+        data: { previa: marcarAprovacao(previa, acao === "aprovar") as unknown as Prisma.InputJsonValue },
       });
     });
   }
 
   /**
-   * "Publicar no Unoovista" — O LATCH. Manchete, texto, trecho pinçado e
-   * carimbo no MESMO UPDATE (o CHECK cobra os quatro juntos), e as marcas da
-   * EM13CO14 e da EM13CO26 na MESMA transação: se a evidência falhar, o post
-   * não sai — e vice-versa. A mesma manchete de novo é idempotente; outra, 409.
+   * "Publicar no Unoovista" (API-004) — o LATCH 1. Manchete, texto, trecho
+   * pinçado e carimbo no MESMO UPDATE (o CHECK cobra os quatro juntos), e as
+   * marcas da EM13CO14 e da EM13CO26 na MESMA transação: se a evidência falhar,
+   * o post não sai — e vice-versa. A mesma manchete de novo é idempotente;
+   * outra, 409.
    */
   publicar(escolaId: string, estudanteId: string, manchete: Manchete) {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
@@ -423,30 +395,18 @@ export class EfeitoAmplificadorService {
     });
   }
 
-  /**
-   * Uma ação no feed da madrugada. Grava e marca a EM13CO24 e a EM13CO08 com o
-   * nível que o feed JÁ alcançou (vale a melhor); "não atingiu" não se marca
-   * aqui — só quando o feed fecha (`abrirExplicar`). Depois de abrir o
-   * Explicar, o feed é histórico: 409.
-   */
-  acaoNoFeed(escolaId: string, estudanteId: string, acao: AcaoNoFeed) {
-    return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
-      if (!sessao) throw erroDeJogo("sessao-nao-aberta");
-      if (!sessao.publicadaEm) throw erroDeJogo("nao-publicado");
-      if (sessao.explicarEm) throw erroDeJogo("explicar-nao-liberado");
-      if (fase === "debate") throw erroDeJogo("telas-pausadas");
-      const r = aplicarAcao(lerFeed(sessao.feed), pacote.conteudo.comentarios, acao);
-      if (!r.ok) throw erroDeJogo(r.codigo);
-      await tx.exp02em1bSessao.update({
-        where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
-        data: { feed: r.feed as unknown as Prisma.InputJsonValue },
-      });
-      await this.marcarOFeed(tx, escolaId, estudanteId, pacote, r.feed, false);
-    });
+  /** "Fixar aviso de cuidado" com o motivo (API-005): a EM13CO24. */
+  avisoDeCuidado(escolaId: string, estudanteId: string, motivo: MotivoDoAviso) {
+    return this.noFeed(escolaId, estudanteId, (feed) => fixarAviso(feed, motivo));
+  }
+
+  /** As ações de proteção (API-006): a Configuração da Publicação e a Central de Apoio — a EM13CO08. */
+  seguranca(escolaId: string, estudanteId: string, acao: AcaoDeSeguranca) {
+    return this.noFeed(escolaId, estudanteId, (feed, pacote) => aplicarSeguranca(feed, pacote.conteudo.comentarios, acao));
   }
 
   /**
-   * A entrada no Explicar (Etapa 5), depois de o professor liberar. Fecha o
+   * A entrada nos bastidores (Etapa 5), depois de o professor liberar. Fecha o
    * feed: o que o estudante não fez lá vira "não atingiu" na EM13CO24 e na
    * EM13CO08, na mesma transação do carimbo. Idempotente.
    */
@@ -465,29 +425,26 @@ export class EfeitoAmplificadorService {
   }
 
   /**
-   * Um indicador apontado na folha de bastidores. O gabarito é daqui: o que
-   * comprova entra na lista; o que não comprova acende a dica, e não conta.
-   * Não é evidência (é indicativo — o handoff o chama de EVT-007).
+   * Um cartão apontado nos bastidores (EVT-005). Os dois revelam o critério
+   * da rede; o clique abre a citação de Nico e não é evidência (PRD RF-007:
+   * avançar sem clicar não trava).
    */
-  apontarIndicador(escolaId: string, estudanteId: string, indicador: string) {
+  apontarEvidencia(escolaId: string, estudanteId: string, elemento: string) {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao) => {
       if (!sessao?.explicarEm) throw erroDeJogo("explicar-nao-liberado");
-      if (sessao.concluidoEm) return;
-      const comprova = INDICADORES_QUE_COMPROVAM.includes(indicador);
-      const indicadores = comprova && !sessao.indicadores.includes(indicador) ? [...sessao.indicadores, indicador] : sessao.indicadores;
+      if (sessao.concluidoEm || sessao.indicadores.includes(elemento)) return;
       await tx.exp02em1bSessao.update({
         where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
-        data: { indicadores, ultimoNaoComprova: !comprova },
+        data: { indicadores: [...sessao.indicadores, elemento] },
       });
     });
   }
 
-  /** O fim: exige os dois indicadores que comprovam (one-pager §4, Etapa 5). Idempotente. */
+  /** O fim (latch 2, API-007): a missão fica em somente leitura e a tela mostra o podcast. Idempotente. */
   concluir(escolaId: string, estudanteId: string) {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao) => {
       if (!sessao?.explicarEm) throw erroDeJogo("explicar-nao-liberado");
       if (sessao.concluidoEm) return;
-      if (!INDICADORES_QUE_COMPROVAM.every((i) => sessao.indicadores.includes(i))) throw erroDeJogo("evidencias-incompletas");
       await tx.exp02em1bSessao.update({
         where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
         data: { concluidoEm: new Date() },
@@ -516,9 +473,10 @@ export class EfeitoAmplificadorService {
   }
 
   /**
-   * "Gerar Conteúdo com IA" — o RASCUNHO do pacote. A turma é conferida ANTES
-   * de gastar token; sem saldo ou com o vendor fora, o rascunho sai do banco
-   * curado (`usouIa: false` e o `motivo`). O rascunho é GRAVADO (um por turma).
+   * "Gerar Pacote com IA" (API-015) — o RASCUNHO do pacote. A turma é
+   * conferida ANTES de gastar token; sem saldo ou com o vendor fora, o
+   * rascunho sai do banco curado (`usouIa: false` e o `motivo`). O rascunho é
+   * GRAVADO (um por turma).
    */
   async gerar(
     escolaId: string,
@@ -553,7 +511,7 @@ export class EfeitoAmplificadorService {
   }
 
   /**
-   * "Homologar Pacote" — o portão da curadoria humana (one-pager §14). O corpo
+   * "Homologar Conteúdo" (API-016) — o portão da curadoria humana. O corpo
    * traz o pacote INTEIRO como o professor o deixou. Homologar um pacote novo é
    * ATIVIDADE nova, e ela nasce PRONTA, não no ar (ADR-130); homologar de novo
    * o mesmo que o último homologado é idempotente.
@@ -567,8 +525,8 @@ export class EfeitoAmplificadorService {
   }
 
   /**
-   * "Usar pacote padrão: Convivência Escolar e Celular" — o caminho curto (2
-   * toques): homologa o banco curado E o põe no ar, numa transação.
+   * "Usar pacote padrão oficial" — o caminho curto (2 toques, PRD RF-009):
+   * homologa o banco curado E o põe no ar, numa transação, sem chamar a IA.
    */
   async usarBancoPadrao(escolaId: string, turmaId: string, professorId: string) {
     return this.prisma.comTenancy(async (tx) => {
@@ -637,9 +595,10 @@ export class EfeitoAmplificadorService {
   }
 
   /**
-   * "Iniciar Atividade com a Turma" — o professor escolhe o pacote que a turma
-   * usa (ADR-130). O que estava em andamento volta a ser pronto; a fase volta à
-   * `aberta`; o pacote que já rodou abre a rodada SEGUINTE. Idempotente.
+   * "Iniciar Atividade com a Turma" (API-013) — o professor escolhe o pacote
+   * que a turma usa (ADR-130). O que estava em andamento volta a ser pronto; o
+   * gate volta à `exploracao`; o pacote que já rodou abre a rodada SEGUINTE.
+   * Idempotente.
    */
   async colocarEmAndamento(escolaId: string, turmaId: string, professorId: string, pacoteId: string) {
     return this.prisma.comTenancy(async (tx) => {
@@ -651,18 +610,19 @@ export class EfeitoAmplificadorService {
   }
 
   /**
-   * Os dois botões da condução: "Pausar Telas para Debate" e "Liberar Etapa 5".
-   * A fase só anda para a FRENTE (`avancarFase`), e cada mudança entra no
-   * histórico (EVT-P05). É a linha que o polling do estudante lê.
+   * Os dois botões da condução (API-010): "Pausar Telas para Debate" e
+   * "Avançar Turma para Explicar". O gate só anda para a FRENTE
+   * (`avancarFase`), e cada mudança entra no histórico (EVT-P05). É a linha que
+   * o polling do estudante lê.
    */
-  async mudarGate(escolaId: string, turmaId: string, professorId: string, acao: "pausar" | "liberar_explicar") {
+  async mudarGate(escolaId: string, turmaId: string, professorId: string, etapa: "pausa" | "explicar") {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId);
       const pacote = await this.exigirPacoteAtivo(tx, escolaId, turmaId);
       const atual = await tx.exp02em1bGateTurma.findUnique({ where: { escolaId_turmaId: { escolaId, turmaId } } });
       const antes = normalizarFase(atual?.fase);
-      const fase = avancarFase(antes, acao === "pausar" ? "debate" : "explicar");
+      const fase = avancarFase(antes, etapa);
       const linha = await tx.exp02em1bGateTurma.upsert({
         where: { escolaId_turmaId: { escolaId, turmaId } },
         create: { escolaId, turmaId, fase },
@@ -673,13 +633,14 @@ export class EfeitoAmplificadorService {
           data: { escolaId, turmaId, pacoteId: pacote.id, rodada: pacote.rodadaAtual, fase, professorId },
         });
       }
-      return { fase, atividade: { pacoteId: pacote.id, rodada: pacote.rodadaAtual }, atualizadoEm: linha.atualizadoEm.toISOString() };
+      return { etapa: fase, atividade: { pacoteId: pacote.id, rodada: pacote.rodadaAtual }, atualizadoEm: linha.atualizadoEm.toISOString() };
     }, escolaId);
   }
 
   /**
-   * "Zerar Turma" — a rodada seguinte do mesmo pacote, e a evidência dele
-   * APAGADA (ADR-155). As sessões ficam. `rodada` é a que o professor VIU.
+   * "Zerar Turma" (API-011) — a rodada seguinte do mesmo pacote. As sessões
+   * ficam (PRD RF-012); a evidência do pacote é APAGADA (ADR-155, a regra da
+   * plataforma). `rodada` é a que o professor VIU.
    */
   async novaRodada(escolaId: string, turmaId: string, professorId: string, rodadaVista: number) {
     return this.prisma.comTenancy(async (tx) => {
@@ -688,7 +649,7 @@ export class EfeitoAmplificadorService {
       const pacote = await this.exigirPacoteAtivo(tx, escolaId, turmaId);
       if (pacote.rodadaAtual === rodadaVista + 1) {
         const gate = await tx.exp02em1bGateTurma.findUnique({ where: { escolaId_turmaId: { escolaId, turmaId } } });
-        return { atividade: { pacoteId: pacote.id, rodada: pacote.rodadaAtual }, fase: normalizarFase(gate?.fase) };
+        return { atividade: { pacoteId: pacote.id, rodada: pacote.rodadaAtual }, etapa: normalizarFase(gate?.fase) };
       }
       if (pacote.rodadaAtual !== rodadaVista) throw erroDeJogo("rodada-desatualizada");
       await apagarEvidenciaDaAtividade(tx, { escolaId, turmaId, expId: EXP_ID, atividadeId: pacote.id });
@@ -698,16 +659,16 @@ export class EfeitoAmplificadorService {
         select: { id: true, rodadaAtual: true },
       });
       await this.voltarAoInicio(tx, escolaId, turmaId);
-      return { atividade: { pacoteId: atualizado.id, rodada: atualizado.rodadaAtual }, fase: FASE_INICIAL };
+      return { atividade: { pacoteId: atualizado.id, rodada: atualizado.rodadaAtual }, etapa: FASE_INICIAL };
     }, escolaId);
   }
 
   /**
-   * O PAINEL — por COMPUTADOR quando há equipe. A lousa (`resumo`) só tem
-   * AGREGADOS: nenhum nome, nenhum nível (one-pager §9). A folha nominal diz o
-   * passo e a manchete escolhida (é por ela que o professor chama "chamadas
-   * opostas" para ler os comentários) — nunca o nível, que é da evidência, e
-   * nunca o chat, que é texto de menor.
+   * O PAINEL DE CONDUÇÃO (API-009, E4-PROF-01) — por COMPUTADOR quando há
+   * equipe. Os quatro cartões: o Balanço Editorial, a Distribuição Horária, o
+   * Monitor de Ritmo e a Matriz de Evidências. A lousa (`resumo`) só tem
+   * AGREGADOS; a folha nominal diz o passo, a manchete e o tempo parado —
+   * nunca o nível de uma criança, e nunca o chat, que é texto de menor.
    */
   async painel(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
@@ -723,18 +684,20 @@ export class EfeitoAmplificadorService {
           manchetes[m] += 1;
         }
       }
+      const agora = Date.now();
       return {
         turma,
         atividade: ctx.pacote ? { pacoteId: ctx.pacote.id, rodada: ctx.pacote.rodada, tema: ctx.pacote.tema } : null,
-        fase: ctx.pacote ? ctx.fase : null,
+        etapa: ctx.pacote ? ctx.fase : null,
         porComputador: mapa.size > 0,
         resumo: {
           unidades: unidades.length,
           publicaram,
-          /* O motor entrega TODO post de madrugada, seja qual for a manchete: o número é o das publicações. */
-          picoNaMadrugada: publicaram,
           manchetes,
-          entrega: ENTREGA_POR_HORARIO.map((e) => ({ ...e })),
+          entrega: ENTREGA_POR_HORARIO.map((e) => ({ faixa: e.faixa, impressoes: e.impressoes })),
+          /* O motor entrega TODO post de madrugada, seja qual for a manchete: 100% das publicações. */
+          percentualNoturno: 100,
+          matriz: await this.matrizDaAtividade(tx, escolaId, turmaId, ctx.pacote),
         },
         linhas: unidades.map(({ linha, equipe }) => ({
           estudanteId: linha.estudanteId,
@@ -742,13 +705,14 @@ export class EfeitoAmplificadorService {
           equipe: equipe ? { id: equipe.id, nome: equipe.nome, membros: equipe.membros.map((m) => ({ id: m.id, nome: m.nome })) } : null,
           passo: passoEfetivo(marcosDe(linha.sessao), ctx.fase),
           manchete: ehManchete(linha.sessao?.manchete ?? null) ? (linha.sessao?.manchete as Manchete) : null,
+          segundosInativo: linha.sessao ? Math.max(0, Math.round((agora - linha.sessao.atualizadoEm.getTime()) / 1000)) : null,
         })),
         roteiro: ROTEIRO,
       };
     }, escolaId);
   }
 
-  /** O material do GUIA DA AULA: o banco curado COM o gabarito, o roteiro e as réguas. Sem tenancy: é catálogo. */
+  /** O material do GUIA DA AULA (API-014): o banco curado COM o gabarito, o roteiro e as réguas. Sem tenancy: é catálogo. */
   material() {
     return {
       padrao: padrao(),
@@ -770,21 +734,27 @@ export class EfeitoAmplificadorService {
     const passo = passoEfetivo(marcosDe(sessao), ctx.fase);
     const previa = pacote && sessao ? lerPrevia(sessao.previa, pacote.conteudo.rascunho) : null;
     const feed = sessao?.publicadaEm ? lerFeed(sessao.feed) : null;
+    const estaPausada = pausada(passo, ctx.fase);
+    const suspeito = pacote ? perfilSuspeito(pacote.conteudo.comentarios) : null;
     return {
       passo,
+      etapa: etapaDoContrato(passo, { pausada: estaPausada, previaAprovada: previa?.aprovada ?? false, avisoFixado: feed?.aviso != null }),
       fase: pacote ? ctx.fase : null,
-      pausada: pausada(passo, ctx.fase),
+      pausada: estaPausada,
       preparada: pacote !== null,
       atividade: pacote ? { pacoteId: pacote.id, rodada: pacote.rodada } : null,
       conversa: {
-        mensagens: sessao
-          ? lerConversa(sessao.conversa).map((f) => ({ papel: f.papel, texto: f.texto, ...(f.origem ? { origem: f.origem } : {}) }))
-          : [],
+        mensagens: sessao ? lerConversa(sessao.conversa).map((f) => ({ papel: f.papel, texto: f.texto })) : [],
         restantes: Math.max(0, MENSAGENS_NO_CHAT - (sessao?.mensagensEnviadas ?? 0)),
       },
       previa:
         pacote && previa
-          ? { gerada: previa.gerada, paragrafos: previa.gerada ? paragrafosVisiveis(previa, pacote.conteudo.rascunho) : [] }
+          ? {
+              gerada: previa.gerada,
+              aprovada: previa.aprovada,
+              paragrafos: previa.gerada ? paragrafosVisiveis(previa, pacote.conteudo.rascunho) : [],
+              pendencias: previa.gerada ? pendencias(previa, pacote.conteudo.rascunho) : { fonte: false, autoria: false, privacidade: false },
+            }
           : null,
       manchetes: pacote && previa?.gerada ? MANCHETES.map((id) => ({ id, texto: pacote.conteudo.manchetes[id] })) : null,
       publicacao:
@@ -799,20 +769,46 @@ export class EfeitoAmplificadorService {
       feed:
         pacote && feed
           ? {
-              comentarios: pacote.conteudo.comentarios.map((c) => ({ id: c.id, autor: c.autor, handle: c.handle, horario: c.horario, texto: c.texto })),
-              ...feed,
-              entrega: ENTREGA_POR_HORARIO.map((e) => ({ ...e })),
+              comentarios: pacote.conteudo.comentarios.map((c) => ({ id: c.id, autor: c.autor, horario: c.horario, texto: c.texto })),
+              perfilSuspeito: suspeito ? { comentarioId: suspeito.id, autor: suspeito.autor, horario: suspeito.horario } : null,
+              aviso: feed.aviso,
+              contaPrivada: feed.contaPrivada,
+              restringirComentarios: feed.restringirComentarios,
+              denunciou: feed.denunciou,
+              relatos: feed.relatos.map((r) => ({ ...r })),
+              metrica: METRICA_NOTURNA,
+              instrucao: instrucaoDoModerador(pacote.tema),
             }
           : null,
       explicar: sessao?.explicarEm
         ? {
-            indicadores: INDICADORES.map((i) => ({ id: i.id, rotulo: i.rotulo, confirmado: sessao.indicadores.includes(i.id) })),
-            ultimoNaoComprova: sessao.ultimoNaoComprova,
-            completo: INDICADORES_QUE_COMPROVAM.every((i) => sessao.indicadores.includes(i)),
+            indicadores: INDICADORES.map((i) => ({ id: i.id, rotulo: i.rotulo, texto: i.texto, apontado: sessao.indicadores.includes(i.id) })),
+            entrega: ENTREGA_POR_HORARIO.map((e) => ({ ...e })),
           }
         : null,
       concluido: Boolean(sessao?.concluidoEm),
     };
+  }
+
+  /** Núcleo das ações no feed: depois do latch, antes do Explicar e sem a pausa. Marca o que o feed JÁ alcançou. */
+  private noFeed(
+    escolaId: string,
+    estudanteId: string,
+    aplicar: (feed: FeedDaSessao, pacote: PacoteDaTurma) => { ok: true; feed: FeedDaSessao } | { ok: false; codigo: "comentario-desconhecido" | "aviso-ja-fixado" },
+  ) {
+    return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
+      if (!sessao) throw erroDeJogo("sessao-nao-aberta");
+      if (!sessao.publicadaEm) throw erroDeJogo("nao-publicado");
+      if (sessao.explicarEm) throw erroDeJogo("explicar-nao-liberado");
+      if (fase === "pausa") throw erroDeJogo("telas-pausadas");
+      const r = aplicar(lerFeed(sessao.feed), pacote);
+      if (!r.ok) throw erroDeJogo(r.codigo);
+      await tx.exp02em1bSessao.update({
+        where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
+        data: { feed: r.feed as unknown as Prisma.InputJsonValue },
+      });
+      await this.marcarOFeed(tx, escolaId, estudanteId, pacote, r.feed, false);
+    });
   }
 
   /**
@@ -828,19 +824,36 @@ export class EfeitoAmplificadorService {
     feed: FeedDaSessao,
     fechando: boolean,
   ) {
-    const dims = dimensoesInspecionadas(feed, pacote.conteudo.comentarios);
-    const co24 = nivelCO24({ ...dims, moderou: feed.moderacoes.length > 0, metricas: feed.metricas });
-    const co08 = nivelCO08({ privacidade: feed.privacidade, denunciou: feed.denuncias.length > 0, ajuda: feed.ajuda });
+    const co24 = nivelCO24(feed);
+    const co08 = nivelCO08(feed);
     const marca = this.marcaDe(escolaId, estudanteId, pacote);
     if (fechando || co24 !== "nao_atingiu") await this.evidencias.marcar(tx, { ...marca, marcador: MARCADOR_CO24, status: co24 });
     if (fechando || co08 !== "nao_atingiu") await this.evidencias.marcar(tx, { ...marca, marcador: MARCADOR_CO08, status: co08 });
+  }
+
+  /** A Matriz Consolidada de Evidências: quantas unidades em cada nível, por habilidade, desta atividade e rodada. */
+  private async matrizDaAtividade(tx: Prisma.TransactionClient, escolaId: string, turmaId: string, pacote: PacoteDaTurma | null) {
+    const vazia = () => ({ atingiu: 0, em_processo: 0, nao_atingiu: 0 });
+    const matriz: Record<Habilidade, ReturnType<typeof vazia>> = { EM13CO24: vazia(), EM13CO14: vazia(), EM13CO26: vazia(), EM13CO08: vazia() };
+    if (!pacote) return matriz;
+    const grupos = await tx.evidencia.groupBy({
+      by: ["habilidade", "status"],
+      where: { escolaId, turmaId, expId: EXP_ID, atividadeId: pacote.id, rodada: pacote.rodada },
+      _count: { _all: true },
+    });
+    for (const g of grupos) {
+      const h = g.habilidade as Habilidade;
+      if (!(HABILIDADES as readonly string[]).includes(h)) continue;
+      if (g.status === "atingiu" || g.status === "em_processo" || g.status === "nao_atingiu") matriz[h][g.status] += g._count._all;
+    }
+    return matriz;
   }
 
   /** As Etapas 1 a 3 aceitam jogada: sessão aberta, antes do latch e sem a pausa do professor. */
   private exigirConversaAberta(sessao: LinhaDaSessao | null, fase: Fase | null): LinhaDaSessao {
     if (!sessao) throw erroDeJogo("sessao-nao-aberta");
     if (sessao.publicadaEm) throw erroDeJogo("ja-publicado");
-    if (fase === "debate") throw erroDeJogo("telas-pausadas");
+    if (fase === "pausa") throw erroDeJogo("telas-pausadas");
     return sessao;
   }
 
@@ -879,7 +892,7 @@ export class EfeitoAmplificadorService {
   private async porNoAr(tx: Prisma.TransactionClient, escolaId: string, turmaId: string, pacote: Exp02em1bPacote) {
     if (pacote.ativo) {
       const gate = await tx.exp02em1bGateTurma.findUnique({ where: { escolaId_turmaId: { escolaId, turmaId } } });
-      return { atividade: { pacoteId: pacote.id, rodada: pacote.rodadaAtual }, fase: normalizarFase(gate?.fase), mudou: false };
+      return { atividade: { pacoteId: pacote.id, rodada: pacote.rodadaAtual }, etapa: normalizarFase(gate?.fase), mudou: false };
     }
     const ultima = await tx.exp02em1bSessao.aggregate({ where: { escolaId, turmaId, pacoteId: pacote.id }, _max: { rodada: true } });
     const rodada = (ultima._max.rodada ?? 0) + 1;
@@ -887,7 +900,7 @@ export class EfeitoAmplificadorService {
     await tx.exp02em1bPacote.updateMany({ where: { escolaId, turmaId, ativo: true }, data: { ativo: false } });
     await tx.exp02em1bPacote.update({ where: { id: pacote.id }, data: { ativo: true, rodadaAtual: rodada } });
     await this.voltarAoInicio(tx, escolaId, turmaId);
-    return { atividade: { pacoteId: pacote.id, rodada }, fase: FASE_INICIAL, mudou: true };
+    return { atividade: { pacoteId: pacote.id, rodada }, etapa: FASE_INICIAL, mudou: true };
   }
 
   /** A TURMA desta rodada, colapsada em UNIDADES (um computador = uma equipe, ou uma criança). */
@@ -967,8 +980,8 @@ export class EfeitoAmplificadorService {
   }
 
   /**
-   * Núcleo de toda mutação: funil, lock por (escola, estudante), o pacote e a
-   * fase lidos UMA vez, o trabalho, e o estado relido. Dois toques rápidos
+   * Núcleo de toda mutação: funil, lock por (escola, estudante), o pacote e o
+   * gate lidos UMA vez, o trabalho, e o estado relido. Dois toques rápidos
    * viram duas transações em fila. Os CHECKs do banco são a rede final.
    */
   private comSessao(
@@ -994,7 +1007,7 @@ export class EfeitoAmplificadorService {
     return turma;
   }
 
-  /** Lock por TURMA: dois professores (ou dois cliques) não intercalam homologação, fase e rodada. */
+  /** Lock por TURMA: dois professores (ou dois cliques) não intercalam homologação, gate e rodada. */
   private async travarTurma(tx: Prisma.TransactionClient, escolaId: string, turmaId: string) {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`exp02em1b-turma:${escolaId}:${turmaId}`}, 0))`;
   }

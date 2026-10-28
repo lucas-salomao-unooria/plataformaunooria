@@ -2,7 +2,7 @@ import type { AiFalante } from "../ai/provider";
 import type { FalaDoPodcast, FalasDoTema, PedidoDeVoz, TrechoDoRoteiro, VagaDoTema } from "../podcast/roteiro";
 
 /**
- * O PODCAST DE RECAPITULAÇÃO de O Efeito Amplificador (ADR-150, ADR-181) —
+ * O PODCAST DE RECAPITULAÇÃO de O Efeito Amplificador (ADR-150, ADR-191) —
  * "Recapitulação Unooria: O Algoritmo Não Dorme", Alex e Sam, cerca de 3 min 30 s.
  *
  * O texto é o do one-pager aprovado (§11), LITERAL, com as rubricas de trilha

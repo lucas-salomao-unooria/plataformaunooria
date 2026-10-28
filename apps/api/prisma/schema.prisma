@@ -3875,14 +3875,14 @@ model Exp02em1bPacote {
   @@map("exp02em1b_pacotes")
 }
 
-/// A fase da TURMA, que o professor move: aberta → debate (Pausar Telas) →
-/// explicar (Liberar Etapa 5). Só para a frente. É a linha do polling de 3 s.
+/// O gate da TURMA, que o professor move: exploracao → pausa (Pausar Telas) →
+/// explicar (Avançar Turma para Explicar). Só para a frente. É a linha do polling de 3 s.
 model Exp02em1bGateTurma {
   escolaId String @map("escola_id")
   turmaId  String @map("turma_id") @db.Uuid
 
-  /// aberta | debate | explicar (CHECK).
-  fase String @default("aberta")
+  /// exploracao | pausa | explicar (CHECK).
+  fase String @default("exploracao")
 
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
