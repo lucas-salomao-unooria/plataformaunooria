@@ -44,7 +44,6 @@ import {
 } from "./conteudo";
 import { ConteudoBaseSchema, type EstadoSchema, type HomologarSchema } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
-import { roteiroDoPodcast } from "./podcast";
 import { IaDaAulaDaExp02em1bService } from "./ia-da-aula.service";
 import { PreparoDaExp02em1bService, type MotivoDoPadrao } from "./preparo.service";
 import {
@@ -230,14 +229,6 @@ function padrao() {
 
 const ROTEIRO = { perguntas: [...ROTEIRO_DO_DEBATE], instrucoes: { ...INSTRUCOES_DO_GATILHO } };
 
-/** A transcrição do podcast, para a tela de conclusão (o áudio é do professor, ADR-150). */
-function transcricaoDoPodcast() {
-  return {
-    titulo: "Podcast: O Algoritmo Não Dorme",
-    blocos: roteiroDoPodcast().map((t) => ({ titulo: t.titulo, falas: t.falas.map((f) => ({ quem: f.falante, texto: f.texto })) })),
-  };
-}
-
 const HABILIDADES = ["EM13CO24", "EM13CO14", "EM13CO26", "EM13CO08"] as const;
 type Habilidade = (typeof HABILIDADES)[number];
 
@@ -282,7 +273,6 @@ export class EfeitoAmplificadorService {
             conceitos: TEXTOS_DO_EXPLICAR.conceitos.map((c) => ({ ...c })),
             esperaAtiva: TEXTOS_DO_EXPLICAR.esperaAtiva,
           },
-          podcast: transcricaoDoPodcast(),
         },
       };
     }, escolaId);

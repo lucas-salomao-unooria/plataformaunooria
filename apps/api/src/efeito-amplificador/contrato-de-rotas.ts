@@ -217,10 +217,7 @@ export const SessaoSchema = EstadoSchema.extend({
       conceitos: z.array(z.object({ id: z.string(), titulo: z.string(), texto: z.string() })),
       esperaAtiva: z.string(),
     }),
-    podcast: z.object({
-      titulo: z.string(),
-      blocos: z.array(z.object({ titulo: z.string(), falas: z.array(z.object({ quem: z.string(), texto: z.string() })) })),
-    }),
+    /* Sem a transcrição do podcast desde a 2.3.1: o episódio é tocado em aula, e a transcrição é só do professor. */
   }),
 });
 

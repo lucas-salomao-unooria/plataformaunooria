@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { BottomSheetUnv, ButtonUnv, IconUnv, InlineHint, ListItem, TopBar } from "@edu/ui/ds-unoovista";
+import { ButtonUnv, IconUnv, InlineHint, ListItem, TopBar } from "@edu/ui/ds-unoovista";
 import { api, reportarErro } from "../lib/api";
 import { TEXTOS } from "../lib/textos";
-import { HABILIDADES_DA_DEVOLUTIVA, type RespostaDaDevolutiva, type Sessao } from "../lib/tipos";
+import { HABILIDADES_DA_DEVOLUTIVA, type RespostaDaDevolutiva } from "../lib/tipos";
 
 /**
- * E6-ALU-02 — o fim, em somente leitura (seção `unoovista`, claro). O selo, o
- * cartão do podcast e a TRANSCRIÇÃO (`textos.podcast`, da api).
+ * E6-ALU-02 — o fim, em somente leitura (seção `unoovista`, claro). O selo, a
+ * devolutiva e o cartão do podcast.
  *
- * O áudio NÃO toca aqui: o podcast é do professor, tocado em aula depois do
- * debate (ele conta a virada) — daí a linha que diz isso, e nenhum player. A
- * transcrição é a folha NÃO modal do `BottomSheet` do DS, recolhida na alça:
- * é o que a seção tem para mostrar e esconder, sem componente local.
+ * O podcast é do professor: tocado em aula depois do debate (ele conta a
+ * virada) — daí a linha que diz isso, e nenhum player. A transcrição também é
+ * só dele, na página da atividade (2.3.1): o estudante ouve, não lê.
  *
  * A DEVOLUTIVA (ADR-192): um parágrafo por habilidade, que o servidor gera
  * UMA vez a partir do que o estudante fez (a IA redige; sem ela, o modelo
@@ -20,7 +19,7 @@ import { HABILIDADES_DA_DEVOLUTIVA, type RespostaDaDevolutiva, type Sessao } fro
  *
  * Sem diário de bordo e sem reflexão: a transferência saiu desta versão (ADR-191).
  */
-export function Conclusao({ podcast, semRede }: { podcast: Sessao["textos"]["podcast"]; semRede: boolean }) {
+export function Conclusao({ semRede }: { semRede: boolean }) {
   return (
     <main className="unv-tela unv-tela--conclusao" data-unv-theme="light">
       <TopBar variant="plain" title={TEXTOS.conclusao.app} />
@@ -46,26 +45,6 @@ export function Conclusao({ podcast, semRede }: { podcast: Sessao["textos"]["pod
           <p className="unv-explicar__texto unv-explicar__texto--secundario">{TEXTOS.conclusao.emAula}</p>
         </section>
       </div>
-      <BottomSheetUnv
-        modal={false}
-        defaultOpen={false}
-        collapsedLabel={TEXTOS.conclusao.transcricao}
-        title={TEXTOS.conclusao.transcricaoTitulo}
-        maxHeight="70%"
-      >
-        <div className="unv-transcricao">
-          {podcast.blocos.map((b) => (
-            <section key={b.titulo}>
-              <h3 className="unv-folha__bloco">{b.titulo}</h3>
-              {b.falas.map((f, i) => (
-                <p key={i} className="unv-transcricao__fala">
-                  <strong>{f.quem}:</strong> {f.texto}
-                </p>
-              ))}
-            </section>
-          ))}
-        </div>
-      </BottomSheetUnv>
     </main>
   );
 }

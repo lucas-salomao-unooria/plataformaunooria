@@ -29,7 +29,7 @@ pnpm --filter @edu/exp02em1b test    # versão em três lugares, bundle sem gaba
 | E4-ALU-01 a 04 | `unoovista` | o feed da madrugada, o aviso de cuidado, a Configuração da Publicação e a Central de Apoio |
 | E4-SIS-01 | `unoovista` | a pausa do professor |
 | E5-ALU-01 / 02 | `unoovista` | os bastidores e a espera ativa com o gráfico |
-| E6-ALU-02 | `unoovista` | o fim: a devolutiva (um parágrafo por habilidade), o podcast (tocado em aula) e a transcrição |
+| E6-ALU-02 | `unoovista` | o fim: a devolutiva (um parágrafo por habilidade) e o cartão do podcast (tocado em aula; a transcrição é do professor) |
 
 A instrução do moderador (TC-10) não está no aparelho: o hub a desenha ao
 lado, a partir do `exp:estado` (`{ instrucao }` na Etapa 4, `{}` fora dela).
