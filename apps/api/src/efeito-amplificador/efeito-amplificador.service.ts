@@ -68,7 +68,7 @@ import {
   type HabilidadeDaDevolutiva,
 } from "./regras/devolutiva";
 import { aplicarSeguranca, fixarAviso, lerFeed, perfilSuspeito, type AcaoDeSeguranca, type FeedDaSessao } from "./regras/feed";
-import { classificar } from "./regras/intencoes";
+import { decidirIntencao, rotaDaMensagem } from "./regras/intencoes";
 import { chaveDaReacao, comentariosDaVariante, trechoViral } from "./regras/reacoes";
 import {
   FASE_INICIAL,
@@ -99,9 +99,9 @@ import {
  * rodada como reaplicação). Toda query leva `escola_id` no `where` ALÉM da RLS
  * que o `comTenancy` arma (regra 1, defesa em profundidade).
  *
- * **A IA não decide o que a régua lê** (ADR-192): o UnooriaAI é a árvore de
- * intenções do 01e, no servidor, e a IA só traduz para ela a mensagem que a
- * árvore não entendeu; as reações do feed vêm escritas do preparo; a
+ * **A IA não decide o que a régua lê** (ADR-192, ADR-193): a IA lê a mensagem
+ * primeiro e a traduz para a árvore de intenções do 01e (a reserva); as reações
+ * do feed vêm escritas do preparo; a
  * devolutiva da conclusão redige a partir dos fatos já gravados.
  *
  * **O gabarito não desce.** O comentário vai sem a categoria de saúde e o
@@ -152,8 +152,10 @@ interface FalaGravada {
   papel: "estudante" | "assistente";
   texto: string;
   intencao?: Intencao;
-  /** Quem traduziu a mensagem em intenção (ADR-192): a árvore do 01e ou, no que ela não entendeu, a IA. */
-  classificador?: "arvore" | "ia";
+  /** Quem traduziu a mensagem em intenção (ADR-193): a IA, a árvore do 01e (a reserva, o "sim", as sugestões) ou a guarda de injeção. */
+  classificador?: "arvore" | "ia" | "guarda";
+  /** A leitura da árvore, quando a IA decidiu outra coisa — a auditoria do piloto. */
+  arvore?: Intencao;
   em: string;
 }
 
@@ -168,7 +170,8 @@ function lerConversa(bruto: Prisma.JsonValue): FalaGravada[] {
         papel: o.papel,
         texto: o.texto,
         ...(typeof o.intencao === "string" && (INTENCOES as readonly string[]).includes(o.intencao) ? { intencao: o.intencao as Intencao } : {}),
-        ...(o.classificador === "arvore" || o.classificador === "ia" ? { classificador: o.classificador } : {}),
+        ...(o.classificador === "arvore" || o.classificador === "ia" || o.classificador === "guarda" ? { classificador: o.classificador } : {}),
+        ...(typeof o.arvore === "string" && (INTENCOES as readonly string[]).includes(o.arvore) ? { arvore: o.arvore as Intencao } : {}),
         em: typeof o.em === "string" ? o.em : "",
       },
     ];
@@ -331,10 +334,12 @@ export class EfeitoAmplificadorService {
    * a prévia muda pela INTENÇÃO, da lista fechada. Até `MENSAGENS_NO_CHAT`; a
    * quinta leva o aviso do limite junto.
    *
-   * A IA (ADR-192) só entra quando a árvore NÃO entende a mensagem: ela a
-   * traduz para uma intenção da mesma lista, e a fala continua a do 01e. Três
+   * A IA lê PRIMEIRO (ADR-193) e a traduz para uma intenção da MESMA lista;
+   * a árvore do 01e é a reserva (IA lenta, sem saldo, insegura) e continua
+   * decidindo sozinha o "sim" da oferta e as três sugestões da copy; texto que
+   * tenta mandar no classificador vai à guarda. A fala continua a do 01e. Três
    * tempos, para a IA não segurar transação nem lock durante segundos: a
-   * LEITURA (funil, porta, limite e a árvore, sem gravar), a IA fora da
+   * LEITURA (funil, porta, limite e a rota, sem gravar), a IA fora da
    * transação, e a GRAVAÇÃO no funil de sempre. Se a sessão andou no meio
    * (outra mensagem, o professor pausou ou zerou), a IA descreve um estado
    * velho — e vale a árvore sobre o estado de agora.
@@ -347,11 +352,11 @@ export class EfeitoAmplificadorService {
       const s = this.exigirConversaAberta(await this.sessaoDe(tx, escolaId, estudanteId, ctx.pacote), ctx.fase);
       if (s.mensagensEnviadas >= MENSAGENS_NO_CHAT) throw erroDeJogo("limite-do-chat");
       const previa = lerPrevia(s.previa, ctx.pacote.conteudo.rascunho);
-      return { pacote: ctx.pacote, sessao: s, arvore: classificar(texto, ctx.pacote.conteudo, previa.ofertaDeSubstituicao) };
+      return { pacote: ctx.pacote, sessao: s, rota: rotaDaMensagem(texto, ctx.pacote.conteudo, previa.ofertaDeSubstituicao) };
     }, escolaId);
 
     const daIa =
-      antes.arvore === "fora_do_tema"
+      antes.rota.tipo === "ia"
         ? await this.iaDaAula.classificar(escolaId, estudanteId, { mensagem: texto, tema: antes.pacote.tema, conteudo: antes.pacote.conteudo })
         : null;
 
@@ -359,11 +364,12 @@ export class EfeitoAmplificadorService {
       const s = this.exigirConversaAberta(sessao, fase);
       if (s.mensagensEnviadas >= MENSAGENS_NO_CHAT) throw erroDeJogo("limite-do-chat");
       const previa = lerPrevia(s.previa, pacote.conteudo.rascunho);
-      const arvore = classificar(texto, pacote.conteudo, previa.ofertaDeSubstituicao);
+      const rota = rotaDaMensagem(texto, pacote.conteudo, previa.ofertaDeSubstituicao);
       const mesmoEstado =
         pacote.id === antes.pacote.id && pacote.rodada === antes.pacote.rodada && s.atualizadoEm.getTime() === antes.sessao.atualizadoEm.getTime();
-      const peloClassificador = arvore === "fora_do_tema" && daIa !== null && mesmoEstado;
-      const intencao: Intencao = peloClassificador ? daIa : arvore;
+      /* A sessão andou no meio: a leitura da IA descreve um estado velho, e vale a árvore sobre o de agora. */
+      const decisao = decidirIntencao(rota, mesmoEstado ? daIa : null);
+      const intencao: Intencao = decisao.intencao;
 
       let nova: Previa = previa;
       let fala: Parameters<typeof falaDoAssistente>[0] = intencao;
@@ -383,7 +389,9 @@ export class EfeitoAmplificadorService {
           papel: "estudante",
           texto: texto.slice(0, MAX_CARACTERES_DA_MENSAGEM),
           intencao,
-          classificador: peloClassificador ? "ia" : "arvore",
+          classificador: decisao.classificador,
+          /* As duas leituras quando discordam: é o dado do piloto sobre onde a árvore lia errado. */
+          ...(decisao.classificador === "ia" && decisao.arvore !== decisao.intencao ? { arvore: decisao.arvore } : {}),
           em: agora,
         },
         { papel: "assistente", texto: falaDoAssistente(fala, pacote.conteudo, pacote.tema), em: agora },

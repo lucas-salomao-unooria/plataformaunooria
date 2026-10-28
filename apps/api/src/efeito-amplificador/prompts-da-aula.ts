@@ -1,5 +1,6 @@
 import type { AiJsonSchema } from "../ai/provider";
 import { INTENCOES, type ConteudoDoPacote, type Intencao } from "./conteudo";
+import type { LeituraDaIa } from "./regras/intencoes";
 import {
   HABILIDADES_DA_DEVOLUTIVA,
   TITULO_DA_HABILIDADE,
@@ -13,9 +14,11 @@ import {
  * Os contratos com a IA DURANTE a aula (ADR-192). Dois, e nenhum decide nada
  * que a régua lê:
  *
- * - o CLASSIFICADOR do chat traduz a mensagem que a árvore de intenções não
- *   entendeu para uma intenção da lista FECHADA; quem muda a prévia é a
- *   intenção, e a fala continua a do 01e (`falaDoAssistente`);
+ * - o CLASSIFICADOR do chat lê a mensagem PRIMEIRO (ADR-193; a árvore de
+ *   intenções é a reserva) e a traduz para uma intenção da lista FECHADA;
+ *   quem muda a prévia é a intenção, e a fala continua a do 01e
+ *   (`falaDoAssistente`). O limiar de confiança e os caminhos que nunca vão à
+ *   IA estão em `regras/intencoes.ts`;
  * - a DEVOLUTIVA redige, a partir dos fatos já gravados, o parágrafo de cada
  *   habilidade da conclusão.
  *
@@ -31,9 +34,6 @@ import {
  * prévia, não pelo texto.
  */
 export const INTENCOES_DO_CLASSIFICADOR = INTENCOES.filter((i) => i !== "substituir_dado") as Exclude<Intencao, "substituir_dado">[];
-
-/** Abaixo disto, a mensagem conta como fora do tema: na dúvida, a IA não dá crédito por uma auditoria. */
-export const CONFIANCA_MINIMA = 0.7;
 
 export const SYSTEM_DO_CLASSIFICADOR = `Você classifica mensagens de estudantes do 2º ano do Ensino Médio numa atividade escolar simulada.
 O estudante é o comunicador do grêmio e conversa com um assistente de IA editorial sobre o rascunho de um post da campanha da escola. O rascunho esconde três problemas: uma estatística atribuída a um instituto que não existe, um trecho copiado de outra autora sem crédito e o nome de um colega exposto com um dado pessoal.
@@ -81,8 +81,8 @@ export const SCHEMA_DO_CLASSIFICADOR: AiJsonSchema = {
 /** Teto de saída: o JSON tem ~20 tokens, e a folga cobre o raciocínio se ele estiver ligado (ADR-148). */
 export const MAX_TOKENS_DO_CLASSIFICADOR = 2_000;
 
-/** A intenção da IA, ou `fora_do_tema` se a confiança não chega ao mínimo. Forma inesperada: lança (a tentativa foi paga e conta). */
-export function validarSaidaDoClassificador(bruto: unknown): Exclude<Intencao, "substituir_dado"> {
+/** A leitura da IA, crua: o limiar é da regra (`decidirIntencao`). Forma inesperada: lança (a tentativa foi paga e conta). */
+export function validarSaidaDoClassificador(bruto: unknown): LeituraDaIa {
   const b = (bruto ?? {}) as Record<string, unknown>;
   const intencao = b.intencao;
   const confianca = typeof b.confianca === "number" ? b.confianca : Number.NaN;
@@ -90,7 +90,7 @@ export function validarSaidaDoClassificador(bruto: unknown): Exclude<Intencao, "
     throw new Error(`intenção fora da lista: ${String(intencao)}`);
   }
   if (!Number.isFinite(confianca) || confianca < 0 || confianca > 1) throw new Error("confiança fora de 0 a 1");
-  return confianca >= CONFIANCA_MINIMA ? (intencao as Exclude<Intencao, "substituir_dado">) : "fora_do_tema";
+  return { intencao: intencao as LeituraDaIa["intencao"], confianca };
 }
 
 // ─────────────────────────────────────────────────────────── a devolutiva

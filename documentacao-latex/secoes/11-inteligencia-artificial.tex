@@ -66,9 +66,10 @@ Preparo do pacote & exp02em1b, \arq{src/efeito-amplificador/} &
   o pacote segue sem elas.\\
 \zebra IA da aula & exp02em1b, \arq{src/efeito-amplificador/ia-da-aula.service.ts} &
   \textbf{Em sala}, com a quota do \emph{estudante} e tetos de 5 e 7\,s
-  (\adrr{ADR-192}). O \textbf{classificador} só recebe o que a árvore de
-  intenções não entende e devolve uma intenção da MESMA lista fechada (a fala
-  continua a do banco); a \textbf{devolutiva} da conclusão redige um parágrafo
+  (\adrr{ADR-192}). O \textbf{classificador} lê a mensagem PRIMEIRO
+  (\adrr{ADR-193}; a árvore de intenções é a reserva, e decide sozinha as
+  sugestões da copy e o \enquote{sim} da oferta) e devolve uma intenção da
+  MESMA lista fechada (a fala continua a do banco); a \textbf{devolutiva} da conclusão redige um parágrafo
   por habilidade a partir dos fatos que a régua já lê, nunca do texto do
   estudante. Nenhuma das duas decide o que a régua mede; perdendo a corrida,
   vale a árvore ou o modelo curado.\\

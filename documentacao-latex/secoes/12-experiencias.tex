@@ -841,23 +841,27 @@ Tomou o código da Missão Tempestade, que virou \cd{exp02em1b-v0} (abaixo).
 Duas seções do design system: o \textbf{UnooriaAI} (\cd{unooriaai}) nas Etapas
 1 a 3, do briefing ao Publicar, e o \textbf{Unoovista} (\cd{unoovista}) nas
 Etapas 4 a 6, do feed da madrugada à conclusão. Módulo da api:
-\arq{efeito-amplificador}; experiência 2.2.0, que traz a IA de volta sem
-mexer na régua (\adrr{ADR-192}).
+\arq{efeito-amplificador}; experiência 2.3.0: a 2.2.0 trouxe a IA de volta
+sem mexer na régua (\adrr{ADR-192}), e a 2.3.0 a pôs para ler o chat
+primeiro (\adrr{ADR-193}).
 
 \begin{destaque}
 O estudante cuida do texto e a rede entrega de madrugada do mesmo jeito: o
 alcance não depende do cuidado, porque a rede otimiza tempo de tela.
 \end{destaque}
 
-\subsection{O UnooriaAI da aula é a árvore de intenções; a IA só no que ela não entende}
+\subsection{O UnooriaAI da aula: a IA lê primeiro, a árvore de intenções é a reserva}
 
 O UnooriaAI é a árvore de intenções do banco de conteúdo, no servidor
 (\arq{regras/intencoes.ts}: minúsculas, sem acento, sem pontuação, lista
-fechada com precedência e os gatilhos que vêm do pacote). Desde a 2.2.0
-(\adrr{ADR-192}), a mensagem que a árvore não entende vai a um classificador de
-IA (\arq{ia-da-aula.service.ts}), que a traduz para uma intenção da MESMA lista
+fechada com precedência e os gatilhos que vêm do pacote). Desde a 2.3.0
+(\adrr{ADR-193}), a mensagem vai PRIMEIRO a um classificador de IA
+(\arq{ia-da-aula.service.ts}), que a traduz para uma intenção da MESMA lista
 --- a fala continua a do banco, e a prévia muda pela intenção. Quota do
-estudante, teto de 5\,s, confiança mínima de 0,7; sem IA, vale a árvore. A conversa abre com a boas-vindas da copy e as três sugestões ---
+estudante, teto de 5\,s, confiança mínima de 0,7; sem IA, vale a árvore.
+Três caminhos nunca vão à IA: o \enquote{sim} logo depois da oferta (é estado
+da prévia), as três sugestões da copy (a árvore as lê exatas) e o texto que
+tenta mandar no classificador, que fica fora do tema. A conversa abre com a boas-vindas da copy e as três sugestões ---
 \enquote{Criar rascunho informativo sobre o tema}, \enquote{Qual a fonte dessa
 pesquisa?} e \enquote{Reescreva removendo os nomes pessoais e citando o autor
 original}. Perguntar a fonte só pergunta: a fala termina em \enquote{Deseja
