@@ -2,21 +2,21 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 /**
- * TRÊS seções do design system, e a fronteira é "quem está falando"
- * (`docs/regras/design-system.md`):
+ * DUAS seções do design system, ambas de clone, e a fronteira é "quem está
+ * falando" (`docs/regras/design-system.md`). Desde a 2.1.0 (ADR-191) a missão
+ * não tem tela da escola: abre e fecha dentro dos apps.
  *
- * - `unooria` — a ESCOLA: a abertura (a pauta do grêmio) e a conclusão;
- * - `unooriaai` — o assistente, do primeiro prompt ao "Publicar no Unoovista";
- * - `unoovista` — a rede social: o feed da madrugada e os bastidores (Etapa 5).
+ * - `unooriaai` — o assistente: a pauta, o chat, a prévia e o "Publicar no Unoovista";
+ * - `unoovista` — a rede social: o relógio, o feed da madrugada, a pausa, os
+ *   bastidores e o fim.
  *
- * Os seletores e variáveis de cada uma são prefixados (`--unooria-*`, `--uai-*`,
- * `--unv-*`) e as folhas não têm reset global: carregar as três não as mistura.
- * A folha de FONTE de cada uma é linha separada e obrigatória: os ícones das
- * três são ligadura do Material Symbols, e sem a família a tela escreve o NOME
- * do ícone. Nunca o `styles.css` consolidado.
+ * Os seletores e variáveis de cada uma são prefixados (`--uai-*`, `--unv-*`) e
+ * as folhas não têm reset global: carregar as duas não as mistura. A folha de
+ * FONTE de cada uma é linha separada e obrigatória: os ícones das duas são
+ * ligadura do Material Symbols, e sem a família a tela escreve o NOME do ícone.
+ * Nunca o `styles.css` consolidado, e nunca a `unooria.css` (a plataforma não
+ * entra no clone).
  */
-import "@unooria/design-system/unooria.css";
-import "@unooria/design-system/fonts/unooria.css";
 import "@unooria/design-system/unooriaai.css";
 import "@unooria/design-system/fonts/unooriaai.css";
 import "@unooria/design-system/unoovista.css";

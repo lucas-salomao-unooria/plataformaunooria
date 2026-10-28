@@ -17,6 +17,7 @@ hub → exp : { type: "hub:init", token, estudante:{id,nome,serie,turmaId,escola
 exp → hub : { type: "exp:concluir", payload:{ score?, dados? } }
 exp → hub : { type: "exp:token-expirando" }   → hub responde { type:"hub:token", token }
 exp → hub : { type: "exp:estado", estado:{...} }   → p/ "chrome" opcional do hub (aditivo)
+                                                       (`instrucao: {antes, destaque, depois}` = o texto AO LADO do aparelho; exp02em1b, ADR-191)
 exp → hub : { type: "exp:erro", mensagem, hash }    → a exp quebrou; o hub troca a tela (aditivo; o registro vai SDK → api)
 hub → exp : { type: "hub:pause" | "hub:resume" }   → emitidos por visibilidade/foco da página
 ```

@@ -2425,9 +2425,17 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
 \arq{20261022130000\_\B{}exp02em1b\_\B{}efeito\_\B{}amplificador} & As quatro tabelas
   de O Efeito Amplificador: \cd{exp02em1b\_pacotes} (com um em andamento e um
   rascunho por turma, índices únicos parciais), \cd{\_gates\_turma}
-  (\cd{aberta} $|$ \cd{debate} $|$ \cd{explicar}), \cd{\_gates\_historico} e
-  \cd{\_sessoes} (o latch do Publicar com os quatro campos juntos), com RLS
-  forçada e \emph{CHECKs} espelhando \arq{conteudo.ts}.\\
+  (\cd{aberta} $|$ \cd{debate} $|$ \cd{explicar}, renomeados na 2.1.0),
+  \cd{\_gates\_historico} e \cd{\_sessoes} (o latch do Publicar com os quatro
+  campos juntos), com RLS forçada e \emph{CHECKs} espelhando \arq{conteudo.ts}.\\
+\zebra \arq{20261028120000\_\B{}exp02em1b\_\B{}2\_\B{}1\_\B{}0} & O Efeito Amplificador
+  2.1.0 (\adrr{ADR-191}): o gate da turma passa a \cd{exploracao} $|$
+  \cd{pausa} $|$ \cd{explicar} (os valores gravados convertidos, o
+  \emph{default} e os dois \emph{CHECKs} recriados), e o conteúdo dos pacotes
+  da 2.0.x passa à forma nova --- a pauta do grêmio, o veículo como
+  \cd{fonteOriginal} e os comentários sem \emph{handle}, com o horário
+  \enquote{02h40} e as categorias do PRD ---, com a asserção no fim. Nenhuma
+  tabela nova; as sessões e as marcas ficam como estão.\\
 \zebra \arq{20261026120000\_\B{}exp02ef1b\_\B{}enigma\_\B{}capa} & As quatro
   tabelas de O Enigma da Capa da Rádio (\adrr{ADR-184}): \cd{exp02ef1b\_pacotes}
   (\cd{chave\_cena}; um em andamento e um rascunho por turma, índices únicos

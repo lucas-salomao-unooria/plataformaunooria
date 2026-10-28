@@ -6,6 +6,7 @@ import {
   NOS,
   PARAGRAFO_MAX_PALAVRAS,
   PARAGRAFOS,
+  PAUTA,
   type ConteudoDoPacote,
 } from "../conteudo";
 
@@ -14,18 +15,40 @@ import {
  * `validar` do preparo) e para a curadoria do professor (a homologação). Devolve
  * TODAS as frases de uma vez, para o professor corrigir de uma só vez.
  *
- * O que ela garante é a MECÂNICA da missão, que não muda com o tema (one-pager
- * §3, "camada fixa"): os três nós no rascunho, a correção de cada um que o
- * UnooriaAI entrega, o recorte que sobrevive à correção, as três manchetes e
- * os comentários da madrugada com as duas dimensões de saúde e o risco.
+ * O que ela garante é a MECÂNICA da missão, que não muda com o tema (PRD §12.2,
+ * a camada fixa): a pauta, os três nós no rascunho com a correção de cada um, o
+ * recorte que sobrevive à correção, as três manchetes e os seis comentários da
+ * madrugada com os relatos de saúde e as contas invasivas.
  */
 
 const palavras = (t: string) => t.trim().split(/\s+/).filter(Boolean).length;
 const contem = (t: string, trecho: string) => t.toLowerCase().includes(trecho.toLowerCase());
 const temAspas = (t: string) => /["“”«»]/.test(t);
 
+/** O teto do texto de um comentário (PRD §12, `comentariosMadrugada.texto`). */
+const COMENTARIO_MAX_CARACTERES = 280;
+
+/** O mínimo de cada categoria de comentário (PRD §12.2, o prompt do preparo). */
+const MINIMOS_DOS_COMENTARIOS = [
+  ["saude_fisica", 2, "dois relatos de saúde física (insônia, dor de cabeça, cansaço visual)"],
+  ["saude_mental", 1, "um relato de saúde mental (ansiedade, medo de ir à escola)"],
+  ["anonimo_agressivo", 2, "duas contas anônimas invasivas"],
+] as const;
+
 export function problemasDoConteudo(c: ConteudoDoPacote): string[] {
   const p: string[] = [];
+
+  if (!c.pauta.titulo.trim()) p.push("Falta o título da pauta do grêmio.");
+  else if (c.pauta.titulo.length > PAUTA.titulo) p.push(`O título da pauta passa de ${PAUTA.titulo} caracteres.`);
+  if (!c.pauta.descricao.trim()) p.push("Falta a descrição da pauta do grêmio.");
+  else if (c.pauta.descricao.length > PAUTA.descricao) p.push(`A descrição da pauta passa de ${PAUTA.descricao} caracteres.`);
+  if (c.pauta.orientacoes.length < PAUTA.orientacoes.min || c.pauta.orientacoes.length > PAUTA.orientacoes.max) {
+    p.push(`A pauta precisa de ${PAUTA.orientacoes.min} a ${PAUTA.orientacoes.max} orientações.`);
+  }
+  if (c.pauta.orientacoes.some((o) => !o.trim() || o.length > PAUTA.orientacao)) {
+    p.push(`Cada orientação da pauta precisa de texto, com até ${PAUTA.orientacao} caracteres.`);
+  }
+
   const n = c.rascunho.length;
   if (n < PARAGRAFOS.min || n > PARAGRAFOS.max) p.push(`O rascunho precisa de ${PARAGRAFOS.min} a ${PARAGRAFOS.max} parágrafos.`);
   const ids = c.rascunho.map((x) => x.id);
@@ -63,14 +86,22 @@ export function problemasDoConteudo(c: ConteudoDoPacote): string[] {
   if (plagio) {
     if (temAspas(plagio.texto)) p.push("O trecho copiado precisa aparecer SEM aspas no original.");
     if (plagio.corrigido && !temAspas(plagio.corrigido)) p.push("A versão corrigida do trecho copiado precisa das aspas.");
-    if (plagio.corrigido && !contem(plagio.corrigido, c.veiculo)) p.push("A versão corrigida do trecho copiado precisa creditar o veículo.");
-    if (!contem(plagio.texto, c.recorte) || (plagio.corrigido && !contem(plagio.corrigido, c.recorte))) {
-      p.push("O recorte que o algoritmo pinça precisa estar no trecho copiado, no original E na versão corrigida.");
+    if (plagio.corrigido && !contem(plagio.corrigido, primeiroNomeDaAutoria(c.fonteOriginal))) {
+      p.push("A versão corrigida do trecho copiado precisa creditar a autoria.");
     }
+  }
+  /*
+   * O recorte que o algoritmo pinça SOBREVIVE às correções: mora num parágrafo
+   * de ligação, ou num nó em que está no original E no corrigido. Senão, o
+   * cuidado do estudante o tiraria do post — e a virada é que não tira.
+   */
+  const casa = c.rascunho.find((x) => contem(x.texto, c.recorte));
+  if (!c.recorte.trim() || !casa || (casa.no !== null && !(casa.corrigido && contem(casa.corrigido, c.recorte)))) {
+    p.push("O recorte que o algoritmo pinça precisa estar num parágrafo que continua no post depois das correções.");
   }
   if (c.fonteInventada.trim().length < 3) p.push("Informe a fonte inventada da alucinação.");
   if (c.colega.trim().length < 3) p.push("Informe o colega exposto no nó de LGPD.");
-  if (c.veiculo.trim().length < 3) p.push("Informe o veículo do trecho copiado.");
+  if (c.fonteOriginal.trim().length < 3) p.push("Informe a autoria do trecho copiado.");
 
   for (const m of MANCHETES) {
     const t = c.manchetes[m]?.trim() ?? "";
@@ -81,29 +112,30 @@ export function problemasDoConteudo(c: ConteudoDoPacote): string[] {
   if (c.comentarios.length !== COMENTARIOS_POR_PACOTE) p.push(`O feed precisa de exatamente ${COMENTARIOS_POR_PACOTE} comentários.`);
   const cids = c.comentarios.map((x) => x.id);
   if (new Set(cids).size !== cids.length) p.push("Cada comentário precisa de um id próprio.");
-  const tipos = new Set(c.comentarios.map((x) => x.tipo));
-  for (const [tipo, frase] of [
-    ["saude_fisica", "um relato de saúde física (sono, dor, cansaço)"],
-    ["saude_mental", "um relato de saúde mental (ansiedade, medo, humilhação)"],
-    ["risco_seguranca", "uma conta suspeita ou invasiva"],
-  ] as const) {
-    if (!tipos.has(tipo)) p.push(`Os comentários precisam de pelo menos ${frase}.`);
+  for (const [tipo, minimo, frase] of MINIMOS_DOS_COMENTARIOS) {
+    if (c.comentarios.filter((x) => x.tipo === tipo).length < minimo) p.push(`Os comentários precisam de pelo menos ${frase}.`);
   }
   for (const com of c.comentarios) {
     const w = palavras(com.texto);
     if (w < COMENTARIO_PALAVRAS.min || w > COMENTARIO_PALAVRAS.max) {
       p.push(`O comentário de ${com.autor || com.id} precisa ter de ${COMENTARIO_PALAVRAS.min} a ${COMENTARIO_PALAVRAS.max} palavras.`);
     }
-    if (!horarioDeMadrugada(com.horario)) p.push(`O comentário de ${com.autor || com.id} precisa ser de madrugada (entre 01:00 e 03:59).`);
+    if (!horarioDeMadrugada(com.horario)) p.push(`O comentário de ${com.autor || com.id} precisa ser de madrugada (entre 01h00 e 03h30).`);
+    if (com.texto.length > COMENTARIO_MAX_CARACTERES) p.push(`O comentário de ${com.autor || com.id} passa de ${COMENTARIO_MAX_CARACTERES} caracteres.`);
   }
   return [...new Set(p)];
 }
 
-/** "02:40" — entre 01:00 e 03:59: o motor entrega de madrugada para todos. */
+/** A palavra que a correção do plágio precisa citar: a mais longa da autoria, sem número ("Helena"/"Ramos"). */
+function primeiroNomeDaAutoria(fonteOriginal: string): string {
+  const palavrasDaAutoria = fonteOriginal.split(/[\s,()]+/).filter((p) => p.length >= 4 && !/\d/.test(p) && !/^(dra?|prof)\.?$/i.test(p));
+  return palavrasDaAutoria[0] ?? fonteOriginal;
+}
+
+/** "02h40" — entre 01h00 e 03h30 (PRD §12.2): o motor entrega de madrugada para todos. */
 export function horarioDeMadrugada(h: string): boolean {
-  const m = /^(\d{2}):(\d{2})$/.exec(h);
+  const m = /^(\d{2})h(\d{2})$/.exec(h);
   if (!m) return false;
-  const hora = Number(m[1]);
-  const minuto = Number(m[2]);
-  return hora >= 1 && hora <= 3 && minuto <= 59;
+  const minutos = Number(m[1]) * 60 + Number(m[2]);
+  return Number(m[2]) <= 59 && minutos >= 60 && minutos <= 210;
 }

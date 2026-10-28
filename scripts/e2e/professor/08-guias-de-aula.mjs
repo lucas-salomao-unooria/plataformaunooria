@@ -43,6 +43,12 @@ const GUIAS = [
        gabarito, para ler antes, e o critério de cada nível, para o depois. */
     vivo: [/O pacote padrão — “/, /O critério de cada nível/],
     bncc: "EM13CO24",
+    /* A 2.1.0 (ADR-191): o debate fecha no TC-24, literal, e a pergunta de
+       TRANSFERÊNCIA saiu com a etapa dela ("Que outro aplicativo… muda de
+       comportamento à noite?"). Guia que ainda a traz manda o professor
+       perguntar algo que a missão deixou de preparar. */
+    literal: [/quem é o verdadeiro cliente da rede social e o que está sendo vendido\?/],
+    ausente: [/Que outro aplicativo que vocês usam muda de comportamento à noite/],
   },
   {
     rota: "/professor/entre-redes/7-ano/unidade-1/guia",
@@ -209,6 +215,12 @@ await suite(
       r.exigir(texto.includes(guia.bncc), `${guia.missao}: traz a habilidade ${guia.bncc}`);
       for (const vivo of guia.vivo) {
         r.exigir(vivo.test(texto), `${guia.missao}: o bloco vivo ${vivo} chegou preenchido`);
+      }
+      for (const literal of guia.literal ?? []) {
+        r.exigir(literal.test(texto), `${guia.missao}: o guia traz ${literal}`);
+      }
+      for (const ausente of guia.ausente ?? []) {
+        r.exigir(!ausente.test(texto), `${guia.missao}: o guia NÃO traz ${ausente}`);
       }
       /* O botão de imprimir É o recurso: o professor conduz com o papel na mão
          enquanto o computador projeta a tela da turma. */

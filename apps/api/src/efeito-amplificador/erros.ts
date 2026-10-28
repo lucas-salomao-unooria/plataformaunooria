@@ -16,11 +16,9 @@ export type CodigoErro =
   | "limite-do-chat"
   | "ja-publicado"
   | "nao-publicado"
-  | "paragrafo-desconhecido"
   | "comentario-desconhecido"
-  | "veja-as-metricas"
+  | "aviso-ja-fixado"
   | "explicar-nao-liberado"
-  | "evidencias-incompletas"
   | "pacote-nao-aprovado"
   | "pacote-invalido"
   | "preparo-invalido"
@@ -37,11 +35,9 @@ export const STATUS: Readonly<Record<CodigoErro, number>> = {
   "limite-do-chat": 409,
   "ja-publicado": 409,
   "nao-publicado": 409,
-  "paragrafo-desconhecido": 400,
   "comentario-desconhecido": 400,
-  "veja-as-metricas": 409,
+  "aviso-ja-fixado": 409,
   "explicar-nao-liberado": 409,
-  "evidencias-incompletas": 409,
   "pacote-nao-aprovado": 409,
   "pacote-invalido": 400,
   "preparo-invalido": 400,
@@ -54,18 +50,16 @@ export const STATUS: Readonly<Record<CodigoErro, number>> = {
 export const MENSAGENS: Readonly<Record<CodigoErro, string>> = {
   // O professor ainda não pôs um pacote no ar. Espera, não bloqueio.
   "campanha-em-preparo": "Aguardando a liberação do orientador do grêmio para começar...",
-  "sessao-nao-aberta": "Toque em Iniciar Campanha primeiro.",
+  "sessao-nao-aberta": "Toque em Abrir UnooriaAI primeiro.",
   // D0-2, literal.
   "telas-pausadas": "Aguardando a liberação do orientador do grêmio para avançar...",
   "rascunho-nao-gerado": "Peça ao UnooriaAI para montar o rascunho primeiro.",
   "limite-do-chat": "Atingimos o limite de interações planejadas para esta etapa de redação.",
   "ja-publicado": "Sua publicação já está no Unoovista.",
   "nao-publicado": "Publique no Unoovista primeiro.",
-  "paragrafo-desconhecido": "Esse trecho não está na prévia.",
   "comentario-desconhecido": "Esse comentário não está mais na publicação.",
-  "veja-as-metricas": "Veja as métricas da publicação antes de arquivá-la.",
+  "aviso-ja-fixado": "A publicação já tem um aviso de cuidado fixado.",
   "explicar-nao-liberado": "Aguardando a liberação do orientador do grêmio para avançar...",
-  "evidencias-incompletas": "Selecione os dois indicadores que comprovam o que a rede priorizou.",
   // As de PROFESSOR, lidas no hub.
   "pacote-nao-aprovado": "Homologue e coloque um pacote no ar para esta turma antes.",
   "pacote-invalido": "O pacote não pôde ser homologado.",

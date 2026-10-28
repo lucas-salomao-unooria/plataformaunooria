@@ -64,8 +64,12 @@ describe("guias da aula", () => {
    *   pedido do Vinicius de tirar a transferência e o Canal B) — o card da tela,
    *   o caso no roteiro da api e a pergunta-ponte do guia. O debate fecha nas
    *   perguntas 3 e 4 do PO, como generalização.
+   * - O Efeito Amplificador (exp02em1b) na 2.1.0 (ADR-191): o debate são as três
+   *   perguntas do roteiro do PRD (TC-22 a TC-24, literais, as mesmas do painel),
+   *   que param na generalização; a transferência da Etapa 6 (o diário do
+   *   Refletir) e o Canal B saíram por decisão do dono do produto.
    */
-  const SEM_TRANSFERENCIA = new Set(["exp02ef1b", "exp01em1b"]);
+  const SEM_TRANSFERENCIA = new Set(["exp02ef1b", "exp01em1b", "exp02em1b"]);
   test("todo debate tem retomada e transferência", () => {
     for (const guia of todosOsGuias()) {
       const niveis = new Set(guia.debate.perguntas.map((p) => p.nivel));

@@ -2,16 +2,15 @@ import type { ConteudoDoPacote, Intencao } from "../conteudo";
 
 /**
  * O que o estudante pediu ao UnooriaAI — a ÁRVORE DE INTENÇÕES do banco de
- * conteúdo (01e), no SERVIDOR. É a RESERVA da conversa híbrida (ADR-181): quem
- * classifica primeiro é a IA (`prompts-da-conversa.ts`), na mesma lista
- * fechada; a árvore responde quando ela falha (sem saldo, vendor fora, prazo,
- * saída recusada). Nos dois caminhos o que a EM13CO14 e a EM13CO26 medem é o
- * PEDIDO do estudante, convertido em intenção — nunca o texto de um modelo.
+ * conteúdo (01e), no SERVIDOR e sem IA (ADR-191: nenhuma chamada de IA durante
+ * a aula, PRD RNF-012). O que a EM13CO14 e a EM13CO26 medem é o PEDIDO do
+ * estudante, convertido em intenção.
  *
  * A entrada passa pelo pré-processamento do 01e: minúsculas, sem acento, sem
- * pontuação. Os gatilhos são uma lista FECHADA, mais três que vêm do pacote (o
- * instituto inventado, o primeiro nome do colega e o veículo), porque o pacote
- * que a IA escreve para outra disciplina não tem "DataBrasil" nem "Lucas".
+ * pontuação. Os gatilhos são uma lista FECHADA, mais os que vêm do pacote (o
+ * instituto inventado, o primeiro nome do colega e as palavras da autoria),
+ * porque o pacote que a IA escreve para outra disciplina não tem "DataBrasil"
+ * nem "Gabriel".
  */
 
 export function normalizar(texto: string): string {
@@ -23,162 +22,158 @@ export function normalizar(texto: string): string {
     .trim();
 }
 
-/** A PRECEDÊNCIA importa: "reescrever tudo protegendo dados" é a revisão geral, não só a LGPD. */
-const GATILHOS: ReadonlyArray<readonly [Exclude<Intencao, "fora_do_tema">, readonly string[]]> = [
-  [
-    "revisao_geral",
-    [
-      "reescrever tudo",
-      "revisar post",
-      "revisar o post",
-      "corrigir erros",
-      "corrigir os erros",
-      "corrigir tudo",
-      "limpar texto",
-      "limpar o texto",
-      "tirar dados falsos e nomes",
-      "versao segura",
-      "arrumar rascunho",
-      "arrumar o rascunho",
-      "editar postagem completa",
-    ],
-  ],
-  [
-    "auditar_lgpd",
-    [
-      "proteger dados",
-      "protegendo dados",
-      "dados de terceiros",
-      "remover nome",
-      "remover o nome",
-      "tirar o nome",
-      "privacidade",
-      "lgpd",
-      "nao expor",
-      "dado sensivel",
-      "dados pessoais",
-      "segredo medico",
-      "sigilo",
-      "anonimizar",
-      "anonimo",
-    ],
-  ],
-  [
-    "auditar_autoral",
-    [
-      "de quem e o texto",
-      "plagio",
-      "copiado",
-      "copia",
-      "citacao sem aspas",
-      "sem aspas",
-      "quem escreveu",
-      "direito autoral",
-      "direitos autorais",
-      "colocar aspas",
-      "dar credito",
-      "credito",
-      "atribuir autor",
-      "citar o autor",
-      "autoria",
-    ],
-  ],
-  [
-    "substituir_dado",
-    ["substituir", "substitua", "pode substituir", "troque o dado", "trocar o dado", "trocar a estatistica", "tirar o dado", "remover o dado", "tirar a estatistica"],
-  ],
-  [
-    "auditar_fonte",
-    [
-      "qual a fonte",
-      "qual e a fonte",
-      "fonte dessa pesquisa",
-      "fonte da pesquisa",
-      "de onde saiu",
-      "estudo comprovado",
-      "comprovar dados",
-      "comprovar os dados",
-      "fonte de pesquisa",
-      "essa pesquisa e real",
-      "pesquisa e real",
-      "dados falsos",
-      "inventou",
-      "e verdade",
-      "confiavel",
-      "existe",
-      "instituto",
-      "estatistica",
-      "esse dado",
-      "esse numero",
-      "92%",
-    ],
-  ],
-  ["confirmar_previa", ["revisar publicacao", "abrir previa", "ver previa", "post pronto", "terminar rascunho", "ir para post"]],
-  [
-    "gerar_rascunho",
-    [
-      "gerar rascunho",
-      "gere",
-      "gerar",
-      "iniciar post",
-      "comecar texto",
-      "criar campanha",
-      "celular na escola",
-      "post celular",
-      "pauta gremio",
-      "rascunho",
-      "montar o post",
-      "monte o post",
-      "monta o post",
-      "montar post",
-      "vamos comecar",
-      "vamos",
-      "comecar",
-    ],
-  ],
-];
+/** Os gatilhos do 01e, mais os sinônimos que a turma usa. */
+const REVISAO_AMPLA = [
+  "corrigir tudo",
+  "corrija tudo",
+  "revisar",
+  "revise",
+  "melhorar",
+  "melhore",
+  "ajustar texto",
+  "ajuste o texto",
+  "deixar equilibrado",
+  "limpar erros",
+  "reescrever tudo",
+  "reescreva tudo",
+  "versao segura",
+] as const;
 
-/** "Sim" depois de a IA oferecer a substituição (a fala da fonte termina com a pergunta). */
-const CONCORDANCIAS = new Set(["sim", "pode", "pode sim", "quero", "claro", "ok", "pode ser", "sim pode", "aceito", "faca isso"]);
+const LGPD = [
+  "remover nomes",
+  "removendo os nomes",
+  "remover o nome",
+  "remova o nome",
+  "tirar o nome",
+  "nome pessoal",
+  "nomes pessoais",
+  "turma",
+  "advertencia",
+  "privacidade",
+  "lgpd",
+  "dados pessoais",
+  "dado pessoal",
+  "anonimizar",
+  "anonimo",
+  "expor",
+  "exposto",
+] as const;
+
+const AUTORAL = [
+  "autor",
+  "autora",
+  "autoria",
+  "plagio",
+  "credito",
+  "citando",
+  "citar",
+  "citacao",
+  "aspas",
+  "copiado",
+  "copia",
+  "direito autoral",
+  "direitos autorais",
+  "quem escreveu",
+] as const;
+
+const FONTES = [
+  "fonte",
+  "fontes",
+  "de onde saiu",
+  "pesquisa",
+  "92%",
+  "comprovar",
+  "comprovado",
+  "estatistica",
+  "instituto",
+  "e verdade",
+  "confiavel",
+  "dado falso",
+  "dados falsos",
+] as const;
+
+const APROVAR = ["aprovar", "aprovo", "aprovado", "ficou bom", "pronto", "pode publicar", "concluir texto"] as const;
+
+const GERAR = [
+  "criar rascunho",
+  "crie o rascunho",
+  "rascunho",
+  "escrever post",
+  "escreva o post",
+  "comecar",
+  "fazer texto",
+  "faca o texto",
+  "gerar",
+  "gere",
+  "montar o post",
+  "monte o post",
+] as const;
+
+/** "Sim" depois de a fala da fonte oferecer a atualização da prévia. */
+const CONCORDANCIAS = new Set(["sim", "pode", "pode sim", "quero", "claro", "ok", "pode ser", "sim pode", "aceito", "atualize", "atualiza"]);
 
 function contem(normalizada: string, gatilho: string): boolean {
   return ` ${normalizada} `.includes(` ${gatilho} `);
 }
 
+const algum = (n: string, gatilhos: readonly string[]) => gatilhos.some((g) => g.length >= 3 && contem(n, g));
+
 /**
  * Os gatilhos que vêm do PACOTE: o instituto (inteiro, e cada palavra
- * distintiva dele — "databrasil"), o primeiro nome do colega e o veículo
- * (inteiro: "tecnologia" sozinha apareceria em pedido de outra coisa).
+ * distintiva dele — "databrasil"), o primeiro nome do colega e as palavras
+ * distintivas da autoria ("helena", "ramos").
  */
-function gatilhosDoPacote(c: Pick<ConteudoDoPacote, "fonteInventada" | "colega" | "veiculo">): Array<[Intencao, string]> {
+function gatilhosDoPacote(c: Pick<ConteudoDoPacote, "fonteInventada" | "colega" | "fonteOriginal">) {
+  const distintivas = (t: string) => normalizar(t).split(" ").filter((p) => p.length >= 5 && !/\d/.test(p));
   const fonte = normalizar(c.fonteInventada);
-  const palavrasDaFonte = fonte.split(" ").filter((p) => p.length >= 5 && !/\d/.test(p));
-  const primeiroNome = normalizar(c.colega).split(" ")[0] ?? "";
-  const gatilhos: Array<[Intencao, string]> = [
-    ["auditar_fonte", fonte],
-    ...palavrasDaFonte.map((p): [Intencao, string] => ["auditar_fonte", p]),
-    ["auditar_lgpd", primeiroNome],
-    ["auditar_autoral", normalizar(c.veiculo)],
-  ];
-  return gatilhos.filter(([, g]) => g.length >= 3);
+  return {
+    fontes: [fonte, ...distintivas(c.fonteInventada)],
+    lgpd: [normalizar(c.colega).split(" ")[0] ?? ""],
+    autoral: [normalizar(c.fonteOriginal), ...distintivas(c.fonteOriginal).filter((p) => !["revista", "jornal", "artigo"].includes(p))],
+  };
 }
 
 /**
  * A intenção de uma mensagem. `ofertaDeSubstituicao`: a última fala do
- * assistente foi a da fonte, que oferece substituir — e aí um "sim" é aceitar.
+ * assistente foi a da fonte, que oferece atualizar a prévia — e aí um "sim" é
+ * aceitar. A PRECEDÊNCIA importa: a revisão ampla vem antes de tudo; autoria e
+ * LGPD juntas (o TC-03) são o direito digital inteiro; a fonte vem antes de
+ * aprovar e de gerar ("qual a fonte desse rascunho?" é auditoria).
  */
 export function classificar(
   texto: string,
-  conteudo: Pick<ConteudoDoPacote, "fonteInventada" | "colega" | "veiculo">,
+  conteudo: Pick<ConteudoDoPacote, "fonteInventada" | "colega" | "fonteOriginal">,
   ofertaDeSubstituicao = false,
 ): Intencao {
   const n = normalizar(texto);
   if (!n) return "fora_do_tema";
   if (ofertaDeSubstituicao && CONCORDANCIAS.has(n)) return "substituir_dado";
-  for (const [intencao, gatilhos] of GATILHOS) {
-    if (gatilhos.some((g) => contem(n, g))) return intencao;
-    const doPacote = gatilhosDoPacote(conteudo).filter(([i]) => i === intencao);
-    if (doPacote.some(([, g]) => contem(n, g))) return intencao;
-  }
+  const doPacote = gatilhosDoPacote(conteudo);
+  if (algum(n, REVISAO_AMPLA)) return "revisao_ampla";
+  const lgpd = algum(n, LGPD) || algum(n, doPacote.lgpd);
+  const autoral = algum(n, AUTORAL) || algum(n, doPacote.autoral);
+  if (lgpd && autoral) return "auditar_direito_digital";
+  if (lgpd) return "auditar_lgpd";
+  if (autoral) return "auditar_autoral";
+  if (algum(n, FONTES) || algum(n, doPacote.fontes)) return "auditar_fontes";
+  if (algum(n, APROVAR)) return "aprovar_previa";
+  if (algum(n, GERAR)) return "gerar_rascunho_inicial";
   return "fora_do_tema";
+}
+
+/** O `prompt_tipo` da telemetria (PRD EVT-001) de cada intenção — o que o KPI-02 conta. */
+export function tipoDoPrompt(intencao: Intencao): string {
+  switch (intencao) {
+    case "auditar_fontes":
+    case "substituir_dado":
+      return "auditar_fontes";
+    case "auditar_direito_digital":
+    case "auditar_autoral":
+    case "auditar_lgpd":
+      return "auditar_direito_digital";
+    case "gerar_rascunho_inicial":
+      return "gerar_rascunho";
+    default:
+      return intencao;
+  }
 }

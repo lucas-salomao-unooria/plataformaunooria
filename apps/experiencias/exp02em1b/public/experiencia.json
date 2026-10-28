@@ -1,7 +1,7 @@
 {
   "id": "exp02em1b",
   "nome": "O Efeito Amplificador",
-  "versao": "2.0.3",
+  "versao": "2.1.0",
   "produto": "entre-redes",
   "series": [
     "2EM"
@@ -14,15 +14,18 @@
   },
   "capabilities": [
     "telemetria",
-    "ia"
+    "progresso",
+    "ia",
+    "avaliacao"
   ],
   "permissoes": [
     "forms"
   ],
   "verbos": {
     "attempted": "entrou na missão",
-    "interacted": "conversou com o UnooriaAI, publicou e agiu no feed",
+    "interacted": "conversou com o UnooriaAI, fixou aviso, acionou proteção ou apontou evidência",
+    "scored": "escolheu a manchete e publicou no Unoovista",
     "progressed": "entrou numa etapa",
-    "completed": "concluiu a missão"
+    "completed": "concluiu o percurso da missão"
   }
 }

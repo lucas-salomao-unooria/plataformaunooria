@@ -1,68 +1,68 @@
 import type { FichaPedagogica } from "./tipos";
 
 /**
- * A FICHA de O EFEITO AMPLIFICADOR (exp02em1b, 2ª série do EM, unidade 1, ADR-181)
- * — versão 1, de 2026-10-22: só o Canal A. O one-pager aprovado previa um
- * Canal B (quatro enquetes) e uma etapa de transferência; o PO tirou os dois
- * (2026-10-22), e toda habilidade é medida pelo que o estudante FAZ:
+ * A FICHA de O EFEITO AMPLIFICADOR (exp02em1b, 2ª série do EM, unidade 1) —
+ * versão 2, de 2026-10-28 (a 2.1.0, ADR-191): 100% Canal A, a régua do PRD
+ * §14.1 e do contrato de evidência do one-pager §12a. Toda habilidade é medida
+ * pelo que o estudante FAZ:
  *
  *   - **EM13CO14** (confiabilidade) e **EM13CO26** (direito digital) no
- *     PUBLICAR, na mesma transação do latch: o que ficou no post depois da
- *     auditoria no UnooriaAI (`efeito-amplificador/regras/evidencia.ts`).
+ *     PUBLICAR, na mesma transação do latch: o que o estudante pediu ao
+ *     UnooriaAI antes de exportar (`efeito-amplificador/regras/evidencia.ts`).
  *   - **EM13CO24** (saúde, o foco) e **EM13CO08** (segurança) pelo que o
  *     estudante faz no feed da madrugada: a cada ação vale a melhor, e na
  *     abertura do Explicar o que não foi feito vira "não atingiu".
  *
- * A Missão Tempestade, que tinha este código, mora em `exp02em1b-v0.ts`.
+ * A versão 1 (a 2.0.x) media a CO24 pelos comentários abertos e a CO08 pela
+ * "ajuda"; as marcas antigas ficam com a versão que as mediu. A Missão
+ * Tempestade, que já teve este código, mora em `exp02em1b-v0.ts`.
  */
 export const FICHA_EXP02EM1B: FichaPedagogica = {
   expId: "exp02em1b",
-  versao: 1,
+  versao: 2,
   habilidades: [
     {
       codigo: "EM13CO24",
-      marcadores: [{ id: "cuidado-com-a-saude", tipo: "acao", rotulo: "Feed da madrugada" }],
+      marcadores: [{ id: "moderacao_saude", tipo: "acao", rotulo: "Aviso de cuidado no feed" }],
       criterios: {
-        atingiu:
-          "No feed da madrugada, abre relatos das duas dimensões — saúde física (sono, dor de cabeça, horas na tela) e saúde mental (ansiedade, medo, humilhação) — e usa ao menos uma moderação (restringir comentários, fixar aviso ou arquivar).",
+        atingiu: 'Fixa o aviso de cuidado na publicação escolhendo o motivo de saúde ("Conteúdo pode afetar a saúde de quem lê").',
         em_processo:
-          "Abre relatos de uma dimensão só, ou das duas sem moderar, ou modera e abre as métricas sem ter lido as duas dimensões.",
-        nao_atingiu: "Não abre nenhum relato, não abre as métricas e não usa nenhuma moderação.",
+          'Fixa o aviso com outro motivo ("Informação sem fonte confiável" ou "Conteúdo ofensivo"), ou restringe os comentários sem fixar aviso.',
+        nao_atingiu: "Não usa nenhuma ferramenta de moderação na publicação.",
         observacao:
-          'Vale a melhor ação no feed. Quem publicou e não fez nada no feed fica "não atingiu" quando abre a Etapa 5; quem não chegou ao feed fica "Não avaliado", e você pode ajustar.',
+          'Vale a melhor ação no feed. Quem publicou e não moderou fica "não atingiu" quando abre a Etapa 5; quem não chegou ao feed fica "Não avaliado", e você pode ajustar.',
       },
     },
     {
       codigo: "EM13CO14",
-      marcadores: [{ id: "auditoria-da-fonte", tipo: "acao", rotulo: "Auditoria no UnooriaAI" }],
+      marcadores: [{ id: "auditoria_fontes", tipo: "acao", rotulo: "Auditoria de fontes no UnooriaAI" }],
       criterios: {
-        atingiu: "Pergunta ao UnooriaAI a fonte da estatística e tira ou corrige o dado inventado antes de publicar.",
-        em_processo: "Pergunta a fonte mas publica o dado inventado, ou tira o dado sem ter checado a origem.",
-        nao_atingiu: "Publica o rascunho sem perguntar a fonte nem mexer na estatística.",
+        atingiu: "Questiona o UnooriaAI sobre a fonte dos dados E corrige a estatística inventada na prévia antes de exportar.",
+        em_processo: "Questiona a fonte mas publica o dado inventado, ou pede a revisão do texto sem checar a origem das afirmações.",
+        nao_atingiu: "Aceita o primeiro rascunho sem investigar as fontes nem corrigir a estatística.",
         observacao: 'Medida no "Publicar no Unoovista". Sem publicar, a habilidade fica "Não avaliado", e você pode ajustar.',
       },
     },
     {
       codigo: "EM13CO26",
-      marcadores: [{ id: "direito-digital-no-post", tipo: "acao", rotulo: "Direito digital no post" }],
+      marcadores: [{ id: "direito_digital", tipo: "acao", rotulo: "Direito digital no post" }],
       criterios: {
-        atingiu: "Credita o trecho copiado (entre aspas, com o veículo) e tira do post o nome e o caso de saúde do colega.",
-        em_processo: "Resolve só um dos dois dilemas: o crédito ou a exposição do colega.",
+        atingiu: "Exige o crédito do trecho copiado E anonimiza o colega exposto antes de publicar.",
+        em_processo: "Resolve só um dos dois dilemas: o crédito de autoria ou a exposição do colega.",
         nao_atingiu: "Publica o trecho copiado sem crédito e o colega exposto.",
-        observacao:
-          'Medida no "Publicar no Unoovista": vale pedir a correção ao UnooriaAI ou tirar o parágrafo do post. Sem publicar, a habilidade fica "Não avaliado".',
+        observacao: 'Medida no "Publicar no Unoovista", pelos pedidos de correção ao UnooriaAI. Sem publicar, a habilidade fica "Não avaliado".',
       },
     },
     {
       codigo: "EM13CO08",
-      marcadores: [{ id: "protecao-na-rede", tipo: "acao", rotulo: "Proteção na rede" }],
+      marcadores: [{ id: "protecao_seguranca", tipo: "acao", rotulo: "Proteção, denúncia e apoio" }],
       criterios: {
         atingiu:
-          "Usa, sem ninguém pedir, as três proteções do Unoovista: deixa a conta privada, denuncia um perfil suspeito e abre a Central de Apoio.",
-        em_processo: "Usa uma ou duas das três proteções.",
-        nao_atingiu: "Não usa nenhuma proteção durante a crise do post.",
+          "Usa, sem ninguém pedir, as três proteções do Unoovista: ajusta a privacidade na Configuração da Publicação, denuncia o perfil suspeito e encaminha um relato pela Central de Apoio.",
+        em_processo: "Usa uma ou duas das três proteções, ou abre a Central de Apoio sem concluir o encaminhamento.",
+        nao_atingiu: "Não aciona nenhuma ferramenta de proteção, privacidade, denúncia ou encaminhamento.",
         observacao:
-          'As três ficam nos menus de três pontos, sem aviso que obrigue o clique: a voluntariedade é a evidência. Vale a melhor ação; quem não usou nenhuma fica "não atingiu" ao abrir a Etapa 5.',
+          'A Configuração da Publicação fica no card do post e a Central de Apoio na barra do feed, sem aviso que obrigue o toque: a voluntariedade é a evidência. Vale a melhor ação; quem não usou nenhuma fica "não atingiu" ao abrir a Etapa 5.',
       },
     },
   ],
