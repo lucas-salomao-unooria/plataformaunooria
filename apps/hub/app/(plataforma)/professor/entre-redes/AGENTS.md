@@ -268,3 +268,21 @@ SOZINHO pelo `BotaoImprimir` com `impressao="relatorio-homologacao"`: a folha
 reteste), e `publicar` sem publicação é o E5-PROF-01 "liberado" (sem o relatório). Na pausa, o botão dela
 fica à vista e desabilitado (`PAUSA_FEITA`): ele NÃO entra em `ACOES_DA_FASE`, que segue só para a frente e
 espelhando a api. "Handoff" do Figma não entra na etiqueta (ADR-91).
+
+## O Porta-Voz dos Dados (exp03em1b)
+
+Página `resultados/resultados-porta-voz.tsx`, criação `atividades/nova/criar-porta-voz.tsx`, espelho
+`lib/porta-voz-tipos.ts` (as rotas da turma em `ROTAS_DA_TURMA`, conferidas no controller da api pelo
+teste). **A primeira missão com atividade e SEM equipe** (individual por desenho, ADR-198): ela está em
+`MISSOES_SEM_EQUIPE` (`lib/entre-redes/atividades.ts`), o assistente de criação pula o passo Equipes, o
+`concluirCriacao` não grava montagem (a api responderia 400 `missao-sem-equipes`) e a página da
+atividade não tem a aba Equipes. **O em andamento é da TURMA** (`POST …/em-andamento` com `{ pacoteId }`
+no corpo, `corpoDoEmAndamento`), não do pacote como nas irmãs. `GET /pacotes` traz também o RASCUNHO da
+curadoria (`aprovadoEm: null`): ele não é atividade, e a lista o tira. "Usar Banco Padrão e Liberar"
+(`pacotes/padrao`) homologa, põe no ar E libera na sala no mesmo toque; sem IA, a geração cai no aviso
+do E0-PROF-03 com "Carregar Banco Padrão Curado", e o rascunho do banco curado NÃO entra na curadoria. O
+"Regenerar Item" devolve o rascunho inteiro do servidor, e a tela fica só com o item novo
+(`comItemRegenerado`): as edições dos outros blocos só sobem no "Homologar Pacote de Conteúdo". A aula
+são dois botões só para a frente ("Pausar para o debate", "Liberar Retomada da Turma"); a lousa é só
+contagem (escala da 1ª publicação, anexo, errata, perícia), e o polling chama `router.refresh()` quando
+`mudouAEvidencia` acusa um dos três gestos que a ficha marca. O podcast é só do professor (aba Podcast).
