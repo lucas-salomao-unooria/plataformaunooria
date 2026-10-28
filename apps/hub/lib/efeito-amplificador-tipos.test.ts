@@ -2,15 +2,22 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import {
+  CHAVES_DAS_REACOES,
   DISCIPLINAS,
   FAIXAS_DA_MADRUGADA,
   FASES,
+  HABILIDADES_DA_DEVOLUTIVA,
   MANCHETES,
   NOS,
   ORIGENS,
+  ORIGENS_DA_DEVOLUTIVA,
   PASSOS,
   PAUTA,
+  ROTULO_DA_REACAO,
   TIPOS_DE_COMENTARIO,
+  TIPOS_QUE_REAGEM,
+  TRECHOS_VIRAIS,
+  comReacao,
   horarioDeMadrugada,
   percentual,
   tempoParado,
@@ -25,6 +32,7 @@ const conteudo = readFileSync(join(API, "conteudo.ts"), "utf8");
 const passos = readFileSync(join(API, "regras/passos.ts"), "utf8");
 const contrato = readFileSync(join(API, "contrato-de-rotas.ts"), "utf8");
 const controller = readFileSync(join(API, "efeito-amplificador-turmas.controller.ts"), "utf8");
+const devolutiva = readFileSync(join(API, "regras/devolutiva.ts"), "utf8");
 
 const lista = (fonte: string, nome: string) => {
   const m = new RegExp(`export const ${nome}(?:: readonly string\\[\\])? = \\[([^\\]]+)\\]`).exec(fonte);
@@ -41,8 +49,28 @@ describe("o espelho dos vocabulários", () => {
     ["FASES", FASES, conteudo],
     ["FAIXAS_DA_MADRUGADA", FAIXAS_DA_MADRUGADA, conteudo],
     ["PASSOS", PASSOS, passos],
+    ["TRECHOS_VIRAIS", TRECHOS_VIRAIS, conteudo],
+    ["HABILIDADES_DA_DEVOLUTIVA", HABILIDADES_DA_DEVOLUTIVA, devolutiva],
+    ["ORIGENS_DA_DEVOLUTIVA", ORIGENS_DA_DEVOLUTIVA, devolutiva],
   ])("%s", (nome, valores, fonte) => {
     expect(lista(fonte, nome)).toEqual([...valores]);
+  });
+
+  test("as reações (ADR-192): as seis chaves saem da mesma derivação, e só as vozes que amplificam reagem", () => {
+    expect(conteudo).toContain("MANCHETES.flatMap((m) => TRECHOS_VIRAIS.map((t) => `${m}.${t}` as const))");
+    expect(CHAVES_DAS_REACOES).toEqual([
+      "neutra.dado",
+      "neutra.recorte",
+      "construtiva.dado",
+      "construtiva.recorte",
+      "sensacionalista.dado",
+      "sensacionalista.recorte",
+    ]);
+    const m = /export const TIPOS_QUE_REAGEM: readonly TipoDeComentario\[\] = \[([^\]]+)\]/.exec(conteudo);
+    const daApi = m ? [...(m[1] as string).matchAll(/"([^"]+)"/g)].map((x) => x[1]) : null;
+    expect(daApi).toEqual([...TIPOS_QUE_REAGEM]);
+    expect(ROTULO_DA_REACAO["neutra.dado"]).toBe("Manchete neutra · a estatística viralizou");
+    expect(ROTULO_DA_REACAO["sensacionalista.recorte"]).toBe("Manchete sensacionalista · o recorte viralizou");
   });
 
   test("os tetos da pauta", () => {
@@ -65,10 +93,28 @@ describe("o contrato que as telas do professor usam", () => {
   });
 
   test("as rotas da turma que o hub chama existem no controller", () => {
-    for (const rota of [":turmaId/pacote", ":turmaId/gerar-conteudo", ":turmaId/homologar", ":turmaId/banco-padrao", ":turmaId/gate", ":turmaId/painel", ":turmaId/zerar", ":turmaId/pacotes/:pacoteId/em-andamento"]) {
+    for (const rota of [":turmaId/pacote", ":turmaId/gerar-conteudo", ":turmaId/homologar", ":turmaId/banco-padrao", ":turmaId/gate", ":turmaId/painel", ":turmaId/zerar", ":turmaId/pacotes/:pacoteId/em-andamento", ":turmaId/pacotes/:pacoteId/devolutivas"]) {
       expect(controller, rota).toContain(`"${rota}"`);
     }
   });
+
+  test("as devolutivas trazem o que a aba Habilidades lê", () => {
+    const m = /export const DevolutivasDaAtividadeSchema = z\.object\(([\s\S]*?)\n\}\);/.exec(contrato);
+    expect(m).not.toBeNull();
+    for (const campo of ["habilidades:", "titulos:", "devolutivas:", "estudanteId:", "nome:", "equipe:", "rodada:", "concluidoEm:", "origem:"]) {
+      expect(m?.[1], campo).toContain(campo);
+    }
+  });
+});
+
+test("a curadoria grava a reação, e o texto vazio tira a entrada (o Zod da api recusa reação vazia)", () => {
+  const base = { comentarios: [], reacoes: { "neutra.dado": { c2: "antes" } } } as unknown as Parameters<typeof comReacao>[0];
+  const escrita = comReacao(base, "neutra.dado", "c4", "nova reação");
+  expect(escrita.reacoes?.["neutra.dado"]).toEqual({ c2: "antes", c4: "nova reação" });
+  expect(base.reacoes?.["neutra.dado"]).toEqual({ c2: "antes" });
+  const apagada = comReacao(comReacao(escrita, "neutra.dado", "c2", "  "), "neutra.dado", "c4", "");
+  expect(apagada.reacoes).toEqual({});
+  expect(comReacao({ ...base, reacoes: undefined }, "construtiva.recorte", "c6", "texto").reacoes).toEqual({ "construtiva.recorte": { c6: "texto" } });
 });
 
 test("o tempo parado do Monitor de Ritmo", () => {

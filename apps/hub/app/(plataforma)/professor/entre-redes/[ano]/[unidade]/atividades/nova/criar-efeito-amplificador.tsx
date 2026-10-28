@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import {
   Button,
   Card,
+  Collapse,
   EmptyState,
   FeedbackAlert,
   Icon,
@@ -22,20 +23,25 @@ import {
 } from "@/components/atividades/assistente-de-atividade";
 import {
   AVISO_SEM_IA,
+  CHAVES_DAS_REACOES,
   HABILIDADE_DO_NO,
   MANCHETE_MAX_CARACTERES,
   MANCHETES,
   MINIMOS_DOS_COMENTARIOS,
   PAUTA,
   ROTULO_DA_MANCHETE,
+  ROTULO_DA_REACAO,
   ROTULO_DO_NO,
   ROTULO_DO_TIPO,
   TIPOS_DE_COMENTARIO,
+  comReacao,
   erroDaApi,
   horarioDeMadrugada,
   problemasDoRecorte,
+  reage,
   rotuloDaDisciplina,
   topicosDoTexto,
+  type ComentarioDoFeed,
   type ConteudoDoPacote,
   type EmAndamento,
   type Origem,
@@ -686,6 +692,7 @@ function CuradoriaDoPacote({
                       value={com.texto}
                       onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => trocarComentario("texto", e.target.value)}
                     />
+                    {c.reacoes && reage(com.tipo) ? <ReacoesDoComentario comentario={com} reacoes={c.reacoes} mexer={mexer} /> : null}
                   </div>
                 );
               })}
@@ -712,6 +719,61 @@ function CuradoriaDoPacote({
         </div>
       </div>
     </Card>
+  );
+}
+
+/**
+ * As seis variantes de um comentário que REAGE ao post (ADR-192), só quando o
+ * pacote as trouxe da geração. O "Texto" acima continua valendo: é o que o
+ * feed mostra quando a variante não tem texto.
+ *
+ * COMPENSAÇÃO MARCADA (lacuna do DS 0.2.24): o `Collapse` fechado deixa o
+ * corpo focável dentro de `aria-hidden` (seis campos por comentário que o Tab
+ * alcançaria sem o leitor de tela anunciar). Por isso ele é CONTROLADO e o
+ * corpo só é renderizado aberto. Quando o pacote tirar o corpo fechado do
+ * foco, o `{aberto ? … : null}` pode virar o filho direto.
+ */
+function ReacoesDoComentario({
+  comentario,
+  reacoes,
+  mexer,
+}: {
+  comentario: ComentarioDoFeed;
+  reacoes: NonNullable<ConteudoDoPacote["reacoes"]>;
+  mexer: (f: (c: ConteudoDoPacote) => ConteudoDoPacote) => void;
+}) {
+  const [aberto, setAberto] = useState(false);
+  return (
+    <div className="flex flex-col gap-2" data-reacoes-do-comentario={comentario.id}>
+      <p className="text-[12px] leading-snug text-unooria-neutral-600">
+        Este comentário muda conforme a manchete e o trecho que viralizaram no post de cada estudante: cada um lê a
+        variante do post que publicou.
+      </p>
+      <Collapse
+        title="As seis reações ao post"
+        size="sm"
+        variant="bordered"
+        isOpen={aberto}
+        onToggle={(abrir) => setAberto(abrir)}
+      >
+        {aberto ? (
+          <div className="flex flex-col gap-3 pt-2">
+            {CHAVES_DAS_REACOES.map((chave) => (
+              <TextArea
+                key={chave}
+                label={ROTULO_DA_REACAO[chave]}
+                rows={2}
+                value={reacoes[chave]?.[comentario.id] ?? ""}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                  const v = e.target.value;
+                  mexer((k) => comReacao(k, chave, comentario.id, v));
+                }}
+              />
+            ))}
+          </div>
+        ) : null}
+      </Collapse>
+    </div>
   );
 }
 
