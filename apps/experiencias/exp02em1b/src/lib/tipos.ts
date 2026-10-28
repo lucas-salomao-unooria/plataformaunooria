@@ -13,9 +13,12 @@ export const EXP_ID = "exp02em1b";
  * `public/experiencia.json` (`versao.test.ts`). A 2.0.0 foi a primeira do Efeito
  * Amplificador: a Missão Tempestade (1.x) mora em `exp02em1b-v0` (ADR-181), e o
  * caminho do bucket da 2.x nunca encosta no dela. A 2.1.0 é a revisão do PO
- * (ADR-191): chat sem IA na aula, a gaveta da prévia, o feed com a Central de Apoio.
+ * (ADR-191): a árvore de intenções no chat, a gaveta da prévia, o feed com a
+ * Central de Apoio. A 2.2.0 (ADR-192) traz a IA sem mexer na régua: o
+ * classificador do que a árvore não entende, o feed que reage ao post de cada
+ * um e a devolutiva da conclusão.
  */
-export const EXP_VERSION = "2.1.0";
+export const EXP_VERSION = "2.2.0";
 
 export type Passo = "abertura" | "conversa" | "feed" | "explicar" | "concluida";
 export type Fase = "exploracao" | "pausa" | "explicar";
@@ -73,6 +76,16 @@ export interface Estado {
     entrega: { faixa: string; impressoes: number; minutos: number }[];
   } | null;
   concluido: boolean;
+}
+
+/** As quatro habilidades da devolutiva, na ordem da tela (a da Matriz do professor). */
+export type HabilidadeDaDevolutiva = "EM13CO24" | "EM13CO14" | "EM13CO26" | "EM13CO08";
+export const HABILIDADES_DA_DEVOLUTIVA: readonly HabilidadeDaDevolutiva[] = ["EM13CO24", "EM13CO14", "EM13CO26", "EM13CO08"];
+
+/** A devolutiva da conclusão (ADR-192): um parágrafo por habilidade, sem nível — a régua é do professor. */
+export interface RespostaDaDevolutiva {
+  devolutiva: { origem: "ia" | "modelo"; habilidades: Record<HabilidadeDaDevolutiva, string>; geradaEm: string };
+  titulos: Record<HabilidadeDaDevolutiva, string>;
 }
 
 export interface Sessao extends Estado {

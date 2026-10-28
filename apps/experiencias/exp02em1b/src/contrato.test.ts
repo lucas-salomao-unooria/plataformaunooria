@@ -44,15 +44,17 @@ describe("sem transferência e sem Canal B (PO, 2026-10-22)", () => {
   });
 });
 
-describe("a api da 2.1.0", () => {
+describe("a api da 2.2.0", () => {
   const api = readFileSync("src/lib/api.ts", "utf8");
   test("só as rotas do PRD §12 — nenhuma das que saíram", () => {
     expect(api).not.toMatch(/`\$\{BASE\}\/(mensagem|paragrafo|feed|indicador)`|post\("(mensagem|paragrafo|feed|indicador)"/);
     for (const rota of ["chat/mensagem", "previa", "publicar", "aviso-cuidado", "seguranca", "explicar", "evidencia", "concluir", "entrar"]) {
       expect(api).toContain(`"${rota}"`);
     }
+    /* A devolutiva da conclusão (ADR-192). */
+    expect(api).toContain("${BASE}/devolutiva");
   });
-  test("sem IA na aula: nenhum teto de timeout próprio", () => {
+  test("a IA da aula corre no servidor contra tetos menores que o do SDK: nenhum teto de timeout próprio", () => {
     expect(api).not.toMatch(/timeoutMs/);
   });
 });

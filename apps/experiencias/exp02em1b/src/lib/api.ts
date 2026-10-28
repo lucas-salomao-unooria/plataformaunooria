@@ -1,15 +1,16 @@
 import type { ExperienciaHandle } from "@edu/sdk";
-import type { AcaoDeSeguranca, Estado, Gate, Manchete, MotivoDoAviso, Sessao } from "./tipos";
+import type { AcaoDeSeguranca, Estado, Gate, Manchete, MotivoDoAviso, RespostaDaDevolutiva, Sessao } from "./tipos";
 
 /**
  * O handle da experiência, num singleton depois do handshake. Toda chamada à
  * api passa por aqui — nunca `fetch` solto: é o SDK que põe o token, renova,
  * aplica timeout e reenvia GET.
  *
- * Sem IA na aula (ADR-191): o chat responde pela árvore de intenções do
- * servidor, então toda rota cabe no timeout PADRÃO do SDK. O teto de 45 s da
- * 2.0.x morreu com a conversa híbrida — devolvê-lo deixaria uma api travada
- * pendurar a tela meio minuto.
+ * Toda rota cabe no timeout PADRÃO do SDK (10 s). A IA da aula (ADR-192) —
+ * o classificador do chat e a devolutiva — corre no servidor contra tetos de
+ * 5 e 7 s e, perdendo, a resposta sai sem ela: a tela nunca espera a IA mais
+ * do que o SDK espera a api. O teto de 45 s da 2.0.x não volta — ele deixaria
+ * uma api travada pendurar a tela meio minuto.
  */
 let handle: ExperienciaHandle | null = null;
 
@@ -37,6 +38,8 @@ export const api = {
   explicar: () => post("explicar"),
   evidencia: (elemento: string) => post("evidencia", { elemento }),
   concluir: () => post("concluir"),
+  /** A devolutiva da conclusão: gerada uma vez no servidor; chamar de novo devolve a mesma. */
+  devolutiva: () => exigir().api.post<RespostaDaDevolutiva>(`${BASE}/devolutiva`),
 };
 
 /** Fecha a missão na plataforma. Sem `score`: a experiência não pontua (regra 3). */

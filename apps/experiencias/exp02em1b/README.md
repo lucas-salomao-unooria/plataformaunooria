@@ -1,13 +1,16 @@
 # exp02em1b — O Efeito Amplificador
 
 Missão da 2ª série do Ensino Médio, unidade 1 ("Como os algoritmos decidem por
-nós?"), versão 2.1.0 (ADR-191). O estudante é moderador do perfil do grêmio:
+nós?"), versão 2.2.0 (ADR-191, ADR-192). O estudante é moderador do perfil do grêmio:
 abre a pauta no UnooriaAI, pede o rascunho e o audita (dado inventado, trecho
 sem crédito, colega exposto), escolhe a manchete e publica no Unoovista. O
 algoritmo pinça um trecho e entrega o post de madrugada — para todo mundo,
 qualquer que seja o texto. No feed ele fixa um aviso de cuidado, ajusta a
 Configuração da Publicação e usa a Central de Apoio; depois do debate, aponta
-nos bastidores os indicadores da retenção e conclui.
+nos bastidores os indicadores da retenção e conclui, com a devolutiva do que
+fez. A IA não decide nada que a régua mede: ela entende o pedido que a árvore
+de intenções do chat não entende, escreve no preparo as reações do feed ao
+post de cada um e redige a devolutiva a partir dos fatos.
 
 ```bash
 pnpm --filter @edu/exp02em1b dev     # :5178 → hub /exp/exp02em1b
@@ -26,7 +29,7 @@ pnpm --filter @edu/exp02em1b test    # versão em três lugares, bundle sem gaba
 | E4-ALU-01 a 04 | `unoovista` | o feed da madrugada, o aviso de cuidado, a Configuração da Publicação e a Central de Apoio |
 | E4-SIS-01 | `unoovista` | a pausa do professor |
 | E5-ALU-01 / 02 | `unoovista` | os bastidores e a espera ativa com o gráfico |
-| E6-ALU-02 | `unoovista` | o fim, com o podcast (tocado em aula) e a transcrição |
+| E6-ALU-02 | `unoovista` | o fim: a devolutiva (um parágrafo por habilidade), o podcast (tocado em aula) e a transcrição |
 
 A instrução do moderador (TC-10) não está no aparelho: o hub a desenha ao
 lado, a partir do `exp:estado` (`{ instrucao }` na Etapa 4, `{}` fora dela).
