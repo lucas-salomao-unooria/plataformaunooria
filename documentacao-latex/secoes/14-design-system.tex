@@ -63,7 +63,12 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
   O Efeito Amplificador (\cd{exp02em1b}, \adrr{ADR-191}), que divide a missão
   com o \cd{unoovista}. Cópia estrutural da \cd{chatgpt} com a identidade da
   Unooria; sem cor primitiva, e ícone por ligadura\\
-\cd{tiktooria} (35) & \cd{/tiktooria} & \cd{--tik-*} &
+\cd{unoojornal} (43, 0.2.24) & \cd{/unoojornal} & \cd{--ujn-*},
+  \cd{data-ujn-theme} --- claro e escuro & o JORNAL de Nina e a Notícia que
+  Desapareceu (\textbf{exp03ef1b}, \adrr{ADR-197}), cuja mecânica é
+  \cd{unooria}: o único DS híbrido, por exceção registrada
+  (Seção~\ref{sec:ds-hibrido-exp03ef1b}). Ícone por ligadura\\
+\zebra \cd{tiktooria} (35) & \cd{/tiktooria} & \cd{--tik-*} &
   --- (dois \emph{contextos} de superfície: cromo claro de lista e perfil,
   imersivo preto de \emph{feed} e câmera --- não dois temas)\\
 \bottomrule
@@ -218,6 +223,7 @@ pacote direto num componente:
 \cd{@edu/ui/ds-unootube} & \cd{unitube} & backup-exp04ef1b (o UnooTube arquivado, \adrr{ADR-116}: não roda mais)\\
 \cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp08ef4b (a exp02em1b saiu na \adrr{ADR-138})\\
 \cd{@edu/ui/ds-unooriaai} & \cd{unooriaai} & exp02em1b-v0 (\adrr{ADR-138}), as Etapas 1 a 3 da exp02em1b (\adrr{ADR-191}) e a bateria de testes de O Assistente Invisível (exp01em1b, \adrr{ADR-185}), com as peças do assistente nas telas da escola em \arq{PecasDoAssistente.tsx}; o \cd{GPTCard} virou \cd{AssistantCard}, e não há \cd{gptGlyphs}\\
+\cd{@edu/ui/ds-unoojornal} & \cd{unoojornal} & o jornal de Nina e a Notícia que Desapareceu (exp03ef1b, \adrr{ADR-197}), com a mecânica na \cd{@edu/ui/ds}; a seção inteira na ponte, e os onze nomes que colidem com a plataforma com o sufixo \cd{Ujn} (\cd{ButtonUjn}, \cd{IconUjn}, \cd{TagUjn}\ldots)\\
 \cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp06ef2b\\
 \cd{@edu/ui/ds-unoochat} & \cd{unoochat} & exp05ef1b (\adrr{ADR-134}; o \cd{FilterChip} entrou na ponte para o alerta do grupo, \adrr{ADR-177}), o \cd{MessageBubble} da gaveta e do Desafio Final do Jornal (\adrr{ADR-136}) e o do pedido pelo WhatsApp da Missão Tempestade (\adrr{ADR-173})\\
 \end{tabularx}
@@ -1238,6 +1244,42 @@ mesmo dia, não cobre nenhuma das quatro. O \cd{Modal} também não centraliza n
 folha que sobe da base); o respiro de cima veio da prop \cd{padding} do
 \cd{ModalBody}, sem CSS local.
 
+\subsection{O Unoojornal e o DS híbrido (exp03ef1b 0.1.0)}
+\label{sec:ds-hibrido-exp03ef1b}
+
+Nina e a Notícia que Desapareceu (\adrr{ADR-197}) é a primeira consumidora da
+seção \cd{unoojornal} (0.2.24): o jornal digital com a identidade da Unooria
+(paleta roxa, Open Sans, Material Symbols), com a estrutura editorial do
+\enquote{Jornal da Escola}. A ponte nova, \arq{packages/ui/src/ds-unoojornal.ts}
+(\cd{@edu/ui/ds-unoojornal}), reexporta a seção INTEIRA --- os componentes, os
+hooks (\cd{useModalFocus}, \cd{useControllableState}), os tokens e o modelo
+de domínio da edição (\cd{ujn*}/\cd{UJN\_*}) --- e os onze nomes que colidem
+com a plataforma saem com o sufixo \cd{Ujn} (\cd{AvatarUjn},
+\cd{BottomSheetUjn}, \cd{ButtonUjn}, \cd{EmptyStateUjn}, \cd{IconUjn},
+\cd{LogoUjn}, \cd{ModalUjn}, \cd{PaginationUjn}, \cd{TagUjn},
+\cd{TextAreaUjn}, \cd{TextFieldUjn}), pela mesma regra do \cd{Unv}. A folha de
+fonte (\arq{/fonts/unoojornal.css}) é obrigatória: o \cd{Icon} é ligadura.
+
+\begin{decisao}
+\textbf{A missão mistura duas seções, por exceção autorizada pelo Lucas}
+(\adrr{ADR-197}). O JORNAL é \cd{unoojornal}: \cd{Logo}, \cd{Masthead} e
+\cd{EditionBar} no cabeçalho; \cd{ArticleCard}, \cd{GalleryImage} e
+\cd{GalleryGrid} nos cartões; \cd{Modal} e \cd{Figure} na foto ampliada;
+\cd{FilterPill} e \cd{FilterBar} no filtro; \cd{Tag} nos selos (\enquote{Mesma
+feira}, \enquote{Recuperada}, o contador); \cd{Toast} no aviso sem sinal; e
+\cd{EmptyState} no erro de mídia. A MECÂNICA é \cd{unooria}: o balão da Nina,
+a caixa da escolha, os carimbos, as etiquetas da ficha, a esteira de blocos
+(\cd{PuzzleTrack} e \cd{PuzzleBlock}, por toque: tocar para pegar, tocar na
+vaga para soltar) e a pausa. A alternativa --- só \cd{unoojornal}, com cinco
+componentes locais --- criaria controles com estado fora do pacote, o que a
+regra proíbe, quando a seção da plataforma já os publica.
+\end{decisao}
+
+O que nenhuma das duas seções tem é compensação local marcada
+\enquote{(b) COMPENSAÇÃO --- sem par no DS}, montada só com os tokens delas
+(nada de cor \emph{hex} inventada). A lista, com a lacuna de cada uma, entra
+aqui quando a tela da experiência fechar.
+
 \subsection{Avisos que ficaram obsoletos}
 
 \begin{nota}
@@ -1799,6 +1841,15 @@ faltou, nunca a causa. E rótulo visível com espelho na api muda nos DOIS lados
 divergência.
 
 \section{Exceção registrada}
+
+\begin{decisao}
+\textbf{Nina e a Notícia que Desapareceu (exp03ef1b) usa duas seções na mesma
+tela} (\adrr{ADR-197}), contra a regra de que as seções nunca se cruzam: o
+jornal é \cd{unoojornal}, a mecânica da missão é \cd{unooria}
+(Seção~\ref{sec:ds-hibrido-exp03ef1b}). A exceção é desta missão só, e
+termina quando a seção \cd{unoojornal} publicar as peças da mecânica; outra
+missão que pedir o mesmo precisa de ADR própria.
+\end{decisao}
 
 \begin{decisao}
 \textbf{O \cd{<video>} da Ajuda com avatar é elemento cru}, contra a regra de
