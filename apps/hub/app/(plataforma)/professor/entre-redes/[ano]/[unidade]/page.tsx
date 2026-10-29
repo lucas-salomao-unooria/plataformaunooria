@@ -14,6 +14,7 @@ import {
   MISSAO_JORNAL_DA_ESCOLA,
   MISSAO_JURI_ESTADUAL,
   MISSAO_MANIFESTO_IA,
+  MISSAO_NINA_NOTICIA,
   MISSAO_PORTA_VOZ,
   MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
@@ -32,6 +33,7 @@ import { MissaoInstanooria } from "./missao-instanooria";
 import { MissaoJornalEscola } from "./missao-jornal-escola";
 import { MissaoJuriEstadual } from "./missao-juri-estadual";
 import { MissaoManifestoIa } from "./missao-manifesto-ia";
+import { MissaoNinaNoticia } from "./missao-nina-noticia";
 import { MissaoPortaVoz } from "./missao-porta-voz";
 import { MissaoQuemMandouIsso } from "./missao-quem-mandou-isso";
 import { MissaoRastroBoato } from "./missao-rastro-boato";
@@ -149,6 +151,9 @@ export default async function MissaoPage({
   }
   if (missao.expId === MISSAO_ASSISTENTE_INVISIVEL.expId) {
     return corpo(<MissaoAssistenteInvisivel ano={ano} missao={comFicha} turma={turma} />);
+  }
+  if (missao.expId === MISSAO_NINA_NOTICIA.expId) {
+    return corpo(<MissaoNinaNoticia ano={ano} missao={comFicha} turma={turma} />);
   }
   if (missao.expId === MISSAO_PORTA_VOZ.expId) {
     return corpo(<MissaoPortaVoz ano={ano} missao={comFicha} turma={turma} />);

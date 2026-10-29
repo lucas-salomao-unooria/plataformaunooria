@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  atividadesDaNina,
   atividadesDaSelecao,
   atividadesDoInstanooria,
   atividadesDoJornal,
@@ -23,8 +24,8 @@ import { concluirCriacao, destinoDepoisDeCriar } from "./criar-atividade";
  * leva, e o fim da criação — pôr no ar e montar as equipes, na ordem certa.
  */
 describe("a lista de atividades", () => {
-  test("as nove missões com atividade — as oito do par da api e a individual (exp03em1b)", () => {
-    expect(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b", "exp03em1b"].every(temAtividades)).toBe(true);
+  test("as dez missões com atividade — as nove do par da api e a individual (exp03em1b)", () => {
+    expect(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b", "exp03ef1b", "exp03em1b"].every(temAtividades)).toBe(true);
     /* A Missão Tempestade, versão anterior (ADR-181), segue sem atividade. */
     expect(temAtividades("exp02em1b-v0")).toBe(false);
     expect(temAtividades(undefined)).toBe(false);
@@ -37,6 +38,7 @@ describe("a lista de atividades", () => {
     expect(serieDaMissao("exp02em1b")).toBe("2EM");
     expect(serieDaMissao("exp02ef1b")).toBe("2EF");
     expect(serieDaMissao("exp01em1b")).toBe("1EM");
+    expect(serieDaMissao("exp03ef1b")).toBe("3EF");
     expect(serieDaMissao("exp03em1b")).toBe("3EM");
     expect(serieDaMissao("app-90-plano-de-aula")).toBeNull();
   });
@@ -128,6 +130,24 @@ describe("a lista de atividades", () => {
     ]);
   });
 
+  test("a Nina: o pacote é a atividade, e sem as imagens aprovadas ela está em preparo", () => {
+    const lista = atividadesDaNina(
+      {
+        ativo: null,
+        historico: [
+          { id: "no-ar", disciplina: "lingua-portuguesa", tema: "Feira", origem: "padrao", ativo: true, criadoEm: "2026-10-01T00:00:00Z", rodadas: 1, imagensAprovadas: true },
+          { id: "nova", disciplina: "ciencias", tema: "Horta", origem: "ia", ativo: false, criadoEm: "2026-10-03T00:00:00Z", rodadas: 0, imagensAprovadas: false },
+        ],
+      },
+      (slug) => (slug === "ciencias" ? "Ciências" : slug),
+    );
+    expect(lista.map((a) => [a.id, a.estado])).toEqual([
+      ["no-ar", "em-andamento"],
+      ["nova", "em-preparo"],
+    ]);
+    expect(lista[1]?.detalhe).toBe("Ciências · gerada com IA");
+  });
+
   test("as rodadas em palavras", () => {
     expect(textoDasRodadas(0)).toBe("nunca rodou");
     expect(textoDasRodadas(1)).toBe("1 rodada");
@@ -158,6 +178,7 @@ describe("para onde a atividade leva", () => {
     expect(caminhoDoEmAndamento("exp05ef1b", "t", "p")).toBe("/quem-mandou-isso/turmas/t/pacotes/p/em-andamento");
     expect(caminhoDoEmAndamento("exp06ef1b", "t", "p")).toBe("/juri-estadual/turmas/t/pacotes/p/em-andamento");
     expect(caminhoDoEmAndamento("exp01em1b", "t", "p")).toBe("/assistente-invisivel/turmas/t/pacotes/p/em-andamento");
+    expect(caminhoDoEmAndamento("exp03ef1b", "t", "p")).toBe("/nina-noticia/turmas/t/pacotes/p/em-andamento");
     /* O Porta-Voz dos Dados: o em andamento é da turma, e o pacote vai no corpo. */
     expect(caminhoDoEmAndamento("exp03em1b", "t", "p")).toBe("/porta-voz-dos-dados/turmas/t/em-andamento");
     expect(corpoDoEmAndamento("exp03em1b", "p")).toEqual({ pacoteId: "p" });

@@ -1,0 +1,1120 @@
+/**
+ * Estilos locais — só o que o design system não dá: o LAYOUT das telas
+ * (1024×768, desktop) e as compensações MARCADAS `(b) COMPENSAÇÃO`. Botão,
+ * etiqueta, cartão, calha de blocos, balão, diálogo: vêm do pacote pelas
+ * pontes, nunca daqui.
+ *
+ * Cor SÓ por token, e o token é o da seção que fala naquele pedaço:
+ *
+ * - JORNAL (`--ujn-*`): o topo, os quadros do filtro, as reportagens, o
+ *   Painel da Investigação — `src/app/jornal/*`;
+ * - MECÂNICA (`--unooria-*`): a Nina, a caixa, os carimbos, a ficha, a
+ *   esteira, a espera — `src/app/mecanica/*`.
+ *
+ * Nenhuma cor hexadecimal neste arquivo. Nenhum `overflow` de rolagem: a
+ * tela foi desenhada para caber em 1024×768, e uma janela menor rola o
+ * DOCUMENTO (o `ScrollBar` do DS é da seção `unooria` e não entraria no
+ * jornal).
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--ujn-color-background-page);
+  color: var(--ujn-color-text-primary);
+  font-family: var(--ujn-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════════════════ a casca */
+
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app__tela {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.app--centrado {
+  align-items: center;
+  justify-content: center;
+  gap: var(--ujn-spacing-l);
+  padding: var(--ujn-spacing-xl);
+  text-align: center;
+}
+
+.aviso-de-abertura {
+  margin: 0;
+  color: var(--ujn-color-text-secondary);
+  font-size: var(--ujn-font-body-md-size);
+}
+
+.esqueleto__topo {
+  height: 56px;
+  border-bottom: var(--ujn-rule-thin) solid var(--ujn-color-border-rule);
+  background: var(--ujn-color-background-card);
+}
+
+.casca {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.casca__corpo {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 20px 22px 12px;
+}
+
+.casca__corpo--centro {
+  align-items: center;
+  justify-content: center;
+}
+
+.casca__corpo--gaveta {
+  padding-right: 0;
+  padding-bottom: 0;
+}
+
+.casca__acoes {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  width: 100%;
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 0 22px 20px;
+}
+
+.ajuda {
+  margin: 0;
+  color: var(--unooria-color-neutral-600);
+  font-family: var(--unooria-font-sans);
+  font-size: var(--unooria-size-body-xs);
+  line-height: var(--unooria-line-height-body-xs);
+}
+
+/* ═══════════════════════════════════════════ JORNAL (`--ujn-*`) */
+
+.jornal-topo {
+  display: flex;
+  align-items: center;
+  gap: var(--ujn-spacing-m);
+  min-height: 56px;
+  padding: 0 22px;
+  border-bottom: var(--ujn-rule-thin) solid var(--ujn-color-border-rule);
+  background: var(--ujn-color-background-card);
+}
+
+.jornal-topo--apagado {
+  opacity: 0.5;
+}
+
+.jornal-topo__edicao {
+  text-transform: uppercase;
+}
+
+.jornal-topo__vao {
+  flex: 1 1 auto;
+}
+
+/* As três reportagens lado a lado (E1, E4-04, E4-05) e os dois resultados (E3-02). */
+.grade-de-tres {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.grade-de-tres--alta > * {
+  min-height: 420px;
+}
+
+.grade-de-dois {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* (b) COMPENSAÇÃO — sem par no DS: o `ArticleCard` não tem lugar para o selo
+   nem para o pin do lugar. O cartão estica até a altura da grade (o rodapé
+   desce, como no protótipo); o selo é um `TagUjn` POSICIONADO no canto do
+   rodapé; o pin é uma máscara no texto do rodapé, na cor do texto. A moldura
+   forte/tracejada é só o fio. Pedido ao `storybook-unooria`: `ArticleCard`
+   com slot de rodapé (`footer`) e ícone de metadado. */
+.reportagem {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.reportagem > .reportagem__cartao {
+  flex: 1 1 auto;
+}
+
+.reportagem--forte > .reportagem__cartao {
+  border-width: 2px;
+  border-color: var(--ujn-color-text-primary);
+}
+
+.reportagem--tracejada > .reportagem__cartao {
+  border: 2px dashed var(--ujn-color-text-primary);
+}
+
+.reportagem .ujn-article-card__time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ujn-color-text-primary);
+  font-weight: var(--ujn-font-weight-semibold);
+}
+
+.reportagem .ujn-article-card__time::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-color: var(--ujn-color-icon-accent);
+  -webkit-mask: url("../assets/icones/onde.svg") center / contain no-repeat;
+  mask: url("../assets/icones/onde.svg") center / contain no-repeat;
+}
+
+.reportagem--com-selo .ujn-article-card__cta {
+  visibility: hidden;
+}
+
+.reportagem__selo {
+  position: absolute;
+  right: var(--ujn-spacing-l);
+  bottom: var(--ujn-spacing-l);
+  pointer-events: none;
+}
+
+/* A foto ampliada (E1, modal aberto): a foto e o cartaz tocável lado a lado. */
+.foto-ampliada {
+  width: min(720px, calc(100vw - 48px));
+  max-width: none;
+}
+
+.foto-ampliada__corpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  align-items: center;
+  gap: var(--ujn-spacing-l);
+}
+
+.foto-ampliada__cartaz {
+  border-radius: var(--ujn-radius-s);
+}
+
+.foto-ampliada__rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ujn-spacing-l);
+  width: 100%;
+}
+
+.foto-ampliada__apoio {
+  margin: 0;
+  color: var(--ujn-color-text-secondary);
+  font-size: var(--ujn-font-body-sm-size);
+}
+
+.erro-de-midia {
+  width: min(480px, 100%);
+  padding: var(--ujn-spacing-xl);
+  border: var(--ujn-rule-thin) solid var(--ujn-color-border-default);
+  border-radius: var(--ujn-radius-m);
+  background: var(--ujn-color-background-card);
+}
+
+/* (b) COMPENSAÇÃO — sem par no DS: o quadro do jornal (a faixa das pastilhas,
+   os valores, a área do resultado, as ferramentas do caso, a matéria grande
+   do telão). Fio, raio e recuo com `--ujn-*`. */
+.quadro-jornal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ujn-spacing-s);
+  padding: var(--ujn-spacing-m) var(--ujn-spacing-l);
+  border: var(--ujn-rule-thin) solid var(--ujn-color-border-default);
+  border-radius: var(--ujn-radius-m);
+  background: var(--ujn-color-background-card);
+}
+
+.quadro-jornal--linha {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ujn-spacing-l);
+}
+
+.quadro-jornal--tracejado {
+  border-style: dashed;
+  background: var(--ujn-color-background-subtle);
+}
+
+.quadro-jornal--centro {
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.valores__rotulo {
+  font-size: var(--ujn-font-kicker-size);
+  font-weight: var(--ujn-font-kicker-weight);
+  letter-spacing: var(--ujn-font-kicker-tracking);
+  text-transform: uppercase;
+}
+
+.resultado-da-busca {
+  min-height: 220px;
+}
+
+.resultado-da-busca__texto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ujn-spacing-xs);
+  color: var(--ujn-color-text-secondary);
+  font-size: var(--ujn-font-body-md-size);
+}
+
+.resultado-da-busca__texto strong {
+  color: var(--ujn-color-text-primary);
+  font-size: var(--ujn-font-title-md-size);
+}
+
+.pastilhas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ujn-spacing-m);
+}
+
+.pastilha {
+  gap: 6px;
+}
+
+/* (b) COMPENSAÇÃO — o `FilterPill` tem 36px; a pastilha da criança vai a 64px
+   de alvo, e a grande (Quem/Onde/Quando) ganha recuo largo. */
+.pastilhas--grandes .pastilha {
+  padding-inline: 24px;
+  font-size: var(--ujn-font-label-lg-size);
+}
+
+.titulo-de-secao {
+  margin: 0;
+  font-size: var(--ujn-font-title-md-size);
+  font-weight: var(--ujn-font-title-md-weight);
+}
+
+.titulo-de-pagina {
+  margin: 0;
+  font-size: var(--ujn-font-title-lg-size);
+  font-weight: var(--ujn-font-title-lg-weight);
+}
+
+/* A matéria grande do telão (E4-01). */
+.materia-grande {
+  flex: 1 1 auto;
+  gap: var(--ujn-spacing-xs);
+  padding: 0 0 var(--ujn-spacing-l);
+}
+
+.materia-grande > * {
+  margin-inline: var(--ujn-spacing-l);
+}
+
+.materia-grande__foto {
+  margin: 0;
+}
+
+/* (b) COMPENSAÇÃO — a `Figure` é 3:2 na largura da coluna (≈ 400px de altura);
+   a matéria do telão precisa caber com o botão em 768px. Só a altura. */
+.materia-grande__foto .ujn-figure__frame {
+  aspect-ratio: auto;
+  height: 300px;
+}
+
+.materia-grande__kicker {
+  margin-top: var(--ujn-spacing-s);
+  margin-bottom: 0;
+  color: var(--ujn-color-text-secondary);
+  font-size: var(--ujn-font-kicker-size);
+  font-weight: var(--ujn-font-kicker-weight);
+  letter-spacing: var(--ujn-font-kicker-tracking);
+  text-transform: uppercase;
+}
+
+.materia-grande__titulo {
+  margin-top: 0;
+  margin-bottom: var(--ujn-spacing-xs);
+  font-size: var(--ujn-font-title-md-size);
+}
+
+/* As ferramentas do caso novo (E6-01). */
+.ferramentas {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ujn-spacing-l);
+}
+
+.ferramentas__tema {
+  margin: 0;
+  font-size: var(--ujn-font-title-md-size);
+}
+
+.ferramentas__retorno {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  margin: 0;
+  color: var(--ujn-color-text-secondary);
+  font-size: var(--ujn-font-body-sm-size);
+  text-align: right;
+}
+
+.ferramentas__botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ujn-spacing-s);
+}
+
+/* O Painel da Investigação (E6-03). */
+.fim__cabeca {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fim__colunas {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  min-height: 460px;
+}
+
+.painel-coluna {
+  padding: var(--ujn-spacing-l);
+  border: var(--ujn-rule-thin) solid var(--ujn-color-border-default);
+  border-radius: var(--ujn-radius-m);
+  background: var(--ujn-color-background-card);
+}
+
+.painel-coluna__titulo {
+  margin: 0 0 var(--ujn-spacing-xs);
+  color: var(--ujn-color-text-secondary);
+  font-size: var(--ujn-font-kicker-size);
+  font-weight: var(--ujn-font-kicker-weight);
+  letter-spacing: var(--ujn-font-kicker-tracking);
+  text-transform: uppercase;
+}
+
+.painel-coluna__texto {
+  font-size: var(--ujn-font-body-sm-size);
+  line-height: var(--ujn-font-body-sm-line);
+}
+
+.painel-rodape {
+  margin: 0;
+  padding: var(--ujn-spacing-l);
+  border: var(--ujn-rule-thin) solid var(--ujn-color-border-default);
+  border-radius: var(--ujn-radius-m);
+  background: var(--ujn-color-background-card);
+  font-weight: var(--ujn-font-weight-semibold);
+  text-align: center;
+}
+
+.janela-do-jornal {
+  width: min(820px, calc(100vw - 48px));
+  max-width: none;
+}
+
+.desafio-extra {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ujn-spacing-l);
+}
+
+.desafio-extra__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ujn-spacing-s);
+}
+
+/* ═══════════════════════════════════════ MECÂNICA (`--unooria-*`) */
+
+/* (b) COMPENSAÇÃO — o `Card` da seção nasce com `max-width: 398px` (o cartão de
+   catálogo); aqui ele é PAINEL de tela e ocupa a coluna da grade. Só medida. */
+.casca .unooria-card.unooria-card,
+.espera .unooria-card.unooria-card {
+  width: 100%;
+  max-width: none;
+}
+
+.rotulo-de-secao {
+  margin: 0;
+  color: var(--unooria-color-neutral-600);
+  font-family: var(--unooria-font-sans);
+  font-size: var(--unooria-size-body-xs);
+  font-weight: var(--unooria-weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fala-da-nina {
+  font-family: var(--unooria-font-sans);
+}
+
+.fala-da-nina__fala {
+  display: block;
+  font-size: var(--unooria-size-body-m);
+  font-weight: var(--unooria-weight-semibold);
+}
+
+.fala-da-nina__apoio {
+  display: block;
+  margin-top: 6px;
+  color: var(--unooria-color-neutral-700);
+  font-size: var(--unooria-size-body-s);
+}
+
+/* A escolha (E2): bandeja à esquerda, caixa à direita. */
+.escolha {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.bandeja,
+.etiquetas,
+.blocos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.bandeja--apagada {
+  opacity: 0.45;
+}
+
+.bandeja__lista,
+.etiquetas__lista,
+.blocos__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.etiquetas__lista {
+  flex-flow: row wrap;
+}
+
+.bandeja__vazia {
+  margin: auto 0;
+  color: var(--unooria-color-neutral-600);
+  font-size: var(--unooria-size-body-s);
+  text-align: center;
+}
+
+.bandeja__rodape,
+.etiquetas__acoes {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.escolha__caixa {
+  position: relative;
+  display: flex;
+}
+
+.caixa {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.caixa .caixa__trilho {
+  flex: 1 1 auto;
+  border: 2px solid var(--unooria-color-neutral-900);
+}
+
+/* (b) COMPENSAÇÃO — sem par no DS: a calha empilha as vagas abaixo de
+   14rem por vaga; a caixa da escolha quer os três NICHOS lado a lado e altos
+   (o protótipo). Só o limiar e a altura. */
+.caixa__trilho .unooria-puzzle-track__slots {
+  --unooria-puzzle-track-threshold: 0px;
+  flex: 1 1 auto;
+}
+
+.caixa__trilho .unooria-puzzle-track__slot,
+.caixa__trilho .unooria-puzzle-track__socket {
+  min-height: 300px;
+}
+
+.caixa__rotulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.caixa__busca,
+.caixa__lugar,
+.rotulo-com-icone,
+.campo__rotulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.caixa__busca {
+  font-weight: var(--unooria-weight-regular);
+}
+
+.caixa__nicho-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.caixa__acao {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* O vidro sobre a caixa travada. */
+.vidro {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--unooria-color-neutral-50) 94%, transparent);
+  backdrop-filter: blur(2px);
+  text-align: center;
+}
+
+.vidro__titulo {
+  font-size: var(--unooria-size-title-xl);
+}
+
+.vidro__apoio {
+  color: var(--unooria-color-neutral-700);
+  font-size: var(--unooria-size-body-s);
+}
+
+/* A omissão (E3-02). */
+.omissao {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 20px;
+}
+
+.omissao__encontradas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.omissao__cabeca {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sua-escolha {
+  padding: 16px;
+  border: 2px solid var(--unooria-color-neutral-900);
+}
+
+.sua-escolha__contagem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 6px;
+  font-weight: var(--unooria-weight-bold);
+}
+
+.sua-escolha__bolinhas {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.sua-escolha__bolinha {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--unooria-color-neutral-900);
+}
+
+.sua-escolha__nomes {
+  margin: 0;
+  color: var(--unooria-color-neutral-700);
+  font-size: var(--unooria-size-body-s);
+}
+
+.meta {
+  padding: 14px 16px;
+}
+
+.meta__molduras {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.moldura {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 88px;
+  border: 1px solid var(--unooria-color-neutral-300);
+  border-radius: 8px;
+  font-size: var(--unooria-size-body-s);
+}
+
+.moldura--ausente {
+  border: 2px dashed var(--unooria-color-neutral-900);
+  background: var(--unooria-color-neutral-150);
+}
+
+/* A ficha do telão (E4-01): a matéria à esquerda, a gaveta à direita. */
+.ficha-tela {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+}
+
+.ficha-tela__materia {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 20px;
+}
+
+.gaveta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-left: 2px solid var(--unooria-color-neutral-900);
+  background: var(--unooria-color-neutral-100);
+}
+
+.gaveta__apoio {
+  margin: auto 0 0;
+  color: var(--unooria-color-neutral-700);
+  font-size: var(--unooria-size-body-xs);
+}
+
+.ficha {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.ficha__cabeca {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ficha__titulo {
+  margin: 0;
+  font-size: var(--unooria-size-body-m);
+}
+
+.ficha__campos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.campo .unooria-puzzle-track__label {
+  margin-bottom: 8px;
+  color: var(--unooria-color-neutral-700);
+  font-size: var(--unooria-size-body-xs);
+  font-weight: var(--unooria-weight-bold);
+  text-transform: uppercase;
+}
+
+.ficha .campo--vazio.campo--vazio {
+  border: 2px solid var(--unooria-color-neutral-900);
+}
+
+/* O reparo (E4-03). */
+.reparo {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+}
+
+.reparo > .ficha {
+  border: 2px solid var(--unooria-color-neutral-900);
+}
+
+.etiquetas__item--posicionada {
+  opacity: 0.55;
+}
+
+/* Os carimbos (E4-02, E6-01). */
+.cartao-carimbo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+
+.cartao-carimbo--destaque {
+  border: 2px solid var(--unooria-color-neutral-900);
+}
+
+.cartao-carimbo__titulo {
+  margin: 0;
+  color: var(--unooria-color-neutral-600);
+  font-size: var(--unooria-size-body-xs);
+  font-weight: var(--unooria-weight-bold);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.cartao-carimbo__pergunta {
+  margin: 0;
+  font-size: var(--unooria-size-body-m);
+  font-weight: var(--unooria-weight-bold);
+  text-align: center;
+}
+
+.cartao-carimbo__opcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.cartao-carimbo__opcao {
+  justify-content: flex-start;
+}
+
+/* (b) COMPENSAÇÃO — sem par no DS: a figura do cartão (pictogramas e
+   miniaturas numa área neutra). */
+.figura {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 80px;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--unooria-color-neutral-150);
+  font-weight: var(--unooria-weight-bold);
+}
+
+.figura__foto {
+  width: 96px;
+  height: 64px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.figura__foto--par {
+  width: 45%;
+}
+
+.figura__mais {
+  color: var(--unooria-color-neutral-600);
+}
+
+.figura__campo,
+.figura__valor {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.figura__selo-nao {
+  position: absolute;
+  top: -10px;
+  right: -6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 6px;
+  border: 2px solid var(--unooria-color-neutral-900);
+  border-radius: 12px;
+  background: var(--unooria-color-neutral-50);
+  font-size: var(--unooria-size-caption-xxxs);
+}
+
+/* A rotina (E5-01). */
+.rotina {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 20px;
+}
+
+.esteira {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.esteira .esteira__trilho {
+  flex: 1 1 auto;
+  border: 2px dashed var(--unooria-color-neutral-400);
+}
+
+/* (b) COMPENSAÇÃO — sem par no DS: o recuo de cada vaga da esteira (ENQUANTO >
+   Pegar, SE > ok, SENÃO > revisar, FIM — `regras.ts#RECUO_DA_VAGA`), só
+   margem. As vagas encostam mais que na calha padrão. */
+.esteira__trilho .unooria-puzzle-track__slots {
+  gap: 8px;
+}
+
+.esteira__trilho .unooria-puzzle-track__slot:nth-child(2),
+.esteira__trilho .unooria-puzzle-track__slot:nth-child(3),
+.esteira__trilho .unooria-puzzle-track__slot:nth-child(5) {
+  margin-left: 24px;
+}
+
+.esteira__trilho .unooria-puzzle-track__slot:nth-child(4),
+.esteira__trilho .unooria-puzzle-track__slot:nth-child(6) {
+  margin-left: 48px;
+}
+
+.esteira__trilho .unooria-puzzle-track__socket {
+  min-height: 52px;
+}
+
+.esteira__acoes {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ficha-em-teste {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+}
+
+.ficha-em-teste__papel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 160px;
+  padding: 20px 12px;
+  border: 2px dashed var(--unooria-color-neutral-900);
+  border-radius: 8px;
+  background: var(--unooria-color-neutral-150);
+  text-align: center;
+}
+
+.ficha-em-teste__marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--unooria-color-neutral-900);
+  color: var(--unooria-color-neutral-50);
+  font-size: var(--unooria-size-body-xs);
+  font-weight: var(--unooria-weight-bold);
+  text-transform: uppercase;
+}
+
+/* O quadro central (ponte, sucesso e erro da rotina). */
+.painel-central {
+  width: min(580px, 100%);
+}
+
+.painel-central__cartao {
+  border: 2px solid var(--unooria-color-neutral-900);
+}
+
+.painel-central__miolo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 32px;
+  text-align: center;
+}
+
+.painel-central__titulo {
+  margin: 0;
+  font-size: var(--unooria-size-title-xl);
+  line-height: var(--unooria-line-height-title-xl);
+}
+
+.painel-central__texto {
+  margin: 0;
+  color: var(--unooria-color-neutral-700);
+  font-size: var(--unooria-size-body-s);
+}
+
+.painel-central__simbolo {
+  color: var(--unooria-color-brandpurple-600);
+}
+
+.painel-de-aviso {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+}
+
+.painel-de-aviso__texto {
+  color: var(--unooria-color-neutral-700);
+  font-size: var(--unooria-size-body-s);
+}
+
+/* (b) COMPENSAÇÃO — sem par no DS: a espera e a pausa. Véu sobre a tela e a
+   faixa fixa no rodapé com o balão da Nina. Só posição e token. */
+.espera {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.espera__veu {
+  flex: 1 1 auto;
+  background: color-mix(in srgb, var(--unooria-color-neutral-50) 70%, transparent);
+}
+
+.espera__faixa {
+  padding: 16px 22px;
+  border-top: 2px solid var(--unooria-color-neutral-900);
+  background: var(--unooria-color-neutral-100);
+}
+
+.espera__titulo {
+  display: block;
+  font-size: var(--unooria-size-body-m);
+}
+
+.espera__apoio {
+  display: block;
+  color: var(--unooria-color-neutral-700);
+  font-size: var(--unooria-size-body-s);
+}
+
+/* ══════════════════════════════════════════ comuns às duas seções */
+
+/* (b) COMPENSAÇÃO — sem par no DS: o pictograma por máscara (`comum/icone.tsx`).
+   A cor é `currentColor`: a de quem o envolve. */
+.icone {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: var(--icone-tamanho, 20px);
+  height: var(--icone-tamanho, 20px);
+  background-color: currentColor;
+  -webkit-mask: var(--icone) center / contain no-repeat;
+  mask: var(--icone) center / contain no-repeat;
+}
+
+/* (b) COMPENSAÇÃO — alvo de 64px na tela da criança. O `ButtonUjn` e o
+   `Button` param em `lg` = 52px, o `FilterPill` em 36px; a copy e o RNF
+   pedem ≥ 64px (o `PuzzleBlock` já dá). Só altura e recuo. Pedido ao
+   `storybook-unooria`: um tamanho de toque infantil. */
+.alvo-64 {
+  min-height: 64px;
+  padding-inline: 24px;
+}
+
+/* O pulso (E1: o cartaz depois de 20 s; E3: a pastilha Onde depois do zero;
+   E4-01: "Inspecionar Ficha" depois de 15 s). Com `prefers-reduced-motion`,
+   vira um contorno fixo — o aviso continua, o movimento sai. */
+.pulsa {
+  animation: pulsa 1.2s ease-in-out infinite;
+  outline: 3px solid var(--ujn-color-focus-ring);
+  outline-offset: 3px;
+}
+
+@keyframes pulsa {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+.gira {
+  animation: gira 2s linear infinite;
+}
+
+@keyframes gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulsa,
+  .gira {
+    animation: none;
+  }
+
+  .vidro {
+    backdrop-filter: none;
+  }
+}

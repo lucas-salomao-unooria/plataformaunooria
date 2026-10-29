@@ -1,6 +1,7 @@
 import { GUIA_EXP08EF1B } from "./exp08ef1b";
 import { GUIA_EXP02EM1B } from "./exp02em1b";
 import { GUIA_EXP02EF1B } from "./exp02ef1b";
+import { GUIA_EXP03EF1B } from "./exp03ef1b";
 import { GUIA_EXP01EM1B } from "./exp01em1b";
 import { GUIA_EXP03EM1B } from "./exp03em1b";
 import { GUIA_EXP01EF1B } from "./exp01ef1b";
@@ -30,6 +31,7 @@ const GUIAS: ReadonlyMap<string, GuiaDaAula> = new Map(
     GUIA_EXP08EF1B,
     GUIA_EXP02EM1B,
     GUIA_EXP02EF1B,
+    GUIA_EXP03EF1B,
     GUIA_EXP01EM1B,
     GUIA_EXP03EM1B,
     GUIA_EXP01EF1B,

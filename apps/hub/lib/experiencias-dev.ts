@@ -92,6 +92,14 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
    */
   "exp01em1b": "http://localhost:5188",
   /**
+   * Nina e a Notícia que Desapareceu — 3º ano EF, unidade 1 (ADR-197).
+   *
+   * 5189, a próxima livre depois da 5188 (a exp01em1b). A porta entra também
+   * no CORS_ORIGINS da api — sem ela o boot da missão morre com "Failed to
+   * fetch" e o erro não diz por quê.
+   */
+  "exp03ef1b": "http://localhost:5189",
+  /**
    * O Porta-Voz dos Dados — 3ª série EM, unidade 1 (ADR-198).
    *
    * 5190, e não 5189: a 5189 está reservada para a exp03ef1b, que corre em

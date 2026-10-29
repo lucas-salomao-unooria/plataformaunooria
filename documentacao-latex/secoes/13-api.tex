@@ -1424,6 +1424,116 @@ nas transações dos gestos: a EF02CO01 no quarto achado e a EF02CO05 no
 \enquote{Pronto} do que ficou fora.
 \end{regra}
 
+\subsection{Nina e a Notícia que Desapareceu (exp03ef1b)}
+\label{sec:api-nina-noticia}
+
+% Esta tabela e ESCRITA A MAO; a verdade e o Apendice C (`apendices/c-endpoints.tex`),
+% gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer.
+
+Desde 2026-10-28 (\adrr{ADR-197}), no módulo \arq{nina-noticia}, no molde do
+Júri Estadual. Vinte e oito rotas em três \emph{controllers}: onze do
+estudante (\cd{@Roles("estudante")} na classe; toda jogada passa pelo funil
+\cd{jogar} --- \cd{garantirSessao} com \cd{exigirMissaoLiberada}, a
+disponibilidade junto, o \emph{lock} da turma com o gate relido e o
+\cd{podeAgir} do passo), quinze por turma (\cd{@Roles("professor",
+...GESTORES)} na classe; turma que a professora não leciona é 404
+\cd{turma-nao-encontrada}) e duas do \cd{admin} (as imagens do banco padrão).
+O contrato HTTP é \arq{contrato-\B{}de-\B{}rotas.ts}, em Zod, com o índice
+\cd{ROTAS}; a experiência e o hub (\arq{lib/nina-noticia-tipos.ts}) espelham os
+tipos dele. Sem atividade em andamento, 403 \cd{atividade-nao-preparada}. A
+turma pausada responde 409 \cd{turma-pausada} a qualquer jogada; a jogada além
+do teto da etapa, 403 \cd{etapa-nao-liberada}; outra fora de ordem, 409
+\cd{passo-fora-de-ordem}; a rodada trocada no meio, 409 \cd{rodada-mudou}.
+Nenhuma rota recebe texto da criança, e a ficha não tem pergunta.
+
+\begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Papel} & \thd{O que faz}\\
+\midrule
+\rota{GET /nina-noticia/sessao} & estudante & O estado: o passo EFETIVO (o
+  mínimo do gravado e do teto da etapa), \cd{aguardandoOProfessor}, o jornal
+  e os blocos de cada etapa já alcançada, com ids opacos e SEM gabarito.\\
+\zebra \rota{GET /nina-noticia/gate} & estudante & O \emph{polling} de 3\,s:
+  a etapa, a pausa, a rodada, a atividade e o passo efetivo.\\
+\rota{POST /nina-noticia/selos} & estudante & E1: os selos \enquote{Mesma
+  feira}; com os três, o passo vai à escolha.\\
+\zebra \rota{POST /nina-noticia/previsao} & estudante & E2,
+  \textbf{o LATCH}: \enquote{Travar Escolha}, ao menos uma notícia. Outra
+  depois: 409 \cd{previsao-ja-travada}.\\
+\rota{POST /nina-noticia/filtro} & estudante & E3: um campo e um valor.
+  Só Onde = Pátio encontra (duas) e leva à omissão; o resto devolve zero e
+  conta em \cd{filtro\_tentativas}.\\
+\zebra \rota{POST /nina-noticia/ficha} & estudante & E4: a ficha do telão
+  aberta, com \cd{dica} (o pulso de 15\,s disparou); devolve a ficha (Onde
+  vazio) e marca a EF15CO08.\\
+\rota{POST /nina-noticia/carimbos} & estudante & E4 (K1--K3) e E6
+  (K4--K6), uma vez por etapa, sem retorno de acerto; o da E6 marca a
+  EF03CO01.\\
+\zebra \rota{POST /nina-noticia/reparo} & estudante & E4: a ficha montada,
+  uma etiqueta por campo; o servidor decide \cd{sucesso} (Pátio em Onde) ou
+  \cd{erro} e marca a EF03CO03 e a EF15CO01.\\
+\rota{POST /nina-noticia/passo} & estudante & Os avanços sem dado
+  (confrontar, os \enquote{Continuar}); idempotente.\\
+\zebra \rota{POST /nina-noticia/rotina} & estudante & E5: os sete blocos na
+  ordem da esteira; cada teste conta; a válida marca a EF03CO02.\\
+\rota{POST /nina-noticia/concluir} & estudante & E6: o Painel da
+  Investigação; exige os carimbos do caso. Idempotente em \cd{fim}.\\
+\zebra \rota{GET /nina-noticia/turmas} & prof., gestor & As turmas para o
+  seletor.\\
+\rota{GET .../turmas/:turmaId/painel} & prof., gestor & O \enquote{Painel da
+  Sala em Tempo Real}: por computador, o progresso e os alertas, nunca
+  acerto; as escolhas da E2 só no agregado.\\
+\zebra \rota{POST .../turmas/:turmaId/gate} & prof., gestor &
+  \enquote{Liberar Filtro}, \enquote{Liberar Inspeção}, \enquote{Pausar
+  Turma}, \enquote{Retomar Turma}; só para a frente (409
+  \cd{transicao-de-etapa-invalida}), com histórico.\\
+\rota{POST .../turmas/:turmaId/zerar} & prof., gestor & Rodada $+1$: apaga
+  a evidência da atividade (\adrr{ADR-155}) e volta a etapa a \cd{aposta}.\\
+\zebra \rota{GET .../turmas/:turmaId/material} & prof., gestor & O guia da
+  aula: o esqueleto COM gabarito (os carimbos, a rotina), o roteiro de
+  mediação e os gatilhos.\\
+\rota{POST .../turmas/:turmaId/\B{}banco-padrao} & prof., gestor &
+  \enquote{Usar Banco Padrão}: a Feira de Troca de Livros, pronta (e no ar,
+  com \cd{porNoAr}).\\
+\zebra \rota{POST .../turmas/:turmaId/\B{}gerar-conteudo} & prof., gestor &
+  O RASCUNHO das três reportagens pela IA, na quota do perfil
+  \cd{professor}; sem saldo ou sem provedor, o banco padrão com
+  \cd{usouIa: false}. Não persiste nada.\\
+\rota{POST .../turmas/:turmaId/\B{}regenerar-reportagem} & prof., gestor &
+  \enquote{Regenerar Notícia}: uma reportagem, no mesmo suporte e com a
+  mesma ficha.\\
+\zebra \rota{POST .../turmas/:turmaId/\B{}homologar} & prof., gestor & A
+  primeira fase da aprovação (os textos), com a estrutura do servidor
+  aplicada de novo.\\
+\rota{GET .../turmas/:turmaId/pacotes} & prof., gestor & As atividades da
+  turma: a em andamento e a lista.\\
+\zebra \rota{GET .../pacotes/:pacoteId} & prof., gestor & Uma atividade
+  inteira, com as imagens já geradas.\\
+\rota{POST .../pacotes/:pacoteId/\B{}gerar-midia} & prof., gestor & As
+  imagens que faltam no pacote (as três cenas e o cartaz), na quota.\\
+\zebra \rota{POST .../imagens/:chave/refazer} & prof., gestor &
+  \enquote{Refazer imagem}: uma imagem do pacote, antes da aprovação.\\
+\rota{POST .../pacotes/:pacoteId/\B{}aprovar-imagens} & prof., gestor & A
+  segunda fase da aprovação (\adrr{ADR-146}).\\
+\zebra \rota{POST .../pacotes/:pacoteId/\B{}em-andamento} & prof., gestor &
+  \enquote{Liberar Atividade para a Turma}: um em andamento por turma; só
+  com as imagens aprovadas (409 \cd{imagens-nao-aprovadas}).\\
+\rota{GET /nina-noticia/\B{}banco-padrao/\B{}imagens} & \textbf{só admin} & As
+  oito imagens do banco padrão: as que existem e as que faltam.\\
+\zebra \rota{POST /nina-noticia/\B{}banco-padrao/\B{}imagens} & \textbf{só admin} &
+  Gera as que faltam, sem quota, com a atribuição
+  \cd{nina-noticia-banco-padrao} no painel de custos.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{O gabarito sai só em respostas de PROFESSOR} --- o material do guia e
+o detalhe do pacote. Ao estudante descem ids OPACOS por sessão (\cd{rp-},
+\cd{et-}, \cd{bl-}), a bandeja da rotina embaralhada e nenhum certo/errado
+antes do desfecho. A linha do painel nunca diz acerto, escolha nem nível
+(\cd{PROIBIDO\_NA\_LINHA\_DO\_PAINEL}, com teste).
+\end{regra}
+
 \subsection{O Assistente Invisível (exp01em1b)}
 \label{sec:api-assistente-invisivel}
 
@@ -2034,7 +2144,11 @@ hub divergiria na primeira revisão de \emph{copy}.
 \rota{GET /assistente-\B{}invisivel/\B{}professor/\B{}material} & prof., gestor & As
   quatro perguntas do roteiro de debate de O Assistente Invisível e os
   critérios das quatro habilidades.\\
-\zebra \rota{GET /porta-voz-\B{}dos-\B{}dados/\B{}professor/\B{}material} & prof.,
+\zebra \rota{GET /nina-noticia/\B{}turmas/\B{}:turmaId/\B{}material} & prof., gestor & O
+  esqueleto de Nina e a Notícia que Desapareceu com o gabarito (os seis
+  carimbos, a sequência da rotina, o reparo), o roteiro de mediação com as
+  três perguntas do debate e os gatilhos de condução.\\
+\rota{GET /porta-voz-\B{}dos-\B{}dados/\B{}professor/\B{}material} & prof.,
   gestor & O banco padrão de O Porta-Voz dos Dados (a tabela e a nota
   técnica), as três perguntas do debate, a série, o laudo, os dois cartões da
   perícia com o gabarito e os critérios das seis habilidades.\\
@@ -2055,6 +2169,9 @@ hub divergiria na primeira revisão de \emph{copy}.
 guarda protege é o PAPEL. Por isso vivem em \emph{controller} separado do de
 turmas. \rota{/vila/professor/cartoes} é a exceção: ela recebe \cd{?turmaId=}
 porque a bolha servida depende da série da turma.
+\rota{/nina-noticia/turmas/:turmaId/material} também foge do catálogo: vive
+no \emph{controller} de turmas e passa pela turma visível da professora,
+como as outras rotas da missão (\adrr{ADR-197}).
 
 Oito delas (a do Assistente Invisível é a exceção: leva só o roteiro e as
 réguas, porque o gabarito da bancada é fixo e o painel já o aplica)

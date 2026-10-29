@@ -1295,6 +1295,95 @@ export const MISSAO_ASSISTENTE_INVISIVEL: Missao = {
 };
 
 /**
+ * 3º ano · Unidade 1 — Nina e a Notícia que Desapareceu (`exp03ef1b`, ADR-197).
+ *
+ * Do one-pager pedagógico aprovado e da spec da frente, com os ajustes do PO de
+ * 27 e 28/10 ("escolha" no lugar de "aposta" em toda tela; o reparo monta a
+ * ficha inteira). A dupla olha três reportagens da mesma feira no Unoojornal,
+ * trava a escolha das que a busca pelo pátio vai achar, vê a do telão sumir e
+ * descobre, na ficha, o campo Onde vazio. Dois portões da professora (Liberar
+ * Filtro, Liberar Inspeção), Pausar/Retomar e Zerar; sem Canal B e sem podcast.
+ */
+export const MISSAO_NINA_NOTICIA: Missao = {
+  anoSlug: "3-ano",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp03ef1b",
+  titulo: "Nina e a Notícia que Desapareceu",
+  resumo:
+    "A feira de livros da escola saiu em três suportes do Unoojornal — o mural impresso, o portal e o telão do " +
+    "corredor —, e as três fotos mostram o pátio. A dupla trava a escolha das notícias que a busca pelo pátio vai " +
+    "encontrar, aplica o filtro e vê a do telão sumir. Na ficha da reportagem, o campo Onde está vazio: a busca " +
+    "consulta a ficha, não a foto. A dupla carimba afirmações (é verdade, não é verdade, não dá para saber), monta " +
+    "a ficha do telão, organiza a rotina que confere uma pilha de fichas e investiga um caso novo.",
+  status: "disponivel",
+  // Sem spoiler: a criança não pode saber antes que uma notícia vai sumir da busca.
+  estudante: {
+    titulo: "Nina e a Notícia que Desapareceu",
+    chamada: "A Nina precisa de ajuda no jornal da escola: encontre todas as reportagens da feira de livros!",
+  },
+  ficha: {
+    competencia:
+      "EF15CO08 — Reconhecer e utilizar tecnologias computacionais para pesquisar e acessar informações (o foco: a " +
+      "busca consulta os campos da ficha, não a foto). Com EF03CO01 (verdadeiro, falso e a negação nos carimbos), " +
+      "EF03CO02 (a rotina com repetição e condição de parada), EF03CO03 (decompor a ficha campo a campo) e EF15CO01 " +
+      "(a informação livre da foto e a estruturada da ficha).",
+    duracao: "1 aula de 50 min (22 min em tela) — ou 2 aulas, com a pausa depois do filtro",
+    formato:
+      "Em duplas, um computador para cada duas crianças (de 1 a 4), no Unoojornal, o jornal escolar digital da " +
+      "Unooria. Sem texto para escrever: tudo é toque nas fotos, nas pastilhas do filtro, nos carimbos e nas " +
+      "etiquetas.",
+    atos: [
+      {
+        rotulo: "1 — Desafiar: as três fotos da feira",
+        texto:
+          "A Nina pede ajuda para encontrar as notícias da feira. A dupla abre as três fotos — mural, portal e telão — " +
+          "e toca no cartaz da feira, que se repete em todas: cada cartão ganha o selo Mesma feira.",
+      },
+      {
+        rotulo: "2 — Navegar: a escolha travada",
+        texto:
+          "A dupla põe na Caixa de resultados esperados as notícias que acha que a busca pelo pátio vai encontrar e " +
+          "toca em Travar Escolha. A escolha não volta, e a tela espera o seu Liberar Filtro.",
+      },
+      {
+        rotulo: "3 — Decidir: o filtro e a notícia que some (o seu primeiro portão)",
+        texto:
+          "Com o filtro liberado, a dupla escolhe Onde: Pátio e busca. Aparecem só 2 notícias; a do telão deixa a " +
+          "moldura vazia. Quem confrontou espera com a tela Momento de conversar com a turma! — a hora de Pausar " +
+          "Turma e perguntar por que a foto não apareceu, se todo mundo viu o pátio nela.",
+      },
+      {
+        rotulo: "4 — Resultado: a ficha (o seu segundo portão)",
+        texto:
+          "Depois de Liberar Inspeção, a dupla abre a ficha do telão e vê o campo Onde vazio. Carimba três cartões, " +
+          "monta a ficha com as três etiquetas e toca em Concluir: com o Pátio no Onde, a busca refeita traz as 3 " +
+          "notícias; em outro campo, a tela explica como ficariam as 3. Nunca há tentar de novo.",
+      },
+      {
+        rotulo: "5 — Explicar: a rotina da pilha de fichas",
+        texto:
+          "Chega uma pilha de fichas novas. A dupla organiza os blocos embaralhados — ENQUANTO houver ficha, pegar, " +
+          "SE o Onde tem ícone marcar ok, SENÃO marcar revisar — e testa: a pilha vai de 3 a 0 e a máquina para.",
+      },
+      {
+        rotulo: "6 — Refletir: o caso do Festival de Ciências",
+        texto:
+          "Duas fotos do Festival com uma ficha sem o dia: a dupla investiga com três ferramentas, carimba três " +
+          "afirmações e chega ao Painel da Investigação, que fica congelado para você.",
+      },
+    ],
+    preparo: [
+      "Crie a atividade: Usar Banco Padrão (a Feira de Troca de Livros) é um clique; ou gere as notícias do seu evento com IA e confira o pacote — inclusive se o pátio aparece na foto do telão — antes de homologar e aprovar as imagens.",
+      "Libere a atividade para a turma: ela entra em andamento e a missão fica liberada na sala de aula.",
+      "Deixe a página da atividade aberta na aba Aula ao vivo: Liberar Filtro, Liberar Inspeção, Pausar Turma e Retomar Turma são seus.",
+      "Não conte que uma notícia vai sumir da busca: a força da descoberta vem da escolha travada antes do filtro.",
+      "Combine as duplas: uma criança toca na tela e a outra aponta as pistas nas fotos.",
+    ],
+  },
+};
+
+/**
  * 3ª série · Unidade 1 — O Porta-Voz dos Dados (`exp03em1b`, ADR-198).
  *
  * Do one-pager do PO v2.0 e do one-pager pedagógico, com as decisões do Lucas
@@ -1389,6 +1478,7 @@ export const MISSAO_PORTA_VOZ: Missao = {
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "1-ano": [MISSAO_FOTO_CONTA],
   "2-ano": [MISSAO_ENIGMA_CAPA],
+  "3-ano": [MISSAO_NINA_NOTICIA],
   "4-ano": [MISSAO_JORNAL_DA_ESCOLA],
   "5-ano": [MISSAO_QUEM_MANDOU_ISSO],
   "6-ano": [MISSAO_JURI_ESTADUAL, MISSAO_RASTRO_BOATO],

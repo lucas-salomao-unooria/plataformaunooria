@@ -105,6 +105,10 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp01em1b\_\B{}gates\_\B{}turma} & Tenant & A fase da turma (as cinco liberações e as duas pausas do professor)\\
 \cd{exp01em1b\_\B{}gates\_\B{}historico} & Tenant & Cada botão do professor, com o pacote, a rodada, a fase de destino e o professor\\
 \zebra \cd{exp01em1b\_\B{}sessoes} & Tenant & Uma sessão por estudante (ou computador), pacote e rodada: as funções, a aposta (latch 1), a auditoria, os cartões, o painel opcional, os retestes e o Publicar (latch 2) --- sem texto livre\\
+\cd{exp03ef1b\_pacotes} & Tenant & Nina e a Notícia que Desapareceu: as três reportagens da feira e as imagens do pacote, com as duas fases da aprovação; é a atividade (um em andamento por turma)\\
+\zebra \cd{exp03ef1b\_gates\_turma} & Tenant & A etapa da turma (\cd{aposta}, \cd{filtro}, \cd{inspecao}) e a pausa\\
+\cd{exp03ef1b\_gates\_historico} & Tenant & Cada clique da professora (liberar, pausar, retomar, zerar), com o pacote, a rodada e quem apertou\\
+\zebra \cd{exp03ef1b\_sessoes} & Tenant & Uma sessão por estudante (ou computador), pacote e rodada: os selos, a escolha (latch), o filtro, a ficha, os carimbos das duas etapas, o reparo, a rotina e a conclusão\\
 \cd{exp03em1b\_\B{}pacotes} & Tenant & O Porta-Voz dos Dados: a roupagem do tema (o grupo, o serviço, a nota técnica, as camadas, as reações dos dois ramos e o pós-Aha); é a atividade da evidência\\
 \zebra \cd{exp03em1b\_\B{}gates\_\B{}turma} & Tenant & O gate da turma (\cd{exploracao}, \cd{pausa}, \cd{liberada})\\
 \cd{exp03em1b\_\B{}gates\_\B{}historico} & Tenant & Cada botão do professor, com o pacote, a rodada, a etapa de destino e o professor\\
@@ -2009,6 +2013,92 @@ de cada bloco) não está em tabela nenhuma: é fixo, de \arq{conteudo.ts}.
   o alinhamento (\cd{pleno} $|$ \cd{incompleto} $|$ \cd{descaracterizado}) e o
   carimbo, no MESMO \cd{UPDATE}; só depois do avanço. O alinhamento e os
   acertos vêm do servidor, nunca do cliente.\\
+\zebra \cd{versao\_\B{}instrumento} & \cd{TEXT} & \cd{1.0.0} por padrão.\\
+\bottomrule
+\end{tabularx}
+
+\section{Tabelas de Nina e a Notícia que Desapareceu (exp03ef1b)}
+\label{sec:dicionario-exp03ef1b}
+
+Desde 2026-10-28 (\adrr{ADR-197}), migração
+\arq{20261028180000\_\B{}exp03ef1b\_\B{}nina\_\B{}noticia}. Quatro tabelas, todas com
+\cd{escola\_id} \cd{NOT NULL}, RLS forçada e política por escola; as regras
+estão no \arq{AGENTS.md} do módulo \arq{nina-noticia}. Nenhuma coluna guarda
+texto escrito pelo estudante, e o gabarito (os seis carimbos, a sequência da
+rotina, a regra do reparo) não está em tabela nenhuma: é fixo, de
+\arq{conteudo.ts}. Os carimbos gravam \cd{v} (É verdade), \cd{x} (Não é
+verdade) ou \cd{duvida} (Não dá para saber); suportes e etiquetas, os nomes
+do vocabulário (\cd{mural}, \cd{portal}, \cd{telao}; \cd{patio},
+\cd{estudantes}, \cd{sexta}), nunca o id opaco da tela.
+
+\begin{itemize}
+  \item \cd{exp03ef1b\_\B{}pacotes}: \cd{id}, \cd{turma\_id} (FK, cascata),
+    \cd{origem} (\cd{padrao} $|$ \cd{ia}), \cd{disciplina} (os componentes do
+    3º ano mais \cd{computacao} e \cd{projeto-\B{}interdisciplinar}), \cd{tema},
+    \cd{assuntos} (o \enquote{Assunto da matéria}), \cd{contexto} (opcional),
+    \cd{conteudo} (\cd{JSONB}, objeto com EXATAMENTE três reportagens),
+    \cd{midia} (\cd{JSONB}, objeto: a chave da imagem \seta{} o arquivo),
+    \cd{aprovado\_em} (a homologação dos textos), \cd{imagens\_\B{}aprovadas\_em}
+    (a segunda fase), \cd{ativo} (só com as imagens aprovadas), \cd{criado\_por},
+    \cd{ia\_geracoes}, \cd{ia\_tokens} ($\geq 0$). Um em andamento por turma
+    (índice único parcial \cd{exp03ef1b\_\B{}pacotes\_\B{}um\_\B{}ativo\_\B{}por\_\B{}turma}).
+    Único (\cd{escola\_id}, \cd{id}): é o alvo das FKs compostas do gate e
+    das sessões.
+  \item \cd{exp03ef1b\_\B{}gates\_\B{}turma}: PK (\cd{escola\_id}, \cd{turma\_id}),
+    \cd{pacote\_id} (FK composta), \cd{rodada} ($\geq 1$), \cd{etapa}
+    (\cd{aposta} $|$ \cd{filtro} $|$ \cd{inspecao}, padrão \cd{aposta}),
+    \cd{pausada} e \cd{pausada\_em} (juntos), \cd{filtro\_\B{}liberado\_em} (nulo
+    só em \cd{aposta}), \cd{inspecao\_\B{}liberada\_em} (preenchido só em
+    \cd{inspecao}), \cd{atualizado\_em}.
+  \item \cd{exp03ef1b\_\B{}gates\_\B{}historico}: \cd{turma\_id}, \cd{pacote\_id},
+    \cd{rodada} ($\geq 1$), \cd{acao} (\cd{liberar} $|$ \cd{pausar} $|$
+    \cd{retomar} $|$ \cd{zerar}), \cd{etapa} (a da turma no clique),
+    \cd{professor\_id} (FK para \cd{users}, \cd{SET NULL}) e \cd{em}.
+\end{itemize}
+
+\subsection{\cd{exp03ef1b\_sessoes}}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} & Uma sessão por (\cd{pacote\_id}, \cd{rodada},
+  \cd{estudante\_id}) --- o estudante, ou quem está logado no computador da
+  equipe --- (índice único \cd{exp03ef1b\_\B{}sessao\_\B{}unica\_\B{}por\_\B{}rodada}).
+  \cd{estudante\_id} com FK para \cd{users} (cascata); (\cd{escola\_id},
+  \cd{pacote\_id}) com FK composta para o pacote.\\
+\zebra \cd{turma\_id}, \cd{rodada} & \cd{UUID}, \cd{INT} & O painel lê por
+  turma, pacote e rodada (índice).\\
+\cd{passo} & \cd{TEXT} & \cd{galeria} $|$ \cd{aposta} $|$ \cd{filtro} $|$
+  \cd{omissao} $|$ \cd{ficha} $|$ \cd{carimbos} $|$ \cd{reparo} $|$
+  \cd{desfecho} $|$ \cd{ponte} $|$ \cd{rotina} $|$ \cd{caso} $|$ \cd{fim};
+  o GRAVADO (o efetivo é o mínimo com o teto da etapa).\\
+\zebra \cd{selos\_feira} & \cd{TEXT[]} & Os suportes com o selo \enquote{Mesma
+  feira}; sair da galeria exige os três.\\
+\cd{previsao\_itens}, \cd{previsao\_\B{}travada\_em} & \cd{TEXT[]},
+  \cd{TIMESTAMPTZ?} & O \textbf{LATCH} da escolha: os itens e o carimbo
+  juntos (vazio se, e só se, sem carimbo); do filtro em diante,
+  travada.\\
+\zebra \cd{filtro\_tentativas}, \cd{filtro\_\B{}acertou\_em} & \cd{INT},
+  \cd{TIMESTAMPTZ?} & As buscas erradas antes de Onde = Pátio, e o acerto
+  (só depois da escolha travada; da omissão em diante, obrigatório).\\
+\cd{ficha\_\B{}aberta\_em}, \cd{dica\_\B{}inspecao\_\B{}usada} & \cd{TIMESTAMPTZ?},
+  \cd{BOOLEAN} & A ficha do telão aberta (só depois do filtro) e se o pulso
+  de 15\,s disparou antes.\\
+\zebra \cd{carimbos\_e4}, \cd{carimbos\_e6} & \cd{JSONB?} & Os três
+  carimbos de cada etapa (\cd{k1}--\cd{k3}, \cd{k4}--\cd{k6}): os da E4 só
+  com a ficha aberta, os da E6 só com a rotina válida.\\
+\cd{reparo\_posicoes}, \cd{reparo\_valido}, \cd{reparo\_em} & \cd{JSONB?},
+  \cd{BOOLEAN?}, \cd{TIMESTAMPTZ?} & A ficha montada (\cd{quem},
+  \cd{onde}, \cd{quando} \seta{} etiqueta), a validade e o carimbo, no MESMO
+  \cd{UPDATE}; \cd{reparo\_valido} é exatamente \enquote{\cd{onde} =
+  \cd{patio}}; só depois dos carimbos da E4.\\
+\zebra \cd{rotina\_tentativas}, \cd{rotina\_valida}, \cd{rotina\_\B{}valida\_em},
+  \cd{rotina\_\B{}ordem\_\B{}bandeja} & vários & Os testes (a válida conta), a
+  válida com o carimbo juntos, e a ordem da bandeja (\cd{JSONB}, lista); só
+  depois do reparo; \cd{caso} e \cd{fim} exigem a válida.\\
+\cd{concluida\_em} & \cd{TIMESTAMPTZ?} & Junto com \cd{passo = fim}, e só
+  com os carimbos da E6.\\
 \zebra \cd{versao\_\B{}instrumento} & \cd{TEXT} & \cd{1.0.0} por padrão.\\
 \bottomrule
 \end{tabularx}

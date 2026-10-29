@@ -90,7 +90,15 @@ Preparo da cena & exp02ef1b, \arq{src/enigma-capa/} &
   cite horário ou conexão. Sem saldo ou sem provedor, o banco padrão de Língua
   Portuguesa; em sala, nada: o chat é roteirizado (\adrr{ADR-185},
   Seção~\ref{sec:ia-preparo-exp01em1b}).\\
-Preparo do pacote & exp03em1b, \arq{src/porta-voz-\B{}dos-\B{}dados/} &
+Preparo do jornal & exp03ef1b, \arq{src/nina-noticia/} &
+  O TEXTO das três reportagens da feira (evento, manchetes, legendas e o
+  cartaz) e os pedidos das quatro imagens do pacote, sobre o tema e o
+  assunto do professor, com a quota dele; e o \enquote{Regenerar Notícia},
+  uma por vez. A ESTRUTURA da ficha (o telão com Onde vazio) é do servidor,
+  nunca da IA. Sem saldo ou sem provedor, o banco padrão (\cd{usouIa:
+  false}); as cenas fixas são do \cd{admin}; em sala, nada (\adrr{ADR-197},
+  Seção~\ref{sec:ia-preparo-exp03ef1b}).\\
+\zebra Preparo do pacote & exp03em1b, \arq{src/porta-voz-\B{}dos-\B{}dados/} &
   A roupagem do tema sobre o recorte do professor (componente, tema, de 3 a 6
   assuntos, território): o recorte do grupo, o serviço, a nota técnica, os
   textos das três camadas, as reações dos dois ramos e o pós-Aha, com a quota
@@ -107,7 +115,7 @@ Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
   \cd{usouIa: false}, \adrr{ADR-157}), que o professor também escolhe direto. Nada chega à turma sem as DUAS fases da aprovação --- os textos
   na homologação, as imagens num OK próprio, depois do qual elas congelam ---,
   e em sala a IA não roda (\adrr{ADR-137}, \adrr{ADR-151}).\\
-\zebra Falas do podcast do Júri & exp06ef1b, \arq{src/juri-estadual/\B{}podcast-fonte.ts}
+Falas do podcast do Júri & exp06ef1b, \arq{src/juri-estadual/\B{}podcast-fonte.ts}
   + \arq{src/podcast/} &
   As três vagas do roteiro (os dois estandes de áreas diferentes, o feed do
   Rafa, o da mesa ao lado), escritas a partir dos quarenta estandes do
@@ -116,14 +124,14 @@ Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
   (\adrr{ADR-157}); na mostra da IA, sem ela, voltam as falas do sheet e a
   tela pede a reescrita. O professor as revisa antes de
   homologar (\adrr{ADR-151}).\\
-\zebra Agente de IA do professor & produto \cd{agente-professor}, \arq{apps/agente-professor}
+Agente de IA do professor & produto \cd{agente-professor}, \arq{apps/agente-professor}
   + \arq{src/agente-professor/} &
   Respostas sobre a BNCC e o acervo de livros da Unooria, com as fontes (título
   e página). \textbf{Fora} da api: o agente roda no Vertex AI Agent Engine
   (\adrr{ADR-126}). Recusa o que está fora do escopo; não planeja aula nem
   avalia estudante, e o código de habilidade que cita é conferido pela api
   (\adrr{ADR-127}).\\
-Ajuda (avatar ou mascote) & produto \cd{ajuda}, \arq{src/ajuda/} &
+\zebra Ajuda (avatar ou mascote) & produto \cd{ajuda}, \arq{src/ajuda/} &
   A resposta do atendente a quem tem dúvida sobre o uso da plataforma
   (todo papel menos o estudante), a partir de uma base \textbf{gerada} do mapa de
   produto e dos guias da aula. No avatar, o \emph{vendor} só escuta, fala e mostra
@@ -342,6 +350,38 @@ Biblioteca), com \cd{usouIa: false}: a aula acontece. O pacote conta
 \cd{ia\_geracoes} e \cd{ia\_tokens}. No painel de custos (\adrr{ADR-161}) a
 chamada aparece como \cd{enigma-capa} (\enquote{O Enigma da Capa da Rádio}, em
 \cd{RECURSOS\_\B{}DE\_\B{}IA}). Na aula não há chamada de IA nenhuma.
+
+\subsection{O preparo de Nina e a Notícia que Desapareceu: o texto é da IA, a ficha é do servidor}
+\label{sec:ia-preparo-exp03ef1b}
+
+A única superfície de IA da exp03ef1b é o preparo do professor, antes da aula
+(\arq{nina-noticia/\B{}preparo.\B{}service.ts} e \arq{midia.\B{}service.ts},
+\adrr{ADR-197}), no desenho do Júri Estadual. \rota{POST
+/nina-noticia/\B{}turmas/\B{}:turmaId/\B{}gerar-\B{}conteudo} faz UMA chamada de texto: a IA
+escreve só o texto das três reportagens e as descrições de cena
+(\cd{TextosGeradosSchema}), e \cd{aplicarEstrutura} põe a ficha por cima ---
+os três suportes, Quem e Quando iguais nas três, Onde = pátio no mural e no
+portal e VAZIO no telão. \cd{problemasDoPacote} confere o resultado, inclusive
+que a cena do telão FALA do pátio (o prompt da imagem exige o pátio
+inequívoco, porque o carimbo K1 é verdadeiro); reprovado, a tentativa lança e
+o \emph{provider} regera. A homologação e a leitura aplicam a estrutura de
+novo: um pacote torto sai com as fichas do servidor.
+
+\textbf{As oito imagens têm dois donos} (\arq{regras/\B{}imagens.ts}): as quatro
+do PACOTE (\cd{mural}, \cd{portal}, \cd{telao}, \cd{cartaz}) são da
+professora, na quota do perfil \cd{professor}, a
+\cd{CUSTO\_\B{}ESTIMADO\_\B{}POR\_\B{}IMAGEM} (2.000 \emph{tokens}) cada, e passam
+pela segunda fase da aprovação (\adrr{ADR-146}); as quatro CENAS FIXAS (o
+caso do Festival e o Desafio Extra) são do \cd{admin}
+(\rota{POST /nina-noticia/\B{}banco-padrao/\B{}imagens}), sem quota, com a
+atribuição \cd{nina-noticia-banco-padrao} no painel de custos. O arquivo é o
+hash do pedido: o que já existe no \emph{bucket} entra de graça.
+
+Sem saldo (\cd{motivo: "sem-saldo"}) ou com o \emph{vendor} fora, o rascunho
+é o \textbf{banco padrão} (a Feira de Troca de Livros), com \cd{usouIa:
+false}: a aula acontece. A medição é do \cd{MedidorDeProvider}, recurso
+\cd{nina-noticia} em \cd{RECURSOS\_\B{}DE\_\B{}IA} (\adrr{ADR-161}). Na aula não há
+chamada de IA nenhuma.
 
 \subsection{O preparo de O Assistente Invisível: o pacote inteiro, item por item}
 \label{sec:ia-preparo-exp01em1b}
