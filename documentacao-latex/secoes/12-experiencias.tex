@@ -1795,15 +1795,20 @@ pela semente \cd{id + rodada}; a bandeja da rotina nunca sai na ordem certa
 
 O pacote (\cd{exp03ef1b\_pacotes}) é a ATIVIDADE da evidência, e a rodada é o
 \enquote{Zerar Turma} (\adrr{ADR-155}). A professora usa o banco padrão (a
-Feira de Troca de Livros) em um toque, ou gera as três reportagens com IA a
+Feira de Troca de Livros, sem IA nos textos, com as imagens pela mesma grade
+de aprovação, \adrr{ADR-199}), ou gera as três reportagens com IA a
 partir do componente curricular, do tema e do \enquote{Assunto da matéria};
 revisa (edita a manchete, regenera uma notícia, refaz uma imagem, com a do
 telão em destaque) e aprova em duas fases (\adrr{ADR-146}): os textos, depois
 as imagens. Só então o pacote vai ao ar (\emph{CHECK} \cd{ativo} só com as
 imagens aprovadas; um em andamento por turma). Sem saldo ou com a IA fora, o
 banco padrão entra no lugar (\cd{usouIa: false}). As quatro imagens das cenas
-fixas (o caso e o Desafio Extra) são geradas uma vez pelo \cd{admin}, sem
-quota, como as do banco padrão do Júri (Seção~\ref{sec:ia-preparo-exp03ef1b}).
+fixas (o caso e o Desafio Extra) são geradas uma vez, na conta da plataforma e
+sem quota: pelo \cd{admin} em \rota{/unooria/\B{}recursos/\B{}imagens-\B{}da-\B{}nina},
+como as do banco padrão do Júri, ou, a que faltar, no preparo da primeira
+professora (\adrr{ADR-199}, Seção~\ref{sec:ia-preparo-exp03ef1b}). A
+experiência não mudou: segue lendo a URL de cada imagem da sessão, e a que
+falta é a ilustração local.
 
 \subsection{A régua pedagógica: 100\% ações em tela}
 
