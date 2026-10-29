@@ -14,7 +14,9 @@
     "ia",
     "avaliacao"
   ],
-  "permissoes": [],
+  "permissoes": [
+    "forms"
+  ],
   "verbos": {
     "attempted": "entrou no conselho",
     "progressed": "avançou de etapa",

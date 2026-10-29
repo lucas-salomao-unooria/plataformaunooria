@@ -156,6 +156,25 @@ const GUIAS = [
     bncc: "EM13CO12",
   },
   {
+    rota: "/professor/entre-redes/9-ano/unidade-1/guia",
+    missao: "O Dossiê Invisível · 9º ano",
+    /* Os três blocos vivos vêm de `GET /dossie-invisivel/professor/material`
+       (ADR-202): o banco padrão com a conta da virada (os mesmos critérios,
+       antes e depois dos cadernos), o Editor de Protocolo COM o gabarito (o
+       estudante recebe os blocos embaralhados) e o critério de cada nível das
+       duas habilidades. A Etapa 6 (Lia, Davi e a Linha 302) saiu desta versão:
+       o guia não pode citá-la. */
+    vivo: [
+      /O banco padrão — “Políticas públicas e combate à desigualdade urbana”, e a conta da virada/,
+      /A conta da virada: os mesmos critérios, antes e depois dos cadernos/,
+      /O Editor de Protocolo, com o gabarito/,
+      /Para a Área de Descarte:\s*Desclassificar imediatamente projetos que não possuam relatórios em PDF na nuvem/,
+      /O critério de cada nível \(registrado pelo que o estudante faz\)/,
+    ],
+    ausente: [/Linha 302/, /\bLia\b.*\bDavi\b/],
+    bncc: "EF09CO08",
+  },
+  {
     rota: "/professor/entre-redes/vila-do-lume/guia",
     missao: "Vila do Lume · transversal",
     vivo: [/não foi um colega de verdade/i],
@@ -194,7 +213,7 @@ await suite(
       "O professor abre o guia na véspera para preparar e na hora para conduzir. Ele é o mesmo " +
       "documento em toda missão — mudam o conteúdo e os blocos que vêm de fonte viva.",
     prova: [
-      "As nove missões desta lista têm guia, e nenhuma cai em 404",
+      "As dez missões desta lista têm guia, e nenhuma cai em 404",
       "As nove seções aparecem na mesma ordem em todas, divididas em quatro tempos (abas)",
       "Cada tempo mostra só as seções dele",
       "Cada guia traz a habilidade da BNCC Computação com o código",
@@ -337,6 +356,39 @@ await suite(
       mostra: "A tabela 95 → 94 → 92 → 88 do banco padrão, a nota técnica e os dois cartões eleitorais, com o distorcido marcado.",
       prova: "O bloco é vivo (GET /porta-voz-dos-dados/professor/material): o gabarito fica com o professor — o estudante recebe os cartões sem rótulo.",
     });
+
+    /* A missão do 9º ano (exp09ef1b, ADR-202) — tela nova, passo novo: o
+       Editor de Protocolo com o gabarito e a conta da virada, que só o
+       professor vê. */
+    await p.goto(`${HUB}/professor/entre-redes/9-ano/unidade-1/guia`, { waitUntil: "domcontentloaded" });
+    await esperarOuFalharCedo(p.locator("h1", { hasText: "Guia da aula" }), p.locator(ALERTA_DE_ERRO), {
+      oQue: "o guia do Dossiê Invisível",
+      timeout: 30_000,
+    });
+    const gabaritoDoDossie = p.locator(".guia-bloco", { hasText: "O Editor de Protocolo, com o gabarito" }).first();
+    await revelar(p, gabaritoDoDossie);
+    const verificacoes = await gabaritoDoDossie.locator("ol > li").evaluateAll((lis) => lis.map((li) => li.textContent ?? ""));
+    r.exigir(
+      verificacoes.length === 3 &&
+        /^1ª verificação:\s*Auditar fontes físicas/.test(verificacoes[0]) &&
+        /^2ª verificação:\s*Normalizar indicadores/.test(verificacoes[1]) &&
+        /^3ª verificação:\s*Sinalizar pendências técnicas/.test(verificacoes[2]),
+      `o guia do Dossiê dá o gabarito do protocolo na ordem (auditar, normalizar, sinalizar) (${verificacoes.length} verificações)`,
+    );
+    const virada = p.locator(".guia-bloco", { hasText: "A conta da virada: os mesmos critérios, antes e depois dos cadernos" }).first();
+    const linhasDaVirada = await virada.locator("tbody tr").evaluateAll((trs) => trs.map((tr) => [...tr.querySelectorAll("td")].map((td) => td.textContent ?? "")));
+    const mesa = linhasDaVirada.find((l) => l[0] === "Mesa Aberta");
+    r.exigir(
+      Boolean(mesa) && /^3º/.test(mesa[1]) && /^1º/.test(mesa[2]),
+      `a conta da virada põe o Mesa Aberta em 3º antes dos cadernos e em 1º depois (${mesa ? mesa.join(" · ") : `sem linha: ${JSON.stringify(linhasDaVirada).slice(0, 200)}`})`,
+    );
+    await gabaritoDoDossie.scrollIntoViewIfNeeded();
+    await r.registrar(p, "guia-do-dossie-gabarito", {
+      titulo: "O Dossiê Invisível: a virada e o protocolo com o gabarito",
+      mostra: "O banco padrão com os três projetos, a conta da virada (o Mesa Aberta de 3º para 1º com os mesmos critérios) e as três verificações do protocolo com o bloco da lixeira.",
+      prova: "O bloco é vivo (GET /dossie-invisivel/professor/material): o gabarito fica com o professor — o estudante recebe os blocos embaralhados e a resposta não diz se acertou.",
+    });
+
     await p.goto(`${HUB}/professor/entre-redes/1-serie/unidade-1/guia`, { waitUntil: "domcontentloaded" });
     await p.locator("h1", { hasText: "Guia da aula" }).waitFor({ timeout: 30_000 });
 
