@@ -109,6 +109,15 @@ Preparo do jornal & exp03ef1b, \arq{src/nina-noticia/} &
   que cite outro percentual. Sem saldo ou sem provedor, o banco curado; em
   sala, nada: o Assistente de Dados é determinístico (\adrr{ADR-198},
   Seção~\ref{sec:ia-preparo-exp03em1b}).\\
+Preparo do pacote e classificador da aula & exp09ef1b,
+  \arq{src/dossie-\B{}invisivel/} &
+  No preparo, a roupagem dos três projetos e a transcrição dos cadernos sobre
+  o recorte do professor, com a quota dele, e o \enquote{Regenerar item}; a
+  régua recusa o pacote que desmonte a virada. NA AULA, a IA \textbf{só
+  classifica} a pergunta do estudante numa das seis intenções, na quota
+  \cd{estudante}, com teto de 5\,s; a árvore de intenções é a reserva e a
+  fala é sempre do catálogo (\adrr{ADR-202},
+  Seção~\ref{sec:ia-exp09ef1b}).\\
 Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
   As quatro áreas e os quarenta estandes da mostra científica sobre o tema e
   os assuntos do professor (cinco chamadas: as categorias e as quatro áreas em
@@ -496,6 +505,48 @@ conta \cd{ia\_geracoes} e \cd{ia\_tokens}; no painel de custos
 (\enquote{O Porta-Voz dos Dados}, em \cd{RECURSOS\_\B{}DE\_\B{}IA}), medida pelo
 \cd{MedidorDeProvider}. Nada gerado chega à turma sem o \enquote{Homologar
 Pacote de Conteúdo}.
+
+\subsection{O Dossiê Invisível: o preparo e a IA que só classifica}
+\label{sec:ia-exp09ef1b}
+
+A exp09ef1b tem DUAS superfícies de IA (\arq{dossie-\B{}invisivel/\B{}ia.\B{}service.ts},
+\adrr{ADR-202}), e nenhuma escreve texto que o estudante leia na aula.
+
+\begin{enumerate}
+  \item \textbf{O preparo do professor}, antes da aula, na quota do perfil
+    \cd{professor} (\cd{temSaldo} ANTES, débito por tentativa,
+    \adrr{ADR-74}): \enquote{Gerar com IA} (\cd{generateJson}, teto de
+    12.000 \emph{tokens} de saída, \adrr{ADR-148}, temperatura 0,5) escreve a
+    ROUPAGEM --- os três projetos (nome, coordenação, vagas, custo, área,
+    impacto, o cartão e os documentos indexados, na quantidade fixa de cada
+    papel: 1, 7 e 12) e a transcrição dos três cadernos; e o
+    \enquote{Regenerar item} reescreve um projeto ou os cadernos (teto de
+    8.000, temperatura 0,8). A saída passa pela régua da homologação, que
+    exige a virada: a nuvem à frente antes da digitalização e o papel à
+    frente depois. Sem saldo ou sem provedor, o banco curado (\cd{usouIa:
+    false}, \cd{motivo}); o \enquote{Usar banco padrão} não chama IA.
+  \item \textbf{O classificador da aula}, a cada pergunta do chat, na quota
+    do perfil \cd{estudante} (\cd{temSaldo} antes, \cd{consumir} pelo que o
+    vendor cobrou), com \emph{rate limit} por estudante: \cd{generateJson}
+    com temperatura 0, uma tentativa, teto de 2.000 \emph{tokens} e uma
+    corrida de 5\,s, FORA da transação. A saída é \cd{\{intencao,
+    confianca\}}, validada contra a lista fechada; com confiança abaixo de
+    0,7, lenta, sem saldo ou recusada, vale a árvore de gatilhos
+    (\arq{regras/\B{}intencoes.ts}), sem erro na tela, e o log
+    \cd{exp09ef1b-\B{}classificador-\B{}sem-ia} sai SEM o texto do estudante. As
+    três sugestões exatas da \emph{copy} e o texto que tenta mandar no
+    classificador (nome de intenção, \enquote{ignore as instruções}) não vão à
+    IA. A FALA é do catálogo; a mensagem guarda a intenção, quem decidiu e a
+    leitura da árvore, para o piloto comparar as duas.
+\end{enumerate}
+
+\begin{atencao}
+\textbf{O custo da exp09ef1b ainda não tem nome no painel de custos.} O
+\cd{MedidorDeProvider} atribui a chamada pelo primeiro segmento da rota
+(\cd{dossie-\B{}invisivel}), e esse recurso ainda não está em
+\cd{RECURSOS\_\B{}DE\_\B{}IA} (\arq{recursos/\B{}custos-\B{}de-\B{}ia.ts}): até entrar, o
+consumo é medido mas aparece sem o nome da missão (\adrr{ADR-161}).
+\end{atencao}
 
 \section{A camada única}
 

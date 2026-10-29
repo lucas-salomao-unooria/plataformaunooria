@@ -1,0 +1,389 @@
+/**
+ * Estilos locais — só leiaute e as compensações MARCADAS. Cor só por token, e
+ * os tokens seguem a seção: `--uai-*` no clone (`.uai-*`), `--unooria-*` na
+ * mecânica. Desktop 1024×768 (Chromebook de laboratório): sem `viewport` no
+ * manifesto, o hub não põe casca de aparelho.
+ *
+ * Sobrescrever classe do DS exige DOIS seletores: o CSS do pacote é injetado
+ * pelo módulo do componente, DEPOIS deste arquivo.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+.app {
+  height: 100%;
+  min-height: 0;
+}
+
+.app--centrado {
+  display: grid;
+  place-items: center;
+}
+
+.esqueleto__topo {
+  height: 56px;
+  border-bottom: 1px solid var(--uai-border-default, #e5e5e5);
+}
+
+/* ─────────────────────────── o clone (UnooriaAI) */
+
+.uai-tela {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--uai-bg-primary, #fff);
+  color: var(--uai-text-primary, #1f1f1f);
+  font-family: var(--uai-font-sans, system-ui, sans-serif);
+}
+
+.uai-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--uai-border-default, #e5e5e5);
+}
+
+.uai-topo__identidade {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  min-width: 0;
+}
+
+.uai-topo__titulo {
+  margin: 0;
+  font-size: 18px;
+}
+
+.uai-topo__meta {
+  color: var(--uai-text-secondary, #555);
+  font-size: 14px;
+}
+
+/* (b) COMPENSAÇÃO — a `unooriaai` não publica faixa de aviso: só o leiaute; o glifo é o `Icon` do DS. */
+.uai-faixa {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 24px;
+  background: var(--uai-bg-secondary, #f5f5f5);
+}
+
+.uai-conversa {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px max(24px, calc((100% - 880px) / 2));
+}
+
+.uai-rodape {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px max(24px, calc((100% - 880px) / 2)) 20px;
+  border-top: 1px solid var(--uai-border-default, #e5e5e5);
+}
+
+.uai-sugestoes,
+.uai-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.uai-acoes {
+  justify-content: flex-end;
+}
+
+/* Alvo mínimo de 64 px nas ações do conselho (spec, acessibilidade motora). */
+.uai-tela .uai-acao {
+  min-height: 48px;
+}
+
+.uai-cartoes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.uai-tela .uai-cartao {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.uai-nota {
+  align-self: center;
+  max-width: 640px;
+  margin: 0;
+  color: var(--uai-text-secondary, #555);
+  font-size: 14px;
+  text-align: center;
+}
+
+.uai-nota--instrucao {
+  font-weight: 600;
+}
+
+.uai-mensagem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* A âncora marcada na E5 (message highlight): só o contorno, com o token da seção. */
+.uai-mensagem--marcada {
+  outline: 2px solid var(--uai-border-strong, #1f1f1f);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+.uai-tela .uai-marcar {
+  align-self: flex-start;
+}
+
+.uai-anexos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.uai-anexos__rotulo {
+  font-size: 13px;
+  color: var(--uai-text-secondary, #555);
+}
+
+.uai-fala__titulo {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.uai-modal__lista {
+  padding-left: 20px;
+}
+
+.uai-modal__nota {
+  color: var(--uai-text-secondary, #555);
+}
+
+/* A trava: a thread fica legível e inerte sob o aviso. */
+.trava {
+  opacity: 0.6;
+}
+
+/* ─────────────────────────── a mecânica (unooria) */
+
+.deliberacao,
+.revisao,
+.editor,
+.confronto,
+.ocr,
+.conceitos,
+.conclusao {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* (b) COMPENSAÇÃO — o `Card` da `unooria` tem `max-width: 398px` (pensado para celular); aqui ele ocupa a coluna. */
+.uai-conversa .deliberacao,
+.uai-conversa .revisao,
+.uai-conversa .editor,
+.uai-conversa .confronto,
+.uai-conversa .ocr,
+.uai-conversa .conceitos,
+.uai-conversa .conclusao {
+  max-width: none;
+  width: 100%;
+}
+
+.deliberacao__painel {
+  margin: 0;
+  font-size: 14px;
+  color: var(--unooria-neutral-700, #555);
+}
+
+.deliberacao__titulo {
+  margin: 0;
+  font-size: 20px;
+}
+
+.deliberacao__guia {
+  margin: 0;
+  font-weight: 600;
+}
+
+.projetos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.projetos .projeto {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: none;
+  cursor: pointer;
+}
+
+.projeto--espera {
+  opacity: 0.75;
+}
+
+.projeto__meta {
+  font-size: 14px;
+  color: var(--unooria-neutral-700, #555);
+}
+
+.ranking {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* (b) COMPENSAÇÃO — o arrasto nativo em volta do `PuzzleBlock` (que só conhece toque): o item e o cursor. */
+.ranking__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: grab;
+}
+
+.ranking__item--arrastando {
+  opacity: 0.5;
+}
+
+.ranking__bloco {
+  flex: 1;
+}
+
+.ranking__botoes,
+.editor__botoes {
+  display: flex;
+  gap: 4px;
+}
+
+.ocr__estagio {
+  font-size: 14px;
+  color: var(--unooria-neutral-700, #555);
+}
+
+.confronto__constatacao {
+  margin: 0;
+  font-weight: 600;
+}
+
+.revisao__colunas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 16px;
+}
+
+.revisao__anterior {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: none;
+}
+
+.revisao__nova {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.revisao__botoes {
+  display: flex;
+  gap: 8px;
+}
+
+.revisao__nova .projetos {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.conceitos__lista {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.conceitos__lista dt {
+  font-weight: 700;
+}
+
+.conceitos__lista dd {
+  margin: 0;
+}
+
+.editor__colunas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.editor__rotulo {
+  margin: 0 0 8px;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.editor__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editor__lista li,
+.editor__vaga {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.editor__esteira {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.editor__lista li[draggable="true"],
+.editor__encaixado {
+  cursor: grab;
+}
+
+.conclusao__selo {
+  margin: 0;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "exp09ef1b",
+  "nome": "O Dossiê Invisível",
+  "versao": "0.1.0",
+  "produto": "entre-redes",
+  "series": [
+    "9EF"
+  ],
+  "unidade": 1,
+  "publico": "estudante",
+  "capabilities": [
+    "telemetria",
+    "progresso",
+    "ia",
+    "avaliacao"
+  ],
+  "permissoes": [
+    "forms"
+  ],
+  "verbos": {
+    "attempted": "entrou no conselho",
+    "progressed": "avançou de etapa",
+    "interacted": "investigou",
+    "scored": "registrou uma decisão",
+    "completed": "enviou o protocolo"
+  }
+}

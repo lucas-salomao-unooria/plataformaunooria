@@ -1352,6 +1352,48 @@ mostra a forma curta do protótipo (\enquote{Publicações: 3/3}), com a longa n
 \cd{aria-label}. Pela regra da \adrr{ADR-187}, subir o DS para a 0.2.25 sobe
 todas as experiências juntas.
 
+\subsection{O Dossiê Invisível: o clone e a mecânica separados por pasta}
+\label{sec:ds-hibrido-exp09ef1b}
+
+O Dossiê Invisível (\adrr{ADR-202}) é a segunda missão com as duas seções na
+mesma tela, por exceção registrada, no desenho de Nina e a Notícia que
+Desapareceu (Seção~\ref{sec:ds-hibrido-exp03ef1b}): o clone UnooriaAI é
+\cd{unooriaai} e a mecânica da aula é \cd{unooria}. A fronteira é de PASTA, e
+\arq{src/contrato.test.ts} a cobra: \arq{src/app/clone/} importa SÓ
+\cd{@edu/ui/ds-unooriaai}, \arq{src/app/mecanica/} SÓ \cd{@edu/ui/ds}, e
+\arq{src/app/telas/} compõe as duas sem importar ponte nenhuma. Os tokens
+seguem a mesma linha: \cd{--uai-*} no clone e \cd{--unooria-*} na mecânica,
+em seções separadas de \arq{estilos/globals.css}. O DS na versão 0.2.25.
+
+\begin{tabularx}{\linewidth}{@{}L{24mm}L{58mm}X@{}}
+\toprule
+\headrow \thd{Seção} & \thd{Peças} & \thd{Onde}\\
+\midrule
+\cd{unooriaai} & \cd{AssistantCard}, \cd{ChatBubble}, \cd{Composer},
+  \cd{PromptSuggestion}, \cd{Tag}, \cd{Badge}, \cd{Icon}, \cd{Modal},
+  \cd{Button} & o cromo do \emph{workspace}, os cartões da abertura, a
+  conversa com o assistente, o \emph{composer} e as sugestões, os anexos e a
+  janela de metadados, as pílulas dirigidas\\
+\zebra \cd{unooria} & \cd{SpeechBubble}, \cd{Card}, \cd{PuzzleBlock},
+  \cd{PuzzleTrack}, \cd{ProgressBar}, \cd{Table}, \cd{AlertBox}, \cd{Tag},
+  \cd{Button} & Amara, o painel de deliberação e o ranking dos critérios, o
+  OCR, a tabela de confronto, a revisão do voto, a espera das travas, os
+  conceitos, o Editor de Protocolo (um \cd{PuzzleTrack} de uma vaga por
+  verificação) e o fim\\
+\bottomrule
+\end{tabularx}
+
+Por que não só o \cd{unooriaai}: a seção do clone não tem lista reordenável,
+arrasto, tabela, barra de progresso nem lixeira, e compor as seis peças com
+primitivas do clone seriam seis componentes silenciosos. A \cd{unooria} as
+tem, e a mecânica não finge ser o aplicativo: é a plataforma conduzindo a
+aula. Sobraram duas compensações, marcadas no código e listadas no
+\arq{AGENTS.md} da experiência: o arrasto nativo em volta do
+\cd{PuzzleBlock}, que não aceita \cd{draggable} (pedido ao DS; a mesma ação
+existe em botões --- Subir, Descer, Mover para Lixeira --- e no toque); e o
+\cd{Card} da \cd{unooria} sem o teto de largura de celular dentro da coluna
+do chat.
+
 \subsection{Avisos que ficaram obsoletos}
 
 \begin{nota}

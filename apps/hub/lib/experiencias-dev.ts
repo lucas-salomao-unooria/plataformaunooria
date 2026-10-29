@@ -108,6 +108,14 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
    * por quê.
    */
   "exp03em1b": "http://localhost:5190",
+  /**
+   * O Dossiê Invisível — 9º ano EF, unidade 1 (ADR-202).
+   *
+   * 5191, a próxima livre depois da 5190 (a exp03em1b). A porta entra também
+   * no CORS_ORIGINS da api — sem ela o boot da missão morre com "Failed to
+   * fetch" e o erro não diz por quê.
+   */
+  "exp09ef1b": "http://localhost:5191",
 };
 
 export function baseDevDaExperiencia(expId: string, fallback: string): string {

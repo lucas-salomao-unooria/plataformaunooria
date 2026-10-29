@@ -63,11 +63,66 @@ await suite(
       "'Mais atingidas primeiro' reordena as habilidades, nunca os estudantes",
       "A lista de estudantes é alfabética e leva ao perfil, dentro da sala",
       "O professor não lê o painel da escola nem o da rede (403)",
+      "O Dossiê Invisível (9º ano, unidade 1) entra na coluna da Unidade 1 da 9A com EF09CO07 e EF09CO08, e as barras são as da api",
     ],
     comando: "node scripts/e2e/professor/13-painel-de-habilidades.mjs",
   },
   async (r) => {
     const erroNaTela = (p) => p.locator(ALERTA_DE_ERRO);
+
+    // ── O Dossiê Invisível na 9A (exp09ef1b, ADR-202) ───────────────────
+    /* A missão mais nova grava evidência na 9A (a `estudante/19` conclui três
+       caminhos: EF09CO08 2 atingiu + 1 em processo; EF09CO07 1 em cada nível).
+       Num contexto PRÓPRIO, antes da 5A: o roteiro da 5A tem retornos cedo no
+       estado vazio. Rodando sozinha, a 9A pode não ter a missão aplicada — a
+       prova vira a missão listada sem barra. */
+    {
+      const professorNono = professorDa("9A");
+      const p9 = await r.pagina("professor 9A");
+      await r.entrar(p9, professorNono.login);
+      const turmas9 = await (await p9.request.get(`${BFF}/turmas/minhas`)).json().catch(() => []);
+      const turma9 = Array.isArray(turmas9) ? turmas9.find((t) => t.nome === "9A") : null;
+      if (r.exigir(Boolean(turma9), `${professorNono.login} leciona na 9A`)) {
+        const consolidado = await (await p9.request.get(`${BFF}/evidencias/turma/${turma9.id}/consolidado`)).json().catch(() => null);
+        const dossie = consolidado?.missoes?.find((m) => m.expId === "exp09ef1b") ?? null;
+        r.exigir(
+          Boolean(dossie) && dossie.unidade === 1 && ["EF09CO07", "EF09CO08"].every((c) => dossie.habilidades.some((h) => h.codigo === c)),
+          `o painel da 9A lista O Dossiê Invisível na Unidade 1 com EF09CO07 e EF09CO08 (unidade ${dossie?.unidade})`,
+        );
+        await p9.goto(`${HUB}/professor/habilidades?turmaId=${turma9.id}`, { waitUntil: "domcontentloaded" });
+        await esperarOuFalharCedo(p9.getByRole("heading", { level: 1, name: "Painel de habilidades" }), erroNaTela(p9), {
+          timeout: 30_000,
+          oQue: "o painel de habilidades da 9A",
+        });
+        if (!dossie?.aplicada) {
+          r.ressalva("a 9A ainda não tem evidência do Dossiê Invisível: rode antes a estudante/19-dossie-invisivel");
+        } else {
+          for (const h of dossie.habilidades) {
+            const barra = p9.locator(".unooria-stacked-progress-card").filter({ hasText: h.codigo }).first();
+            await barra.waitFor({ timeout: 15_000 });
+            const legenda = await barra.innerText();
+            const d = h.distribuicao;
+            r.exigir(
+              legenda.includes(`${d.atingiu} (`) && legenda.includes(`${d.naoAvaliado} (`),
+              `a barra de ${h.codigo} na 9A mostra os números da api (atingiu ${d.atingiu}, em processo ${d.emProcesso}, não atingiu ${d.naoAtingiu}, não avaliado ${d.naoAvaliado})`,
+            );
+          }
+          const co08 = dossie.habilidades.find((h) => h.codigo === "EF09CO08")?.distribuicao;
+          const co07 = dossie.habilidades.find((h) => h.codigo === "EF09CO07")?.distribuicao;
+          r.exigir(
+            co08?.atingiu >= 2 && co08?.emProcesso >= 1 && co07?.atingiu >= 1 && co07?.emProcesso >= 1 && co07?.naoAtingiu >= 1,
+            `a régua dos três caminhos da estudante/19 chega ao consolidado (EF09CO08 ${JSON.stringify(co08)}; EF09CO07 ${JSON.stringify(co07)})`,
+          );
+          await p9.locator(".unooria-stacked-progress-card").filter({ hasText: "EF09CO08" }).first().scrollIntoViewIfNeeded();
+        }
+        await r.registrar(p9, "painel-da-9a-dossie", {
+          titulo: "O Dossiê Invisível no painel da 9A",
+          mostra: "A coluna da Unidade 1 do 9º ano com O Dossiê Invisível: a barra de EF09CO08 e a de EF09CO07, em quantas crianças.",
+          prova: "A missão nova entra no painel pela FICHA (evidencias/fichas/exp09ef1b.ts), sem lista à mão; quem não fez é “não avaliado”, tracejado.",
+          inteira: true,
+        });
+      }
+    }
     const professora = professorDa(TURMA);
     const p = await r.pagina("professor");
     await r.entrar(p, professora.login);

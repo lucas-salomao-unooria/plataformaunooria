@@ -9,6 +9,7 @@ import { FICHA_EXP05EF1B } from "./exp05ef1b";
 import { FICHA_EXP06EF1B } from "./exp06ef1b";
 import { FICHA_EXP07EF1B } from "./exp07ef1b";
 import { FICHA_EXP08EF1B } from "./exp08ef1b";
+import { FICHA_EXP09EF1B } from "./exp09ef1b";
 import type { FichaPedagogica } from "./tipos";
 
 export type { FichaPedagogica, HabilidadeDaFicha, MarcadorDaFicha, PerguntaDaFicha } from "./tipos";
@@ -18,7 +19,7 @@ export type { FichaPedagogica, HabilidadeDaFicha, MarcadorDaFicha, PerguntaDaFic
  *
  * A plataforma da evidência entrou antes de qualquer missão medir alguma coisa;
  * a primeira foi Quem Mandou Isso? v2.2 (exp05ef1b), a segunda A Seleção
- * (exp07ef1b), a terceira o Jornal da Escola (exp04ef1b), a quarta O Júri Estadual de Projetos (exp06ef1b) a quinta O Conteúdo que não chegou (exp08ef1b) e a sexta a Missão Tempestade (hoje `exp02em1b-v0`, a versão anterior da ADR-181), e a sétima O Efeito Amplificador (`exp02em1b`, ADR-181), só Canal A, a primeira do EM e a única que só conta ao encerrar (ADR-154), e a oitava O Enigma da Capa da Rádio (`exp02ef1b`, ADR-184), 100% Canal A, a primeira do 2º ano, e a nona O Assistente Invisível (`exp01em1b`, ADR-185), 100% Canal A, as quatro marcas no latch do Publicar, e a décima Nina e a Notícia que Desapareceu (`exp03ef1b`, ADR-197), 100% Canal A, a primeira do 3º ano, e a décima primeira O Porta-Voz dos Dados (`exp03em1b`, ADR-198), 100% Canal A, seis habilidades marcadas no Publicar, na decisão da errata e na perícia. Cada missão que for adaptada acrescenta a ficha dela aqui (um
+ * (exp07ef1b), a terceira o Jornal da Escola (exp04ef1b), a quarta O Júri Estadual de Projetos (exp06ef1b) a quinta O Conteúdo que não chegou (exp08ef1b) e a sexta a Missão Tempestade (hoje `exp02em1b-v0`, a versão anterior da ADR-181), e a sétima O Efeito Amplificador (`exp02em1b`, ADR-181), só Canal A, a primeira do EM e a única que só conta ao encerrar (ADR-154), e a oitava O Enigma da Capa da Rádio (`exp02ef1b`, ADR-184), 100% Canal A, a primeira do 2º ano, e a nona O Assistente Invisível (`exp01em1b`, ADR-185), 100% Canal A, as quatro marcas no latch do Publicar, e a décima Nina e a Notícia que Desapareceu (`exp03ef1b`, ADR-197), 100% Canal A, a primeira do 3º ano, e a décima primeira O Porta-Voz dos Dados (`exp03em1b`, ADR-198), 100% Canal A, seis habilidades marcadas no Publicar, na decisão da errata e na perícia. E a décima segunda O Dossiê Invisível (`exp09ef1b`, ADR-202), 100% Canal A, a primeira do 9º ano: EF09CO08 na escolha inicial e na decisão final, EF09CO07 no protocolo. Cada missão que for adaptada acrescenta a ficha dela aqui (um
  * arquivo `fichas/<expId>.ts`), no MESMO trabalho que faz a missão chamar
  * `EvidenciasService.marcar` e `registrarContexto`.
  *
@@ -43,4 +44,5 @@ export const FICHAS: readonly FichaPedagogica[] = [
   FICHA_EXP01EM1B,
   FICHA_EXP03EF1B,
   FICHA_EXP03EM1B,
+  FICHA_EXP09EF1B,
 ];

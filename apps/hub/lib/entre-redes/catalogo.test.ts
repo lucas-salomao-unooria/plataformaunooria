@@ -30,6 +30,7 @@ describe("grade do Entre Redes", () => {
     expect(buscarMissao("1-serie", "unidade-1")?.missao.expId).toBe("exp01em1b");
     expect(buscarMissao("2-serie", "unidade-1")?.missao.expId).toBe("exp02em1b");
     expect(buscarMissao("3-serie", "unidade-1")?.missao.expId).toBe("exp03em1b");
+    expect(buscarMissao("9-ano", "unidade-1")?.missao.expId).toBe("exp09ef1b");
   });
 
   /* O UnooTube foi arquivado (ADR-116) e o Jornal da Escola tomou o código e a
@@ -64,5 +65,23 @@ describe("grade do Entre Redes", () => {
     expect(texto).not.toContain("EF06CO07");
     expect(texto).not.toContain("EF06CO10");
     expect(texto).not.toMatch(/\d+\s?%/);
+  });
+
+  /* O 9º ano deixou de ser só "em breve" (ADR-202): a unidade 1 é O Dossiê
+     Invisível, que cita a EF09CO08 (o foco) e a EF09CO07 com o texto oficial.
+     A Etapa 6 (o módulo bônus) saiu da missão e não aparece na ficha. */
+  test("a unidade 1 do 9º ano é O Dossiê Invisível, com EF09CO08 e EF09CO07 no texto oficial", () => {
+    const dossie = buscarMissao("9-ano", "unidade-1")?.missao;
+    expect(dossie?.status).toBe("disponivel");
+    expect(dossie?.titulo).toBe("O Dossiê Invisível");
+    expect(buscarMissao("9-ano", "unidade-2")?.missao.status).not.toBe("disponivel");
+    const competencia = dossie?.ficha?.competencia ?? "";
+    const curriculo = readFileSync(join(__dirname, "../../../api/src/curriculo/dados/habilidades-computacao.ts"), "utf8");
+    for (const codigo of ["EF09CO08", "EF09CO07"]) {
+      const oficial = new RegExp(`"codigo": "${codigo}",\\s*"descricao": "([^"]+)"`).exec(curriculo)?.[1] ?? "";
+      expect(oficial, codigo).not.toBe("");
+      expect(competencia.toLowerCase()).toContain(oficial.replace(/\.$/, "").toLowerCase());
+    }
+    expect(JSON.stringify(dossie)).not.toMatch(/Lia e Davi|módulo bônus|transporte escolar/);
   });
 });
