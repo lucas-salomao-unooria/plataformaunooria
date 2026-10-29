@@ -334,6 +334,10 @@ describe("o podcast (fixo, só do professor)", () => {
     expect(texto).toContain("daquela ferramenta essencial que vocês montaram: a Nota de Intenção.");
     expect(texto).not.toContain("tiveram que redigir");
   });
+  test("sem inglês e sem cravar a unidade do período (a IA escreve semanas, bimestres…)", () => {
+    expect(texto).not.toMatch(/\b(bot|feed|posts?|preview|slot)\b/i);
+    expect(texto).not.toMatch(/\b(primeiro|quarto) mês\b/);
+  });
   test("cinco blocos, só Alex e Sam, e cada trecho cabe no teto do áudio", () => {
     const r = roteiroDoPodcast();
     expect(r.map((t) => t.bloco)).toEqual(["abertura", "recapitulacao", "revelacao", "provocacao", "encerramento"]);
