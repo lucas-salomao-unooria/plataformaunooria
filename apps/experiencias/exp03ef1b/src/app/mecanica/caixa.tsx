@@ -1,4 +1,5 @@
 import { Card, Icon, PuzzleBlock, PuzzleTrack } from "@edu/ui/ds";
+import type { Arrastavel } from "../comum/arrastar";
 import { E2 } from "../../lib/textos";
 import { Icone } from "../comum/icone";
 
@@ -13,26 +14,29 @@ export interface NoticiaDaBandeja {
  * "Caixa de resultados esperados", com três nichos. Mecânica da missão: só
  * `@edu/ui/ds` (`Card`, `PuzzleBlock`, `PuzzleTrack`).
  *
- * TOQUE, sem arraste (spec §0.2): tocar a notícia na bandeja a põe no
- * primeiro nicho vazio; tocar a notícia na caixa a devolve. Travada, os
- * blocos ficam `locked` (focáveis e legíveis, sem resposta ao toque).
+ * TOQUE ou ARRASTE (ADR-201): tocar a notícia na bandeja a põe no primeiro
+ * nicho vazio, e tocar a notícia na caixa a devolve; arrastar a põe no nicho
+ * em que ela cair (`zona="caixa"`) ou a devolve à bandeja (`zona="bandeja"`).
+ * Travada, os blocos ficam `locked` (focáveis e legíveis, sem resposta).
  */
 export function BandejaDaEscolha({
   noticias,
   naCaixa,
   travada,
   aoTocar,
+  arrastavel,
   rodape,
 }: {
   noticias: readonly NoticiaDaBandeja[];
   naCaixa: readonly string[];
   travada: boolean;
   aoTocar: (id: string) => void;
+  arrastavel?: Arrastavel;
   rodape?: React.ReactNode;
 }) {
   const fora = noticias.filter((n) => !naCaixa.includes(n.id));
   return (
-    <Card variant="outlined" className={`bandeja${travada ? " bandeja--apagada" : ""}`}>
+    <Card variant="outlined" className={`bandeja${travada ? " bandeja--apagada" : ""}`} data-soltar="bandeja">
       <h2 className="rotulo-de-secao">{E2.bandeja}</h2>
       {fora.length === 0 && !travada ? <p className="bandeja__vazia">{E2.bandejaVazia}</p> : null}
       <ul className="bandeja__lista">
@@ -40,7 +44,7 @@ export function BandejaDaEscolha({
           ? null
           : fora.map((n) => (
               <li key={n.id}>
-                <PuzzleBlock label={n.rotulo} icon="newspaper" state="idle" onClick={() => aoTocar(n.id)} />
+                <PuzzleBlock label={n.rotulo} icon="newspaper" state="idle" onClick={() => aoTocar(n.id)} {...arrastavel?.(n.id)} />
               </li>
             ))}
       </ul>
@@ -54,6 +58,7 @@ export function CaixaDaEscolha({
   noticias,
   travada,
   aoTirar,
+  arrastavel,
   status,
   acao,
 }: {
@@ -61,6 +66,7 @@ export function CaixaDaEscolha({
   noticias: readonly NoticiaDaBandeja[];
   travada: boolean;
   aoTirar: (id: string) => void;
+  arrastavel?: Arrastavel;
   status?: string;
   acao: React.ReactNode;
 }) {
@@ -79,6 +85,7 @@ export function CaixaDaEscolha({
       <PuzzleTrack
         label={rotulo}
         className="caixa__trilho"
+        data-soltar="caixa"
         showEmptySlotLabel
         emptySlotLabel={(i) => (
           <span className="caixa__nicho-vazio">
@@ -104,6 +111,7 @@ export function CaixaDaEscolha({
               icon="newspaper"
               state={travada ? "locked" : "placed"}
               onClick={() => !travada && aoTirar(id)}
+              {...(travada ? {} : arrastavel?.(id))}
             />
           );
         })}

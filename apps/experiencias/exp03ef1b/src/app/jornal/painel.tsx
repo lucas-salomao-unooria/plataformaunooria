@@ -1,4 +1,4 @@
-import { Figure, ModalUjn } from "@edu/ui/ds-unoojornal";
+import { Figure } from "@edu/ui/ds-unoojornal";
 import type { ReactNode } from "react";
 
 /**
@@ -23,28 +23,7 @@ export function RodapeSomenteLeitura({ children }: { children: ReactNode }) {
   return <p className="painel-rodape">{children}</p>;
 }
 
-/** Uma janela do jornal (o Desafio Extra): o `ModalUjn`, com o corpo que a tela compõe. */
-export function JanelaDoJornal({
-  aberta,
-  titulo,
-  descricao,
-  aoFechar,
-  children,
-}: {
-  aberta: boolean;
-  titulo: string;
-  descricao?: string;
-  aoFechar: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <ModalUjn open={aberta} onClose={aoFechar} title={titulo} description={descricao} className="janela-do-jornal">
-      {children}
-    </ModalUjn>
-  );
-}
-
-/** A foto de uma matéria fora do cartão (o Desafio Extra, a foto grande do telão). */
+/** A foto de uma matéria fora do cartão (a foto grande do telão). */
 export function FotoDaMateria({ src, alt, legenda, className }: { src: string; alt: string; legenda?: string; className?: string }) {
   return <Figure src={src} alt={alt} caption={legenda} className={className} />;
 }

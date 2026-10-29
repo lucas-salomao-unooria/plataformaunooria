@@ -96,10 +96,10 @@ espelhos dessas listas; mudar a forma aqui sem avisar quebra os dois.
   pacote, volta à aprovação; no ar, não muda. `porNoAr: true` aprova como está. Quota do
   perfil `professor` (`temSaldo` antes, o pago por tentativa depois); a medição
   é do `MedidorDeProvider`, recurso `nina-noticia` em `RECURSOS_DE_IA`.
-- **Oito imagens, dois donos** (`regras/imagens.ts`): as do PACOTE (`mural`,
+- **Seis imagens, dois donos** (`regras/imagens.ts`): as do PACOTE (`mural`,
   `portal`, `telao`, `cartaz`), da professora, com quota e as duas fases de
-  aprovação (ADR-146); as CENAS FIXAS (`caso-a`, `caso-b`, `extra-1`,
-  `extra-2`), da PLATAFORMA — sem quota, atribuição `nina-noticia-banco-padrao`
+  aprovação (ADR-146); as CENAS FIXAS (`caso-a`, `caso-b`; as `extra-*`
+  saíram com o Desafio Extra, ADR-201), da PLATAFORMA — sem quota, atribuição `nina-noticia-banco-padrao`
   —, que nascem por dois caminhos (ADR-199): o `admin` em
   `/unooria/recursos/imagens-da-nina` (`POST /nina-noticia/banco-padrao/imagens`)
   ou o `gerar-midia` da professora, que gera em PARALELO as que faltam

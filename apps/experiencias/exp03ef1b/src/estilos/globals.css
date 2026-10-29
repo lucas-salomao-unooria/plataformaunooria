@@ -448,23 +448,6 @@ body {
   text-align: center;
 }
 
-.janela-do-jornal {
-  width: min(820px, calc(100vw - 48px));
-  max-width: none;
-}
-
-.desafio-extra {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--ujn-spacing-l);
-}
-
-.desafio-extra__item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ujn-spacing-s);
-}
-
 /* ═══════════════════════════════════════ MECÂNICA (`--unooria-*`) */
 
 /* (b) COMPENSAÇÃO — o `Card` da seção nasce com `max-width: 398px` (o cartão de
@@ -1054,6 +1037,35 @@ body {
   display: block;
   color: var(--unooria-color-neutral-700);
   font-size: var(--unooria-size-body-s);
+}
+
+/* (b) COMPENSAÇÃO — sem par no DS: o ARRASTE dos cartões (`comum/arrastar.ts`,
+   ADR-201). O `PuzzleBlock` só conhece o toque; isto é o comportamento por
+   cima dele. `touch-action: none` para o dedo arrastar a peça, e não a página;
+   o fantasma é a cópia da peça presa ao corpo (fora de qualquer `overflow`),
+   a origem fica apagada e a vaga sob o dedo ganha o contorno de 2px. */
+[data-arrastavel] {
+  touch-action: none;
+  cursor: grab;
+}
+
+.arraste-origem {
+  opacity: 0.35;
+}
+
+.arraste-fantasma {
+  position: fixed;
+  z-index: 60;
+  margin: 0;
+  pointer-events: none;
+  cursor: grabbing;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--unooria-color-neutral-900) 25%, transparent);
+}
+
+.arraste-sobre {
+  outline: 2px solid var(--unooria-color-brandpurple-600);
+  outline-offset: 2px;
+  border-radius: 12px;
 }
 
 /* ══════════════════════════════════════════ comuns às duas seções */

@@ -1864,7 +1864,9 @@ a api no teste. O preparo é \arq{atividades/nova/criar-nina-noticia.tsx}.
 O jornal (cabeçalho, cartões, foto ampliada, filtro, selos, aviso sem sinal,
 erro de mídia) é \cd{unoojornal}, pela ponte \cd{@edu/ui/ds-unoojornal}; a
 mecânica (a Nina, a caixa da escolha, os carimbos, as etiquetas, a esteira de
-blocos por toque e a pausa) é \cd{unooria}. É a única missão com essa mistura,
+blocos e a pausa) é \cd{unooria}. As peças se movem por toque em dois tempos
+OU por arraste (\adrr{ADR-201}): o arraste é compensação de comportamento por
+cima do \cd{PuzzleBlock}, em Pointer Events, porque o DS decidiu só tocar. É a única missão com essa mistura,
 por exceção registrada (\adrr{ADR-197}, Seção~\ref{sec:ds-hibrido-exp03ef1b});
 o que nenhuma das duas seções tem é compensação local marcada, só com os
 tokens delas.
