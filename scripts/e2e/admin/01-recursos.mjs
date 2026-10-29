@@ -482,7 +482,8 @@ await suite(
     };
     const banco = await lerBanco(p);
     r.exigir(
-      banco.status === 200 && banco.corpo?.total === 40 && banco.corpo.prontas + banco.corpo.faltam.length === 40,
+      // 40 estandes × 4 lâminas (ADR-178): a api conta imagens, não estandes.
+      banco.status === 200 && banco.corpo?.total === 160 && banco.corpo.prontas + banco.corpo.faltam.length === 160,
       `a api do banco padrão responde ao admin: ${banco.corpo?.prontas} de ${banco.corpo?.total} prontas, ${banco.corpo?.faltam?.length} faltando (HTTP ${banco.status})`,
     );
     const progressoNaTela = `${banco.corpo?.prontas} de ${banco.corpo?.total}`;
@@ -494,7 +495,7 @@ await suite(
     const gerarBanco = telaDoBanco.getByRole("button", { name: "Gerar as imagens que faltam" });
     r.exigir(
       (await gerarBanco.count()) === 1 && (await gerarBanco.isDisabled()) === Boolean(banco.corpo?.completo),
-      `o botão “Gerar as imagens que faltam” existe, e só fica desligado com as 40 prontas (completo=${banco.corpo?.completo})`,
+      `o botão “Gerar as imagens que faltam” existe, e só fica desligado com as 160 prontas (completo=${banco.corpo?.completo})`,
     );
     /* Só a aba aberta é desenhada: a prova dos 40 anda pelas quatro. */
     const abasDoBanco = telaDoBanco.getByRole("tab");
