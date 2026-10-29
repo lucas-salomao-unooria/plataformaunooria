@@ -15,6 +15,7 @@ import {
   linhasDoPost,
   montarParecer,
   rotuloCurto,
+  rotuloDoEixo,
   valorDaDemonstracao,
   vistaPadrao,
   RITMO_DO_FEED,
@@ -125,6 +126,15 @@ describe("a perícia (E6)", () => {
 
   test("o rótulo do eixo do cartão sem o parêntese", () => {
     expect(rotuloCurto("Ano Anterior (Período 1)")).toBe("Ano Anterior");
+  });
+
+  test("o rótulo do eixo: inteiro quando cabe; inicial e número quando não cabe (como o M1 do protótipo)", () => {
+    expect(rotuloDoEixo("Mês 1", 8)).toBe("Mês 1");
+    expect(rotuloDoEixo("Semana 4", 8)).toBe("Semana 4");
+    expect(rotuloDoEixo("1º Quadrimestre", 8)).toBe("Q1");
+    expect(rotuloDoEixo("Quadrimestre 3", 8)).toBe("Q3");
+    expect(rotuloDoEixo("Ano Anterior (Período 1)", 18)).toBe("Ano Anterior");
+    expect(rotuloDoEixo("Primavera chuvosa", 8)).toBe("Primave…");
   });
 });
 

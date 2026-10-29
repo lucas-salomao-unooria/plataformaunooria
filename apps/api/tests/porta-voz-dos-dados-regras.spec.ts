@@ -11,6 +11,7 @@ import {
   MOTIVOS_DA_PERICIA,
   ROTULO_DA_DISCIPLINA,
   SERIE_HISTORICA,
+  TEXTOS_DO_CHAT,
   TIPOS_DE_PUBLICACAO,
   conteudoDoPadrao,
   type ConteudoDoPacote,
@@ -288,6 +289,22 @@ describe("o pacote e o banco padrão", () => {
     expect(mexido((c) => (c.notaTecnica.resumo = "A queda se concentrou em duas ruas centrais durante obras na tubulação antiga."))).not.toEqual([]);
     expect(mexido((c) => (c.camadas.contexto = "Nota: o índice caiu de 96% para 85% no período."))).not.toEqual([]);
     expect(mexido((c) => (c.reacoes.zero[1]!.texto = "x".repeat(181)))).not.toEqual([]);
+  });
+
+  test("a régua recusa períodos em unidades misturadas, e aceita qualquer unidade única", () => {
+    expect(mexido((c) => (c.servico.periodos = ["Semana 1", "Semana 2", "Mês 3", "Mês 4"]))).toContain(
+      "Os quatro períodos precisam estar na mesma unidade de tempo (ex.: Mês 1 a Mês 4).",
+    );
+    expect(mexido((c) => (c.servico.periodos = ["Semana 1", "Semana 2", "Semana 3", "Semana 4"]))).toEqual([]);
+    expect(mexido((c) => (c.servico.periodos = ["1º Quadrimestre", "2º Quadrimestre", "Quadrimestre 3", "4º quadrimestre"]))).toEqual([]);
+  });
+
+  test("os textos fixos do chat: sem inglês e sem cravar a unidade do período", () => {
+    const chat = JSON.stringify(TEXTOS_DO_CHAT);
+    expect(chat).not.toMatch(/\b(preview|slot|post)s?\b/i);
+    expect(TEXTOS_DO_CHAT.introDaTabela).not.toMatch(/mes(es)?\b|semana|quadrimestre/i);
+    /* O lembrete antes das prévias não manda tocar "na escala acima": ela ainda não existe. */
+    expect(TEXTOS_DO_CHAT.nudgeE2SemPrevias).not.toContain("acima");
   });
 
   test("o Regenerar Item junta o item novo e passa a régua inteira", () => {

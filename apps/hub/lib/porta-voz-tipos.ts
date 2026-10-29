@@ -101,7 +101,7 @@ export const ROTULO_DO_ITEM: Record<ItemDoPacote, string> = {
   notaTecnica: "A nota técnica anexa",
   camadas: "As três informações do compositor",
   reacoes: "As reações dos moradores",
-  posAha: "Depois do post da escola rival",
+  posAha: "Depois da publicação da escola rival",
 };
 
 export const MOTIVOS_DA_PERICIA = ["escala", "fonte", "titulo"] as const;

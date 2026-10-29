@@ -154,13 +154,19 @@ export const TEXTOS_DO_CHAT = {
     "Olá, estudante. Você foi nomeado Porta-Voz Oficial de Dados da sua escola perante a administração municipal. Sua missão é analisar os indicadores recebidos, estruturar o boletim técnico e encaminhá-lo com transparência ao grupo da cidade. Use suas publicações com responsabilidade técnica.",
   iniciar: "Iniciar Estruturação de Dados",
   nudgeE1: "Ainda por aí? Clique abaixo para iniciar a estruturação dos dados.",
+  /* "Quatro períodos", não "quatro meses": o período é do pacote (semana,
+     mês, quadrimestre…), e o bot que dizia "meses" desmentia a tabela. */
   introDaTabela:
-    "Recebemos os registros consolidados da subprefeitura referentes aos últimos quatro meses. Inspecione os percentuais tabulados e consulte os anexos metodológicos antes de selecionar a representação gráfica do boletim.",
+    "Recebemos os registros consolidados da subprefeitura referentes aos quatro últimos períodos de apuração. Inspecione os percentuais tabulados e consulte os anexos metodológicos antes de selecionar a representação gráfica do boletim.",
   perguntaDaPrevia: "Qual visualização você deseja gerar para o relatório?",
-  nudgeE2: "Porta-Voz, o Comitê Municipal aguarda seu boletim. Toque na escala acima para gerar o preview.",
+  /* O lembrete de 90 s da E2 em três versões, pelo que JÁ está na tela: o
+     texto único mandava tocar "na escala acima" antes de as escalas existirem. */
+  nudgeE2SemPrevias: "Porta-Voz, o Comitê Municipal aguarda seu boletim. Toque em Gerar Prévias das Escalas, logo abaixo, para comparar as duas representações.",
+  nudgeE2: "Porta-Voz, o Comitê Municipal aguarda seu boletim. Toque em uma das escalas acima para gerar a prévia.",
+  nudgeE2ComPrevia: "Porta-Voz, o Comitê Municipal aguarda seu boletim. Compare as escalas acima e, quando decidir, abra o compositor de publicação.",
   escalas: { zero: "Escala Absoluta (Origem 0)", oitenta: "Escala com Recorte de Variação (Origem 80%)" },
   errata:
-    "Atenção, Porta-Voz: Diante do debate gerado no comitê público, o regulamento do programa permite que você publique uma ERRATA TÉCNICA CORRETIVA utilizando o seu 2º slot de publicação (restando 1/3). O post anterior permanecerá no histórico.",
+    "Atenção, Porta-Voz: Diante do debate gerado no comitê público, o regulamento do programa permite que você publique uma ERRATA TÉCNICA CORRETIVA utilizando a sua 2ª publicação (restando 1/3). A publicação anterior permanecerá no histórico.",
   publicarErrata: "Publicar Errata Corretiva",
   pularErrata: "Avançar sem publicar errata",
   cotaEsgotada:

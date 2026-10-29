@@ -465,7 +465,9 @@ recusadas e as que falharam depois de cobradas, \adrr{ADR-74}):
     de sistema descreve a missão e pede só a ROUPAGEM: o recorte do grupo (até
     60 caracteres, depois de \enquote{Comitê Municipal de Políticas Públicas
     ---}), o serviço (órgão, indicador, os quatro períodos e as situações, sem
-    números), a nota técnica formal (com a queda localizada e a estabilidade
+    números; os períodos consecutivos na MESMA unidade de tempo, no formato
+    \enquote{Mês 1}\ldots{} ou \enquote{Semana 1}\ldots, e o pacote inteiro
+    falando dessa unidade), a nota técnica formal (com a queda localizada e a estabilidade
     de 98\% do resto da rede), os textos fixos das três camadas (a explicação
     da escala com variante para 0 e para 80), as reações dos MESMOS três
     moradores nos dois ramos (indiferença com o eixo em 0, alarme com o eixo
@@ -482,9 +484,13 @@ gabarito são de \arq{conteudo.ts}. \textbf{A régua é uma só}
 (\cd{regras/\B{}pacote.ts\#\B{}problemas\B{}Do\B{}Conteudo}), para a saída da IA e para a
 homologação: a forma do contrato, a explicação de cada escala falando do
 eixo certo, os mesmos três moradores nos dois ramos, a estabilidade de 98\%
-na nota técnica, quatro períodos e \textbf{nenhum percentual que não seja da
+na nota técnica, quatro períodos numa unidade só (\cd{unidadeDoPeriodo}:
+\enquote{1º Quadrimestre} e \enquote{Quadrimestre 2} contam como a mesma) e \textbf{nenhum percentual que não seja da
 série} --- a IA que escrevesse \enquote{caiu de 96 para 85} desmentiria a
-tabela.
+tabela. O texto fixo do bot diz \enquote{quatro últimos períodos de
+apuração}, e não \enquote{quatro meses}: a unidade é do pacote, e o bot que
+cravava meses desmentia a tabela de semanas ou quadrimestres que a IA
+escrevia (corrigido na 1.0.1).
 
 \textbf{Sem saldo ou com o \emph{vendor} fora}, o rascunho sai do banco
 curado (\enquote{Vigilância Sanitária da Água}), com \cd{usouIa: false} e o

@@ -244,6 +244,25 @@ export function rotuloCurto(rotulo: string): string {
   return i < 0 ? rotulo : rotulo.slice(0, i);
 }
 
+/**
+ * O rótulo que CABE embaixo da barra. O período vem da IA ("Semana 1",
+ * "1º Quadrimestre"…), e com quatro barras "Quadrimestre" é mais largo que o
+ * vão: os rótulos se sobrepunham. O que cabe fica inteiro; o que não cabe vira
+ * a inicial com o número, como o protótipo ("M1"…"M4"). O nome inteiro segue
+ * na tabela e na descrição do gráfico (`descricaoDoGrafico`).
+ */
+export function rotuloDoEixo(rotulo: string, maxCaracteres: number): string {
+  const curto = rotuloCurto(rotulo).trim();
+  if (curto.length <= maxCaracteres) return curto;
+  const numero = /\d+/.exec(curto)?.[0];
+  const palavra = curto
+    .replace(/\d+\s*[ºª°]?/g, " ")
+    .trim()
+    .split(/\s+/)[0];
+  if (numero && palavra) return `${palavra.charAt(0).toLocaleUpperCase("pt-BR")}${numero}`;
+  return `${curto.slice(0, Math.max(1, maxCaracteres - 1)).trimEnd()}…`;
+}
+
 // ─────────────────────────────────────────────────────────── a navegação
 
 /** As conversas do mensageiro: a lista, o chat do Assistente, o grupo da cidade. */
