@@ -2457,7 +2457,10 @@ disciplina}
 \aceite
 \begin{itemize}
   \item No topo, o caminho curto: \enquote{Usar Banco Padrão} cria a atividade
-    da Feira de Troca de Livros, pronta.
+    da Feira de Troca de Livros, com os textos prontos, sem IA. As imagens
+    passam pela mesma conferência da IA: as que a Unooria já gerou chegam
+    prontas, as que faltam são geradas ali (com o meu limite de IA; de graça se
+    a mesma imagem já existe), posso pedir outra e aprovo antes de liberar.
   \item Ou escolho o componente curricular, escrevo o tema do evento (até 60
     caracteres) e o assunto da matéria, e toco em \enquote{Gerar Notícias com
     IA}. A IA escreve as três reportagens e pede as imagens; a ficha de cada
@@ -2468,6 +2471,12 @@ disciplina}
   \item Aprovo em duas etapas, os textos e depois as imagens, e toco em
     \enquote{Liberar Atividade para a Turma}. Nada gerado chega à turma sem a
     minha aprovação.
+  \item As imagens do caso novo e do Desafio Extra são as mesmas para todas
+    as turmas: a que ainda não existir é gerada junto com as minhas, uma vez
+    só, por conta da Unooria --- não gasta o meu limite de IA e eu não as
+    troco.
+  \item Na página da atividade, enquanto ela não estiver em aula, continuo
+    vendo as imagens, pedindo outra e aprovando.
   \item Sem saldo de IA, ou com ela fora do ar, o banco pronto entra no
     lugar, e a aula acontece.
 \end{itemize}
@@ -2596,10 +2605,37 @@ demonstrou}{saber quem precisa de mim agora e fechar a aula}
     vale para cada um da equipe.
   \item \enquote{Zerar Turma} abre uma rodada nova e apaga as habilidades
     daquela atividade.
+  \item A missão não tem podcast de recapitulação nesta versão, por decisão
+    da especificação.
 \end{itemize}
 \pendencia{a EF15CO01 repete, na prática, a régua da EF03CO03, e a decisão é
-do PO; as imagens do caso e do Desafio Extra são geradas uma vez pela Unooria,
-ainda sem tela no painel; sem podcast nesta versão.}
+do PO.}
+\end{historia}
+
+\begin{historia}{H06.18.10}{Gerar as imagens do banco pronto da Nina}{\pronto}
+\hu{Administrador Unooria}{gerar, de uma vez, as oito imagens da missão do
+3º ano --- as quatro da Feira de Troca de Livros e as quatro do caso novo e do
+Desafio Extra}{que a professora que usa o banco pronto encontre as fotos
+prontas, e que nenhuma turma veja só a ilustração}
+\aceite
+\begin{itemize}
+  \item No painel da Unooria, em Recursos, \enquote{Imagens do banco padrão
+    da Nina} mostra quantas das oito imagens já existem e quais faltam, em dois
+    grupos: a feira (mural, portal, telão e cartaz) e as cenas do caso novo e
+    do Desafio Extra.
+  \item \enquote{Gerar as imagens que faltam} gera só as que faltam e
+    continua sozinho até terminar. A imagem que já existe não é gerada de novo;
+    clicar duas vezes não paga a mesma imagem duas vezes.
+  \item Gerar aqui adianta o trabalho: a professora que encontrar a imagem
+    pronta não espera nem gasta o limite dela, e a que faltar ela mesma gera
+    no preparo (\id{H06.18.1}).
+  \item É custo da Unooria, não da escola: não gasta o limite diário de IA de
+    nenhuma professora, e aparece no painel de custos de IA (\id{H10.7.1}) numa
+    linha própria.
+  \item Só a Unooria vê esta página. Se a api não responder, a tela diz que as
+    imagens não carregaram, nunca \enquote{0 de 8}; se alguma imagem falhar, a
+    tela diz quais, e gerar de novo tenta só as que faltam.
+\end{itemize}
 \end{historia}
 
 % ---------------------------------------------------------------------------

@@ -7,7 +7,9 @@ import type { Perfil } from "../auth/claims";
 import { logger } from "../observabilidade/logger";
 import { promptDaImagem } from "./conteudo";
 import { erroDeJogo } from "./erros";
+import { ImagensDoBancoPadraoDaExp03ef1bService } from "./banco-padrao-imagens.service";
 import {
+  TAMANHO_DA_IMAGEM,
   imagensDoPacote,
   itensDasCenasFixas,
   itensDoPacote,
@@ -24,8 +26,14 @@ import { CHAVES_DAS_IMAGENS, EXP_ID, type ChaveDaImagem } from "./vocabulario";
  * estimado e o `falharam[]`.
  *
  * - **O arquivo é o hash do PEDIDO** (`regras/imagens.ts#nomeDaImagem`): o que
- *   já está no bucket entra DE GRAÇA. As CENAS FIXAS (o caso novo e o Desafio
- *   Extra) são do banco, geradas pelo `admin`: aqui só entram se já existirem.
+ *   já está no bucket entra DE GRAÇA — inclusive no pacote do BANCO PADRÃO,
+ *   que desde a ADR-199 também passa por esta grade.
+ * - **As CENAS FIXAS (o caso novo e o Desafio Extra) vêm junto** (ADR-199): a
+ *   que ainda não existe é gerada aqui, em paralelo às do pacote, pela
+ *   `ImagensDoBancoPadraoDaExp03ef1bService#garantirCenasFixas` — na conta da
+ *   PLATAFORMA (`nina-noticia-banco-padrao`), nunca na quota da professora, e
+ *   uma vez só (a próxima turma acha o arquivo pelo hash). A professora não as
+ *   refaz nem as vê na grade: são iguais para todas as turmas.
  * - **A professora VÊ e APROVA as imagens antes da turma** (ADR-146): gerar e
  *   refazer só valem com `imagens_aprovadas_em` nulo
  *   (`NinaNoticiaService.pacoteParaMidia`, 409 `imagens-ja-aprovadas`). A tela
@@ -41,8 +49,6 @@ export const IMAGENS_POR_CHAMADA = 4;
 /** Custo estimado por imagem, em tokens: a geração não devolve contagem, e debitar zero faria a quota mentir. */
 export const CUSTO_ESTIMADO_POR_IMAGEM = 2_000;
 
-/** 800×600 (4:3), a foto da reportagem. */
-export const TAMANHO_DA_IMAGEM = { largura: 800, altura: 600 } as const;
 
 export interface ProgressoDaMidia {
   pacoteId: string;
@@ -73,6 +79,7 @@ export class MidiaDaExp03ef1bService {
     private readonly assets: AssetsService,
     private readonly quota: QuotaService,
     private readonly missao: NinaNoticiaService,
+    private readonly banco: ImagensDoBancoPadraoDaExp03ef1bService,
   ) {}
 
   /** Gera as que faltam no pacote (até `IMAGENS_POR_CHAMADA`) e devolve o progresso. */
@@ -143,16 +150,42 @@ export class MidiaDaExp03ef1bService {
   ): Promise<ProgressoDaMidia> {
     const midia: Partial<Record<ChaveDaMidia, string>> = { ...pacote.midia };
 
-    /* As cenas fixas do banco: de graça, se o `admin` já as gerou. Nunca pagas aqui. */
-    for (const item of itensDasCenasFixas()) {
-      if (midia[item.chave]) continue;
-      if (await this.assets.midiaDeExperienciaExiste(EXP_ID, item.nome)) {
-        const url = this.assets.urlDaMidiaDeExperiencia(EXP_ID, item.nome);
-        await this.missao.registrarMidia(escolaId, pacote.id, item.chave, url);
-        midia[item.chave] = url;
-      }
+    /* As cenas fixas, em PARALELO às do pacote e na conta da plataforma: a
+       professora sem saldo não as impede (não são dela), e a falha de uma não
+       derruba o preparo. */
+    const cenas = itensDasCenasFixas().some((i) => !midia[i.chave])
+      ? this.registrarCenasFixas(escolaId, pacote.id, midia)
+      : Promise.resolve();
+    try {
+      return await this.gerarAsDoPacote(escolaId, usuarioId, perfil, pacote, midia);
+    } finally {
+      await cenas;
     }
+  }
 
+  /** As cenas fixas que o pacote ainda não tem: existentes de graça, as que faltam geradas pela plataforma. */
+  private async registrarCenasFixas(
+    escolaId: string,
+    pacoteId: string,
+    midia: Readonly<Partial<Record<ChaveDaMidia, string>>>,
+  ): Promise<void> {
+    try {
+      const cenas = await this.banco.garantirCenasFixas();
+      for (const [chave, url] of Object.entries(cenas) as [ChaveDaMidia, string][]) {
+        if (!midia[chave]) await this.missao.registrarMidia(escolaId, pacoteId, chave, url);
+      }
+    } catch {
+      logger.warn({ codigo: "exp03ef1b-cenas-fixas-nao-registradas", escolaId }, "cenas fixas não registradas no pacote");
+    }
+  }
+
+  private async gerarAsDoPacote(
+    escolaId: string,
+    usuarioId: string,
+    perfil: Perfil,
+    pacote: Awaited<ReturnType<NinaNoticiaService["pacoteParaMidia"]>>,
+    midia: Partial<Record<ChaveDaMidia, string>>,
+  ): Promise<ProgressoDaMidia> {
     const pendentes = itensDoPacote(pacote.conteudo).filter((i) => !midia[i.chave]);
     const geradas: ChaveDaImagem[] = [];
     const falharam: ChaveDaImagem[] = [];

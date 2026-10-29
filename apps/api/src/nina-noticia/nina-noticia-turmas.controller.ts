@@ -197,9 +197,9 @@ export class NinaNoticiaTurmasController {
   @Post(":turmaId/banco-padrao")
   @HttpCode(200)
   @Contrato({
-    resumo: '"Usar Banco Padrão" — a Feira de Troca de Livros, pronta, em um toque (e no ar, com `porNoAr`).',
+    resumo: '"Usar Banco Padrão" — a Feira de Troca de Livros, sem IA nos textos; as imagens passam pela aprovação.',
     descricao:
-      "Cria (ou reaproveita) a atividade `padrao`, sem IA, com as imagens já APROVADAS: as do banco que o `admin` já gerou entram na `midia`; a que falta segue com a ilustração local. Com `porNoAr: true`, põe em andamento na mesma chamada.",
+      "Cria (ou reaproveita) a atividade `padrao`, sem IA nos textos, com as imagens do banco que já existem no storage na `midia` e `imagensAprovadasEm` **nulo** (ADR-199): a professora vê a mesma grade da IA, gera as que faltam (`POST …/pacotes/:pacoteId/gerar-midia`, de graça as que já existem pelo hash), refaz e aprova (`POST …/aprovar-imagens`). O reaproveitado FORA do ar ganha as imagens do banco que faltavam e, se ainda lhe falta alguma das quatro, volta à aprovação; no ar, não muda. Com `porNoAr: true`, aprova as imagens como estão e põe em andamento na mesma chamada.",
     params: PARAMS,
     query: QUERY,
     corpo: BancoPadraoSchema,
@@ -378,7 +378,7 @@ export class NinaNoticiaTurmasController {
   @Contrato({
     resumo: "Gera as imagens que faltam no pacote: as três cenas e o cartaz.",
     descricao:
-      "Até quatro novas por chamada, em paralelo. Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma; `falharam` diz o que não saiu (segue a ilustração local). O que já está no bucket (o mesmo pedido) entra sem custo. As cenas fixas do caso novo e do Desafio Extra vêm do banco do `admin`, de graça, se já existirem.",
+      "Até quatro novas por chamada, em paralelo. Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma; `falharam` diz o que não saiu (segue a ilustração local). O que já está no bucket (o mesmo pedido) entra sem custo.\n\n**As cenas fixas** do caso novo e do Desafio Extra (iguais para todas as turmas) entram junto: a que já existe, de graça; a que falta é gerada nesta chamada, uma vez só, na conta da PLATAFORMA (recurso `nina-noticia-banco-padrao` no painel de custos, perfil `admin`, sem escola) — nunca na quota da professora. Não aparecem na resposta, que traz só as quatro do pacote (ADR-199).",
     params: PARAMS_DO_PACOTE,
     query: QUERY,
     resposta: ProgressoDaMidiaSchema,

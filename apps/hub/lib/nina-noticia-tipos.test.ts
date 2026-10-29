@@ -8,7 +8,10 @@ import { GATILHOS_DO_GUIA, ROTEIRO_DO_GUIA } from "./entre-redes/guias/exp03ef1b
 import {
   ACOES_DO_GATE,
   CAMPOS,
+  CAMINHO_DAS_IMAGENS_DO_BANCO,
+  CHAVES_DAS_CENAS_FIXAS,
   CHAVES_DAS_IMAGENS,
+  CHAVES_DO_BANCO,
   COPY_DO_PAINEL,
   COPY_DO_PREPARO,
   DIAS,
@@ -41,6 +44,7 @@ import {
   corpoDosParametros,
   erroDaResposta,
   falhaDaIa,
+  falhasAcumuladas,
   gatilhosDaEtapa,
   manchetesRepetidas,
   mudouAEvidencia,
@@ -48,8 +52,10 @@ import {
   problemaDaManchete,
   problemasDosParametros,
   rotuloDaDisciplina,
+  rotuloDaImagemDoBanco,
   rotuloDoBotao,
   textoDaFicha,
+  textoDoProgressoDoBanco,
   textosDasEscolhas,
   todosConcluiram,
   type ConteudoDoPacote,
@@ -103,6 +109,7 @@ describe("o espelho do vocabulário da api", () => {
     ["ORIGENS_DO_PACOTE", ORIGENS_DO_PACOTE],
     ["DISCIPLINAS", DISCIPLINAS],
     ["CHAVES_DAS_IMAGENS", CHAVES_DAS_IMAGENS],
+    ["CHAVES_DAS_CENAS_FIXAS", CHAVES_DAS_CENAS_FIXAS],
   ])("%s", (nome, valores) => {
     expect([...valores]).toEqual(listaDaApi(vocabulario, nome));
   });
@@ -146,6 +153,27 @@ describe("o espelho do vocabulário da api", () => {
     ]) {
       expect(contrato, caminho).toContain(`caminho: "${caminho}"`);
     }
+  });
+
+  test("a rota das imagens do banco (a tela do admin) existe no índice, com papel admin", () => {
+    const relativo = CAMINHO_DAS_IMAGENS_DO_BANCO.replace(/^\/nina-noticia\//, "");
+    expect(contrato).toMatch(new RegExp(`caminho: "${relativo}",\\s*papel: "admin"`));
+  });
+});
+
+describe("as imagens do banco padrão (a tela do admin)", () => {
+  test("as oito, na ordem da api: as do pacote e as cenas fixas, cada uma com rótulo", () => {
+    expect([...CHAVES_DO_BANCO]).toEqual([...CHAVES_DAS_IMAGENS, ...CHAVES_DAS_CENAS_FIXAS]);
+    const servico = readFileSync(join(API, "banco-padrao-imagens.service.ts"), "utf8");
+    expect(servico).toContain("[...itensDoPacote(conteudoDoBancoPadrao()), ...itensDasCenasFixas()]");
+    for (const chave of CHAVES_DO_BANCO) expect(rotuloDaImagemDoBanco(chave).length).toBeGreaterThan(3);
+    expect(new Set(CHAVES_DO_BANCO.map(rotuloDaImagemDoBanco)).size).toBe(CHAVES_DO_BANCO.length);
+  });
+
+  test("o progresso em frase, e as falhas que ainda não saíram", () => {
+    expect(textoDoProgressoDoBanco({ total: 8, prontas: 3 })).toBe("3 de 8 imagens do banco prontas.");
+    expect(textoDoProgressoDoBanco({ total: 8, prontas: 8 })).toBe("As 8 imagens do banco estão prontas.");
+    expect(falhasAcumuladas(["telao"], { falharam: ["extra-2", "mural"], imagens: { telao: "u" } })).toEqual(["mural", "extra-2"]);
   });
 });
 

@@ -88,18 +88,30 @@ espelhos dessas listas; mudar a forma aqui sem avisar quebra os dois.
   homologação aplica `aplicarEstrutura` de novo antes de gravar; a LEITURA
   também (pacote torto sai com as fichas do servidor).
 - **Fallback é da ROTA** (`gerar-conteudo`): sem saldo ou IA fora → 200 com o
-  banco padrão, `usouIa: false`, `motivo` e as imagens do banco. Quota do
+  banco padrão, `usouIa: false`, `motivo` e as imagens do banco.
+- **O banco padrão passa pela grade** (ADR-199): `usarBancoPadrao` cria o
+  pacote com `imagens_aprovadas_em` NULO e as imagens do banco que existem; a
+  professora gera as que faltam (`gerar-midia`), refaz e aprova. O
+  reaproveitado FORA do ar ganha as que faltavam e, se ainda falta imagem do
+  pacote, volta à aprovação; no ar, não muda. `porNoAr: true` aprova como está. Quota do
   perfil `professor` (`temSaldo` antes, o pago por tentativa depois); a medição
   é do `MedidorDeProvider`, recurso `nina-noticia` em `RECURSOS_DE_IA`.
 - **Oito imagens, dois donos** (`regras/imagens.ts`): as do PACOTE (`mural`,
   `portal`, `telao`, `cartaz`), da professora, com quota e as duas fases de
   aprovação (ADR-146); as CENAS FIXAS (`caso-a`, `caso-b`, `extra-1`,
-  `extra-2`), só do `admin` (`POST /nina-noticia/banco-padrao/imagens`, sem
-  quota, atribuição `nina-noticia-banco-padrao`). O arquivo é o hash do PEDIDO
-  (`feira/<hash>.webp`): o que existe no bucket entra de graça; o refeito leva
-  variação no nome. O pacote recebe as cenas fixas na criação e no `gerar-midia`
-  — se o `admin` gerar DEPOIS, o pacote já aprovado fica sem elas (ilustração
-  local) até outro pacote.
+  `extra-2`), da PLATAFORMA — sem quota, atribuição `nina-noticia-banco-padrao`
+  —, que nascem por dois caminhos (ADR-199): o `admin` em
+  `/unooria/recursos/imagens-da-nina` (`POST /nina-noticia/banco-padrao/imagens`)
+  ou o `gerar-midia` da professora, que gera em PARALELO as que faltam
+  (`garantirCenasFixas`), inclusive quando ela está sem saldo (429 para as
+  dela). A trava por ARQUIVO (`gerandoArquivo`, no serviço do banco) é dividida
+  pelo `admin` e pelas professoras: cada cena é paga uma vez por processo. O
+  arquivo é o hash do PEDIDO (`feira/<hash>.webp`): o que existe no bucket entra
+  de graça; o refeito leva variação no nome. O pacote APROVADO antes de a cena
+  existir fica sem ela (ilustração local) até outro pacote.
+- **`TAMANHO_DA_IMAGEM` mora em `regras/imagens.ts`**: o `midia.service`
+  injeta o serviço do banco, e o banco importar do `midia.service` faria ciclo
+  de import (o decorator do Nest lê `undefined`).
 - **As telas da professora só veem as quatro do pacote** (`imagensDoPacote`): o
   `z.record` do contrato recusa outra chave.
 
@@ -122,5 +134,6 @@ tentativas contando a válida), `reparo` EF03CO03 e `previsao` EF15CO01 (os dois
   pausa, filtro que conta, ficha, carimbos, reparo certo/errado, rotina, fim, as
   cinco marcas, painel, CHECKs comparados ao vocabulário, RLS e zerar.
 - `tests/nina-noticia-midia.spec.ts` — SEM banco, com IA FALSA (só aqui): o
-  preparo, a régua que regera, o fallback, as imagens do pacote e as do banco
-  (guarda de `admin` e a atribuição no painel de custos).
+  preparo, a régua que regera, o fallback, as imagens do pacote, as cenas
+  fixas no preparo (conta da plataforma, uma vez só com duas turmas, sem saldo)
+  e as do banco (guarda de `admin` e a atribuição no painel de custos).

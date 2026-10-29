@@ -20,6 +20,16 @@ BFF). O laço é o `continuarGerando` (oito por chamada); a api
 manda só chaves de lâmina e URLs (quatro por projeto, ADR-178), e a grade (aba
 por área) nomeia pelo número. Api fora do ar é erro, nunca "0 de 160".
 
+### Imagens do banco padrão da Nina (`recursos/imagens-da-nina`, ADR-199)
+
+O mesmo molde, com link ao lado do Júri no fim de `/unooria/recursos`: `GET`/`POST
+/nina-noticia/banco-padrao/imagens`, só `admin` (prefixo `nina-noticia` do BFF). Oito imagens em
+dois grupos, sem abas: a Feira de Troca de Livros (`CHAVES_DAS_IMAGENS`) e as cenas fixas
+(`CHAVES_DAS_CENAS_FIXAS`), rotuladas pela POSIÇÃO (`ROTULO_DA_CENA_FIXA`), nunca pelo conteúdo
+do banco, que só a api tem. O laço é o `continuarGerando` (oito por chamada, quatro de cada vez);
+sem "refazer", como o Júri. Api fora do ar é erro, nunca "0 de 8". Gerar aqui é ADIANTAR: a
+professora gera no preparo a que faltar.
+
 ### O segundo item: Uso de IA (ADR-105, 2026-09-15)
 
 `/unooria/uso-de-ia` — o teto diário de tokens por perfil, um cartão por linha

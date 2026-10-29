@@ -279,7 +279,13 @@ espelho `lib/nina-noticia-tipos.ts` (o teste lê `vocabulario.ts`, `invariantes.
 - **"aposta" é nome INTERNO** (passo e etapa). Na tela é "escolha" — "Travar Escolha", "Escolhas da
   Etapa 2" (spec §7.1). O teste do espelho lê as telas desta missão SEM comentários e reprova a
   palavra fora do literal `"aposta"`.
-- **Preparo no topo, como o Júri**: "Usar Banco Padrão" (`POST banco-padrao`, pronto, sem IA). Ou o
+- **Preparo no topo, como o Júri**: "Usar Banco Padrão" (`POST banco-padrao`, textos sem IA). **Aqui o
+  banco padrão SE AFASTA do Júri** (ADR-199, pedido do Lucas): o pacote nasce EM PREPARO e a criação
+  abre a MESMA grade `imagens-da-nina.tsx` (`data-fase="banco-padrao"`), com `gerarAoAbrir` — as do
+  banco chegam prontas, as que faltam se geram com a quota dela (de graça pelo hash), "Refazer
+  imagem" e "Aprovar imagens"; só então "Pacote homologado e pronto." e o "Liberar". As CENAS
+  FIXAS não aparecem na grade (iguais para todas as turmas, a professora não as refaz): o
+  `gerar-midia` as gera na conta da plataforma, e quem as confere é o `admin`. Ou o
   recorte com IA: Componente Curricular (`Selection`), Tema do Evento (≤ 60) e **"Assunto da
   matéria"** (spec §7.2). `gerar-conteudo` é UMA chamada que escreve só o texto das três notícias
   (cabe no teto do BFF); `usouIa: false` mostra o quadro E0-PROF-03 com o título da falha

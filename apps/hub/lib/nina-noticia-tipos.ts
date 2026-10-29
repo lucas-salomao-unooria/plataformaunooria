@@ -148,6 +148,33 @@ export const ROTULO_DA_IMAGEM: Record<ChaveDaImagem, string> = {
   cartaz: "Cartaz da feira",
 };
 
+/**
+ * As CENAS FIXAS do banco (o caso novo e o Desafio Extra): iguais para todas
+ * as turmas, geradas na conta da plataforma — na tela do `admin`
+ * (`/unooria/recursos/imagens-da-nina`) ou, a que faltar, no preparo da
+ * primeira professora (ADR-199). A professora não as vê nem as refaz.
+ */
+export const CHAVES_DAS_CENAS_FIXAS = ["caso-a", "caso-b", "extra-1", "extra-2"] as const;
+export type ChaveDaCenaFixa = (typeof CHAVES_DAS_CENAS_FIXAS)[number];
+
+/** O rótulo de cada cena fixa — pela POSIÇÃO na missão, sem o conteúdo do banco (que mora só na api). */
+export const ROTULO_DA_CENA_FIXA: Record<ChaveDaCenaFixa, string> = {
+  "caso-a": "Caso novo · 1ª matéria",
+  "caso-b": "Caso novo · 2ª matéria",
+  "extra-1": "Desafio Extra · 1ª ficha",
+  "extra-2": "Desafio Extra · 2ª ficha",
+};
+
+/** As oito do banco padrão, na ordem da api (`banco-padrao-imagens.service.ts#itensDoBanco`). */
+export const CHAVES_DO_BANCO = [...CHAVES_DAS_IMAGENS, ...CHAVES_DAS_CENAS_FIXAS] as const;
+export type ChaveDoBanco = (typeof CHAVES_DO_BANCO)[number];
+
+export function rotuloDaImagemDoBanco(chave: ChaveDoBanco): string {
+  return (CHAVES_DAS_IMAGENS as readonly string[]).includes(chave)
+    ? ROTULO_DA_IMAGEM[chave as ChaveDaImagem]
+    : ROTULO_DA_CENA_FIXA[chave as ChaveDaCenaFixa];
+}
+
 /** A manchete tem no máximo quatro palavras (`invariantes.ts`). */
 export const MAX_PALAVRAS_DA_MANCHETE = 4;
 /** Os tetos de caractere da manchete (`ReportagemDoPacoteSchema`). */
@@ -460,9 +487,11 @@ export const COPY_DO_PREPARO = {
   explicacaoDoRecorte:
     "Selecione o componente e defina o tema do evento escolar para personalizar as notícias da simulação, ou utilize o pacote padrão já validado.",
   caminhoCurto: "Caminho Curto: Pacote Curado Padrão",
-  descricaoDoCaminhoCurto: "Feira de Troca de Livros da Escola (Língua Portuguesa) — pronto para uso imediato sem IA.",
+  descricaoDoCaminhoCurto: "Feira de Troca de Livros da Escola (Língua Portuguesa) — os textos prontos, sem IA.",
+  /* ADR-199: as imagens passam pela aprovação, e a que o banco ainda não tem é
+     gerada com a cota da professora — "sem consumo de créditos" deixou de ser verdade. */
   apoioDoBancoPadrao:
-    "Carrega imediatamente o pacote curado da Feira de Livros da Escola, sem consumo de créditos de IA.",
+    "Carrega o pacote curado da Feira de Livros da Escola. Os textos não consomem créditos de IA; só as imagens que o banco ainda não tiver, que você confere e aprova em seguida.",
   botaoPadrao: "Usar Banco Padrão",
   personalizar: "Ou personalize com Inteligência Artificial",
   rotuloDaDisciplina: "Componente Curricular",
@@ -570,8 +599,43 @@ export function camposVazios(ficha: Ficha): Campo[] {
 }
 
 /** Continuar o laço das imagens? Para em `completo` ou quando uma volta não gera nada. */
-export function continuarGerando(p: Pick<ProgressoDaMidia, "completo" | "geradas">): boolean {
+export function continuarGerando(p: { completo: boolean; geradas: readonly string[] }): boolean {
   return !p.completo && p.geradas.length > 0;
+}
+
+// ───────────────────────────────────── admin: as imagens do banco padrão
+
+/** `GET`/`POST /nina-noticia/banco-padrao/imagens` — só `admin` (a tela `/unooria/recursos/imagens-da-nina`). */
+export const CAMINHO_DAS_IMAGENS_DO_BANCO = "/nina-noticia/banco-padrao/imagens";
+
+/** As oito imagens do banco: quantas existem, quais faltam e as URLs. O storage é o registro. */
+export interface ImagensDoBancoPadrao {
+  total: number;
+  prontas: number;
+  faltam: ChaveDoBanco[];
+  completo: boolean;
+  imagens: Partial<Record<ChaveDoBanco, string>>;
+}
+
+/** O progresso, e o que ESTA chamada gerou ou não conseguiu. */
+export interface GeracaoDoBancoPadrao extends ImagensDoBancoPadrao {
+  geradas: ChaveDoBanco[];
+  falharam: ChaveDoBanco[];
+}
+
+export function textoDoProgressoDoBanco(b: Pick<ImagensDoBancoPadrao, "total" | "prontas">): string {
+  if (b.total === 0) return "O banco padrão não tem imagens.";
+  if (b.prontas >= b.total) return `As ${b.total} imagens do banco estão prontas.`;
+  return `${b.prontas} de ${b.total} imagens do banco prontas.`;
+}
+
+/** As que falharam nesta sessão e AINDA não têm imagem (a que saiu depois deixa a lista). */
+export function falhasAcumuladas(
+  anteriores: readonly ChaveDoBanco[],
+  p: Pick<GeracaoDoBancoPadrao, "falharam" | "imagens">,
+): ChaveDoBanco[] {
+  const todas = new Set([...anteriores, ...p.falharam]);
+  return CHAVES_DO_BANCO.filter((c) => todas.has(c) && !p.imagens[c]);
 }
 
 // ─────────────────────────────────────────────────────────────── os rótulos
