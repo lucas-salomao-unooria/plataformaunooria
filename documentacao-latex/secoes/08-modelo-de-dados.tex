@@ -2478,6 +2478,14 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   ordem por etapa) e \cd{\_publicacoes} (uma linha por publicação, única por
   sessão e tipo), com RLS forçada e \emph{CHECKs} espelhando
   \arq{conteudo.ts}.\\
+\zebra \arq{20261029200000\_\B{}exp09ef1b\_\B{}dossie\_\B{}invisivel} & As quatro
+  tabelas de O Dossiê Invisível (\adrr{ADR-202}): \cd{exp09ef1b\_\B{}pacotes}
+  (um em andamento e um rascunho por turma, índices únicos parciais),
+  \cd{\_gates\_turma} (\cd{exploracao} $|$ \cd{revelacao} $|$ \cd{revoto} $|$
+  \cd{explicar}), \cd{\_gates\_historico} (só as três travas) e
+  \cd{\_sessoes} (a conversa, os dois latches, o caminho e o protocolo, com
+  \emph{CHECKs} de ordem por etapa), com RLS forçada e \emph{CHECKs}
+  espelhando \arq{conteudo.ts}.\\
 \bottomrule
 \end{tabularx}
 
@@ -2703,6 +2711,57 @@ depois da errata decidida; o parecer exige o motivo do cartão sinalizado e
 recusa motivo de cartão não sinalizado; e a conclusão é o parecer OU o pular,
 depois da perícia aberta. O passo da tela é DERIVADO dessas colunas e do gate
 (\arq{regras/\B{}passos.ts}).
+\end{regra}
+
+\section{As quatro tabelas da exp09ef1b}
+\label{sec:tabelas-exp09ef1b}
+
+O Dossiê Invisível (\adrr{ADR-202}), no desenho de O Porta-Voz dos Dados, sem
+a tabela de publicações: os dois votos e o protocolo cabem na sessão. Todas
+com \cd{escola\_id NOT NULL}, RLS forçada, política por escola e \cd{GRANT}
+para \cd{app\_runtime}. Os vocabulários (disciplina, origem, etapa do gate,
+projeto, caminho, critério, pílula e âncora) vivem em
+\arq{dossie-\B{}invisivel/\B{}conteudo.ts} E nos \emph{CHECKs}, e
+\arq{tests/\B{}dossie-\B{}invisivel-\B{}regras.\B{}spec.ts} compara os dois textos.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp09ef1b\_\B{}pacotes} & A ATIVIDADE: a roupagem em \cd{conteudo\_json}
+  (os três projetos, com nome, coordenação, vagas, custo, área, impacto, o
+  cartão e os documentos indexados, e a transcrição dos cadernos), o recorte
+  do professor (disciplina, tema, de 3 a 6 assuntos, contexto), a
+  \cd{origem} (\cd{ia} $|$ \cd{padrao}), \cd{ativo}, \cd{rodada\_atual}, a
+  homologação (carimbo e autor juntos; só o homologado vai ao ar), o gasto de
+  IA do preparo e as vistas do painel. Um em andamento e um rascunho por
+  turma. Os papéis dos projetos, a verba, as falas e o gabarito NÃO estão
+  aqui: são fixos, de \arq{conteudo.ts}.\\
+\zebra \cd{exp09ef1b\_\B{}gates\_\B{}turma} & O gate da turma, só para a frente:
+  \cd{exploracao}, \cd{revelacao}, \cd{revoto}, \cd{explicar}. Chave
+  (escola, turma).\\
+\cd{exp09ef1b\_\B{}gates\_\B{}historico} & Cada trava do professor: o pacote, a
+  rodada, a etapa de destino (nunca \cd{exploracao}, que é o
+  \enquote{Zerar}) e o professor (\cd{SET NULL} se a conta sair).\\
+\zebra \cd{exp09ef1b\_\B{}sessoes} & Uma linha por (escola, estudante, pacote,
+  rodada), com a turma: a \cd{conversa} (JSONB, TEXTO LIVRE DE MENOR, com a
+  intenção e as duas leituras de cada mensagem), os contadores do chat, os
+  carimbos dos cadernos (oferta, digitalização e a etapa em que ela
+  aconteceu, E2 ou E4) e do \enquote{Ver Projetos}, o LATCH 1 (projeto,
+  ranking e caminho), as pílulas, o LATCH 2 (projeto e ranking finais), as
+  âncoras, o protocolo e a conclusão.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Os latches e a ordem são do banco também.} O chat vai de 0 a 5
+mensagens e as consultas que contam nunca passam das enviadas; a etapa da
+digitalização anda com o carimbo; o latch 1 grava projeto, ranking de três
+critérios e caminho juntos, e só depois de entrar; o latch 2 grava projeto e
+ranking juntos, só depois do 1 e com os cadernos digitalizados; e a
+conclusão é o protocolo, depois do 2º voto. A conversa nunca sai da sessão:
+não vai a painel, telemetria nem log. O passo da tela é DERIVADO dessas
+colunas e do gate (\arq{regras/\B{}passos.ts}).
 \end{regra}
 
 \section{As três tabelas da exp01ef1b}

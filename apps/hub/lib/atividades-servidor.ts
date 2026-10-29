@@ -9,6 +9,7 @@ import {
   atividadesDoEnigma,
   atividadesDaNina,
   atividadesDoAssistente,
+  atividadesDoDossie,
   atividadesDoJuri,
   atividadesDoPortaVoz,
   atividadesDoQuemMandou,
@@ -20,6 +21,7 @@ import {
 import { caminhoDaTurma as caminhoDoEfeito, rotuloDaDisciplina as rotuloDoEfeito, type PacotesDaTurmaEfeito } from "./efeito-amplificador-tipos";
 import { ROTAS_DA_CURADORIA as ROTAS_DO_ASSISTENTE, caminhoDaTurma as caminhoDoAssistente, rotuloDaDisciplina as rotuloDoAssistente, type PacotesDaTurmaAssistente } from "./assistente-invisivel-tipos";
 import { caminhoDaTurma as caminhoDoEnigma, rotuloDaDisciplina as rotuloDoEnigma, type PacotesDaTurmaEnigma } from "./enigma-capa-tipos";
+import { ROTAS_DA_TURMA as ROTAS_DO_DOSSIE, caminhoDaTurma as caminhoDoDossie, rotuloDaDisciplina as rotuloDoDossie, type PacotesDaTurmaDossie } from "./dossie-invisivel-tipos";
 import type { PacotesDaTurma } from "./jornal-escola-tipos";
 import { caminhoDaTurma as caminhoDaNina, rotuloDaDisciplina as rotuloDaNina, type PacotesDaTurmaNina } from "./nina-noticia-tipos";
 import { ROTAS_DA_TURMA as ROTAS_DO_PORTA_VOZ, caminhoDaTurma as caminhoDoPortaVoz, rotuloDaDisciplina as rotuloDoPortaVoz, type PacotesDaTurmaPortaVoz } from "./porta-voz-tipos";
@@ -86,6 +88,10 @@ export async function atividadesDaMissao(
     case "exp03em1b": {
       const r = await apiDoServidor<PacotesDaTurmaPortaVoz>(`${caminhoDoPortaVoz(turmaId)}${ROTAS_DO_PORTA_VOZ.pacotes}`);
       return r ? ordenarAtividades(atividadesDoPortaVoz(r, rotuloDoPortaVoz)) : null;
+    }
+    case "exp09ef1b": {
+      const r = await apiDoServidor<PacotesDaTurmaDossie>(`${caminhoDoDossie(turmaId)}${ROTAS_DO_DOSSIE.pacotes}`);
+      return r ? ordenarAtividades(atividadesDoDossie(r, rotuloDoDossie)) : null;
     }
   }
 }

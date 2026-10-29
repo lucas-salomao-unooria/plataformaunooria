@@ -11,6 +11,7 @@ import type { TurmaDoAssistente } from "@/components/atividades/assistente-de-at
 import { CriarASelecao } from "./criar-a-selecao";
 import { CriarAssistenteInvisivel } from "./criar-assistente-invisivel";
 import { CriarEfeitoAmplificador } from "./criar-efeito-amplificador";
+import { CriarDossieInvisivel } from "./criar-dossie-invisivel";
 import { CriarEnigmaCapa } from "./criar-enigma-capa";
 import { CriarJornalEscola } from "./criar-jornal-escola";
 import { CriarJuriEstadual } from "./criar-juri-estadual";
@@ -90,6 +91,8 @@ export default async function NovaAtividadePage({
         <CriarNinaNoticia {...props} />
       ) : expId === "exp03em1b" ? (
         <CriarPortaVoz {...props} />
+      ) : expId === "exp09ef1b" ? (
+        <CriarDossieInvisivel {...props} />
       ) : (
         <CriarQuemMandou {...props} />
       )}

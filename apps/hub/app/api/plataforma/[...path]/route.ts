@@ -138,6 +138,15 @@ const PREFIXOS_PERMITIDOS = [
      sala e os aparelhos andam pelo polling da sessão. As guardas de papel estão
      na api (`@Roles("professor")` na escrita). */
   "porta-voz-dos-dados",
+  /* exp09ef1b (O Dossiê Invisível, ADR-202): o preparo ("Usar banco padrão"
+     em dois toques, "Gerar com IA", editar e "Regenerar item pontual" na
+     curadoria, "Aprovar Pacote"), o "Liberar para a Turma", as três travas da
+     aula ("Liberar Próxima Pauta", "Abrir Revisão da Decisão" e "Destravar
+     Explicar e Protocolo"), o painel relido a cada 5 s e o "Zerar Turma" são
+     client-side — o professor toca na frente da sala e os computadores andam
+     pelo polling da sessão. As guardas de papel estão na api
+     (`@Roles("professor")` na escrita). */
+  "dossie-invisivel",
   /* exp06ef2b: o gate da aula (abrir a Aula 2, pausar a simulação) e o "zerar
      turma" são client-side — a professora aperta no meio da aula e as 30 telas
      andam na hora, sem recarregar a página. As guardas de papel estão na api
