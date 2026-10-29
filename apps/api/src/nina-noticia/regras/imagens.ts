@@ -16,8 +16,10 @@ import {
  *   refaz e aprova no preparo, com a quota dela;
  * - as CENAS FIXAS do banco (`caso-a`, `caso-b`, `extra-1`, `extra-2`: o
  *   Festival de Ciências e o Desafio Extra): iguais para toda turma, geradas uma
- *   vez pelo `admin` (`banco-padrao-imagens.service.ts`). A professora nunca as
- *   gera; o pacote as recebe de graça quando já estão no storage.
+ *   vez na conta da PLATAFORMA — pelo `admin` em `/unooria/recursos/imagens-da-nina`
+ *   ou, a que ainda faltar, no `gerar-midia` da primeira professora (ADR-199).
+ *   A professora nunca as refaz nem paga por elas; o pacote as recebe de graça
+ *   quando já estão no storage.
  *
  * **O arquivo é o hash do PEDIDO** (o prompt inteiro, com a versão): a mesma
  * cena gerada uma vez serve a toda turma que homologar o mesmo texto, e um
@@ -25,6 +27,9 @@ import {
  * variação no nome — sobrescrever o arquivo do pedido trocaria a imagem de
  * todo pacote que a herdou, inclusive o de uma turma em aula.
  */
+
+/** 800×600 (4:3), a foto da reportagem — das quatro do pacote e das cenas fixas. */
+export const TAMANHO_DA_IMAGEM = { largura: 800, altura: 600 } as const;
 
 /** Sobe quando o PEDIDO de imagem muda de estilo: o próximo preparo gera de novo em vez de reaproveitar. */
 export const VERSAO_DO_PEDIDO_DE_IMAGEM = 1;

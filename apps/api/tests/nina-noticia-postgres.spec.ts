@@ -186,6 +186,42 @@ describe("a porta da sala e a missão vazia", () => {
     expect(await codigo(service.painel(ESCOLA, ids.turma, ids.prof))).toBe("atividade-nao-preparada");
   });
 
+  test("ADR-199: o banco padrão SEM pôr no ar nasce EM PREPARO (as imagens passam pela grade); o de novo é o MESMO, ganha as do banco que faltavam e segue em preparo", async () => {
+    const r = await service.usarBancoPadrao(ESCOLA, ids.turma, ids.prof, ids.prof, false, { telao: "https://cdn/telao.webp" });
+    expect(r).toMatchObject({ origem: "padrao", ativo: false });
+    const lido = await prisma.exp03ef1bPacote.findUniqueOrThrow({ where: { id: r.id } });
+    expect(lido.imagensAprovadasEm).toBeNull();
+    expect(lido.midia).toEqual({ telao: "https://cdn/telao.webp" });
+    expect(await codigo(service.colocarEmAndamento(ESCOLA, ids.turma, ids.prof, r.id))).toBe("imagens-nao-aprovadas");
+    /* A grade da professora pode gerar: o pacote está em validação. */
+    await expect(service.pacoteParaMidia(ESCOLA, ids.turma, ids.prof, r.id)).resolves.toMatchObject({ id: r.id });
+
+    const denovo = await service.usarBancoPadrao(ESCOLA, ids.turma, ids.prof, ids.prof, false, {
+      mural: "https://cdn/mural.webp",
+      telao: "https://cdn/OUTRA.webp",
+      "caso-a": "https://cdn/caso-a.webp",
+    });
+    expect(denovo.id).toBe(r.id);
+    const relido = await prisma.exp03ef1bPacote.findUniqueOrThrow({ where: { id: r.id } });
+    /* O que o pacote já tinha (inclusive uma imagem refeita) vence a do banco. */
+    expect(relido.midia).toEqual({ telao: "https://cdn/telao.webp", mural: "https://cdn/mural.webp", "caso-a": "https://cdn/caso-a.webp" });
+    expect(relido.imagensAprovadasEm).toBeNull();
+  });
+
+  test("ADR-199: o reaproveitado APROVADO e fora do ar com imagem faltando volta à aprovação; completo, segue aprovado", async () => {
+    const pacote = await prisma.exp03ef1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turma, origem: "padrao" } });
+    await service.aprovarImagens(ESCOLA, ids.turma, ids.prof, pacote.id);
+    await service.usarBancoPadrao(ESCOLA, ids.turma, ids.prof, ids.prof, false);
+    expect((await prisma.exp03ef1bPacote.findUniqueOrThrow({ where: { id: pacote.id } })).imagensAprovadasEm).toBeNull();
+
+    const completas = { mural: "m", portal: "p", telao: "t", cartaz: "c" };
+    await prisma.exp03ef1bPacote.update({ where: { id: pacote.id }, data: { midia: completas, imagensAprovadasEm: new Date() } });
+    await service.usarBancoPadrao(ESCOLA, ids.turma, ids.prof, ids.prof, false);
+    expect((await prisma.exp03ef1bPacote.findUniqueOrThrow({ where: { id: pacote.id } })).imagensAprovadasEm).not.toBeNull();
+    /* Volta ao estado do teste seguinte: em preparo, sem imagens. */
+    await prisma.exp03ef1bPacote.update({ where: { id: pacote.id }, data: { midia: {}, imagensAprovadasEm: null } });
+  });
+
   test("o banco padrão no ar num toque; de novo, a MESMA atividade; a professora de outra turma recebe 404", async () => {
     expect(await codigo(service.usarBancoPadrao(ESCOLA, ids.turma, ids.profB, ids.profB, true))).toBe("turma-nao-encontrada");
     const r = await service.usarBancoPadrao(ESCOLA, ids.turma, ids.prof, ids.prof, true);
