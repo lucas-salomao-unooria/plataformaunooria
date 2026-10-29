@@ -98,7 +98,16 @@ Preparo do jornal & exp03ef1b, \arq{src/nina-noticia/} &
   nunca da IA. Sem saldo ou sem provedor, o banco padrão (\cd{usouIa:
   false}); as cenas fixas são do \cd{admin}; em sala, nada (\adrr{ADR-197},
   Seção~\ref{sec:ia-preparo-exp03ef1b}).\\
-\zebra Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
+\zebra Preparo do pacote & exp03em1b, \arq{src/porta-voz-\B{}dos-\B{}dados/} &
+  A roupagem do tema sobre o recorte do professor (componente, tema, de 3 a 6
+  assuntos, território): o recorte do grupo, o serviço, a nota técnica, os
+  textos das três camadas, as reações dos dois ramos e o pós-Aha, com a quota
+  dele; e o \enquote{Regenerar Item}. Os números da série, o laudo, a escola
+  rival e a perícia são fixos e nem passam pelo modelo; a régua recusa texto
+  que cite outro percentual. Sem saldo ou sem provedor, o banco curado; em
+  sala, nada: o Assistente de Dados é determinístico (\adrr{ADR-198},
+  Seção~\ref{sec:ia-preparo-exp03em1b}).\\
+Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
   As quatro áreas e os quarenta estandes da mostra científica sobre o tema e
   os assuntos do professor (cinco chamadas: as categorias e as quatro áreas em
   paralelo, \adrr{ADR-164}), e as imagens a partir da descrição de cada um.
@@ -424,6 +433,57 @@ painel de custos (\adrr{ADR-161}) a chamada aparece como
 \cd{assistente-\B{}invisivel} (\enquote{O Assistente Invisível}, em
 \cd{RECURSOS\_\B{}DE\_\B{}IA}). Nada gerado chega à turma sem o \enquote{Aprovar
 Pacote Homologado}.
+
+\subsection{O preparo de O Porta-Voz dos Dados: só a roupagem do tema}
+\label{sec:ia-preparo-exp03em1b}
+
+A única superfície de IA da exp03em1b é o preparo do professor, antes da aula
+(\arq{porta-\B{}voz-\B{}dos-\B{}dados/\B{}preparo.\B{}service.ts}, \adrr{ADR-198}). Na
+aula, o Assistente de Dados é um bot DETERMINÍSTICO sobre o pacote
+homologado: não há chamada de IA na tela do estudante, nem texto livre. São
+duas chamadas pagas, as duas na quota do perfil \cd{professor} (regra 5:
+\cd{temSaldo} ANTES, \cd{consumir} depois, por tentativa, inclusive as
+recusadas e as que falharam depois de cobradas, \adrr{ADR-74}):
+
+\begin{enumerate}
+  \item \textbf{\enquote{Gerar Proposta via IA}} (\rota{POST
+    /porta-\B{}voz-\B{}dos-\B{}dados/\B{}turmas/\B{}:turmaId/\B{}pacotes/\B{}gerar-\B{}conteudo}):
+    \cd{generateJson} (\arq{prompts.ts}, teto de 12.000 \emph{tokens} de
+    saída, \adrr{ADR-148}, temperatura 0,5) sobre o recorte. O \emph{prompt}
+    de sistema descreve a missão e pede só a ROUPAGEM: o recorte do grupo (até
+    60 caracteres, depois de \enquote{Comitê Municipal de Políticas Públicas
+    ---}), o serviço (órgão, indicador, os quatro períodos e as situações, sem
+    números), a nota técnica formal (com a queda localizada e a estabilidade
+    de 98\% do resto da rede), os textos fixos das três camadas (a explicação
+    da escala com variante para 0 e para 80), as reações dos MESMOS três
+    moradores nos dois ramos (indiferença com o eixo em 0, alarme com o eixo
+    em 80) e o pós-Aha (o morador confuso e o coordenador).
+  \item \textbf{\enquote{Regenerar Item}} (\rota{POST
+    .../pacotes/\B{}:pacoteId/\B{}regenerar}): a IA reescreve UM dos seis itens
+    do rascunho, com o resto do pacote no \emph{prompt} (teto de 8.000,
+    temperatura 0,8), e a saída passa pela régua inteira junto com o pacote.
+\end{enumerate}
+
+\textbf{A camada fixa nem passa pelo modelo}: os números 95, 94, 92 e 88, as
+amostras, o laudo ($\approx$\,6,3), a escola rival, os cartões da perícia e o
+gabarito são de \arq{conteudo.ts}. \textbf{A régua é uma só}
+(\cd{regras/\B{}pacote.ts\#\B{}problemas\B{}Do\B{}Conteudo}), para a saída da IA e para a
+homologação: a forma do contrato, a explicação de cada escala falando do
+eixo certo, os mesmos três moradores nos dois ramos, a estabilidade de 98\%
+na nota técnica, quatro períodos e \textbf{nenhum percentual que não seja da
+série} --- a IA que escrevesse \enquote{caiu de 96 para 85} desmentiria a
+tabela.
+
+\textbf{Sem saldo ou com o \emph{vendor} fora}, o rascunho sai do banco
+curado (\enquote{Vigilância Sanitária da Água}), com \cd{usouIa: false} e o
+\cd{motivo} (\cd{sem-saldo} $|$ \cd{indisponivel}), e o hub oferece
+\enquote{Carregar Banco Padrão Curado}; o regenerar deixa o item como estava.
+O \enquote{Usar Banco Padrão e Liberar} deliberado não chama IA. O pacote
+conta \cd{ia\_geracoes} e \cd{ia\_tokens}; no painel de custos
+(\adrr{ADR-161}) a chamada aparece como \cd{porta-\B{}voz-\B{}dos-\B{}dados}
+(\enquote{O Porta-Voz dos Dados}, em \cd{RECURSOS\_\B{}DE\_\B{}IA}), medida pelo
+\cd{MedidorDeProvider}. Nada gerado chega à turma sem o \enquote{Homologar
+Pacote de Conteúdo}.
 
 \section{A camada única}
 

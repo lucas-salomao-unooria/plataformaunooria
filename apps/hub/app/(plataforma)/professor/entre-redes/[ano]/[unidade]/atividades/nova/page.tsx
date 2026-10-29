@@ -15,6 +15,7 @@ import { CriarEnigmaCapa } from "./criar-enigma-capa";
 import { CriarJornalEscola } from "./criar-jornal-escola";
 import { CriarJuriEstadual } from "./criar-juri-estadual";
 import { CriarNinaNoticia } from "./criar-nina-noticia";
+import { CriarPortaVoz } from "./criar-porta-voz";
 import { CriarQuemMandou } from "./criar-quem-mandou";
 
 /**
@@ -87,6 +88,8 @@ export default async function NovaAtividadePage({
         <CriarAssistenteInvisivel {...props} />
       ) : expId === "exp03ef1b" ? (
         <CriarNinaNoticia {...props} />
+      ) : expId === "exp03em1b" ? (
+        <CriarPortaVoz {...props} />
       ) : (
         <CriarQuemMandou {...props} />
       )}

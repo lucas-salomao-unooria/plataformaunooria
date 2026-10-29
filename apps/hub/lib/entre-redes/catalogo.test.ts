@@ -28,6 +28,8 @@ describe("grade do Entre Redes", () => {
     expect(buscarMissao("6-ano", "unidade-2")?.missao.expId).toBe("exp06ef2b");
     expect(buscarMissao("8-ano", "unidade-1")?.missao.expId).toBe("exp08ef1b");
     expect(buscarMissao("1-serie", "unidade-1")?.missao.expId).toBe("exp01em1b");
+    expect(buscarMissao("2-serie", "unidade-1")?.missao.expId).toBe("exp02em1b");
+    expect(buscarMissao("3-serie", "unidade-1")?.missao.expId).toBe("exp03em1b");
   });
 
   /* O UnooTube foi arquivado (ADR-116) e o Jornal da Escola tomou o código e a

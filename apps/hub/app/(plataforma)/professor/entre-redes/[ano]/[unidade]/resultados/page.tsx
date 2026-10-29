@@ -10,6 +10,7 @@ import {
   MISSAO_FOTO_CONTA,
   MISSAO_JORNAL_DA_ESCOLA,
   MISSAO_JURI_ESTADUAL,
+  MISSAO_PORTA_VOZ,
   MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
@@ -25,6 +26,7 @@ import { ResultadosNinaNoticia } from "./resultados-nina-noticia";
 import { ResultadosFotoConta } from "./resultados-foto-conta";
 import { ResultadosJornalEscola } from "./resultados-jornal-escola";
 import { ResultadosJuriEstadual } from "./resultados-juri-estadual";
+import { ResultadosPortaVoz } from "./resultados-porta-voz";
 import { ResultadosQuemMandouIsso } from "./resultados-quem-mandou-isso";
 import { ResultadosRastroBoato } from "./resultados-rastro-boato";
 import { ResultadosUnooGPT } from "./resultados-unoogpt";
@@ -97,6 +99,9 @@ export default async function ResultadosPage({
   }
   if (missao.expId === MISSAO_NINA_NOTICIA.expId) {
     return <ResultadosNinaNoticia missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} separar={separar} />;
+  }
+  if (missao.expId === MISSAO_PORTA_VOZ.expId) {
+    return <ResultadosPortaVoz missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();

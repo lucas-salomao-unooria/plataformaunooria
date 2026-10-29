@@ -104,6 +104,13 @@ export {
  */
 export { TypingIndicator } from '@unooria/design-system/unoochat';
 
+/**
+ * O interruptor (0.2.25, pedido da exp03em1b): `<button role="switch">` com
+ * rótulo e descrição — as três camadas do compositor do Porta-Voz. A API é a
+ * do `Toggle` da plataforma; o `Toggle` NÃO entra no clone (é outra seção).
+ */
+export { Switch } from '@unooria/design-system/unoochat';
+
 /** Tokens, para o CSS local não escrever cor à mão. */
 export {
   uncColorTokens,
@@ -151,4 +158,6 @@ export type {
   UncPollProps,
   UncSystemMessageProps,
   UncToastProps,
+  UncSwitchProps,
+  UncSwitchLabelPosition,
 } from '@unooria/design-system/unoochat';

@@ -1,6 +1,6 @@
 {
   "name": "@edu/exp05ef1b",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,7 @@
   "dependencies": {
     "@edu/sdk": "workspace:*",
     "@edu/ui": "workspace:*",
-    "@unooria/design-system": "^0.2.24",
+    "@unooria/design-system": "^0.2.25",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
