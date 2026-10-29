@@ -117,12 +117,15 @@ espelhos dessas listas; mudar a forma aqui sem avisar quebra os dois.
 
 ## A evidência (E14) — `regras/evidencia.ts`
 
-Ficha `evidencias/fichas/exp03ef1b.ts` versão 1, só ação:
+Ficha `evidencias/fichas/exp03ef1b.ts` versão 2, só ação:
 `inspecao` EF15CO08 (no `POST ficha`: certo de primeira e sem o pulso =
 atingiu), `carimbos` EF03CO01 (no `POST carimbos` da E6; a UNIFORMIDADE vence:
 uniforme = não atingiu; K3 ✔ e K5 ? e ≥ 5 de 6 = atingiu), `rotina` EF03CO02 (≤ 2
-tentativas contando a válida), `reparo` EF03CO03 e `previsao` EF15CO01 (os dois no
-`POST reparo`). Tarefa não feita = sem marca (`null`).
+tentativas contando a válida) e `reparo` EF03CO03 (no `POST reparo`). Tarefa não
+feita = sem marca (`null`). A versão 1 marcava também `previsao` EF15CO01 no
+reparo, pela mesma régua da EF03CO03; o PO a tirou da missão (ADR-200) — a
+apostila não a trabalha. A escolha travada da E2 continua: é a surpresa da
+busca, só não vira nota.
 
 ## As suítes
 
@@ -132,7 +135,7 @@ tentativas contando a válida), `reparo` EF03CO03 e `previsao` EF15CO01 (os dois
 - `tests/nina-noticia-postgres.spec.ts` — a aula na ordem: porta da sala, banco
   padrão no ar, sessão sem gabarito, latch (inclusive concorrente), portões e
   pausa, filtro que conta, ficha, carimbos, reparo certo/errado, rotina, fim, as
-  cinco marcas, painel, CHECKs comparados ao vocabulário, RLS e zerar.
+  quatro marcas (e a EF15CO01 sem marca, ADR-200), painel, CHECKs comparados ao vocabulário, RLS e zerar.
 - `tests/nina-noticia-midia.spec.ts` — SEM banco, com IA FALSA (só aqui): o
   preparo, a régua que regera, o fallback, as imagens do pacote, as cenas
   fixas no preparo (conta da plataforma, uma vez só com duas turmas, sem saldo)

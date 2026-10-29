@@ -70,7 +70,7 @@ export function MissaoNinaNoticia({
           </p>
           <p className="text-[13px] text-unooria-neutral-500">
             A missão não coleta foto, voz nem texto da criança: tudo é toque. O painel da aula mostra só o progresso e
-            os alertas de cada computador; as cinco habilidades são registradas pelo que a dupla FAZ, no painel de
+            os alertas de cada computador; as quatro habilidades são registradas pelo que a dupla FAZ, no painel de
             habilidades da atividade.
           </p>
         </>

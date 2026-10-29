@@ -2,7 +2,7 @@ import type { FichaPedagogica } from "./tipos";
 
 /**
  * A FICHA de NINA E A NOTÍCIA QUE DESAPARECEU (exp03ef1b, 3º ano EF, unidade 1,
- * ADR-197) — versão 1, de 2026-10-28: 100% Canal A, sem pergunta e sem
+ * ADR-197) — versão 2, de 2026-10-29: 100% Canal A, sem pergunta e sem
  * resolvedor. Toda habilidade é medida pelo que a criança FAZ, cada uma na
  * transação da própria jogada (`nina-noticia/regras/evidencia.ts`):
  *
@@ -11,16 +11,18 @@ import type { FichaPedagogica } from "./tipos";
  *   - **EF03CO01** nos seis carimbos, no `POST carimbos` do caso novo (E6) —
  *     a uniformidade vence;
  *   - **EF03CO02** na rotina válida (`POST rotina`);
- *   - **EF03CO03** e **EF15CO01** no reparo da ficha (`POST reparo`).
+ *   - **EF03CO03** no reparo da ficha (`POST reparo`).
  *
  * Sem o Canal B (spec §0.1). Quem não faz a tarefa fica "Não avaliado" — a
  * AUSÊNCIA de marca —, nunca "não atingiu". Toda rodada mede de novo (ADR-145).
- * A EF15CO01 repete, na prática, a régua da EF03CO03 (a escolha travada
- * confrontada com o reparo): pendência levada ao PO (spec §2).
+ * A versão 1 tinha também a EF15CO01, marcada no mesmo reparo e pela mesma
+ * régua da EF03CO03; o PO a tirou da missão (ADR-200): a apostila não a
+ * trabalha. A escolha travada da E2 continua — é a surpresa da busca —, só
+ * não vira nota.
  */
 export const FICHA_EXP03EF1B: FichaPedagogica = {
   expId: "exp03ef1b",
-  versao: 1,
+  versao: 2,
   habilidades: [
     {
       codigo: "EF15CO08",
@@ -65,17 +67,6 @@ export const FICHA_EXP03EF1B: FichaPedagogica = {
         nao_atingiu: "A missão não dá este nível sozinha: toda ficha concluída tem as três etiquetas. Você pode ajustar.",
         observacao:
           'Medida no "Concluir" da ficha. Só a posição da etiqueta Pátio conta; onde vão as outras duas fica registrado. Quem não conclui a ficha fica "Não avaliado".',
-      },
-    },
-    {
-      codigo: "EF15CO01",
-      marcadores: [{ id: "previsao", tipo: "acao", rotulo: "A escolha confrontada com o conserto" }],
-      criterios: {
-        atingiu: "Travou a escolha das notícias e, depois de ver a que faltou, conserta a ficha com o Pátio no campo Onde.",
-        em_processo: "Travou a escolha, mas conserta a ficha com o Pátio fora do campo Onde.",
-        nao_atingiu: "A missão não dá este nível sozinha: a marca só existe com a escolha travada e a ficha concluída. Você pode ajustar.",
-        observacao:
-          'Medida no "Concluir" da ficha, junto com a EF03CO03. Na prática segue a mesma régua; a diferença está em confrontar a escolha inicial com o que a busca mostrou, na conversa da turma.',
       },
     },
   ],
