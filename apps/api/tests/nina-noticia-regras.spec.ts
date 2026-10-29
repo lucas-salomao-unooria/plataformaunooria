@@ -41,7 +41,6 @@ import { problemasDoPacote } from "../src/nina-noticia/invariantes";
 import { GABARITO, acertos, uniforme } from "../src/nina-noticia/regras/carimbos";
 import {
   nivelDaInspecao,
-  nivelDaPrevisao,
   nivelDaRotina,
   nivelDoReparo,
   nivelDosCarimbos,
@@ -363,12 +362,9 @@ describe("os níveis da evidência (spec §2)", () => {
     expect(nivelDaRotina({ valida: false, tentativas: 5 })).toBeNull();
   });
 
-  test("EF03CO03 e EF15CO01 — o reparo e a escolha", () => {
+  test("EF03CO03 — o reparo", () => {
     expect(nivelDoReparo(true)).toBe("atingiu");
     expect(nivelDoReparo(false)).toBe("em_processo");
-    expect(nivelDaPrevisao({ previsaoTravada: true, reparoValido: true })).toBe("atingiu");
-    expect(nivelDaPrevisao({ previsaoTravada: true, reparoValido: false })).toBe("em_processo");
-    expect(nivelDaPrevisao({ previsaoTravada: false, reparoValido: true })).toBeNull();
   });
 });
 

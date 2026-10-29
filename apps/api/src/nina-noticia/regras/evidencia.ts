@@ -3,7 +3,7 @@ import { TENTATIVAS_PARA_ATINGIR_A_ROTINA } from "../vocabulario";
 import { acertos, uniforme, type CarimbosDaEtapa } from "./carimbos";
 
 /**
- * Os MARCADORES da ficha (`evidencias/fichas/exp03ef1b.ts`, versão 1, só ação —
+ * Os MARCADORES da ficha (`evidencias/fichas/exp03ef1b.ts`, versão 2, só ação —
  * spec §2) e as réguas que os alimentam. Os ids são contrato com a ficha: a
  * missão calcula o nível na transação da tarefa e o entrega pela porta
  * `marcar`.
@@ -21,8 +21,6 @@ export const MARCADOR_DOS_CARIMBOS = "carimbos";
 export const MARCADOR_DA_ROTINA = "rotina";
 /** EF03CO03: o reparo. Marca no `POST reparo`. */
 export const MARCADOR_DO_REPARO = "reparo";
-/** EF15CO01: a escolha travada confrontada com o reparo. Marca no `POST reparo`. */
-export const MARCADOR_DA_PREVISAO = "previsao";
 
 /** A habilidade da BNCC de cada marcador — o que a ficha declara. */
 export const HABILIDADE_DO_MARCADOR = {
@@ -30,7 +28,6 @@ export const HABILIDADE_DO_MARCADOR = {
   [MARCADOR_DOS_CARIMBOS]: "EF03CO01",
   [MARCADOR_DA_ROTINA]: "EF03CO02",
   [MARCADOR_DO_REPARO]: "EF03CO03",
-  [MARCADOR_DA_PREVISAO]: "EF15CO01",
 } as const;
 
 /**
@@ -78,13 +75,3 @@ export function nivelDoReparo(valido: boolean): Nivel {
   return valido ? "atingiu" : "em_processo";
 }
 
-/**
- * EF15CO01: a escolha travada (a previsão) confrontada com a correção. Atingiu =
- * previsão travada + reparo válido; em processo = previsão travada + reparo
- * inválido; sem previsão travada, sem marca. (Na prática repete a EF03CO03 —
- * pendência levada ao PO, spec §2.)
- */
-export function nivelDaPrevisao(p: { previsaoTravada: boolean; reparoValido: boolean }): Nivel | null {
-  if (!p.previsaoTravada) return null;
-  return p.reparoValido ? "atingiu" : "em_processo";
-}

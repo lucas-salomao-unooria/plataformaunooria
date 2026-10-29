@@ -9,7 +9,7 @@ export interface NoticiaDaBandeja {
 }
 
 /**
- * A escolha da E2 (EF15CO01, a previsão): a bandeja "Notícias da feira" e a
+ * A escolha da E2 (a previsão): a bandeja "Notícias da feira" e a
  * "Caixa de resultados esperados", com três nichos. Mecânica da missão: só
  * `@edu/ui/ds` (`Card`, `PuzzleBlock`, `PuzzleTrack`).
  *

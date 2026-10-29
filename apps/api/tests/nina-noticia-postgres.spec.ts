@@ -371,7 +371,7 @@ describe("E4: a ficha, os carimbos e o reparo", () => {
     await service.carimbos(ESCOLA, ids.caio, ids.turma, "e4", { k1: "v", k2: "x", k3: "duvida" });
   });
 
-  test("o reparo recusa a etiqueta repetida e a de outra sessão; Pátio em Onde é SUCESSO (EF03CO03 e EF15CO01 atingiu)", async () => {
+  test("o reparo recusa a etiqueta repetida e a de outra sessão; Pátio em Onde é SUCESSO (EF03CO03 atingiu; a EF15CO01 saiu da ficha, ADR-200)", async () => {
     const s = await sessao(ids.ana);
     expect(s.reparo?.etiquetas.map((e) => e.etiqueta)).toEqual(["patio", "estudantes", "sexta"]);
     expect(s.reparo?.desfecho).toBeNull();
@@ -382,16 +382,16 @@ describe("E4: a ficha, os carimbos e o reparo", () => {
     const r = RespostaDoReparoSchema.parse(await service.reparo(ESCOLA, ids.ana, ids.turma, certa));
     expect(r).toMatchObject({ desfecho: "sucesso", passo: "desfecho" });
     expect(await nivel(ids.ana, "reparo")).toBe("atingiu");
-    expect(await nivel(ids.ana, "previsao")).toBe("atingiu");
+    expect(await nivel(ids.ana, "previsao")).toBeNull();
     expect(await codigo(service.reparo(ESCOLA, ids.ana, ids.turma, certa))).toBe("reparo-ja-enviado");
     expect((await sessao(ids.ana)).reparo).toMatchObject({ desfecho: "sucesso", enviada: certa });
   });
 
-  test("Pátio fora de Onde é ERRO (em processo nas duas), sem 'tentar de novo'", async () => {
+  test("Pátio fora de Onde é ERRO (em processo), sem 'tentar de novo'", async () => {
     const errada = await montar(ids.bia, { quem: "patio", onde: "sexta", quando: "estudantes" });
     expect(await service.reparo(ESCOLA, ids.bia, ids.turma, errada)).toMatchObject({ desfecho: "erro" });
     expect(await nivel(ids.bia, "reparo")).toBe("em_processo");
-    expect(await nivel(ids.bia, "previsao")).toBe("em_processo");
+    expect(await nivel(ids.bia, "previsao")).toBeNull();
     expect((await linha(ids.bia)).reparoPosicoes).toEqual({ quem: "patio", onde: "sexta", quando: "estudantes" });
   });
 });
