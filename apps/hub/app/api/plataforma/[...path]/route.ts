@@ -125,7 +125,10 @@ const PREFIXOS_PERMITIDOS = [
      (Liberar Filtro, Liberar Inspeção), Pausar/Retomar Turma, o painel relido a
      cada 5 s e o "Zerar Turma" são client-side — a professora toca na frente da
      sala e os computadores andam pelo polling do gate (3 s). As guardas de
-     papel estão na api (`@Roles("professor")` na escrita). */
+     papel estão na api (`@Roles("professor")` na escrita). O mesmo prefixo
+     leva as imagens do BANCO PADRÃO (`nina-noticia/banco-padrao/imagens`, a
+     tela `/unooria/recursos/imagens-da-nina`, ADR-199), que só o `admin`
+     alcança: o `@Roles("admin")` está na api. */
   "nina-noticia",
   /* exp03em1b (O Porta-Voz dos Dados, ADR-198): o preparo (banco padrão em
      dois toques, gerar com IA, editar e "Regenerar Item" na curadoria,
