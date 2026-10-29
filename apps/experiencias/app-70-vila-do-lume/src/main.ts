@@ -26,7 +26,7 @@ import type { PontePlataforma } from "./tipos";
  *  porque quem estava com a aba aberta durante um publish termina com a anterior:
  *  sem isto o skew de versão fica invisível na tabela. Subir aqui e no
  *  `experiencia.json` é o mesmo ato. */
-const EXP_VERSION = "1.1.8";
+const EXP_VERSION = "1.1.9";
 
 /** `"Ana Beatriz Souza"` → `"Ana"`. A Pedra dos Nomes é lida pelas outras
  *  crianças da turma; nome inteiro ali é exposição sem ganho nenhum. */

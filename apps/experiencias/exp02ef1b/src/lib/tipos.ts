@@ -17,7 +17,7 @@ export const EXP_ID = "exp02ef1b";
  * A versão vive em TRÊS lugares: aqui, no `package.json` e no
  * `public/experiencia.json` (`versao.test.ts` compara os três — ADR-84).
  */
-export const EXP_VERSION = "2.2.1";
+export const EXP_VERSION = "2.2.2";
 
 export type Passo =
   | "inicio"
