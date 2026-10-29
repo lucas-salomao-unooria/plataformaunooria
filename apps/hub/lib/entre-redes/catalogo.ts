@@ -1326,8 +1326,7 @@ export const MISSAO_NINA_NOTICIA: Missao = {
     competencia:
       "EF15CO08 — Reconhecer e utilizar tecnologias computacionais para pesquisar e acessar informações (o foco: a " +
       "busca consulta os campos da ficha, não a foto). Com EF03CO01 (verdadeiro, falso e a negação nos carimbos), " +
-      "EF03CO02 (a rotina com repetição e condição de parada), EF03CO03 (decompor a ficha campo a campo) e EF15CO01 " +
-      "(a informação livre da foto e a estruturada da ficha).",
+      "EF03CO02 (a rotina com repetição e condição de parada) e EF03CO03 (decompor a ficha campo a campo).",
     duracao: "1 aula de 50 min (22 min em tela) — ou 2 aulas, com a pausa depois do filtro",
     formato:
       "Em duplas, um computador para cada duas crianças (de 1 a 4), no Unoojornal, o jornal escolar digital da " +

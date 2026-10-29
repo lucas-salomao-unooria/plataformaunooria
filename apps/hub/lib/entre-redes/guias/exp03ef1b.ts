@@ -113,13 +113,6 @@ export const GUIA_EXP03EF1B: GuiaDaAula = {
       eixo: "Pensamento Computacional",
       ondeAcontece: "Etapa 4: a ficha do telão montada com as três etiquetas, registrada no Concluir.",
     },
-    {
-      codigo: "EF15CO01",
-      texto:
-        "Identificar as principais formas de organizar e representar a informação de maneira estruturada (matrizes, registros, listas e grafos) ou não estruturada (números, palavras, valores verdade).",
-      eixo: "Pensamento Computacional",
-      ondeAcontece: "Da escolha travada na Etapa 2 ao reparo da ficha na Etapa 4: a foto (livre) contra a ficha (em campos).",
-    },
   ],
 
   antes: {

@@ -43,7 +43,7 @@ import { revelar } from "../lib/abas.mjs";
  * 8. **E6 — o caso novo e o fim**: as ferramentas, K4–K6, o "Painel da
  *    Investigação" ("Investigação concluída!") e o Desafio Extra só leitura.
  * 9. **O painel e a evidência**: as escolhas e o progresso da turma, e as
- *    cinco marcas da ficha da exp03ef1b com o nível que a régua dá.
+ *    quatro marcas da ficha da exp03ef1b com o nível que a régua dá.
  *
  * O gabarito nunca desce: a sessão do estudante não traz gabarito, a bandeja
  * da rotina nunca vem na ordem certa e os ids são opacos.
@@ -213,7 +213,7 @@ await suite(
       "E4: a ficha com o Onde vazio, os carimbos com as três opções visíveis, e o reparo errado leva ao erro explicado com as três notícias — sem “Tentar de novo”",
       "E5: a rotina errada não para; Reorganizar; a certa roda a simulação até o sucesso",
       "E6: as ferramentas, K4–K6, o Painel da Investigação e o Desafio Extra",
-      "O gabarito não desce para a tela nem para a sessão; o painel de habilidades registra as cinco marcas com o nível da régua",
+      "O gabarito não desce para a tela nem para a sessão; o painel de habilidades registra as quatro marcas com o nível da régua",
     ],
     comando: "node scripts/e2e/estudante/17-nina-noticia.mjs",
   },
@@ -979,11 +979,13 @@ await suite(
     await habilidades.waitFor({ timeout: 30_000 });
     await habilidades.getByText("EF15CO08").first().waitFor({ timeout: 30_000 });
     const textoDasHabilidades = await texto(habilidades);
-    const CODIGOS = ["EF15CO08", "EF03CO01", "EF03CO02", "EF03CO03", "EF15CO01"];
+    const CODIGOS = ["EF15CO08", "EF03CO01", "EF03CO02", "EF03CO03"];
     r.exigir(
       CODIGOS.every((c) => textoDasHabilidades.includes(c)),
-      `o painel de habilidades mostra as cinco da ficha da exp03ef1b (${CODIGOS.filter((c) => textoDasHabilidades.includes(c)).join(", ")})`,
+      `o painel de habilidades mostra as quatro da ficha da exp03ef1b (${CODIGOS.filter((c) => textoDasHabilidades.includes(c)).join(", ")})`,
     );
+    // ADR-200: o PO tirou a EF15CO01 da missão — ela não pode voltar ao painel.
+    r.exigir(!textoDasHabilidades.includes("EF15CO01"), "a EF15CO01 não aparece mais no painel de habilidades da missão");
     const caminhoDaEvidencia = `/evidencias/turma/${turmaId}/missao/${EXP_ID}/atividade/${atividadeId}`;
     const nivelDe = (c, codigo) => {
       const e = c?.estudantes?.find((x) => x.nome === ESTUDANTE.nome);
@@ -998,7 +1000,6 @@ await suite(
       "EF03CO01 (os seis carimbos certos, K3 ✔ e K5 ?)": [nivelDe(evidencia, "EF03CO01"), "atingiu"],
       "EF03CO02 (rotina válida na 2ª tentativa)": [nivelDe(evidencia, "EF03CO02"), "atingiu"],
       "EF03CO03 (Pátio fora do campo Onde)": [nivelDe(evidencia, "EF03CO03"), "em_processo"],
-      "EF15CO01 (escolha travada + reparo inválido)": [nivelDe(evidencia, "EF15CO01"), "em_processo"],
     };
     for (const [quem, [veio, regua]] of Object.entries(esperado)) {
       r.exigir(veio === regua, `${ESTUDANTE.login} ${quem}: o painel registra “${veio}”, e a régua dá “${regua}”`);
@@ -1006,7 +1007,7 @@ await suite(
     await habilidades.scrollIntoViewIfNeeded();
     await r.registrar(prof, "habilidades", {
       titulo: "As habilidades da missão",
-      mostra: "A aba Habilidades: EF15CO08, EF03CO01, EF03CO02, EF03CO03 e EF15CO01, com o nível de cada criança na rodada.",
+      mostra: "A aba Habilidades: EF15CO08, EF03CO01, EF03CO02 e EF03CO03, com o nível de cada criança na rodada.",
       prova: "As marcas nascem das AÇÕES gravadas no servidor (a busca, os carimbos, a rotina, o reparo), com a régua da ficha E14.",
       inteira: true,
     });

@@ -30,12 +30,10 @@ import { erroDeJogo, type CodigoErro } from "./erros";
 import { completos, type CarimbosDaEtapa } from "./regras/carimbos";
 import {
   MARCADOR_DA_INSPECAO,
-  MARCADOR_DA_PREVISAO,
   MARCADOR_DA_ROTINA,
   MARCADOR_DOS_CARIMBOS,
   MARCADOR_DO_REPARO,
   nivelDaInspecao,
-  nivelDaPrevisao,
   nivelDaRotina,
   nivelDoReparo,
   nivelDosCarimbos,
@@ -452,7 +450,7 @@ export class NinaNoticiaService {
   /**
    * E4-03 — o "Concluir" do reparo: a ficha do telão MONTADA. Uma vez. O
    * servidor decide o desfecho (válido ⇔ Pátio em Onde) e MARCA a EF03CO03
-   * (`reparo`) e a EF15CO01 (`previsao`). Os dois desfechos têm "Continuar".
+   * (`reparo`). Os dois desfechos têm "Continuar".
    */
   async reparo(escolaId: string, estudanteId: string, turmaId: string | null, ficha: FichaMontada) {
     return this.jogar(escolaId, estudanteId, turmaId, async (tx, ctx, gate) => {
@@ -467,13 +465,6 @@ export class NinaNoticiaService {
       });
       if (count === 0) throw erroDeJogo("reparo-ja-enviado");
       await this.marcar(tx, ctx, gate, MARCADOR_DO_REPARO, nivelDoReparo(r.valido));
-      await this.marcar(
-        tx,
-        ctx,
-        gate,
-        MARCADOR_DA_PREVISAO,
-        nivelDaPrevisao({ previsaoTravada: s.previsaoTravadaEm !== null, reparoValido: r.valido }),
-      );
       return { ...this.estado(await this.reler(tx, s.id), gate), desfecho: r.desfecho };
     });
   }
