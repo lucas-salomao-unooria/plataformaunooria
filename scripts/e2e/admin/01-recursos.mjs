@@ -482,7 +482,8 @@ await suite(
     };
     const banco = await lerBanco(p);
     r.exigir(
-      banco.status === 200 && banco.corpo?.total === 40 && banco.corpo.prontas + banco.corpo.faltam.length === 40,
+      // 40 estandes × 4 lâminas (ADR-178): a api conta imagens, não estandes.
+      banco.status === 200 && banco.corpo?.total === 160 && banco.corpo.prontas + banco.corpo.faltam.length === 160,
       `a api do banco padrão responde ao admin: ${banco.corpo?.prontas} de ${banco.corpo?.total} prontas, ${banco.corpo?.faltam?.length} faltando (HTTP ${banco.status})`,
     );
     const progressoNaTela = `${banco.corpo?.prontas} de ${banco.corpo?.total}`;
@@ -494,7 +495,7 @@ await suite(
     const gerarBanco = telaDoBanco.getByRole("button", { name: "Gerar as imagens que faltam" });
     r.exigir(
       (await gerarBanco.count()) === 1 && (await gerarBanco.isDisabled()) === Boolean(banco.corpo?.completo),
-      `o botão “Gerar as imagens que faltam” existe, e só fica desligado com as 40 prontas (completo=${banco.corpo?.completo})`,
+      `o botão “Gerar as imagens que faltam” existe, e só fica desligado com as 160 prontas (completo=${banco.corpo?.completo})`,
     );
     /* Só a aba aberta é desenhada: a prova dos 40 anda pelas quatro. */
     const abasDoBanco = telaDoBanco.getByRole("tab");
@@ -565,6 +566,69 @@ await suite(
     r.exigir(
       doProfessor.status === 403,
       `para o professor, a rota das imagens do banco responde 403 pelo BFF (veio ${doProfessor.status})`,
+    );
+
+    // ── as imagens do banco padrão da Nina (exp03ef1b, ADR-199) ──────────
+    /* Oito: as quatro da Feira de Troca de Livros e as quatro cenas fixas (o
+       caso novo e o Desafio Extra). A suíte prova o link, a tela, o progresso
+       e a guarda; GERAR custa IA real e só roda com E2E_GERAR_IMAGENS_DA_NINA=1
+       (UMA ida, que faz as oito que faltarem). */
+    await p.goto(`${HUB}/unooria/recursos`, { waitUntil: "domcontentloaded" });
+    const linkDaNina = cartao(p, "Conteúdo padrão das missões").locator('a[href="/unooria/recursos/imagens-da-nina"]');
+    await linkDaNina.waitFor({ timeout: 30_000 });
+    await linkDaNina.click();
+    await p.waitForURL("**/unooria/recursos/imagens-da-nina", { timeout: 30_000 });
+    const telaDaNina = p.locator("[data-imagens-do-banco-da-nina]");
+    await esperarOuFalharCedo(telaDaNina, p.locator(ALERTA_DE_ERRO), {
+      timeout: 60_000,
+      oQue: "a tela das imagens do banco padrão da Nina",
+    });
+    const lerBancoDaNina = async (pagina) => {
+      const resposta = await pagina.request.get(`${BFF}/nina-noticia/banco-padrao/imagens`);
+      return { status: resposta.status(), corpo: await resposta.json().catch(() => null) };
+    };
+    const bancoDaNina = await lerBancoDaNina(p);
+    r.exigir(
+      bancoDaNina.status === 200 && bancoDaNina.corpo?.total === 8 && bancoDaNina.corpo.prontas + bancoDaNina.corpo.faltam.length === 8,
+      `a api do banco da Nina responde ao admin: ${bancoDaNina.corpo?.prontas} de ${bancoDaNina.corpo?.total} prontas (HTTP ${bancoDaNina.status})`,
+    );
+    const progressoDaNina = `${bancoDaNina.corpo?.prontas} de ${bancoDaNina.corpo?.total}`;
+    r.exigir(
+      (await telaDaNina.getByText(progressoDaNina).count()) > 0 &&
+        (await telaDaNina.locator('[data-grupo="pacote"] [data-imagem-do-banco]').count()) === 4 &&
+        (await telaDaNina.locator('[data-grupo="cenas-fixas"] [data-imagem-do-banco]').count()) === 4,
+      `a tela mostra o progresso da api (“${progressoDaNina}”) e as oito em dois grupos: a feira e as cenas fixas`,
+    );
+    const gerarDaNina = telaDaNina.getByRole("button", { name: "Gerar as imagens que faltam" });
+    r.exigir(
+      (await gerarDaNina.count()) === 1 && (await gerarDaNina.isDisabled()) === Boolean(bancoDaNina.corpo?.completo),
+      `o botão “Gerar as imagens que faltam” só fica desligado com as oito prontas (completo=${bancoDaNina.corpo?.completo})`,
+    );
+    await r.registrar(p, "imagens-do-banco-da-nina", {
+      titulo: "As imagens do banco padrão da Nina",
+      mostra:
+        `Recursos › Imagens do banco padrão da Nina: o progresso “${progressoDaNina}”, o botão “Gerar as imagens ` +
+        "que faltam”, a Feira de Troca de Livros (mural, portal, telão e cartaz) e as cenas fixas do caso novo e do Desafio Extra.",
+      prova:
+        "As oito imagens da missão do 3º ano, na conta da plataforma e só pelo admin. Gerar aqui adianta: a professora " +
+        "gera no preparo dela a que faltar.",
+      detalhe: progressoDaNina,
+      inteira: true,
+    });
+    if (process.env.E2E_GERAR_IMAGENS_DA_NINA === "1" && !bancoDaNina.corpo?.completo) {
+      const ida = await p.request.fetch(`${BFF}/nina-noticia/banco-padrao/imagens`, { method: "POST", timeout: 200_000 });
+      const geracao = await ida.json().catch(() => null);
+      r.exigir(
+        ida.status() === 200 && Array.isArray(geracao?.geradas) && geracao.geradas.length > 0,
+        `uma rodada gera as que faltam com a IA real (HTTP ${ida.status()}: ${geracao?.geradas?.length ?? "?"} geradas, ${geracao?.prontas} de ${geracao?.total})`,
+      );
+    } else if (!bancoDaNina.corpo?.completo) {
+      r.ressalva("a geração das imagens do banco da Nina não foi exercida (custa IA real): rode com E2E_GERAR_IMAGENS_DA_NINA=1");
+    }
+    const ninaDoProfessor = await lerBancoDaNina(pp);
+    r.exigir(
+      ninaDoProfessor.status === 403,
+      `para o professor, a rota das imagens do banco da Nina responde 403 pelo BFF (veio ${ninaDoProfessor.status})`,
     );
   },
 );

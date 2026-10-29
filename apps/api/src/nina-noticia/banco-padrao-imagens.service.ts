@@ -6,9 +6,8 @@ import { AssetsService } from "../assets/assets.service";
 import { logger } from "../observabilidade/logger";
 import { conteudoDoBancoPadrao } from "./banco-padrao";
 import type { GeracaoDoBancoPadraoSchema, ImagensDoBancoPadraoSchema } from "./contrato-de-rotas";
-import { TAMANHO_DA_IMAGEM } from "./midia.service";
-import { itensDasCenasFixas, itensDoPacote, type ChaveDaMidia, type ItemDeImagem } from "./regras/imagens";
-import { EXP_ID } from "./vocabulario";
+import { TAMANHO_DA_IMAGEM, itensDasCenasFixas, itensDoPacote, type ChaveDaMidia, type ItemDeImagem } from "./regras/imagens";
+import { EXP_ID, type ChaveDaCenaFixa } from "./vocabulario";
 
 /**
  * As IMAGENS DO BANCO PADRÃO — as quatro do pacote da Feira de Troca de Livros
@@ -25,6 +24,11 @@ import { EXP_ID } from "./vocabulario";
  * - **Sem quota de professor**: custo da plataforma. Quem enxerga é o painel
  *   de custos (ADR-161), pela ATRIBUIÇÃO explícita abaixo; quem segura a mão é
  *   o rate limit da rota.
+ * - **As CENAS FIXAS também nascem no preparo da professora** (ADR-199,
+ *   `garantirCenasFixas`): o `gerar-midia` da turma gera as que ainda não
+ *   existem, na conta da PLATAFORMA (esta mesma atribuição), uma vez só — a
+ *   trava por arquivo (`gerandoArquivo`) vale para o `admin` e para todas as
+ *   professoras do processo, e a próxima turma acha o arquivo pelo hash.
  */
 
 /** O recurso do painel de custos (`recursos/custos-de-ia.ts#RECURSOS_DE_IA`). */
@@ -45,6 +49,12 @@ export type GeracaoDoBancoPadrao = z.infer<typeof GeracaoDoBancoPadraoSchema>;
 
 /** Uma geração por processo: dois cliques do admin não pagam a mesma imagem duas vezes. */
 let emCurso: Promise<GeracaoDoBancoPadrao> | null = null;
+
+/**
+ * As gerações em andamento POR ARQUIVO, neste processo: o `admin` na tela dele
+ * e duas professoras no preparo pedindo a mesma cena fixa pagam UMA imagem.
+ */
+const gerandoArquivo = new Map<string, Promise<string>>();
 
 /** As oito do banco, na ordem: as do pacote e as cenas fixas. */
 export function itensDoBanco(): ItemDeImagem[] {
@@ -72,6 +82,31 @@ export class ImagensDoBancoPadraoDaExp03ef1bService {
     }
   }
 
+  /**
+   * As CENAS FIXAS (o caso novo e o Desafio Extra), para o pacote de uma turma
+   * (ADR-199): a que existe no storage entra de graça; a que falta é GERADA
+   * aqui, na conta da plataforma (sem quota da professora). Nunca lança: a
+   * cena que falhar fica de fora e a experiência desenha a ilustração local;
+   * a próxima chamada tenta de novo.
+   */
+  async garantirCenasFixas(): Promise<Partial<Record<ChaveDaCenaFixa, string>>> {
+    const saida: Partial<Record<ChaveDaCenaFixa, string>> = {};
+    await Promise.all(
+      itensDasCenasFixas().map(async (item) => {
+        try {
+          const existe = await this.assets.midiaDeExperienciaExiste(EXP_ID, item.nome);
+          saida[item.chave as ChaveDaCenaFixa] = existe
+            ? this.assets.urlDaMidiaDeExperiencia(EXP_ID, item.nome)
+            : await this.gerarArquivo(item);
+        } catch {
+          /* Sem `err` no log: a mensagem do provider pode carregar trecho do pedido. */
+          logger.warn({ codigo: "exp03ef1b-cena-fixa-falhou", chave: item.chave }, "cena fixa não gerada — segue a ilustração local");
+        }
+      }),
+    );
+    return saida;
+  }
+
   async progresso(): Promise<ImagensDoBancoPadrao> {
     return this.lerProgresso();
   }
@@ -94,19 +129,7 @@ export class ImagensDoBancoPadraoDaExp03ef1bService {
     for (let inicio = 0; inicio < pendentes.length; inicio += IMAGENS_DO_BANCO_EM_PARALELO) {
       const leva = pendentes.slice(inicio, inicio + IMAGENS_DO_BANCO_EM_PARALELO);
       const resultados = await Promise.allSettled(
-        leva.map(async (item) => {
-          const bytes = await this.ia.generateImage(item.prompt, {
-            proporcao: "4:3",
-            atribuicao: ATRIBUICAO_DAS_IMAGENS_DO_BANCO,
-          });
-          await this.assets.salvarMidiaDeExperiencia({
-            expId: EXP_ID,
-            nome: item.nome,
-            bytes,
-            contentType: "image/webp",
-            imagem: { ...TAMANHO_DA_IMAGEM },
-          });
-        }),
+        leva.map((item) => this.gerarArquivo(item)),
       );
       resultados.forEach((r, i) => {
         const item = leva[i]!;
@@ -119,6 +142,27 @@ export class ImagensDoBancoPadraoDaExp03ef1bService {
       });
     }
     return { ...(await this.lerProgresso()), geradas, falharam };
+  }
+
+  /** Gera UMA imagem do banco no arquivo do hash, na conta da plataforma — com a trava por arquivo. */
+  private gerarArquivo(item: ItemDeImagem): Promise<string> {
+    const emAndamento = gerandoArquivo.get(item.nome);
+    if (emAndamento) return emAndamento;
+    const trabalho = (async () => {
+      const bytes = await this.ia.generateImage(item.prompt, {
+        proporcao: "4:3",
+        atribuicao: ATRIBUICAO_DAS_IMAGENS_DO_BANCO,
+      });
+      return this.assets.salvarMidiaDeExperiencia({
+        expId: EXP_ID,
+        nome: item.nome,
+        bytes,
+        contentType: "image/webp",
+        imagem: { ...TAMANHO_DA_IMAGEM },
+      });
+    })().finally(() => gerandoArquivo.delete(item.nome));
+    gerandoArquivo.set(item.nome, trabalho);
+    return trabalho;
   }
 
   private async lerProgresso(): Promise<ImagensDoBancoPadrao> {

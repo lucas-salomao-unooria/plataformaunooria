@@ -965,11 +965,22 @@ export class NinaNoticiaService {
   }
 
   /**
-   * "Usar Banco Padrão" (E0-PROF-02) — o caminho curto: sem IA e sem
+   * "Usar Banco Padrão" (E0-PROF-02) — o caminho curto: sem IA nos TEXTOS e sem
    * curadoria. Cria (ou reaproveita) o pacote `padrao` da Feira de Troca de
-   * Livros, já com as imagens APROVADAS (as do banco, geradas pelo `admin`), e
-   * com `porNoAr` o põe em andamento. A imagem que o banco ainda não tem segue
-   * com a ilustração local da experiência.
+   * Livros com as imagens do banco que já existem no storage.
+   *
+   * **As imagens passam pela grade da professora** (ADR-199): o pacote nasce
+   * com `imagens_aprovadas_em` NULO, e ela gera as que faltam (`gerar-midia`;
+   * de graça as que já existem pelo hash), refaz e aprova — só então vai ao ar.
+   * Antes, ele nascia aprovado e dependia de o `admin` ter gerado o banco: em
+   * dev ninguém tinha, e a turma via só a ilustração local.
+   *
+   * - **`porNoAr`** (o "usar e pôr no ar" de um toque, sem tela que o use)
+   *   aprova as imagens como estão — as do banco são da plataforma — e põe em
+   *   andamento.
+   * - **O reaproveitado FORA do ar ganha as que faltavam**; se ainda lhe falta
+   *   imagem do pacote, volta à segunda fase (`imagens_aprovadas_em` nulo),
+   *   para a professora gerar as que faltam. No ar, nada muda no meio da aula.
    */
   async usarBancoPadrao(
     escolaId: string,
@@ -986,20 +997,24 @@ export class NinaNoticiaService {
       const existentes = await tx.exp03ef1bPacote.findMany({
         where: { escolaId, turmaId, origem: "padrao" },
         orderBy: { criadoEm: "desc" },
-        select: { id: true, tema: true, ativo: true, conteudo: true, midia: true },
+        select: { id: true, tema: true, ativo: true, conteudo: true, midia: true, imagensAprovadasEm: true },
       });
       const igual = existentes.find((p) => canonico(p.conteudo) === canonico(conteudo));
       const doBanco = imagensDoBancoPara("padrao", imagensDoBanco);
+      const agora = new Date();
       if (igual) {
-        const midia = midiaDaLinha(igual.midia);
-        const faltavam = Object.fromEntries(Object.entries(doBanco).filter(([chave]) => !midia[chave as ChaveDaMidia]));
         /* No ar, as imagens não mudam no meio da aula. */
-        if (!igual.ativo && Object.keys(faltavam).length > 0) {
-          await tx.exp03ef1bPacote.update({ where: { id: igual.id }, data: { midia: { ...midia, ...faltavam } } });
-        }
+        if (igual.ativo) return { id: igual.id, tema: igual.tema, ativo: igual.ativo };
+        const midia: Partial<Record<ChaveDaMidia, string>> = { ...doBanco, ...midiaDaLinha(igual.midia) };
+        const resumo = resumoDaMidia(midia);
+        const incompleto = resumo.prontas < resumo.total;
+        const aprovadasEm = porNoAr ? (igual.imagensAprovadasEm ?? agora) : incompleto ? null : igual.imagensAprovadasEm;
+        await tx.exp03ef1bPacote.update({
+          where: { id: igual.id },
+          data: { midia: midia as Prisma.InputJsonValue, imagensAprovadasEm: aprovadasEm },
+        });
         return { id: igual.id, tema: igual.tema, ativo: igual.ativo };
       }
-      const agora = new Date();
       return tx.exp03ef1bPacote.create({
         data: {
           escolaId,
@@ -1011,7 +1026,7 @@ export class NinaNoticiaService {
           contexto: null,
           conteudo: conteudo as unknown as Prisma.InputJsonValue,
           midia: doBanco,
-          imagensAprovadasEm: agora,
+          imagensAprovadasEm: porNoAr ? agora : null,
           ativo: false,
           criadoPor,
           aprovadoEm: agora,

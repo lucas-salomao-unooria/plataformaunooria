@@ -263,19 +263,44 @@ await suite(
     );
 
     let usouIa = false;
-    /** Aplica o banco padrão pelo botão dado e espera a fase pronta. */
+    /**
+     * Aplica o banco padrão pelo botão dado, passa pela grade das imagens
+     * (ADR-199: as do banco chegam prontas, as que faltam se geram ali) e
+     * espera a fase pronta. O reaproveitado completo e aprovado já abre pronto.
+     */
     const aplicarBancoPadrao = async (botao) => {
       await hidratado(prof, botao);
       await botao.click();
-      await esperarOuFalharCedo(
-        prof.locator('[data-preparo-nina][data-fase="banco-padrao"] [data-pacote-pronto]'),
-        prof.locator(`[data-preparo-nina] ${ALERTA_DE_ERRO}`),
-        { timeout: 30_000, oQue: "usar o banco padrão" },
-      );
+      const fase = prof.locator('[data-preparo-nina][data-fase="banco-padrao"]');
+      await esperarOuFalharCedo(fase.locator("[data-imagens-da-nina]"), prof.locator(`[data-preparo-nina] ${ALERTA_DE_ERRO}`), {
+        timeout: 30_000,
+        oQue: "usar o banco padrão",
+      });
+      const aprovar = fase.locator('[data-acao="aprovar-imagens"]');
+      if ((await fase.locator('[data-imagens-da-nina][data-imagens-aprovadas="sim"]').count()) === 0) {
+        const inicio = Date.now();
+        await esperarOuFalharCedo(fase.locator('[data-acao="aprovar-imagens"]:not([disabled])'), fase.locator(ALERTA_DE_ERRO), {
+          timeout: 300_000,
+          oQue: "gerar as imagens que faltam no banco padrão",
+        });
+        const comImagem = await fase.locator("[data-imagem] img").count();
+        await r.registrar(prof, "banco-padrao-imagens", {
+          titulo: "O banco padrão também passa pelas imagens",
+          mostra: `A mesma grade da IA, com as quatro imagens da feira (${comImagem} com imagem), o telão em destaque e “Refazer imagem”.`,
+          prova:
+            "As que o banco já tem chegam prontas; as que faltam se geram ali (de graça se o arquivo já existe). Nada chega à turma sem o OK da professora.",
+          detalhe: `${comImagem} de 4 com imagem em ${Math.round((Date.now() - inicio) / 1000)}s`,
+        });
+        await aprovar.click();
+      }
+      await esperarOuFalharCedo(fase.locator("[data-pacote-pronto]"), prof.locator(`[data-preparo-nina] ${ALERTA_DE_ERRO}`), {
+        timeout: 30_000,
+        oQue: "aprovar as imagens do banco padrão",
+      });
       await r.registrar(prof, "banco-padrao", {
-        titulo: "O banco padrão, em um toque",
-        mostra: "“Pacote homologado e pronto.”: a Feira de Troca de Livros com as três notícias, sem IA.",
-        prova: "O caminho curto e o fallback da IA: a atividade fica gravada, fora do ar, com as imagens do banco.",
+        titulo: "O banco padrão, com as imagens aprovadas",
+        mostra: "“Pacote homologado e pronto.”: a Feira de Troca de Livros com as três notícias, sem IA nos textos, e as imagens aprovadas.",
+        prova: "O caminho curto e o fallback da IA: a atividade fica gravada, fora do ar, com as imagens que a professora aprovou.",
       });
     };
 

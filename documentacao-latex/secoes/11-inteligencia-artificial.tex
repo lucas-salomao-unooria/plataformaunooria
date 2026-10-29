@@ -96,7 +96,9 @@ Preparo do jornal & exp03ef1b, \arq{src/nina-noticia/} &
   assunto do professor, com a quota dele; e o \enquote{Regenerar Notícia},
   uma por vez. A ESTRUTURA da ficha (o telão com Onde vazio) é do servidor,
   nunca da IA. Sem saldo ou sem provedor, o banco padrão (\cd{usouIa:
-  false}); as cenas fixas são do \cd{admin}; em sala, nada (\adrr{ADR-197},
+  false}); as imagens do banco padrão também passam pela grade dela, e as
+  cenas fixas que faltam saem no preparo, na conta da plataforma
+  (\adrr{ADR-199}); em sala, nada (\adrr{ADR-197},
   Seção~\ref{sec:ia-preparo-exp03ef1b}).\\
 \zebra Preparo do pacote & exp03em1b, \arq{src/porta-voz-\B{}dos-\B{}dados/} &
   A roupagem do tema sobre o recorte do professor (componente, tema, de 3 a 6
@@ -371,11 +373,21 @@ novo: um pacote torto sai com as fichas do servidor.
 do PACOTE (\cd{mural}, \cd{portal}, \cd{telao}, \cd{cartaz}) são da
 professora, na quota do perfil \cd{professor}, a
 \cd{CUSTO\_\B{}ESTIMADO\_\B{}POR\_\B{}IMAGEM} (2.000 \emph{tokens}) cada, e passam
-pela segunda fase da aprovação (\adrr{ADR-146}); as quatro CENAS FIXAS (o
-caso do Festival e o Desafio Extra) são do \cd{admin}
-(\rota{POST /nina-noticia/\B{}banco-padrao/\B{}imagens}), sem quota, com a
-atribuição \cd{nina-noticia-banco-padrao} no painel de custos. O arquivo é o
-hash do pedido: o que já existe no \emph{bucket} entra de graça.
+pela segunda fase da aprovação (\adrr{ADR-146}) --- inclusive no
+\enquote{Usar Banco Padrão}, que desde a \adrr{ADR-199} cria o pacote em
+preparo e abre a mesma grade: as do banco que já existem chegam prontas, as
+que faltam se geram ali. As quatro CENAS FIXAS (o caso do Festival e o Desafio
+Extra) são da PLATAFORMA, sem quota de professor e com a atribuição
+\cd{nina-noticia-banco-padrao} (perfil \cd{admin}, sem escola) no painel de
+custos, e nascem por dois caminhos: o \cd{admin} em
+\rota{/unooria/recursos/imagens-da-nina} (\rota{POST
+/nina-noticia/\B{}banco-padrao/\B{}imagens}, as oito numa chamada, quatro de
+cada vez) ou, a que ainda faltar, o \cd{gerar-midia} da primeira professora,
+em paralelo às do pacote --- inclusive quando ela está sem saldo (429 para as
+dela, as da plataforma saem). Uma trava por arquivo, no processo, faz o
+\cd{admin} e duas professoras simultâneas pagarem cada cena uma vez. O arquivo
+é o hash do pedido: o que já existe no \emph{bucket} entra de graça, e a
+próxima turma reaproveita.
 
 Sem saldo (\cd{motivo: "sem-saldo"}) ou com o \emph{vendor} fora, o rascunho
 é o \textbf{banco padrão} (a Feira de Troca de Livros), com \cd{usouIa:

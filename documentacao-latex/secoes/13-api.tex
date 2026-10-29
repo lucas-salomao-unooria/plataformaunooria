@@ -1493,8 +1493,9 @@ Nenhuma rota recebe texto da criança, e a ficha não tem pergunta.
   aula: o esqueleto COM gabarito (os carimbos, a rotina), o roteiro de
   mediação e os gatilhos.\\
 \rota{POST .../turmas/:turmaId/\B{}banco-padrao} & prof., gestor &
-  \enquote{Usar Banco Padrão}: a Feira de Troca de Livros, pronta (e no ar,
-  com \cd{porNoAr}).\\
+  \enquote{Usar Banco Padrão}: a Feira de Troca de Livros, gravada com as
+  imagens APROVADAS NULAS --- a professora as confere na grade
+  (\adrr{ADR-199}); com \cd{porNoAr}, aprova como está e põe no ar.\\
 \zebra \rota{POST .../turmas/:turmaId/\B{}gerar-conteudo} & prof., gestor &
   O RASCUNHO das três reportagens pela IA, na quota do perfil
   \cd{professor}; sem saldo ou sem provedor, o banco padrão com
@@ -1510,7 +1511,9 @@ Nenhuma rota recebe texto da criança, e a ficha não tem pergunta.
 \zebra \rota{GET .../pacotes/:pacoteId} & prof., gestor & Uma atividade
   inteira, com as imagens já geradas.\\
 \rota{POST .../pacotes/:pacoteId/\B{}gerar-midia} & prof., gestor & As
-  imagens que faltam no pacote (as três cenas e o cartaz), na quota.\\
+  imagens que faltam no pacote (as três cenas e o cartaz), na quota; e as
+  cenas fixas que faltam no storage, na conta da plataforma
+  (\adrr{ADR-199}).\\
 \zebra \rota{POST .../imagens/:chave/refazer} & prof., gestor &
   \enquote{Refazer imagem}: uma imagem do pacote, antes da aprovação.\\
 \rota{POST .../pacotes/:pacoteId/\B{}aprovar-imagens} & prof., gestor & A
@@ -1519,7 +1522,8 @@ Nenhuma rota recebe texto da criança, e a ficha não tem pergunta.
   \enquote{Liberar Atividade para a Turma}: um em andamento por turma; só
   com as imagens aprovadas (409 \cd{imagens-nao-aprovadas}).\\
 \rota{GET /nina-noticia/\B{}banco-padrao/\B{}imagens} & \textbf{só admin} & As
-  oito imagens do banco padrão: as que existem e as que faltam.\\
+  oito imagens do banco padrão: as que existem e as que faltam (tela
+  \rota{/unooria/\B{}recursos/\B{}imagens-\B{}da-\B{}nina}, \adrr{ADR-199}).\\
 \zebra \rota{POST /nina-noticia/\B{}banco-padrao/\B{}imagens} & \textbf{só admin} &
   Gera as que faltam, sem quota, com a atribuição
   \cd{nina-noticia-banco-padrao} no painel de custos.\\

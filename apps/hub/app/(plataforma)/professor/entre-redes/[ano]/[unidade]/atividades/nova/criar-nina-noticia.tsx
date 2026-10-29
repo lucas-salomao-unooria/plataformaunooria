@@ -55,11 +55,12 @@ interface TextosHomologados {
   aprovadasEm: string | null;
 }
 
-/** O banco padrão aplicado: a atividade pronta, sem IA (`POST banco-padrao`). */
-interface BancoPadraoAplicado {
-  id: string;
-  turmaId: string;
-}
+/**
+ * O banco padrão aplicado (`POST banco-padrao`): a atividade GRAVADA, fora do
+ * ar, com os textos curados e as imagens do banco que já existem — e, desde a
+ * ADR-199, em preparo: as imagens passam pela MESMA grade da IA.
+ */
+type BancoPadraoAplicado = TextosHomologados;
 
 /**
  * NOVA ATIVIDADE de NINA E A NOTÍCIA QUE DESAPARECEU (ADR-197, ADR-130): o
@@ -67,8 +68,11 @@ interface BancoPadraoAplicado {
  * Júri (`criar-juri-estadual.tsx`). Os quadros E0-PROF-02 a 05:
  *
  * 1. **O CAMINHO CURTO no topo** (E0-PROF-02): "Usar Banco Padrão" chama `POST
- *    banco-padrao` — um clique, a Feira de Troca de Livros, a atividade nasce
- *    pronta e sem IA.
+ *    banco-padrao` — um clique, a Feira de Troca de Livros, sem IA nos textos.
+ *    As IMAGENS passam pela mesma grade da IA (ADR-199): as que o banco já tem
+ *    chegam prontas, as que faltam se geram ali (de graça se o arquivo do
+ *    pedido já existe; senão com a quota dela), "Refazer imagem" e "Aprovar
+ *    imagens". Antes ela não via imagem nenhuma e dependia do `admin`.
  * 2. **Ou personalize com IA**: Componente Curricular (`Selection`), Tema do
  *    Evento (≤ 60) e "Assunto da matéria" (spec §7.2); "Gerar Notícias com IA"
  *    (`gerar-conteudo`, UMA chamada que escreve só o TEXTO das três
@@ -160,7 +164,16 @@ export function CriarNinaNoticia({
         return;
       }
       const criado = (await r.json()) as PacoteHomologado;
-      setBancoPadrao({ id: criado.id, turmaId });
+      /* O detalhe traz os textos do banco (que só a api conhece), as imagens
+         que ele já tem e se já estão aprovadas (o reaproveitado completo). */
+      const detalhe = await fetch(`/api/plataforma${caminhoDoPacote(turmaId, criado.id)}`, { cache: "no-store" });
+      if (!detalhe.ok) {
+        setErro(erroDaResposta(await detalhe.json().catch(() => null), "O banco padrão foi aplicado, mas não deu para abrir as imagens."));
+        return;
+      }
+      const lido = (await detalhe.json()) as PacoteDetalhe;
+      setImagensAprovadas(false);
+      setBancoPadrao({ id: criado.id, turmaId, conteudo: lido.conteudo, imagens: lido.imagens, aprovadasEm: lido.imagensAprovadasEm });
     } catch {
       setErro({ mensagem: SEM_CONEXAO, erros: [] });
     } finally {
@@ -288,9 +301,12 @@ export function CriarNinaNoticia({
   /** O "Liberar Atividade para a Turma" do assistente: o pacote já está gravado. */
   async function criar(turmaId: string): Promise<ResultadoDaCriacao> {
     if (bancoPadrao) {
-      return bancoPadrao.turmaId === turmaId
+      if (bancoPadrao.turmaId !== turmaId) {
+        return { ok: false, mensagem: "O banco padrão foi aplicado para outra turma. Volte a ela ou aplique de novo.", erros: [] };
+      }
+      return imagensAprovadas
         ? { ok: true, id: bancoPadrao.id }
-        : { ok: false, mensagem: "O banco padrão foi aplicado para outra turma. Volte a ela ou aplique de novo.", erros: [] };
+        : { ok: false, mensagem: "Aprove as imagens do banco padrão antes de liberar a atividade.", erros: [] };
     }
     if (!homologados || homologados.turmaId !== turmaId || !imagensAprovadas) {
       return { ok: false, mensagem: "Homologue o pacote e aprove as imagens desta turma antes de liberar a atividade.", erros: [] };
@@ -324,10 +340,10 @@ export function CriarNinaNoticia({
       rotaDaMissao={rotaDaMissao}
       turmas={turmas}
       turmaInicial={turmaInicial}
-      conteudoPronto={bancoPadrao !== null || (homologados !== null && imagensAprovadas)}
+      conteudoPronto={(bancoPadrao !== null || homologados !== null) && imagensAprovadas}
       resumoDoConteudo={
         bancoPadrao
-          ? "Banco padrão · Feira de Troca de Livros · três notícias, sem IA"
+          ? "Banco padrão · Feira de Troca de Livros · três notícias, com as imagens aprovadas"
           : homologados
             ? `“${homologados.conteudo.tema}” · ${rotuloDaDisciplina(parametros.disciplina)} · três notícias, com os textos e as imagens aprovados`
             : null
@@ -341,11 +357,33 @@ export function CriarNinaNoticia({
               {bancoPadrao.turmaId !== turmaId ? (
                 outraTurma
               ) : (
-                <PacotePronto
-                  tema="Feira de Troca de Livros"
-                  detalhe="O pacote curado padrão, com as três notícias da feira e as imagens do banco, sem uso de IA."
-                  aoRecomecar={recomecar}
-                />
+                <>
+                  <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-700">
+                    As três notícias da Feira de Troca de Livros são o pacote curado padrão, sem uso de IA, e a atividade
+                    está gravada, ainda fora do ar. Agora as imagens: as que o banco já tem chegam prontas, e as que
+                    faltam são geradas aqui.{" "}
+                    <strong>Nenhuma imagem gerada por inteligência artificial é exibida aos estudantes sem a sua aprovação.</strong>
+                  </p>
+                  <ImagensDaNina
+                    key={bancoPadrao.id}
+                    turmaId={turmaId}
+                    pacoteId={bancoPadrao.id}
+                    conteudo={bancoPadrao.conteudo}
+                    imagensIniciais={bancoPadrao.imagens}
+                    aprovadasEmInicial={bancoPadrao.aprovadasEm}
+                    podeEditar
+                    gerarAoAbrir
+                    aoMudarAprovacao={aoMudarAprovacao}
+                    moldura={false}
+                  />
+                  {imagensAprovadas ? (
+                    <PacotePronto
+                      tema="Feira de Troca de Livros"
+                      detalhe="O pacote curado padrão, com as três notícias da feira, sem uso de IA nos textos, e as imagens aprovadas."
+                      aoRecomecar={recomecar}
+                    />
+                  ) : null}
+                </>
               )}
             </div>
           </Card>
