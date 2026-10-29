@@ -176,3 +176,10 @@ describe("endereços", () => {
     });
   });
 });
+
+describe("o painel da Unooria: as imagens dos bancos padrão moram debaixo de Recursos", () => {
+  test("Júri e Nina, cada um com o rótulo próprio, e a home do admin (Recursos) como primeiro item", () => {
+    expect(rotulos("/unooria/recursos/imagens-do-juri", "admin")).toEqual(["Início", "Imagens do banco padrão do Júri"]);
+    expect(rotulos("/unooria/recursos/imagens-da-nina", "admin")).toEqual(["Início", "Imagens do banco padrão da Nina"]);
+  });
+});

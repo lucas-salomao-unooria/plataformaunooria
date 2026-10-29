@@ -75,12 +75,18 @@ export default async function RecursosPage({
       <Card variant="outlined" title="Conteúdo padrão das missões">
         <div className="flex flex-col items-start gap-3">
           <p className="max-w-3xl text-[13px] leading-snug text-unooria-neutral-700">
-            O Júri Estadual de Projetos (6º ano) tem um banco padrão de projetos que o professor usa sem IA. As imagens
-            dele são geradas uma vez, aqui, e valem para toda atividade criada com o banco.
+            O Júri Estadual de Projetos (6º ano) e Nina e a Notícia que Desapareceu (3º ano) têm um banco padrão que o
+            professor usa sem IA. As imagens deles são geradas uma vez, aqui, e valem para toda atividade criada com o
+            banco.
           </p>
-          <LinkButton href="/unooria/recursos/imagens-do-juri" variant="secondary" size="sm">
-            Imagens do banco padrão do Júri Estadual
-          </LinkButton>
+          <div className="flex flex-wrap gap-3">
+            <LinkButton href="/unooria/recursos/imagens-do-juri" variant="secondary" size="sm">
+              Imagens do banco padrão do Júri Estadual
+            </LinkButton>
+            <LinkButton href="/unooria/recursos/imagens-da-nina" variant="secondary" size="sm">
+              Imagens do banco padrão da Nina
+            </LinkButton>
+          </div>
         </div>
       </Card>
     </div>
