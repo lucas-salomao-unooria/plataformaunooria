@@ -28,6 +28,7 @@ await suite(
       "A aula da A Seleção (o botão único e a etapa) mora na mesma tela dos resultados, sem coluna de pontos",
       "A aula do Júri Estadual mora na página da atividade: os 40 estandes, a lousa anônima dos votos por área e — depois da auditoria — da concentração do feed, a folha sem coluna de voto, taxa, concentração nem nível, e com as categorias buscadas e os parados na cédula",
       "A aula do Enigma da Capa da Rádio mora na página da atividade: quem aguarda a virada e quem marcou algo fora da foto, o botão único LIBERAR VIRADA, os cartões da conversa e a folha por criança, pelo nome, sem coluna de nível, nota ou ranking",
+      "A aula do Porta-Voz dos Dados mora na página da atividade: os dois botões só para a frente, a lousa de contagens com a distribuição da escala e a folha pelo nome, sem coluna de nível, nota, escala nem ranking",
     ],
     comando: "node scripts/e2e/professor/06-resultados-das-missoes.mjs",
   },
@@ -334,6 +335,59 @@ await suite(
       prova:
         "As liberações andam só para a frente, com confirmação. A folha é para a tela do professor, sem nível; os " +
         "níveis (Canal A) ficam no relatório final e na aba Habilidades, sem nota nem ordenação.",
+      inteira: true,
+    });
+
+    // ── O Porta-Voz dos Dados (3ª série EM, unidade 1) ──────────────────
+    /* A suíte do estudante (estudante/18-porta-voz.mjs) corre ANTES: cria a
+       atividade na 3EM-A com a IA, pausa, libera a retomada e dois estudantes
+       concluem. É a página DESSA atividade que este passo lê; rodando sozinha,
+       a turma pode estar sem atividade — os dois ramos são legítimos. */
+    const professorTerceiraEM = conta("professor", { turma: "3EM-A" });
+    await r.entrar(p, professorTerceiraEM.login);
+    const turmasDoPortaVoz = await (await p.request.get(`${BFF}/turmas/minhas`)).json().catch(() => []);
+    const turmaDoPortaVoz = Array.isArray(turmasDoPortaVoz) ? turmasDoPortaVoz.find((t) => t.nome === "3EM-A") : null;
+    if (!r.exigir(Boolean(turmaDoPortaVoz), `${professorTerceiraEM.login} leciona na 3EM-A`)) return;
+    await p.goto(`${HUB}/professor/entre-redes/3-serie/unidade-1/resultados?turmaId=${turmaDoPortaVoz.id}`, {
+      waitUntil: "domcontentloaded",
+    });
+    await p.locator("[data-painel-da-aula], [data-sem-atividade], [data-atividade-pronta]").first().waitFor({ timeout: 30_000 });
+    if ((await p.locator("[data-painel-da-aula]").count()) === 0) {
+      r.ressalva("a 3EM-A não tem atividade do Porta-Voz dos Dados em andamento: rode antes a estudante/18-porta-voz, que a cria");
+      r.exigir(
+        /Nenhuma atividade em andamento nesta turma|Esta atividade está pronta/.test(await p.locator("main").innerText()),
+        "sem atividade em andamento, a página do Porta-Voz dos Dados diz que a turma vê a missão fechada",
+      );
+    } else {
+      const etapa = await p.locator("[data-controle-da-missao]").getAttribute("data-etapa");
+      const botoes = p.locator("[data-botoes-da-aula] button");
+      r.exigir((await botoes.count()) === 2, `os dois botões da aula estão no topo (etapa da turma: ${etapa})`);
+      /* Só para a frente: "Pausar" só na exploração, "Liberar" até a liberação. */
+      r.exigir(
+        (await p.locator('[data-acao="pausar-debate"]').isDisabled()) === (etapa !== "exploracao") &&
+          (await p.locator('[data-acao="liberar-retomada"]').isDisabled()) === (etapa === "liberada"),
+        `os botões da aula andam só para a frente (etapa ${etapa})`,
+      );
+      r.exigir(
+        (await p.locator("[data-lousa] .unooria-metric-card").count()) === 4 && (await p.locator("[data-distribuicao-das-escalas]").count()) === 1,
+        "a lousa traz as quatro contagens e a distribuição da escala na 1ª publicação",
+      );
+      const colunas = await p.locator("[data-monitor-de-ritmo]").getByRole("columnheader").allInnerTexts();
+      r.exigir(
+        colunas.length > 0 && !colunas.some((c) => /\b(n[íi]vel|pontos|nota|ranking|escala)\b/i.test(c)),
+        `a folha do Porta-Voz não tem coluna de nível, nota, escala nem ranking (colunas: ${colunas.join(", ")})`,
+      );
+      await p.locator("[data-distribuicao-das-escalas]").scrollIntoViewIfNeeded();
+    }
+    await r.registrar(p, "resultados-porta-voz", {
+      titulo: "A atividade do Porta-Voz dos Dados: a aula ao vivo",
+      mostra:
+        "A atividade em andamento: Pausar para o debate e Liberar Retomada da Turma no topo, a lousa de contagens " +
+        "(pausados, anexo, publicaram, concluíram), a distribuição da escala na 1ª publicação, a errata, a perícia, " +
+        "o roteiro do debate e a folha de ritmo pelo nome.",
+      prova:
+        "O gate só anda para a frente, com confirmação. A lousa vai ao projetor sem nomes; a folha nominal só tem a " +
+        "etapa e o tempo parado — a escala de cada um e o nível ficam fora (o nível mora na aba Habilidades).",
       inteira: true,
     });
   },

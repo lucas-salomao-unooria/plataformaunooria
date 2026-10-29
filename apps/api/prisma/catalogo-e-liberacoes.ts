@@ -181,6 +181,8 @@ export const LIBERACOES_DE_DEMO: Array<{ turma: string; expIds: string[] }> = [
   // O 4º ano ficou sem missão liberada entre o arquivamento do UnooTube
   // (ADR-116) e a chegada do Jornal da Escola, que herdou o código exp04ef1b.
   // É a turma da suíte `estudante/12-jornal-da-escola`.
+  // O 3º ano: Nina e a Notícia que Desapareceu (ADR-197).
+  { turma: "3A", expIds: ["exp03ef1b"] },
   { turma: "4A", expIds: ["exp04ef1b"] },
   { turma: "5A", expIds: ["exp05ef1b"] },
   // O 6º ano abre as duas missões da série: a unidade 2 (exp06ef2b) e o Júri
@@ -190,6 +192,8 @@ export const LIBERACOES_DE_DEMO: Array<{ turma: string; expIds: string[] }> = [
   // A 1ª série EM: O Assistente Invisível (ADR-185).
   { turma: "1EM-A", expIds: ["exp01em1b"] },
   { turma: "2EM-A", expIds: ["exp02em1b"] },
+  // A 3ª série EM: O Porta-Voz dos Dados (ADR-198).
+  { turma: "3EM-A", expIds: ["exp03em1b"] },
 ];
 
 export async function semearLiberacoes(

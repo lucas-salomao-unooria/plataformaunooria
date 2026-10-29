@@ -10,6 +10,7 @@
     "./ds": "./src/ds.ts",
     "./ds-insta": "./src/ds-insta.ts",
     "./ds-unoovista": "./src/ds-unoovista.ts",
+    "./ds-unoojornal": "./src/ds-unoojornal.ts",
     "./ds-unootube": "./src/ds-unootube.ts",
     "./ds-chatgpt": "./src/ds-chatgpt.ts",
     "./ds-whatsapp": "./src/ds-whatsapp.ts",
@@ -23,7 +24,7 @@
     "build": "echo 'sem build (fonte TS direto)'"
   },
   "dependencies": {
-    "@unooria/design-system": "^0.2.24"
+    "@unooria/design-system": "^0.2.25"
   },
   "peerDependencies": {
     "react": ">=19"

@@ -2459,6 +2459,25 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   inicial) e \cd{\_sessoes} (os dois latches, a aposta e o Publicar com os
   cinco campos juntos, e um \emph{CHECK} de ordem por etapa), com RLS forçada
   e \emph{CHECKs} espelhando \arq{conteudo.ts}.\\
+\zebra \arq{20261028180000\_\B{}exp03ef1b\_\B{}nina\_\B{}noticia} & As quatro
+  tabelas de Nina e a Notícia que Desapareceu (\adrr{ADR-197}):
+  \cd{exp03ef1b\_pacotes} (as três reportagens, as duas fases da aprovação,
+  um em andamento por turma, índice único parcial), \cd{\_gates\_turma}
+  (\cd{aposta} $|$ \cd{filtro} $|$ \cd{inspecao}, e a pausa),
+  \cd{\_gates\_historico} (\cd{liberar} $|$ \cd{pausar} $|$ \cd{retomar} $|$
+  \cd{zerar}) e \cd{\_sessoes} (o latch da escolha, os carimbos das duas
+  etapas, o reparo com a validade amarrada à posição do Pátio, a rotina e um
+  \emph{CHECK} de ordem por etapa), com RLS forçada e \emph{CHECKs}
+  espelhando \arq{vocabulario.ts}.\\
+\arq{20261028190000\_\B{}exp03em1b\_\B{}porta\_\B{}voz\_\B{}dos\_\B{}dados} & As cinco
+  tabelas de O Porta-Voz dos Dados (\adrr{ADR-198}): \cd{exp03em1b\_\B{}pacotes}
+  (um em andamento e um rascunho por turma, índices únicos parciais),
+  \cd{\_gates\_turma} (\cd{exploracao} $|$ \cd{pausa} $|$ \cd{liberada}),
+  \cd{\_gates\_historico} (só \cd{pausa} e \cd{liberada}), \cd{\_sessoes} (os
+  marcos, a cota de 3 a 1 e a perícia em colunas, com um \emph{CHECK} de
+  ordem por etapa) e \cd{\_publicacoes} (uma linha por publicação, única por
+  sessão e tipo), com RLS forçada e \emph{CHECKs} espelhando
+  \arq{conteudo.ts}.\\
 \bottomrule
 \end{tabularx}
 
@@ -2580,6 +2599,110 @@ o avanço só depois de um reteste e o Publicar só depois do avanço), e os
 campos de cada etapa andam juntos (\enquote{todos ou nenhum}). O passo da
 tela é DERIVADO dessas colunas e da fase da turma (\arq{regras/\B{}passos.ts});
 a fase NÃO muda o passo, só põe a espera por cima dele.
+\end{regra}
+
+\section{As quatro tabelas da exp03ef1b}
+\label{sec:tabelas-exp03ef1b}
+
+Nina e a Notícia que Desapareceu (\adrr{ADR-197}, migração
+\cd{20261028180000\_\B{}exp03ef1b\_\B{}nina\_\B{}noticia}), no desenho do Júri
+Estadual: todas com \cd{escola\_id NOT NULL}, RLS forçada, política por escola
+e \cd{GRANT} para \cd{app\_runtime}. Os vocabulários (disciplina, origem,
+etapa, ação do histórico, passo, suportes, carimbos e etiquetas) vivem em
+\arq{nina-noticia/\B{}vocabulario.ts} E nos \emph{CHECKs}, e
+\arq{tests/\B{}nina-noticia-\B{}postgres.\B{}spec.ts} compara os dois textos.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp03ef1b\_pacotes} & A ATIVIDADE: as três reportagens em \cd{conteudo}
+  (\cd{JSONB}, exatamente três), a \cd{midia} (chave \seta{} arquivo), a
+  \cd{origem} (\cd{padrao} $|$ \cd{ia}), o recorte do professor (disciplina,
+  tema, assuntos, contexto), as duas fases da aprovação (\cd{aprovado\_em} e
+  \cd{imagens\_aprovadas\_em}), \cd{ativo} (só com as imagens aprovadas) e o
+  gasto de IA. Um em andamento por turma (índice único parcial). A ficha de
+  cada reportagem NÃO é do conteúdo gravado: o servidor a aplica por cima na
+  leitura.\\
+\zebra \cd{exp03ef1b\_gates\_turma} & A etapa da turma (\cd{aposta} $|$
+  \cd{filtro} $|$ \cd{inspecao}), só para a frente, com o carimbo de cada
+  portão, a \cd{pausada} com \cd{pausada\_em}, o pacote e a rodada. Chave
+  (escola, turma).\\
+\cd{exp03ef1b\_gates\_historico} & Cada clique da professora
+  (\cd{liberar} $|$ \cd{pausar} $|$ \cd{retomar} $|$ \cd{zerar}): a etapa, o
+  pacote, a rodada e quem apertou (\cd{SET NULL} se a conta sair).\\
+\zebra \cd{exp03ef1b\_sessoes} & Uma linha por (pacote, rodada, estudante),
+  com a escola e a turma. O \cd{passo}; os selos da galeria; a escolha
+  (\cd{previsao\_itens} e o carimbo --- o LATCH); as tentativas do filtro e o
+  acerto; a ficha aberta e a \cd{dica\_inspecao\_usada}; os carimbos da E4 e
+  da E6 (\cd{JSONB}); o reparo (as posições, a validade e o carimbo, juntos);
+  as tentativas da rotina, a válida e a ordem da bandeja; a conclusão; e a
+  \cd{versao\_instrumento}. Sem texto livre, e sem id opaco: o banco grava
+  SUPORTES, ETIQUETAS e BLOCOS.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{A ordem da missão é do banco também.} Cada etapa tem um \emph{CHECK}
+que exige a anterior (sair da galeria pede os três selos; do filtro em diante,
+a escolha travada; da omissão em diante, o filtro certo; a ficha só depois do
+filtro; os carimbos da E4 só com a ficha aberta; o reparo só depois deles; a
+rotina só depois do reparo; os carimbos da E6 só com a rotina válida; \cd{fim}
+e \cd{concluida\_em} juntos). O CHECK do reparo amarra a validade à posição:
+\cd{reparo\_valido} é exatamente \enquote{a etiqueta Pátio está em Onde}. No
+gate, o carimbo de cada portão existe só da etapa dele em diante, e
+\cd{pausada} anda com \cd{pausada\_em}.
+\end{regra}
+
+\section{As cinco tabelas da exp03em1b}
+\label{sec:tabelas-exp03em1b}
+
+O Porta-Voz dos Dados (\adrr{ADR-198}), no desenho de O Efeito Amplificador,
+com uma tabela a mais: as publicações. Todas com \cd{escola\_id NOT NULL}, RLS
+forçada, política por escola e \cd{GRANT} para \cd{app\_runtime}. Os
+vocabulários (disciplina, origem, etapa do gate, tipo, escala e motivo)
+vivem em \arq{porta-\B{}voz-\B{}dos-\B{}dados/\B{}conteudo.ts} E nos \emph{CHECKs}, e
+\arq{tests/\B{}porta-\B{}voz-\B{}dos-\B{}dados-\B{}regras.\B{}spec.ts} compara os dois textos.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp03em1b\_\B{}pacotes} & A ATIVIDADE: a roupagem do tema em
+  \cd{conteudo\_json} (o recorte do grupo, o serviço com os períodos, a nota
+  técnica, os textos das três camadas, as reações dos dois ramos e o pós-Aha),
+  o recorte do professor (disciplina, tema, de 3 a 6 assuntos, território), a
+  \cd{origem} (\cd{ia} $|$ \cd{padrao}), \cd{ativo}, \cd{rodada\_atual}, a
+  homologação (carimbo e autor juntos; só o homologado vai ao ar), o gasto de
+  IA e as vistas do painel. Um em andamento e um rascunho por turma (índices
+  únicos parciais). Os números da série e o gabarito NÃO estão aqui: são
+  fixos, de \arq{conteudo.ts}.\\
+\zebra \cd{exp03em1b\_\B{}gates\_\B{}turma} & O gate da turma, só para a frente:
+  \cd{exploracao}, \cd{pausa}, \cd{liberada}. Chave (escola, turma).\\
+\cd{exp03em1b\_\B{}gates\_\B{}historico} & Cada botão do professor: o pacote, a
+  rodada, a etapa de destino (nunca \cd{exploracao}, que é o \enquote{Zerar}) e
+  o professor (\cd{SET NULL} se a conta sair).\\
+\zebra \cd{exp03em1b\_\B{}sessoes} & Uma linha por (escola, estudante, pacote,
+  rodada), com a turma: os marcos do servidor (chat, anexo, nudge da E2,
+  compositor, perícia), a cota (\cd{slots\_\B{}restantes}), os carimbos da 1ª
+  publicação e da errata (ou do pular), o parecer em colunas (sinalizou e
+  motivo de cada cartão, ou o pular) e a conclusão. Sem texto livre.\\
+\cd{exp03em1b\_\B{}publicacoes} & Uma linha por publicação confirmada
+  (\cd{inicial} $|$ \cd{errata}, única por sessão e tipo): a escala (0 $|$ 80)
+  e as três camadas (\cd{explicacao}, \cd{fonte}, \cd{contexto}). A 1ª fica
+  quando a errata sai --- o DDL do PRD a sobrescrevia (\adrr{ADR-198}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{A cota e a ordem são do banco também.} \cd{slots\_\B{}restantes} vai de
+3 a 1: 3 sem a 1ª publicação, 2 depois dela, 1 só com a errata PUBLICADA (o
+pular não gasta) --- não há terceira. O compositor só depois do chat, a 1ª
+publicação só com o compositor aberto, a errata só depois da 1ª, a perícia só
+depois da errata decidida; o parecer exige o motivo do cartão sinalizado e
+recusa motivo de cartão não sinalizado; e a conclusão é o parecer OU o pular,
+depois da perícia aberta. O passo da tela é DERIVADO dessas colunas e do gate
+(\arq{regras/\B{}passos.ts}).
 \end{regra}
 
 \section{As três tabelas da exp01ef1b}

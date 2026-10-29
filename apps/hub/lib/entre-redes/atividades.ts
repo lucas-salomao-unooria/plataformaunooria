@@ -2,8 +2,10 @@ import type { CoberturasDaTurma } from "../a-selecao-tipos";
 import type { PacotesDaTurmaEfeito } from "../efeito-amplificador-tipos";
 import type { PacotesDaTurmaAssistente } from "../assistente-invisivel-tipos";
 import type { PacotesDaTurmaEnigma } from "../enigma-capa-tipos";
+import type { PacotesDaTurmaNina } from "../nina-noticia-tipos";
 import type { PacotesDaTurma } from "../jornal-escola-tipos";
 import type { PacotesDoJuri } from "../juri-estadual-tipos";
+import type { PacotesDaTurmaPortaVoz } from "../porta-voz-tipos";
 import type { PacotesDaTurmaQuemMandou } from "../quem-mandou-tipos";
 
 /**
@@ -20,12 +22,30 @@ import type { PacotesDaTurmaQuemMandou } from "../quem-mandou-tipos";
  * As leituras server-side moram em `atividades-servidor.ts`.
  */
 
-/** As missões com atividade — o mesmo par de `equipes/regras.ts#EXPERIENCIAS_COM_ATIVIDADE` na api. */
-export const MISSOES_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b"] as const;
+/**
+ * As missões com atividade — as nove primeiras são o mesmo par de
+ * `equipes/regras.ts#EXPERIENCIAS_COM_ATIVIDADE` na api. A exp03em1b (O
+ * Porta-Voz dos Dados, ADR-198) tem atividade (o pacote homologado) mas NÃO
+ * tem equipe: é individual por desenho, e a api não a põe na lista das
+ * equipes (lá ela só serve para achar a atividade da equipe). Ela está em
+ * `MISSOES_SEM_EQUIPE`, e a criação pula o passo das equipes.
+ */
+export const MISSOES_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b", "exp03ef1b", "exp03em1b"] as const;
 export type MissaoComAtividade = (typeof MISSOES_COM_ATIVIDADE)[number];
 
 export function temAtividades(expId: string | null | undefined): expId is MissaoComAtividade {
   return (MISSOES_COM_ATIVIDADE as readonly string[]).includes(expId ?? "");
+}
+
+/**
+ * As missões com atividade que são INDIVIDUAIS por desenho: a api responde
+ * 400 `missao-sem-equipes` a qualquer montagem. A criação não pergunta como a
+ * turma senta, e a página da atividade não tem a aba Equipes.
+ */
+export const MISSOES_SEM_EQUIPE: readonly MissaoComAtividade[] = ["exp03em1b"];
+
+export function aceitaEquipes(expId: MissaoComAtividade): boolean {
+  return !MISSOES_SEM_EQUIPE.includes(expId);
 }
 
 /**
@@ -121,7 +141,23 @@ export function caminhoDoEmAndamento(expId: MissaoComAtividade, turmaId: string,
       return `/enigma-capa/turmas/${t}/pacotes/${a}/em-andamento`;
     case "exp01em1b":
       return `/assistente-invisivel/turmas/${t}/pacotes/${a}/em-andamento`;
+    case "exp03ef1b":
+      return `/nina-noticia/turmas/${t}/pacotes/${a}/em-andamento`;
+    case "exp03em1b":
+      /* Aqui o em andamento é da TURMA, e o pacote vai no corpo (`corpoDoEmAndamento`). */
+      return `/porta-voz-dos-dados/turmas/${t}/em-andamento`;
   }
+}
+
+/**
+ * O corpo de "Usar esta atividade agora". Nas irmãs a atividade vai no
+ * caminho e o corpo é vazio; no Instanooria vai o `forcar` (as pendências do
+ * 422); na exp03em1b o pacote vai no corpo.
+ */
+export function corpoDoEmAndamento(expId: MissaoComAtividade, atividadeId: string, forcar = false): Record<string, unknown> {
+  if (expId === "exp08ef1b") return { forcar };
+  if (expId === "exp03em1b") return { pacoteId: atividadeId };
+  return {};
 }
 
 /** A atividade do Instanooria como `GET /atividades` a devolve. */
@@ -257,6 +293,45 @@ export function atividadesDoAssistente(p: PacotesDaTurmaAssistente, rotuloDaDisc
     criadaEm: h.aprovadoEm,
     rodadas: h.rodadas,
   }));
+}
+
+/**
+ * Nina e a Notícia que Desapareceu (ADR-197): o pacote homologado é a
+ * atividade, como no Júri — com a SEGUNDA fase da aprovação (as imagens, ADR-146).
+ * Sem ela a atividade é "Em preparo", e o card não oferece "Usar esta atividade
+ * agora": a api recusaria com 409 `imagens-nao-aprovadas`.
+ */
+export function atividadesDaNina(p: PacotesDaTurmaNina, rotuloDaDisciplina: (slug: string) => string): AtividadeNaLista[] {
+  return p.historico.map((h) => ({
+    id: h.id,
+    titulo: h.tema,
+    detalhe: [rotuloDaDisciplina(h.disciplina), ORIGEM[h.origem]].join(" · "),
+    estado: h.ativo ? "em-andamento" : h.imagensAprovadas ? "pronta" : "em-preparo",
+    criadaEm: h.criadoEm,
+    rodadas: h.rodadas,
+  }));
+}
+
+/**
+ * O Porta-Voz dos Dados (ADR-198): o pacote HOMOLOGADO é a atividade. A lista
+ * da api traz também o rascunho da curadoria (`aprovadoEm: null`), que não é
+ * atividade ainda — fica de fora.
+ */
+export function atividadesDoPortaVoz(p: PacotesDaTurmaPortaVoz, rotuloDaDisciplina: (slug: string) => string): AtividadeNaLista[] {
+  return p.pacotes.flatMap((h) =>
+    h.aprovadoEm
+      ? [
+          {
+            id: h.id,
+            titulo: h.tema,
+            detalhe: [rotuloDaDisciplina(h.disciplina), ORIGEM[h.origem]].join(" · "),
+            estado: h.ativo ? ("em-andamento" as const) : ("pronta" as const),
+            criadaEm: h.aprovadoEm,
+            rodadas: h.rodadas,
+          },
+        ]
+      : [],
+  );
 }
 
 /**

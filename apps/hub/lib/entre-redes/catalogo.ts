@@ -1294,9 +1294,191 @@ export const MISSAO_ASSISTENTE_INVISIVEL: Missao = {
   },
 };
 
+/**
+ * 3º ano · Unidade 1 — Nina e a Notícia que Desapareceu (`exp03ef1b`, ADR-197).
+ *
+ * Do one-pager pedagógico aprovado e da spec da frente, com os ajustes do PO de
+ * 27 e 28/10 ("escolha" no lugar de "aposta" em toda tela; o reparo monta a
+ * ficha inteira). A dupla olha três reportagens da mesma feira no Unoojornal,
+ * trava a escolha das que a busca pelo pátio vai achar, vê a do telão sumir e
+ * descobre, na ficha, o campo Onde vazio. Dois portões da professora (Liberar
+ * Filtro, Liberar Inspeção), Pausar/Retomar e Zerar; sem Canal B e sem podcast.
+ */
+export const MISSAO_NINA_NOTICIA: Missao = {
+  anoSlug: "3-ano",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp03ef1b",
+  titulo: "Nina e a Notícia que Desapareceu",
+  resumo:
+    "A feira de livros da escola saiu em três suportes do Unoojornal — o mural impresso, o portal e o telão do " +
+    "corredor —, e as três fotos mostram o pátio. A dupla trava a escolha das notícias que a busca pelo pátio vai " +
+    "encontrar, aplica o filtro e vê a do telão sumir. Na ficha da reportagem, o campo Onde está vazio: a busca " +
+    "consulta a ficha, não a foto. A dupla carimba afirmações (é verdade, não é verdade, não dá para saber), monta " +
+    "a ficha do telão, organiza a rotina que confere uma pilha de fichas e investiga um caso novo.",
+  status: "disponivel",
+  // Sem spoiler: a criança não pode saber antes que uma notícia vai sumir da busca.
+  estudante: {
+    titulo: "Nina e a Notícia que Desapareceu",
+    chamada: "A Nina precisa de ajuda no jornal da escola: encontre todas as reportagens da feira de livros!",
+  },
+  ficha: {
+    competencia:
+      "EF15CO08 — Reconhecer e utilizar tecnologias computacionais para pesquisar e acessar informações (o foco: a " +
+      "busca consulta os campos da ficha, não a foto). Com EF03CO01 (verdadeiro, falso e a negação nos carimbos), " +
+      "EF03CO02 (a rotina com repetição e condição de parada), EF03CO03 (decompor a ficha campo a campo) e EF15CO01 " +
+      "(a informação livre da foto e a estruturada da ficha).",
+    duracao: "1 aula de 50 min (22 min em tela) — ou 2 aulas, com a pausa depois do filtro",
+    formato:
+      "Em duplas, um computador para cada duas crianças (de 1 a 4), no Unoojornal, o jornal escolar digital da " +
+      "Unooria. Sem texto para escrever: tudo é toque nas fotos, nas pastilhas do filtro, nos carimbos e nas " +
+      "etiquetas.",
+    atos: [
+      {
+        rotulo: "1 — Desafiar: as três fotos da feira",
+        texto:
+          "A Nina pede ajuda para encontrar as notícias da feira. A dupla abre as três fotos — mural, portal e telão — " +
+          "e toca no cartaz da feira, que se repete em todas: cada cartão ganha o selo Mesma feira.",
+      },
+      {
+        rotulo: "2 — Navegar: a escolha travada",
+        texto:
+          "A dupla põe na Caixa de resultados esperados as notícias que acha que a busca pelo pátio vai encontrar e " +
+          "toca em Travar Escolha. A escolha não volta, e a tela espera o seu Liberar Filtro.",
+      },
+      {
+        rotulo: "3 — Decidir: o filtro e a notícia que some (o seu primeiro portão)",
+        texto:
+          "Com o filtro liberado, a dupla escolhe Onde: Pátio e busca. Aparecem só 2 notícias; a do telão deixa a " +
+          "moldura vazia. Quem confrontou espera com a tela Momento de conversar com a turma! — a hora de Pausar " +
+          "Turma e perguntar por que a foto não apareceu, se todo mundo viu o pátio nela.",
+      },
+      {
+        rotulo: "4 — Resultado: a ficha (o seu segundo portão)",
+        texto:
+          "Depois de Liberar Inspeção, a dupla abre a ficha do telão e vê o campo Onde vazio. Carimba três cartões, " +
+          "monta a ficha com as três etiquetas e toca em Concluir: com o Pátio no Onde, a busca refeita traz as 3 " +
+          "notícias; em outro campo, a tela explica como ficariam as 3. Nunca há tentar de novo.",
+      },
+      {
+        rotulo: "5 — Explicar: a rotina da pilha de fichas",
+        texto:
+          "Chega uma pilha de fichas novas. A dupla organiza os blocos embaralhados — ENQUANTO houver ficha, pegar, " +
+          "SE o Onde tem ícone marcar ok, SENÃO marcar revisar — e testa: a pilha vai de 3 a 0 e a máquina para.",
+      },
+      {
+        rotulo: "6 — Refletir: o caso do Festival de Ciências",
+        texto:
+          "Duas fotos do Festival com uma ficha sem o dia: a dupla investiga com três ferramentas, carimba três " +
+          "afirmações e chega ao Painel da Investigação, que fica congelado para você.",
+      },
+    ],
+    preparo: [
+      "Crie a atividade: Usar Banco Padrão (a Feira de Troca de Livros) é um clique; ou gere as notícias do seu evento com IA e confira o pacote — inclusive se o pátio aparece na foto do telão — antes de homologar e aprovar as imagens.",
+      "Libere a atividade para a turma: ela entra em andamento e a missão fica liberada na sala de aula.",
+      "Deixe a página da atividade aberta na aba Aula ao vivo: Liberar Filtro, Liberar Inspeção, Pausar Turma e Retomar Turma são seus.",
+      "Não conte que uma notícia vai sumir da busca: a força da descoberta vem da escolha travada antes do filtro.",
+      "Combine as duplas: uma criança toca na tela e a outra aponta as pistas nas fotos.",
+    ],
+  },
+};
+
+/**
+ * 3ª série · Unidade 1 — O Porta-Voz dos Dados (`exp03em1b`, ADR-198).
+ *
+ * Do one-pager do PO v2.0 e do one-pager pedagógico, com as decisões do Lucas
+ * de 2026-10-28: o clone é o Unoochat, a missão é individual com o debate
+ * coletivo no meio, o professor pausa as telas e libera a retomada (dois
+ * botões, só para a frente), e o podcast é só do professor. A descoberta
+ * central está na ficha; a do estudante não conta a virada.
+ */
+export const MISSAO_PORTA_VOZ: Missao = {
+  anoSlug: "3-serie",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp03em1b",
+  titulo: "O Porta-Voz dos Dados",
+  // Copy `prof.cat.desc_missao`, literal: é texto do PROFESSOR, e não conta a virada.
+  resumo: "Simulação em mensageiro institucional: responsabilidade técnica e escolhas de escala em gráficos públicos.",
+  status: "disponivel",
+  // Sem spoiler: a missão mede a escolha da escala antes de alguém mostrar o outro gráfico.
+  estudante: {
+    titulo: "O Porta-Voz dos Dados",
+    chamada:
+      "Você é o Porta-Voz Oficial de Dados da escola: analise o boletim da prefeitura no Unoochat e publique o gráfico oficial no grupo da cidade.",
+  },
+  ficha: {
+    competencia:
+      "EM13CO12 — Produzir, analisar, gerir e compartilhar informações a partir de dados, utilizando princípios de " +
+      "ciência de dados (o foco: o boletim publicado). Com EM13CO13 (consultar a nota técnica antes de decidir), " +
+      "EM13CO14 (a perícia dos cartões eleitorais), EM13CO21 (a explicação da escala), EM13CO22 (o gráfico com as " +
+      "informações que o acompanham) e EM13CO26 (a errata responsável).",
+    duracao: "1 aula de 50 min (25 min em tela, 25 min fora da tela)",
+    formato:
+      "Individual, um estudante por aparelho, com o debate coletivo da turma no meio. O estudante usa o Unoochat, " +
+      "o aplicativo de mensagens da Unooria: o chat privado com o Assistente de Dados da prefeitura e o grupo " +
+      "público da cidade. O Assistente responde por botões, sem inteligência artificial na aula, e não há texto " +
+      "livre: a escala, as informações e o parecer são escolhas fechadas.",
+    atos: [
+      {
+        rotulo: "1 — Desafiar: o cargo de Porta-Voz",
+        texto:
+          "No chat privado, o Assistente de Dados nomeia o estudante Porta-Voz Oficial de Dados da escola. No topo, " +
+          "a cota: 3 publicações oficiais. O grupo da cidade fica só para leitura até ele publicar.",
+      },
+      {
+        rotulo: "2 — Navegar: a tabela e a nota técnica",
+        texto:
+          "Quatro meses de um serviço público: 95%, 94%, 92% e 88%. Anexa, a nota técnica explica que a queda se " +
+          "concentrou em duas ruas durante uma obra — abrir é escolha do estudante.",
+      },
+      {
+        rotulo: "3 — Decidir: a escala e as informações",
+        texto:
+          "No compositor, com a prévia ao vivo, ele escolhe onde o eixo começa (0% ou 80%) e liga ou desliga três " +
+          "informações prontas: a explicação da escala, a fonte dos dados e o contexto da queda. Publicar gasta a " +
+          "1ª das 3 publicações e não volta.",
+      },
+      {
+        rotulo: "4 — Resultado: o grupo reage (o seu primeiro botão)",
+        texto:
+          "Os moradores reagem ao gráfico de cada um: indiferença com o eixo em 0%, pânico com o eixo em 80%. Dez " +
+          "segundos depois, a escola rival publica a mesma planilha com a escala oposta. Você aperta Pausar para o " +
+          "debate e conduz a conversa com a sala.",
+      },
+      {
+        rotulo: "4b — A errata (o seu segundo botão)",
+        texto:
+          "Liberar Retomada da Turma abre a errata: o compositor volta com as escolhas da 1ª publicação, e o " +
+          "estudante pode corrigir e republicar com a 2ª publicação, ou seguir sem errata.",
+      },
+      {
+        rotulo: "5 — Explicar: o laudo e o Fator de Mentira",
+        texto:
+          "O laudo desmonta o gráfico: 7 pontos de queda real viraram uma queda visual de quase metade da coluna. " +
+          "Uma régua de 0 a 80 mostra a altura das colunas mudando conforme o eixo.",
+      },
+      {
+        rotulo: "6 — Perícia técnica: os cartões eleitorais",
+        texto:
+          "O estudante examina dois cartões de campanha, sem rótulo de certo ou errado, pode ver os dados e a " +
+          "fonte, sinaliza o que precisa de revisão com o motivo e emite o parecer. Depois, conclui.",
+      },
+    ],
+    preparo: [
+      "Crie a atividade: Usar Banco Padrão e Liberar (Vigilância Sanitária da Água, dois toques) ou o recorte da sua disciplina gerado com IA, que você revisa e homologa antes de liberar.",
+      "Ponha a atividade em andamento e libere a missão na sala de aula: sem as duas, o estudante vê uma tela de espera.",
+      "Deixe a página da atividade aberta na aba Aula ao vivo: são dois botões seus, sempre para a frente — Pausar para o debate e Liberar Retomada da Turma.",
+      "Não conte que a aula é sobre gráficos que enganam nem que a escola rival vai publicar: a missão mede a escolha da escala antes desse contraste.",
+      "Toque o podcast de recapitulação só depois da missão em tela: ele conta a virada.",
+    ],
+  },
+};
+
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "1-ano": [MISSAO_FOTO_CONTA],
   "2-ano": [MISSAO_ENIGMA_CAPA],
+  "3-ano": [MISSAO_NINA_NOTICIA],
   "4-ano": [MISSAO_JORNAL_DA_ESCOLA],
   "5-ano": [MISSAO_QUEM_MANDOU_ISSO],
   "6-ano": [MISSAO_JURI_ESTADUAL, MISSAO_RASTRO_BOATO],
@@ -1304,6 +1486,7 @@ const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "8-ano": [MISSAO_ATUAL, MISSAO_MANIFESTO_IA],
   "1-serie": [MISSAO_ASSISTENTE_INVISIVEL],
   "2-serie": [MISSAO_EFEITO_AMPLIFICADOR],
+  "3-serie": [MISSAO_PORTA_VOZ],
 };
 
 function montarAno(slug: string, rotulo: string, etapa: Etapa): Ano {

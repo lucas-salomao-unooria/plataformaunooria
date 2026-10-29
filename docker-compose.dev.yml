@@ -25,6 +25,7 @@
 #   exp01ef1b  Vite de O Que a Foto Conta, o clone do mural (5183)
 #   exp05ef1b  Vite de Quem mandou isso?, o clone do mensageiro (5184)
 #   exp06ef1b  Vite de O Júri Estadual de Projetos, o clone de rede social de fotos (5185)
+#   exp03ef1b  Vite de Nina e a Notícia que Desapareceu, o jornal Unoojornal (5189)
 #   exp02em1b-v0  Vite da Missão Tempestade, a VERSÃO ANTERIOR da 2ª série EM (5186,
 #              ADR-181) — só no profile `anteriores`: `docker compose --profile anteriores …`
 #
@@ -71,6 +72,7 @@ x-fonte: &fonte
   - nm-exp06ef2b:/repo/apps/experiencias/exp06ef2b/node_modules
   - nm-exp05ef1b:/repo/apps/experiencias/exp05ef1b/node_modules
   - nm-exp06ef1b:/repo/apps/experiencias/exp06ef1b/node_modules
+  - nm-exp03ef1b:/repo/apps/experiencias/exp03ef1b/node_modules
   - nm-exp-template:/repo/apps/experiencias/_template/node_modules
   - pnpm-store:/pnpm-store
   # Artefatos de build também em volume, por dois motivos: não competir com o
@@ -229,7 +231,7 @@ services:
       # Toda porta de exp entra no CORS: sem a :5175 o plano de aula embedado
       # morre com "Failed to fetch", sem a :5176 o check-in de bem-estar e sem
       # a :5177 a Vila do Lume não abre nem conclui a partida.
-      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180,http://localhost:5181,http://localhost:5182,http://localhost:5183,http://localhost:5184,http://localhost:5185,http://localhost:5186,http://localhost:5187,http://localhost:5188
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180,http://localhost:5181,http://localhost:5182,http://localhost:5183,http://localhost:5184,http://localhost:5185,http://localhost:5186,http://localhost:5187,http://localhost:5188,http://localhost:5189,http://localhost:5190
       # O FUSO da plataforma inteira (ADR-99). Ausente = America/Sao_Paulo.
       # O MESMO valor vai para o hub abaixo: 1 contrato = 1 stack, e api e hub
       # que discordem do fuso devolvem o defeito da ADR-98 — entre as 21h e a
@@ -475,6 +477,18 @@ services:
       deps:
         condition: service_completed_successfully
 
+  # 5189 (ADR-197), a próxima livre depois da 5188. Volume PRÓPRIO de
+  # node_modules (`nm-exp03ef1b`), pela mesma razão da exp05ef1b acima.
+  exp03ef1b:
+    <<: *dev
+    working_dir: /repo/apps/experiencias/exp03ef1b
+    command: pnpm exec vite --host 0.0.0.0 --port 5189 --strictPort
+    ports:
+      - "5189:5189"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
 
 volumes:
   pgdata:
@@ -495,6 +509,7 @@ volumes:
   nm-exp06ef2b:
   nm-exp05ef1b:
   nm-exp06ef1b:
+  nm-exp03ef1b:
   nm-exp-template:
   hub-next:
   api-dist:

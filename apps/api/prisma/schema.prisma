@@ -285,6 +285,20 @@ model Turma {
   assistGates        Exp01em1bGateTurma[]
   assistHistorico    Exp01em1bGateHistorico[]
   assistSessoes      Exp01em1bSessao[]
+  /// Nina e a Notícia que Desapareceu (exp03ef1b, ADR-197): o pacote homologado
+  /// é POR TURMA (e é a atividade da evidência), o relógio é da turma, e a
+  /// sessão carrega a turma.
+  ninaPacotes        Exp03ef1bPacote[]
+  ninaGates          Exp03ef1bGateTurma[]
+  ninaHistorico      Exp03ef1bGateHistorico[]
+  ninaSessoes        Exp03ef1bSessao[]
+  /// O Porta-Voz dos Dados (exp03em1b, ADR-198): o pacote é POR TURMA (a
+  /// atividade da evidência), o gate é da turma, e a sessão e a publicação carregam a turma.
+  portaVozPacotes    Exp03em1bPacote[]
+  portaVozGates      Exp03em1bGateTurma[]
+  portaVozHistorico  Exp03em1bGateHistorico[]
+  portaVozSessoes    Exp03em1bSessao[]
+  portaVozPosts      Exp03em1bPublicacao[]
 
   @@unique([escolaId, periodoLetivoId, nome])
   @@index([escolaId])
@@ -511,6 +525,14 @@ model User {
   assistenteSessoes          Exp01em1bSessao[]           @relation("Exp01em1bEstudante")
   /// As liberações e pausas de O Assistente Invisível (o histórico).
   assistenteGatesApertados   Exp01em1bGateHistorico[]    @relation("Exp01em1bGateProfessor")
+  /// Lista: a sessão da exp03ef1b é por (pacote, rodada), não por estudante.
+  ninaSessoes                Exp03ef1bSessao[]           @relation("Exp03ef1bEstudante")
+  /// Os portões, as pausas e os zerar de Nina e a Notícia que Desapareceu (o histórico).
+  ninaGatesApertados         Exp03ef1bGateHistorico[]    @relation("Exp03ef1bGateProfessor")
+  /// Lista: a sessão da exp03em1b é por (pacote, rodada), não por estudante.
+  portaVozSessoes            Exp03em1bSessao[]           @relation("Exp03em1bEstudante")
+  /// O "Pausar Telas" e o "Liberar Retomada" de O Porta-Voz dos Dados (o histórico).
+  portaVozGatesApertados     Exp03em1bGateHistorico[]    @relation("Exp03em1bGateProfessor")
   /// As conversas deste professor com o agente de IA — a POSSE da sessão do
   /// Agent Engine mora aqui, não no engine.
   agenteProfessorConversas   AgenteProfessorConversa[]   @relation("AgenteProfessorConversaUsuario")
@@ -4087,8 +4109,8 @@ model Exp02ef1bSessao {
   lupaInv2Foto1Ms Int       @default(0) @map("lupa_inv2_foto1_ms")
   lupaInv2Foto2Ms Int       @default(0) @map("lupa_inv2_foto2_ms")
   /// Tentativas de avançar sem o piso ("OLHE O FUNDO") — a régua da EF02CO05.
-  lupaAlertas    Int       @default(0) @map("lupa_alertas") @db.SmallInt
-  lupaLiberadaEm DateTime? @map("lupa_liberada_em") @db.Timestamptz(6)
+  lupaAlertas     Int       @default(0) @map("lupa_alertas") @db.SmallInt
+  lupaLiberadaEm  DateTime? @map("lupa_liberada_em") @db.Timestamptz(6)
 
   /// A CAPA (E3) — o LATCH 1: os sete campos no MESMO UPDATE (CHECK "todos ou nenhum").
   capaFotoId        String?   @map("capa_foto_id")
@@ -4315,4 +4337,339 @@ model Exp01em1bSessao {
   @@id([escolaId, estudanteId, pacoteId, rodada])
   @@index([escolaId, turmaId, pacoteId, rodada])
   @@map("exp01em1b_sessoes")
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Nina e a Notícia que Desapareceu (exp03ef1b, 3º ano EF, unidade 1, ADR-197).
+// Módulo `src/nina-noticia/`; vocabulários e CHECKs no bloco manual da
+// migração `20261028180000_exp03ef1b_nina_noticia`.
+// ──────────────────────────────────────────────────────────────────────────
+
+/// O PACOTE da feira (as três reportagens e o cartaz) — a ATIVIDADE da
+/// evidência (ADR-130). Nasce PRONTO, não no ar; o em andamento (`ativo`) é um
+/// por turma (índice parcial).
+model Exp03ef1bPacote {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId   String  @map("escola_id")
+  turmaId    String  @map("turma_id") @db.Uuid
+  /// padrao | ia (CHECK). `padrao` = a Feira de Troca de Livros (`nina-noticia/banco-padrao.ts`).
+  origem     String
+  /// O slug de `nina-noticia/vocabulario.ts#DISCIPLINAS` (CHECK).
+  disciplina String
+  /// O tema como a criança o lê (o `conteudo.tema`).
+  tema       String
+  /// O "Assunto da matéria" que a professora deu ao gerador (spec §7.2).
+  assuntos   String
+  contexto   String?
+
+  /// O tema, o cartaz e as três reportagens (texto + a ESTRUTURA do servidor).
+  /// `Json` porque é lido e escrito sempre inteiro; o schema real é
+  /// `contrato-de-rotas.ts#ConteudoDoPacoteSchema`, com `problemasDoPacote`.
+  conteudo Json
+
+  /// As URLs das imagens, por chave (`mural`, `portal`, `telao`, `cartaz` e as
+  /// cenas fixas do banco `caso-a`, `caso-b`, `extra-1`, `extra-2`).
+  midia Json @default("{}")
+
+  /// A SEGUNDA fase da aprovação (ADR-146): a professora viu as imagens — e a
+  /// do telão mostra o pátio. NULO = a atividade não vai ao ar.
+  imagensAprovadasEm DateTime? @map("imagens_aprovadas_em") @db.Timestamptz(6)
+
+  ativo Boolean @default(false)
+
+  /// Quem homologou. Carimbo sem FK: a saída de um professor não trava a atividade.
+  criadoPor  String    @map("criado_por") @db.Uuid
+  aprovadoEm DateTime? @map("aprovado_em") @db.Timestamptz(6)
+
+  /// As gerações de rascunho feitas com este pacote em sala, e o que custaram.
+  iaGeracoes Int @default(0) @map("ia_geracoes")
+  iaTokens   Int @default(0) @map("ia_tokens")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma   Turma                @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  gates   Exp03ef1bGateTurma[]
+  sessoes Exp03ef1bSessao[]
+
+  /// O alvo das FKs compostas: a sessão de uma escola não aponta para o pacote de outra.
+  @@unique([escolaId, id])
+  @@index([escolaId, turmaId])
+  @@map("exp03ef1b_pacotes")
+}
+
+/// O RELÓGIO DA TURMA — os dois portões da professora ("Liberar Filtro",
+/// "Liberar Inspeção") e a pausa. Lido por polling de 3 s.
+model Exp03ef1bGateTurma {
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+  pacoteId String @map("pacote_id") @db.Uuid
+  /// ≥ 1 (CHECK). "Zerar Turma" soma um; pacote novo abre a seguinte à última.
+  rodada   Int    @default(1)
+  /// aposta | filtro | inspecao (CHECK; a ordem é `regras/passos.ts`). Só avança.
+  etapa    String @default("aposta")
+  /// "Pausar Turma": congela todas as telas. Par com `pausada_em` (CHECK).
+  pausada  Boolean @default(false)
+
+  filtroLiberadoEm   DateTime? @map("filtro_liberado_em") @db.Timestamptz(6)
+  inspecaoLiberadaEm DateTime? @map("inspecao_liberada_em") @db.Timestamptz(6)
+  pausadaEm          DateTime? @map("pausada_em") @db.Timestamptz(6)
+
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma  Turma           @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  pacote Exp03ef1bPacote @relation(fields: [escolaId, pacoteId], references: [escolaId, id], onDelete: Cascade)
+
+  @@id([escolaId, turmaId])
+  @@index([escolaId, pacoteId])
+  @@map("exp03ef1b_gates_turma")
+}
+
+/// O histórico APPEND-ONLY dos botões da professora: cada liberação, pausa,
+/// retomada e zerar.
+model Exp03ef1bGateHistorico {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String   @map("escola_id")
+  turmaId     String   @map("turma_id") @db.Uuid
+  pacoteId    String   @map("pacote_id") @db.Uuid
+  rodada      Int
+  /// liberar | pausar | retomar | zerar (CHECK).
+  acao        String
+  /// A etapa da turma DEPOIS do clique (CHECK).
+  etapa       String
+  /// Quem apertou. Nulo se o professor saiu da rede (SET NULL): o histórico fica.
+  professorId String?  @map("professor_id") @db.Uuid
+  em          DateTime @default(now()) @db.Timestamptz(6)
+
+  turma     Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  professor User? @relation("Exp03ef1bGateProfessor", fields: [professorId], references: [id], onDelete: SetNull)
+
+  @@index([escolaId, turmaId])
+  @@map("exp03ef1b_gates_historico")
+}
+
+/// A sessão de UM estudante (ou do computador da equipe) em UMA rodada de UM
+/// pacote. O passo é gravado (F5 retoma nele); o EFETIVO é min(passo, teto da
+/// etapa). Os ids opacos da sessão saem de `id` + `rodada`
+/// (`regras/ordem.ts#sementeDaSessao`), e o que se grava são SUPORTES,
+/// ETIQUETAS e BLOCOS — nunca o id opaco.
+model Exp03ef1bSessao {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String @map("escola_id")
+  turmaId     String @map("turma_id") @db.Uuid
+  pacoteId    String @map("pacote_id") @db.Uuid
+  rodada      Int
+  estudanteId String @map("estudante_id") @db.Uuid
+
+  /// galeria … fim (CHECK; a ordem é `vocabulario.ts#PASSOS`).
+  passo String @default("galeria")
+
+  /// E1: os suportes com "Mesma feira" aceso.
+  selosFeira        String[]  @default([]) @map("selos_feira")
+  /// E2 — o LATCH da escolha: os suportes na caixa e o carimbo, juntos (CHECK).
+  previsaoItens     String[]  @default([]) @map("previsao_itens")
+  previsaoTravadaEm DateTime? @map("previsao_travada_em") @db.Timestamptz(6)
+
+  /// E3: as buscas ANTES da certa (Onde = Pátio) e o carimbo da certa.
+  filtroTentativas Int       @default(0) @map("filtro_tentativas")
+  filtroAcertouEm  DateTime? @map("filtro_acertou_em") @db.Timestamptz(6)
+
+  /// E4-01: a ficha do telão aberta, e se o pulso de 15 s disparou antes.
+  fichaAbertaEm     DateTime? @map("ficha_aberta_em") @db.Timestamptz(6)
+  dicaInspecaoUsada Boolean   @default(false) @map("dica_inspecao_usada")
+
+  /// E4-02 e E6-01: os carimbos `{k1: v|x|duvida, …}`, uma vez cada (CHECK de forma).
+  carimbosE4 Json? @map("carimbos_e4")
+  carimbosE6 Json? @map("carimbos_e6")
+
+  /// E4-03: a ficha MONTADA `{quem, onde, quando} → etiqueta`, a validade e o carimbo, juntos (CHECK).
+  reparoPosicoes Json?     @map("reparo_posicoes")
+  reparoValido   Boolean?  @map("reparo_valido")
+  reparoEm       DateTime? @map("reparo_em") @db.Timestamptz(6)
+
+  /// E5-01: cada "Testar Rotina" conta; a válida carimba. A bandeja sorteada fica para auditoria.
+  rotinaTentativas   Int       @default(0) @map("rotina_tentativas")
+  rotinaValida       Boolean   @default(false) @map("rotina_valida")
+  rotinaValidaEm     DateTime? @map("rotina_valida_em") @db.Timestamptz(6)
+  rotinaOrdemBandeja Json?     @map("rotina_ordem_bandeja")
+
+  /// E6-03: `fim` e o carimbo andam juntos (CHECK).
+  concluidaEm DateTime? @map("concluida_em") @db.Timestamptz(6)
+
+  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma     Turma           @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  estudante User            @relation("Exp03ef1bEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  pacote    Exp03ef1bPacote @relation(fields: [escolaId, pacoteId], references: [escolaId, id], onDelete: Cascade)
+
+  @@unique([pacoteId, rodada, estudanteId], map: "exp03ef1b_sessao_unica_por_rodada")
+  @@index([escolaId, turmaId, pacoteId, rodada])
+  @@index([escolaId, estudanteId])
+  @@map("exp03ef1b_sessoes")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// O PORTA-VOZ DOS DADOS — exp03em1b, 3ª série EM, unidade 1 (ADR-198).
+// Módulo `apps/api/src/porta-voz-dos-dados`. CHECKs, índices parciais e RLS no
+// bloco MANUAL da migração `20261028190000_exp03em1b_porta_voz_dos_dados`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// O pacote didático de UMA turma: a roupagem do tema (a IA ou o banco padrão),
+/// homologada pelo professor. É a ATIVIDADE da evidência (ADR-130).
+model Exp03em1bPacote {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  /// O componente curricular do recorte (CHECK, `conteudo.ts#DISCIPLINAS`).
+  disciplina String
+  tema       String
+  assuntos   String[]
+  /// O território (o bairro da escola), opcional.
+  contexto   String?
+
+  /// A roupagem (`contrato-de-rotas.ts#ConteudoBaseSchema`). Os números da série,
+  /// a escola rival e os cartões da perícia são FIXOS no servidor, não moram aqui.
+  conteudoJson Json @map("conteudo_json")
+
+  /// ia | padrao (CHECK).
+  origem String
+
+  ativo       Boolean   @default(false)
+  /// A reaplicação: "Zerar Turma" soma 1, e as rodadas anteriores ficam.
+  rodadaAtual Int       @default(1) @map("rodada_atual") @db.SmallInt
+  /// `null` = rascunho. Carimbo e autor andam juntos (CHECK) — EVT-P03.
+  aprovadoEm  DateTime? @map("aprovado_em") @db.Timestamptz(6)
+  aprovadoPor String?   @map("aprovado_por") @db.Uuid
+
+  /// EVT-P01/P02: a primeira chamada de preparo, e quantas gerações/tokens o rascunho custou.
+  preparoIniciadoEm DateTime  @default(now()) @map("preparo_iniciado_em") @db.Timestamptz(6)
+  iaGeracoes        Int       @default(0) @map("ia_geracoes")
+  iaTokens          Int       @default(0) @map("ia_tokens")
+  /// EVT-P04: o painel de condução aberto.
+  painelVistoEm     DateTime? @map("painel_visto_em") @db.Timestamptz(6)
+  painelVistas      Int       @default(0) @map("painel_vistas")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma   Turma             @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  sessoes Exp03em1bSessao[]
+
+  /// O alvo da FK composta das sessões: a sessão de uma escola não aponta para o pacote de outra.
+  @@unique([escolaId, id])
+  @@index([escolaId, turmaId])
+  @@map("exp03em1b_pacotes")
+}
+
+/// O gate da turma: exploracao → pausa → liberada (CHECK), só para a frente.
+model Exp03em1bGateTurma {
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  etapa String @default("exploracao")
+
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, turmaId])
+  @@map("exp03em1b_gates_turma")
+}
+
+/// Cada botão do gate (EVT-P05): para ONDE a turma foi, quem e quando.
+model Exp03em1bGateHistorico {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String   @map("escola_id")
+  turmaId     String   @map("turma_id") @db.Uuid
+  pacoteId    String   @map("pacote_id") @db.Uuid
+  rodada      Int      @db.SmallInt
+  etapa       String
+  professorId String?  @map("professor_id") @db.Uuid
+  em          DateTime @default(now()) @db.Timestamptz(6)
+
+  turma     Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  professor User? @relation("Exp03em1bGateProfessor", fields: [professorId], references: [id], onDelete: SetNull)
+
+  @@index([escolaId, turmaId])
+  @@map("exp03em1b_gates_historico")
+}
+
+/// A sessão de um estudante numa rodada do pacote. Só carimbos, contagens e
+/// vocabulário fechado: NENHUMA coluna de texto livre do estudante.
+model Exp03em1bSessao {
+  escolaId    String @map("escola_id")
+  estudanteId String @map("estudante_id") @db.Uuid
+  pacoteId    String @map("pacote_id") @db.Uuid
+  rodada      Int    @db.SmallInt
+  turmaId     String @map("turma_id") @db.Uuid
+
+  entrouEm DateTime @default(now()) @map("entrou_em") @db.Timestamptz(6)
+
+  /// Os marcos com o carimbo do SERVIDOR (a primeira vez vale).
+  chatAbertoEm       DateTime? @map("chat_aberto_em") @db.Timestamptz(6)
+  anexoAbertoEm      DateTime? @map("anexo_aberto_em") @db.Timestamptz(6)
+  nudgeE2Em          DateTime? @map("nudge_e2_em") @db.Timestamptz(6)
+  compositorAbertoEm DateTime? @map("compositor_aberto_em") @db.Timestamptz(6)
+
+  /// A cota: 3 → 2 (1ª publicação) → 1 (errata). Não há 3ª publicação no V1.
+  slotsRestantes Int       @default(3) @map("slots_restantes") @db.SmallInt
+  /// O LATCH 1: a 1ª publicação confirmada (a linha dela está em `_publicacoes`).
+  publicadaEm    DateTime? @map("publicada_em") @db.Timestamptz(6)
+  /// A decisão da errata (publicada ou pulada) e se foi pulada.
+  errataEm       DateTime? @map("errata_em") @db.Timestamptz(6)
+  errataPulada   Boolean   @default(false) @map("errata_pulada")
+
+  /// A perícia (E6), em colunas: o cartão sinalizado e o motivo (escala | fonte | titulo).
+  periciaAbertaEm DateTime? @map("pericia_aberta_em") @db.Timestamptz(6)
+  sinalizouA      Boolean?  @map("sinalizou_a")
+  motivoA         String?   @map("motivo_a")
+  sinalizouB      Boolean?  @map("sinalizou_b")
+  motivoB         String?   @map("motivo_b")
+  parecerEm       DateTime? @map("parecer_em") @db.Timestamptz(6)
+  pulouPericia    Boolean   @default(false) @map("pulou_pericia")
+  concluidoEm     DateTime? @map("concluido_em") @db.Timestamptz(6)
+
+  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  estudante   User                  @relation("Exp03em1bEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  turma       Turma                 @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  pacote      Exp03em1bPacote       @relation(fields: [escolaId, pacoteId], references: [escolaId, id], onDelete: Cascade)
+  publicacoes Exp03em1bPublicacao[]
+
+  @@id([escolaId, estudanteId, pacoteId, rodada])
+  @@index([escolaId, turmaId, pacoteId, rodada])
+  @@map("exp03em1b_sessoes")
+}
+
+/// UMA linha por publicação confirmada (a diretriz do PO: o original fica no
+/// histórico). Única por (sessão, tipo): a 1ª e, se houver, a errata.
+model Exp03em1bPublicacao {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String   @map("escola_id")
+  estudanteId String   @map("estudante_id") @db.Uuid
+  pacoteId    String   @map("pacote_id") @db.Uuid
+  rodada      Int      @db.SmallInt
+  turmaId     String   @map("turma_id") @db.Uuid
+  /// inicial | errata (CHECK).
+  tipo        String
+  /// 0 | 80 (CHECK): a origem do eixo Y.
+  escala      Int      @db.SmallInt
+  explicacao  Boolean
+  fonte       Boolean
+  contexto    Boolean
+  publicadaEm DateTime @default(now()) @map("publicada_em") @db.Timestamptz(6)
+
+  turma  Turma           @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  sessao Exp03em1bSessao @relation(fields: [escolaId, estudanteId, pacoteId, rodada], references: [escolaId, estudanteId, pacoteId, rodada], onDelete: Cascade)
+
+  @@unique([escolaId, estudanteId, pacoteId, rodada, tipo])
+  @@index([escolaId, turmaId, pacoteId, rodada])
+  @@map("exp03em1b_publicacoes")
 }

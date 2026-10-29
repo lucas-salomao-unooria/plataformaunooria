@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AlertBox, Button, Modal, ModalBody, ModalFooter, ModalHeader, ModalTitle } from "@edu/ui/ds";
-import { caminhoDoEmAndamento, type MissaoComAtividade } from "@/lib/entre-redes/atividades";
+import { caminhoDoEmAndamento, corpoDoEmAndamento, type MissaoComAtividade } from "@/lib/entre-redes/atividades";
 import { liberarNaSala } from "@/lib/entre-redes/criar-atividade";
 
 type Confirmacao =
@@ -50,7 +50,7 @@ export function UsarEstaAtividade({
       const resposta = await fetch(`/api/plataforma${caminhoDoEmAndamento(expId, turmaId, atividadeId)}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(expId === "exp08ef1b" ? { forcar } : {}),
+        body: JSON.stringify(corpoDoEmAndamento(expId, atividadeId, forcar)),
       });
       const corpo = (await resposta.json().catch(() => null)) as { mensagem?: string; pendencias?: unknown } | null;
       if (resposta.status === 422 && Array.isArray(corpo?.pendencias)) {

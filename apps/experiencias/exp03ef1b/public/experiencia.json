@@ -1,0 +1,27 @@
+{
+  "id": "exp03ef1b",
+  "nome": "Nina e a Notícia que Desapareceu",
+  "versao": "0.1.0",
+  "produto": "entre-redes",
+  "series": [
+    "3EF"
+  ],
+  "unidade": 1,
+  "publico": "estudante",
+  "capabilities": [
+    "telemetria",
+    "progresso",
+    "avaliacao",
+    "tempo-real",
+    "ia"
+  ],
+  "permissoes": [
+    "forms"
+  ],
+  "verbos": {
+    "attempted": "travou a escolha, buscou no filtro do jornal e testou a rotina",
+    "interacted": "abriu as fotos, conferiu o cartaz, inspecionou a ficha e carimbou os cartões",
+    "progressed": "avançou pelas etapas da investigação conduzidas pela professora",
+    "completed": "concluiu a investigação no Painel da Investigação"
+  }
+}

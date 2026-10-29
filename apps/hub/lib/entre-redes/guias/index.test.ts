@@ -68,8 +68,12 @@ describe("guias da aula", () => {
    *   perguntas do roteiro do PRD (TC-22 a TC-24, literais, as mesmas do painel),
    *   que param na generalização; a transferência da Etapa 6 (o diário do
    *   Refletir) e o Canal B saíram por decisão do dono do produto.
+   * - Nina e a Notícia que Desapareceu (exp03ef1b, ADR-197): a transferência
+   *   era a pergunta em quadrinhos da Etapa 6 (o Canal B), e o Canal B saiu da
+   *   frente por decisão do dono do produto (spec §0.1). O debate são as três
+   *   perguntas do roteiro aprovado, que param na generalização.
    */
-  const SEM_TRANSFERENCIA = new Set(["exp02ef1b", "exp01em1b", "exp02em1b"]);
+  const SEM_TRANSFERENCIA = new Set(["exp02ef1b", "exp01em1b", "exp02em1b", "exp03ef1b"]);
   test("todo debate tem retomada e transferência", () => {
     for (const guia of todosOsGuias()) {
       const niveis = new Set(guia.debate.perguntas.map((p) => p.nivel));

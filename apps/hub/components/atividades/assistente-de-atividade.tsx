@@ -13,7 +13,7 @@ import {
   Toggle,
 } from "@edu/ui/ds";
 import { tamanhoDasEquipes } from "@/lib/equipes";
-import { rotaDaAtividade, type MissaoComAtividade } from "@/lib/entre-redes/atividades";
+import { aceitaEquipes, rotaDaAtividade, type MissaoComAtividade } from "@/lib/entre-redes/atividades";
 import { concluirCriacao, destinoDepoisDeCriar, type EscolhaDeEquipes } from "@/lib/entre-redes/criar-atividade";
 
 /** Uma turma que pode fazer a missão, com o que está em andamento nela. */
@@ -28,7 +28,18 @@ export interface TurmaDoAssistente {
 /** O que a missão devolve ao gravar o conteúdo: o id da atividade, ou o erro em frases. */
 export type ResultadoDaCriacao = { ok: true; id: string } | { ok: false; mensagem: string; erros: string[] };
 
-const PASSOS = ["Turma", "Conteúdo", "Equipes", "Revisar e criar"] as const;
+type Etapa = "turma" | "conteudo" | "equipes" | "revisar";
+
+const ROTULO_DA_ETAPA: Record<Etapa, string> = {
+  turma: "Turma",
+  conteudo: "Conteúdo",
+  equipes: "Equipes",
+  revisar: "Revisar e criar",
+};
+
+/** A missão individual por desenho (`MISSOES_SEM_EQUIPE`, ADR-198) pula o passo das equipes. */
+const COM_EQUIPES: readonly Etapa[] = ["turma", "conteudo", "equipes", "revisar"];
+const SEM_EQUIPES: readonly Etapa[] = ["turma", "conteudo", "revisar"];
 
 const ROTULO_DO_MODO = {
   sorteio: "Sortear as equipes",
@@ -87,7 +98,10 @@ export function AssistenteDeAtividade({
 
   const [passo, setPasso] = useState(inicial ? 1 : 0);
   const [turmaId, setTurmaId] = useState(inicial);
-  const [modo, setModo] = useState<ModoEscolhido | "">("");
+  const semEquipes = !aceitaEquipes(expId);
+  const etapas = semEquipes ? SEM_EQUIPES : COM_EQUIPES;
+  const [modoEscolhido, setModo] = useState<ModoEscolhido | "">("");
+  const modo: ModoEscolhido | "" = semEquipes ? "individual" : modoEscolhido;
   const [computadores, setComputadores] = useState<number | null>(null);
   const [porNoAr, setPorNoAr] = useState<boolean | null>(null);
   const [criando, setCriando] = useState(false);
@@ -102,7 +116,8 @@ export function AssistenteDeAtividade({
   const nComputadores = Math.min(estudantes, Math.max(1, computadores ?? Math.ceil(estudantes / 2)));
   const noAr = porNoAr ?? !turma?.emAndamento;
 
-  const podeAvancar = [Boolean(turma), conteudoPronto, modo !== "", true][passo] ?? false;
+  const etapa = etapas[passo] ?? "turma";
+  const podeAvancar = { turma: Boolean(turma), conteudo: conteudoPronto, equipes: modo !== "", revisar: true }[etapa];
 
   const escolha = (): EscolhaDeEquipes =>
     modo === "individual"
@@ -136,8 +151,8 @@ export function AssistenteDeAtividade({
     }
   }
 
-  const passos = PASSOS.map((rotulo, i) => ({
-    label: rotulo,
+  const passos = etapas.map((e, i) => ({
+    label: ROTULO_DA_ETAPA[e],
     status: i < passo ? ("completed" as const) : i === passo ? ("selected" as const) : ("default" as const),
   }));
 
@@ -153,7 +168,7 @@ export function AssistenteDeAtividade({
         }}
       />
 
-      {passo === 0 ? (
+      {etapa === "turma" ? (
         <Card variant="outlined" title="Para qual turma é esta atividade?">
           <div className="flex max-w-xl flex-col gap-3">
             <p className="text-[13px] text-unooria-neutral-600">
@@ -182,12 +197,12 @@ export function AssistenteDeAtividade({
       {/* O conteúdo fica MONTADO nos outros passos (escondido), para o que o
           professor gerou e editou não se perder ao voltar e avançar. */}
       {turma ? (
-        <div hidden={passo !== 1} data-passo-conteudo>
+        <div hidden={etapa !== "conteudo"} data-passo-conteudo>
           {conteudo(turma.id)}
         </div>
       ) : null}
 
-      {passo === 2 ? (
+      {etapa === "equipes" ? (
         <Card variant="outlined" title="Como a turma vai se sentar?">
           <div className="flex flex-col gap-5">
             <p className="max-w-3xl text-[13px] text-unooria-neutral-600">
@@ -243,7 +258,7 @@ export function AssistenteDeAtividade({
         </Card>
       ) : null}
 
-      {passo === 3 ? (
+      {etapa === "revisar" ? (
         <Card variant="outlined" title="Revisar e criar">
           <div className="flex flex-col gap-4" data-revisao-da-criacao>
             <dl className="grid gap-x-6 gap-y-2 text-[14px] sm:grid-cols-[max-content_1fr]">
@@ -253,7 +268,9 @@ export function AssistenteDeAtividade({
               <dd className="text-unooria-neutral-800">{resumoDoConteudo}</dd>
               <dt className="font-semibold text-unooria-neutral-950">Equipes</dt>
               <dd className="text-unooria-neutral-800">
-                {modo === "individual"
+                {semEquipes
+                  ? "Missão individual: cada estudante no próprio aparelho"
+                  : modo === "individual"
                   ? ROTULO_DO_MODO.individual
                   : modo
                     ? `${ROTULO_DO_MODO[modo]} · ${nComputadores} ${nComputadores === 1 ? "computador" : "computadores"}`
@@ -330,7 +347,7 @@ export function AssistenteDeAtividade({
                 Voltar
               </Button>
             ) : null}
-            {passo < PASSOS.length - 1 ? (
+            {passo < etapas.length - 1 ? (
               <Button
                 variant="primary"
                 size="md"

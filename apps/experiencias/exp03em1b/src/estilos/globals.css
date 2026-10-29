@@ -1,0 +1,535 @@
+/**
+ * Estilos locais da exp03em1b. Só o que o design system não dá: o leiaute do
+ * aparelho, as pilhas das conversas e a mídia DESENHADA (o gráfico e a
+ * planilha, que são conteúdo, não controle). Compensação de componente vai
+ * marcada `(b) COMPENSAÇÃO`, com a lacuna (a lista está no `AGENTS.md`). O
+ * Switch, o Slider, o `trailing` do ChatHeader e o documento tocável chegaram
+ * na 0.2.25 e não têm compensação.
+ *
+ * Cor NUNCA se escreve à mão: sai de `--unc-*` (o mensageiro, tema claro) e de
+ * `--unooria-*` (a escola). A fronteira está MARCADA abaixo — os dois são roxos
+ * e claros, e token do clone numa tela da escola nem destoa (ADR-134).
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  /* O aparelho é desenhado pelo HUB (pelo `viewport` do manifesto): aqui só se
+     preenche os 375×812 que ele reserva — sem `PhoneFrame`. */
+  background: var(--unc-color-surface-base);
+  color: var(--unc-color-text-primary);
+  font-family: var(--unc-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A raiz é o contexto de posição da folha, do diálogo, do visualizador e da
+   faixa da pausa: os quatro são `position: absolute` no pacote. */
+.raiz,
+.raiz__tela {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* `100%` e não `100dvh`: dentro do iframe, `dvh` é a janela do navegador. */
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--unc-color-surface-canvas);
+}
+
+.app--centrado {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.aviso {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.esqueleto__topo {
+  height: 56px;
+  background: var(--unc-color-surface-appbar);
+}
+
+.so-leitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ═══════════════════════════════════════════ O MENSAGEIRO (`--unc-*`) ═══ */
+
+/* A área que rola dentro do CLONE: barra do sistema, como em toda
+   experiência — o `ScrollBar` do DS é da `unooria` e não entra no disfarce. */
+.app__corpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.lista__vazia {
+  margin: 0;
+  padding: 32px 24px;
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: center;
+  color: var(--unc-color-text-secondary);
+}
+
+/* A folga lateral de 12px cabe a cauda do balão (`-6px` no pacote). */
+.conversa {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 12px 20px;
+}
+
+.conversa > .unc-datechip,
+.conversa > .unc-systemmessage {
+  align-self: center;
+}
+
+.rodape {
+  flex: none;
+}
+
+.rodape__acao {
+  padding: 10px 12px;
+  background: var(--unc-color-surface-appbar);
+}
+
+.rodape__acao--dupla {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.rodape__acao--dupla .unc-textbutton {
+  align-self: center;
+}
+
+/* O post do boletim: as etiquetas, o título e as camadas, dentro do balão. */
+.post__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.post__titulo {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.post__indicador,
+.cartao__partido {
+  margin: 0 0 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--unc-color-text-bubble-meta);
+}
+
+.post__camada,
+.balao__legenda {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.balao__legenda {
+  color: var(--unc-color-text-bubble-meta);
+}
+
+/* O post espelho e o selo de autenticação, empilhados à esquerda. */
+.rival {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.rival > .unc-message-bubble,
+.rival > div:first-child {
+  align-self: flex-start;
+}
+
+.previas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+/* O chip da escala tem texto longo (TC-06.2): quebra em vez de vazar o balão. */
+.previas .unc-filterchip {
+  height: auto;
+  min-height: 32px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  line-height: 1.3;
+  white-space: normal;
+  text-align: left;
+}
+
+.falha-do-grafico {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  text-align: center;
+  color: var(--unc-color-text-bubble);
+}
+
+.falha-do-grafico__texto {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* A folha da nota técnica e a dos dados da perícia. */
+.folha {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 var(--unc-gutter) 8px;
+}
+
+.folha__orgao {
+  margin: 0;
+  font-size: 13px;
+  color: var(--unc-color-text-secondary);
+}
+
+.folha__texto {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.folha__subtitulo {
+  margin: 4px 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* (b) COMPENSAÇÃO — o `ListItem` do Unoochat tem título e subtítulo em
+   `nowrap` com reticência (a linha de conversa do app). Na folha dos dados da
+   perícia, o que some na reticência é justamente o dado ("Ano Anterior
+   (P…", "601.…"): aqui eles quebram linha. Só medida e quebra; a aparência é
+   a do pacote. Some quando o `ListItem` aceitar texto longo (mesma lacuna do
+   `.unv-item-longo` da exp02em1b). O vão lateral já é o da folha. */
+.folha .unc-listitem {
+  padding: 8px 0;
+}
+
+.folha .unc-sectionlabel {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.folha .unc-listitem__title,
+.folha .unc-listitem__subtitle,
+.folha .unc-listitem__meta {
+  white-space: normal;
+  overflow: visible;
+}
+
+.legenda-da-tabela {
+  display: block;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* O compositor (E3 e E4-ALU-05), dentro da `BottomSheet`. */
+.compositor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 var(--unc-gutter) 8px;
+}
+
+.compositor__errata {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.compositor__aviso,
+.compositor__vazio {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--unc-color-text-secondary);
+}
+
+.compositor__grupo {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.compositor__rotulo {
+  margin: 0 0 6px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--unc-color-text-secondary);
+}
+
+.compositor__radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}
+
+.compositor__camadas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* A prévia é um balão ENVIADO: alinha à direita, como no grupo. */
+.compositor__previa {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 12px 8px;
+  border-radius: 12px;
+  background: var(--unc-color-surface-canvas);
+}
+
+.compositor__acoes {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  padding: 0 var(--unc-gutter);
+}
+
+/* O rodapé do `Dialog`: as duas ações empilhadas, na largura da janela. */
+.dialogo__acoes {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.compositor__acoes .unc-textbutton {
+  align-self: center;
+}
+
+/* A perícia: as ações dentro do cartão. */
+.cartao__acoes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* A faixa da pausa fora do grupo: no lugar do campo de escrever. */
+.pausa {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+}
+
+/* A faixa da rede caída: por cima do topo, sem empurrar a conversa. */
+.faixa-de-conexao {
+  position: absolute;
+  top: 88px;
+  right: 0;
+  left: 0;
+  z-index: 15;
+}
+
+/* O gráfico e a planilha no mensageiro — CONTEÚDO desenhado, cor do clone.
+   Na RAIZ, não no `.app`: a folha do compositor e o diálogo são irmãos da
+   conversa, e sem a variável o SVG pinta de preto. A escola sobrescreve. */
+.raiz {
+  --grafico-fundo: var(--unc-color-surface-bubble-in);
+  --grafico-barra: var(--unc-color-accent);
+  --grafico-texto: var(--unc-color-text-bubble);
+  --grafico-suave: var(--unc-color-text-bubble-meta);
+  --grafico-grade: var(--unc-color-border-divider);
+  --grafico-cabeca: var(--unc-color-surface-canvas);
+  --grafico-sobre-barra: var(--unc-color-text-on-accent);
+}
+
+/* ═══════════════════════════════════════════ A ESCOLA (`--unooria-*`) ═══ */
+
+.escola {
+  background: var(--unooria-color-neutral-50);
+  color: var(--unooria-color-neutral-900);
+  font-family: var(--unooria-font-sans);
+  --grafico-fundo: var(--unooria-color-neutral-50);
+  --grafico-barra: var(--unooria-color-brandnavy-600);
+  --grafico-texto: var(--unooria-color-neutral-900);
+  --grafico-suave: var(--unooria-color-neutral-700);
+  --grafico-grade: var(--unooria-color-neutral-400);
+  --grafico-cabeca: var(--unooria-color-neutral-50);
+  --grafico-sobre-barra: var(--unooria-color-neutral-50);
+}
+
+.escola__pilha {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 16px 28px;
+}
+
+.escola__pilha--centrada {
+  min-height: 100%;
+  justify-content: center;
+}
+
+.escola__titulo {
+  margin: 0 0 8px;
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.escola__fala {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.escola__comando {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* (b) COMPENSAÇÃO — medida, não aparência: o `MetricCard` tem `max-width: 301px` (o cartão de
+   painel do hub); no laudo ele ocupa a largura da pilha, como o `Card` acima. */
+.escola__pilha > .unooria-metric-card {
+  max-width: none;
+}
+
+.regua {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.regua__grafico {
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════ o desenho (as duas seções) ═══ */
+
+.grafico,
+.tabela {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.grafico__fundo {
+  fill: var(--grafico-fundo);
+}
+
+.grafico__barra {
+  fill: var(--grafico-barra);
+}
+
+.grafico__grade {
+  stroke: var(--grafico-grade);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.grafico__linha {
+  stroke: var(--grafico-suave);
+  stroke-width: 1.2;
+}
+
+.grafico__eixo,
+.grafico__rotulo {
+  fill: var(--grafico-suave);
+  font-size: 11px;
+  font-family: inherit;
+}
+
+.grafico__valor {
+  fill: var(--grafico-texto);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.grafico__valor--dentro {
+  fill: var(--grafico-sobre-barra);
+}
+
+.tabela__titulo {
+  fill: var(--grafico-texto);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.tabela__cabeca {
+  fill: var(--grafico-cabeca);
+}
+
+.tabela__th {
+  fill: var(--grafico-suave);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.tabela__td {
+  fill: var(--grafico-texto);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.tabela__td--valor {
+  font-weight: 700;
+}
+
+/* No visualizador, a planilha ocupa a largura, com fundo próprio. */
+.tabela--ampliada {
+  max-width: 100%;
+}

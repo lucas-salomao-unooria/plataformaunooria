@@ -1,5 +1,5 @@
 import { caminhoDasEquipes, type SugestaoDeEquipes } from "../equipes";
-import { caminhoDoEmAndamento, type MissaoComAtividade } from "./atividades";
+import { aceitaEquipes, caminhoDoEmAndamento, corpoDoEmAndamento, type MissaoComAtividade } from "./atividades";
 
 /**
  * O FIM DA CRIAÇÃO DE UMA ATIVIDADE (ADR-130), depois que a missão gravou o
@@ -110,7 +110,7 @@ export async function concluirCriacao(
       const r = await busca(`${BFF}${caminhoDoEmAndamento(expId, turmaId, atividadeId)}`, {
         method: "POST",
         headers: json,
-        body: "{}",
+        body: JSON.stringify(corpoDoEmAndamento(expId, atividadeId)),
       });
       if (!r.ok) {
         avisos.push(
@@ -125,7 +125,9 @@ export async function concluirCriacao(
     }
   }
 
-  if (equipes.modo === "manual") return { avisos };
+  /* "Eu separo" monta na página; a missão individual (ADR-198) não tem equipe:
+     a api recusaria a montagem com 400 `missao-sem-equipes`. */
+  if (equipes.modo === "manual" || !aceitaEquipes(expId)) return { avisos };
 
   const base = `${BFF}${caminhoDasEquipes(turmaId, expId, atividadeId)}`;
   const falhou = (detalhe: string) => avisos.push(`A atividade foi criada, mas as equipes não foram salvas: ${detalhe}`);

@@ -508,11 +508,11 @@ missões fazem até ele e a dele até \arq{ai/}; as outras estão no par Mermaid
     {\texttt{ai/}\desc{\texttt{AiProvider}, medido\\(custo por chamada)\\[4pt]
      \texttt{QuotaService}\\[4pt]
      \texttt{AgenteProfessorPort}\\\texttt{AvatarAoVivoPort}\\\texttt{VozAoVivoPort}}};
-  \node[infra] (store) at (14.50,-15.25)
+  \node[infra] (store) at (14.50,-15.40)
     {\texttt{object-storage/}\desc{e \texttt{assets/}:\\local $|$ GCS}};
 
   % ---- domínio
-  \node[dom, text width=112mm, minimum height=18mm] (missoes) at (6.10,-12.90)
+  \node[dom, text width=112mm, minimum height=18mm] (missoes) at (6.10,-12.84)
     {Missões com ficha, equipe e podcast\desc{\texttt{motor/} \texttt{geracao/}
      \texttt{dossie/} \texttt{atividades/} \texttt{perfis/} (exp08ef1b, o Unoovista)\\
      \texttt{efeito-amplificador/} (exp02em1b) \textperiodcentered{} \texttt{unoogpt/} (exp02em1b-v0)\\
@@ -520,11 +520,13 @@ missões fazem até ele e a dele até \arq{ai/}; as outras estão no par Mermaid
      \texttt{juri-estadual/} (exp06ef1b) \textperiodcentered{}
      \texttt{quem-mandou-isso/} (exp05ef1b)\\
      \texttt{enigma-capa/} (exp02ef1b) \textperiodcentered{}
-     \texttt{assistente-invisivel/} (exp01em1b)}};
-  \node[dom, text width=71.5mm] (outras) at (4.075,-15.25)
+     \texttt{assistente-invisivel/} (exp01em1b)\\
+     \texttt{nina-noticia/} (exp03ef1b) \textperiodcentered{}
+     \texttt{porta-voz-dos-dados/} (exp03em1b, sem equipe)}};
+  \node[dom, text width=71.5mm] (outras) at (4.075,-15.40)
     {Outras missões\desc{\texttt{vila/} (app-70) \textperiodcentered{} \texttt{rastro-boato/} (exp06ef2b)\\
      \texttt{manifesto-ia/} (exp08ef4b) \textperiodcentered{} \texttt{foto-conta/} (exp01ef1b)}};
-  \node[dom] (apps) at (10.15,-15.25)
+  \node[dom] (apps) at (10.15,-15.40)
     {Apps do professor\desc{\texttt{planos/}, \texttt{bemestar/},\\\texttt{planejamento/}}};
 
   % ---- relações: transversal
@@ -548,9 +550,9 @@ missões fazem até ele e a dele até \arq{ai/}; as outras estão no par Mermaid
   \draw[c4rel] (10.95,0 |- missoes.north) -- (10.95,0 |- podcast.south)
     node[cxlabel, midway, left=2pt] {\texttt{registrarFonte}};
   \draw[c4rel] (missoes.east |- 0,-12.60) -- (ai.west |- 0,-12.60);
-  \draw[c4rel] (apps.east |- 0,-14.95) -- (12.325,-14.95) -- (12.325,-14.15)
+  \draw[c4rel] (apps.east |- 0,-15.10) -- (12.325,-15.10) -- (12.325,-14.15)
     -- (13.20,-14.15) -- (13.20,0 |- ai.south);
-  \draw[c4rel] (apps.east |- 0,-15.55) -- (store.west |- 0,-15.55);
+  \draw[c4rel] (apps.east |- 0,-15.70) -- (store.west |- 0,-15.70);
 
 \end{tikzpicture}}
 \begin{legendadiag}

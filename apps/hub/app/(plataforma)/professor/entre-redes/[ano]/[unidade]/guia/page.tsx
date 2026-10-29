@@ -14,6 +14,7 @@ import {
   MISSAO_ENIGMA_CAPA,
   MISSAO_JORNAL_DA_ESCOLA,
   MISSAO_JURI_ESTADUAL,
+  MISSAO_PORTA_VOZ,
   MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
@@ -27,6 +28,7 @@ import { CAMINHO_DO_MATERIAL as MATERIAL_DO_ASSISTENTE, type Material as Materia
 import { CAMINHO_DO_MATERIAL as MATERIAL_DO_ENIGMA, type Material as MaterialDoEnigma } from "@/lib/enigma-capa-tipos";
 import { baseDoBundleDaExperiencia } from "@/lib/bundle-da-experiencia";
 import { CAMINHO_DO_MATERIAL, type MaterialDoJuri } from "@/lib/juri-estadual-tipos";
+import { CAMINHO_DO_MATERIAL as MATERIAL_DO_PORTA_VOZ, type Material as MaterialDoPortaVoz } from "@/lib/porta-voz-tipos";
 import type { MaterialDoProfessor } from "@/lib/quem-mandou-tipos";
 
 import { IntervencoesDoRastro, type MaterialDoRastro } from "./intervencoes-do-rastro";
@@ -37,6 +39,7 @@ import { CartoesDoEnigma, CenasDoEnigma, ReguasDoEnigma } from "./material-do-en
 import { BotoesDoJornal, MesaDoJornal, PerguntasDoJornal } from "./material-do-jornal";
 import { GabaritoDoJuri, PlenariaDoJuri } from "./material-do-juri";
 import { MomentosDoPainel } from "./momentos-do-painel";
+import { BancoDoPortaVoz, LaudoDoPortaVoz, ReguasDoPortaVoz } from "./material-do-porta-voz";
 import { QuemMandouOPacote } from "./quem-mandou-o-pacote";
 import { TelasDaRevelacao } from "./telas-da-revelacao";
 
@@ -217,6 +220,18 @@ async function blocosDaMissao(expId: string | undefined): Promise<BlocosVivos | 
          transferência, para a mediação; o critério de cada nível, para o depois. */
       const material = await apiDoServidor<MaterialDoAssistente>(MATERIAL_DO_ASSISTENTE);
       return { debate: <RoteiroDoAssistente dados={material} />, depois: <ReguasDoAssistente dados={material} /> };
+    }
+
+    case MISSAO_PORTA_VOZ.expId: {
+      /* UMA chamada para os três blocos: o banco padrão e a perícia com o
+         gabarito, para ler antes; o laudo, para o Explicar; o critério de cada
+         nível, para o depois. */
+      const material = await apiDoServidor<MaterialDoPortaVoz>(MATERIAL_DO_PORTA_VOZ);
+      return {
+        antes: <BancoDoPortaVoz dados={material} />,
+        roteiro: <LaudoDoPortaVoz dados={material} />,
+        depois: <ReguasDoPortaVoz dados={material} />,
+      };
     }
 
     default:
