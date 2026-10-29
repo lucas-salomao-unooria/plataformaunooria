@@ -1781,6 +1781,112 @@ EM13CO13 no publicar da 1ª, quatro na decisão da errata e a EM13CO14 no
 parecer (Seção~\ref{sec:exp03em1b}).
 \end{regra}
 
+\subsection{O Dossiê Invisível (exp09ef1b)}
+\label{sec:api-dossie-invisivel}
+
+% Esta tabela e ESCRITA A MAO; a verdade e o Apendice C (`apendices/c-endpoints.tex`),
+% gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer.
+
+Desde 2026-10-29 (\adrr{ADR-202}), no módulo \arq{dossie-\B{}invisivel}, no
+molde de O Porta-Voz dos Dados. Vinte e uma rotas em três \emph{controllers}:
+dez do estudante (\cd{@Roles(\B{}"estudante")} na classe e
+\cd{exigirMissaoLiberada} no funil de TODAS: 403 \cd{missao-\B{}nao-\B{}liberada}),
+dez por turma (\cd{@Roles} por método: as leituras para professor e
+gestores, as escritas só para o professor que leciona; turma que ele não
+leciona é 404) e uma de catálogo. As rotas do estudante estão no SINGULAR
+(\rota{/dossie-\B{}invisivel/sessao/*}, correção do PO) e TODAS devolvem a
+MESMA \cd{SessaoSchema}; a turma do estudante sai do \emph{token}, nunca do
+corpo. O contrato HTTP é \arq{contrato-\B{}de-\B{}rotas.ts}, em Zod, de onde sai o
+OpenAPI. Sem pacote no ar, as jogadas respondem 409
+\cd{atividade-\B{}nao-\B{}preparada}. Não há rota de Canal B nem da Etapa 6. O
+podcast é do módulo da plataforma (\rota{/podcast/\B{}exp09ef1b/\B{}turmas/:t/*},
+\adrr{ADR-150}).
+
+\begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Papel} & \thd{O que faz}\\
+\midrule
+\rota{GET /dossie-\B{}invisivel/sessao} & estudante & O estado e o
+  \emph{polling} das travas (\textasciitilde{}3\,s): o passo DERIVADO, o
+  chat, a ordem embaralhada dos critérios, os votos, a revelação (os cadernos
+  só depois de digitalizados), Amara montada, o banco do protocolo
+  embaralhado e SEM o gabarito. Sem pacote, \cd{preparada: false}.\\
+\zebra \rota{POST .../sessao/entrar} & estudante & \enquote{Começar
+  Análise}: abre a sessão desta rodada. Idempotente.\\
+\rota{POST .../sessao/mensagem} & estudante & Uma pergunta ao assistente
+  (até 280 caracteres): o classificador da IA lê primeiro (quota
+  \cd{estudante}, 5\,s), a árvore é a reserva e a fala é do catálogo. Depois
+  da 5ª, 409 \cd{limite-\B{}do-\B{}chat}; depois da escolha, 409
+  \cd{ja-\B{}decidido}.\\
+\zebra \rota{POST .../sessao/\B{}ver-projetos} & estudante & \enquote{Ver
+  Projetos}: a lista, o parecer e a escolha liberada. Idempotente.\\
+\rota{POST .../sessao/\B{}digitalizar} & estudante & \enquote{Digitalizar
+  cadernos} (o OCR): na E2 depois da oferta (A1), na E4 com a revelação
+  liberada (B e A2). Fora disso, 409 \cd{escolha-\B{}nao-\B{}liberada} ou
+  \cd{revelacao-\B{}nao-\B{}liberada}.\\
+\zebra \rota{POST .../sessao/decisao} & estudante & \enquote{Registrar
+  Decisão}, \textbf{o LATCH 1}: o projeto e o ranking; congela o caminho e
+  marca a EF09CO08 de quem investigou. Antes de 3 consultas ou do \enquote{Ver
+  Projetos}, 409 \cd{escolha-\B{}nao-\B{}liberada}; outra decisão, 409
+  \cd{ja-\B{}decidido}.\\
+\rota{POST .../sessao/pilula} & estudante & Uma pílula dirigida da E4
+  (\cd{custo} $|$ \cd{assinaturas}). Idempotente.\\
+\zebra \rota{POST .../sessao/revoto} & estudante & \enquote{Confirmar
+  Decisão Final}, \textbf{o LATCH 2}: projeto e ranking, depois da trava do
+  debate (409 \cd{revoto-\B{}nao-\B{}liberado}), com os cadernos digitalizados
+  (\cd{cadernos-\B{}pendentes}) e uma pílula aberta (\cd{pilula-\B{}pendente});
+  marca a EF09CO08. Outro, 409 \cd{ja-\B{}revotado}.\\
+\rota{POST .../sessao/ancoras} & estudante & As âncoras marcadas na E5. Não
+  é evidência.\\
+\zebra \rota{POST .../sessao/\B{}protocolo} & estudante & \enquote{Enviar
+  Proposta}: as três verificações e o descarte, com pelo menos um bloco;
+  conclui e marca a EF09CO07. A resposta não diz se acertou. Antes da 3ª
+  trava, 409 \cd{explicar-\B{}nao-\B{}liberado}.\\
+\rota{GET .../turmas/:turmaId/pacotes} & prof., gestor & O preparo: o
+  rascunho e os homologados, o em andamento, o banco padrão e os
+  componentes.\\
+\zebra \rota{GET .../turmas/:turmaId/\B{}pacotes/:pacoteId} & prof., gestor &
+  UM pacote da turma, inteiro.\\
+\rota{POST .../pacotes/\B{}gerar-conteudo} & \textbf{só professor} & O
+  RASCUNHO pela IA (um por turma), na quota do perfil \cd{professor}; a
+  saída passa pela régua da virada; sem saldo ou sem provedor, do banco
+  curado (\cd{usouIa: false}, \cd{motivo}).\\
+\zebra \rota{POST .../pacotes/padrao} & \textbf{só professor} &
+  \enquote{Usar banco padrão}: o banco curado JÁ homologado e no ar, sem IA.
+  Idempotente.\\
+\rota{POST .../pacotes/:pacoteId/\B{}regenerar} & \textbf{só professor} & UM
+  item do rascunho (\cd{papel} $|$ \cd{parcial} $|$ \cd{nuvem} $|$
+  \cd{cadernos}); sem IA, o item fica.\\
+\zebra \rota{POST .../pacotes/:pacoteId/\B{}homologar} & \textbf{só
+  professor} & SÓ aprova, com a edição no lugar; fora da régua (inclusive a
+  virada), 400 \cd{pacote-\B{}invalido} com os erros.\\
+\rota{POST .../turmas/:turmaId/\B{}em-andamento} & \textbf{só professor} & O
+  pacote homologado no ar (\cd{\{pacoteId\}} no corpo): abre a rodada
+  seguinte se ele já rodou e devolve o gate a \cd{exploracao}.\\
+\zebra \rota{POST .../turmas/:turmaId/gate} & \textbf{só professor} & As
+  três travas, com \cd{\{etapa\}}: \cd{revelacao}, \cd{revoto} e
+  \cd{explicar}, só para a frente, cada uma no histórico.\\
+\rota{POST .../turmas/:turmaId/zerar} & \textbf{só professor} &
+  \enquote{Zerar Turma}: rodada $+1$, a evidência do pacote apagada
+  (\adrr{ADR-155}), as sessões guardadas.\\
+\zebra \rota{GET .../turmas/:turmaId/painel} & prof., gestor & A aula ao
+  vivo: só CONTAGENS (por passo, caminhos, escolha inicial e final por
+  projeto, a migração, protocolos enviados), a folha nominal com o passo e o
+  tempo parado, e o roteiro com os botões. Nunca o texto da conversa.\\
+\rota{GET /dossie-\B{}invisivel/\B{}professor/\B{}material} & prof., gestor & O guia:
+  o banco padrão, o roteiro, a conta da virada, o gabarito do protocolo e as
+  réguas. Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{O gabarito do protocolo não sai em resposta nenhuma de estudante}, e
+os cadernos só descem depois de digitalizados. A conversa do estudante é
+texto livre de menor e não sai da sessão. As duas habilidades são marcadas
+nas transações dos gestos --- a EF09CO08 nos dois latches, a EF09CO07 no
+protocolo (Seção~\ref{sec:exp09ef1b}).
+\end{regra}
+
 \subsection{Jornal da Escola (exp04ef1b)}
 \label{sec:api-jornal-escola}
 
@@ -2156,6 +2262,10 @@ hub divergiria na primeira revisão de \emph{copy}.
   gestor & O banco padrão de O Porta-Voz dos Dados (a tabela e a nota
   técnica), as três perguntas do debate, a série, o laudo, os dois cartões da
   perícia com o gabarito e os critérios das seis habilidades.\\
+\zebra \rota{GET /dossie-\B{}invisivel/\B{}professor/\B{}material} & prof., gestor &
+  O banco padrão de O Dossiê Invisível, as três perguntas do debate com os
+  rótulos das três travas, a conta da virada, o gabarito do protocolo com o
+  bloco danoso e os critérios das duas habilidades.\\
 \bottomrule
 \end{tabularx}
 
@@ -2167,8 +2277,9 @@ hub divergiria na primeira revisão de \emph{copy}.
 \rota{/jornal-escola/professor/material},
 \rota{/juri-estadual/professor/material},
 \rota{/enigma-capa/professor/material},
-\rota{/assistente-\B{}invisivel/professor/material} e
-\rota{/porta-voz-\B{}dos-\B{}dados/professor/material} não há \cd{escolaId} nem
+\rota{/assistente-\B{}invisivel/professor/material},
+\rota{/porta-voz-\B{}dos-\B{}dados/professor/material} e
+\rota{/dossie-\B{}invisivel/professor/material} não há \cd{escolaId} nem
 \emph{tenancy} a aplicar --- o conteúdo é igual para todo contrato, e o que a
 guarda protege é o PAPEL. Por isso vivem em \emph{controller} separado do de
 turmas. \rota{/vila/professor/cartoes} é a exceção: ela recebe \cd{?turmaId=}
@@ -2177,7 +2288,7 @@ porque a bolha servida depende da série da turma.
 no \emph{controller} de turmas e passa pela turma visível da professora,
 como as outras rotas da missão (\adrr{ADR-197}).
 
-Oito delas (a do Assistente Invisível é a exceção: leva só o roteiro e as
+Nove delas (a do Assistente Invisível é a exceção: leva só o roteiro e as
 réguas, porque o gabarito da bancada é fixo e o painel já o aplica)
 devolvem exatamente os campos que o servidor retira antes de a
 opção chegar ao estudante (regra inviolável nº 3): o que muda entre as duas

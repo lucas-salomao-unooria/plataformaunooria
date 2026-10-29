@@ -6,6 +6,7 @@ import {
   atividadesDoJornal,
   atividadesDoJuri,
   aceitaEquipes,
+  atividadesDoDossie,
   atividadesDoPortaVoz,
   caminhoDoEmAndamento,
   corpoDoEmAndamento,
@@ -24,8 +25,8 @@ import { concluirCriacao, destinoDepoisDeCriar } from "./criar-atividade";
  * leva, e o fim da criação — pôr no ar e montar as equipes, na ordem certa.
  */
 describe("a lista de atividades", () => {
-  test("as dez missões com atividade — as nove do par da api e a individual (exp03em1b)", () => {
-    expect(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b", "exp03ef1b", "exp03em1b"].every(temAtividades)).toBe(true);
+  test("as onze missões com atividade — as nove do par da api e as duas individuais (exp03em1b e exp09ef1b)", () => {
+    expect(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b", "exp03ef1b", "exp03em1b", "exp09ef1b"].every(temAtividades)).toBe(true);
     /* A Missão Tempestade, versão anterior (ADR-181), segue sem atividade. */
     expect(temAtividades("exp02em1b-v0")).toBe(false);
     expect(temAtividades(undefined)).toBe(false);
@@ -40,6 +41,7 @@ describe("a lista de atividades", () => {
     expect(serieDaMissao("exp01em1b")).toBe("1EM");
     expect(serieDaMissao("exp03ef1b")).toBe("3EF");
     expect(serieDaMissao("exp03em1b")).toBe("3EM");
+    expect(serieDaMissao("exp09ef1b")).toBe("9EF");
     expect(serieDaMissao("app-90-plano-de-aula")).toBeNull();
   });
 
@@ -182,12 +184,16 @@ describe("para onde a atividade leva", () => {
     /* O Porta-Voz dos Dados: o em andamento é da turma, e o pacote vai no corpo. */
     expect(caminhoDoEmAndamento("exp03em1b", "t", "p")).toBe("/porta-voz-dos-dados/turmas/t/em-andamento");
     expect(corpoDoEmAndamento("exp03em1b", "p")).toEqual({ pacoteId: "p" });
+    /* O Dossiê Invisível segue o mesmo molde. */
+    expect(caminhoDoEmAndamento("exp09ef1b", "t", "p")).toBe("/dossie-invisivel/turmas/t/em-andamento");
+    expect(corpoDoEmAndamento("exp09ef1b", "p")).toEqual({ pacoteId: "p" });
     expect(corpoDoEmAndamento("exp08ef1b", "a", true)).toEqual({ forcar: true });
     expect(corpoDoEmAndamento("exp07ef1b", "c")).toEqual({});
   });
 
-  test("a exp03em1b é individual: sem equipe", () => {
+  test("a exp03em1b e a exp09ef1b são individuais: sem equipe", () => {
     expect(aceitaEquipes("exp03em1b")).toBe(false);
+    expect(aceitaEquipes("exp09ef1b")).toBe(false);
     expect(aceitaEquipes("exp02em1b")).toBe(true);
   });
 
@@ -207,6 +213,25 @@ describe("para onde a atividade leva", () => {
     );
     expect(lista).toEqual([
       { id: "p1", titulo: "Água", detalhe: "BIOLOGIA · conteúdo da Unooria", estado: "em-andamento", criadaEm: "2026-10-28T10:00:00Z", rodadas: 1 },
+    ]);
+  });
+
+  test("O Dossiê Invisível: o rascunho da curadoria não é atividade", () => {
+    const lista = atividadesDoDossie(
+      {
+        turma: { id: "t", nome: "9A", serie: "9EF" },
+        emAndamento: null,
+        pacotes: [
+          { id: "p1", turmaId: "t", origem: "ia", disciplina: "ciencias", tema: "Verba da merenda", ativo: false, aprovadoEm: "2026-10-29T10:00:00Z", criadoEm: "2026-10-29T09:00:00Z", rodadas: 0 },
+          { id: "r1", turmaId: "t", origem: "ia", disciplina: "historia", tema: "Rascunho", ativo: false, aprovadoEm: null, criadoEm: "2026-10-29T11:00:00Z", rodadas: 0 },
+        ],
+        padrao: {} as never,
+        disciplinas: [],
+      },
+      (slug) => slug.toUpperCase(),
+    );
+    expect(lista).toEqual([
+      { id: "p1", titulo: "Verba da merenda", detalhe: "CIENCIAS · gerada com IA", estado: "pronta", criadaEm: "2026-10-29T10:00:00Z", rodadas: 0 },
     ]);
   });
 
@@ -298,6 +323,19 @@ describe("o fim da criação", () => {
     expect(chamadas).toEqual([
       { url: "/api/plataforma/porta-voz-dos-dados/turmas/t/em-andamento", metodo: "POST", corpo: { pacoteId: "p" } },
       { url: "/api/plataforma/salas/turma/t/missoes/exp03em1b", metodo: "PUT", corpo: { estado: "liberada" } },
+    ]);
+  });
+
+  test("O Dossiê Invisível: o pacote vai no corpo do em andamento, e nenhuma equipe é gravada", async () => {
+    const { busca, chamadas } = buscaFalsa({});
+    const fim = await concluirCriacao(
+      { expId: "exp09ef1b", turmaId: "t", atividadeId: "p", equipes: { modo: "individual" }, porNoAr: true },
+      busca,
+    );
+    expect(fim.avisos).toEqual([]);
+    expect(chamadas).toEqual([
+      { url: "/api/plataforma/dossie-invisivel/turmas/t/em-andamento", metodo: "POST", corpo: { pacoteId: "p" } },
+      { url: "/api/plataforma/salas/turma/t/missoes/exp09ef1b", metodo: "PUT", corpo: { estado: "liberada" } },
     ]);
   });
 

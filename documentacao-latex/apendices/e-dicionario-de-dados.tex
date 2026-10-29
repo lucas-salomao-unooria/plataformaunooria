@@ -114,6 +114,10 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{exp03em1b\_\B{}gates\_\B{}historico} & Tenant & Cada botão do professor, com o pacote, a rodada, a etapa de destino e o professor\\
 \zebra \cd{exp03em1b\_\B{}sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: os marcos do servidor, a cota, a errata e o parecer da perícia --- sem texto livre\\
 \cd{exp03em1b\_\B{}publicacoes} & Tenant & Uma linha por publicação (a 1ª e a errata): a escala e as três camadas\\
+\zebra \cd{exp09ef1b\_\B{}pacotes} & Tenant & O Dossiê Invisível: a roupagem do tema (os três projetos e a transcrição dos cadernos); é a atividade da evidência\\
+\cd{exp09ef1b\_\B{}gates\_\B{}turma} & Tenant & O gate da turma (\cd{exploracao}, \cd{revelacao}, \cd{revoto}, \cd{explicar})\\
+\zebra \cd{exp09ef1b\_\B{}gates\_\B{}historico} & Tenant & Cada trava do professor, com o pacote, a rodada, a etapa de destino e o professor\\
+\cd{exp09ef1b\_\B{}sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: a conversa (texto livre de menor), os cadernos, os dois votos, o caminho, as âncoras e o protocolo\\
 \cd{exp02em1b\_v0\_sessoes} & Tenant & Versão anterior (\adrr{ADR-181}): estado da partida da Missão Tempestade\\
 \zebra \cd{exp02em1b\_v0\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
 \cd{exp02em1b\_v0\_marcos} & Tenant & Trilha da decisão\\
@@ -2170,6 +2174,76 @@ Nenhuma coluna guarda texto escrito pelo estudante, e o gabarito da perícia
   sempre no sinalizado; o parecer e o pular nunca juntos.\\
 \cd{concluido\_em} & \cd{TIMESTAMPTZ?} & O latch final: o parecer OU o pular,
   depois da perícia aberta.\\
+\zebra \cd{versao\_\B{}instrumento} & \cd{TEXT} & \cd{1.0.0} por padrão.\\
+\bottomrule
+\end{tabularx}
+
+\section{Tabelas de O Dossiê Invisível (exp09ef1b)}
+\label{sec:dicionario-exp09ef1b}
+
+Desde 2026-10-29 (\adrr{ADR-202}), migração
+\arq{20261029200000\_\B{}exp09ef1b\_\B{}dossie\_\B{}invisivel}. Quatro tabelas, todas
+com \cd{escola\_id} \cd{NOT NULL}, RLS forçada e política por escola; as
+regras estão no \arq{AGENTS.md} do módulo \arq{dossie-\B{}invisivel}. A
+\cd{conversa} da sessão é o ÚNICO texto livre de menor da missão; o gabarito
+do protocolo e o bloco danoso não estão em tabela nenhuma: são fixos, de
+\arq{regras/\B{}evidencia.ts}.
+
+\begin{itemize}
+  \item \cd{exp09ef1b\_\B{}pacotes}: \cd{id}, \cd{turma\_id} (FK, cascata),
+    \cd{disciplina} (os nove componentes do 9º ano, \cd{computacao} e
+    \cd{interdisciplinar}), \cd{tema}, \cd{assuntos} (\cd{TEXT[]}, de 3 a 6),
+    \cd{contexto} (opcional), \cd{conteudo\_json} (a roupagem, validada pelo
+    Zod; objeto), \cd{origem} (\cd{ia} $|$ \cd{padrao}), \cd{ativo},
+    \cd{rodada\_atual} ($\geq 1$), \cd{aprovado\_em}/\cd{aprovado\_por}
+    (juntos; \cd{ativo} só homologado), \cd{preparo\_\B{}iniciado\_em},
+    \cd{ia\_geracoes}, \cd{ia\_tokens}, \cd{painel\_\B{}visto\_em},
+    \cd{painel\_vistas} (contadores $\geq 0$). Um em andamento e um rascunho
+    por turma (índices únicos parciais). Único (\cd{escola\_id}, \cd{id}): é
+    o alvo da FK composta das sessões.
+  \item \cd{exp09ef1b\_\B{}gates\_\B{}turma}: PK (\cd{escola\_id}, \cd{turma\_id}),
+    \cd{etapa} (\cd{exploracao} $|$ \cd{revelacao} $|$ \cd{revoto} $|$
+    \cd{explicar}, padrão \cd{exploracao}), \cd{atualizado\_em}.
+  \item \cd{exp09ef1b\_\B{}gates\_\B{}historico}: \cd{pacote\_id}, \cd{rodada}
+    ($\geq 1$), \cd{etapa} (\cd{revelacao} $|$ \cd{revoto} $|$
+    \cd{explicar}), \cd{professor\_id} (FK para \cd{users}, \cd{SET NULL}) e
+    \cd{em}.
+\end{itemize}
+
+\subsection{\cd{exp09ef1b\_sessoes}}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, estudante\_id, pacote\_id, rodada)} & PK composta & Uma
+  sessão por estudante, atividade e rodada. \cd{estudante\_id} com FK para
+  \cd{users} (cascata); (\cd{escola\_id}, \cd{pacote\_id}) com FK composta para
+  o pacote.\\
+\zebra \cd{turma\_id} & \cd{UUID} & FK para \cd{turmas}; o painel lê por
+  turma, pacote e rodada (índice).\\
+\cd{entrou\_em} & \cd{TIMESTAMPTZ?} & O \enquote{Começar Análise}.\\
+\zebra \cd{conversa} & \cd{JSONB} & A thread (array): cada mensagem com o
+  autor, o texto e, na do estudante, a intenção, o classificador e a leitura
+  da árvore. \textbf{Texto livre de menor}: não sai para painel, telemetria
+  nem log.\\
+\cd{consultas}, \cd{enviadas} & \cd{SMALLINT} & De 0 a 5, e as consultas
+  (as que contaram) nunca passam das enviadas.\\
+\zebra \cd{cadernos\_\B{}oferecidos\_em}, \cd{cadernos\_em},
+  \cd{cadernos\_\B{}na\_etapa}, \cd{ver\_\B{}projetos\_em} & vários & A oferta e a
+  digitalização dos cadernos (a etapa, \cd{E2} ou \cd{E4}, anda com o
+  carimbo) e o \enquote{Ver Projetos}.\\
+\cd{decisao\_em}, \cd{projeto\_inicial}, \cd{ranking\_inicial},
+  \cd{caminho} & vários & O \textbf{LATCH 1}: juntos, com três critérios no
+  ranking e o caminho (\cd{A1} $|$ \cd{A2} $|$ \cd{B}); só depois de entrar.\\
+\zebra \cd{pilulas} & \cd{TEXT[]} & As pílulas abertas na E4 (\cd{custo},
+  \cd{assinaturas}).\\
+\cd{revoto\_em}, \cd{projeto\_final}, \cd{ranking\_final} & vários & O
+  \textbf{LATCH 2}: juntos, só depois do 1 e com os cadernos digitalizados.\\
+\zebra \cd{ancoras} & \cd{TEXT[]} & As âncoras marcadas na E5
+  (\cd{contraste}, \cd{parecer-inicial}, \cd{inversao}); não é evidência.\\
+\cd{protocolo\_json}, \cd{concluido\_em} & vários & O protocolo enviado (as
+  três verificações e o descarte) e a conclusão, juntos e depois do 2º voto.\\
 \zebra \cd{versao\_\B{}instrumento} & \cd{TEXT} & \cd{1.0.0} por padrão.\\
 \bottomrule
 \end{tabularx}
