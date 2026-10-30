@@ -41,7 +41,10 @@ import { revelar } from "../lib/abas.mjs";
  * 7. **E5 — a rotina**: a ponte, os blocos embaralhados, a rotina errada ("A
  *    rotina não para") → Reorganizar → a certa → a simulação → sucesso.
  * 8. **E6 — o caso novo e o fim**: as ferramentas, K4–K6, o "Painel da
- *    Investigação" ("Investigação concluída!") e o Desafio Extra só leitura.
+ *    Investigação" ("Investigação concluída!") — sem o Desafio Extra (ADR-201).
+ *    O ARRASTE (ADR-201) entra nas três mecânicas: uma notícia na caixa, a
+ *    etiqueta Pátio no reparo e a rotina certa inteira vão por arraste; o
+ *    resto, por toque — os dois caminhos continuam valendo.
  * 9. **O painel e a evidência**: as escolhas e o progresso da turma, e as
  *    quatro marcas da ficha da exp03ef1b com o nível que a régua dá.
  *
@@ -212,7 +215,7 @@ await suite(
       "E3: a busca errada devolve 0 notícias; Onde = Pátio traz duas, e a moldura do telão diz “Notícia não encontrada”",
       "E4: a ficha com o Onde vazio, os carimbos com as três opções visíveis, e o reparo errado leva ao erro explicado com as três notícias — sem “Tentar de novo”",
       "E5: a rotina errada não para; Reorganizar; a certa roda a simulação até o sucesso",
-      "E6: as ferramentas, K4–K6, o Painel da Investigação e o Desafio Extra",
+      "E6: as ferramentas, K4–K6 e o Painel da Investigação, sem o Desafio Extra",
       "O gabarito não desce para a tela nem para a sessão; o painel de habilidades registra as quatro marcas com o nível da régua",
     ],
     comando: "node scripts/e2e/estudante/17-nina-noticia.mjs",
@@ -513,7 +516,8 @@ await suite(
     await r.registrar(prof, "painel-da-aula", {
       titulo: "O Painel da Sala em Tempo Real",
       mostra:
-        "A atividade em andamento: “Painel da Sala em Tempo Real”, Pausar Turma e Liberar Filtro, as equipes por etapa, " +
+        "A atividade em andamento: “Painel da Sala em Tempo Real”, Pausar Turma e Liberar Filtro, os quatro números da aula " +
+        "(Entraram, Travaram a escolha, Viram a notícia sumir, Concluíram), " +
         "“Escolhas da Etapa 2”, os alertas, o roteiro de mediação e a folha da turma.",
       prova: "A turma inteira avança junto e o portão não volta; a linha da folha diz só onde cada um está — nunca acerto.",
       inteira: true,
@@ -599,11 +603,19 @@ await suite(
     for (const k of kickers) await bandeja.getByRole("button", { name: k }).first().click();
     await q().getByRole("button", { name: COPY.esvaziar }).click();
     r.exigir(await travar.isDisabled(), "“Esvaziar Caixa” devolve as três e Travar volta a desligar");
-    for (const k of kickers) await bandeja.getByRole("button", { name: k }).first().click();
+    /* ADR-201: a primeira vai por ARRASTE até o 3º nicho; as outras, por toque. */
+    await bandeja.getByRole("button", { name: kickers[0] }).first().dragTo(q().getByText(/^Nicho 3$/).first());
+    r.exigir(
+      (await bandeja.getByRole("button", { name: kickers[0] }).count()) === 0 && (await q().getByText(/^Nicho 3$/).count()) === 0,
+      "arrastar a notícia até o Nicho 3 a põe ali (ADR-201)",
+    );
+    for (const k of kickers.slice(1)) await bandeja.getByRole("button", { name: k }).first().click();
     r.exigir(!(await travar.isDisabled()), "com as três notícias na caixa, Travar Escolha acende");
     await r.registrar(p, "e2-escolha", {
       titulo: "E2 — a escolha, antes de travar",
-      mostra: "A bandeja “Notícias da feira” vazia e a “Caixa de resultados esperados” (Pátio) com as três notícias; “Travar Escolha”.",
+      mostra:
+        "A bandeja “Notícias da feira” vazia e a “Caixa de resultados esperados” (Pátio) com as três notícias — uma arrastada " +
+        "até o 3º nicho, duas por toque; “Travar Escolha”.",
       prova: "A criança escolhe quais notícias a busca pelo pátio vai trazer — a maioria põe as três, porque as três fotos são do pátio.",
     });
     await semAposta("E2");
@@ -630,11 +642,13 @@ await suite(
     );
     const cartaoDasEscolhas = prof.locator("main").getByText(COPY.escolhasDaEtapa2).first();
     await cartaoDasEscolhas.waitFor({ timeout: 15_000 });
-    await prof.locator('[data-equipes-por-etapa]').getByText(/^\s*1\s*\/\s*\d+/).first().waitFor({ timeout: 15_000 }).catch(() => undefined);
+    await prof.locator("[data-progresso-da-aula]").getByText(/^\s*[1-9]\d*\/\d+/).first().waitFor({ timeout: 15_000 }).catch(() => undefined);
     await cartaoDasEscolhas.scrollIntoViewIfNeeded();
     await r.registrar(prof, "painel-escolhas", {
       titulo: "As Escolhas da Etapa 2, no agregado",
-      mostra: "O card “Escolhas da Etapa 2” com quantos escolheram três, duas ou uma notícia — sem nome —, e quem está em cada etapa.",
+      mostra:
+        "O card “Escolhas da Etapa 2” com a porcentagem que escolheu as três e quantos escolheram três, duas ou uma notícia — " +
+        "sem nome —, e “Travaram a escolha”, o número que o Liberar Filtro espera.",
       prova: "A escolha não vai para a linha da criança: o painel pode ir para o projetor.",
     });
     await hidratado(prof, botaoDoFiltro);
@@ -801,7 +815,13 @@ await suite(
       await etiquetas.getByRole("button").filter({ hasText: new RegExp(`^\\s*${rotulo}\\s*$`) }).first().click();
       await q().getByRole("button", { name: `Colocar no campo ${campo}` }).click();
     };
-    await colocar("Pátio", "Quem");
+    /* ADR-201: o Pátio vai por ARRASTE até o campo Quem; as outras, por toque. */
+    await etiquetas
+      .getByRole("button")
+      .filter({ hasText: /^\s*Pátio\s*$/ })
+      .first()
+      .dragTo(q().getByRole("button", { name: "Colocar no campo Quem" }));
+    r.exigir((await q().getByRole("button", { name: "Colocar no campo Quem" }).count()) === 0, "arrastar a etiqueta Pátio até o campo Quem a encaixa ali (ADR-201)");
     await colocar("estudantes", "Onde");
     await colocar("sexta", "Quando");
     await concluir.and(q().locator(":not([disabled])")).waitFor({ timeout: 5_000 });
@@ -847,10 +867,17 @@ await suite(
       prova: "A ordem da bandeja é sorteada no servidor e nunca é a certa: a criança organiza a rotina sozinha.",
     });
     const rotuloDe = (bloco) => blocos.find((b) => b.bloco === bloco)?.rotulo;
-    const montarRotina = async (sequencia) => {
+    /* Por toque (toca o bloco, toca a vaga) ou por ARRASTE até a vaga (ADR-201). */
+    const montarRotina = async (sequencia, { arrastando = false } = {}) => {
       for (let i = 0; i < sequencia.length; i += 1) {
-        await q().locator(".blocos").getByRole("button", { name: rotuloDe(sequencia[i]) }).first().click();
-        await q().getByRole("button", { name: `Vaga ${i + 1}: tocar para colocar` }).click();
+        const bloco = q().locator(".blocos").getByRole("button", { name: rotuloDe(sequencia[i]) }).first();
+        const vaga = q().getByRole("button", { name: `Vaga ${i + 1}: tocar para colocar` });
+        if (arrastando) {
+          await bloco.dragTo(vaga);
+        } else {
+          await bloco.click();
+          await vaga.click();
+        }
       }
     };
     await montarRotina(SEQUENCIA_ERRADA);
@@ -875,7 +902,8 @@ await suite(
     for (const bloco of SEQUENCIA_ERRADA) {
       await q().locator(".esteira__trilho").getByRole("button", { name: rotuloDe(bloco) }).first().click();
     }
-    await montarRotina(SEQUENCIA_CERTA);
+    await montarRotina(SEQUENCIA_CERTA, { arrastando: true });
+    r.exigir((await q().locator(".blocos").getByRole("button").count()) === 0, "a rotina certa montada inteira por ARRASTE: a bandeja fica vazia (ADR-201)");
     await testar.click();
     await esperarOuFalharPorHttp(p, q().getByText(/Ficha em teste/), /\/nina-noticia\/rotina/, { timeout: 15_000, oQue: "testar a rotina certa" });
     await r.registrar(p, "e5-simulacao", {
@@ -932,14 +960,7 @@ await suite(
       prova: "O resumo é da sessão gravada no servidor; nada aqui muda mais.",
     });
     await semAposta("o fim");
-    await q().getByRole("button", { name: COPY.desafioExtra }).click();
-    const desafio = q().getByRole("dialog", { name: COPY.desafioExtra });
-    await desafio.waitFor({ timeout: 10_000 });
-    await r.registrar(p, "e6-desafio-extra", {
-      titulo: "O Desafio Extra",
-      mostra: "A janela “Desafio Extra”: duas fichas do banco, com foto e campos, para olhar com calma.",
-      prova: "Só leitura: nada aqui é gravado.",
-    });
+    r.exigir((await q().getByRole("button", { name: COPY.desafioExtra }).count()) === 0, "o fim não tem mais o botão “Desafio Extra” (ADR-201)");
     const sessaoFinal = await sessaoDoEstudante();
     r.exigir(sessaoFinal.concluida === true, "a sessão fica concluída");
     r.exigir(!/gabarito|correta|corretos|certa"/i.test(JSON.stringify(sessaoFinal)), "nem no fim a sessão traz gabarito");
@@ -966,10 +987,10 @@ await suite(
       `a folha não tem coluna de acerto, nota, nível nem escolha (colunas: ${colunas.join(", ")})`,
     );
     r.exigir(!APOSTA.test(await texto(prof.locator("main"))), "o painel da professora não diz “aposta”");
-    await prof.locator("[data-equipes-por-etapa]").scrollIntoViewIfNeeded();
+    await prof.locator("[data-progresso-da-aula]").scrollIntoViewIfNeeded();
     await r.registrar(prof, "painel-final", {
       titulo: "O painel depois da aula",
-      mostra: "Os estudantes por etapa (um na etapa 6), as Escolhas da Etapa 2, os alertas da sala e a folha com a criança em “Concluída”.",
+      mostra: "Os quatro números da aula (um em Concluíram), as Escolhas da Etapa 2, os alertas da sala e a folha com a criança em “Concluída”.",
       prova: "O progresso e o agregado, nunca o acerto ligado a um nome.",
       inteira: true,
     });

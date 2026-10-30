@@ -17,7 +17,7 @@ export const EXP_ID = "exp03ef1b";
  * A versão vive em TRÊS lugares: aqui, no `package.json` e no
  * `public/experiencia.json`. O `versao.test.ts` compara os três (ADR-84).
  */
-export const EXP_VERSION = "0.1.2";
+export const EXP_VERSION = "0.2.1";
 
 /** O prefixo das rotas do módulo da api (`apps/api/src/nina-noticia`). */
 export const ROTA = "/nina-noticia";
@@ -171,12 +171,6 @@ export interface FerramentaPublica {
   aviso: string | null;
 }
 
-export interface FichaExtra {
-  manchete: string;
-  ficha: Ficha;
-  imagem: ImagemPublica;
-}
-
 export interface ResumoDaInvestigacao {
   suportes: { escolhidas: number };
   omissao: { encontradas: number; deFora: Suporte };
@@ -218,7 +212,6 @@ export interface Sessao extends Estado {
   } | null;
   fim: {
     resumo: ResumoDaInvestigacao;
-    desafioExtra: FichaExtra[];
   } | null;
   concluida: boolean;
 }

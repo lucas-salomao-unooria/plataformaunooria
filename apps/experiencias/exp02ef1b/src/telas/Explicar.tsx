@@ -24,8 +24,9 @@ const IMAGEM_INTEIRA = { x: 0, y: 0, w: 100, h: 100 };
  *   última); arrastar uma carta sobre outra forma o par. O arraste só
  *   reposiciona — a carta volta ao lugar e nunca muda de tamanho. O par fica
  *   agrupado no alto, do mesmo tamanho.
- * - MOTIVO: "O que é parecido?" — A atividade / A cor da roupa, com apoio
- *   visual. O voto envia o par (`POST /pares`).
+ * - MOTIVO: "O que é parecido?" — A atividade / A cor da roupa, só o texto
+ *   (o emoji de apoio saiu a pedido do Lucas, 2026-10-29). O voto envia o par
+ *   (`POST /pares`).
  * - SEGUNDA FOTO: "Foto de leitura: o que precisa aparecer?" — Mochila /
  *   Parede / Criança lendo, e a mesma moldura fixa da capa (55% × 85% da
  *   imagem). "Colocar no álbum" (`POST /segunda-foto`).
@@ -159,14 +160,7 @@ function Pares({ ctx }: { ctx: Contexto }) {
           question={textoDe(sessao.textos, "e5", "motivo")}
           options={sessao.material.motivos.map((m) => ({
             id: m.id,
-            label: (
-              <span className="opcao">
-                <span aria-hidden="true" className="opcao__apoio">
-                  {m.id === "atividade" ? ROTULOS.emojiAtividade : ROTULOS.emojiRoupa}
-                </span>
-                {m.rotulo}
-              </span>
-            ),
+            label: m.rotulo,
           }))}
           value={motivo}
           onVote={(id) => void votar(id)}

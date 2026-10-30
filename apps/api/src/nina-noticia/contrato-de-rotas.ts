@@ -190,8 +190,6 @@ const FerramentaPublicaSchema = z.object({
   aviso: z.string().nullable(),
 });
 
-const FichaExtraPublicaSchema = z.object({ manchete: z.string(), ficha: FichaSchema, imagem: ImagemPublicaSchema });
-
 /** O "Painel da Investigação" (E6-03): o resumo da PRÓPRIA sessão, em quatro colunas. */
 export const ResumoDaInvestigacaoSchema = z.object({
   suportes: z.object({ escolhidas: z.number().int().min(0).max(SUPORTES.length) }),
@@ -253,11 +251,10 @@ export const SessaoSchema = EstadoSchema.extend({
       ferramentas: z.array(FerramentaPublicaSchema).length(FERRAMENTAS_DO_CASO.length),
     })
     .nullable(),
-  /** No `fim`: o Painel da Investigação e o Desafio Extra (só leitura). */
+  /** No `fim`: o Painel da Investigação (só leitura). O Desafio Extra saiu (ADR-201). */
   fim: z
     .object({
       resumo: ResumoDaInvestigacaoSchema,
-      desafioExtra: z.array(FichaExtraPublicaSchema).length(2),
     })
     .nullable(),
   concluida: z.boolean(),
@@ -554,7 +551,7 @@ export const MaterialSchema = z.object({
 
 // ───────────────────────────────────── admin: as imagens do banco padrão
 
-/** As imagens do BANCO PADRÃO: as do pacote padrão e as cenas fixas (caso novo, Desafio Extra). */
+/** As imagens do BANCO PADRÃO: as do pacote padrão e as cenas fixas (as duas do caso novo). */
 export const ImagensDoBancoPadraoSchema = z.object({
   total: z.number().int().min(0),
   prontas: z.number().int().min(0),

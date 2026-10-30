@@ -86,9 +86,9 @@ export function distribuicaoDasEscolhas(previsoes: readonly (readonly Suporte[])
 }
 
 export type AlertasDaLinha = {
-  /** "Alerta: equipe em repetição sem parada." — mais de 3 testes da rotina sem a válida. */
+  /** "Alerta: rotina em repetição sem parada." — mais de 3 testes da rotina sem a válida. */
   semParada: boolean;
-  /** "Alerta: carimbos uniformes na equipe." — os três de uma etapa iguais, na E4 ou na E6. */
+  /** "Alerta: carimbos todos iguais." — os três de uma etapa iguais, na E4 ou na E6. */
   uniformes: boolean;
 };
 

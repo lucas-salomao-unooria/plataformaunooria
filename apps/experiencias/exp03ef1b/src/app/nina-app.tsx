@@ -323,7 +323,7 @@ export function NinaApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
       conteudo = sessao.caso ? <TelaDoCaso caso={sessao.caso} ocupado={ocupado} aoEnviar={(c) => void carimbarE6(c)} /> : null;
       break;
     case "fim":
-      conteudo = sessao.fim ? <TelaDoFim resumo={sessao.fim.resumo} desafioExtra={sessao.fim.desafioExtra} /> : null;
+      conteudo = sessao.fim ? <TelaDoFim resumo={sessao.fim.resumo} /> : null;
       break;
   }
 

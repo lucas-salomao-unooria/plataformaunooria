@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ESTEIRA_VAZIA, quadrosDaSimulacao, sequenciaDaEsteira, soltarBloco, tirarBloco, vagasVazias, type Esteira } from "../../lib/regras";
 import { CABECALHO, E5 } from "../../lib/textos";
 import { SIMULACAO_DA_ROTINA_MS, type BlocoPublico, type PassoDaSimulacao } from "../../lib/tipos";
+import { useArrastar } from "../comum/arrastar";
 import { Icone } from "../comum/icone";
 import { Cabecalho } from "../jornal/cabecalho";
 import { AcaoDaMissao } from "../mecanica/acoes";
@@ -14,7 +15,7 @@ export type ModoDaRotina = "edicao" | "executando" | "sucesso" | "erro";
 /**
  * E5-ALU-01 — a rotina automática. Os sete blocos descem EMBARALHADOS e com
  * ids opacos (a ordem é do servidor; a tela não reordena). A criança monta a
- * esteira por toque e toca "Testar Rotina"; quem decide se ela para é o
+ * esteira por toque ou arraste (ADR-201) e toca "Testar Rotina"; quem decide se ela para é o
  * SERVIDOR (`POST rotina`):
  *
  * - válida → a simulação que a api devolveu, ficha a ficha (contador 3 → 0,
@@ -52,6 +53,12 @@ export function TelaDaRotina({
     relogios.push(window.setTimeout(() => setModo("sucesso"), SIMULACAO_DA_ROTINA_MS + 300));
     return () => relogios.forEach((r) => window.clearTimeout(r));
   }, [modo, simulacao, inicial?.modo]);
+
+  const { arrastavel } = useArrastar((id, alvo) => {
+    setEscolhido(null);
+    if (alvo.zona === "esteira" && alvo.vaga !== null) setEsteira((e) => soltarBloco(e, id, alvo.vaga!));
+    else if (alvo.zona === "bandeja") setEsteira((e) => (e.includes(id) ? tirarBloco(e, e.indexOf(id)) : e));
+  }, modo === "edicao");
 
   const sequencia = sequenciaDaEsteira(esteira);
   const faltam = vagasVazias(esteira);
@@ -111,6 +118,7 @@ export function TelaDaRotina({
             naEsteira={esteira}
             escolhido={escolhido}
             aoEscolher={(id) => setEscolhido((a) => (a === id ? null : id))}
+            arrastavel={arrastavel}
             status={status}
           />
         )}
@@ -126,6 +134,7 @@ export function TelaDaRotina({
             setEscolhido(null);
           }}
           aoTirar={(vaga) => setEsteira((e) => tirarBloco(e, vaga))}
+          arrastavel={arrastavel}
           acoes={
             executando ? (
               <AcaoDaMissao variante="outline" desabilitado aoTocar={() => undefined}>

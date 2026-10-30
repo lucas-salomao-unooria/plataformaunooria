@@ -630,10 +630,10 @@ await suite(
     );
 
     // ── as imagens do banco padrão da Nina (exp03ef1b, ADR-199) ──────────
-    /* Oito: as quatro da Feira de Troca de Livros e as quatro cenas fixas (o
-       caso novo e o Desafio Extra). A suíte prova o link, a tela, o progresso
+    /* Seis: as quatro da Feira de Troca de Livros e as duas cenas fixas do
+       caso novo (o Desafio Extra saiu, ADR-201). A suíte prova o link, a tela, o progresso
        e a guarda; GERAR custa IA real e só roda com E2E_GERAR_IMAGENS_DA_NINA=1
-       (UMA ida, que faz as oito que faltarem). */
+       (UMA ida, que faz as seis que faltarem). */
     await p.goto(`${HUB}/unooria/recursos`, { waitUntil: "domcontentloaded" });
     const linkDaNina = cartao(p, "Conteúdo padrão das missões").locator('a[href="/unooria/recursos/imagens-da-nina"]');
     await linkDaNina.waitFor({ timeout: 30_000 });
@@ -650,28 +650,28 @@ await suite(
     };
     const bancoDaNina = await lerBancoDaNina(p);
     r.exigir(
-      bancoDaNina.status === 200 && bancoDaNina.corpo?.total === 8 && bancoDaNina.corpo.prontas + bancoDaNina.corpo.faltam.length === 8,
+      bancoDaNina.status === 200 && bancoDaNina.corpo?.total === 6 && bancoDaNina.corpo.prontas + bancoDaNina.corpo.faltam.length === 6,
       `a api do banco da Nina responde ao admin: ${bancoDaNina.corpo?.prontas} de ${bancoDaNina.corpo?.total} prontas (HTTP ${bancoDaNina.status})`,
     );
     const progressoDaNina = `${bancoDaNina.corpo?.prontas} de ${bancoDaNina.corpo?.total}`;
     r.exigir(
       (await telaDaNina.getByText(progressoDaNina).count()) > 0 &&
         (await telaDaNina.locator('[data-grupo="pacote"] [data-imagem-do-banco]').count()) === 4 &&
-        (await telaDaNina.locator('[data-grupo="cenas-fixas"] [data-imagem-do-banco]').count()) === 4,
-      `a tela mostra o progresso da api (“${progressoDaNina}”) e as oito em dois grupos: a feira e as cenas fixas`,
+        (await telaDaNina.locator('[data-grupo="cenas-fixas"] [data-imagem-do-banco]').count()) === 2,
+      `a tela mostra o progresso da api (“${progressoDaNina}”) e as seis em dois grupos: a feira e as cenas fixas`,
     );
     const gerarDaNina = telaDaNina.getByRole("button", { name: "Gerar as imagens que faltam" });
     r.exigir(
       (await gerarDaNina.count()) === 1 && (await gerarDaNina.isDisabled()) === Boolean(bancoDaNina.corpo?.completo),
-      `o botão “Gerar as imagens que faltam” só fica desligado com as oito prontas (completo=${bancoDaNina.corpo?.completo})`,
+      `o botão “Gerar as imagens que faltam” só fica desligado com as seis prontas (completo=${bancoDaNina.corpo?.completo})`,
     );
     await r.registrar(p, "imagens-do-banco-da-nina", {
       titulo: "As imagens do banco padrão da Nina",
       mostra:
         `Recursos › Imagens do banco padrão da Nina: o progresso “${progressoDaNina}”, o botão “Gerar as imagens ` +
-        "que faltam”, a Feira de Troca de Livros (mural, portal, telão e cartaz) e as cenas fixas do caso novo e do Desafio Extra.",
+        "que faltam”, a Feira de Troca de Livros (mural, portal, telão e cartaz) e as cenas fixas do caso novo.",
       prova:
-        "As oito imagens da missão do 3º ano, na conta da plataforma e só pelo admin. Gerar aqui adianta: a professora " +
+        "As seis imagens da missão do 3º ano, na conta da plataforma e só pelo admin. Gerar aqui adianta: a professora " +
         "gera no preparo dela a que faltar.",
       detalhe: progressoDaNina,
       inteira: true,

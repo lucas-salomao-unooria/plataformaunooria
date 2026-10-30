@@ -31,7 +31,7 @@ const GRUPOS: readonly { id: string; titulo: string; descricao: string; chaves: 
   },
   {
     id: "cenas-fixas",
-    titulo: "O caso novo e o Desafio Extra",
+    titulo: "O caso novo",
     descricao:
       "As cenas fixas, iguais para todas as turmas, em toda atividade (do banco ou da IA). A professora não as refaz.",
     chaves: CHAVES_DAS_CENAS_FIXAS,
@@ -40,12 +40,12 @@ const GRUPOS: readonly { id: string; titulo: string; descricao: string; chaves: 
 
 /**
  * A grade e o laço das imagens do banco padrão da Nina. O laço é o do Júri
- * (`continuarGerando`): a api gera ATÉ OITO por chamada — as oito numa volta
+ * (`continuarGerando`): a api gera ATÉ SEIS por chamada — as seis numa volta
  * só, quatro de cada vez —, e a tela repete enquanto falta alguma e a chamada
  * anterior gerou pelo menos uma; repetir depois de uma volta sem nada seria
  * pedir de novo as mesmas que o provedor acabou de recusar.
  *
- * Sem abas: são oito imagens, em dois grupos. Sem "refazer" — o molde do Júri
+ * Sem abas: são seis imagens, em dois grupos. Sem "refazer" — o molde do Júri
  * não tem: o arquivo é o hash do PEDIDO, e trocar a imagem de um nome que
  * outras turmas já usam mudaria a foto de uma atividade aprovada.
  */
@@ -120,7 +120,7 @@ export function ImagensDoBancoDaNina({ inicial }: { inicial: ImagensDoBancoPadra
     <section className="flex flex-col gap-4" data-imagens-do-banco-da-nina>
       <SectionHeader
         title="Imagens do banco padrão de Nina e a Notícia que Desapareceu"
-        description="As oito imagens da missão do 3º ano: as quatro da Feira de Troca de Livros, que o banco padrão usa, e as quatro cenas fixas do caso novo e do Desafio Extra, que toda atividade usa. Gerar aqui adianta o trabalho: a professora que encontrar a imagem pronta não espera nem gasta a cota dela, e a que faltar ela mesma gera no preparo."
+        description="As seis imagens da missão do 3º ano: as quatro da Feira de Troca de Livros, que o banco padrão usa, e as duas cenas fixas do caso novo, que toda atividade usa. Gerar aqui adianta o trabalho: a professora que encontrar a imagem pronta não espera nem gasta a cota dela, e a que faltar ela mesma gera no preparo."
       />
 
       <Card variant="outlined">
@@ -134,7 +134,7 @@ export function ImagensDoBancoDaNina({ inicial }: { inicial: ImagensDoBancoPadra
             data-progresso-do-banco
           />
           <p className="max-w-3xl text-[13px] leading-snug text-unooria-neutral-700">
-            Cada rodada gera até oito imagens, quatro de cada vez, e a tela repete sozinha até não faltar nenhuma.
+            Cada rodada gera até seis imagens, quatro de cada vez, e a tela repete sozinha até não faltar nenhuma.
             Deixe esta página aberta enquanto saem. O custo aparece em Custos de IA.
           </p>
           <div className="flex flex-wrap items-center gap-3">

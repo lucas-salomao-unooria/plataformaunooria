@@ -92,6 +92,18 @@ export function porNaCaixa(caixa: Caixa, id: string): Caixa {
   return caixa.map((v, i) => (i === vaga ? id : v));
 }
 
+/**
+ * Arrastar uma notícia para um nicho: ela vai a ESSE nicho. Vinda de outro
+ * nicho, troca de lugar com quem estava lá; vinda da bandeja, quem estava lá
+ * volta à bandeja.
+ */
+export function porNoNicho(caixa: Caixa, id: string, nicho: number): Caixa {
+  if (nicho < 0 || nicho >= caixa.length) return caixa;
+  const de = caixa.indexOf(id);
+  const ocupante = caixa[nicho] ?? null;
+  return caixa.map((v, i) => (i === nicho ? id : i === de ? ocupante : v));
+}
+
 /** Tocar uma notícia dentro da caixa: ela volta à bandeja. */
 export function tirarDaCaixa(caixa: Caixa, id: string): Caixa {
   return caixa.map((v) => (v === id ? null : v));

@@ -239,7 +239,11 @@ fica presa à faixa do meio — mas a caixa arrastada com mais de 1/4 FORA da fa
 (`fracaoForaDaFaixa`): é o objeto que a IA pôs fora (medido: ~metade das imagens, com qualquer
 redação), e a curadoria oferece "Gerar outra imagem". O **pedido da imagem** (só a descrição; as regras fixas são da api) fica
 editável na curadoria, e "Gerar a imagem com este pedido" (`rascunho/imagem`) troca SÓ a imagem e
-apaga as áreas. Toda geração mostra a espera ONDE o professor olha: o quadro animado no lugar da cena
+apaga as áreas. **O pedido EDITADO fica na sessão** (`sessionStorage`, por turma; Lucas, 2026-10-29):
+GERAR NOVAMENTE remonta a curadoria (a `key` traz a geração), e sem isso a caixa voltava ao pedido que a
+IA escreveu para a cena nova; "Usar o pedido desta imagem" volta ao da cena, e aprovar apaga a chave.
+**As sete falas do podcast** (ADR-204) são pedidas quando a curadoria monta, com a cena e os selos/falas
+editados (`conteudoComAsEdicoes`), e vão no `homologar` — sem elas na régua, o "Aprovar" não acende. Toda geração mostra a espera ONDE o professor olha: o quadro animado no lugar da cena
 (`EsperaDaCena`) ou o véu sobre a imagem (`ocupada` da `CenaDoEnigma`), com o botão em carregamento —
 a barra lá em cima, sozinha, ficava fora da tela. A cena pronta é arquivo do
 bundle: a base vem de `lib/bundle-da-experiencia.ts`, no servidor. LIBERAR VIRADA é um botão só, da turma.
@@ -301,8 +305,11 @@ espelho `lib/nina-noticia-tipos.ts` (o teste lê `vocabulario.ts`, `invariantes.
 - **O painel (E4-PROF-01)**: "Painel da Sala em Tempo Real", polling de 5 s. DOIS portões pelo
   `proximaEtapa` ("Liberar Filtro", depois "Liberar Inspeção"; `{acao: "liberar", para}`), e
   "Pausar Turma"/"Retomar Turma" (`{acao: "pausar" | "retomar"}`) — pausada, o painel vira o quadro
-  "Sala pausada" do print 24 e o portão some até retomar. Cartões "Equipes na etapa N" (1–6), "Escolhas
-  da Etapa 2" (só o agregado: 3/2/1 e a que ficou de fora) e "Alertas da sala" (vazio = "Nenhum alerta
+  "Sala pausada" do print 24 e o portão some até retomar. Quatro números na ordem dos portões
+  (`progressoDaAula`: Entraram, Travaram a escolha, Viram a notícia sumir, Concluíram — os seis
+  cartões por etapa espremiam o painel; a etapa de cada um é a folha), "Escolhas da Etapa 2" (só o
+  agregado; o VALOR é curto, a porcentagem, e a frase vai na descrição — no corpo grande do
+  `MetricCard` a frase estourava o cartão) e "Alertas da sala" (vazio = "Nenhum alerta
   crítico ativo"); o roteiro de mediação na íntegra; a folha diz etapa, passo e alertas — nunca acerto.
   `mudouAEvidencia` relê a página quando uma linha passa de `ficha`, `reparo`, `rotina` ou `caso`.
 - **"Zerar Turma"** com diálogo: rodada nova, habilidades apagadas (ADR-155).

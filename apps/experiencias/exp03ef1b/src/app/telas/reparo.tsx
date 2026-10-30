@@ -2,6 +2,7 @@ import { useState } from "react";
 import { campoDaEtiqueta, fichaMontada, MONTAGEM_VAZIA, soltarEtiqueta, tirarEtiqueta, type Montagem } from "../../lib/regras";
 import { CABECALHO, E4, ICONE_DA_ETIQUETA, NINA } from "../../lib/textos";
 import { CAMPOS, type Campo, type EtiquetaPublica, type FichaMontada } from "../../lib/tipos";
+import { useArrastar } from "../comum/arrastar";
 import { Cabecalho } from "../jornal/cabecalho";
 import { AcaoDaMissao } from "../mecanica/acoes";
 import { BandejaDeEtiquetas } from "../mecanica/etiquetas";
@@ -14,7 +15,7 @@ import { Casca } from "./casca";
  * começa com os TRÊS campos vazios e as três etiquetas (Pátio, estudantes,
  * sexta) na bandeja. A criança monta a ficha como quiser — qualquer etiqueta
  * em qualquer campo, por TOQUE (toca a etiqueta, toca o campo; toca a
- * encaixada para devolver) — e só então "Concluir" (com as três
+ * encaixada para devolver) ou por ARRASTE (ADR-201) — e só então "Concluir" (com as três
  * posicionadas). A avaliação é SÓ no Concluir, no servidor: nenhum sinal de
  * acerto antes.
  */
@@ -32,6 +33,16 @@ export function TelaDoReparo({
   const [montagem, setMontagem] = useState<Montagem>(inicial?.montagem ?? MONTAGEM_VAZIA);
   const [escolhida, setEscolhida] = useState<string | null>(inicial?.escolhida ?? null);
   const pronta = fichaMontada(montagem);
+  const { arrastavel } = useArrastar((id, alvo) => {
+    setEscolhida(null);
+    const campo = CAMPOS.find((c) => alvo.zona === `campo:${c}`);
+    if (campo) setMontagem((m) => soltarEtiqueta(m, id, campo));
+    else if (alvo.zona === "bandeja")
+      setMontagem((m) => {
+        const de = campoDaEtiqueta(m, id);
+        return de ? tirarEtiqueta(m, de) : m;
+      });
+  });
 
   const campos = Object.fromEntries(
     CAMPOS.map((c): [Campo, ConteudoDoCampo] => {
@@ -58,6 +69,8 @@ export function TelaDoReparo({
             setEscolhida(null);
           }}
           aoTirar={(campo) => setMontagem((m) => tirarEtiqueta(m, campo))}
+          arrastavel={arrastavel}
+          idDoCampo={Object.fromEntries(CAMPOS.flatMap((c) => (montagem[c] ? [[c, montagem[c]]] : [])))}
         />
         <BandejaDeEtiquetas
           etiquetas={etiquetas.map((e) => ({
@@ -68,6 +81,7 @@ export function TelaDoReparo({
           }))}
           escolhida={escolhida}
           aoEscolher={(id) => setEscolhida((atual) => (atual === id ? null : id))}
+          arrastavel={arrastavel}
           status={status}
           acoes={
             <>
