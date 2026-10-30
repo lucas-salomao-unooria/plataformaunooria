@@ -11,8 +11,8 @@ import { EXP_ID, type ChaveDaCenaFixa } from "./vocabulario";
 
 /**
  * As IMAGENS DO BANCO PADRÃO — as quatro do pacote da Feira de Troca de Livros
- * (mural, portal, telão, cartaz) e as quatro CENAS FIXAS (o Festival de
- * Ciências e o Desafio Extra), geradas UMA vez, fora de qualquer turma, pelo
+ * (mural, portal, telão, cartaz) e as duas CENAS FIXAS (o Festival de
+ * Ciências), geradas UMA vez, fora de qualquer turma, pelo
  * `admin` (`POST /nina-noticia/banco-padrao/imagens`). Molde:
  * `juri-estadual/banco-padrao-imagens.service.ts`.
  *
@@ -40,8 +40,8 @@ export const ATRIBUICAO_DAS_IMAGENS_DO_BANCO: AtribuicaoDoConsumo = {
   recurso: RECURSO_DAS_IMAGENS_DO_BANCO,
 };
 
-/** Quantas por chamada: as oito saem em duas levas de quatro, longe dos 180 s do BFF. */
-export const IMAGENS_DO_BANCO_POR_CHAMADA = 8;
+/** Quantas por chamada: as seis saem em duas levas (quatro e duas), longe dos 180 s do BFF. */
+export const IMAGENS_DO_BANCO_POR_CHAMADA = 6;
 export const IMAGENS_DO_BANCO_EM_PARALELO = 4;
 
 export type ImagensDoBancoPadrao = z.infer<typeof ImagensDoBancoPadraoSchema>;
@@ -56,7 +56,7 @@ let emCurso: Promise<GeracaoDoBancoPadrao> | null = null;
  */
 const gerandoArquivo = new Map<string, Promise<string>>();
 
-/** As oito do banco, na ordem: as do pacote e as cenas fixas. */
+/** As seis do banco, na ordem: as do pacote e as cenas fixas. */
 export function itensDoBanco(): ItemDeImagem[] {
   return [...itensDoPacote(conteudoDoBancoPadrao()), ...itensDasCenasFixas()];
 }
@@ -83,7 +83,7 @@ export class ImagensDoBancoPadraoDaExp03ef1bService {
   }
 
   /**
-   * As CENAS FIXAS (o caso novo e o Desafio Extra), para o pacote de uma turma
+   * As CENAS FIXAS (o caso novo), para o pacote de uma turma
    * (ADR-199): a que existe no storage entra de graça; a que falta é GERADA
    * aqui, na conta da plataforma (sem quota da professora). Nunca lança: a
    * cena que falhar fica de fora e a experiência desenha a ilustração local;

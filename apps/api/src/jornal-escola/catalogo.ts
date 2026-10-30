@@ -347,7 +347,7 @@ export const ROTEIRO_DA_MEDIACAO = {
     "Quais são as três perguntas que todo editor precisa fazer antes de apertar o botão de publicar?",
   ] as const,
   gatilhoDaRevisao:
-    "Acabei de liberar nos aparelhos de vocês a ferramenta do Bento. Cada dupla monta a sua Chave do Editor — combinem antes de tocar — para destravar a nossa mesa de revisão e consertar o jornal!",
+    "Acabei de liberar nos aparelhos de vocês a ferramenta do Bento. Cada um monta a sua Chave do Editor — quem está em equipe, combine antes de tocar — para destravar a nossa mesa de revisão e consertar o jornal!",
 } as const;
 
 /**

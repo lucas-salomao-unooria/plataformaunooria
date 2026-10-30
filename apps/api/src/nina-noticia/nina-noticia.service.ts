@@ -14,7 +14,6 @@ import { PrismaService } from "../prisma/prisma.service";
 import { ASSUNTOS_DO_BANCO_PADRAO, DISCIPLINA_DO_BANCO_PADRAO, conteudoDoBancoPadrao } from "./banco-padrao";
 import {
   CARTOES_DA_MISSAO,
-  DESAFIO_EXTRA,
   FERRAMENTAS,
   FICHAS_TESTE,
   GATILHOS_DE_CONDUCAO,
@@ -258,7 +257,7 @@ function imagensDoBancoPara(origem: OrigemDoPacote, banco: Readonly<Record<strin
   for (const chave of CHAVES_DA_MIDIA) {
     const url = banco[chave];
     if (!url) continue;
-    if (origem === "padrao" || chave.startsWith("caso-") || chave.startsWith("extra-")) saida[chave] = url;
+    if (origem === "padrao" || chave.startsWith("caso-")) saida[chave] = url;
   }
   return saida;
 }
@@ -889,7 +888,7 @@ export class NinaNoticiaService {
    * `imagens_aprovadas_em` nulo. O mesmo conteúdo do pacote mais recente é o
    * segundo clique (idempotente). O conteúdo IGUAL ao banco padrão vira
    * `origem = 'padrao'` e leva as imagens do banco; o da IA leva só as cenas
-   * fixas (o caso novo e o Desafio Extra).
+   * fixas (as duas do caso novo).
    */
   async homologar(
     escolaId: string,
@@ -1211,11 +1210,6 @@ export class NinaNoticiaService {
         efetivo === "fim"
           ? {
               resumo: resumoDaSessao(s, pacote.conteudo),
-              desafioExtra: DESAFIO_EXTRA.map((d) => ({
-                manchete: d.manchete,
-                ficha: { ...d.ficha },
-                imagem: { url: url(d.chave), alt: d.imagem.alt },
-              })),
             }
           : null,
       concluida: s.concluidaEm !== null,

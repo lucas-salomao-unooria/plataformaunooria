@@ -111,7 +111,7 @@ export const ROTULO_DO_CAMPO: Readonly<Record<Campo, string>> = {
 export const LUGARES = ["patio", "biblioteca", "quadra"] as const;
 export type Lugar = (typeof LUGARES)[number];
 
-/** Quem aparece numa ficha (as da feira, as fichas-teste e as do Desafio Extra). */
+/** Quem aparece numa ficha (as da feira, as fichas-teste e as do caso novo). */
 export const PESSOAS = ["estudantes", "professores", "familias", "visitantes"] as const;
 export type Pessoa = (typeof PESSOAS)[number];
 
@@ -244,7 +244,7 @@ export type MarcaDaRotina = (typeof MARCAS_DA_ROTINA)[number];
 /**
  * O limiar da rotina (EF03CO02 e o alerta do painel): até DUAS tentativas
  * (contando a válida) é "atingiu"; mais de TRÊS sem acertar acende "Alerta:
- * equipe em repetição sem parada.".
+ * rotina em repetição sem parada.".
  */
 export const TENTATIVAS_PARA_ATINGIR_A_ROTINA = 2;
 export const TENTATIVAS_PARA_ALERTA_DA_ROTINA = 3;
@@ -300,13 +300,13 @@ export const ROTULO_DA_DISCIPLINA: Readonly<Record<Disciplina, string>> = {
 /**
  * As IMAGENS de um pacote, por chave: uma por reportagem e a do cartaz comum
  * da feira (o que a criança toca no Modal da E1). As cenas fixas do banco
- * padrão (o caso novo e o Desafio Extra) têm chaves próprias em
+ * padrão (as duas do caso novo) têm chaves próprias em
  * `CHAVES_DAS_CENAS_FIXAS` e só o `admin` as gera.
  */
 export const CHAVES_DAS_IMAGENS = ["mural", "portal", "telao", "cartaz"] as const;
 export type ChaveDaImagem = (typeof CHAVES_DAS_IMAGENS)[number];
 
-export const CHAVES_DAS_CENAS_FIXAS = ["caso-a", "caso-b", "extra-1", "extra-2"] as const;
+export const CHAVES_DAS_CENAS_FIXAS = ["caso-a", "caso-b"] as const;
 export type ChaveDaCenaFixa = (typeof CHAVES_DAS_CENAS_FIXAS)[number];
 
 // ------------------------------------------------------- os tempos

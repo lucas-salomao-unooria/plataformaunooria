@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { CAIXA_VAZIA, caixaDosItens, itensDaCaixa, porNaCaixa, tirarDaCaixa, type Caixa } from "../../lib/regras";
+import { CAIXA_VAZIA, caixaDosItens, itensDaCaixa, porNaCaixa, porNoNicho, tirarDaCaixa, type Caixa } from "../../lib/regras";
 import { CABECALHO, E2, NINA, NOME_CURTO_DO_SUPORTE } from "../../lib/textos";
 import type { ReportagemPublica } from "../../lib/tipos";
+import { useArrastar } from "../comum/arrastar";
 import { Cabecalho } from "../jornal/cabecalho";
 import { AcaoDaMissao } from "../mecanica/acoes";
 import { BandejaDaEscolha, CaixaDaEscolha, VidroDaEscolha } from "../mecanica/caixa";
@@ -10,7 +11,7 @@ import { Casca } from "./casca";
 
 /**
  * E2-ALU-01 — a ESCOLHA (o nome interno é `aposta`/`previsao`; na tela é
- * "escolha", spec §7.1). A dupla põe na caixa as notícias que acha que a
+ * "escolha", spec §7.1). A criança (ou a equipe) põe na caixa as notícias que acha que a
  * busca "Onde: Pátio" vai trazer e trava. Travar é o LATCH (`POST
  * previsao`): só vale quando a api confirma, e depois a caixa fica sob o
  * vidro esperando a professora liberar o filtro — sem botão.
@@ -33,6 +34,11 @@ export function TelaDaEscolha({
   const naCaixa = travada ? [...previsao.itens] : itensDaCaixa(caixa);
   const exibida = travada ? caixaDosItens(previsao.itens) : caixa;
 
+  const { arrastavel } = useArrastar((id, alvo) => {
+    if (alvo.zona === "caixa") setCaixa((c) => (alvo.vaga === null ? porNaCaixa(c, id) : porNoNicho(c, id, alvo.vaga)));
+    else if (alvo.zona === "bandeja") setCaixa((c) => tirarDaCaixa(c, id));
+  }, !travada);
+
   const noticias = reportagens.map((r) => ({ id: r.id, rotulo: r.kicker, curto: NOME_CURTO_DO_SUPORTE[r.suporte] }));
   const vazia = naCaixa.length === 0;
 
@@ -45,6 +51,7 @@ export function TelaDaEscolha({
           naCaixa={naCaixa}
           travada={travada}
           aoTocar={(id) => setCaixa((c) => porNaCaixa(c, id))}
+          arrastavel={arrastavel}
           rodape={
             !travada && !vazia ? (
               <AcaoDaMissao variante="outline" larga aoTocar={() => setCaixa(CAIXA_VAZIA)}>
@@ -59,6 +66,7 @@ export function TelaDaEscolha({
             noticias={noticias}
             travada={travada}
             aoTirar={(id) => setCaixa((c) => tirarDaCaixa(c, id))}
+            arrastavel={arrastavel}
             status={!travada && vazia ? E2.vazia : undefined}
             acao={
               travada ? null : (

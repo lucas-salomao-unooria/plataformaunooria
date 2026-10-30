@@ -82,8 +82,4 @@ export const CASO: NonNullable<Sessao["caso"]> = {
 
 export const FIM: NonNullable<Sessao["fim"]> = {
   resumo: { suportes: { escolhidas: 3 }, omissao: { encontradas: 2, deFora: "telao" }, reparo: { desfecho: "sucesso" }, automacao: { testes: 2 } },
-  desafioExtra: [
-    { manchete: "Campeonato de Pira", ficha: { quem: "estudantes", onde: "biblioteca", quando: "quarta" }, imagem: { url: null, alt: "Crianças brincam de pega-pega no gramado do pátio." } },
-    { manchete: "Teatro de Fantoches", ficha: { quem: "estudantes", onde: "biblioteca", quando: null }, imagem: { url: null, alt: "Fantoches de meia num palco da biblioteca; ao lado, um cartaz de terça-feira." } },
-  ],
 };

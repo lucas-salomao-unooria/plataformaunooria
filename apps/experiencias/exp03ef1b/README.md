@@ -32,7 +32,7 @@ Precisa da missão LIBERADA na turma (ADR-69), do produto `entre-redes` ligado
 | `attempted` | `carimbos:enviar` | Avançar da E4 e da E6 | `contexto: { etapa }` — sem os carimbos |
 | `attempted` | `reparo:concluir` | Concluir | `resultado: { desfecho }` (o que a tela já mostra) |
 | `attempted` | `rotina:testar` | Testar Rotina | `resultado: { valida }` |
-| `interacted` | `caso:ferramenta`, `fim:desafio-extra` | E6 | `contexto: { ferramenta }` |
+| `interacted` | `caso:ferramenta` | E6 | `contexto: { ferramenta }` |
 | `completed` | `missao:concluida` | `POST concluir` | — |
 | `interacted` | `conexao:aviso` | sem sinal / sessão | `contexto: { motivo }` |
 

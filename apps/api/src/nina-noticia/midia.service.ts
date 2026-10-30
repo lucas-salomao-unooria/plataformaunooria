@@ -28,7 +28,7 @@ import { CHAVES_DAS_IMAGENS, EXP_ID, type ChaveDaImagem } from "./vocabulario";
  * - **O arquivo é o hash do PEDIDO** (`regras/imagens.ts#nomeDaImagem`): o que
  *   já está no bucket entra DE GRAÇA — inclusive no pacote do BANCO PADRÃO,
  *   que desde a ADR-199 também passa por esta grade.
- * - **As CENAS FIXAS (o caso novo e o Desafio Extra) vêm junto** (ADR-199): a
+ * - **As CENAS FIXAS (o caso novo) vêm junto** (ADR-199): a
  *   que ainda não existe é gerada aqui, em paralelo às do pacote, pela
  *   `ImagensDoBancoPadraoDaExp03ef1bService#garantirCenasFixas` — na conta da
  *   PLATAFORMA (`nina-noticia-banco-padrao`), nunca na quota da professora, e

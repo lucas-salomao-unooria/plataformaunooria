@@ -60,7 +60,6 @@ export const telemetria = {
 
   // E6
   usouFerramenta: (ferramenta: string) => track("interacted", "caso:ferramenta", { contexto: { ferramenta } }),
-  abriuDesafioExtra: () => track("interacted", "fim:desafio-extra"),
 
   concluiu: () => track("completed", "missao:concluida"),
 
