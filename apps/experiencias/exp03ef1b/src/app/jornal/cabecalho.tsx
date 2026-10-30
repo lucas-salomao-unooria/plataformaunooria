@@ -15,14 +15,11 @@ export function Cabecalho({
   direita,
   destaque = false,
   apagado = false,
-  acao,
 }: {
   edicao?: string;
   direita?: React.ReactNode;
   destaque?: boolean;
   apagado?: boolean;
-  /** Um botão do jornal no canto (o "Desafio Extra" do fim). */
-  acao?: React.ReactNode;
 }) {
   return (
     <header className={`jornal-topo${apagado ? " jornal-topo--apagado" : ""}`}>
@@ -38,7 +35,6 @@ export function Cabecalho({
           {direita}
         </TagUjn>
       ) : null}
-      {acao}
     </header>
   );
 }

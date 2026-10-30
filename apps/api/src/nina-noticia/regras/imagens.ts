@@ -14,8 +14,8 @@ import {
  *
  * - as do PACOTE (`mural`, `portal`, `telao`, `cartaz`): a professora gera,
  *   refaz e aprova no preparo, com a quota dela;
- * - as CENAS FIXAS do banco (`caso-a`, `caso-b`, `extra-1`, `extra-2`: o
- *   Festival de Ciências e o Desafio Extra): iguais para toda turma, geradas uma
+ * - as CENAS FIXAS do banco (`caso-a`, `caso-b`: o Festival de Ciências;
+ *   o Desafio Extra e as `extra-*` saíram na ADR-201): iguais para toda turma, geradas uma
  *   vez na conta da PLATAFORMA — pelo `admin` em `/unooria/recursos/imagens-da-nina`
  *   ou, a que ainda faltar, no `gerar-midia` da primeira professora (ADR-199).
  *   A professora nunca as refaz nem paga por elas; o pacote as recebe de graça
@@ -61,7 +61,7 @@ export function itensDoPacote(conteudo: ConteudoDoPacote): ItemDeImagem[] {
   });
 }
 
-/** As quatro cenas fixas do banco (o caso novo e o Desafio Extra). */
+/** As duas cenas fixas do banco (o caso novo). */
 export function itensDasCenasFixas(): ItemDeImagem[] {
   return CHAVES_DAS_CENAS_FIXAS.map((chave) => {
     const prompt = promptDaCenaFixa(chave);

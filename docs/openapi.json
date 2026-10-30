@@ -72195,89 +72195,10 @@
                             "automacao"
                           ],
                           "additionalProperties": false
-                        },
-                        "desafioExtra": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "manchete": {
-                                "type": "string"
-                              },
-                              "ficha": {
-                                "type": "object",
-                                "properties": {
-                                  "quem": {
-                                    "type": "string",
-                                    "enum": [
-                                      "estudantes",
-                                      "professores",
-                                      "familias",
-                                      "visitantes"
-                                    ],
-                                    "nullable": true
-                                  },
-                                  "onde": {
-                                    "type": "string",
-                                    "enum": [
-                                      "patio",
-                                      "biblioteca",
-                                      "quadra"
-                                    ],
-                                    "nullable": true
-                                  },
-                                  "quando": {
-                                    "type": "string",
-                                    "enum": [
-                                      "segunda",
-                                      "terca",
-                                      "quarta",
-                                      "quinta",
-                                      "sexta",
-                                      "sabado"
-                                    ],
-                                    "nullable": true
-                                  }
-                                },
-                                "required": [
-                                  "quem",
-                                  "onde",
-                                  "quando"
-                                ],
-                                "additionalProperties": false
-                              },
-                              "imagem": {
-                                "type": "object",
-                                "properties": {
-                                  "url": {
-                                    "type": "string",
-                                    "nullable": true
-                                  },
-                                  "alt": {
-                                    "type": "string"
-                                  }
-                                },
-                                "required": [
-                                  "url",
-                                  "alt"
-                                ],
-                                "additionalProperties": false
-                              }
-                            },
-                            "required": [
-                              "manchete",
-                              "ficha",
-                              "imagem"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "minItems": 2,
-                          "maxItems": 2
                         }
                       },
                       "required": [
-                        "resumo",
-                        "desafioExtra"
+                        "resumo"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -76247,7 +76168,7 @@
           "nina-noticia"
         ],
         "summary": "Gera as imagens que faltam no pacote: as três cenas e o cartaz.",
-        "description": "Até quatro novas por chamada, em paralelo. Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma; `falharam` diz o que não saiu (segue a ilustração local). O que já está no bucket (o mesmo pedido) entra sem custo.\n\n**As cenas fixas** do caso novo e do Desafio Extra (iguais para todas as turmas) entram junto: a que já existe, de graça; a que falta é gerada nesta chamada, uma vez só, na conta da PLATAFORMA (recurso `nina-noticia-banco-padrao` no painel de custos, perfil `admin`, sem escola) — nunca na quota da professora. Não aparecem na resposta, que traz só as quatro do pacote (ADR-199).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quota da professora, com custo ESTIMADO por imagem. Sem saldo: **429** `sem-saldo-de-ia`.\n- Depois de `aprovar-imagens`: **409** `imagens-ja-aprovadas`.\n- Pacote de outra turma: **404** `atividade-nao-encontrada`.",
+        "description": "Até quatro novas por chamada, em paralelo. Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma; `falharam` diz o que não saiu (segue a ilustração local). O que já está no bucket (o mesmo pedido) entra sem custo.\n\n**As cenas fixas** do caso novo (iguais para todas as turmas) entram junto: a que já existe, de graça; a que falta é gerada nesta chamada, uma vez só, na conta da PLATAFORMA (recurso `nina-noticia-banco-padrao` no painel de custos, perfil `admin`, sem escola) — nunca na quota da professora. Não aparecem na resposta, que traz só as quatro do pacote (ADR-199).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quota da professora, com custo ESTIMADO por imagem. Sem saldo: **429** `sem-saldo-de-ia`.\n- Depois de `aprovar-imagens`: **409** `imagens-ja-aprovadas`.\n- Pacote de outra turma: **404** `atividade-nao-encontrada`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -76563,9 +76484,7 @@
                           "telao",
                           "cartaz",
                           "caso-a",
-                          "caso-b",
-                          "extra-1",
-                          "extra-2"
+                          "caso-b"
                         ]
                       }
                     },
@@ -76580,9 +76499,7 @@
                         "telao",
                         "cartaz",
                         "caso-a",
-                        "caso-b",
-                        "extra-1",
-                        "extra-2"
+                        "caso-b"
                       ],
                       "properties": {
                         "mural": {
@@ -76601,12 +76518,6 @@
                           "type": "string"
                         },
                         "caso-b": {
-                          "type": "string"
-                        },
-                        "extra-1": {
-                          "type": "string"
-                        },
-                        "extra-2": {
                           "type": "string"
                         }
                       },
@@ -76630,7 +76541,7 @@
           "nina-noticia"
         ],
         "summary": "As imagens do banco padrão: quantas existem, quais faltam e as URLs.",
-        "description": "**Só `admin`.** Oito: as quatro do pacote da Feira de Troca de Livros (`mural`, `portal`, `telao`, `cartaz`) e as quatro cenas fixas (`caso-a`, `caso-b`, `extra-1`, `extra-2`). O nome do arquivo é o hash do pedido — o mesmo da customização. O storage é o registro.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Professora e gestores respondem **403**.",
+        "description": "**Só `admin`.** Seis: as quatro do pacote da Feira de Troca de Livros (`mural`, `portal`, `telao`, `cartaz`) e as duas cenas fixas do caso novo (`caso-a`, `caso-b`). O nome do arquivo é o hash do pedido — o mesmo da customização. O storage é o registro.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Professora e gestores respondem **403**.",
         "security": [
           {
             "token-da-plataforma": []
@@ -76670,9 +76581,7 @@
                           "telao",
                           "cartaz",
                           "caso-a",
-                          "caso-b",
-                          "extra-1",
-                          "extra-2"
+                          "caso-b"
                         ]
                       }
                     },
@@ -76687,9 +76596,7 @@
                         "telao",
                         "cartaz",
                         "caso-a",
-                        "caso-b",
-                        "extra-1",
-                        "extra-2"
+                        "caso-b"
                       ],
                       "properties": {
                         "mural": {
@@ -76709,12 +76616,6 @@
                         },
                         "caso-b": {
                           "type": "string"
-                        },
-                        "extra-1": {
-                          "type": "string"
-                        },
-                        "extra-2": {
-                          "type": "string"
                         }
                       },
                       "additionalProperties": false
@@ -76729,9 +76630,7 @@
                           "telao",
                           "cartaz",
                           "caso-a",
-                          "caso-b",
-                          "extra-1",
-                          "extra-2"
+                          "caso-b"
                         ]
                       }
                     },
@@ -76745,9 +76644,7 @@
                           "telao",
                           "cartaz",
                           "caso-a",
-                          "caso-b",
-                          "extra-1",
-                          "extra-2"
+                          "caso-b"
                         ]
                       }
                     }
@@ -76771,7 +76668,7 @@
           "nina-noticia"
         ],
         "summary": "Gera as imagens que faltam no banco padrão — incremental e idempotente.",
-        "description": "**Só `admin`.** Até oito por chamada, quatro de cada vez. O que já existe não é gerado de novo; duas chamadas simultâneas recebem o mesmo trabalho. **Custo da plataforma**: sem quota de professor, medido no painel de custos no recurso `nina-noticia-banco-padrao`, perfil `admin`, sem escola.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Professora e gestores respondem **403**.\n- Rate limit: 20 chamadas por minuto, depois **429** `muitas-requisicoes`.",
+        "description": "**Só `admin`.** Até seis por chamada, quatro de cada vez. O que já existe não é gerado de novo; duas chamadas simultâneas recebem o mesmo trabalho. **Custo da plataforma**: sem quota de professor, medido no painel de custos no recurso `nina-noticia-banco-padrao`, perfil `admin`, sem escola.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Professora e gestores respondem **403**.\n- Rate limit: 20 chamadas por minuto, depois **429** `muitas-requisicoes`.",
         "security": [
           {
             "token-da-plataforma": []

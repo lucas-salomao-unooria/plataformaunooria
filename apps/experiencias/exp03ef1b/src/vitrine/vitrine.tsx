@@ -127,8 +127,7 @@ const ESTADOS: Record<string, () => ReactNode> = {
     <TelaDoCaso caso={CASO} ocupado={false} aoEnviar={nada} inicial={{ marcas: { k4: "v" }, ferramenta: CASO.ferramentas[0] ?? null }} />
   ),
   "37-E6-ALU-01-carimbado": () => <TelaDoCaso caso={CASO} ocupado={false} aoEnviar={nada} inicial={{ marcas: { k4: "v", k5: "duvida", k6: "x" } }} />,
-  "40-E6-ALU-03-congelado_final": () => <TelaDoFim resumo={FIM.resumo} desafioExtra={FIM.desafioExtra} />,
-  "40b-E6-ALU-03-desafio_extra": () => <TelaDoFim resumo={FIM.resumo} desafioExtra={FIM.desafioExtra} inicial={{ desafioAberto: true }} />,
+  "40-E6-ALU-03-congelado_final": () => <TelaDoFim resumo={FIM.resumo} />,
 };
 
 function Vitrine() {

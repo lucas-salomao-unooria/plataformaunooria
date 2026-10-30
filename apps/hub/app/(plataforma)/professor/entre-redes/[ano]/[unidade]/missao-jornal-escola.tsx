@@ -69,7 +69,7 @@ export function MissaoJornalEscola({
             ouvir a conversa.
           </p>
           <p>
-            A Chave do Editor <strong>não é corrigida na tela</strong>: cada dupla monta a sua uma vez, testa em
+            A Chave do Editor <strong>não é corrigida na tela</strong>: cada computador monta a sua uma vez, testa em
             duas matérias novas e só depois recebe, como todos, a mesma regra de referência. O nível de cada
             criança fica no painel de habilidades, só para você.
           </p>

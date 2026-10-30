@@ -301,8 +301,11 @@ espelho `lib/nina-noticia-tipos.ts` (o teste lê `vocabulario.ts`, `invariantes.
 - **O painel (E4-PROF-01)**: "Painel da Sala em Tempo Real", polling de 5 s. DOIS portões pelo
   `proximaEtapa` ("Liberar Filtro", depois "Liberar Inspeção"; `{acao: "liberar", para}`), e
   "Pausar Turma"/"Retomar Turma" (`{acao: "pausar" | "retomar"}`) — pausada, o painel vira o quadro
-  "Sala pausada" do print 24 e o portão some até retomar. Cartões "Equipes na etapa N" (1–6), "Escolhas
-  da Etapa 2" (só o agregado: 3/2/1 e a que ficou de fora) e "Alertas da sala" (vazio = "Nenhum alerta
+  "Sala pausada" do print 24 e o portão some até retomar. Quatro números na ordem dos portões
+  (`progressoDaAula`: Entraram, Travaram a escolha, Viram a notícia sumir, Concluíram — os seis
+  cartões por etapa espremiam o painel; a etapa de cada um é a folha), "Escolhas da Etapa 2" (só o
+  agregado; o VALOR é curto, a porcentagem, e a frase vai na descrição — no corpo grande do
+  `MetricCard` a frase estourava o cartão) e "Alertas da sala" (vazio = "Nenhum alerta
   crítico ativo"); o roteiro de mediação na íntegra; a folha diz etapa, passo e alertas — nunca acerto.
   `mudouAEvidencia` relê a página quando uma linha passa de `ficha`, `reparo`, `rotina` ou `caso`.
 - **"Zerar Turma"** com diálogo: rodada nova, habilidades apagadas (ADR-155).

@@ -36,7 +36,7 @@ export function MissaoNinaNoticia({
       titulo={missao.titulo}
       resumo={missao.resumo}
       ficha={missao.ficha}
-      etiquetas={["EF15CO08", "EF03CO01", "EF03CO02", "Em duplas"]}
+      etiquetas={["EF15CO08", "EF03CO01", "EF03CO02", "EF03CO03", "Individual ou em equipes"]}
       guia={guia}
       aviso={{
         tipo: "warning",
@@ -57,12 +57,12 @@ export function MissaoNinaNoticia({
         <>
           <p>
             <strong className="text-unooria-neutral-950">As três fotos mostram o pátio, mas a ficha do telão tem o campo Onde vazio.</strong>{" "}
-            Nada na tela conta isso antes da busca: a dupla trava a escolha, aplica o filtro Onde: Pátio e vê a
+            Nada na tela conta isso antes da busca: a turma trava a escolha, aplica o filtro Onde: Pátio e vê a
             notícia do telão sumir, deixando a moldura vazia.
           </p>
           <p>
             <strong className="text-unooria-neutral-950">A escolha travada não volta.</strong> É ela que dá força à
-            descoberta: a dupla confronta o que esperava com o que a busca devolveu.
+            descoberta: a turma confronta o que esperava com o que a busca devolveu.
           </p>
           <p>
             Nenhum carimbo, ficha ou rotina recebe certo ou errado na tela antes do Concluir, e o reparo nunca pede
@@ -70,7 +70,7 @@ export function MissaoNinaNoticia({
           </p>
           <p className="text-[13px] text-unooria-neutral-500">
             A missão não coleta foto, voz nem texto da criança: tudo é toque. O painel da aula mostra só o progresso e
-            os alertas de cada computador; as quatro habilidades são registradas pelo que a dupla FAZ, no painel de
+            os alertas de cada computador; as quatro habilidades são registradas pelo que cada computador FAZ, no painel de
             habilidades da atividade.
           </p>
         </>
@@ -84,7 +84,7 @@ function RoteiroDeMediacao() {
   return (
     <div className="flex flex-col gap-5" data-roteiro-de-mediacao>
       <p className="max-w-3xl text-[14px] leading-relaxed text-unooria-neutral-700">
-        No 3º ano a mediação é oral: leia em voz alta, devagar, e deixe as duplas responderem antes de você. As
+        No 3º ano a mediação é oral: leia em voz alta, devagar, e deixe a turma responder antes de você. As
         perguntas valem para a pausa depois do filtro e para o fechamento.
       </p>
       <ol className="flex max-w-3xl list-decimal flex-col gap-4 pl-5 text-[14px] leading-relaxed text-unooria-neutral-900">

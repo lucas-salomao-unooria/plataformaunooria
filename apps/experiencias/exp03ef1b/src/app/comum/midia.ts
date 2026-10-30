@@ -4,8 +4,6 @@ import cenaTelao from "../../assets/cenas/telao.svg";
 import cenaCartaz from "../../assets/cenas/cartaz.svg";
 import cenaCasoA from "../../assets/cenas/caso-a.svg";
 import cenaCasoB from "../../assets/cenas/caso-b.svg";
-import cenaExtra1 from "../../assets/cenas/extra-1.svg";
-import cenaExtra2 from "../../assets/cenas/extra-2.svg";
 import type { ImagemPublica } from "../../lib/tipos";
 
 /**
@@ -21,8 +19,6 @@ export const ILUSTRACAO = {
   cartaz: cenaCartaz,
   "caso-a": cenaCasoA,
   "caso-b": cenaCasoB,
-  "extra-1": cenaExtra1,
-  "extra-2": cenaExtra2,
 } as const;
 
 export type Cena = keyof typeof ILUSTRACAO;

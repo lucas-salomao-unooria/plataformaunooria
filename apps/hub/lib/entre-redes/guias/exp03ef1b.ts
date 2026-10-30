@@ -35,7 +35,7 @@ export const ROTEIRO_DO_GUIA = [
 ] as const;
 
 export const GATILHOS_DO_GUIA = [
-  "Verifique se todas as duplas clicaram no cadeado 'Travar Escolha' antes de autorizar o uso do filtro.",
+  "Verifique se todas as telas mostram a escolha travada no cadeado 'Travar Escolha' antes de autorizar o uso do filtro.",
   "A notícia do telão desapareceu: congele a sala no botão 'Pausar Turma' e faça a provocação coletiva antes de liberar a Etapa 4.",
   "Clique em 'Liberar Inspeção' para abrir as fichas técnicas nas telas dos estudantes.",
 ] as const;
@@ -46,7 +46,7 @@ const GATILHOS_DE_CONDUCAO = GATILHOS_DO_GUIA;
 export const GUIA_EXP03EF1B: GuiaDaAula = {
   expId: "exp03ef1b",
   chamada:
-    "Uma aula em duplas em que a criança de 8 anos descobre, com as próprias mãos, que a busca do computador não " +
+    "Uma aula — individual, em duplas ou em equipes — em que a criança de 8 anos descobre, com as próprias mãos, que a busca do computador não " +
     "olha a foto como nós olhamos: ela consulta os campos da ficha — e o campo vazio faz uma notícia desaparecer.",
 
   avisos: [
@@ -89,7 +89,7 @@ export const GUIA_EXP03EF1B: GuiaDaAula = {
       eixo: "Cultura Digital",
       principal: true,
       ondeAcontece:
-        "Etapas 3 e 4: a busca Onde: Pátio e a ficha do telão aberta. Registrada quando a dupla abre a ficha — se acertou o filtro de primeira e se precisou do pulso do botão.",
+        "Etapas 3 e 4: a busca Onde: Pátio e a ficha do telão aberta. Registrada quando a ficha do telão é aberta — se acertou o filtro de primeira e se precisou do pulso do botão.",
     },
     {
       codigo: "EF03CO01",
@@ -97,7 +97,7 @@ export const GUIA_EXP03EF1B: GuiaDaAula = {
         "Associar os valores 'verdadeiro' e 'falso' a sentenças lógicas que dizem respeito a situações do dia a dia, fazendo uso de termos que indicam negação.",
       eixo: "Pensamento Computacional",
       ondeAcontece:
-        "Os seis carimbos: três na Etapa 4 (um deles com o selo de negação) e três no caso do Festival de Ciências, na Etapa 6. Registrada quando a dupla envia os da Etapa 6.",
+        "Os seis carimbos: três na Etapa 4 (um deles com o selo de negação) e três no caso do Festival de Ciências, na Etapa 6. Registrada quando os da Etapa 6 são enviados.",
     },
     {
       codigo: "EF03CO02",
@@ -118,9 +118,9 @@ export const GUIA_EXP03EF1B: GuiaDaAula = {
   antes: {
     tecnico: [
       {
-        titulo: "Um computador para cada dupla",
+        titulo: "Um computador por estudante ou por equipe",
         texto:
-          "Duplas recomendadas (de 1 a 4 crianças por computador). Monte as equipes na criação da atividade: o painel conta por computador.",
+          "De 1 a 4 crianças por computador. Se forem equipes, monte-as na criação da atividade: o painel conta por computador.",
       },
       {
         titulo: "Atividade criada e liberada",
@@ -135,8 +135,8 @@ export const GUIA_EXP03EF1B: GuiaDaAula = {
     ],
     pedagogico: [
       {
-        titulo: "Combine os papéis da dupla",
-        texto: "Uma criança toca na tela e a outra aponta as pistas nas fotos; trocam na metade.",
+        titulo: "Combine os papéis, se houver equipes",
+        texto: "Com mais de uma criança no computador, uma toca na tela e as outras apontam as pistas nas fotos; trocam na metade.",
       },
       {
         titulo: "Ensaie a provocação do sumiço",
@@ -150,7 +150,7 @@ export const GUIA_EXP03EF1B: GuiaDaAula = {
     ],
     naoDiga: [
       "Que uma das notícias vai sumir da busca.",
-      "Que a ficha do telão está com o campo Onde vazio — a dupla descobre ao abrir a ficha.",
+      "Que a ficha do telão está com o campo Onde vazio — a turma descobre ao abrir a ficha.",
       "Que o computador “não enxerga foto”: este filtro consulta campos; outros sistemas reconhecem imagens.",
     ],
   },
@@ -160,45 +160,45 @@ export const GUIA_EXP03EF1B: GuiaDaAula = {
     linhas: [
       {
         tempo: "0–5",
-        momento: "Acolhimento e duplas",
+        momento: "Acolhimento e organização da turma",
         professor:
-          "Organize as duplas e conte o pedido da Nina: ela precisa encontrar, no jornal da escola, todas as reportagens da feira de livros.",
+          "Organize a turma nos computadores (individual ou em equipes) e conte o pedido da Nina: ela precisa encontrar, no jornal da escola, todas as reportagens da feira de livros.",
       },
       {
         tempo: "5–8",
         momento: "Etapa 1 — as três fotos da feira",
         professor:
-          "A dupla abre as fotos do mural, do portal e do telão e toca no cartaz da feira, que se repete: cada cartão ganha Mesma feira.",
+          "A turma abre as fotos do mural, do portal e do telão e toca no cartaz da feira, que se repete: cada cartão ganha Mesma feira.",
       },
       {
         tempo: "8–12",
         momento: "Etapa 2 — a escolha travada",
-        professor: `A dupla põe na caixa as notícias que acha que a busca pelo pátio vai achar e toca em Travar Escolha. ${GATILHOS_DE_CONDUCAO[0]}`,
+        professor: `Cada computador põe na caixa as notícias que acha que a busca pelo pátio vai achar e toca em Travar Escolha. ${GATILHOS_DE_CONDUCAO[0]}`,
         botao: "Liberar Filtro",
       },
       {
         tempo: "12–18",
         momento: "Etapa 3 — o filtro e a pausa",
-        professor: `A dupla busca Onde: Pátio e vê só 2 notícias; a do telão deixa a moldura vazia. ${GATILHOS_DE_CONDUCAO[1]}`,
+        professor: `A turma busca Onde: Pátio e vê só 2 notícias; a do telão deixa a moldura vazia. ${GATILHOS_DE_CONDUCAO[1]}`,
         botao: "Pausar Turma",
       },
       {
         tempo: "18–26",
         momento: "Etapa 4 — a ficha, os carimbos e o reparo",
-        professor: `${GATILHOS_DE_CONDUCAO[2]} A dupla abre a ficha do telão, carimba três cartões e monta a ficha com as três etiquetas. Com o Pátio no Onde, a busca refeita traz as 3; em outro campo, a tela explica como ficariam.`,
+        professor: `${GATILHOS_DE_CONDUCAO[2]} Cada computador abre a ficha do telão, carimba três cartões e monta a ficha com as três etiquetas. Com o Pátio no Onde, a busca refeita traz as 3; em outro campo, a tela explica como ficariam.`,
         botao: "Liberar Inspeção",
       },
       {
         tempo: "26–34",
         momento: "Etapa 5 — a rotina da pilha",
         professor:
-          "Circule entre as duplas enquanto organizam os blocos embaralhados: pergunte quando o computador deve parar de conferir as fichas.",
+          "Circule pela sala enquanto a turma organiza os blocos embaralhados: pergunte quando o computador deve parar de conferir as fichas.",
       },
       {
         tempo: "34–41",
         momento: "Etapa 6 — o caso do Festival de Ciências",
         professor:
-          "A dupla investiga duas fotos com uma ficha sem o dia, usa as três ferramentas e carimba. O Painel da Investigação fica congelado no fim; quem termina antes abre o Desafio Extra.",
+          "A turma investiga duas fotos com uma ficha sem o dia, usa as três ferramentas e carimba. O Painel da Investigação fica congelado no fim.",
       },
       {
         tempo: "41–50",
@@ -207,7 +207,7 @@ export const GUIA_EXP03EF1B: GuiaDaAula = {
       },
     ],
     nota:
-      "Em duas aulas de 50 min, a primeira vai das Etapas 1 a 4, com a conversa do sumiço; a segunda faz a rotina, o caso novo e o debate. A missão guarda o passo de cada dupla.",
+      "Em duas aulas de 50 min, a primeira vai das Etapas 1 a 4, com a conversa do sumiço; a segunda faz a rotina, o caso novo e o debate. A missão guarda o passo de cada computador.",
   },
 
   debate: {
@@ -217,7 +217,7 @@ export const GUIA_EXP03EF1B: GuiaDaAula = {
       {
         nivel: "retomada",
         pergunta: "Quantas notícias vocês puseram na caixa? Quantas a busca pelo pátio encontrou?",
-        porQue: "Põe lado a lado o que a dupla esperava e o que aconteceu, antes de qualquer explicação.",
+        porQue: "Põe lado a lado o que a turma esperava e o que aconteceu, antes de qualquer explicação.",
       },
       {
         nivel: "analise",
@@ -238,7 +238,7 @@ export const GUIA_EXP03EF1B: GuiaDaAula = {
   },
 
   observacao: {
-    intro: "Enquanto as duplas estão na tela, observe sem intervir:",
+    intro: "Enquanto a turma está na tela, observe sem intervir:",
     marcas: [
       { letra: "F", texto: "Escolheu o filtro do lugar sem ajuda." },
       { letra: "C", texto: "Abriu a ficha e apontou o campo vazio." },
@@ -250,22 +250,22 @@ export const GUIA_EXP03EF1B: GuiaDaAula = {
 
   mediacao: [
     {
-      quando: "A dupla quer travar a escolha com a caixa vazia.",
+      quando: "Alguém quer travar a escolha com a caixa vazia.",
       faca: "O botão fica apagado e a tela pede ao menos uma notícia na caixa. Pergunte quais fotos mostram o pátio.",
     },
     {
       quando: "O filtro escolhido devolve 0 notícias.",
       faca: "A pastilha Onde pulsa. Pergunte: “Vocês querem achar pelo quem, pelo quando ou pelo lugar?”",
-      naoFaca: "Não toque na pastilha pela dupla: tentar outro filtro antes conta na habilidade da busca.",
+      naoFaca: "Não toque na pastilha pela criança: tentar outro filtro antes conta na habilidade da busca.",
     },
     {
-      quando: "Uma equipe testa a rotina várias vezes sem parar (o painel acende o alerta).",
+      quando: "Um computador testa a rotina várias vezes sem parar (o painel acende o alerta).",
       faca: "Aproxime-se e pergunte quando o computador deve parar de conferir as fichas.",
-      naoFaca: "Não monte a sequência pela dupla.",
+      naoFaca: "Não monte a sequência pela turma.",
     },
     {
-      quando: "Uma equipe carimba o mesmo símbolo em todos os cartões (o painel acende o alerta).",
-      faca: "Estimule a conferência visual: leia cada cartão em voz alta e peça para a dupla olhar a figura de novo.",
+      quando: "Um computador carimba o mesmo símbolo em todos os cartões (o painel acende o alerta).",
+      faca: "Estimule a conferência visual: leia cada cartão em voz alta e peça para olharem a figura de novo.",
     },
   ],
 
@@ -276,9 +276,9 @@ export const GUIA_EXP03EF1B: GuiaDaAula = {
       "Uma rotina automática confere muitas fichas, mas precisa saber a hora exata de parar.",
     ],
     registro:
-      "Peça que cada dupla desenhe uma ficha com os três campos (Quem, Onde, Quando) de um evento da escola, com o ícone de cada um.",
+      "Peça que cada estudante ou equipe desenhe uma ficha com os três campos (Quem, Onde, Quando) de um evento da escola, com o ícone de cada um.",
     rubrica: {
-      nota: "Os níveis registrados pela plataforma, por habilidade, a partir do que a dupla fez — confira no painel de habilidades.",
+      nota: "Os níveis registrados pela plataforma, por habilidade, a partir do que cada computador fez — confira no painel de habilidades.",
       criterios: [
         {
           criterio: "Busca por campos (EF15CO08)",
@@ -315,7 +315,7 @@ export const GUIA_EXP03EF1B: GuiaDaAula = {
   cuidados: [
     "Não generalize para “o computador nunca reconhece imagens”: este filtro consulta campos, outros sistemas têm visão computacional.",
     "Ausência de dado não é falsidade: evite chamar a notícia do telão de errada ou mentirosa.",
-    "Não compare duplas: o painel não faz ranking, e os carimbos não mostram cor de certo ou errado.",
+    "Não compare estudantes nem equipes: o painel não faz ranking, e os carimbos não mostram cor de certo ou errado.",
   ],
 
   adaptacoes: [
@@ -330,17 +330,17 @@ export const GUIA_EXP03EF1B: GuiaDaAula = {
     },
     {
       contexto: "Duas aulas em vez de uma",
-      comoAdaptar: "Pare depois da Etapa 4 e da conversa do sumiço; a missão retoma no passo de cada dupla.",
+      comoAdaptar: "Pare depois da Etapa 4 e da conversa do sumiço; a missão retoma no passo de cada computador.",
     },
   ],
 
   duvidas: [
     {
-      pergunta: "E se a dupla puser as três notícias na caixa?",
+      pergunta: "E se a turma puser as três notícias na caixa?",
       resposta: "A do telão some do mesmo jeito na busca: três prometidas contra duas entregues, e o mesmo susto.",
     },
     {
-      pergunta: "E se a dupla puser o Pátio no campo errado?",
+      pergunta: "E se alguém puser o Pátio no campo errado?",
       resposta:
         "Não há punição nem “tentar de novo”: a tela explica que o pátio é um lugar, mostra como ficariam as três notícias e segue com Continuar.",
     },

@@ -5,9 +5,9 @@ import { ImagensDoBancoDaNina } from "./imagens-do-banco";
 
 /**
  * AS IMAGENS DO BANCO PADRÃO DE NINA E A NOTÍCIA QUE DESAPARECEU (exp03ef1b,
- * ADR-199): as oito — as quatro da Feira de Troca de Livros (mural, portal,
- * telão e cartaz) e as quatro CENAS FIXAS (o caso novo e o Desafio Extra),
- * iguais para todas as turmas. Molde: `../imagens-do-juri/`.
+ * ADR-199): as seis — as quatro da Feira de Troca de Livros (mural, portal,
+ * telão e cartaz) e as duas CENAS FIXAS do caso novo (o Desafio Extra saiu
+ * na ADR-201), iguais para todas as turmas. Molde: `../imagens-do-juri/`.
  *
  * Gerá-las aqui é ADIANTAR o trabalho: a professora que usa o banco padrão
  * gera as que faltam no preparo dela (com a quota dela as quatro da feira; na

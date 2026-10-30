@@ -11,6 +11,7 @@ import {
   itensDaCaixa,
   passoEfetivo,
   porNaCaixa,
+  porNoNicho,
   quadrosDaSimulacao,
   sequenciaDaEsteira,
   soltarBloco,
@@ -49,7 +50,7 @@ describe("o passo e o portão", () => {
   });
 });
 
-describe("E2 — a caixa da escolha (toque, sem arraste)", () => {
+describe("E2 — a caixa da escolha (toque ou arraste, ADR-201)", () => {
   test("tocar na bandeja põe no primeiro nicho vazio; tocar na caixa devolve", () => {
     let c = porNaCaixa(CAIXA_VAZIA, "rp-aaa");
     c = porNaCaixa(c, "rp-bbb");
@@ -64,6 +65,15 @@ describe("E2 — a caixa da escolha (toque, sem arraste)", () => {
     const cheia = ["rp-a11", "rp-b22", "rp-c33"];
     expect(porNaCaixa(cheia, "rp-a11")).toBe(cheia);
     expect(porNaCaixa(cheia, "rp-d44")).toBe(cheia);
+  });
+
+  test("arrastar para um nicho: da bandeja ocupa o nicho (o ocupante volta); de outro nicho, troca", () => {
+    const c = porNoNicho(CAIXA_VAZIA, "rp-aaa", 2);
+    expect(c).toEqual([null, null, "rp-aaa"]);
+    expect(porNoNicho(c, "rp-bbb", 2)).toEqual([null, null, "rp-bbb"]);
+    const duas = porNoNicho(c, "rp-bbb", 0);
+    expect(porNoNicho(duas, "rp-aaa", 0)).toEqual(["rp-aaa", null, "rp-bbb"]);
+    expect(porNoNicho(duas, "rp-aaa", 5)).toBe(duas);
   });
 });
 
