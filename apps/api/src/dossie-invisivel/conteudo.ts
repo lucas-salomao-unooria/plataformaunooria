@@ -268,36 +268,36 @@ export function custoPorRefeicao(c: ConteudoDoPacote): string {
  */
 export const FALAS_DO_ASSISTENTE = {
   boasVindas:
-    "Bem-vindo à sala de triagem da Comissão de Recursos Comunitários. O saldo disponível é de R$ 12.000,00 indivisíveis. Como relator da pauta, envie perguntas para auditar os projetos inscritos.",
+    "Bem-vindo à triagem da Comissão de Recursos Comunitários. São R$ 12.000 indivisíveis: pergunte o que precisar para auditar os projetos.",
   abertura:
-    "Sessão deliberativa aberta. Sou o assistente técnico da Comissão de Recursos Comunitários. Tenho acesso ao repositório digital de propostas concorrentes à verba de R$ 12.000. Consulte-me sobre métricas, regularidade e atendimento.",
+    "Sessão aberta. Sou o assistente técnico da Comissão e consulto o repositório digital dos projetos que disputam os R$ 12.000. Pergunte sobre custos, regularidade ou atendimento.",
   custo:
-    "{papel} estima R$ {custoPapel} por vaga para {vagasPapel} estudantes. {nuvem} projeta R$ {custoNuvem} por vaga para {vagasNuvem} estudantes. {parcial} projeta R$ {custoParcial} por vaga para {vagasParcial} estudantes.",
-  regularidade: "{nuvem} possui 12 relatórios mensais homologados em PDF. {parcial} tem 7 atas semestrais. {papel} possui apenas a ficha cadastral de abertura no sistema digital.",
+    "Custo por vaga: {papel}, R$ {custoPapel} ({vagasPapel} vagas); {nuvem}, R$ {custoNuvem} ({vagasNuvem} vagas); {parcial}, R$ {custoParcial} ({vagasParcial} vagas).",
+  regularidade: "No sistema, {nuvem} tem 12 relatórios mensais em PDF; {parcial}, 7 atas semestrais; {papel}, só a ficha cadastral de abertura.",
   contraste:
-    "Os registros disponíveis no sistema para o {papel} são limitados à ficha cadastral básica (1 documento indexado). Os demais projetos possuem entre 6 e 12 documentos indexados.",
+    "No sistema, o projeto {papel} tem só a ficha cadastral (1 documento indexado). Os outros têm entre 6 e 12 documentos.",
   impacto: "{nuvem} {impactoNuvem} {parcial} {impactoParcial} {papel} {impactoPapel}",
   ofertaDosCadernos:
-    "O inventário do conselho registra 3 cadernos de campo do {papel} em arquivo físico. O sistema não consegue processar registros em papel. Deseja solicitar a digitalização?",
+    "O projeto {papel} tem 3 cadernos de campo em papel, que o sistema não consegue ler. Quer digitalizá-los?",
   ocrConcluido:
-    "Leitura óptica dos 3 cadernos concluída com sucesso. 180 registros diários de refeições e presenças foram indexados à base de dados. As métricas do {papel} agora estão integradas ao cálculo.",
-  parecerInicial: "Com base nas métricas digitais, recomendo o {nuvem} por menor risco documental e maior governança técnica. Os autos estão prontos para sua deliberação formal.",
+    "Leitura concluída: 180 registros diários de refeições e presenças do projeto {papel} entraram no cálculo.",
+  parecerInicial: "Pelas métricas digitais, recomendo o projeto {nuvem}: menor risco documental e maior governança técnica.",
   parecerInvertido:
-    "Após leitura óptica de 180 registros diários de campo, o projeto {papel} atinge a pontuação máxima de mérito por custo-efetividade e urgência comunitária comprovada. Compare os dados na tabela.",
+    "Com os cadernos, o projeto {papel} passa a ter o melhor custo-efetividade e urgência comprovada. Compare na tabela.",
   limiar: "Limite de 3 consultas atingido. Você já pode deliberar sobre os R$ 12.000 da comissão.",
   foraDoTema:
-    "Esta consulta não corresponde às diretrizes orçamentárias da Comissão de Recursos Comunitários. Por favor, formule perguntas sobre as metas, custos, relatórios ou comprovações dos projetos sociais sob auditoria.",
+    "Essa pergunta foge da pauta da comissão. Pergunte sobre custos, relatórios ou resultados dos projetos.",
   limite:
-    "Você atingiu o número limite de consultas preliminares previsto no regimento da comissão. As informações essenciais já foram processadas. Avance clicando em 'Ver Projetos' para abrir o painel de deliberação.",
+    "Você usou as consultas previstas no regimento. Clique em \"Ver Projetos\" para deliberar.",
   /** [PROPOSTA] — a resposta de "Ver Projetos" não tem copy. */
-  verProjetos: "[PROPOSTA] Projetos inscritos para a verba de R$ 12.000: {papel} ({vagasPapel} vagas), {parcial} ({vagasParcial} vagas) e {nuvem} ({vagasNuvem} vagas).",
+  verProjetos: "[PROPOSTA] Inscritos para os R$ 12.000: {papel} ({vagasPapel} vagas), {parcial} ({vagasParcial} vagas) e {nuvem} ({vagasNuvem} vagas).",
   contrafactual:
-    "Você registrou sua escolha em {votado} após auditar os cadernos físicos. Se você não tivesse investigado as lacunas na Etapa 2, o sistema teria comparado apenas os rastros digitais.",
+    "Você votou no projeto {votado} depois de auditar os cadernos. Sem essa investigação, o sistema teria comparado só os rastros digitais.",
   /** [PROPOSTA] — a copy não escreveu as respostas das duas pílulas dirigidas (plano G6). */
   pilulaCusto:
-    "[PROPOSTA] Com os cadernos digitalizados, o {papel} comprova {refeicoes} refeições servidas a {vagasPapel} jovens em 180 dias: R$ {custoRefeicao} por refeição e R$ {custoPapel} por vaga. O {comparado} projeta R$ {custoComparado} por vaga.",
+    "[PROPOSTA] Pelos cadernos, o projeto {papel} serviu {refeicoes} refeições a {vagasPapel} jovens em 180 dias: R$ {custoRefeicao} por refeição e R$ {custoPapel} por vaga. O projeto {comparado} projeta R$ {custoComparado} por vaga.",
   pilulaAssinaturas:
-    "[PROPOSTA] Os 3 cadernos somam 180 registros diários, cada um com a lista de presença assinada pelos responsáveis. O trabalho registrado é o mesmo que um relatório digital descreveria: só o formato era papel.",
+    "[PROPOSTA] São 180 registros diários, com a presença assinada pelos responsáveis. O trabalho é o mesmo de um relatório digital: só o formato era papel.",
 } as const;
 export type FalaDoAssistente = keyof typeof FALAS_DO_ASSISTENTE;
 
@@ -307,12 +307,12 @@ export const CONSTATACAO_DA_TABELA = "Constatação de Auditoria: Os critérios 
 export const AMARA = {
   abertura: "Doze mil reais. Um projeto fica, dois ficam sem nada. A decisão é sua, conselheiro.",
   sistematizacao:
-    "Você escolheu o repasse para o projeto {votado}, enquanto parte significativa da turma foi induzida pelos relatórios da nuvem a votar em outro. Eu estava avaliando o resultado do projeto ou apenas os rastros digitais que a inteligência artificial tinha para ler?",
+    "Você escolheu o projeto {votado}, enquanto boa parte da turma foi levada pelos relatórios da nuvem a votar em outro. Eu avaliava o resultado do projeto ou só os rastros digitais que a IA tinha para ler?",
   /** [PROPOSTA] (plano G9): quando a turma NÃO concentrou o voto no projeto da nuvem, a fala não afirma uma indução que não houve. */
   sistematizacaoNeutra:
-    "[PROPOSTA] Você escolheu o repasse para o projeto {votado}. Eu estava avaliando o resultado do projeto ou apenas os rastros digitais que a inteligência artificial tinha para ler?",
+    "[PROPOSTA] Você escolheu o projeto {votado}. Eu avaliava o resultado do projeto ou só os rastros digitais que a IA tinha para ler?",
   conceitos:
-    "Viés algorítmico ocorre quando dados do passado reproduzem desigualdades. Decisões automatizadas identificam padrões naquilo que foi digitalizado, ignorando realidades que ficaram de fora.",
+    "Nesta simulação, o assistente só consultou o que estava digitalizado e deixou de fora o que ficou no papel. É assim que dados do passado podem reproduzir desigualdades numa decisão automatizada.",
 } as const;
 
 /** A fração da turma no projeto da nuvem a partir da qual a fala de Amara afirma a indução (G9). */
@@ -377,7 +377,7 @@ export const TEXTOS_DA_TELA = {
   subirCriterio: "Subir critério",
   descerCriterio: "Descer critério",
   registrar: "Registrar Decisão",
-  espera: "Parecer registrado. Aguardando autorização da presidência da mesa para abrir o próximo ponto de pauta.",
+  espera: "Parecer registrado. Aguarde a presidência da mesa abrir o próximo ponto de pauta.",
   colProjeto: "Projeto Auditado",
   colDocumentos: "Documentos Verificados",
   colVagas: "Vagas Comprovadas",
@@ -386,8 +386,8 @@ export const TEXTOS_DA_TELA = {
   manter: "Manter Decisão Original",
   revisar: "Revisar Decisão",
   confirmarFinal: "Confirmar Decisão Final",
-  esperaDoDebate: "[PROPOSTA] Debate da plenária em andamento. A revisão da decisão abre quando a presidência da mesa autorizar.",
-  instrucaoAncoras: "Selecione no histórico onde o assistente alegou falta de consistência e onde ocorreu a inversão.",
+  esperaDoDebate: "[PROPOSTA] Debate da plenária em andamento. A revisão abre quando a presidência da mesa autorizar.",
+  instrucaoAncoras: "Marque no histórico onde o assistente apontou falta de registros e onde a recomendação se inverteu.",
   abrirEditor: "Abrir Editor de Protocolo",
   editorTitulo: "Editor de Protocolo da IA do Conselho",
   editorOrientacao: "Organize as diretrizes na esteira de protocolo para orientar a análise do assistente.",

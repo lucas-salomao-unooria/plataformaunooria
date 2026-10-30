@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { api } from "../../lib/api";
+import { useFalasEmSequencia } from "../../lib/falas";
 import { primeiroCriterio } from "../../lib/regras";
 import { telemetria } from "../../lib/telemetria";
 import { TEXTOS } from "../../lib/textos";
@@ -84,6 +85,7 @@ export function TelaConversa({ s, semRede, executar }: Props) {
   const [ocupado, setOcupado] = useState(false);
   const anexo = useAnexo(s);
   const c = s.chat;
+  const fala = useFalasEmSequencia(c.mensagens);
   const ofertaAberta = c.cadernosOferecidos && !c.cadernosDigitalizados;
 
   async function enviar(texto: string) {
@@ -122,14 +124,17 @@ export function TelaConversa({ s, semRede, executar }: Props) {
               enviando={pendente !== null}
               onEnviar={(t) => void enviar(t)}
             />
-            <div className="uai-acoes">
+            {/* Com a oferta aberta, "Digitalizar cadernos" vem ANTES de "Ver Projetos" (ajuste do PO de 30/10):
+                os dois juntos, e o caminho A2 (recusar e ver os projetos) continua a um toque. */}
+            <div className="uai-acoes" data-tela={ofertaAberta && !fala.digitando ? "oferta-dos-cadernos" : undefined}>
+              {ofertaAberta && !ocr && !fala.digitando && <AcaoDoApp onClick={() => setOcr(true)}>{s.textos.tela.digitalizar}</AcaoDoApp>}
               {!c.podeEscolher && (
-                <AcaoDoApp variante="outline" onClick={() => void executar(api.verProjetos)} disabled={ocr}>
+                <AcaoDoApp variante="outline" onClick={() => void executar(api.verProjetos)} disabled={ocr || fala.digitando}>
                   {s.textos.tela.verProjetos}
                 </AcaoDoApp>
               )}
               {c.podeEscolher && (
-                <AcaoDoApp grande onClick={() => setDeliberando(true)} disabled={ocr}>
+                <AcaoDoApp grande onClick={() => setDeliberando(true)} disabled={ocr || fala.digitando}>
                   {s.textos.tela.escolherProjeto}
                 </AcaoDoApp>
               )}
@@ -139,18 +144,15 @@ export function TelaConversa({ s, semRede, executar }: Props) {
       }
     >
       <Amara>{s.textos.amara}</Amara>
-      <Thread nomes={s.conteudo?.projetos.map((p) => p.nome) ?? []} mensagens={c.mensagens} pendente={pendente} digitando={s.textos.tela.digitando} onAnexo={anexo.abrir} />
-      {ofertaAberta && !ocr && (
-        <div className="uai-acoes" data-tela="oferta-dos-cadernos">
-          <AcaoDoApp onClick={() => setOcr(true)}>{s.textos.tela.digitalizar}</AcaoDoApp>
-        </div>
-      )}
+      <Thread
+        nomes={s.conteudo?.projetos.map((p) => p.nome) ?? []}
+        mensagens={fala.visiveis}
+        pendente={pendente}
+        digitando={s.textos.tela.digitando}
+        assistenteDigitando={fala.digitando}
+        onAnexo={anexo.abrir}
+      />
       {ocr && <LeituraOptica tela={s.textos.tela} onFim={() => void fimDoOcr()} />}
-      {c.cadernosDigitalizados && (
-        <p className="uai-nota" role="status">
-          {TEXTOS.caminhoA1}
-        </p>
-      )}
       {deliberando && s.conteudo && (
         <PainelDeDeliberacao
           projetos={s.conteudo.projetos}
@@ -192,6 +194,7 @@ export function TelaRevelacao({ s, semRede, executar }: Props) {
   const anexo = useAnexo(s);
   const r = s.revelacao;
   const digitalizou = s.chat.cadernosDigitalizados;
+  const fala = useFalasEmSequencia(s.chat.mensagens);
 
   const fimDoOcr = useCallback(async () => {
     const nova = await executar(api.digitalizar);
@@ -213,8 +216,14 @@ export function TelaRevelacao({ s, semRede, executar }: Props) {
 
   return (
     <Workspace tela={s.textos.tela} semRede={semRede}>
-      <Thread nomes={s.conteudo?.projetos.map((p) => p.nome) ?? []} mensagens={s.chat.mensagens} onAnexo={anexo.abrir} />
-      {!digitalizou && !ocr && (
+      <Thread
+        nomes={s.conteudo?.projetos.map((p) => p.nome) ?? []}
+        mensagens={fala.visiveis}
+        digitando={s.textos.tela.digitando}
+        assistenteDigitando={fala.digitando}
+        onAnexo={anexo.abrir}
+      />
+      {!digitalizou && !ocr && !fala.digitando && (
         <div data-tela="E4-ALU-01">
           <FalaDoAssistente>{s.textos.tela.aviso}</FalaDoAssistente>
           <div className="uai-acoes">
@@ -225,7 +234,8 @@ export function TelaRevelacao({ s, semRede, executar }: Props) {
         </div>
       )}
       {ocr && <LeituraOptica tela={s.textos.tela} onFim={() => void fimDoOcr()} />}
-      {digitalizou && r && (
+      {/* A tabela, as pílulas e a revisão esperam a última fala do assistente terminar de "chegar". */}
+      {digitalizou && r && !fala.digitando && (
         <>
           {r.contrafactual && <FalaDoAssistente titulo={TEXTOS.contrafactualTitulo}>{r.contrafactual}</FalaDoAssistente>}
           {r.tabela.length > 0 && <TabelaDeConfronto linhas={r.tabela} tela={s.textos.tela} constatacao={r.constatacao} />}
