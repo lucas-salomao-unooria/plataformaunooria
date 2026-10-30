@@ -127,6 +127,12 @@ body,
   text-align: left;
 }
 
+/* (b) COMPENSAÇÃO — a descrição do `AssistantCard` é de uma linha só, com reticências; o
+   cartão de contexto do protótipo (E1-ALU-01) mostra o texto inteiro do projeto. */
+.uai-tela .uai-cartao .uai-assistant-card__description {
+  white-space: normal;
+}
+
 .uai-nota {
   align-self: center;
   max-width: 640px;
@@ -244,6 +250,27 @@ body,
   cursor: pointer;
 }
 
+/* (b) COMPENSAÇÃO — o `Tag` da `unooria` é de uma linha, com reticências; no cartão estreito do
+   projeto "Fila de espera (sem abertura de vagas)" virava "Fila de espera (…", e o protótipo
+   (E3-ALU-01) mostra a frase inteira. Só a altura e a quebra: a cor e o raio seguem do DS. */
+.projetos .projeto .unooria-tag {
+  height: auto;
+  align-self: flex-start;
+  white-space: normal;
+  text-align: left;
+}
+
+.projetos .projeto .unooria-tag__label {
+  white-space: normal;
+}
+
+/* O projeto marcado ganha o contorno da marca: no 2º voto (cartão compacto, sem etiqueta) é a única
+   marca, como no protótipo (E4-ALU-03). */
+.projetos .projeto--marcado {
+  outline: 2px solid var(--unooria-color-brandnavy-800, #49699f);
+  outline-offset: -2px;
+}
+
 .projeto--espera {
   opacity: 0.75;
 }
@@ -262,6 +289,13 @@ body,
   list-style: none;
 }
 
+/* (b) COMPENSAÇÃO — a `PuzzleTrack` põe as vagas lado a lado a partir de 672px; o ranking do
+   protótipo (E3-ALU-01) é uma faixa por critério, de cima para baixo. Ao lado, as três
+   vagas espremiam o bloco e os botões, e o rótulo quebrava uma letra por linha. */
+.ranking .unooria-puzzle-track__slot {
+  flex-basis: 100%;
+}
+
 /* O item do ranking: o bloco e os botões lado a lado (o arrasto e o cursor são do DS desde a 0.2.26). */
 .ranking__item,
 .editor__item {
@@ -272,7 +306,17 @@ body,
 }
 
 .ranking__bloco {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ranking__botoes {
+  flex: none;
+}
+
+.ranking__confirmar {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .ranking__botoes,
@@ -288,12 +332,15 @@ body,
 
 .confronto__constatacao {
   margin: 0;
-  font-weight: 600;
+  padding: 12px 16px;
+  border: 1px solid var(--unooria-color-neutral-150, #e4e8e9);
+  border-radius: 8px;
+  line-height: 1.5;
 }
 
 .revisao__colunas {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
   gap: 16px;
 }
 
@@ -314,6 +361,11 @@ body,
 .revisao__botoes {
   display: flex;
   gap: 8px;
+}
+
+/* Os dois botões dividem a linha (E4-ALU-03 do protótipo: `flex: 1` em cada). */
+.revisao__botoes > * {
+  flex: 1 1 0;
 }
 
 .revisao__nova .projetos {

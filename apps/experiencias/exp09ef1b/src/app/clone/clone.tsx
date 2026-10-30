@@ -43,7 +43,7 @@ export function CartoesDosProjetos({ projetos }: { projetos: ProjetoNaTela[] }) 
   return (
     <div className="uai-cartoes">
       {projetos.map((p) => (
-        <AssistantCard key={p.id} className="uai-cartao" name={p.nome} description={`${p.nome}: ${p.card}`} initial={p.nome.slice(0, 1)} />
+        <AssistantCard key={p.id} block className="uai-cartao" name={p.nome} description={`${p.nome}: ${p.card}`} initial={p.nome.slice(0, 1)} />
       ))}
     </div>
   );
@@ -154,12 +154,15 @@ export function Entrada({
   tela,
   sugestoes,
   ativo,
+  sugestoesLivres,
   enviando,
   onEnviar,
 }: {
   tela: Tela;
   sugestoes: string[] | null;
   ativo: boolean;
+  /** Na abertura, a pílula também começa a análise (E1-ALU-01: "Começar Análise" OU tocar em pílula), com o composer ainda fechado. */
+  sugestoesLivres?: boolean;
   enviando: boolean;
   onEnviar: (texto: string) => void;
 }) {
@@ -169,7 +172,7 @@ export function Entrada({
       {sugestoes && (
         <div className="uai-sugestoes">
           {sugestoes.map((s) => (
-            <PromptSuggestion key={s} as="button" type="button" disabled={enviando || !ativo} onClick={() => onEnviar(s)}>
+            <PromptSuggestion key={s} as="button" type="button" disabled={enviando || !(ativo || sugestoesLivres)} onClick={() => onEnviar(s)}>
               {s}
             </PromptSuggestion>
           ))}

@@ -13,6 +13,8 @@ export const TEXTOS = {
   anexos: "Anexos indexados:",
   /** [PROTÓTIPO] E3-ALU-01 "projeto marcado". */
   reorganize: "Reorganize a ordem dos critérios para habilitar a trava:",
+  confirmarOrdem: "Confirmar esta ordem",
+  ordemConfirmada: "Ordem confirmada",
   /** [PROTÓTIPO] E2-ALU-02. */
   caminhoA1: "Caminho investigativo A1 ativo: você descobriu os dados físicos antes da deliberação.",
   ocrTitulo: "Reconhecimento Óptico de Caracteres (OCR)",
