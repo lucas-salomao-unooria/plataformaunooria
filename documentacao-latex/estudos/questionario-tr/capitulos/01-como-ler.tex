@@ -1,0 +1,106 @@
+% ===========================================================================
+%  CAPITULO 1 — Como ler estas respostas
+% ===========================================================================
+\chapter{Como ler estas respostas}
+\label{cap:como-ler}
+
+Este documento responde, pergunta por pergunta, ao \emph{Questionário de
+validação para os times} da Liga Digital (versão 1, 30/10/2026), escrito para
+reunir as evidências que faltam ao Termo de Referência (TR) técnico e
+pedagógico. As respostas foram levantadas no próprio repositório da
+plataforma, e não em apresentações comerciais: o que está aqui como
+implementado tem código, teste ou registro de decisão que o sustenta.
+
+\section{Nomes do questionário e nomes da plataforma}
+
+O questionário usa o vocabulário comercial. A plataforma usa outro, e as
+evidências citadas estão escritas nele. A correspondência é esta:
+
+\begin{center}
+\footnotesize\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{@{}L{42mm}Y@{}}
+\toprule
+\textbf{No questionário} & \textbf{Na plataforma e nas evidências}\\
+\midrule
+Liga Digital & Plataforma Unooria: o hub web (professor, estudante, gestores
+  e administração) e as experiências embutidas nele.\\
+Missão & Experiência imersiva, identificada por um código como
+  \cd{exp08ef1b} (8º ano do EF, 1º bimestre) ou \cd{exp02em1b} (2ª série do
+  EM, 1º bimestre). Cada uma simula um aplicativo fictício (Unoovista,
+  Unoochat, UnooriaAI, Instanooria\ldots).\\
+Ficha da missão & A tela de detalhe da missão no painel do professor,
+  alimentada pelo manifesto público da experiência
+  (\arq{public/experiencia.json}).\\
+Contextualização / personalização / setup & A criação da atividade pelo
+  professor: tema e contexto escritos por ele, a partir dos quais a IA gera os
+  conteúdos da simulação.\\
+Aplicação para a turma & A \emph{liberação} da missão numa turma
+  (\adrr{ADR-69}) somada à atividade que o professor põe no ar.\\
+Tentativa do estudante & A \emph{rodada} ou sessão do estudante dentro de uma
+  atividade.\\
+Disponibilidade na rede & O interruptor do painel da Unooria
+  (\adrr{ADR-87}): se o produto ou a missão existe naquele contrato, regional
+  ou escola.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Estrutura de cada resposta}
+
+Cada pergunta ganha uma caixa com o código do questionário, um selo de status
+e cinco campos, na ordem que o questionário pediu:
+
+\begin{campos}
+  \item[Hoje] o comportamento que existe, verificado no código.
+  \item[Limitações] o que não funciona, só funciona em parte do catálogo, ou
+    exige condição operacional.
+  \item[Planejado] o que está em desenvolvimento ou decidido, com a fonte.
+    Nada aqui é tratado como implementado.
+  \item[Evidência] onde conferir: arquivo do repositório, ADR (Capítulo 18 da
+    Documentação Técnica, \cd{PU-DOC-001}), história do Mapa de Produto
+    (\cd{PU-PRD-001}) ou suíte e2e.
+  \item[Lacuna] o que esta resposta não fecha e quem precisa fechar.
+\end{campos}
+
+Quando ajuda, a caixa é seguida de uma \textbf{proposta de redação para o TR}:
+um requisito escrito como resultado observável com critério de aceite, sem
+amarrar arquitetura, marca ou fornecedor, como pedem as observações finais do
+questionário.
+
+\section{Selos de status}
+
+\begin{center}
+\footnotesize\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\linewidth}{@{}L{48mm}Y@{}}
+\toprule
+\textbf{Selo} & \textbf{Significado}\\
+\midrule
+\implementado & Existe em todo o escopo perguntado, com evidência.\\
+\parcial & Existe, mas só em parte do catálogo, sem algum dos controles
+  pedidos ou com restrição operacional relevante.\\
+\variapormissao & O comportamento difere entre missões; a resposta traz o
+  recorte.\\
+\naoimpl\newline\naoexiste & Não há código para isso hoje. Quando é
+  compromisso da V1, a lacuna está descrita no Capítulo~\ref{cap:v1}.\\
+\foradorepo & A resposta depende de material que não está no repositório
+  (relatório de PoC, coleção didática, contrato de suporte) e precisa vir do
+  time dono.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{atencao}
+\textbf{O repositório não responde tudo.} Perguntas sobre a prova de conceito
+com o Instituto Paula Souza (P10), a coleção didática e o livro do professor
+(E01, E02), a formação e o modelo de implantação (E03) e os compromissos
+comerciais de suporte (parte de T09) dependem de documentos que não estão
+versionados aqui. Para elas, o documento registra o que a plataforma oferece de
+apoio e lista exatamente o que o time responsável precisa anexar.
+\end{atencao}
+
+\section{Data e base da verificação}
+
+As respostas refletem a branch \cd{dev-local} em 30 de outubro de 2026. A
+plataforma muda toda semana: antes de publicar o TR, confirme em ambiente de
+homologação, com dados sintéticos, cada item marcado como implementado, como o
+próprio questionário recomenda.

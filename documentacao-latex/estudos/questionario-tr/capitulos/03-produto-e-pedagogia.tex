@@ -1,0 +1,447 @@
+% ===========================================================================
+%  CAPITULO 3 — Produto e Pedagogia (P01–P10)
+% ===========================================================================
+\chapter{Produto e Pedagogia}
+\label{cap:produto}
+
+% ---------------------------------------------------------------------------
+\section{P01 · O que o professor vê antes de aplicar a missão}
+\label{sec:p01}
+
+\begin{resposta}{P01}{Ficha e guia da missão}{\implementado}
+\begin{campos}
+  \item[Hoje] Duas telas por missão, ambas no painel do professor, seção
+    \emph{Entre Redes}, escolhendo ano e unidade:
+    \begin{itemize}
+      \item \textbf{Ficha da missão} (``Conhecer a missão''), em quatro abas:
+        \emph{Como funciona} (os atos da missão), \emph{Antes de rodar}
+        (preparo), \emph{O que ela não conta} (opcional) e \emph{Competência e
+        formato}. Campos obrigatórios em toda missão publicada: título, resumo,
+        unidade, competência, duração, formato, atos e preparo. Os códigos BNCC
+        aparecem como etiquetas no cabeçalho (\adrr{ADR-100}, \adrr{ADR-182}).
+      \item \textbf{Guia da aula}, em quatro tempos (\emph{Preparar},
+        \emph{Conduzir}, \emph{Fechar}, \emph{Consultar}) e versão para
+        impressão. Campos obrigatórios: objetivos; habilidades BNCC (código,
+        texto, eixo e onde acontece na missão); preparo técnico e pedagógico e
+        ``o que não dizer''; roteiro minuto a minuto com o comando de cada
+        momento; debate, observação e mediação; síntese, registro,
+        desdobramentos e \textbf{rubrica} (critério $\times$ em
+        desenvolvimento / adequado / avançado); cuidados, adaptações e dúvidas
+        frequentes. Avisos e produto final são opcionais. Um teste automático
+        recusa publicar missão sem guia (\adrr{ADR-65}).
+    \end{itemize}
+    Os critérios por nível de cada habilidade aparecem também no painel de
+    habilidades da atividade, nas missões que têm régua de avaliação.
+  \item[Limitações] \textbf{Não há campo de bimestre}: a missão é identificada
+    por ano/série e \emph{unidade} (1 a 4), e a equivalência unidade =
+    bimestre não está formalizada. \textbf{Não há campo de correspondência
+    com o livro}: aparece como texto livre em alguns guias (por exemplo,
+    ``capítulo 1 do livro, pp. 2--9'' no guia da 2ª série do EM). Materiais
+    necessários ficam dentro do preparo, sem campo próprio. Nada disso é
+    editável pelo professor: é conteúdo fixo, versionado pela Unooria.
+  \item[Evidência] \arq{apps/\B{}hub/\B{}lib/\B{}entre-redes/\B{}catalogo.ts} (ficha);
+    \arq{apps/\B{}hub/\B{}lib/\B{}entre-redes/\B{}guias/\B{}} (um guia por missão) e o teste
+    \arq{guias/index.test.ts}; suíte \arq{scripts/\B{}e2e/\B{}professor/\B{}08-guias-de-aula.mjs};
+    Mapa de Produto, H04.3.2 e H04.4.1.
+  \item[Lacuna] Produto: capturas das duas telas de uma missão real para anexo
+    (podem ser tiradas da suíte e2e citada). Pedagogia/Editorial: formalizar
+    unidade = bimestre e a referência ao livro como campo.
+\end{campos}
+\end{resposta}
+
+% ---------------------------------------------------------------------------
+\section{P02 · O que o professor informa para contextualizar}
+\label{sec:p02}
+
+\begin{resposta}{P02}{Formulário de personalização}{\variapormissao}
+\begin{campos}
+  \item[Hoje] Na ficha, \emph{Nova atividade} abre um assistente de quatro
+    passos: \textbf{Turma \seta{} Conteúdo \seta{} Equipes \seta{} Revisar e
+    criar} (\adrr{ADR-130}). O passo \emph{Conteúdo} é próprio de cada missão;
+    as entradas são texto livre e escolha do componente curricular. Na maioria
+    das missões há o atalho \emph{Usar banco padrão}, que carrega conteúdo
+    curado pela Unooria; sem saldo de IA ou com o provedor indisponível, a
+    tela usa o banco padrão. A Tabela~\ref{tab:p02} resume as entradas e o que
+    a IA produz.
+  \item[Fixo] Em todas as missões a IA \textbf{não altera} mecânica, etapas,
+    gabaritos, rubricas e réguas de habilidade. Exemplos: em \emph{Quem Mandou
+    Isso?} a resposta certa de cada mensagem não é editável; no \emph{Porta-Voz
+    dos Dados} os números da série e o laudo nem passam pelo modelo; no
+    \emph{Enigma da Capa} é o professor quem marca na imagem onde estão os
+    objetos.
+  \item[Limitações] \textbf{Não é possível anexar documentos} (PDF, plano de
+    aula, apostila ou link) para orientar a geração: não existe campo de
+    envio de arquivo. Os campos ``nome do arquivo'' que aparecem em duas
+    missões são conteúdo fictício da simulação, não anexos. Duas missões não
+    têm personalização por IA (\emph{Rastro do Boato} e a versão anterior da
+    2ª série do EM).
+  \item[Evidência] \arq{apps/\B{}hub/\B{}components/\B{}atividades/\B{}assistente-de-atividade.tsx};
+    entradas reais das suítes e2e: ``Boato da merenda cancelada na escola''
+    (\arq{estudante/\B{}10-quem-mandou-isso.mjs}), ``Água limpa e saúde no
+    bairro'' com quatro tópicos (\arq{estudante/\B{}12-jornal-da-escola.mjs}),
+    ``Revolução Industrial na Inglaterra'' (\arq{professor/\B{}02-atividade-do-zero.mjs}).
+  \item[Lacuna] O resultado gerado não fica gravado nas suítes (é gerado a
+    cada execução). Produto: anexar um par entrada/saída capturado em
+    homologação.
+\end{campos}
+\end{resposta}
+
+\begin{center}
+\footnotesize\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{58mm}X@{}}
+\caption{Entradas do professor e o que a IA gera, por missão}\label{tab:p02}\\
+\toprule
+\textbf{Missão} & \textbf{O professor informa} & \textbf{A IA gera}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Missão} & \textbf{O professor informa} & \textbf{A IA gera}\\
+\midrule
+\endhead
+O Que a Foto Conta (1º EF) & tema fechado: pátio, horta, sala ou parquinho
+  & legendas e comentários\\
+Enigma da Capa (2º EF) & componente, tema, 3 a 6 palavras-chave
+  & a cena e a imagem panorâmica\\
+Nina e a Notícia (3º EF) & componente, tema do evento, assunto
+  & o texto das 3 notícias (estrutura fixa)\\
+Jornal da Escola (4º EF) & componente, tema central, tópicos das 8 notícias
+  & 8 notícias e imagens\\
+Quem Mandou Isso? (5º EF) & componente, boato fictício, 3 a 6 fatos, contexto
+  local (opcional) & 8 mensagens\\
+Júri Estadual (6º EF) & componente, título da mostra, 3 a 6 assuntos
+  & 40 estandes e imagens\\
+A Seleção (7º EF) & evento central, detalhe da cidade (opcional)
+  & 12 posts e as falas do podcast\\
+Unoovista (8º EF) & título, disciplina, tema, o que já foi trabalhado
+  (opcional), proporção & perguntas-chave com nota de equilíbrio; posts e
+  imagens\\
+Manifesto da IA (8º EF) & dilema da escola (opcional) & textos de apoio\\
+Dossiê Invisível (9º EF) & componente, tema, conceitos, contexto (opcional)
+  & documentos do dossiê (quantidade fixa)\\
+Assistente Invisível (1ª EM) & disciplina, tema, conceitos, foco regional
+  (opcional) & as três conversas do assistente\\
+Efeito Amplificador (2ª EM) & componente, tema da campanha, 3 a 6 tópicos,
+  contexto & conteúdo da campanha\\
+Porta-Voz dos Dados (3ª EM) & componente, tema gerador, 3 a 6 objetos de
+  conhecimento, bairro (opcional) & textos (números e laudo fixos)\\
+Rastro do Boato (6º EF) & --- & sem IA; conteúdo fixo\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ---------------------------------------------------------------------------
+\section{P03 · Salvar, reaproveitar e compartilhar}
+\label{sec:p03}
+
+\begin{resposta}{P03}{A missão contextualizada como versão reutilizável}{\parcial}
+\begin{campos}
+  \item[Hoje] A atividade criada fica \textbf{salva} e pertence a
+    \textbf{uma turma}. Na mesma turma ela é reaproveitável: a lista
+    \emph{Suas atividades} mostra as atividades em andamento, prontas e em
+    preparo, e \emph{Usar esta atividade agora} a põe no ar de novo, abrindo
+    uma rodada nova e preservando a anterior. Só uma atividade fica no ar por
+    turma; a que sai volta a ``pronta'' com tudo guardado. Também é possível
+    reaproveitar as equipes da atividade anterior.
+  \item[Quem faz o quê] Vê e conduz: o professor que leciona na turma (outra
+    turma responde como inexistente). Pela interface, só o professor edita;
+    a coordenação lê. Exclusão só existe numa missão (Unoovista), com
+    confirmação pela digitação do título. Não há fluxo de aprovação por
+    terceiros. O conteúdo aprovado fica gravado na própria atividade; se a
+    Unooria atualizar a missão-base, a atividade já criada mantém o conteúdo
+    aprovado.
+  \item[Limitações] \textbf{Duplicar para outra turma, outro período ou outro
+    professor não existe atualmente} (exceção: no Unoovista a atividade pode
+    ser limpa e usada com outra turma). \textbf{Compartilhar entre
+    professores, escola, rede ou biblioteca comum não existe atualmente.} No
+    exemplo do questionário, a professora refaz a personalização para o
+    8º ano B; o banco padrão da Unooria é o único conteúdo comum.
+  \item[Planejado] Nada registrado no Mapa de Produto nem no \emph{backlog}.
+  \item[Evidência] Mapa de Produto, H06.13.1 e H06.13.3; \adrr{ADR-130},
+    \adrr{ADR-146}, \adrr{ADR-155}.
+\end{campos}
+\end{resposta}
+
+% ---------------------------------------------------------------------------
+\section{P04 · Curadoria do conteúdo gerado}
+\label{sec:p04}
+
+\begin{resposta}{P04}{Revisão antes de a turma ver}{\variapormissao}
+\begin{campos}
+  \item[Hoje] Regra comum: \textbf{nada gerado chega à turma sem aprovação do
+    professor}; sem ela, a plataforma recusa pôr a atividade no ar. O
+    professor vê cada item gerado. Os controles variam:
+    \begin{itemize}
+      \item \textbf{Editar e regenerar item a item}, com aprovação final do
+        pacote inteiro: Assistente Invisível, Porta-Voz dos Dados e Dossiê
+        Invisível (que marca ``modificado pelo docente''); na Nina só a
+        manchete é editável.
+      \item \textbf{Duas fases}, textos e depois imagens (\adrr{ADR-146},
+        \adrr{ADR-147}): no Jornal da Escola cada imagem é aprovada
+        individualmente e ``gerar outra imagem'' a reabre; na Seleção a troca é
+        por post e a aprovação das imagens, em lote.
+      \item \textbf{Aprovação em lote}: Júri Estadual e imagens da Nina; depois
+        de aprovada, a imagem não muda.
+      \item \textbf{Unoovista}: filtrar, regerar texto ou imagem, excluir post;
+        ativar é recusado se faltar conteúdo.
+      \item As falas do podcast são revisadas obrigatoriamente na criação
+        (\adrr{ADR-150}, \adrr{ADR-204}).
+    \end{itemize}
+    Rejeitar um item é pedir nova geração manual daquele item; não há nova
+    geração automática. \textbf{Registro}: a maioria das missões grava quem
+    aprovou e quando, e o conteúdo aprovado fica salvo na atividade.
+    \textbf{Verificação adicional}: regras automáticas conferem estrutura e
+    critérios pedagógicos da saída antes de mostrá-la; na Seleção, uma
+    segunda leitura por IA confere se o post editado manteve o enquadramento.
+  \item[Limitações] Três missões não guardam o autor da aprovação (Nina guarda
+    só a data; Manifesto, um indicador sim/não; Unoovista, o dono e o
+    estado). Edições não são versionadas. Não há moderação dedicada nem
+    configuração própria dos filtros do provedor (T05). O Mapa de Produto
+    registra que as imagens geradas precisam de revisão de conteúdo antes da
+    primeira rede (H06.12.7).
+  \item[Evidência] \arq{apps/\B{}hub/\B{}app/\B{}(plataforma)/\B{}professor/\B{}entre-redes/\B{}AGENTS.md};
+    \cd{PU-DOC-001}, Cap. 11; suítes e2e de estudante 10 a 19 e
+    \arq{professor/\B{}02-atividade-do-zero.mjs}.
+\end{campos}
+\end{resposta}
+
+% ---------------------------------------------------------------------------
+\section{P05 · Comandos do professor durante a aula}
+\label{sec:p05}
+
+\begin{resposta}{P05}{Condução em sala}{\variapormissao}
+\begin{campos}
+  \item[Hoje] Em toda missão há três comandos de base: \textbf{liberar} a
+    missão na turma (sem isso, o estudante vê o cartão com cadeado, e
+    digitar o endereço também não abre: \adrr{ADR-69}), \textbf{pôr a
+    atividade no ar} e \textbf{encerrar} (fecha a entrada sem expulsar quem
+    está jogando, e converte as marcas pendentes em nível). Depois, cada
+    missão tem as etapas próprias, conduzidas pelo professor
+    (Tabela~\ref{tab:p05}). O estudante vê a tela de espera, a tela
+    congelada (pausa) ou a etapa nova; quem está atrasado continua no próprio
+    caminho. O painel da aula mostra ``ainda não entrou'', ``concluíram
+    $x$/$y$'', a fila por passo e o tempo parado; com equipes, conta por
+    computador.
+  \item[Limitações] A atualização é por consulta periódica, não em tempo
+    real: o estudante relê a etapa a cada 3 a 5 segundos e o painel do
+    professor a cada 2 a 5 segundos (\adrr{ADR-93}); todos precisam estar
+    conectados. \textbf{As etapas só avançam}: voltar ou pular é recusado, e
+    repetir o comando não muda nada. Programar abertura e fechamento ainda não
+    existe (H04.2.3, a fazer).
+  \item[Evidência] Uma suíte e2e por missão em \arq{scripts/e2e/estudante/};
+    \arq{scripts/\B{}e2e/\B{}professor/\B{}06-resultados-das-missoes.mjs}; Mapa de
+    Produto, H04.2.1 e H04.2.2.
+\end{campos}
+\end{resposta}
+
+\begin{center}
+\footnotesize\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{@{}L{42mm}X@{}}
+\caption{Comandos de condução, por missão}\label{tab:p05}\\
+\toprule
+\textbf{Missão} & \textbf{Etapas e comandos do professor}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Missão} & \textbf{Etapas e comandos do professor}\\
+\midrule
+\endhead
+O Que a Foto Conta & configurar, aprovar o pacote, destravar etapa, reiniciar\\
+Enigma da Capa & liberar a virada\\
+Nina e a Notícia & aposta \seta{} filtro \seta{} inspeção; pausar e retomar a turma\\
+Jornal da Escola & exploração \seta{} resultado \seta{} revisão\\
+Quem Mandou Isso? & revelação, síntese (opcional), reflexão; projetar o termômetro da turma\\
+Júri Estadual & exploração \seta{} galeria (liberar auditoria)\\
+Rastro do Boato & liberar a aula 2; pausar a simulação\\
+A Seleção & exploração \seta{} mural \seta{} fichas \seta{} explicação\\
+Manifesto da IA & pausar para debate; retomar\\
+Dossiê Invisível & exploração \seta{} revelação \seta{} revoto \seta{} explicação (sem pausa)\\
+Assistente Invisível & testes \seta{} simulação \seta{} explicar \seta{} publicar, com duas pausas
+  de debate opcionais; a simulação exige todas as apostas feitas\\
+Efeito Amplificador & exploração \seta{} pausa para debate \seta{} explicar\\
+Porta-Voz dos Dados & exploração \seta{} pausa \seta{} liberação da errata\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ---------------------------------------------------------------------------
+\section{P06 · Nova aplicação e novas tentativas}
+\label{sec:p06}
+
+\begin{resposta}{P06}{Missão-base, atividade e rodada}{\implementado}
+\begin{campos}
+  \item[Hoje] Os três objetos existem: a \textbf{missão-base} (o esqueleto
+    publicado pela Unooria), a \textbf{atividade} (a aplicação
+    contextualizada, de uma turma) e a \textbf{rodada} (cada vez que a
+    atividade vai ao ar). (1) O professor pode criar \textbf{várias atividades
+    da mesma missão para a mesma turma}; só uma fica no ar por vez.
+    (2) Pôr no ar de novo uma atividade que já rodou abre a \textbf{rodada
+    seguinte}, e o estudante refaz a missão; a rodada anterior fica guardada
+    e toda rodada mede tudo de novo (\adrr{ADR-145}). \emph{Zerar a turma}
+    (\adrr{ADR-155}) abre nova rodada e apaga as marcas e os níveis daquela
+    atividade, inclusive ajustes do professor, para recomeçar limpo (útil
+    após erro); o histórico de eventos permanece. (3) \textbf{O que vale}: na
+    mesma rodada, o melhor registro; na atividade, a melhor rodada por
+    habilidade; no painel de habilidades, o melhor resultado entre todas as
+    atividades e rodadas da missão (\adrr{ADR-144}). Ajuste do professor
+    prevalece sobre registro próprio, que prevalece sobre o da equipe.
+    (4) \textbf{Duplicidade}: o banco aceita um único resultado por escola,
+    missão, atividade, rodada, estudante e habilidade; liberar e pôr no ar são
+    idempotentes; atividade e rodada nunca vêm do navegador, são definidas no
+    servidor.
+  \item[Limitações] Exceções: no Unoovista vale o primeiro envio; em
+    múltipla escolha vale a primeira resposta, salvo régua que diga o
+    contrário. Não há regra específica para ano letivo seguinte: a atividade
+    é da turma, e a turma nova é outra turma (P03).
+  \item[Evidência] Mapa de Produto, H14.2.2 e H14.2.4; testes
+    \arq{apps/\B{}api/\B{}tests/\B{}evidencias-consolidado-postgres.spec.ts}; suítes
+    \arq{professor/\B{}13-painel-de-habilidades.mjs} e
+    \arq{professor/\B{}11-perfil-do-aluno.mjs}.
+\end{campos}
+\end{resposta}
+
+% ---------------------------------------------------------------------------
+\section{P07 · Evidência quando o estudante conversa com a IA}
+\label{sec:p07}
+
+\begin{resposta}{P07}{Conversa livre e avaliação}{\implementado}
+\begin{campos}
+  \item[Hoje] Três missões têm texto livre do estudante dirigido à IA: o
+    \emph{Efeito Amplificador} (2ª EM), o \emph{Dossiê Invisível} (9º EF) e a
+    versão anterior da 2ª série (fora do catálogo, mantida para turmas que já
+    a usavam). O Assistente Invisível (1ª EM) \textbf{não} tem conversa
+    livre: o estudante lê conversas preparadas. (1) \textbf{A avaliação usa
+    eventos estruturados, nunca o conteúdo da conversa}: o que pontua são
+    ações (publicar, avisar, proteger, escolher um caminho). Nas missões
+    atuais, a IA só traduz a mensagem numa intenção de lista fechada, que
+    decide o caminho da história; ``a IA nunca decide o que a régua lê''
+    (\adrr{ADR-192}). (2) Os critérios estão nas \textbf{réguas de
+    avaliação}, uma por missão, escritas a partir da régua pedagógica, com
+    códigos BNCC conferidos automaticamente contra o currículo e versão
+    gravada em cada marca. (3) Há LLM classificando em dois pontos: a
+    intenção da mensagem (temperatura 0, saída em formato fechado e validado,
+    confiança mínima de 0,7, árvore de regras quando a IA falha) e, na
+    \emph{Seleção}, a legenda escrita pelo estudante, lida em três
+    indicadores; o nível é decidido por regra no servidor e, se a IA falhar,
+    fica ``não avaliado'' para o professor ajustar. A consistência é medida
+    por conjunto de referência com a IA real: 88/89 e 89/89 acertos, zero
+    crédito indevido. (4) O texto do estudante não vai a painel, telemetria
+    nem registro técnico; na versão anterior da 2ª série o professor lê a
+    transcrição de cada estudante, e o gestor só vê o agregado.
+  \item[Exemplo] Do conjunto de referência: a mensagem ``essa frase da empatia
+    é sua mesmo?'' é classificada como a intenção ``auditar autoria'', que
+    leva ao caminho em que o estudante investiga a origem do texto; a
+    evidência vem desse caminho e das ações seguintes, não da frase.
+  \item[Limitações] O classificador não é determinístico: um erro custa ao
+    estudante reformular a mensagem, nunca um crédito indevido.
+  \item[Evidência] \arq{apps/\B{}api/\B{}src/\B{}efeito-amplificador/\B{}AGENTS.md};
+    \arq{apps/\B{}api/\B{}scripts/\B{}medir-classificador-exp02em1b.ts};
+    \arq{apps/\B{}api/\B{}src/\B{}evidencias/\B{}fichas/\B{}}; \arq{tests/\B{}evidencias-fichas.spec.ts};
+    \adrr{ADR-172}, \adrr{ADR-191}--\adrr{ADR-193}.
+\end{campos}
+\end{resposta}
+
+% ---------------------------------------------------------------------------
+\section{P08 · Qualidade das recomendações pedagógicas}
+\label{sec:p08}
+
+\begin{resposta}{P08}{Recomendações geradas por IA}{\naoexiste}
+\begin{campos}
+  \item[Hoje] \textbf{Recomendações de intervenção geradas por IA a partir das
+    dificuldades da turma não existem atualmente.} O que existe: o
+    \textbf{painel de habilidades} mostra, por habilidade, quantos estudantes
+    atingiram, estão em processo, não atingiram ou não foram avaliados, e
+    ordena por regra fixa (sem IA) para o professor ver onde reforçar; numa
+    missão a IA \textbf{sugere um nível} para a reflexão do estudante,
+    rotulado ``sugestão da IA'' até o professor confirmar (\adrr{ADR-167});
+    o \textbf{agente de IA do professor} responde sobre BNCC e sobre o acervo
+    de livros, citando código e página, mas não acessa resultados da turma
+    nem evidências.
+  \item[Prompts] Ficam no repositório, só no servidor, versionados pelo
+    histórico do código; apenas uma missão grava a versão do prompt junto do
+    resultado. A autoria pedagógica dos prompts não está registrada nos
+    arquivos.
+  \item[Observado $\times$ sugerido] Já há separação explícita: sugestão da IA
+    é rotulada e só vale após confirmação; ``não avaliado'' nunca conta como
+    ``não atingiu''; o agente só cita habilidade que a busca devolveu e avisa
+    quando o código não existe.
+  \item[Limitações] O agente do professor está parcial e ainda não está no ar
+    nos ambientes da rede.
+  \item[Evidência] \arq{apps/\B{}hub/\B{}lib/\B{}painel-de-habilidades.ts};
+    \arq{apps/\B{}agente-professor/\B{}agente\_professor/\B{}instrucoes.py} e o conjunto de
+    avaliação \arq{avaliacao/\B{}agente\_professor.evalset.json} (16 casos);
+    Mapa de Produto, F08.4 e H14.4.5.
+  \item[Lacuna] É o compromisso V1-03/V1-04 (Capítulo~\ref{cap:v1}).
+\end{campos}
+\end{resposta}
+
+% ---------------------------------------------------------------------------
+\section{P09 · Acessibilidade e inclusão}
+\label{sec:p09}
+
+\begin{resposta}{P09}{Recursos por tipo de missão}{\parcial}
+\begin{campos}
+  \item[Hoje] Alvo declarado: \textbf{WCAG 2.2 AA} (\adrr{ADR-162}), com
+    verificação automática (axe-core) nas regras A e AA das versões 2.0, 2.1
+    e 2.2, medindo a página e cada missão embutida. Primeira medição: 65 telas
+    do hub e a abertura de 11 missões; as violações encontradas foram
+    corrigidas no design system (contraste de texto, foco visível, alvo de
+    toque, relações de acessibilidade das abas), e a última medição
+    registrada é de \textbf{zero violação} nessas telas. Recursos presentes:
+    \textbf{texto alternativo} nas imagens geradas por IA, derivado da
+    descrição que gerou a imagem, nunca vazio (\adrr{ADR-163}), e nas fotos
+    fixas; \textbf{transcrição integral sempre visível} nos áudios de
+    podcast, pensada também para sala sem fone; anúncio de mudança para
+    leitor de tela em várias missões; respeito à preferência de movimento
+    reduzido em várias missões. \textbf{1º ano, não alfabetizados}: instrução
+    em caixa alta com até 8 palavras e redundância tripla (texto, pictograma e
+    locução), botão grande de repetir o áudio, uma locução por vez.
+  \item[Limitações] Só houve verificação automática: \textbf{falta a passada
+    manual com teclado e leitor de tela}, que é a que autoriza declarar AA
+    (risco R-07). A Vila do Lume (jogo 3D) está fora da medição. As
+    \textbf{locuções ainda não foram gravadas} (a missão do 1º ano cai para
+    texto e ícone; Manifesto e Rastro do Boato aguardam áudio). \textbf{Não
+    há controle para ligar e desligar áudio}: ouvir é sempre opcional (o
+    áudio só toca por comando) e o texto sempre o substitui. Não há legenda de
+    vídeo nem ampliação de fonte própria (vale o zoom do navegador). A
+    preferência de movimento reduzido não está em todas as missões.
+  \item[Planejado] Passada manual de teclado e leitor de tela por papel;
+    tornar a verificação bloqueante no catálogo de componentes; gravação das
+    locuções (responsável: Conteúdo).
+  \item[Evidência] \arq{scripts/\B{}e2e/\B{}lib/\B{}acessibilidade.mjs};
+    \arq{scripts/\B{}e2e/\B{}ferramentas/\B{}medir-acessibilidade.mjs};
+    \cd{PU-DOC-001}, Cap. 16 (estado ``parcial'') e Cap. 19 (R-07).
+  \item[Lacuna] O relatório da última medição não é guardado no repositório;
+    gerar e anexar um novo antes do TR.
+\end{campos}
+\end{resposta}
+
+\begin{paraotr}
+A solução deve atender à WCAG 2.2 nível AA (ou ABNT NBR 17225) nas telas de
+estudante, professor e gestor, com alternativa textual a todo áudio e imagem.
+Aceite: relatório de verificação automática sem violações e relatório de
+avaliação manual com teclado e leitor de tela, com plano de correção datado
+para as barreiras encontradas.
+\end{paraotr}
+
+% ---------------------------------------------------------------------------
+\section{P10 · Resultados da PoC com o Instituto Paula Souza}
+\label{sec:p10}
+
+\begin{resposta}{P10}{PoC}{\foradorepo}
+\begin{campos}
+  \item[Hoje] O repositório não contém relatório, apresentação, instrumento de
+    pesquisa nem dados da PoC; não há menção ao Instituto Paula Souza no
+    código nem na documentação. Também não há instrumentação de pesquisa
+    (questionário de satisfação, medida de aprendizagem pré e pós) na
+    plataforma.
+  \item[O que a plataforma oferece] Para uma futura avaliação, os dados que a
+    plataforma já registra podem servir de medida objetiva de conclusão e de
+    desempenho por habilidade: progresso e conclusão por estudante e missão,
+    evidências por habilidade e telemetria das missões (T10).
+  \item[Lacuna] Time de Produto/Pedagogia: anexar período, objetivos,
+    missões testadas, número e perfil de participantes, metodologia,
+    instrumentos, resultados, limitações e mudanças de produto. Sem esse
+    material, o TR não deve declarar ganho de aprendizagem, engajamento ou
+    aceitação.
+\end{campos}
+\end{resposta}

@@ -70,6 +70,7 @@ própria pasta, com `tectonic -k <arquivo>.tex`:
 |---|---|---|
 | PU-EST-001 — teste de carga | `estudos/teste-de-carga/` | engenharia e decisão |
 | PU-EST-002 — comparativo de infraestrutura em nuvem (GCP, AWS e Azure) | `estudos/comparativo-nuvem/` | engenharia, arquitetura e decisão |
+| PU-EST-003 — respostas ao questionário de validação do Termo de Referência (Liga Digital) | `estudos/questionario-tr/` | times que consolidam o TR da licitação |
 | PU-PRD-001 — mapa de produto (épicos, features, histórias) | `produto/mapa-de-produto/` | PO e time de desenvolvimento |
 
 **A PU-PRD-001 é escrita em linguagem de produto**: pessoas, telas e regras
