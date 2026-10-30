@@ -203,6 +203,48 @@ export class Roteiro {
    * vídeo. Um passo sem eles entra no deck como "passo 7" e não ensina nada a
    * quem não escreveu o teste.
    */
+  /**
+   * O print quando o `page.screenshot` estourou DUAS vezes (normal e com o
+   * movimento congelado). Antes de capturar, o Playwright espera as fontes
+   * (`document.fonts.ready`) e um quadro estável; no smoke do deploy de dev
+   * (2026-10-29 e 30, `publico/01-site`, passo do rodapé) essa espera passou de
+   * 60s nas duas tentativas, em quatro reruns seguidos, enquanto o print de
+   * ERRO tirado logo depois saía na hora — e a corrida inteira caía por causa
+   * da câmera, com as verificações do passo já VERDES.
+   *
+   * Aqui: (1) o estado das fontes vai para o log, que é o que confirma ou
+   * desmente a causa na próxima vez; (2) a captura vai direto pelo protocolo
+   * (`Page.captureScreenshot`, que não espera fonte nem quadro), com teto de
+   * 30s; (3) se nem isso sair, o passo fica SEM print e o log diz — o deck e o
+   * vídeo já pulam imagem ausente com aviso. Nada disso apaga erro de produto:
+   * as asserções do passo continuam reprovando como sempre.
+   */
+  async #printDeUltimoRecurso(pagina, caminho) {
+    const fontes = await pagina
+      .evaluate(() => ({
+        status: document.fonts.status,
+        carregando: [...document.fonts].filter((f) => f.status === "loading").map((f) => `${f.family} ${f.weight}`),
+      }))
+      .catch((erro) => ({ status: `indisponível (${String(erro).slice(0, 40)})`, carregando: [] }));
+    console.log(
+      `      · o print estourou de novo; fontes: ${fontes.status}` +
+        (fontes.carregando.length ? ` (carregando: ${fontes.carregando.join(", ")})` : "") +
+        " — capturando direto pelo protocolo",
+    );
+    let sessao;
+    try {
+      sessao = await pagina.context().newCDPSession(pagina);
+      const captura = sessao.send("Page.captureScreenshot", { format: "png" });
+      const teto = new Promise((_, recusar) => setTimeout(() => recusar(new Error("Timeout 30000ms")), 30_000));
+      const { data } = await Promise.race([captura, teto]);
+      writeFileSync(caminho, Buffer.from(data, "base64"));
+    } catch (erro) {
+      console.log(`      · passo SEM print: nem a captura direta saiu (${String(erro).slice(0, 60)})`);
+    } finally {
+      await sessao?.detach().catch(() => {});
+    }
+  }
+
   async registrar(pagina, nome, ficha = {}) {
     const numero = this.passos.length + 1;
     const arq = `${numero}-${nome}.png`;
@@ -239,6 +281,9 @@ export class Roteiro {
       try {
         if (tempo) await pagina.emulateMedia({ reducedMotion: "reduce" });
         await tirarPrint({ fullPage: false });
+      } catch (segundo) {
+        if (!/Timeout/i.test(String(segundo))) throw segundo;
+        await this.#printDeUltimoRecurso(pagina, caminho);
       } finally {
         if (tempo) await pagina.emulateMedia({ reducedMotion: null }).catch(() => {});
       }
