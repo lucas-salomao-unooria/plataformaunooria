@@ -121,6 +121,18 @@ ainda assim estourar, repete a captura com `emulateMedia({reducedMotion:
 "reduce"})` — o desligamento que os próprios efeitos respeitam, então o quadro
 é o mesmo, parado.
 
+**3. O print que estoura mesmo parado.** Antes de capturar, o `page.screenshot`
+do Playwright espera as fontes (`document.fonts.ready`). No smoke de `dev`
+(2026-10-29 e 30, o rodapé de `publico/01-site`) as DUAS tentativas passaram
+de 60s em quatro reruns seguidos — e o print de ERRO, tirado logo depois, saiu
+na hora. Uma fonte presa reproduz o mesmo efeito: o `page.screenshot` estoura e
+a captura direta (`Page.captureScreenshot`) sai em milissegundos. Por isso,
+quando as duas tentativas estouram, o `registrar` escreve no log o estado das
+fontes (`fontes: loading (carregando: …)`), captura direto pelo protocolo com
+teto de 30s e, se nem isso sair, segue com o passo SEM print, dizendo isso no
+log. As asserções do passo continuam valendo: o que deixa de derrubar a corrida
+é só a câmera.
+
 ## O 404 do BFF que não é do produto
 
 `GET /api/plataforma/<prefixo>/…` respondendo **404 `{"mensagem":"rota não
