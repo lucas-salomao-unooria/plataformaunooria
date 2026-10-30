@@ -61,6 +61,15 @@ escala oposta, o professor pausa as telas e libera a retomada; vêm a errata
 - **Sem podcast na tela do estudante** (decisão 1): é do professor.
 - **A instrução ao lado do aparelho** (`exp:estado.instrucao`) muda por etapa,
   a pausa vence; publicada só quando muda (`regras.ts#estadoParaOHub`).
+- **O eixo X do gráfico encurta o rótulo que não cabe** (`regras.ts#rotuloDoEixo`):
+  o período vem da IA ("1º Quadrimestre"), e com quatro barras os nomes se
+  sobrepunham (1.0.0). Cabe, fica inteiro; não cabe, vira a inicial com o
+  número ("Q1"), como o "M1" do protótipo. O nome inteiro segue na tabela e
+  na descrição do gráfico.
+- **O lembrete de 90 s da E2 tem três textos** (`nudgeE2SemPrevias`,
+  `nudgeE2`, `nudgeE2ComPrevia`), pelo que já estava na conversa quando ele
+  chegou, e entra ANTES das prévias se elas ainda não existiam: o texto único
+  mandava tocar "na escala acima" antes de as escalas aparecerem.
 - **A versão vive em três lugares** (`versao.test.ts`).
 
 ## Desenvolvimento sem hub nem api: `?fixture=`
@@ -76,7 +85,7 @@ build troca `import.meta.env.DEV` por `false` e nada disso entra no `dist/`
 
 | Lacuna | Onde | O que a compensação faz |
 |---|---|---|
-| `ListItem` com título e subtítulo em `nowrap` | folha "Ver dados e fonte" (E6-ALU-02) | `.folha .unc-listitem__*` quebra linha |
+| Sem tabela no Unoochat | folha "Ver dados e fonte" (E6-ALU-02) | o relatório da Secretaria é uma `<table class="dados">` de CONTEÚDO, como no protótipo (a lista de `ListItem` da 1.0.0 quebrava cada dado em três linhas) |
 | `MetricCard` com `max-width: 301px` | laudo (E5) | `.escola__pilha > .unooria-metric-card` sem teto |
 | `MessageBubble.Document` põe os detalhes na linha do nome (detalhe longo some com o nome) | anexo (E2) | detalhes curtos ("PDF · 42 KB") e a procedência como legenda do balão |
 | `ChatHeader` com `trailing` longo encurta o nome ("Assiste…") | chat e grupo | o chip mostra a forma curta do protótipo ("Publicações: 3/3"); a longa (TC-03/TC-09) vai no `aria-label` |

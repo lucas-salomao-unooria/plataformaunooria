@@ -29,6 +29,7 @@ await suite(
       "A aula do Júri Estadual mora na página da atividade: os 40 estandes, a lousa anônima dos votos por área e — depois da auditoria — da concentração do feed, a folha sem coluna de voto, taxa, concentração nem nível, e com as categorias buscadas e os parados na cédula",
       "A aula do Enigma da Capa da Rádio mora na página da atividade: quem aguarda a virada e quem marcou algo fora da foto, o botão único LIBERAR VIRADA, os cartões da conversa e a folha por criança, pelo nome, sem coluna de nível, nota ou ranking",
       "A aula do Porta-Voz dos Dados mora na página da atividade: os dois botões só para a frente, a lousa de contagens com a distribuição da escala e a folha pelo nome, sem coluna de nível, nota, escala nem ranking",
+      "A aula do Dossiê Invisível mora na página da atividade: as três travas na ordem, só a próxima habilitada, a lousa de contagens com a 1ª deliberação, os caminhos A1/A2/B e a migração, e a folha pelo nome sem voto, caminho nem nível",
     ],
     comando: "node scripts/e2e/professor/06-resultados-das-missoes.mjs",
   },
@@ -388,6 +389,63 @@ await suite(
       prova:
         "O gate só anda para a frente, com confirmação. A lousa vai ao projetor sem nomes; a folha nominal só tem a " +
         "etapa e o tempo parado — a escala de cada um e o nível ficam fora (o nível mora na aba Habilidades).",
+      inteira: true,
+    });
+
+    // ── O Dossiê Invisível (9º ano, unidade 1) ──────────────────────────
+    /* A suíte do estudante (estudante/19-dossie-invisivel.mjs) corre ANTES: põe
+       o banco padrão no ar na 9A, aperta as três travas e três estudantes
+       concluem. Rodando sozinha, a turma pode estar sem atividade — os dois
+       ramos são legítimos. */
+    const professorNono = conta("professor", { turma: "9A" });
+    await r.entrar(p, professorNono.login);
+    const turmasDoDossie = await (await p.request.get(`${BFF}/turmas/minhas`)).json().catch(() => []);
+    const turmaDoDossie = Array.isArray(turmasDoDossie) ? turmasDoDossie.find((t) => t.nome === "9A") : null;
+    if (!r.exigir(Boolean(turmaDoDossie), `${professorNono.login} leciona na 9A`)) return;
+    await p.goto(`${HUB}/professor/entre-redes/9-ano/unidade-1/resultados?turmaId=${turmaDoDossie.id}`, {
+      waitUntil: "domcontentloaded",
+    });
+    await p.locator("[data-painel-da-aula], [data-sem-atividade], [data-atividade-pronta]").first().waitFor({ timeout: 30_000 });
+    if ((await p.locator("[data-painel-da-aula]").count()) === 0) {
+      r.ressalva("a 9A não tem atividade do Dossiê Invisível em andamento: rode antes a estudante/19-dossie-invisivel, que a põe no ar");
+      r.exigir(
+        /Nenhuma atividade em andamento nesta turma|Esta atividade está pronta/.test(await p.locator("main").innerText()),
+        "sem atividade em andamento, a página do Dossiê Invisível diz que a turma vê a missão fechada",
+      );
+    } else {
+      const etapa = await p.locator("[data-controle-da-missao]").getAttribute("data-etapa");
+      const travas = ["revelacao", "revoto", "explicar"];
+      const feitas = await Promise.all(travas.map((t) => p.locator(`[data-acao="trava-${t}"]`).getAttribute("data-feita")));
+      const habilitadas = await p.locator("[data-botoes-da-aula] button:not([disabled])").count();
+      r.exigir((await p.locator("[data-botoes-da-aula] button").count()) === 3, `as três travas da aula estão no topo (etapa da turma: ${etapa})`);
+      /* Só para a frente: as feitas são um prefixo da ordem, e só a próxima acende. */
+      const prefixo = feitas.indexOf("nao") === -1 ? 3 : feitas.indexOf("nao");
+      r.exigir(
+        feitas.slice(prefixo).every((f) => f === "nao") && habilitadas === (prefixo === 3 ? 0 : 1),
+        `as travas andam só para a frente: ${travas.map((t, i) => `${t} ${feitas[i]}`).join(", ")} · ${habilitadas} habilitada(s)`,
+      );
+      r.exigir(
+        (await p.locator("[data-lousa] .unooria-metric-card").count()) === 4 &&
+          (await p.locator("[data-distribuicao-dos-votos]").count()) === 1 &&
+          (await p.locator("[data-caminhos]").count()) === 1,
+        "a lousa traz as quatro contagens, a distribuição da 1ª deliberação e os caminhos da investigação",
+      );
+      const colunas = await p.locator("[data-monitor-de-ritmo]").getByRole("columnheader").allInnerTexts();
+      r.exigir(
+        colunas.length > 0 && !colunas.some((c) => /\b(n[íi]vel|pontos|nota|ranking|voto|caminho)\b/i.test(c)),
+        `a folha do Dossiê não tem coluna de nível, nota, voto nem caminho (colunas: ${colunas.join(", ")})`,
+      );
+      await p.locator("[data-distribuicao-dos-votos]").scrollIntoViewIfNeeded();
+    }
+    await r.registrar(p, "resultados-dossie-invisivel", {
+      titulo: "A atividade do Dossiê Invisível: a aula ao vivo",
+      mostra:
+        "A atividade em andamento: as três travas no topo (Liberar Próxima Pauta, Abrir Revisão da Decisão, Destravar " +
+        "Explicar e Protocolo), a lousa de contagens, a distribuição de votos da 1ª deliberação, os caminhos A1 · A2 · B, " +
+        "a migração do 2º voto, o roteiro do debate e a folha de ritmo pelo nome.",
+      prova:
+        "O gate só anda para a frente, com confirmação, e só a próxima trava acende. A lousa vai ao projetor sem nomes; a " +
+        "folha nominal só tem a etapa e o tempo parado — o voto, o caminho e o nível ficam fora (o nível mora na aba Habilidades).",
       inteira: true,
     });
   },

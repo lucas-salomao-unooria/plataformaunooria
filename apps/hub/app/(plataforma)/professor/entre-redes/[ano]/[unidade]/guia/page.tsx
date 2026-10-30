@@ -15,6 +15,7 @@ import {
   MISSAO_JORNAL_DA_ESCOLA,
   MISSAO_JURI_ESTADUAL,
   MISSAO_PORTA_VOZ,
+  MISSAO_DOSSIE_INVISIVEL,
   MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
@@ -29,6 +30,7 @@ import { CAMINHO_DO_MATERIAL as MATERIAL_DO_ENIGMA, type Material as MaterialDoE
 import { baseDoBundleDaExperiencia } from "@/lib/bundle-da-experiencia";
 import { CAMINHO_DO_MATERIAL, type MaterialDoJuri } from "@/lib/juri-estadual-tipos";
 import { CAMINHO_DO_MATERIAL as MATERIAL_DO_PORTA_VOZ, type Material as MaterialDoPortaVoz } from "@/lib/porta-voz-tipos";
+import { CAMINHO_DO_MATERIAL as MATERIAL_DO_DOSSIE, type Material as MaterialDoDossie } from "@/lib/dossie-invisivel-tipos";
 import type { MaterialDoProfessor } from "@/lib/quem-mandou-tipos";
 
 import { IntervencoesDoRastro, type MaterialDoRastro } from "./intervencoes-do-rastro";
@@ -38,6 +40,7 @@ import { GabaritoDoEfeito, ReguasDoEfeito } from "./material-do-efeito";
 import { CartoesDoEnigma, CenasDoEnigma, ReguasDoEnigma } from "./material-do-enigma";
 import { BotoesDoJornal, MesaDoJornal, PerguntasDoJornal } from "./material-do-jornal";
 import { GabaritoDoJuri, PlenariaDoJuri } from "./material-do-juri";
+import { BancoDoDossie, ProtocoloDoDossie, ReguasDoDossie } from "./material-do-dossie-invisivel";
 import { MomentosDoPainel } from "./momentos-do-painel";
 import { BancoDoPortaVoz, LaudoDoPortaVoz, ReguasDoPortaVoz } from "./material-do-porta-voz";
 import { QuemMandouOPacote } from "./quem-mandou-o-pacote";
@@ -231,6 +234,18 @@ async function blocosDaMissao(expId: string | undefined): Promise<BlocosVivos | 
         antes: <BancoDoPortaVoz dados={material} />,
         roteiro: <LaudoDoPortaVoz dados={material} />,
         depois: <ReguasDoPortaVoz dados={material} />,
+      };
+    }
+
+    case MISSAO_DOSSIE_INVISIVEL.expId: {
+      /* UMA chamada para os três blocos: o banco padrão e a conta da virada,
+         para ler antes; o gabarito do Editor de Protocolo, para o Explicar; o
+         critério de cada nível, para o depois. */
+      const material = await apiDoServidor<MaterialDoDossie>(MATERIAL_DO_DOSSIE);
+      return {
+        antes: <BancoDoDossie dados={material} />,
+        roteiro: <ProtocoloDoDossie dados={material} />,
+        depois: <ReguasDoDossie dados={material} />,
       };
     }
 

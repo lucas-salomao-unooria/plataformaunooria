@@ -1,4 +1,5 @@
 import type { CoberturasDaTurma } from "../a-selecao-tipos";
+import type { PacotesDaTurmaDossie } from "../dossie-invisivel-tipos";
 import type { PacotesDaTurmaEfeito } from "../efeito-amplificador-tipos";
 import type { PacotesDaTurmaAssistente } from "../assistente-invisivel-tipos";
 import type { PacotesDaTurmaEnigma } from "../enigma-capa-tipos";
@@ -28,9 +29,11 @@ import type { PacotesDaTurmaQuemMandou } from "../quem-mandou-tipos";
  * Porta-Voz dos Dados, ADR-198) tem atividade (o pacote homologado) mas NÃO
  * tem equipe: é individual por desenho, e a api não a põe na lista das
  * equipes (lá ela só serve para achar a atividade da equipe). Ela está em
- * `MISSOES_SEM_EQUIPE`, e a criação pula o passo das equipes.
+ * `MISSOES_SEM_EQUIPE`, e a criação pula o passo das equipes. A exp09ef1b (O
+ * Dossiê Invisível, ADR-202) segue o mesmo molde: individual, pacote
+ * homologado, em andamento da turma.
  */
-export const MISSOES_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b", "exp03ef1b", "exp03em1b"] as const;
+export const MISSOES_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b", "exp02em1b", "exp02ef1b", "exp01em1b", "exp03ef1b", "exp03em1b", "exp09ef1b"] as const;
 export type MissaoComAtividade = (typeof MISSOES_COM_ATIVIDADE)[number];
 
 export function temAtividades(expId: string | null | undefined): expId is MissaoComAtividade {
@@ -42,7 +45,7 @@ export function temAtividades(expId: string | null | undefined): expId is Missao
  * 400 `missao-sem-equipes` a qualquer montagem. A criação não pergunta como a
  * turma senta, e a página da atividade não tem a aba Equipes.
  */
-export const MISSOES_SEM_EQUIPE: readonly MissaoComAtividade[] = ["exp03em1b"];
+export const MISSOES_SEM_EQUIPE: readonly MissaoComAtividade[] = ["exp03em1b", "exp09ef1b"];
 
 export function aceitaEquipes(expId: MissaoComAtividade): boolean {
   return !MISSOES_SEM_EQUIPE.includes(expId);
@@ -146,17 +149,20 @@ export function caminhoDoEmAndamento(expId: MissaoComAtividade, turmaId: string,
     case "exp03em1b":
       /* Aqui o em andamento é da TURMA, e o pacote vai no corpo (`corpoDoEmAndamento`). */
       return `/porta-voz-dos-dados/turmas/${t}/em-andamento`;
+    case "exp09ef1b":
+      /* Como a exp03em1b: o em andamento é da TURMA, e o pacote vai no corpo. */
+      return `/dossie-invisivel/turmas/${t}/em-andamento`;
   }
 }
 
 /**
  * O corpo de "Usar esta atividade agora". Nas irmãs a atividade vai no
  * caminho e o corpo é vazio; no Instanooria vai o `forcar` (as pendências do
- * 422); na exp03em1b o pacote vai no corpo.
+ * 422); na exp03em1b e na exp09ef1b o pacote vai no corpo.
  */
 export function corpoDoEmAndamento(expId: MissaoComAtividade, atividadeId: string, forcar = false): Record<string, unknown> {
   if (expId === "exp08ef1b") return { forcar };
-  if (expId === "exp03em1b") return { pacoteId: atividadeId };
+  if (expId === "exp03em1b" || expId === "exp09ef1b") return { pacoteId: atividadeId };
   return {};
 }
 
@@ -318,7 +324,22 @@ export function atividadesDaNina(p: PacotesDaTurmaNina, rotuloDaDisciplina: (slu
  * atividade ainda — fica de fora.
  */
 export function atividadesDoPortaVoz(p: PacotesDaTurmaPortaVoz, rotuloDaDisciplina: (slug: string) => string): AtividadeNaLista[] {
-  return p.pacotes.flatMap((h) =>
+  return homologadosComoAtividades(p.pacotes, rotuloDaDisciplina);
+}
+
+/**
+ * O Dossiê Invisível (ADR-202): o mesmo molde do Porta-Voz — o pacote
+ * HOMOLOGADO ("Aprovar Pacote") é a atividade, e o rascunho da curadoria fica
+ * de fora.
+ */
+export function atividadesDoDossie(p: PacotesDaTurmaDossie, rotuloDaDisciplina: (slug: string) => string): AtividadeNaLista[] {
+  return homologadosComoAtividades(p.pacotes, rotuloDaDisciplina);
+}
+
+type PacoteHomologavel = PacotesDaTurmaPortaVoz["pacotes"][number] | PacotesDaTurmaDossie["pacotes"][number];
+
+function homologadosComoAtividades(pacotes: readonly PacoteHomologavel[], rotuloDaDisciplina: (slug: string) => string): AtividadeNaLista[] {
+  return pacotes.flatMap((h) =>
     h.aprovadoEm
       ? [
           {

@@ -11,6 +11,8 @@ import { MENSAGEM_MAX_CARACTERES, MORADORES, SERIE_HISTORICA, type ConteudoDoPac
  *     (o feed troca o tom, não as pessoas), e cada uma cabe nos 180 caracteres;
  *   - a nota técnica diz a estabilidade de 98% do resto da rede — é o
  *     contexto que a camada "contexto" resume e que o laudo usa;
+ *   - os quatro períodos estão na mesma unidade de tempo (o bot diz "quatro
+ *     períodos", e o eixo e a tabela leem os rótulos);
  *   - nenhum texto do pacote CRAVA outros números da série: 95, 94, 92 e 88
  *     são do servidor, e a IA que reescrevesse "caiu de 96 para 85" desmentiria
  *     a tabela. Os textos podem não citar número nenhum.
@@ -40,6 +42,9 @@ export function problemasDoConteudo(c: ConteudoDoPacote): string[] {
   if (!/98\s?%/.test(c.notaTecnica.resumo)) problemas.push("O resumo da nota técnica precisa dizer a estabilidade de 98% no restante da rede.");
 
   if (c.servico.periodos.length !== SERIE_HISTORICA.length) problemas.push(`A tabela tem exatamente ${SERIE_HISTORICA.length} períodos.`);
+  /* A unidade é a mesma nos quatro ("Semana 1"… ou "1º Quadrimestre"…): misturada, a tabela e o eixo do gráfico se desmentem. */
+  const unidades = new Set(c.servico.periodos.map(unidadeDoPeriodo));
+  if (unidades.size > 1) problemas.push("Os quatro períodos precisam estar na mesma unidade de tempo (ex.: Mês 1 a Mês 4).");
   if (c.servico.situacoes.length !== SERIE_HISTORICA.length) problemas.push(`A tabela tem exatamente ${SERIE_HISTORICA.length} situações.`);
 
   const permitidos = new Set(["0", "80", "98", "100", "7", "120", ...SERIE_HISTORICA.flatMap((s) => [s.valor, s.conformes, s.inconformes].map(String))]);
@@ -49,6 +54,15 @@ export function problemasDoConteudo(c: ConteudoDoPacote): string[] {
     }
   }
   return [...new Set(problemas)];
+}
+
+/** A unidade de um rótulo de período, sem o número nem o ordinal: "1º Quadrimestre" e "Quadrimestre 2" dão "quadrimestre". */
+export function unidadeDoPeriodo(rotulo: string): string {
+  return rotulo
+    .replace(/\d+\s*[ºª°]?/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLocaleLowerCase("pt-BR");
 }
 
 function textosComNumero(c: ConteudoDoPacote): Array<[string, string]> {

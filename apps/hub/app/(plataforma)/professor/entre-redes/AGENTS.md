@@ -327,3 +327,23 @@ do E0-PROF-03 com "Carregar Banco Padrão Curado", e o rascunho do banco curado 
 são dois botões só para a frente ("Pausar para o debate", "Liberar Retomada da Turma"); a lousa é só
 contagem (escala da 1ª publicação, anexo, errata, perícia), e o polling chama `router.refresh()` quando
 `mudouAEvidencia` acusa um dos três gestos que a ficha marca. O podcast é só do professor (aba Podcast).
+
+## O Dossiê Invisível (exp09ef1b)
+
+Página `resultados/resultados-dossie-invisivel.tsx`, criação `atividades/nova/criar-dossie-invisivel.tsx`,
+espelho `lib/dossie-invisivel-tipos.ts` (o teste lê `conteudo.ts`, `regras/passos.ts`,
+`contrato-de-rotas.ts` e o controller da api como texto, e reprova a Etapa 6 nas telas), guia
+`lib/entre-redes/guias/exp09ef1b.ts`. **O molde é o Porta-Voz** (ADR-202): individual
+(`MISSOES_SEM_EQUIPE`), em andamento da TURMA com `{ pacoteId }` no corpo, o rascunho da curadoria fora
+da lista, "Usar banco padrão" que põe no ar E libera na sala, e sem IA o E0-PROF-03 com "Prosseguir
+com Banco Padrão" (o banco NÃO entra na curadoria). A curadoria (E0-PROF-04) edita os três projetos e
+os cadernos inline; o número de documentos de cada papel (1, 7, 12) é fixo — edita-se o texto, não a
+quantidade. "Regenerar item pontual" troca só o item (`comItemRegenerado`), e a etiqueta "Modificado
+pelo docente" sai de `itensModificados` contra o que o servidor entregou. **TRÊS travas, só para a
+frente** (`TRAVAS`, `proximaTrava`): "Liberar Próxima Pauta", "Abrir Revisão da Decisão" (depois do
+debate) e "Destravar Explicar e Protocolo" — as três à vista, só a próxima habilitada; o rótulo vem de
+`roteiro.botoes` da api. A lousa é só contagem: a "Distribuição de Votos da Turma — 1ª Deliberação"
+(tipografia grande, para o telão), os caminhos A1/A2/B e, depois da trava do debate, a "Consolidação
+do Segundo Voto e Migração de Escolhas" (mantiveram/trocaram e 1ª × final por projeto). **Não há a
+Etapa 6** (o caso do transporte saiu da missão): nada de módulo extra no painel. Podcast só do
+professor.

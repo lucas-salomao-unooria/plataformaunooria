@@ -4,10 +4,8 @@ import {
   Button,
   ChatHeader,
   ChatWallpaper,
-  ListItem,
   MessageBubble,
   Radio,
-  SectionLabel,
   Switch,
   TextButton,
 } from "@edu/ui/ds-unoochat";
@@ -139,27 +137,29 @@ export function Pericia({
       >
         <div className="folha">
           <p className="folha__orgao">{t.dados.origem}</p>
-          <SectionLabel>{TEXTOS.pericia.dadosOficiais}</SectionLabel>
-          <ListItem density="settings" title={t.dados.indicador} />
-          {t.dados.periodos.map((p) => (
-            <ListItem
-              key={p.rotulo}
-              density="settings"
-              title={p.rotulo}
-              subtitle={TEXTOS.pericia.ocorrencias(p.ocorrencias, p.populacao)}
-              meta={TEXTOS.pericia.taxa(numeroBr(p.taxa))}
-            />
-          ))}
-          {t.cartoes.map((c) => (
-            <div key={c.id}>
-              <SectionLabel>{TEXTOS.pericia.dadosDoCartao(c.id)}</SectionLabel>
-              <ListItem
-                density="settings"
-                title={TEXTOS.pericia.eixoDoCartao(numeroBr(c.eixo.origem), numeroBr(c.eixo.teto))}
-                subtitle={TEXTOS.pericia.fonte(c.fonte)}
-              />
-            </div>
-          ))}
+          {/* O relatório da Secretaria como a tabela do protótipo (E6-ALU-02): é
+              CONTEÚDO (o documento oficial), como a planilha da E2 — o Unoochat
+              não publica tabela, e a lista de linhas quebrava cada dado em três. */}
+          <table className="dados">
+            <caption className="dados__titulo">{t.dados.indicador}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{TEXTOS.pericia.colPeriodo}</th>
+                <th scope="col">{TEXTOS.pericia.colOcorrencias}</th>
+                <th scope="col">{TEXTOS.pericia.colTaxa}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {t.dados.periodos.map((p) => (
+                <tr key={p.rotulo}>
+                  <th scope="row">{rotuloCurto(p.rotulo)}</th>
+                  <td>{p.ocorrencias}</td>
+                  <td className="dados__valor">{numeroBr(p.taxa)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="folha__orgao">{TEXTOS.pericia.populacao(t.dados.periodos.map((p) => `${rotuloCurto(p.rotulo)}: ${p.populacao}`).join(" · "))}</p>
         </div>
       </BottomSheet>
     </div>
