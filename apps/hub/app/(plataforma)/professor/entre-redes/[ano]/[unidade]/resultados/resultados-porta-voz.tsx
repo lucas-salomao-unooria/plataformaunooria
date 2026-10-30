@@ -324,7 +324,7 @@ function PacoteDoPortaVoz({ pacote }: { pacote: PacoteDetalhe }) {
         <ul className="flex flex-col gap-1">
           {VALORES_DA_SERIE.map((valor, i) => (
             <li key={i}>
-              <strong>{`${c.servico.periodos[i] ?? `Mês ${i + 1}`}: ${valor}%`}</strong> {c.servico.situacoes[i] ? `— ${c.servico.situacoes[i]}` : ""}
+              <strong>{`${c.servico.periodos[i] ?? `Período ${i + 1}`}: ${valor}%`}</strong> {c.servico.situacoes[i] ? `— ${c.servico.situacoes[i]}` : ""}
             </li>
           ))}
         </ul>
@@ -367,7 +367,7 @@ function PacoteDoPortaVoz({ pacote }: { pacote: PacoteDetalhe }) {
         </div>
       </div>
       <div className="flex flex-col gap-1">
-        <h3 className="text-[14px] font-semibold text-unooria-neutral-950">Depois do post da escola rival</h3>
+        <h3 className="text-[14px] font-semibold text-unooria-neutral-950">Depois da publicação da escola rival</h3>
         <ul className="flex flex-col gap-2">{[c.posAha.conflito, c.posAha.coordenador].map(fala)}</ul>
       </div>
     </div>

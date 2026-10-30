@@ -1,4 +1,4 @@
-import { alturasDasBarras, numeroBr, type Barra } from "../lib/regras";
+import { alturasDasBarras, numeroBr, rotuloDoEixo, type Barra } from "../lib/regras";
 
 /**
  * O gráfico de barras da missão — UM componente só, usado na prévia da E2, na
@@ -46,6 +46,8 @@ export function GraficoDoBoletim({
   const vao = largura / barras.length;
   const barra = Math.min(46, vao * 0.56);
   const grade = [origem, (origem + teto) / 2, teto];
+  /* Quantos caracteres do rótulo cabem no vão (11px de fonte, ~6,6 de largura média). */
+  const cabe = Math.floor((vao - 4) / 6.6);
 
   return (
     <svg className="grafico" viewBox={`0 0 ${L} ${A}`} role="presentation" aria-hidden="true" focusable="false">
@@ -80,7 +82,7 @@ export function GraficoDoBoletim({
               {unidade}
             </text>
             <text x={x + barra / 2} y={base + 16} textAnchor="middle" className="grafico__rotulo">
-              {b.rotulo}
+              {rotuloDoEixo(b.rotulo, cabe)}
             </text>
           </g>
         );
