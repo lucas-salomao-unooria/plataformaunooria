@@ -453,7 +453,7 @@ await suite(
       terceira.status === 200 && terceira.corpo?.chat?.consultas === 3 && terceira.corpo?.chat?.podeEscolher === true && terceira.corpo?.chat?.cadernosOferecidos === false,
       `B: três consultas pelas sugestões liberam a escolha sem a oferta dos cadernos (consultas ${terceira.corpo?.chat?.consultas}, ${segunda.status}/${terceira.status})`,
     );
-    await qb.getByText("Limiar de 3 consultas atingido.", { exact: false }).first().waitFor({ timeout: 15_000 });
+    await qb.getByText("Limite de 3 consultas atingido.", { exact: false }).first().waitFor({ timeout: 15_000 });
     await qb.getByText(/possui apenas a ficha cadastral de abertura no sistema digital/).first().waitFor({ timeout: 10_000 });
     await r.registrar(b, "b-tres-sugestoes", {
       titulo: "B segue as três sugestões",
