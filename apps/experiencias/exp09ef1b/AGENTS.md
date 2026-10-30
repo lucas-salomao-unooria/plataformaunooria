@@ -34,10 +34,18 @@ do Lucas, 2026-10-29): a Etapa 6 (Lia, Davi, transporte) e o Canal B.
   `PuzzleBlock` e `onSlotDrop` na `PuzzleTrack` (o ranking é uma calha de três
   vagas; o banco, as três verificações e o descarte são calhas que recebem).
   A mesma ação existe em botões (Subir/Descer, Mover para Lixeira) e no toque
-  (toca o bloco, toca a vaga). (b) COMPENSAÇÃO — sem par no DS: só o `Card` da
-  `unooria` sem o `max-width` de celular dentro da coluna do chat.
+  (toca o bloco, toca a vaga). (b) COMPENSAÇÕES — sem par no DS, todas em
+  `estilos/globals.css` e todas de grade (ADR-205): o `Card` da `unooria` sem
+  o `max-width` de celular na coluna do chat; o ranking com as vagas
+  EMPILHADAS (a `PuzzleTrack` põe três lado a lado a partir de 672 px, e o
+  bloco do ranking virava uma letra por linha); a descrição do
+  `AssistantCard` e o `Tag` dos projetos em várias linhas (o DS corta com
+  reticências). O protótipo (`design/08-prototipo.html`) é a régua visual.
 - **O ranking da E3 nasce na ordem do servidor** (embaralhada por sessão) e o
-  "Registrar Decisão" só acende com o projeto marcado e o ranking tocado. No 2º
+  "Registrar Decisão" só acende com o projeto marcado e o ranking tocado —
+  mover OU "Confirmar esta ordem" (ADR-205: concordar com a ordem sorteada é
+  um gesto, nunca um subir-e-descer de mentira; tirar a trava deixaria o
+  sorteio decidir a régua da EF09CO08). No 2º
   voto o ranking vem com a ordem da E3 e mexer é opcional.
 - **O Editor de Protocolo abre limpo** (sem demonstração nem dica de descarte)
   e o "Enviar Proposta" acende com ≥ 1 bloco — sem trava no cliente; a régua é
