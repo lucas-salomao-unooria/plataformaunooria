@@ -21,9 +21,11 @@ import {
   RIVAL,
   SERIE_HISTORICA,
   TEXTOS_DO_CHAT,
+  TEXTO_DA_PROJECAO,
   conteudoDoPadrao,
   nomeDoGrupo,
 } from "../../../../api/src/porta-voz-dos-dados/conteudo";
+import { ordemDasCamadas } from "../../../../api/src/porta-voz-dos-dados/regras/publicacao";
 import type { EtapaDoGate, Marco, Parecer, Passo, Publicacao, Publicar, Sessao } from "./tipos";
 
 interface Servidor {
@@ -56,19 +58,19 @@ const BASE: Servidor = {
   pericia: false,
   parecer: null,
 };
-const OITENTA_NU: Publicar = { escala: 80, explicacao: false, fonte: false, contexto: false };
+const OITENTA_NU: Publicar = { escala: 80, explicacao: false, fonte: false, contexto: false, projecao: false };
 
 const FIXTURES: Record<string, Partial<Servidor>> = {
   espera: { preparada: false },
   abertura: {},
   dados: { chat: true },
   compositor: { chat: true, anexo: true, compositor: true },
-  feed0: { chat: true, compositor: true, inicial: pub({ escala: 0, explicacao: true, fonte: true, contexto: false }) },
+  feed0: { chat: true, compositor: true, inicial: pub({ escala: 0, explicacao: true, fonte: true, contexto: false, projecao: false }) },
   feed80: { chat: true, compositor: true, inicial: pub(OITENTA_NU) },
   pausa: { chat: true, compositor: true, inicial: pub(OITENTA_NU), etapa: "pausa" },
   errata: { chat: true, compositor: true, inicial: pub(OITENTA_NU), etapa: "liberada" },
   "errata-recente": { chat: true, anexo: true, compositor: true, etapa: "liberada" },
-  laudo: { chat: true, compositor: true, inicial: pub(OITENTA_NU, 8), errata: pub({ escala: 0, explicacao: true, fonte: true, contexto: true }), etapa: "liberada" },
+  laudo: { chat: true, compositor: true, inicial: pub(OITENTA_NU, 8), errata: pub({ escala: 0, explicacao: true, fonte: true, contexto: true, projecao: false }), etapa: "liberada" },
   pericia: { chat: true, compositor: true, inicial: pub(OITENTA_NU, 8), errataPulada: true, etapa: "liberada", pericia: true },
   concluida: {
     chat: true,
@@ -127,7 +129,7 @@ function sessaoDe(s: Servidor): Sessao {
             serie: SERIE_HISTORICA.map((v, i) => ({ periodo: c.servico.periodos[i]!, ...v, situacao: c.servico.situacoes[i]! })),
           },
           notaTecnica: c.notaTecnica,
-          camadas: c.camadas,
+          camadas: { ...c.camadas, projecao: TEXTO_DA_PROJECAO, ordem: ordemDasCamadas("fixture") },
         }
       : null,
     textos: {

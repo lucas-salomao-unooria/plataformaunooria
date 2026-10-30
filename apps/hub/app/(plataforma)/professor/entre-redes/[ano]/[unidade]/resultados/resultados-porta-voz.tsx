@@ -17,6 +17,7 @@ import {
   EXP_ID,
   NOME_DO_GRUPO,
   ROTAS_DA_TURMA,
+  TEXTO_DA_PROJECAO,
   VALORES_DA_SERIE,
   caminhoDaTurma,
   rotuloDaDisciplina,
@@ -340,7 +341,7 @@ function PacoteDoPortaVoz({ pacote }: { pacote: PacoteDetalhe }) {
         ))}
       </div>
       <div className="flex flex-col gap-1">
-        <h3 className="text-[14px] font-semibold text-unooria-neutral-950">As três informações do compositor</h3>
+        <h3 className="text-[14px] font-semibold text-unooria-neutral-950">As quatro informações do compositor</h3>
         <ul className="flex flex-col gap-1">
           <li>
             <strong>Explicação da escala (eixo em 0%):</strong> {c.camadas.explicacao.zero}
@@ -353,6 +354,10 @@ function PacoteDoPortaVoz({ pacote }: { pacote: PacoteDetalhe }) {
           </li>
           <li>
             <strong>Contexto da queda:</strong> {c.camadas.contexto}
+          </li>
+          {/* ADR-203: a 4ª, incorreta de propósito, fixa em toda turma. Aparece embaralhada entre as outras. */}
+          <li>
+            <strong>Projeção da tendência (incorreta de propósito, a nota técnica a desmente):</strong> {TEXTO_DA_PROJECAO}
           </li>
         </ul>
       </div>

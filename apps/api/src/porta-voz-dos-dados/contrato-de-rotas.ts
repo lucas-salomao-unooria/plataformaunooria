@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   ASSUNTOS,
+  CAMADAS_DO_COMPOSITOR,
   DISCIPLINAS,
   ETAPAS_DO_GATE,
   ITENS_DO_PACOTE,
@@ -38,12 +39,17 @@ export const EscalaSchema = z.union([z.literal(0), z.literal(80)]);
 /** Um marco que a tela informa; o servidor carimba a hora (a primeira vez vale). */
 export const MarcoSchema = z.object({ marco: z.enum(MARCOS) });
 
-/** A 1ª publicação e a errata (o mesmo corpo): a escala e as três camadas. */
+/**
+ * A 1ª publicação e a errata (o mesmo corpo): a escala e as quatro camadas. A
+ * `projecao` é a incorreta (ADR-203); ausente = desligada, para o corpo de um
+ * bundle anterior à v2 continuar valendo.
+ */
 export const PublicarSchema = z.object({
   escala: EscalaSchema,
   explicacao: z.boolean(),
   fonte: z.boolean(),
   contexto: z.boolean(),
+  projecao: z.boolean().default(false),
 });
 
 /** O parecer da perícia (E6): sinalizou ⇒ motivo; não sinalizou ⇒ sem motivo. */
@@ -224,7 +230,15 @@ export const SessaoSchema = z.object({
         resumo: z.string(),
         secoes: z.array(z.object({ titulo: z.string(), texto: z.string() })),
       }),
-      camadas: z.object({ explicacao: z.object({ zero: z.string(), oitenta: z.string() }), fonte: z.string(), contexto: z.string() }),
+      camadas: z.object({
+        explicacao: z.object({ zero: z.string(), oitenta: z.string() }),
+        fonte: z.string(),
+        contexto: z.string(),
+        /** A 4ª camada, a incorreta (ADR-203); o texto é do servidor. */
+        projecao: z.string(),
+        /** A ordem das quatro no compositor, embaralhada por estudante. */
+        ordem: z.array(z.enum(CAMADAS_DO_COMPOSITOR)).length(CAMADAS_DO_COMPOSITOR.length),
+      }),
     })
     .nullable(),
   /** Os textos FIXOS da missão: o bot, o laudo, a perícia (sem gabarito), a conclusão. */
