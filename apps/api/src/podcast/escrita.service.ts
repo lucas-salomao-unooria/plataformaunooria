@@ -64,6 +64,8 @@ export class EscritaDasFalasService {
     await escrita.exigirTurma(escolaId, turmaId, professorId);
 
     if (escrita.ehPadrao(lido.data)) return this.resposta(fonte, fonte.falasPadrao, false, null);
+    const prontas = escrita.falasProntas?.(lido.data);
+    if (prontas) return this.resposta(fonte, prontas, false, null);
 
     try {
       if (!(await this.quota.temSaldo(escolaId, usuarioId, perfil))) {

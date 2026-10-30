@@ -12,6 +12,8 @@ import { FICHA_EXP02EF1B } from "../evidencias/fichas/exp02ef1b";
 import { ehUuid } from "../motor/guardas";
 import { logger } from "../observabilidade/logger";
 import { PrismaService } from "../prisma/prisma.service";
+import { gravarFalasDoPodcast } from "../podcast/podcast.service";
+import type { FalasDoTema } from "../podcast/roteiro";
 import {
   CARTAS_DOS_PARES,
   CHAVES_PRONTAS,
@@ -66,6 +68,7 @@ import {
 } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
 import { PreparoDaExp02ef1bService, type MotivoDoPronto } from "./preparo.service";
+import { falasDoPronto, prontoIntocado } from "./podcast";
 import {
   MARCADOR_CO01,
   MARCADOR_CO05,
@@ -746,10 +749,16 @@ export class EnigmaCapaService {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId);
+      const gravarFalas = (atividadeId: string) =>
+        gravarFalasDoPodcast(tx, { escolaId, expId: EXP_ID, atividadeId, falas: corpo.podcast, aprovadoPor: professorId });
       const linha = await tx.exp02ef1bPacote.findFirst({ where: { escolaId, turmaId, aprovadoEm: null } });
       if (!linha) {
         const ja = await tx.exp02ef1bPacote.findFirst({ where: { id: corpo.rascunhoId, escolaId, turmaId, aprovadoEm: { not: null } } });
-        if (ja) return this.exigirParaProfessor(ja);
+        if (ja) {
+          /* O segundo clique pode trazer as falas do podcast editadas: elas valem (ADR-150). */
+          await gravarFalas(ja.id);
+          return this.exigirParaProfessor(ja);
+        }
         throw erroDeJogo("rascunho-nao-encontrado");
       }
       if (linha.id !== corpo.rascunhoId) throw erroDeJogo("rascunho-desatualizado");
@@ -775,6 +784,7 @@ export class EnigmaCapaService {
           aprovadoPor: professorId,
         },
       });
+      await gravarFalas(aprovado.id);
       return this.exigirParaProfessor(aprovado);
     }, escolaId);
   }
@@ -860,14 +870,39 @@ export class EnigmaCapaService {
     }, escolaId);
   }
 
-  /** O pacote do podcast (ADR-150): o pedido, desta turma, ou o em andamento. */
-  async pacoteParaPodcast(escolaId: string, turmaId: string, professorId: string | undefined, pacoteId?: string) {
+  /**
+   * O pacote do podcast (ADR-150, ADR-204): o pedido, desta turma, ou o em
+   * andamento — e de onde vêm as falas da cena. A linha de `podcast_roteiros`
+   * (as revisadas na curadoria) vence; sem ela, o pronto intocado tem as dele
+   * (a Biblioteca é o `padrao`; a Horta e o Museu, `falasProprias`); sem
+   * nenhuma das duas, o motor responde 409 `roteiro-indisponivel`.
+   */
+  async pacoteParaPodcast(
+    escolaId: string,
+    turmaId: string,
+    professorId: string | undefined,
+    pacoteId?: string,
+  ): Promise<{ id: string; tema: string; padrao: boolean; falasProprias?: FalasDoTema }> {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       const id = pacoteId ?? (await this.exigirPacoteAtivo(tx, escolaId, turmaId)).id;
       const linha = await this.pacoteAprovadoDaTurma(tx, escolaId, turmaId, id);
-      return { id: linha.id, tema: linha.tema };
+      const revisadas = await tx.podcastRoteiro.findUnique({
+        where: { escolaId_expId_atividadeId: { escolaId, expId: EXP_ID, atividadeId: linha.id } },
+        select: { atividadeId: true },
+      });
+      const conteudo = lerConteudo(linha.conteudoJson);
+      const pronto = !revisadas && linha.origem === "padrao" && conteudo ? prontoIntocado(conteudo) : null;
+      if (pronto === "horta" || pronto === "museu") {
+        return { id: linha.id, tema: linha.tema, padrao: false, falasProprias: falasDoPronto(pronto) };
+      }
+      return { id: linha.id, tema: linha.tema, padrao: pronto === "biblioteca" };
     }, escolaId);
+  }
+
+  /** A guarda de turma da escrita das falas do podcast, antes de gastar token (404 para turma alheia). */
+  async exigirTurmaVisivel(escolaId: string, turmaId: string, professorId: string | undefined): Promise<void> {
+    await this.prisma.comTenancy((tx) => this.turmaVisivel(tx, escolaId, turmaId, professorId), escolaId);
   }
 
   /**
