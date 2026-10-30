@@ -265,7 +265,7 @@ export const GUIA_EXP03EM1B: GuiaDaAula = {
     marcas: [
       { letra: "A", texto: "Abriu a nota técnica antes de montar o boletim." },
       { letra: "E", texto: "Trocou entre as duas escalas na prévia antes de publicar." },
-      { letra: "R", texto: "Reagiu ao post da escola rival comparando os dois eixos." },
+      { letra: "R", texto: "Reagiu à publicação da escola rival comparando os dois eixos." },
     ],
     nota: "As marcas são para o debate, não para nota: o nível de cada habilidade está no painel de habilidades.",
   },
@@ -367,12 +367,12 @@ export const GUIA_EXP03EM1B: GuiaDaAula = {
     {
       contexto: "A mesma missão em Língua Portuguesa",
       comoAdaptar:
-        "Recorte: a cobertura sobre atrasos no transporte escolar. A IA gera a planilha de pontualidade da frota, a nota sobre obras viárias e as postagens inflamadas no grupo. Não muda: os números, a cota de 3 publicações, a escolha entre 0% e 80%, o post rival e a pausa.",
+        "Recorte: a cobertura sobre atrasos no transporte escolar. A IA gera a planilha de pontualidade da frota, a nota sobre obras viárias e as postagens inflamadas no grupo. Não muda: os números, a cota de 3 publicações, a escolha entre 0% e 80%, a publicação rival e a pausa.",
     },
     {
       contexto: "A mesma missão em História",
       comoAdaptar:
-        "Recorte: a preservação e o fluxo de visitantes em patrimônios públicos. A IA gera a planilha de visitação, a nota sobre reformas em alas e as cobranças dos conselheiros. Não muda: os números, a cota, a escolha da escala, o post rival e a pausa.",
+        "Recorte: a preservação e o fluxo de visitantes em patrimônios públicos. A IA gera a planilha de visitação, a nota sobre reformas em alas e as cobranças dos conselheiros. Não muda: os números, a cota, a escolha da escala, a publicação rival e a pausa.",
     },
   ],
 
@@ -390,7 +390,7 @@ export const GUIA_EXP03EM1B: GuiaDaAula = {
     {
       pergunta: "Quem não publicou quando eu pausei perde a aula?",
       resposta:
-        "Não. Quem publica depois da retomada vê o post da escola rival e segue direto para a oferta da errata.",
+        "Não. Quem publica depois da retomada vê a publicação da escola rival e segue direto para a oferta da errata.",
     },
     {
       pergunta: "Onde vejo o resultado de cada estudante?",

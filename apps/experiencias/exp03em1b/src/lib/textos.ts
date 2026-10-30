@@ -34,7 +34,7 @@ export const TEXTOS = {
 
   // ── E1-ALU-02 a E2 — o chat do Assistente
   assistente: {
-    presenca: "bot oficial do programa", // [PROTÓTIPO]
+    presenca: "assistente oficial do programa", // [PROTÓTIPO], sem o inglês (ADR-91)
     nudgeDigitando: "Assistente de Dados está digitando", // [PROPOSTA] nome acessível do TypingIndicator
     tituloDaTabela: "Registros Consolidados da Subprefeitura", // [PROTÓTIPO]
     colPeriodo: "Período", // e2.rotulo.col_periodo
@@ -48,7 +48,7 @@ export const TEXTOS = {
     anexoProcedencia: "Documento Oficial · Subprefeitura Municipal",
     abrirAnexo: (arquivo: string) => `Abrir ${arquivo}`, // [PROPOSTA] nome acessível
     concluirLeitura: "Concluir Leitura do Anexo", // e2.sheet.btn_fechar
-    gerarPrevias: "Gerar Previews das Escalas", // [PROTÓTIPO]
+    gerarPrevias: "Gerar Prévias das Escalas", // [PROTÓTIPO], sem o inglês (ADR-91)
     exibindo: (escala: string) => `Exibindo: ${escala}`, // [PROTÓTIPO]
     abrirCompositor: "Abrir Compositor de Publicação", // e2.acao.avancar_composicao
     erroDoGrafico: "Boletim visual indisponível temporariamente. Os registros numéricos estão preservados.", // e2.erro.svg_titulo
@@ -58,8 +58,8 @@ export const TEXTOS = {
 
   // ── E3 — o compositor
   compositor: {
-    titulo: "Parametrização do Boletim Oficial", // e3.header.compositor
-    tituloDaErrata: "Compositor de Errata Oficial (Slot 2 de 3)", // e4.header.errata_compositor
+    titulo: "Monte seu Boletim Oficial", // e3.header.compositor, trocado pelo Lucas (29/10)
+    tituloDaErrata: "Monte sua Errata Oficial (Publicação 2 de 3)", // e4.header.errata_compositor, sem o inglês (ADR-91) e no tom do título da 1ª
     tagErrata: "Errata", // [PROTÓTIPO] "Prévia: ERRATA TÉCNICA OFICIAL"
     avisoDaErrata:
       "Seleções da 1ª publicação pré-carregadas. Altere o que julgar necessário para reparar a clareza pública. O original permanecerá no histórico do comitê.", // [PROTÓTIPO]
@@ -81,7 +81,7 @@ export const TEXTOS = {
       corpo:
         "Atenção: Esta ação gastará 1 de suas 3 publicações oficiais no grupo da cidade. Mensagens encaminhadas não podem ser editadas ou excluídas. Deseja publicar?", // e3.modal.alerta_corpo (TC-08)
       corpoDaErrata:
-        "Atenção: Esta ação gastará o slot 2 de 3 das suas publicações oficiais no grupo da cidade. A errata entra abaixo do boletim original, que permanece no histórico. Mensagens encaminhadas não podem ser editadas ou excluídas. Deseja publicar?", // [PROPOSTA] o equivalente do TC-08 para o slot 2
+        "Atenção: Esta ação gastará a 2ª de suas 3 publicações oficiais no grupo da cidade. A errata entra abaixo do boletim original, que permanece no histórico. Mensagens encaminhadas não podem ser editadas ou excluídas. Deseja publicar?", // [PROPOSTA] o equivalente do TC-08 para o slot 2
       ok: "Confirmar Envio", // e3.modal.btn_confirmar
       revisar: "Revisar Parametrização", // e3.modal.btn_cancelar
       gravando: "Gravando no Comitê...", // [PROTÓTIPO] processando envio
@@ -117,11 +117,10 @@ export const TEXTOS = {
     verDados: "Ver dados e fonte", // e6.cartao.acao_dados_a/b
     retornar: "Retornar aos Cartões", // e6.sheet.fechar
     fonte: (f: string) => `Fonte: ${f}`, // [PROPOSTA]
-    dadosOficiais: "Dados oficiais", // [PROPOSTA] seção da folha
-    dadosDoCartao: (id: string) => `Gráfico do Cartão ${id}`, // [PROPOSTA] seção da folha
-    eixoDoCartao: (de: string, ate: string) => `Eixo vertical de ${de} a ${ate}`, // [PROPOSTA]
-    ocorrencias: (n: number, populacao: string) => `${n} ocorrências · ${populacao}`, // [PROPOSTA]
-    taxa: (t: string) => `${t} por 100 mil hab.`, // [PROPOSTA]
+    colPeriodo: "Período", // [PROTÓTIPO] E6-ALU-02
+    colOcorrencias: "Ocorrências", // [PROPOSTA] o dado que o protótipo não tabulava
+    colTaxa: "Taxa por 100 mil hab.", // [PROTÓTIPO] E6-ALU-02
+    populacao: (porPeriodo: string) => `População de referência — ${porPeriodo}`, // [PROPOSTA]
   },
 
   // ── E6-ALU-03 — a conclusão (Unooria)
@@ -146,7 +145,7 @@ export const TEXTOS = {
     feed: { antes: "Acompanhe a reação do ", destaque: "grupo da cidade", depois: " ao seu boletim." },
     errata: {
       antes: "O Assistente de Dados liberou o ",
-      destaque: "2º slot de publicação",
+      destaque: "2ª publicação",
       depois: ": publique uma errata ou avance sem publicar.",
     },
     laudo: { antes: "Arraste a régua e veja o ", destaque: "Fator de Mentira", depois: " mudar com a origem do eixo." },

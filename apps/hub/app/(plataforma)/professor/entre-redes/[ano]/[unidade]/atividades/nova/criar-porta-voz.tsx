@@ -643,7 +643,7 @@ function CuradoriaDoPacote({
                 <Campo label="Periodicidade" max={80} value={c.servico.periodicidade} onChange={(v) => mexer((k) => ({ ...k, servico: { ...k.servico, periodicidade: v } }))} />
                 {VALORES_DA_SERIE.map((valor, i) => (
                   <div key={i} className={quadro}>
-                    <span className="text-[12px] font-semibold text-unooria-neutral-600">{`Mês ${i + 1} · ${valor}% (fixo)`}</span>
+                    <span className="text-[12px] font-semibold text-unooria-neutral-600">{`${c.servico.periodos[i]?.trim() || `Período ${i + 1}`} · ${valor}% (fixo)`}</span>
                     <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
                       <Campo
                         label="Período"

@@ -38,12 +38,12 @@ const RAIZ = "/porta-voz-dos-dados";
 const COPY = {
   bot: "Assistente de Dados — Programa Municipal",
   iniciar: "Iniciar Estruturação de Dados",
-  gerarPrevias: "Gerar Previews das Escalas",
+  gerarPrevias: "Gerar Prévias das Escalas",
   escala80: "Escala com Recorte de Variação (Origem 80%)",
   escala0: "Escala Absoluta (Origem 0)",
   abrirCompositor: "Abrir Compositor de Publicação",
-  compositor: "Parametrização do Boletim Oficial",
-  compositorErrata: "Compositor de Errata Oficial (Slot 2 de 3)",
+  compositor: "Monte seu Boletim Oficial",
+  compositorErrata: "Monte sua Errata Oficial (Publicação 2 de 3)",
   zero: "0–100%",
   oitenta: "80–100%",
   previaSemEscala: "Escolha a origem do eixo vertical para gerar a prévia.",
@@ -457,10 +457,10 @@ await suite(
 
     // ═══ ESTUDANTE A: a errata ═════════════════════════════════════════════
     await qa.getByRole("button", { name: COPY.abrirAssistente, exact: true }).click({ timeout: 25_000 });
-    await qa.getByText(/ERRATA TÉCNICA CORRETIVA utilizando o seu 2º slot/).waitFor({ timeout: 10_000 });
+    await qa.getByText(/ERRATA TÉCNICA CORRETIVA utilizando a sua 2ª publicação/).waitFor({ timeout: 10_000 });
     await r.registrar(a, "oferta-da-errata", {
       titulo: "A oferta da errata",
-      mostra: "O Assistente de Dados libera o 2º slot: “Publicar Errata Corretiva” ou “Avançar sem publicar errata”.",
+      mostra: "O Assistente de Dados libera a 2ª publicação: “Publicar Errata Corretiva” ou “Avançar sem publicar errata”.",
       prova: "A errata só abre com a retomada liberada; o original permanece no histórico.",
     });
     await qa.locator(".rodape").getByRole("button", { name: COPY.publicarErrata, exact: true }).click();
@@ -475,13 +475,13 @@ await suite(
     );
     await r.registrar(a, "errata-0-com-fonte", {
       titulo: "A errata: 0–100% com a fonte",
-      mostra: "O compositor da errata (slot 2 de 3) com a etiqueta Errata, a escala trocada para 0–100% e a fonte dos dados ligada.",
+      mostra: "O compositor da errata (publicação 2 de 3) com a etiqueta Errata, a escala trocada para 0–100% e a fonte dos dados ligada.",
       prova: "A errata parte da 1ª publicação INTEIRA: o estudante muda só o que quer corrigir.",
     });
     await errataA.getByRole("button", { name: COPY.publicarErrata, exact: true }).click();
     const confirmacaoErrata = qa.getByRole("dialog", { name: COPY.confirmarTitulo, exact: true });
     await confirmacaoErrata.waitFor({ timeout: 10_000 });
-    r.exigir((await confirmacaoErrata.innerText()).includes("slot 2 de 3"), "a confirmação da errata fala do slot 2 de 3");
+    r.exigir((await confirmacaoErrata.innerText()).includes("2ª de suas 3 publicações"), "a confirmação da errata fala da 2ª de 3 publicações");
     const errataPublicada = await comResposta(a, /errata\/publicar$/, () => confirmacaoErrata.getByRole("button", { name: COPY.confirmar, exact: true }).click());
     r.exigir(
       errataPublicada.status === 200 && errataPublicada.corpo?.slotsRestantes === 1 && errataPublicada.corpo?.publicacoes?.errata?.escala === 0,
@@ -534,9 +534,14 @@ await suite(
     await qa.getByRole("button", { name: COPY.verDados, exact: true }).first().click();
     const folhaDados = qa.getByRole("dialog", { name: "Relatório Técnico Oficial de Ocorrências Policiais" });
     await folhaDados.waitFor({ timeout: 10_000 });
+    const linhasDosDados = await folhaDados.locator("table.dados tbody tr").allInnerTexts();
+    r.exigir(
+      linhasDosDados.length === 2 && /Ano Anterior[\s\S]*145[\s\S]*24,1/.test(linhasDosDados[0] ?? "") && /Ano Atual[\s\S]*143[\s\S]*23,8/.test(linhasDosDados[1] ?? ""),
+      `a folha mostra a tabela da Secretaria, uma linha por ano (${JSON.stringify(linhasDosDados)})`,
+    );
     await r.registrar(a, "pericia-dados", {
       titulo: "A perícia: os dados oficiais",
-      mostra: "A folha “Ver dados e fonte”: as taxas da Secretaria nos dois anos e o eixo de cada cartão.",
+      mostra: "A folha “Ver dados e fonte”: a tabela da Secretaria (período, ocorrências e taxa por 100 mil habitantes), como no protótipo.",
       prova: "Os cartões chegam como peças, sem rótulo de certo ou errado: o gabarito fica no servidor.",
     });
     await folhaDados.getByRole("button", { name: COPY.retornar, exact: true }).click();
