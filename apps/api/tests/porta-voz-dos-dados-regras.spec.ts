@@ -5,6 +5,8 @@ import { FICHA_EXP03EM1B } from "../src/evidencias/fichas/exp03em1b";
 import { FICHAS } from "../src/evidencias/fichas";
 import type { Nivel } from "../src/evidencias/regras";
 import {
+  CAMADA_INCORRETA,
+  CAMADAS_DO_COMPOSITOR,
   DISCIPLINAS,
   ETAPAS_DO_GATE,
   LAUDO,
@@ -12,6 +14,7 @@ import {
   ROTULO_DA_DISCIPLINA,
   SERIE_HISTORICA,
   TEXTOS_DO_CHAT,
+  TEXTO_DA_PROJECAO,
   TIPOS_DE_PUBLICACAO,
   conteudoDoPadrao,
   type ConteudoDoPacote,
@@ -37,7 +40,7 @@ import {
 import { problemasDoConteudo } from "../src/porta-voz-dos-dados/regras/pacote";
 import { avancarEtapa, normalizarEtapa, passoEfetivo, pausada, type MarcosDaSessao } from "../src/porta-voz-dos-dados/regras/passos";
 import { problemasDoParecer } from "../src/porta-voz-dos-dados/regras/pericia";
-import { adequada, camadasAtivas, corrigiu, regrediu, type Publicacao } from "../src/porta-voz-dos-dados/regras/publicacao";
+import { adequada, camadasAtivas, corrigiu, mesmaPublicacao, ordemDasCamadas, regrediu, type Publicacao } from "../src/porta-voz-dos-dados/regras/publicacao";
 import { trechosAlemDoTeto } from "../src/podcast/roteiro";
 
 /**
@@ -50,15 +53,18 @@ import { trechosAlemDoTeto } from "../src/podcast/roteiro";
 const ESCALAS: Escala[] = [0, 80];
 const BOOL = [false, true];
 
-/** Toda publicação possível: 2 escalas × 2³ camadas = 16. */
+/** Toda publicação possível: 2 escalas × 2⁴ camadas (as três corretas e a projeção, ADR-203) = 32. */
 const TODAS: Publicacao[] = ESCALAS.flatMap((escala) =>
-  BOOL.flatMap((explicacao) => BOOL.flatMap((fonte) => BOOL.map((contexto) => ({ escala, explicacao, fonte, contexto })))),
+  BOOL.flatMap((explicacao) =>
+    BOOL.flatMap((fonte) => BOOL.flatMap((contexto) => BOOL.map((projecao) => ({ escala, explicacao, fonte, contexto, projecao })))),
+  ),
 );
 const pub = (escala: Escala, camadas: Partial<Omit<Publicacao, "escala">> = {}): Publicacao => ({
   escala,
   explicacao: false,
   fonte: false,
   contexto: false,
+  projecao: false,
   ...camadas,
 });
 const NIVEIS: Nivel[] = ["atingiu", "em_processo", "nao_atingiu"];
@@ -133,11 +139,21 @@ describe("EM13CO21 — a explicação da escala", () => {
 });
 
 describe("EM13CO22 — as camadas da publicação FINAL", () => {
-  test("a contagem decide: ≥ 2, 1, 0 — nas 16 publicações", () => {
+  test("a contagem das corretas decide: ≥ 2, 1, 0 — e a projeção ligada põe teto em processo (ADR-203), nas 32", () => {
     for (const p of TODAS) {
       const n = camadasAtivas(p);
-      expect(nivelCO22(p, null)).toBe(n >= 2 ? "atingiu" : n === 1 ? "em_processo" : "nao_atingiu");
+      const esperado = p.projecao ? (n >= 1 ? "em_processo" : "nao_atingiu") : n >= 2 ? "atingiu" : n === 1 ? "em_processo" : "nao_atingiu";
+      expect(nivelCO22(p, null)).toBe(esperado);
     }
+  });
+  test("ligar TUDO cai na pegadinha: as três corretas e a projeção ficam em processo", () => {
+    expect(nivelCO22(pub(0, { explicacao: true, fonte: true, contexto: true, projecao: true }), null)).toBe("em_processo");
+    expect(nivelCO22(pub(0, { projecao: true }), null)).toBe("nao_atingiu");
+    expect(camadasAtivas(pub(0, { projecao: true }))).toBe(0);
+  });
+  test("a errata que desliga a projeção recupera o atingiu", () => {
+    const tudo = pub(0, { explicacao: true, fonte: true, contexto: true, projecao: true });
+    expect(nivelCO22(tudo, { ...tudo, projecao: false })).toBe("atingiu");
   });
   test("com errata, vale a errata", () => {
     expect(nivelCO22(pub(0, { fonte: true, contexto: true }), pub(0))).toBe("nao_atingiu");
@@ -159,11 +175,13 @@ describe("EM13CO26 — a tabela de decisão (decisão 4)", () => {
     ["errata sem correção real (só a explicação)", pub(80, { fonte: true }), pub(80, { fonte: true, explicacao: true }), "em_processo"],
     ["errata idêntica", pub(80), pub(80), "em_processo"],
     ["errata 0 → 80 numa 1ª inadequada", pub(0), pub(80, { fonte: true }), "nao_atingiu"],
+    ["errata que desliga a projeção (ADR-203)", pub(80, { fonte: true, projecao: true }), pub(80, { fonte: true }), "atingiu"],
+    ["errata que LIGA a projeção não corrige", pub(80, { fonte: true }), pub(80, { fonte: true, projecao: true }), "em_processo"],
   ])("%s → %s", (_, inicial, errata, nivel) => {
     expect(nivelCO26(inicial, errata)).toBe(nivel);
   });
 
-  test("todas as 16 × 17 combinações caem num dos três níveis, e a regressão nunca atinge", () => {
+  test("todas as 32 × 33 combinações caem num dos três níveis, e a regressão nunca atinge", () => {
     for (const i of TODAS) {
       for (const e of [null, ...TODAS]) {
         const n = nivelCO26(i, e);
@@ -370,5 +388,25 @@ describe("o espelho dos CHECKs da migração", () => {
   test("RLS forçada nas cinco tabelas", () => {
     expect(sql).toContain("ARRAY['exp03em1b_pacotes', 'exp03em1b_gates_turma', 'exp03em1b_gates_historico', 'exp03em1b_sessoes', 'exp03em1b_publicacoes']");
     expect(sql).toContain("FORCE ROW LEVEL SECURITY");
+  });
+});
+
+describe("a 4ª camada do compositor (ADR-203)", () => {
+  test("a ordem é uma permutação das quatro, estável pela semente e diferente entre estudantes", () => {
+    const a = ordemDasCamadas("pacote-1:estudante-1");
+    expect([...a].sort()).toEqual([...CAMADAS_DO_COMPOSITOR].sort());
+    expect(ordemDasCamadas("pacote-1:estudante-1")).toEqual(a);
+    const ordens = new Set(Array.from({ length: 40 }, (_, i) => ordemDasCamadas(`pacote-1:estudante-${i}`).join(",")));
+    expect(ordens.size).toBeGreaterThan(5);
+    const posicoes = new Set(Array.from({ length: 40 }, (_, i) => ordemDasCamadas(`pacote-1:estudante-${i}`).indexOf(CAMADA_INCORRETA)));
+    expect(posicoes.size).toBe(4);
+  });
+  test("a projeção entra na idempotência e o texto não crava outro número que a tabela", () => {
+    expect(mesmaPublicacao(pub(0), pub(0, { projecao: true }))).toBe(false);
+    expect(TEXTO_DA_PROJECAO).toMatch(/80%/);
+    expect(TEXTO_DA_PROJECAO.length).toBeLessThanOrEqual(140);
+    /* A e2e não importa TypeScript: o espelho dela é conferido aqui. */
+    const e2e = readFileSync(join(__dirname, "../../../scripts/e2e/estudante/18-porta-voz.mjs"), "utf8");
+    expect(e2e).toContain(`const TEXTO_DA_PROJECAO = "${TEXTO_DA_PROJECAO}";`);
   });
 });

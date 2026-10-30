@@ -52,8 +52,9 @@ export function MissaoPortaVoz({
           </p>
           <p>
             <strong className="text-unooria-neutral-950">Nada avisa que a escala engana.</strong> O compositor começa
-            sem escala marcada: o estudante escolhe entre o eixo em 0% e o eixo em 80%, e as três informações (a
-            explicação da escala, a fonte e o contexto da queda) são opcionais. A nota técnica anexa conta que a queda
+            sem escala marcada: o estudante escolhe entre o eixo em 0% e o eixo em 80%, e as quatro informações são
+            opcionais — três corretas (a explicação da escala, a fonte e o contexto da queda) e uma projeção que a nota
+            técnica desmente, embaralhada entre elas: quem liga tudo sem ler cai nela. A nota técnica anexa conta que a queda
             ficou em duas ruas durante uma obra — só para quem a abre.
           </p>
           <p>

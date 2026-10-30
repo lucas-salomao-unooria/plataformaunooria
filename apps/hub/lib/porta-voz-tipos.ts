@@ -95,11 +95,18 @@ export const ITENS_DO_PACOTE = ["grupo", "servico", "notaTecnica", "camadas", "r
 export type ItemDoPacote = (typeof ITENS_DO_PACOTE)[number];
 
 /** Cada bloco da curadoria — o título do cartão e o que o "Regenerar Item" refaz. */
+/**
+ * A 4ª camada do compositor, INCORRETA de propósito (v2 do PO, ADR-203): o
+ * texto é do servidor, fixo em toda turma, e não passa pela curadoria. Espelho
+ * de `conteudo.ts#TEXTO_DA_PROJECAO` da api, conferido no teste.
+ */
+export const TEXTO_DA_PROJECAO = "Projeção: mantida a tendência, o índice fica abaixo de 80% no próximo período.";
+
 export const ROTULO_DO_ITEM: Record<ItemDoPacote, string> = {
   grupo: "O grupo da cidade",
   servico: "A tabela do serviço público",
   notaTecnica: "A nota técnica anexa",
-  camadas: "As três informações do compositor",
+  camadas: "As três informações corretas do compositor",
   reacoes: "As reações dos moradores",
   posAha: "Depois da publicação da escola rival",
 };

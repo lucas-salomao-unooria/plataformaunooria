@@ -37,6 +37,22 @@ eleitorais, que conclui.
   marca: marcar na 1ª deixaria um "atingiu" que uma errata regressiva não
   apagaria. CO14 no parecer (ou no pular). Quem não chega ao gesto fica "Não
   avaliado".
+- **A 4ª camada é INCORRETA de propósito** (v2 do PO, ADR-203): a
+  `projecao` ("o índice fica abaixo de 80% no próximo período"), que a nota
+  técnica desmente. Texto do SERVIDOR (`TEXTO_DA_PROJECAO`), fixo em toda turma
+  — não passa pelo prompt nem pela curadoria, e por isso vale também para o
+  pacote antigo. A ordem das quatro no compositor é EMBARALHADA por estudante
+  e atividade (`ordemDasCamadas`, determinística: o F5 e a errata mostram a
+  mesma). O nome da chave não diz que é a errada; o gabarito é a régua. CO22:
+  com ela ligada na publicação final, o teto é "em processo" (sem nenhuma
+  correta, não atingiu); desligá-la na errata conta como correção na CO26.
+  O hub (`lib/porta-voz-tipos.ts`) e a e2e 18 espelham o texto, e o teste de
+  regras confere os dois.
+- **Sem imperativo onde se mede a iniciativa** (v2 do PO, ADR-203): a fala do
+  Assistente diz que a nota técnica EXISTE ("segue em anexo, caso queira
+  consultá-la"), nunca "consulte". O tom de ordem induz o gesto e contamina a
+  CO13. Vale para todo texto novo perto do anexo, das camadas, da errata e da
+  perícia.
 - **CO26 (decisão 4)**: adequada = eixo 0 + fonte. 0 → 80 na errata é
   regressão (não atingiu); 80 → 0 conta como correção mesmo tirando a fonte.
   CO21: ligada na 1ª e desligada na errata = em processo.

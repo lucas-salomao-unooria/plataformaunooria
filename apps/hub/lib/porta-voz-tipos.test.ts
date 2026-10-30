@@ -16,6 +16,7 @@ import {
   ROTULO_DO_ITEM,
   ROTULO_DO_PASSO,
   TEMA,
+  TEXTO_DA_PROJECAO,
   VALORES_DA_SERIE,
   assinaturaDaEvidencia,
   assuntosDoTexto,
@@ -74,6 +75,7 @@ describe("o espelho dos vocabulários", () => {
     );
     expect(conteudo).toContain(`export const MORADORES = ${MORADORES};`);
     expect(conteudo).toContain(`export const NOME_DO_GRUPO = "${NOME_DO_GRUPO}";`);
+    expect(conteudo).toContain(`export const TEXTO_DA_PROJECAO = "${TEXTO_DA_PROJECAO}";`);
     const serie = /export const SERIE_HISTORICA = \[([\s\S]*?)\];/.exec(conteudo)?.[1] ?? "";
     expect([...serie.matchAll(/valor: (\d+)/g)].map((m) => Number(m[1]))).toEqual([...VALORES_DA_SERIE]);
     expect(contrato).toContain("contexto: z.string().trim().max(120).optional().nullable()");

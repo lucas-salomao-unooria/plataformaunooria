@@ -26,12 +26,15 @@ const CAMADAS = {
   explicacao: { zero: "eixo em zero", oitenta: "eixo em oitenta" },
   fonte: "a fonte",
   contexto: "o contexto",
+  projecao: "a projeção",
+  ordem: ["explicacao", "fonte", "contexto", "projecao"] as const,
 };
-const pub = (escala: 0 | 80, explicacao = false, fonte = false, contexto = false): Publicacao => ({
+const pub = (escala: 0 | 80, explicacao = false, fonte = false, contexto = false, projecao = false): Publicacao => ({
   escala,
   explicacao,
   fonte,
   contexto,
+  projecao,
   publicadaEm: "2026-10-28T13:00:00.000Z",
 });
 const fala = (autor: string) => ({ autor, perfil: "p", texto: `${autor} fala` });
@@ -45,23 +48,26 @@ const FEED: NonNullable<Sessao["feed"]> = {
 describe("o compositor (decisão 5 e a errata)", () => {
   test("a 1ª publicação começa SEM escala e sem camada; publicar exige a escala", () => {
     const e = escolhaInicial("inicial", null);
-    expect(e).toEqual({ escala: null, explicacao: false, fonte: false, contexto: false });
+    expect(e).toEqual({ escala: null, explicacao: false, fonte: false, contexto: false, projecao: false });
     expect(corpoDaPublicacao(e)).toBeNull();
-    expect(corpoDaPublicacao({ ...e, escala: 80 })).toEqual({ escala: 80, explicacao: false, fonte: false, contexto: false });
+    expect(corpoDaPublicacao({ ...e, escala: 80 })).toEqual({ escala: 80, explicacao: false, fonte: false, contexto: false, projecao: false });
   });
 
   test("as camadas são opcionais: com escala e sem camada, publica", () => {
-    expect(corpoDaPublicacao({ escala: 0, explicacao: false, fonte: false, contexto: false })).not.toBeNull();
+    expect(corpoDaPublicacao({ escala: 0, explicacao: false, fonte: false, contexto: false, projecao: false })).not.toBeNull();
   });
 
   test("a errata recarrega a 1ª escolha INTEIRA (escala e camadas)", () => {
-    expect(escolhaInicial("errata", pub(80, true, false, true))).toEqual({ escala: 80, explicacao: true, fonte: false, contexto: true });
+    expect(escolhaInicial("errata", pub(80, true, false, true, true))).toEqual({ escala: 80, explicacao: true, fonte: false, contexto: true, projecao: true });
   });
 
   test("o post carrega as camadas ligadas, na ordem; a anotação acompanha a escala", () => {
     expect(linhasDoPost(pub(80, true, true, true), CAMADAS)).toEqual(["eixo em oitenta", "a fonte", "o contexto"]);
     expect(linhasDoPost(pub(0, true, false, false), CAMADAS)).toEqual(["eixo em zero"]);
     expect(linhasDoPost(pub(0), CAMADAS)).toEqual([]);
+    /* ADR-203: a ordem é a do servidor, e a projeção sai no post como as outras. */
+    const embaralhada = { ...CAMADAS, ordem: ["projecao", "fonte", "explicacao", "contexto"] as const };
+    expect(linhasDoPost(pub(0, true, true, false, true), embaralhada)).toEqual(["a projeção", "a fonte", "eixo em zero"]);
   });
 });
 

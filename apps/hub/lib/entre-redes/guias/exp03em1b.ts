@@ -97,7 +97,7 @@ export const GUIA_EXP03EM1B: GuiaDaAula = {
         "Produzir e publicar conteúdo como textos, imagens, áudios, vídeos e suas associações, bem como ferramentas para sua integração, organização e apresentação, utilizando diferentes mídias digitais.",
       eixo: "Cultura Digital",
       ondeAcontece:
-        "O boletim final com o gráfico e pelo menos duas das três informações ligadas (explicação da escala, fonte e contexto).",
+        "O boletim final com o gráfico e pelo menos duas das três informações corretas ligadas (explicação da escala, fonte e contexto), sem a projeção que a nota técnica desmente. Ligar tudo, a projeção junto, fica em processo.",
     },
     {
       codigo: "EM13CO26",
@@ -326,9 +326,9 @@ export const GUIA_EXP03EM1B: GuiaDaAula = {
         },
         {
           criterio: "O gráfico com as informações (EM13CO22)",
-          emDesenvolvimento: "Publica o gráfico sozinho.",
-          adequado: "Publica com uma informação.",
-          avancado: "Publica com duas ou três informações.",
+          emDesenvolvimento: "Publica o gráfico sozinho, ou só com a projeção.",
+          adequado: "Publica com uma informação correta, ou liga tudo, a projeção junto.",
+          avancado: "Publica com duas ou três informações corretas, sem a projeção.",
         },
         {
           criterio: "A errata (EM13CO26)",

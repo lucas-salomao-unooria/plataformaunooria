@@ -5,7 +5,7 @@ import { QuotaService } from "../src/ai/quota.service";
 import type { AuthClaims } from "../src/auth/claims";
 import { EquipesService } from "../src/equipes/equipes.service";
 import { EvidenciasService } from "../src/evidencias/evidencias.service";
-import { EXP_ID, PACOTE_PADRAO, conteudoDoPadrao } from "../src/porta-voz-dos-dados/conteudo";
+import { CAMADAS_DO_COMPOSITOR, EXP_ID, PACOTE_PADRAO, TEXTO_DA_PROJECAO, conteudoDoPadrao } from "../src/porta-voz-dos-dados/conteudo";
 import {
   RespostaEmAndamentoSchema,
   RespostaGerarConteudoSchema,
@@ -105,8 +105,8 @@ async function nivel(estudanteId: string, marcador: string) {
   return m?.status ?? null;
 }
 
-const P0 = { escala: 0 as const, explicacao: true, fonte: true, contexto: false };
-const P80 = { escala: 80 as const, explicacao: false, fonte: false, contexto: false };
+const P0 = { escala: 0 as const, explicacao: true, fonte: true, contexto: false, projecao: false };
+const P80 = { escala: 80 as const, explicacao: false, fonte: false, contexto: false, projecao: false };
 
 beforeAll(async () => {
   await criarRoleDeRuntime(prisma);
@@ -259,6 +259,9 @@ describe("a aula", () => {
     expect(s).toMatchObject({ passo: "feed", slotsRestantes: 2, errataLiberada: false, publicacoes: { inicial: { escala: 0, fonte: true }, errata: null } });
     expect(s.conteudo?.grupo.nome).toBe("Comitê Municipal de Políticas Públicas — Qualidade da Água do Bairro");
     expect(s.conteudo?.servico.serie.map((x) => x.valor)).toEqual([95, 94, 92, 88]);
+    /* ADR-203: a 4ª camada (a incorreta) e a ordem das quatro, embaralhada por estudante e estável no F5. */
+    expect(s.conteudo?.camadas.projecao).toBe(TEXTO_DA_PROJECAO);
+    expect([...(s.conteudo?.camadas.ordem ?? [])].sort()).toEqual([...CAMADAS_DO_COMPOSITOR].sort());
     /* O feed do ramo 0, e o post espelho com a escala OPOSTA. */
     expect(s.feed?.reacoes[0]?.texto).toBe("Ah, tudo tranquilo, oscilação normal de rotina");
     expect(s.feed?.rival).toMatchObject({ escola: "Escola Estadual Santos Dumont", escala: 80 });
@@ -325,7 +328,7 @@ describe("a aula", () => {
   });
 
   test("bia corrige na errata (80 → 0 + fonte + contexto): o 2º slot, a 1ª no histórico", async () => {
-    const errata = { escala: 0 as const, explicacao: false, fonte: true, contexto: true };
+    const errata = { escala: 0 as const, explicacao: false, fonte: true, contexto: true, projecao: false };
     const s = SessaoSchema.parse(await service.publicarErrata(ESCOLA, ids.bia, errata));
     expect(s).toMatchObject({ passo: "laudo", slotsRestantes: 1, publicacoes: { inicial: { escala: 80 }, errata: { escala: 0, contexto: true } } });
     expect(await prisma.exp03em1bPublicacao.count({ where: { escolaId: ESCOLA, estudanteId: ids.bia } })).toBe(2);

@@ -27,6 +27,7 @@ import {
   SERIE_HISTORICA,
   SLOTS_DE_PUBLICACAO,
   TEXTOS_DO_CHAT,
+  TEXTO_DA_PROJECAO,
   COORDENADOR,
   VERSAO_DO_INSTRUMENTO,
   conteudoDoPadrao,
@@ -60,7 +61,7 @@ import {
 import { problemasDoConteudo } from "./regras/pacote";
 import { ETAPA_INICIAL, PASSOS, avancarEtapa, normalizarEtapa, passoEfetivo, pausada, type MarcosDaSessao, type Passo } from "./regras/passos";
 import { mesmoParecer } from "./regras/pericia";
-import { mesmaPublicacao, type Publicacao } from "./regras/publicacao";
+import { mesmaPublicacao, ordemDasCamadas, type Publicacao } from "./regras/publicacao";
 
 /**
  * Persistência e regras aplicadas da exp03em1b — O Porta-Voz dos Dados
@@ -107,7 +108,7 @@ const CAMPOS_DA_SESSAO = {
   pulouPericia: true,
   concluidoEm: true,
   atualizadoEm: true,
-  publicacoes: { select: { tipo: true, escala: true, explicacao: true, fonte: true, contexto: true, publicadaEm: true } },
+  publicacoes: { select: { tipo: true, escala: true, explicacao: true, fonte: true, contexto: true, projecao: true, publicadaEm: true } },
 } satisfies Prisma.Exp03em1bSessaoSelect;
 
 type LinhaDaSessao = Prisma.Exp03em1bSessaoGetPayload<{ select: typeof CAMPOS_DA_SESSAO }>;
@@ -128,7 +129,7 @@ function marcosDe(s: LinhaDaSessao | null | undefined): MarcosDaSessao | null {
 function publicacaoDe(s: LinhaDaSessao | null | undefined, tipo: "inicial" | "errata"): PublicacaoGravada | null {
   const p = s?.publicacoes.find((x) => x.tipo === tipo);
   if (!p || (p.escala !== 0 && p.escala !== 80)) return null;
-  return { escala: p.escala, explicacao: p.explicacao, fonte: p.fonte, contexto: p.contexto, publicadaEm: p.publicadaEm };
+  return { escala: p.escala, explicacao: p.explicacao, fonte: p.fonte, contexto: p.contexto, projecao: p.projecao, publicadaEm: p.publicadaEm };
 }
 
 function motivo(v: string | null): MotivoDaPericia | null {
@@ -216,7 +217,7 @@ export class PortaVozDosDadosService {
       const { turmaId } = await this.estudanteDaEscola(tx, escolaId, estudanteId);
       const ctx = await this.contextoDaTurma(tx, escolaId, turmaId);
       const sessao = ctx.pacote ? await this.sessaoDe(tx, escolaId, estudanteId, ctx.pacote) : null;
-      return this.montarEstado(ctx, sessao);
+      return this.montarEstado(ctx, sessao, estudanteId);
     }, escolaId);
   }
 
@@ -687,13 +688,15 @@ export class PortaVozDosDadosService {
   // ─────────────────────────────────────────────────────────── privados
 
   /** O estado do estudante. Allowlist: nada do gabarito, e o feed só do ramo que ELE publicou. */
-  private montarEstado(ctx: ContextoDaTurma, s: LinhaDaSessao | null): z.infer<typeof SessaoSchema> {
+  private montarEstado(ctx: ContextoDaTurma, s: LinhaDaSessao | null, estudanteId: string): z.infer<typeof SessaoSchema> {
     const pacote = ctx.pacote;
     const passo = passoEfetivo(marcosDe(s), ctx.etapa);
     const inicial = publicacaoDe(s, "inicial");
     const errata = publicacaoDe(s, "errata");
     const iso = (p: PublicacaoGravada | null) =>
-      p ? { escala: p.escala, explicacao: p.explicacao, fonte: p.fonte, contexto: p.contexto, publicadaEm: p.publicadaEm.toISOString() } : null;
+      p
+        ? { escala: p.escala, explicacao: p.explicacao, fonte: p.fonte, contexto: p.contexto, projecao: p.projecao, publicadaEm: p.publicadaEm.toISOString() }
+        : null;
     const c = pacote?.conteudo ?? null;
     return {
       preparada: pacote !== null,
@@ -744,7 +747,13 @@ export class PortaVozDosDadosService {
               serie: SERIE_HISTORICA.map((v, i) => ({ periodo: c.servico.periodos[i] ?? `Período ${i + 1}`, ...v, situacao: c.servico.situacoes[i] ?? "" })),
             },
             notaTecnica: { ...c.notaTecnica, secoes: c.notaTecnica.secoes.map((x) => ({ ...x })) },
-            camadas: { explicacao: { ...c.camadas.explicacao }, fonte: c.camadas.fonte, contexto: c.camadas.contexto },
+            camadas: {
+              explicacao: { ...c.camadas.explicacao },
+              fonte: c.camadas.fonte,
+              contexto: c.camadas.contexto,
+              projecao: TEXTO_DA_PROJECAO,
+              ordem: ordemDasCamadas(`${pacote!.id}:${estudanteId}`),
+            },
           }
         : null,
       textos: textosFixos(),
@@ -860,7 +869,7 @@ export class PortaVozDosDadosService {
       }
       if (!sessao.concluidoEm && ctx.etapa === "pausa") throw erroDeJogo("telas-pausadas");
       await trabalho(tx, pacote, sessao, ctx.etapa);
-      return this.montarEstado(ctx, await this.sessaoDe(tx, escolaId, estudanteId, pacote));
+      return this.montarEstado(ctx, await this.sessaoDe(tx, escolaId, estudanteId, pacote), estudanteId);
     }, escolaId);
   }
 
