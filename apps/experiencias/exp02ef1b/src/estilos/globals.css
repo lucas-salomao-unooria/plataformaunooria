@@ -719,17 +719,6 @@ body {
   pointer-events: none;
 }
 
-.opcao {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.opcao__apoio {
-  font-size: 28px;
-  line-height: 1;
-}
-
 /* As opções pictográficas GRANDES (E5, E6): o pacote dá 44 px; a faixa pede 56+. */
 .opcoes-grandes {
   width: 100%;

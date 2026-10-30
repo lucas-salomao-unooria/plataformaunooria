@@ -8,7 +8,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | Dev | `pnpm --filter @edu/exp02ef1b dev` → **:5187** (`strictPort`) · hub `/exp/exp02ef1b` ou `/dev-embed?src=http://localhost:5187` |
 | DS | UMA seção: `unoovista` (`@edu/ui/ds-unoovista` + `unoovista.css` + `fonts/unoovista.css`) |
 | api | módulo `enigma-capa` (`apps/api/src/enigma-capa/`, prefixo `/enigma-capa`, tabelas `exp02ef1b_*`, ADR-184) |
-| Versão | `2.2.1` nos três lugares (`public/experiencia.json`, `package.json`, `EXP_VERSION` em `src/lib/tipos.ts`) |
+| Versão | `2.2.3` nos três lugares (`public/experiencia.json`, `package.json`, `EXP_VERSION` em `src/lib/tipos.ts`) |
 
 A criança (7–8 anos) lê a missão no mural da @radio_escola ("ENCONTRE OS 2
 OBJETOS IGUAIS NAS DUAS FOTOS DA BIBLIOTECA"), acha os dois objetos do fundo

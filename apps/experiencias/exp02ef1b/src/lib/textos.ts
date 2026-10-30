@@ -112,8 +112,6 @@ export const ROTULOS = {
   carta: (n: number) => `Foto ${n}`,
   selo: "Selo da capa",
   soltarSelo: "Solte o selo aqui",
-  emojiAtividade: "🤝",
-  emojiRoupa: "👕",
   emojiElemento: { mochila: "🎒", parede: "🧱", "crianca-lendo": "📖" } as Record<string, string>,
   erroDeAbertura: "SEM SINAL NA RÁDIO",
   semAtividade: "AGUARDE O PROFESSOR",

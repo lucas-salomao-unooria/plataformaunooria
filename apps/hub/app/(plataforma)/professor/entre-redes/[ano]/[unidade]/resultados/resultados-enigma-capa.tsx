@@ -42,8 +42,8 @@ const ROTULO_DA_ORIGEM = { ia: "Gerada com IA e aprovada por você", padrao: "Pa
  * o pacote aprovado, com tudo o que se faz com ele, nas cinco abas do template
  * (ADR-182): pô-lo no ar (se está pronto), a aula ao vivo (LIBERAR VIRADA e a
  * folha) e o "Zerar" só no em andamento, a cena com o gabarito, as equipes, o
- * podcast fixo e o painel de habilidades (EF02CO05 e EF02CO01). Molde: a de O
- * Efeito Amplificador.
+ * podcast (que conta a cena da atividade, ADR-204) e o painel de habilidades
+ * (EF02CO05 e EF02CO01). Molde: a de O Efeito Amplificador.
  *
  * Painel, botão e "Zerar" operam SEMPRE no pacote em andamento (a api não
  * recebe o pacote neles): por isso só aparecem quando a atividade da página É
@@ -304,7 +304,7 @@ export async function ResultadosEnigmaCapa({
               />
             }
             podcast={
-              /* Depois da aula: o podcast da plataforma (ADR-150) — fixo, o roteiro do §11 do one-pager (Iara e Bento). */
+              /* Depois da aula: o podcast da plataforma (ADR-150) — o roteiro do §11 (Iara e Bento) com as falas que contam a cena desta atividade (ADR-204). */
               <CartaoDoPodcast expId={EXP_ID} turmaId={turma} atividadeId={detalhe.id} podcast={podcast} />
             }
             habilidades={
