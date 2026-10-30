@@ -289,15 +289,15 @@ export const FALAS_DO_ASSISTENTE = {
     "Essa pergunta foge da pauta da comissão. Pergunte sobre custos, relatórios ou resultados dos projetos.",
   limite:
     "Você usou as consultas previstas no regimento. Clique em \"Ver Projetos\" para deliberar.",
-  /** [PROPOSTA] — a resposta de "Ver Projetos" não tem copy. */
-  verProjetos: "[PROPOSTA] Inscritos para os R$ 12.000: {papel} ({vagasPapel} vagas), {parcial} ({vagasParcial} vagas) e {nuvem} ({vagasNuvem} vagas).",
+  /** A resposta de "Ver Projetos" (a copy não tinha; texto da implementação, aceito pelo Lucas em 30/10). */
+  verProjetos: "Inscritos para os R$ 12.000: {papel} ({vagasPapel} vagas), {parcial} ({vagasParcial} vagas) e {nuvem} ({vagasNuvem} vagas).",
   contrafactual:
     "Você votou no projeto {votado} depois de auditar os cadernos. Sem essa investigação, o sistema teria comparado só os rastros digitais.",
-  /** [PROPOSTA] — a copy não escreveu as respostas das duas pílulas dirigidas (plano G6). */
+  /** As respostas das duas pílulas dirigidas (plano G6; a copy não tinha; aceitas pelo Lucas em 30/10). */
   pilulaCusto:
-    "[PROPOSTA] Pelos cadernos, o projeto {papel} serviu {refeicoes} refeições a {vagasPapel} jovens em 180 dias: R$ {custoRefeicao} por refeição e R$ {custoPapel} por vaga. O projeto {comparado} projeta R$ {custoComparado} por vaga.",
+    "Pelos cadernos, o projeto {papel} serviu {refeicoes} refeições a {vagasPapel} jovens em 180 dias: R$ {custoRefeicao} por refeição e R$ {custoPapel} por vaga. O projeto {comparado} projeta R$ {custoComparado} por vaga.",
   pilulaAssinaturas:
-    "[PROPOSTA] São 180 registros diários, com a presença assinada pelos responsáveis. O trabalho é o mesmo de um relatório digital: só o formato era papel.",
+    "São 180 registros diários, com a presença assinada pelos responsáveis. O trabalho é o mesmo de um relatório digital: só o formato era papel.",
 } as const;
 export type FalaDoAssistente = keyof typeof FALAS_DO_ASSISTENTE;
 
@@ -308,9 +308,9 @@ export const AMARA = {
   abertura: "Doze mil reais. Um projeto fica, dois ficam sem nada. A decisão é sua, conselheiro.",
   sistematizacao:
     "Você escolheu o projeto {votado}, enquanto boa parte da turma foi levada pelos relatórios da nuvem a votar em outro. Eu avaliava o resultado do projeto ou só os rastros digitais que a IA tinha para ler?",
-  /** [PROPOSTA] (plano G9): quando a turma NÃO concentrou o voto no projeto da nuvem, a fala não afirma uma indução que não houve. */
+  /** (plano G9; aceita pelo Lucas em 30/10): quando a turma NÃO concentrou o voto no projeto da nuvem, a fala não afirma uma indução que não houve. */
   sistematizacaoNeutra:
-    "[PROPOSTA] Você escolheu o projeto {votado}. Eu avaliava o resultado do projeto ou só os rastros digitais que a IA tinha para ler?",
+    "Você escolheu o projeto {votado}. Eu avaliava o resultado do projeto ou só os rastros digitais que a IA tinha para ler?",
   conceitos:
     "Nesta simulação, o assistente só consultou o que estava digitalizado e deixou de fora o que ficou no papel. É assim que dados do passado podem reproduzir desigualdades numa decisão automatizada.",
 } as const;
@@ -351,7 +351,7 @@ export const SUGESTOES: ReadonlyArray<{ texto: string; intencao: Intencao }> = [
   { texto: "Quais são as evidências de impacto de cada iniciativa?", intencao: "impacto_social" },
 ];
 
-/** Os textos fixos da tela do estudante (copy `design/06`). Os `[PROPOSTA]` são lacunas da copy (plano §3). */
+/** Os textos fixos da tela do estudante (copy `design/06`). As lacunas da copy (plano §3) foram preenchidas pela implementação e aceitas pelo Lucas em 30/10. */
 export const TEXTOS_DA_TELA = {
   workspace: "Conselho Municipal de Apoio Social",
   cracha: "Conselheiro Relator — Comissão de Recursos Comunitários",
@@ -386,7 +386,7 @@ export const TEXTOS_DA_TELA = {
   manter: "Manter Decisão Original",
   revisar: "Revisar Decisão",
   confirmarFinal: "Confirmar Decisão Final",
-  esperaDoDebate: "[PROPOSTA] Debate da plenária em andamento. A revisão abre quando a presidência da mesa autorizar.",
+  esperaDoDebate: "Debate da plenária em andamento. A revisão abre quando a presidência da mesa autorizar.",
   instrucaoAncoras: "Marque no histórico onde o assistente apontou falta de registros e onde a recomendação se inverteu.",
   abrirEditor: "Abrir Editor de Protocolo",
   editorTitulo: "Editor de Protocolo da IA do Conselho",
@@ -419,7 +419,7 @@ export const ROTEIRO_DO_DEBATE: readonly string[] = [
 /** Os botões das três travas, no painel do professor. */
 export const BOTOES_DO_GATE: Readonly<Record<Exclude<EtapaDoGate, "exploracao">, string>> = {
   revelacao: "Liberar Próxima Pauta",
-  /** [PROPOSTA] — a 3ª trava não tem copy (decisão do Lucas de 29/10). */
+  /** A 3ª trava não tinha copy (decisão do Lucas de 29/10; texto aceito em 30/10). */
   revoto: "Abrir Revisão da Decisão",
   explicar: "Destravar Explicar e Protocolo",
 };
