@@ -16,6 +16,7 @@ import {
   MISSAO_MANIFESTO_IA,
   MISSAO_NINA_NOTICIA,
   MISSAO_PORTA_VOZ,
+  MISSAO_DOSSIE_INVISIVEL,
   MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
@@ -27,6 +28,7 @@ import { turmaDaConducao } from "@/lib/turmas";
 import { MissaoASelecao } from "./missao-a-selecao";
 import { MissaoAssistenteInvisivel } from "./missao-assistente-invisivel";
 import { MissaoEfeitoAmplificador } from "./missao-efeito-amplificador";
+import { MissaoDossieInvisivel } from "./missao-dossie-invisivel";
 import { MissaoEnigmaCapa } from "./missao-enigma-capa";
 import { MissaoFotoConta } from "./missao-foto-conta";
 import { MissaoInstanooria } from "./missao-instanooria";
@@ -157,6 +159,9 @@ export default async function MissaoPage({
   }
   if (missao.expId === MISSAO_PORTA_VOZ.expId) {
     return corpo(<MissaoPortaVoz ano={ano} missao={comFicha} turma={turma} />);
+  }
+  if (missao.expId === MISSAO_DOSSIE_INVISIVEL.expId) {
+    return corpo(<MissaoDossieInvisivel ano={ano} missao={comFicha} turma={turma} />);
   }
   /* FALLBACK = INSTANOORIA, e é por isso que ele é perigoso: uma missão
      publicada sem ramo aqui não quebra — ela mostra a tela de OUTRA missão,

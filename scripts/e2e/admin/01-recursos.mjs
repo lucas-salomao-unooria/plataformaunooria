@@ -80,6 +80,7 @@ await suite(
       "O histórico registra cada mudança com o motivo e o nome de quem a fez — e sem UPDATE possível",
       "A REDE lê o histórico dela em /admin/recursos, e não alcança nenhuma escrita (403)",
       "O Porta-Voz dos Dados (exp03em1b) aparece no Entre Redes e DESLIGA na escola: a rota do estudante responde 403 recurso-indisponivel, e herdar devolve o acesso",
+      "O Dossiê Invisível (exp09ef1b) aparece no Entre Redes e DESLIGA na escola: a rota do estudante da 9A responde 403 recurso-indisponivel, e herdar devolve o acesso",
       "As imagens do banco padrão do Júri Estadual: a tela do admin com o progresso “X de 40”, uma aba por área — e o professor recebe 403",
     ],
     comando: "node scripts/e2e/admin/01-recursos.mjs",
@@ -367,6 +368,61 @@ await suite(
     r.exigir(
       religada.status === antesDeDesligar.status,
       `herdando de novo, a rota do estudante volta ao que era (${religada.status})`,
+    );
+
+    // ── a missão do 9º ano DESLIGA (exp09ef1b, ADR-202) ─────────────────
+    /* A mesma prova da regra 8 para O Dossiê Invisível, na mesma escola (a do
+       escopo já escolhido) e com a mesma sonda por `page.request`: entrar no
+       painel não basta, a missão tem de desligar no funil do estudante. */
+    const linhaDoDossie = cartao(p, "Entre Redes").locator("li").filter({ hasText: "exp09ef1b" });
+    r.exigir(
+      (await linhaDoDossie.count()) === 1 &&
+        (await linhaDoDossie.innerText()).includes("O Dossiê Invisível") &&
+        (await linhaDoDossie.locator("button[role=combobox]").count()) === 1,
+      "O Dossiê Invisível (exp09ef1b) aparece dentro do Entre Redes, com o interruptor “Neste escopo”",
+    );
+    const estudanteNono = conta("estudante", { turma: "9A" });
+    const p9 = await r.pagina("estudante 9A");
+    await r.entrar(p9, estudanteNono.login, estudanteNono.senha || senhaDemo());
+    const sessaoDoDossie = async () => {
+      const resp = await p9.request.get(`${HUB}/api/plataforma/dossie-invisivel/sessao`);
+      return { status: resp.status(), codigo: (await resp.json().catch(() => null))?.codigo ?? null };
+    };
+    const dossieAntes = await sessaoDoDossie();
+
+    await p.bringToFront();
+    await p.waitForTimeout(400);
+    await escolher(p, linhaDoDossie, "Neste escopo", "Desligado");
+    const modalDoDossie = p.locator(".unooria-modal-overlay").last();
+    await modalDoDossie.locator("textarea").waitFor({ timeout: 15_000 });
+    await modalDoDossie.locator("textarea").fill(MOTIVO);
+    await p.waitForTimeout(400);
+    await modalDoDossie.getByRole("button", { name: "Desligar" }).click();
+    await esperarOuFalharCedo(linhaDoDossie.getByText(/desligad/i), p.locator(ALERTA_DE_ERRO), {
+      timeout: 30_000,
+      oQue: "o desligamento do Dossiê Invisível na escola",
+    });
+    const dossieDesligado = await sessaoDoDossie();
+    r.exigir(
+      dossieDesligado.status === 403 && dossieDesligado.codigo === "recurso-indisponivel",
+      `desligado na escola, a rota do estudante da 9A responde 403 recurso-indisponivel (${dossieDesligado.status} ${dossieDesligado.codigo ?? ""}; antes: ${dossieAntes.status})`,
+    );
+    await linhaDoDossie.scrollIntoViewIfNeeded();
+    await r.registrar(p, "dossie-desligado", {
+      titulo: "O Dossiê Invisível desliga nesta escola",
+      mostra: "A linha da exp09ef1b dentro do Entre Redes com o interruptor em Desligado e a explicação do estado.",
+      prova:
+        "Experiência nova nasce com interruptor (regra 8): desligada, o estudante da 9A recebe 403 recurso-indisponivel " +
+        "no funil da missão, mesmo com ela liberada na sala.",
+      detalhe: `GET /dossie-invisivel/sessao: ${dossieAntes.status} antes, ${dossieDesligado.status} desligada`,
+    });
+
+    await escolher(p, linhaDoDossie, "Neste escopo", "Herda de cima");
+    await linhaDoDossie.getByText(/desligad/i).waitFor({ state: "detached", timeout: 30_000 });
+    const dossieReligado = await sessaoDoDossie();
+    r.exigir(
+      dossieReligado.status === dossieAntes.status && dossieAntes.status === 200,
+      `herdando de novo, a rota do estudante da 9A volta a responder 200 (${dossieAntes.status} → ${dossieReligado.status})`,
     );
 
     // ── o mesmo histórico, do lado da REDE ──────────────────────────────

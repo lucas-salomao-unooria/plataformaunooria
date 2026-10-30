@@ -1474,6 +1474,97 @@ export const MISSAO_PORTA_VOZ: Missao = {
   },
 };
 
+/**
+ * 9º ano · Unidade 1 — O Dossiê Invisível (`exp09ef1b`, ADR-202).
+ *
+ * Do one-pager pedagógico v5 e da copy revisada (`design/06`), com as decisões
+ * do Lucas de 2026-10-29: o clone é o UnooriaAI, a missão é individual com o
+ * debate coletivo no meio, são TRÊS travas do professor (a próxima pauta, a
+ * revisão da decisão depois do debate e o Explicar), não há a Etapa 6 (o
+ * módulo bônus saiu: a missão termina no Editor de Protocolo) e o podcast é
+ * só do professor. A descoberta central está na ficha; a do estudante não
+ * conta a virada.
+ */
+export const MISSAO_DOSSIE_INVISIVEL: Missao = {
+  anoSlug: "9-ano",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp09ef1b",
+  titulo: "O Dossiê Invisível",
+  // Copy `e0.narrativa.card_descricao`, sem o título na frente (o card já o mostra). Não conta a virada.
+  resumo: "Auditoria algorítmica e alocação orçamentária participativa no 9º ano.",
+  status: "disponivel",
+  // Sem spoiler: a missão mede se o conselheiro investiga a lacuna antes de alguém mostrar os cadernos.
+  estudante: {
+    titulo: "O Dossiê Invisível",
+    chamada:
+      "Você é conselheiro da Comissão de Recursos Comunitários: audite três projetos com o assistente do UnooriaAI e decida quem recebe os R$ 12.000.",
+  },
+  ficha: {
+    competencia:
+      "EF09CO08 — Discutir como a distribuição desigual de recursos de computação em uma economia global levanta " +
+      "questões de equidade, acesso e poder (o foco: a investigação da lacuna e a revisão dos critérios). Com EF09CO07 " +
+      "— Avaliar aplicações e implicações políticas, socioambientais e culturais das tecnologias digitais para propor " +
+      "alternativas aos desafios do mundo contemporâneo, incluindo aqueles relativos ao mundo do trabalho (o Editor de " +
+      "Protocolo da IA do Conselho).",
+    duracao: "1 aula de 50 min (24 min em tela, 16 min fora da tela)",
+    formato:
+      "Individual, um estudante por computador (ou bancada de 2 a 4), com o debate coletivo da turma no meio. O " +
+      "estudante usa o UnooriaAI, o assistente de inteligência artificial da Unooria, como conselheiro relator de uma " +
+      "comissão municipal: conversa com o assistente sobre três projetos sociais que disputam uma verba única de " +
+      "R$ 12.000. A inteligência artificial da aula só classifica a pergunta; as respostas são fixas, iguais para " +
+      "todos. O ranking dos critérios e o protocolo são escolhas fechadas.",
+    atos: [
+      {
+        rotulo: "1 — Desafiar: a verba indivisível",
+        texto:
+          "O conselheiro recebe três projetos comunitários e a fala de Amara: um projeto fica, dois ficam sem nada. " +
+          "Ele começa a análise ou escolhe uma das três perguntas sugeridas.",
+      },
+      {
+        rotulo: "2 — Navegar: a conversa com o assistente",
+        texto:
+          "O assistente compara custos, relatórios e impacto: 12 relatórios digitais de um lado, uma ficha cadastral " +
+          "do outro. Quem desconfia da lacuna descobre os cadernos de campo em papel e pode digitalizá-los; quem não " +
+          "pergunta recebe a recomendação da máquina. São até 5 consultas.",
+      },
+      {
+        rotulo: "3 — Decidir: a primeira escolha",
+        texto:
+          "O conselheiro escolhe um projeto, ordena os três critérios (regularidade documental, urgência social e " +
+          "capacidade técnica) e registra a decisão, que não volta. A tela aguarda a presidência da mesa.",
+      },
+      {
+        rotulo: "4 — Resultado: a próxima pauta (o seu primeiro botão)",
+        texto:
+          "Liberar Próxima Pauta abre os cadernos digitalizados e a tabela de confronto: com os mesmos critérios, o " +
+          "parecer da máquina se inverte. Você projeta a distribuição de votos da turma e conduz o debate com as " +
+          "perguntas do roteiro.",
+      },
+      {
+        rotulo: "4b — A revisão da decisão (o seu segundo botão)",
+        texto:
+          "Depois do debate, Abrir Revisão da Decisão libera o segundo voto: com a primeira escolha à vista, o " +
+          "conselheiro mantém ou revisa o projeto e reordena os critérios.",
+      },
+      {
+        rotulo: "5 — Explicar: Amara e o Editor de Protocolo (o seu terceiro botão)",
+        texto:
+          "Destravar Explicar e Protocolo traz Amara nomeando os conceitos (viés algorítmico, dados do passado, " +
+          "identificação de padrões e decisões automatizadas). O conselheiro marca no histórico onde o assistente " +
+          "errou, monta as três verificações do protocolo e descarta o que considera danoso. Enviar a proposta conclui.",
+      },
+    ],
+    preparo: [
+      "Crie a atividade: Usar banco padrão (Mesa Aberta, Ponto de Apoio e Conexão para Continuar, dois toques) ou um tema da sua disciplina gerado com IA, que você revisa e aprova antes de liberar.",
+      "Libere para a turma: a atividade entra em andamento e a missão é liberada na sala de aula, na hora (não há agendamento).",
+      "Deixe a página da atividade aberta na aba Aula ao vivo: são três botões seus, sempre para a frente — Liberar Próxima Pauta, Abrir Revisão da Decisão e Destravar Explicar e Protocolo.",
+      "Não conte que a aula é sobre viés algorítmico nem que existem cadernos em papel: a missão mede se o conselheiro investiga a lacuna antes da revelação.",
+      "Toque o podcast de recapitulação só depois da missão em tela: ele conta a virada.",
+    ],
+  },
+};
+
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "1-ano": [MISSAO_FOTO_CONTA],
   "2-ano": [MISSAO_ENIGMA_CAPA],
@@ -1483,6 +1574,7 @@ const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "6-ano": [MISSAO_JURI_ESTADUAL, MISSAO_RASTRO_BOATO],
   "7-ano": [MISSAO_A_SELECAO],
   "8-ano": [MISSAO_ATUAL, MISSAO_MANIFESTO_IA],
+  "9-ano": [MISSAO_DOSSIE_INVISIVEL],
   "1-serie": [MISSAO_ASSISTENTE_INVISIVEL],
   "2-serie": [MISSAO_EFEITO_AMPLIFICADOR],
   "3-serie": [MISSAO_PORTA_VOZ],

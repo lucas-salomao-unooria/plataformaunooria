@@ -45,6 +45,8 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria, progresso, ia, avaliacao & \arq{a-selecao}, \arq{evidencias}\\
 \zebra \cd{exp08ef4b} & \cd{8EF} & estudante &
   telemetria, progresso, avaliacao & \arq{manifesto-ia}\\
+\cd{exp09ef1b} & \cd{9EF} & estudante &
+  telemetria, progresso, ia, avaliacao & \arq{dossie-\B{}invisivel}, \arq{evidencias}\\
 \cd{app-70-vila-do-lume} & \textbf{transversal} & estudante &
   telemetria & \arq{vila}\\
 \zebra \cd{app-90-plano-de-aula} & --- & \textbf{professor} &
@@ -111,6 +113,13 @@ que nasce na 1.0.0, na porta 5190: a primeira missão da 3ª série, individual,
 com ficha pedagógica de seis habilidades só pelo que o estudante faz
 (Seção~\ref{sec:exp03em1b}).
 
+A unidade 1 do 9º ano é \textbf{O Dossiê Invisível} (\adrr{ADR-202}), no
+UnooriaAI (\cd{unooriaai}) com a mecânica na seção da plataforma
+(\cd{unooria}), separadas por pasta, que nasce na 0.1.0, na porta 5191: a
+primeira missão do 9º ano, individual, com a IA da aula que só classifica a
+pergunta e ficha pedagógica de duas habilidades só pelo que o estudante faz
+(Seção~\ref{sec:exp09ef1b}).
+
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{18mm}X@{}}
 \toprule
 \headrow \thd{Experiência} & \thd{Porta em \emph{dev}} & \thd{Onde aparece no hub}\\
@@ -132,6 +141,7 @@ com ficha pedagógica de seis habilidades só pelo que o estudante faz
 \cd{exp01em1b} & \cd{5188} & \rota{/exp/exp01em1b} (O Assistente Invisível, \cd{strictPort})\\
 \zebra \cd{exp03ef1b} & \cd{5189} & \rota{/exp/exp03ef1b} (Nina e a Notícia que Desapareceu, \cd{strictPort})\\
 \cd{exp03em1b} & \cd{5190} & \rota{/exp/exp03em1b} (O Porta-Voz dos Dados, \cd{strictPort})\\
+\zebra \cd{exp09ef1b} & \cd{5191} & \rota{/exp/exp09ef1b} (O Dossiê Invisível, \cd{strictPort})\\
 \bottomrule
 \end{tabularx}
 
@@ -334,6 +344,13 @@ da missão injeta o que só ela sabe montar:
     debate, a série, o laudo, os dois cartões da perícia COM o gabarito e o
     critério de cada nível das seis habilidades. O componente é
     \arq{guia/\B{}material-\B{}do-\B{}porta-\B{}voz.tsx} (\adrr{ADR-198}).
+  \item \textbf{exp09ef1b} (O Dossiê Invisível) ---
+    \rota{GET /dossie-\B{}invisivel/\B{}professor/\B{}material} devolve o banco
+    padrão, o roteiro das três perguntas do debate com os rótulos das três
+    travas, a conta da virada (o índice de cada projeto antes e depois dos
+    cadernos), o protocolo COM o gabarito e o bloco danoso, e o critério de
+    cada nível das duas habilidades. O componente é
+    \arq{guia/\B{}material-\B{}do-\B{}dossie-\B{}invisivel.tsx} (\adrr{ADR-202}).
   \item \textbf{backup-exp04ef1b} (o UnooTube, arquivado na \adrr{ADR-116}; o
     bloco saiu do guia com ele) --- a tabela dos 21 vídeos, com o \cd{factual} de
     cada um, vinha de \rota{GET /unootube/professor/videos}. A criança de nove
@@ -2502,6 +2519,202 @@ IA real (a professora gera o pacote, o estudante publica, a turma pausa e
 retoma, a errata, o laudo e a perícia) é \arq{scripts/e2e/estudante/18-porta-voz.mjs}:
 dois estudantes por ramos opostos, as seis habilidades conferidas na aba da
 professora contra a ficha.
+
+% ---------------------------------------------------------------------------
+\section{exp09ef1b --- O Dossiê Invisível}
+\label{sec:exp09ef1b}
+
+\textbf{9º ano EF, unidade 1, seções \cd{unooriaai} e \cd{unooria}
+(híbrido, por pasta), experiência 0.1.0, porta 5191.} Desde 2026-10-29
+(\adrr{ADR-202}), vinda da esteira de produto (one-pager v5, banco de
+conteúdo \cd{01e}, \emph{copy} revisada \cd{06} e protótipo \cd{08}), com o
+plano aprovado e as decisões do Lucas por cima. Módulo da api:
+\arq{dossie-\B{}invisivel} (prefixo \rota{/dossie-\B{}invisivel}, tabelas
+\cd{exp09ef1b\_*}). Manifesto: \cd{telemetria}, \cd{progresso}, \cd{ia} e
+\cd{avaliacao}, \textbf{sem} \cd{permissoes} e \textbf{sem} \cd{viewport}
+(\emph{desktop}, 1024$\times$768), produto \cd{entre-redes}.
+
+\begin{destaque}
+A inteligência artificial recomenda o que consegue ler. Com os mesmos
+critérios, o vencedor muda quando os registros em papel entram na base: o que
+parecia mérito era a forma do dado.
+\end{destaque}
+
+O estudante é o Conselheiro Relator da Comissão de Recursos Comunitários. No
+\emph{workspace} \enquote{Conselho Municipal de Apoio Social} do UnooriaAI,
+conversa com o assistente do conselho sobre três projetos que disputam R\$
+12.000 indivisíveis. Os PAPÉIS são fixos e os nomes vêm do pacote: um
+projeto com registros só em papel (no banco padrão, Mesa Aberta, com 1
+documento indexado), um com relatórios parciais (Ponto de Apoio, 7) e um com
+acervo digital em nuvem (Conexão para Continuar, 12). O assistente recomenda
+o da nuvem; quem desconfia da lacuna recebe a oferta de digitalizar os três
+cadernos de campo (180 registros diários), e com os MESMOS critérios a
+recomendação se inverte. Depois vêm o debate, o 2º voto, a sistematização de
+Amara e o Editor de Protocolo, que conclui. A missão é \textbf{individual}
+(\cd{MISSOES\_\B{}SEM\_\B{}EQUIPE}) e tem atividade (o pacote). \textbf{A Etapa 6}
+(Lia, Davi e a Linha 302) \textbf{e o Canal B não existem nesta versão}
+(\adrr{ADR-202}).
+
+\subsection{O que o estudante vive}
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}X@{}}
+\toprule
+\headrow \thd{Etapa} & \thd{Na tela, e o que o servidor guarda}\\
+\midrule
+\textbf{E1} Abertura & Amara (\enquote{Doze mil reais. Um projeto fica, dois
+  ficam sem nada.}), os três cartões dos projetos, as três sugestões e
+  \enquote{Começar Análise}, que abre a sessão (\cd{entrou\_em}).\\
+\zebra \textbf{E2} Conversa & O chat com o assistente: até cinco mensagens
+  de até 280 caracteres; \enquote{Escolher Projeto} libera na 3ª consulta ou
+  no \enquote{Ver Projetos}. Cada pergunta vai ao classificador (a IA, com a
+  árvore de reserva) e a resposta é uma fala do catálogo. A intenção
+  \cd{investigar\_\B{}lacuna\_\B{}cadernos} faz a oferta dos cadernos e mostra
+  \enquote{Digitalizar cadernos} (o OCR, 0,8\,s + 1,2\,s na tela). Os anexos
+  abrem a janela de metadados do documento.\\
+\textbf{E3} Deliberação & O painel de R\$ 12.000: escolher um projeto (os
+  outros dois viram \enquote{Fila de espera}) e ordenar os três critérios,
+  arrastando ou com Subir/Descer, a partir da ordem embaralhada da sessão.
+  \enquote{Registrar Decisão} é o \textbf{LATCH 1}: o projeto, o ranking e o
+  CAMINHO (A1, A2 ou B) congelam. Depois, a espera até a 1ª trava.\\
+\zebra \textbf{E4} Revelação & Quem não digitalizou (B e A2) digitaliza agora;
+  quem já digitalizou (A1) vê o contrafactual. A tabela de confronto (o
+  projeto escolhido contra o projeto em papel depois do OCR; quem escolheu o
+  próprio projeto em papel vê o da nuvem, G5), a constatação de auditoria e
+  as duas pílulas dirigidas (custo por refeição e as 180 listas de
+  presença). Depois do DEBATE (a 2ª trava), \enquote{Manter Decisão
+  Original} ou \enquote{Revisar Decisão}, o ranking de novo (mexer é
+  opcional) e \enquote{Confirmar Decisão Final}: o \textbf{LATCH 2}. A 1ª
+  escolha fica à vista, congelada.\\
+\textbf{E5} Explicar & Depois da 3ª trava: Amara sistematiza os quatro
+  conceitos (viés algorítmico, dados do passado, identificação de padrões,
+  decisões automatizadas); o estudante marca no histórico as âncoras
+  (contraste, parecer inicial, inversão), sem nota; e o Editor de Protocolo:
+  quatro blocos para três verificações e a Área de Descarte, arrastando ou
+  com Subir/Descer/Mover para Lixeira. \enquote{Enviar Proposta} acende com
+  um bloco e CONCLUI.\\
+\bottomrule
+\end{tabularx}
+
+O passo é DERIVADO no servidor dos carimbos da sessão e do gate da turma
+(\arq{regras/\B{}passos.ts}): \cd{abertura} \seta{} \cd{conversa} \seta{}
+\cd{espera1} \seta{} \cd{revelacao} \seta{} \cd{espera2} \seta{} \cd{explicar}
+\seta{} \cd{concluida}. Quem chega atrasado a uma trava já aberta não espera.
+O \emph{polling} de 3\,s só corre nas esperas e sem pacote no ar.
+
+\subsection{A virada é uma conta}
+
+O índice de cada projeto soma dois critérios de peso 0,5 --- documentos
+indexados e vagas comprovadas ---, cada um dividido pelo maior valor da
+rodada (\arq{regras/\B{}pacote.ts}). Antes dos cadernos o sistema não lê o
+papel: o projeto em papel tem 1 documento e 0 vagas comprovadas; depois, 180
+registros e as vagas dele. No banco padrão:
+
+\begin{center}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\headrow \thd{} & \thd{papel} & \thd{parcial} & \thd{nuvem}\\
+\midrule
+Antes da digitalização & 0,042 & 0,742 & \textbf{1,000}\\
+\zebra Depois da digitalização & \textbf{1,000} & 0,394 & 0,450\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A régua do pacote recusa, na homologação e na saída da IA, o tema em que a
+nuvem não vença antes ou o papel não vença depois.
+
+\subsection{A IA da aula só classifica}
+
+Na aula, a IA lê a pergunta e devolve uma das seis intenções do \cd{01e}
+(custo e atendimento, regularidade documental, impacto social, investigar a
+lacuna dos cadernos, pedir a recomendação, fora do tema) com a confiança,
+na quota do perfil \cd{estudante}, com teto de 5\,s e fora da transação
+(Seção~\ref{sec:ia-exp09ef1b}). Abaixo de 0,7 de confiança, ou sem resposta,
+vale a árvore de gatilhos (\arq{regras/\B{}intencoes.ts}). As sugestões exatas
+e o texto que tenta mandar no classificador nunca vão à IA. A FALA é sempre
+do catálogo (\arq{conteudo.ts}), com os nomes do pacote. A conversa é texto
+livre de MENOR: fica em \cd{exp09ef1b\_\B{}sessoes.\B{}conversa} para o F5 e as
+âncoras, e não vai a painel, telemetria nem log.
+
+\subsection{As três travas do professor}
+
+\cd{exploracao} \seta{} \cd{revelacao} (\enquote{Liberar Próxima Pauta})
+\seta{} \cd{revoto} (\enquote{Abrir Revisão da Decisão}, depois do debate)
+\seta{} \cd{explicar} (\enquote{Destravar Explicar e Protocolo}), só para a
+frente, cada mudança em \cd{exp09ef1b\_\B{}gates\_\B{}historico}. No painel, as três
+ficam à vista e só a próxima fica habilitada. Não há pausa: as esperas são
+passos.
+
+\subsection{A régua pedagógica: 100\% Canal A, duas habilidades}
+
+A ficha \arq{evidencias/\B{}fichas/\B{}exp09ef1b.ts}, versão 1, não tem pergunta.
+Toda marca é de AÇÃO, gravada na transação do gesto, com a régua pura em
+\arq{regras/\B{}evidencia.ts}: a EF09CO08 no \enquote{Registrar Decisão} (quem
+investigou já atinge) e no \enquote{Confirmar Decisão Final} (o conjunto), e
+a porta \cd{marcar} guarda a melhor; a EF09CO07 no \enquote{Enviar
+Proposta}. Quem não chega ao gesto fica \enquote{Não avaliado}.
+
+\begin{tabularx}{\linewidth}{@{}L{20mm}X X X@{}}
+\toprule
+\headrow \thd{Habilidade} & \thd{Atingiu} & \thd{Em processo} & \thd{Não atingiu}\\
+\midrule
+\textbf{EF09CO08} (foco) & caminho A1 ou A2 (perguntou pela lacuna), ou, no
+  2º voto, a urgência social acima da regularidade documental & caminho B e
+  o 2º voto mudou o projeto ou o ranking (o caso do ranking é [PROPOSTA],
+  G4) & caminho B, o mesmo projeto e o mesmo ranking\\
+\zebra \textbf{EF09CO07} & auditar fontes, normalizar impacto e sinalizar
+  pendências nas três verificações certas \textbf{e} o bloco danoso na
+  lixeira & dois dos três certos, ou os três sem o descarte & qualquer outra
+  composição\\
+\bottomrule
+\end{tabularx}
+
+O gabarito do protocolo e o bloco danoso não descem ao cliente; o banco de
+blocos e o ranking da E3 descem embaralhados por sessão.
+
+\subsection{O professor: preparo, aula ao vivo, resultados e guia}
+
+O preparo é \arq{atividades/\B{}nova/\B{}criar-\B{}dossie-\B{}invisivel.tsx}, no molde do
+Porta-Voz: \enquote{Usar banco padrão} (o banco curado \enquote{Políticas
+públicas e combate à desigualdade urbana}, já homologado, no ar e liberado
+na sala) ou o recorte (componente do 9º ano, Computação ou projeto
+interdisciplinar; tema; de 3 a 6 assuntos; contexto opcional) com a geração
+pela IA, a curadoria dos três projetos e dos cadernos com edição no lugar e
+\enquote{Regenerar item pontual} (o número de documentos de cada papel é fixo),
+a homologação e a liberação. Sem IA, \enquote{Prosseguir com Banco Padrão}.
+A aba Aula ao vivo (\arq{resultados/\B{}painel-\B{}da-\B{}aula-\B{}dossie-\B{}invisivel.tsx})
+mostra só CONTAGENS para o projetor: a distribuição de votos da 1ª
+deliberação, os caminhos A1/A2/B e, depois da trava do debate, a migração
+do 1º para o 2º voto; a folha nominal diz só o passo e o tempo parado. O
+guia (\arq{lib/entre-redes/\B{}guias/\B{}exp09ef1b.ts}) traz o material vivo
+(\arq{guia/\B{}material-\B{}do-\B{}dossie-\B{}invisivel.tsx}): o banco padrão, o roteiro
+das três perguntas do debate, a conta da virada, o gabarito do protocolo e
+as réguas. O podcast é FIXO (\arq{podcast.ts}, \adrr{ADR-150}),
+\enquote{Recapitulação Unooria}, com Lucas e Bianca, cerca de 3\,min 15\,s,
+com o bloco 4 reescrito sem o caso da Etapa 6, e é SÓ do professor.
+
+\subsection{O que ficou para o PO}
+
+Os textos que a \emph{copy} não deu estão marcados \enquote{[PROPOSTA]} em
+\arq{conteudo.ts}: a resposta do \enquote{Ver Projetos}, as duas pílulas, a
+espera do debate, o rótulo da 3ª trava e a fala neutra de Amara (a frase da
+indução da turma só aparece com $\geq$\,50\% dos votos da E3 na nuvem, G9),
+mais o caso G4 da régua. O DS é híbrido por pasta
+(Seção~\ref{sec:ds-hibrido-exp09ef1b}).
+
+\subsection*{As suítes}
+
+Por baixo, as suítes da api: \arq{tests/\B{}dossie-\B{}invisivel-\B{}regras.\B{}spec.ts}
+(sem banco: a conta da virada, a régua do pacote e o banco padrão, a árvore e
+a decisão IA $\times$ árvore, as duas réguas em tabela, o passo e o gate, o
+embaralhar, o podcast e o espelho dos \emph{CHECKs}) e
+\arq{tests/\B{}dossie-\B{}invisivel-\B{}postgres.\B{}spec.ts} (a porta da sala, os
+caminhos A1, A2 e B, os latches, as travas, as marcas, o gabarito ausente, o
+painel sem o texto do menor, a RLS e o zerar). Na experiência,
+\arq{src/contrato.test.ts} prende a fronteira das duas pontes e a ausência do
+gabarito no \emph{bundle}. A suíte de ponta a ponta
+(\arq{scripts/e2e/estudante/\B{}19-\B{}dossie-\B{}invisivel.mjs}: os três caminhos, as
+travas acionadas pela professora e as duas réguas) ainda está sendo escrita.
 
 % ---------------------------------------------------------------------------
 \section{exp08ef4b --- O Manifesto da IA}

@@ -11,6 +11,7 @@ import {
   MISSAO_JORNAL_DA_ESCOLA,
   MISSAO_JURI_ESTADUAL,
   MISSAO_PORTA_VOZ,
+  MISSAO_DOSSIE_INVISIVEL,
   MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
@@ -20,6 +21,7 @@ import {
 import { ResultadosASelecao } from "./resultados-a-selecao";
 import { ResultadosAssistenteInvisivel } from "./resultados-assistente-invisivel";
 import { ResultadosEfeitoAmplificador } from "./resultados-efeito-amplificador";
+import { ResultadosDossieInvisivel } from "./resultados-dossie-invisivel";
 import { ResultadosEnigmaCapa } from "./resultados-enigma-capa";
 import { ResultadosManifestoIa } from "./resultados-manifesto-ia";
 import { ResultadosNinaNoticia } from "./resultados-nina-noticia";
@@ -102,6 +104,9 @@ export default async function ResultadosPage({
   }
   if (missao.expId === MISSAO_PORTA_VOZ.expId) {
     return <ResultadosPortaVoz missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} />;
+  }
+  if (missao.expId === MISSAO_DOSSIE_INVISIVEL.expId) {
+    return <ResultadosDossieInvisivel missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();
