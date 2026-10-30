@@ -15,8 +15,8 @@ export const TEXTOS = {
   reorganize: "Reorganize a ordem dos critérios para habilitar a trava:",
   confirmarOrdem: "Confirmar esta ordem",
   ordemConfirmada: "Ordem confirmada",
-  /** [PROTÓTIPO] E2-ALU-02. */
-  caminhoA1: "Caminho investigativo A1 ativo: você descobriu os dados físicos antes da deliberação.",
+  /** O nome do "digitando" para o leitor de tela, quando a tela não recebe o da api. */
+  digitando: "Assistente digitando",
   ocrTitulo: "Reconhecimento Óptico de Caracteres (OCR)",
   ocrEstagio1: "Estágio 1 de 2: leitura óptica de caligrafia em papel de campo.",
   ocrEstagio2: "Estágio 2 de 2: validação de 180 assinaturas diárias.",

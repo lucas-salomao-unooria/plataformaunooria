@@ -63,15 +63,15 @@ const COPY = {
   marcar: "Marcar no histórico",
   enviar: "Enviar",
   pilulaCusto: "Comparar custo real por refeição diária",
-  caminhoA1: "Caminho investigativo A1 ativo: você descobriu os dados físicos antes da deliberação.",
-  ofertaDosCadernos: "O inventário do conselho registra 3 cadernos de campo do Mesa Aberta em arquivo físico.",
-  ocrConcluido: "Leitura óptica dos 3 cadernos concluída com sucesso.",
-  parecerInicial: "recomendo o Conexão para Continuar por menor risco documental",
-  parecerInvertido: "o projeto Mesa Aberta atinge a pontuação máxima de mérito",
+  ofertaDosCadernos: "O projeto Mesa Aberta tem 3 cadernos de campo em papel",
+  ocrConcluido: "Leitura concluída: 180 registros diários",
+  parecerInicial: "recomendo o projeto Conexão para Continuar",
+  parecerInvertido: "o projeto Mesa Aberta passa a ter o melhor custo-efetividade",
+  digitando: "Assistente consultando a base de dados do conselho...",
   constatacao: "Constatação de Auditoria: Os critérios de peso e atendimento não mudaram. O que mudou foi o que o robô conseguia ler.",
   esperaDoDebate: "Debate da plenária em andamento.",
-  espera: "Parecer registrado. Aguardando autorização da presidência da mesa para abrir o próximo ponto de pauta.",
-  amaraInduzida: "parte significativa da turma foi induzida pelos relatórios da nuvem",
+  espera: "Parecer registrado. Aguarde a presidência da mesa abrir o próximo ponto de pauta.",
+  amaraInduzida: "boa parte da turma foi levada pelos relatórios da nuvem",
   concluida: "Auditoria orçamentária homologada e arquivada nos anais do conselho",
 };
 
@@ -322,7 +322,7 @@ await suite(
       const { pg, q } = estudantes[rotulo];
       const entrou = await comResposta(pg, /sessao\/entrar$/, () => q.getByRole("button", { name: COPY.comecar, exact: true }).click());
       r.exigir(entrou.status === 200 && entrou.corpo?.passo === "conversa", `${rotulo}: “Começar Análise” abre a conversa (HTTP ${entrou.status}, passo ${entrou.corpo?.passo})`);
-      await q.getByText(/Sessão deliberativa aberta\. Sou o assistente técnico/).first().waitFor({ timeout: 15_000 });
+      await q.getByText(/Sessão aberta\. Sou o assistente técnico/).first().waitFor({ timeout: 15_000 });
     }
 
     /**
@@ -362,19 +362,32 @@ await suite(
     const oferta = q1.locator('[data-tela="oferta-dos-cadernos"]');
     await oferta.waitFor({ timeout: 10_000 });
     r.exigir((await q1.locator(".uai-sugestoes").count()) === 0, "A1: as sugestões somem depois da primeira mensagem");
+    /* Ajuste do PO de 30/10: com a oferta aberta, "Digitalizar cadernos" vem ANTES de "Ver Projetos". */
+    const botoesDaOferta = await oferta.getByRole("button").allInnerTexts();
+    r.exigir(
+      botoesDaOferta.indexOf(COPY.digitalizar) === 0 && botoesDaOferta.indexOf(COPY.verProjetos) === 1,
+      `A1: na oferta, "Digitalizar cadernos" vem antes de "Ver Projetos" (${botoesDaOferta.join(" · ")})`,
+    );
     await r.registrar(a1, "a1-oferta-dos-cadernos", {
       titulo: "A1 pergunta pela lacuna",
-      mostra: "A pergunta de A1 sobre os registros do Mesa Aberta e a resposta do assistente: 3 cadernos de campo em arquivo físico, e “Digitalizar cadernos”.",
+      mostra: "A pergunta de A1 sobre os registros do Mesa Aberta e a resposta do assistente: 3 cadernos de campo em papel, e “Digitalizar cadernos” antes de “Ver Projetos”.",
       prova: "A oferta só vem para quem desconfia da ausência de dados — é a investigação que a EF09CO08 mede.",
       detalhe: "enviada pelo composer do iframe",
     });
     const ocrA1 = await comResposta(a1, /sessao\/digitalizar$/, () => oferta.getByRole("button", { name: COPY.digitalizar, exact: true }).click());
     r.exigir(ocrA1.status === 200 && ocrA1.corpo?.chat?.cadernosDigitalizados === true, `A1: o OCR grava os cadernos no servidor (HTTP ${ocrA1.status})`);
-    await q1.getByText(COPY.caminhoA1, { exact: true }).waitFor({ timeout: 10_000 });
+    /* As duas falas novas (o OCR e o parecer invertido) entram UMA DE CADA VEZ, com o "digitando" antes
+       (ajuste do PO de 30/10): o indicador aparece, a 1ª fala chega antes da 2ª. */
+    await q1.getByRole("status", { name: COPY.digitando }).first().waitFor({ timeout: 10_000 });
+    r.exigir(true, 'A1: o "digitando" do assistente aparece antes das falas novas');
+    await q1.getByText(COPY.ocrConcluido, { exact: false }).first().waitFor({ timeout: 10_000 });
+    const parecerJunto = await q1.getByText(COPY.parecerInvertido, { exact: false }).count();
+    r.exigir(parecerJunto === 0, "A1: a leitura dos cadernos chega antes do parecer — as falas entram uma de cada vez");
     await q1.getByText(COPY.parecerInvertido, { exact: false }).first().waitFor({ timeout: 10_000 });
+    await q1.getByRole("status", { name: COPY.digitando }).waitFor({ state: "detached", timeout: 10_000 });
     await r.registrar(a1, "a1-cadernos-digitalizados", {
       titulo: "A1 digitaliza antes de escolher",
-      mostra: "A leitura óptica concluída (180 registros), o parecer que já se inverte para o Mesa Aberta e a nota “Caminho investigativo A1 ativo”.",
+      mostra: "A leitura concluída (180 registros) e o parecer que já se inverte para o Mesa Aberta, cada fala depois do “digitando”.",
       prova: "Os cadernos só descem depois de digitalizados; o caminho congela no “Registrar Decisão”.",
     });
 
@@ -492,7 +505,7 @@ await suite(
       `B: três consultas pelas sugestões liberam a escolha sem a oferta dos cadernos (consultas ${terceira.corpo?.chat?.consultas}, ${segunda.status}/${terceira.status})`,
     );
     await qb.getByText("Limite de 3 consultas atingido.", { exact: false }).first().waitFor({ timeout: 15_000 });
-    await qb.getByText(/possui apenas a ficha cadastral de abertura no sistema digital/).first().waitFor({ timeout: 10_000 });
+    await qb.getByText(/, só a ficha cadastral de abertura/).first().waitFor({ timeout: 10_000 });
     await r.registrar(b, "b-tres-sugestoes", {
       titulo: "B segue as três sugestões",
       mostra: "Custo por vaga, regularidade (12 relatórios contra a ficha cadastral do Mesa Aberta, com os anexos) e impacto; o parecer pela nuvem e o limiar das 3 consultas.",
@@ -572,7 +585,7 @@ await suite(
       const { pg, q } = estudantes[rotulo];
       const feita = await comResposta(pg, /sessao\/pilula$/, () => q.getByRole("button", { name: COPY.pilulaCusto, exact: true }).click());
       r.exigir(feita.status === 200 && feita.corpo?.revelacao?.pilulas?.includes("custo"), `${rotulo}: a pílula do custo responde (HTTP ${feita.status})`);
-      await q.getByText(/refeições servidas a 24 jovens em 180 dias/).first().waitFor({ timeout: 10_000 });
+      await q.getByText(/serviu 4\.320 refeições a 24 jovens em 180 dias/).first().waitFor({ timeout: 10_000 });
       await q.getByText(COPY.esperaDoDebate, { exact: false }).first().waitFor({ timeout: 10_000 });
       r.exigir(feita.corpo?.revotoAberto === false, `${rotulo}: antes da trava do debate, o 2º voto não abre`);
     }

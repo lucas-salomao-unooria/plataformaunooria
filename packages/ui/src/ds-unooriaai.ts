@@ -82,6 +82,9 @@ export { ChoicePoll } from '@unooria/design-system/unooriaai';
 /** O separador de sessão na conversa (0.2.22): "--- Sessão 2/3: Beatriz (23h45) ---" na bateria de testes da exp01em1b. */
 export { SessionDivider } from '@unooria/design-system/unooriaai';
 
+/** O assistente digitando (0.2.27): os três pontos antes de cada fala do assistente na exp09ef1b. */
+export { TypingIndicator } from '@unooria/design-system/unooriaai';
+
 /**
  * Ícones da seção. `uaiIcons` é o registro (nome → ligadura do Material
  * Symbols) e `uaiIconNames` serve de fonte para o `UaiIconName`.
@@ -98,6 +101,7 @@ export type {
   UaiChoicePollOption,
   UaiChoicePollProps,
   UaiSessionDividerProps,
+  UaiTypingIndicatorProps,
   UaiChatBubbleProps,
   UaiChatBubbleRole,
   UaiComposerDockProps,

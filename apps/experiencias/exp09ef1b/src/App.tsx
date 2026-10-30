@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import { TelaAbertura, TelaConcluida, TelaConversa, TelaEspera, TelaExplicar, TelaRevelacao, TelaSemPacote } from "./app/telas/telas";
 import { api, concluirNaPlataforma, reportarErro, statusDoErro } from "./lib/api";
+import { semearFalasVistas } from "./lib/falas";
 import { etapaDoPasso } from "./lib/regras";
 import { telemetria } from "./lib/telemetria";
 import type { Sessao } from "./lib/tipos";
@@ -17,7 +18,11 @@ export type Executar = (chamada: () => Promise<Sessao>) => Promise<Sessao | null
  * turma andou, a tela ficou velha) relê o estado inteiro.
  */
 export function App({ inicial }: { inicial: Sessao }) {
-  const [s, setS] = useState<Sessao>(inicial);
+  /* O histórico que chega no handshake (o F5 no meio da aula) não anima: só o que é novo daqui em diante. */
+  const [s, setS] = useState<Sessao>(() => {
+    semearFalasVistas(inicial.chat.mensagens);
+    return inicial;
+  });
   const [semRede, setSemRede] = useState(false);
   const passoAnterior = useRef<string | null>(null);
   const concluiu = useRef(inicial.concluido);
