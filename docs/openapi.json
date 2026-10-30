@@ -117416,10 +117416,61 @@
                     },
                     "minItems": 2,
                     "maxItems": 2
+                  },
+                  "podcast": {
+                    "type": "object",
+                    "properties": {
+                      "espaco": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "impressao": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "fotos": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "selos": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "visitante": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "objetos": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "lugar": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      }
+                    },
+                    "required": [
+                      "espaco",
+                      "impressao",
+                      "fotos",
+                      "selos",
+                      "visitante",
+                      "objetos",
+                      "lugar"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "required": [
-                  "rascunhoId"
+                  "rascunhoId",
+                  "podcast"
                 ],
                 "additionalProperties": false
               }

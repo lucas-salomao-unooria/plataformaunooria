@@ -14,7 +14,8 @@ import { arrastar, comResposta, esperarNaApi, hidratado, idDaTurma, lerApi, pont
  * tema dela (o Vertex escreve o texto e desenha a panorâmica, com a espera
  * animada no lugar da cena), EDITA o pedido da imagem e gera outra só da
  * imagem (o véu animado em cima dela — ADR-188), DESENHA na curadoria a área
- * dos dois objetos iguais do fundo (a IA não devolve coordenada), aprova e põe
+ * dos dois objetos iguais do fundo (a IA não devolve coordenada), revisa as
+ * sete falas do podcast que a IA escreveu para a cena dela (ADR-204), aprova e põe
  * no ar. O estudante, num celular, lê a missão (ENCONTRE OS 2 OBJETOS IGUAIS
  * NAS DUAS FOTOS…), abre a bancada, tenta avançar antes do piso uma vez (o
  * aviso OLHE O FUNDO), acha os dois objetos com a lupa EM CADA foto (ela
@@ -25,7 +26,10 @@ import { arrastar, comResposta, esperarNaApi, hidratado, idDaTurma, lerApi, pont
  * duas fotos (com um F5 no meio), arrasta a alça do slider de comparação do
  * centro até o fim (A CENA COMPLETA), finca dois alfinetes no que ficou fora,
  * monta o par e a segunda foto, que conclui. No fim, a folha da turma, as
- * habilidades EF02CO05 e EF02CO01 com o nível da régua e o podcast fixo.
+ * habilidades EF02CO05 e EF02CO01 com o nível da régua e o podcast que conta
+ * a cena da professora, não a biblioteca do banco padrão (ADR-204). Antes de
+ * gerar a imagem pelo pedido, um GERAR NOVAMENTE prova que o pedido editado
+ * fica guardado na sessão (pedido do Lucas, 2026-10-29).
  *
  * A suíte joga com o gabarito que o PROFESSOR vê (`GET …/pacotes/:id`): os
  * alvos que ele marcou, a foto e o selo coerentes. A sessão do estudante, ela
@@ -79,7 +83,7 @@ await suite(
       "AGUARDE O PROFESSOR (sem retrato) até a virada GERAL; o painel conta quem aguarda",
       "Um toque errado é a onda neutra; os quatro achados redesenham depois de um F5; a alça sai do centro e revela A CENA COMPLETA",
       "Os alfinetes no “fora”, o par e a segunda foto, que conclui (FOTO GUARDADA NO ÁLBUM!)",
-      "O painel por estudante e as habilidades EF02CO05 e EF02CO01 com o nível da régua; o podcast fixo",
+      "O painel por estudante e as habilidades EF02CO05 e EF02CO01 com o nível da régua; o podcast que conta a cena da atividade",
     ],
     comando: "node scripts/e2e/estudante/14-enigma-capa.mjs",
   },
@@ -181,7 +185,7 @@ await suite(
     const semIa = await passo.locator("[data-aviso-sem-ia]").getAttribute("data-aviso-sem-ia").catch(() => null);
     const rascunhoId = await curadoria.getAttribute("data-rascunho");
     if (rascunhoDeAntes) r.ressalva(`havia um rascunho de antes na curadoria (${rascunhoDeAntes.slice(0, 8)}); a geração nova o substitui`);
-    const rascunho = (await lerApi(prof, `${daTurma}/rascunho`)).corpo?.rascunho ?? null;
+    let rascunho = (await lerApi(prof, `${daTurma}/rascunho`)).corpo?.rascunho ?? null;
     let origemDaCena = rascunho?.origem ?? null;
     if (semIa) {
       /* Ramo LEGÍTIMO: sem saldo ou com o vendor fora, o rascunho é o pronto da disciplina, com o aviso. */
@@ -224,6 +228,33 @@ await suite(
         mostra: "O texto que desenhou a cena, aberto para a professora, com um acréscimo dela: um mural de cortiça e um varal de desenhos na parede do meio.",
         prova: "A professora muda a imagem sem refazer o pacote; as regras de segurança (ilustração, sem rosto, sem texto) a Unooria acrescenta sempre.",
       });
+      /* O pedido editado FICA na sessão: GERAR NOVAMENTE pede outra cena inteira e não o apaga (pedido do Lucas, 2026-10-29). */
+      const pedidoEditado = await caixaDoPedido.inputValue();
+      const geracaoDeAntes = rascunho?.conteudo?.cena?.imagem?.url ?? null;
+      await curadoria.locator('[data-acao="gerar-novamente"]').click();
+      await cena.locator("[data-gerando-imagem]").waitFor({ timeout: 10_000 });
+      await esperarOuFalharCedo(
+        curadoria.locator('[data-acao="gerar-novamente"]:not([disabled])'),
+        passo.locator(ALERTA_DE_ERRO),
+        { timeout: 240_000, oQue: "a cena nova do GERAR NOVAMENTE" },
+      );
+      rascunho = (await lerApi(prof, `${daTurma}/rascunho`)).corpo?.rascunho ?? rascunho;
+      if (rascunho?.pedidoDaImagem === null) {
+        r.ressalva("o GERAR NOVAMENTE caiu no pronto da disciplina (sem IA): sem pedido de imagem para guardar");
+      } else {
+        const caixaDepois = curadoria.locator("[data-pedido-da-imagem] textarea");
+        await caixaDepois.waitFor({ timeout: 10_000 });
+        r.exigir(
+          (await caixaDepois.inputValue()) === pedidoEditado && (await curadoria.locator("[data-pedido-editado]").count()) === 1,
+          `depois do GERAR NOVAMENTE (cena ${rascunho?.conteudo?.cena?.imagem?.url !== geracaoDeAntes ? "nova" : "igual"}), o pedido que a professora escreveu continua na caixa, com “Usar o pedido desta imagem” para voltar ao da cena`,
+        );
+        await curadoria.locator("[data-pedido-da-imagem]").scrollIntoViewIfNeeded();
+        await r.registrar(prof, "o-pedido-continua", {
+          titulo: "O pedido editado continua depois de gerar outra cena",
+          mostra: "A cena nova da IA e, na caixa, o pedido que a professora tinha escrito — com o aviso de que ele fica guardado e o “Usar o pedido desta imagem”.",
+          prova: "O pedido da professora fica guardado na sessão enquanto ela prepara a atividade: gerar outra cena não o apaga mais.",
+        });
+      }
       const imagemAntes = (await lerApi(prof, `${daTurma}/rascunho`)).corpo?.rascunho?.conteudo?.cena?.imagem?.url ?? null;
       await curadoria.locator('[data-acao="gerar-imagem-do-pedido"]').click();
       await cena.locator("[data-gerando-imagem]").waitFor({ timeout: 10_000 });
@@ -317,6 +348,29 @@ await suite(
       inteira: true,
     });
 
+    /* As sete falas do podcast que contam ESTA cena (ADR-204): a IA as escreve quando a curadoria abre, e a professora revisa. */
+    const falasDoPodcast = curadoria.locator("[data-falas-do-podcast]");
+    await esperarOuFalharCedo(falasDoPodcast.locator("textarea").nth(6), curadoria.locator(ALERTA_DE_ERRO), {
+      timeout: 180_000,
+      oQue: "as falas do podcast da cena",
+    });
+    await esperarOuFalharCedo(curadoria.locator('[data-acao="aprovar-atividade"]:not([disabled])'), curadoria.locator(ALERTA_DE_ERRO), {
+      timeout: 180_000,
+      oQue: "as falas do podcast na régua, para aprovar",
+    });
+    const falasRevisadas = await falasDoPodcast.locator("textarea").evaluateAll((els) => els.map((e) => e.value));
+    const espacoDaCena = rascunho?.conteudo?.cena?.chave === "biblioteca";
+    r.exigir(
+      falasRevisadas.length === 7 && falasRevisadas.every((f) => f.trim().split(/\s+/).length >= 12) && (espacoDaCena || !/biblioteca|relógio de parede|cartaz amarelo/i.test(falasRevisadas.join(" "))),
+      "a curadoria mostra as SETE falas do podcast, escritas para a cena da professora — nada da biblioteca do banco padrão",
+    );
+    await falasDoPodcast.scrollIntoViewIfNeeded();
+    await r.registrar(prof, "falas-do-podcast", {
+      titulo: "As falas do podcast que contam esta cena",
+      mostra: "As sete falas de Iara e Bento que mudam com a cena — o espaço, as duas fotos, os selos, a visitante, os dois objetos do fundo e o lugar inteiro —, abertas para a professora.",
+      prova: "O podcast conta a atividade que a turma viveu: antes era fixo e falava da biblioteca em qualquer cena (ADR-204).",
+      inteira: true,
+    });
     await curadoria.locator('[data-acao="aprovar-atividade"]:not([disabled])').waitFor({ timeout: 10_000 });
     await curadoria.locator('[data-acao="aprovar-atividade"]').click();
     await esperarOuFalharCedo(passo.locator('[data-fase="gravada"]'), passo.locator(ALERTA_DE_ERRO), {
@@ -796,7 +850,13 @@ await suite(
       vozes: ["Bento", "Iara"],
       trechos: 5,
       passo: "podcast",
-      descricao: "Bento e Iara, o roteiro fixo do PO",
+      descricao: "Bento e Iara, com as falas da cena da professora",
     });
+    const transcricao = await prof.locator("[data-transcricao-podcast]").innerText();
+    const norm = (t) => t.replace(/\s+/g, " ").trim();
+    r.exigir(
+      norm(transcricao).includes(norm(falasRevisadas[5] ?? "@@")) && (espacoDaCena || !/relógio de parede marcando duas e quinze/.test(transcricao)),
+      "a transcrição do podcast traz a fala dos dois objetos que a professora aprovou — não o relógio e o cartaz da biblioteca",
+    );
   },
 );

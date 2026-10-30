@@ -1327,7 +1327,7 @@ O que define a missão, tecnicamente:
 \label{sec:exp02ef1b}
 
 \textbf{2º ano EF, unidade 1 (\enquote{Toda imagem tem um autor}), clone
-\cd{unoovista}, experiência 2.1.0, porta 5187.} Desde 2026-10-26
+\cd{unoovista}, experiência 2.2.3, porta 5187.} Desde 2026-10-26
 (\adrr{ADR-184}), vinda da esteira de produto (one-pager v1.1 do PO); a 2.0.0
 segue o protótipo validado pelo time e tira a etapa 6 (\adrr{ADR-186}). Módulo
 da api: \arq{enigma-capa} (prefixo \rota{/enigma-capa}, tabelas
@@ -1462,7 +1462,9 @@ alvos marcáveis como círculos: na tela eles entregariam a resposta e o
 gabarito ao cliente (regra 3), então a criança finca o alfinete onde achar. O
 \cd{E4-ALU-01} tinha o botão PROSSEGUIR PARA PAUSA, e o one-pager pede a pausa
 sozinha depois de 5\,s: ficou o tempo. No \cd{E5-ALU-01}, escolher o motivo já
-leva à segunda foto, sem o botão intermediário. A frase da cena completa diz
+leva à segunda foto, sem o botão intermediário, e as duas opções (\enquote{A
+atividade} e \enquote{A cor da roupa}) são só texto, sem o emoji de apoio que
+tinham até a 2.2.2, desde a 2.2.3 (\adrr{ADR-204}). A frase da cena completa diz
 \enquote{MESMO LUGAR}, e não \enquote{MESMA SALA}, porque a horta e as cenas da
 IA não são salas. A ilustração do Bento continua sem arte: ele fala só pelo
 balão.
@@ -1664,8 +1666,18 @@ e os três cartões ENQUADRAMENTO, AUTORIA e O QUE FICOU DE FORA --- a nomeaçã
 é ORAL, e por isso a seção \cd{unooria} não entra no \emph{bundle}. O debate do guia termina na generalização: a missão não tem transferência
 (\adrr{ADR-186}), e é a única com essa exceção em
 \arq{lib/entre-redes/guias/index.test.ts}. O podcast
-é FIXO (\arq{podcast.ts}, \adrr{ADR-150}): o roteiro literal do PO, com o
-Bento e a Iara, e os efeitos sonoros na direção de atuação.
+(\arq{podcast.ts}, \adrr{ADR-150}) é o roteiro do PO, com o Bento e a Iara
+e os efeitos sonoros na direção de atuação, e desde a 2.2.3 CONTA A CENA DA
+ATIVIDADE (\adrr{ADR-204}): as sete falas que citam o espaço, as duas fotos,
+os selos, a visitante, os dois objetos e o lugar inteiro são vagas do tema.
+Na Biblioteca intocada valem as do PO, letra a letra (o mesmo áudio); na Horta
+e no Museu intocados, as escritas para eles (\cd{FALAS\_\B{}DOS\_\B{}PRONTOS});
+na cena da IA, ou num pronto com selo ou fala da visitante editados, a IA as
+escreve, o professor as revisa na curadoria e o \enquote{Aprovar atividade}
+as grava. Até a 2.2.2 o roteiro era fixo e falava da biblioteca em qualquer
+cena. Na curadoria, o pedido da imagem editado fica na sessão do navegador,
+por turma, e sobrevive ao GERAR NOVAMENTE (\enquote{Usar o pedido desta
+imagem} volta ao da cena nova); a chave é apagada ao aprovar.
 
 \subsection{Compensações locais do DS}
 

@@ -34,8 +34,10 @@ import {
   type RespostaDoGerar,
   type SeloDaCena,
 } from "@/lib/enigma-capa-tipos";
+import { falasParaHomologar, type FalasEscritas } from "@/lib/podcast-tipos";
 
 import { CenaDoEnigma } from "../../resultados/cena-do-enigma";
+import { FalasDoPodcast, falasComProblema, pedirFalasDoTema } from "./falas-do-podcast";
 
 interface PreparoLido {
   turmaId: string;
@@ -62,6 +64,33 @@ const RECORTE_VAZIO: Recorte = { disciplina: "", tema: "", palavrasTexto: "", no
 const SEM_REDE = "A conexão falhou. Confira a internet e tente de novo.";
 const BFF = (turmaId: string) => `/api/plataforma${caminhoDaApi(turmaId)}`;
 const JSON_HEADERS = { "content-type": "application/json" };
+
+/**
+ * O PEDIDO DA IMAGEM que o professor editou, guardado na SESSÃO do navegador
+ * enquanto ele customiza a missão (pedido do Lucas, 2026-10-29): sem isto,
+ * "GERAR NOVAMENTE" remontava a curadoria com o pedido que a IA escreveu para a
+ * cena nova, e a edição sumia. Por turma, no `sessionStorage` (fecha a aba,
+ * some); apagado ao aprovar e no "Usar o pedido desta imagem". Não é segredo:
+ * é a descrição da cena que o professor escreveu, e as regras fixas são da api.
+ */
+const chaveDoPedido = (turmaId: string) => `exp02ef1b:pedido-da-imagem:${turmaId}`;
+
+function pedidoGuardado(turmaId: string): string | null {
+  try {
+    return window.sessionStorage.getItem(chaveDoPedido(turmaId));
+  } catch {
+    return null;
+  }
+}
+
+function guardarPedido(turmaId: string, pedido: string | null) {
+  try {
+    if (pedido === null) window.sessionStorage.removeItem(chaveDoPedido(turmaId));
+    else window.sessionStorage.setItem(chaveDoPedido(turmaId), pedido);
+  } catch {
+    /* Navegador sem armazenamento (aba privada, bloqueio): a edição vale até a próxima geração. */
+  }
+}
 
 /** O botão de cada pacote pronto. A Biblioteca é o caminho curto do PO (§9a), literal. */
 const ROTULO_DO_PRONTO: Record<ChavePronta, string> = {
@@ -514,13 +543,22 @@ function Curadoria({
   const [areas, setAreas] = useState<Partial<Record<InvarianteId, Retangulo>>>({});
   const [selos, setSelos] = useState<SeloDaCena[]>(() => cena.selos.map((s) => ({ ...s })));
   const [falas, setFalas] = useState(() => cena.fotos.map((f) => ({ fotoId: f.id, visitante: f.visitante })));
-  const [pedido, setPedido] = useState(rascunho.pedidoDaImagem ?? "");
+  /* O pedido editado nesta sessão vence o da cena: GERAR NOVAMENTE não o apaga. */
+  const [pedido, setPedido] = useState(() => (rascunho.pedidoDaImagem !== null ? (pedidoGuardado(turmaId) ?? rascunho.pedidoDaImagem) : ""));
   const [enviando, setEnviando] = useState<"marcar" | "aprovar" | "imagem" | null>(null);
   const [imagemSemIa, setImagemSemIa] = useState<"sem-saldo" | "indisponivel" | null>(null);
   /* O objeto que o professor arrastou e que ficou FORA da faixa do meio: a IA nem sempre obedece à posição. */
   const [foraDaFaixa, setForaDaFaixa] = useState<InvarianteId | null>(null);
   const [erro, setErro] = useState<{ mensagem: string; erros: string[] } | null>(null);
   const cenaRef = useRef<HTMLDivElement>(null);
+  /* As falas do podcast que contam ESTA cena (ADR-150, ADR-204): pedidas quando
+     a curadoria abre, revisadas aqui e gravadas no "Aprovar". `falasDaCena` é a
+     cena para a qual foram escritas — mudou um selo ou a fala da visitante, a
+     tela avisa, sem bloquear. */
+  const [falasDoPodcast, setFalasDoPodcast] = useState<FalasEscritas | null>(null);
+  const [escrevendoFalas, setEscrevendoFalas] = useState(false);
+  const [falhaDasFalas, setFalhaDasFalas] = useState<string | null>(null);
+  const [falasDaCena, setFalasDaCena] = useState("");
 
   const proximo = marcando ? cena.invariantes.find((i) => !areas[i.id]) ?? null : null;
   const marcas: MarcaNaCena[] = marcando
@@ -537,10 +575,46 @@ function Curadoria({
   ];
   const textosValidos = selos.every((s) => s.texto.trim().length > 0) && falas.every((f) => f.visitante.trim().length > 0);
   const trabalhando = ocupado || enviando !== null;
-  const podeAprovar = !marcando && rascunho.pendencias.length === 0 && textosValidos && !trabalhando;
+  const conteudoAtual = conteudoComAsEdicoes(rascunho, selos, falas);
+  const falasProntas = falasDoPodcast !== null && falasComProblema(falasDoPodcast) === 0 && !escrevendoFalas;
+  const podeAprovar = !marcando && rascunho.pendencias.length === 0 && textosValidos && falasProntas && !trabalhando;
+  const pedidoEditado = rascunho.pedidoDaImagem !== null && pedido.trim() !== (rascunho.pedidoDaImagem ?? "").trim();
   const temPedido = rascunho.pedidoDaImagem !== null;
   const pedidoValido = pedido.trim().length >= PEDIDO_DA_IMAGEM.min && pedido.trim().length <= PEDIDO_DA_IMAGEM.max;
   const espera = gerandoCena ? TEXTO_DA_GERACAO : enviando === "imagem" ? TEXTO_DA_NOVA_IMAGEM : null;
+
+  async function escreverFalas() {
+    const cenaDasFalas = conteudoComAsEdicoes(rascunho, selos, falas);
+    setEscrevendoFalas(true);
+    setFalhaDasFalas(null);
+    const r = await pedirFalasDoTema("exp02ef1b", turmaId, cenaDasFalas);
+    if (r.ok) {
+      setFalasDoPodcast(r.falas);
+      setFalasDaCena(JSON.stringify(cenaDasFalas));
+    } else {
+      setFalhaDasFalas(r.mensagem);
+    }
+    setEscrevendoFalas(false);
+  }
+
+  /* Cada cena nova (a curadoria remonta a cada geração) pede as falas UMA vez. */
+  const pediuFalas = useRef(false);
+  useEffect(() => {
+    if (pediuFalas.current) return;
+    pediuFalas.current = true;
+    void escreverFalas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- só na montagem: a cena desta curadoria
+  }, []);
+
+  function mudarPedido(texto: string) {
+    setPedido(texto);
+    guardarPedido(turmaId, texto);
+  }
+
+  function voltarAoPedidoDaCena() {
+    setPedido(rascunho.pedidoDaImagem ?? "");
+    guardarPedido(turmaId, null);
+  }
 
   /* A espera aparece na imagem: traz a imagem para a vista de quem clicou lá embaixo. */
   useEffect(() => {
@@ -634,6 +708,7 @@ function Curadoria({
           rascunhoId: rascunho.id,
           selos: selos.map((s) => ({ ...s, texto: s.texto.trim() })),
           falas: falas.map((f) => ({ ...f, visitante: f.visitante.trim() })),
+          podcast: falasParaHomologar(falasDoPodcast?.vagas ?? []),
         }),
       });
       const corpo: unknown = await r.json().catch(() => null);
@@ -642,6 +717,7 @@ function Curadoria({
         setErro(erroDaApi(corpo, "Não deu para aprovar a atividade agora."));
         return;
       }
+      guardarPedido(turmaId, null);
       aoAprovar(id);
     } catch {
       setErro({ mensagem: SEM_REDE, erros: [] });
@@ -750,8 +826,19 @@ function Curadoria({
               value={pedido}
               maxLength={PEDIDO_DA_IMAGEM.max}
               helperText="A Unooria sempre acrescenta as regras de segurança: ilustração (nunca foto), crianças sem rosto identificável, nenhum texto na imagem e os dois objetos na faixa do meio."
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPedido(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => mudarPedido(e.target.value)}
             />
+            {pedidoEditado ? (
+              <div className="flex flex-wrap items-center gap-3" data-pedido-editado>
+                <p className="text-[12px] text-unooria-neutral-700">
+                  Este é o pedido que você escreveu: ele fica guardado enquanto você prepara a atividade, mesmo que gere
+                  outra cena. A imagem acima só muda quando você toca em “Gerar a imagem com este pedido”.
+                </p>
+                <Button variant="ghost" size="sm" isDisabled={trabalhando} onClick={voltarAoPedidoDaCena} data-acao="voltar-ao-pedido-da-cena">
+                  Usar o pedido desta imagem
+                </Button>
+              </div>
+            ) : null}
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 variant="secondary"
@@ -820,6 +907,17 @@ function Curadoria({
           </div>
         </div>
 
+        {/* As falas do podcast, junto da cena que elas contam (ADR-150, ADR-204). */}
+        <FalasDoPodcast
+          falas={falasDoPodcast}
+          escrevendo={escrevendoFalas}
+          falha={falhaDasFalas}
+          desatualizadas={falasDoPodcast !== null && falasDaCena !== JSON.stringify(conteudoAtual)}
+          travado={enviando === "aprovar"}
+          aoMudar={(vagas) => setFalasDoPodcast((atual) => (atual ? { ...atual, vagas } : atual))}
+          aoReescrever={() => void escreverFalas()}
+        />
+
         {rascunho.pendencias.length > 0 && !marcando ? (
           <FeedbackAlert
             type="warning"
@@ -840,12 +938,33 @@ function Curadoria({
             Aprovar atividade
           </Button>
           <p className="text-[12px] text-unooria-neutral-600">
-            {marcando ? "Desenhe a área dos dois objetos iguais para aprovar." : "Aprovada, a atividade fica pronta; você escolhe quando a turma usa."}
+            {marcando
+              ? "Desenhe a área dos dois objetos iguais para aprovar."
+              : !falasProntas
+                ? "Revise as falas do podcast para aprovar."
+                : "Aprovada, a atividade fica pronta; você escolhe quando a turma usa."}
           </p>
         </div>
       </div>
     </Card>
   );
+}
+
+/** A cena como a turma vai vê-la: a do rascunho, com os selos e as falas da visitante editados aqui. */
+function conteudoComAsEdicoes(
+  rascunho: PacoteDoProfessor,
+  selos: readonly SeloDaCena[],
+  falas: readonly { fotoId: string; visitante: string }[],
+): PacoteDoProfessor["conteudo"] {
+  const cena = rascunho.conteudo.cena;
+  return {
+    ...rascunho.conteudo,
+    cena: {
+      ...cena,
+      selos: cena.selos.map((s) => ({ ...s, texto: (selos.find((x) => x.id === s.id)?.texto ?? s.texto).trim() || s.texto })),
+      fotos: cena.fotos.map((f) => ({ ...f, visitante: (falas.find((x) => x.fotoId === f.id)?.visitante ?? f.visitante).trim() || f.visitante })),
+    },
+  };
 }
 
 /** Lê o preparo da turma (`GET …/pacote`) — a `key` com a turma e a tentativa faz cada troca ser uma leitura nova. */

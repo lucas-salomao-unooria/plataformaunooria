@@ -5,6 +5,7 @@ import { QuotaService } from "../src/ai/quota.service";
 import type { AssetsService } from "../src/assets/assets.service";
 import type { AuthClaims } from "../src/auth/claims";
 import { EXP_ID, PACOTES_PRONTOS, conteudoPronto, type FotoId, type Ponto, type SeloId } from "../src/enigma-capa/conteudo";
+import { FALAS_DOS_PRONTOS, FALAS_DO_TEMA_PADRAO, VAGAS_DO_PODCAST } from "../src/enigma-capa/podcast";
 import {
   EstadoSchema,
   GateDoEstudanteSchema,
@@ -108,6 +109,7 @@ evidencias.onModuleInit();
 const ids = { turmaA: "", turmaB: "", turmaC: "", turmaVizinha: "", prof: "", profB: "", ana: "", bia: "", caio: "", duda: "", fabi: "", vizinho: "" };
 
 async function limpar() {
+  await prisma.podcastRoteiro.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.evidenciaEvento.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.evidencia.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.evidenciaMarca.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
@@ -315,7 +317,7 @@ describe("o preparo do professor (IA com a quota do perfil professor)", () => {
 
   test("sem as áreas, a aprovação recusa; o professor desenha a área de cada objeto (fora da faixa comum, 400)", async () => {
     const { rascunho } = await service.rascunho(ESCOLA, ids.turmaA, ids.prof);
-    const r = await recusa(() => controller.homologar(ids.turmaA, undefined, { rascunhoId: rascunho!.id }, req(ids.prof)));
+    const r = await recusa(() => controller.homologar(ids.turmaA, undefined, { rascunhoId: rascunho!.id, podcast: FALAS_DO_TEMA_PADRAO }, req(ids.prof)));
     expect(r).toMatchObject({ status: 400, corpo: { codigo: "pacote-invalido" } });
     const fora = await recusa(() =>
       controller.alvos(ids.turmaA, undefined, { alvos: [{ id: "inv-1", x: 10, y: 30, w: 10, h: 20 }, { id: "inv-2", x: 56, y: 30, w: 10, h: 20 }] }, req(ids.prof)),
@@ -341,13 +343,30 @@ describe("o preparo do professor (IA com a quota do perfil professor)", () => {
 
   test("aprovar: outro rascunho é 409; o certo vira atividade PRONTA (não no ar); o duplo clique é idempotente", async () => {
     const { rascunho } = await service.rascunho(ESCOLA, ids.turmaA, ids.prof);
-    expect(await codigo(() => controller.homologar(ids.turmaA, undefined, { rascunhoId: "00000000-0000-4000-8000-000000000000" }, req(ids.prof)))).toBe(
-      "rascunho-desatualizado",
+    expect(
+      await codigo(() =>
+        controller.homologar(ids.turmaA, undefined, { rascunhoId: "00000000-0000-4000-8000-000000000000", podcast: FALAS_DO_TEMA_PADRAO }, req(ids.prof)),
+      ),
+    ).toBe("rascunho-desatualizado");
+    /* Sem as falas do podcast revisadas, não há aprovação (ADR-204). */
+    expect(await codigo(() => controller.homologar(ids.turmaA, undefined, { rascunhoId: rascunho!.id }, req(ids.prof)))).toBe("pacote-invalido");
+    const falasDaQuadra = Object.fromEntries(
+      VAGAS_DO_PODCAST.map((v) => [v.id, `Na quadra da escola, ${v.falante} conta para a turma o que aconteceu com ${v.sobre}, sem pressa.`]),
     );
-    const corpo = { rascunhoId: rascunho!.id, selos: [{ id: "selo-1", texto: "HORA DO VÔLEI", emoji: "🏐" }, { id: "selo-2", texto: "HORA DE DESCANSAR", emoji: "😴" }] };
+    const corpo = {
+      rascunhoId: rascunho!.id,
+      selos: [{ id: "selo-1", texto: "HORA DO VÔLEI", emoji: "🏐" }, { id: "selo-2", texto: "HORA DE DESCANSAR", emoji: "😴" }],
+      podcast: falasDaQuadra,
+    };
     const um = await controller.homologar(ids.turmaA, undefined, corpo, req(ids.prof));
-    const dois = await controller.homologar(ids.turmaA, undefined, corpo, req(ids.prof));
+    const dois = await controller.homologar(ids.turmaA, undefined, { ...corpo, podcast: { ...falasDaQuadra, lugar: `${falasDaQuadra.lugar} Que surpresa!` } }, req(ids.prof));
     expect(dois.id).toBe(um.id);
+    /* As falas revisadas viram a linha do podcast, e o segundo clique as atualiza. */
+    const roteiro = await prisma.podcastRoteiro.findUniqueOrThrow({
+      where: { escolaId_expId_atividadeId: { escolaId: ESCOLA, expId: EXP_ID, atividadeId: um.id } },
+    });
+    expect(roteiro.falas).toMatchObject({ espaco: falasDaQuadra.espaco, lugar: `${falasDaQuadra.lugar} Que surpresa!` });
+    expect(await service.pacoteParaPodcast(ESCOLA, ids.turmaA, ids.prof, um.id)).toEqual({ id: um.id, tema: um.tema, padrao: false });
     expect(um).toMatchObject({ ativo: false, origem: "ia" });
     expect(um.conteudo.cena.selos[0]?.texto).toBe("HORA DO VÔLEI");
     expect(PacoteDaTurmaSchema.parse(await service.pacoteDaTurma(ESCOLA, ids.turmaA, ids.prof)).ativo).toBeNull();
@@ -375,6 +394,20 @@ describe("o preparo do professor (IA com a quota do perfil professor)", () => {
     expect(de_novo).toMatchObject({ mudou: false, atividade: { pacoteId: r.atividade.pacoteId } });
     /* O rascunho da curadoria continua lá. */
     expect(await prisma.exp02ef1bPacote.count({ where: { escolaId: ESCOLA, turmaId: ids.turmaA, aprovadoEm: null } })).toBe(1);
+  });
+
+  test("o podcast conta a cena do pronto: a Biblioteca é o padrão do PO; a Horta e o Museu, as falas deles (ADR-204)", async () => {
+    const horta = await service.usarBancoPadrao(ESCOLA, ids.turmaA, ids.prof, "horta");
+    const doPodcast = await service.pacoteParaPodcast(ESCOLA, ids.turmaA, ids.prof, horta.atividade.pacoteId);
+    expect(doPodcast).toMatchObject({ padrao: false, falasProprias: FALAS_DOS_PRONTOS.horta });
+    expect(JSON.stringify(doPodcast.falasProprias)).not.toMatch(/biblioteca|relógio/i);
+    /* A Biblioteca volta ao ar (é a que a aula abaixo usa) e é o padrão. */
+    const biblioteca = await service.usarBancoPadrao(ESCOLA, ids.turmaA, ids.prof, "biblioteca");
+    expect(await service.pacoteParaPodcast(ESCOLA, ids.turmaA, ids.prof)).toEqual({
+      id: biblioteca.atividade.pacoteId,
+      tema: PACOTES_PRONTOS.biblioteca.tema,
+      padrao: true,
+    });
   });
 });
 

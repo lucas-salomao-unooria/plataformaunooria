@@ -239,7 +239,11 @@ fica presa à faixa do meio — mas a caixa arrastada com mais de 1/4 FORA da fa
 (`fracaoForaDaFaixa`): é o objeto que a IA pôs fora (medido: ~metade das imagens, com qualquer
 redação), e a curadoria oferece "Gerar outra imagem". O **pedido da imagem** (só a descrição; as regras fixas são da api) fica
 editável na curadoria, e "Gerar a imagem com este pedido" (`rascunho/imagem`) troca SÓ a imagem e
-apaga as áreas. Toda geração mostra a espera ONDE o professor olha: o quadro animado no lugar da cena
+apaga as áreas. **O pedido EDITADO fica na sessão** (`sessionStorage`, por turma; Lucas, 2026-10-29):
+GERAR NOVAMENTE remonta a curadoria (a `key` traz a geração), e sem isso a caixa voltava ao pedido que a
+IA escreveu para a cena nova; "Usar o pedido desta imagem" volta ao da cena, e aprovar apaga a chave.
+**As sete falas do podcast** (ADR-204) são pedidas quando a curadoria monta, com a cena e os selos/falas
+editados (`conteudoComAsEdicoes`), e vão no `homologar` — sem elas na régua, o "Aprovar" não acende. Toda geração mostra a espera ONDE o professor olha: o quadro animado no lugar da cena
 (`EsperaDaCena`) ou o véu sobre a imagem (`ocupada` da `CenaDoEnigma`), com o botão em carregamento —
 a barra lá em cima, sozinha, ficava fora da tela. A cena pronta é arquivo do
 bundle: a base vem de `lib/bundle-da-experiencia.ts`, no servidor. LIBERAR VIRADA é um botão só, da turma.

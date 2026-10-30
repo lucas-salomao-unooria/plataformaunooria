@@ -79,6 +79,8 @@ Preparo da cena & exp02ef1b, \arq{src/enigma-capa/} &
   16:9, sobre o tema do professor, com a quota dele. A IA não dá coordenada:
   o \textbf{professor desenha a área dos dois objetos} na imagem antes de
   aprovar, e pode editar o pedido da imagem e gerar outra (\adrr{ADR-188}).
+  Na cena da IA, também as sete falas do podcast que contam a cena, pela
+  rota única \rota{falas-do-tema}, revisadas na curadoria (\adrr{ADR-204}).
   Sem saldo ou sem provedor, o pacote pronto da disciplina; em sala, nada
   (\adrr{ADR-184}, Seção~\ref{sec:ia-preparo-exp02ef1b}).\\
 \zebra Preparo do pacote & exp01em1b, \arq{src/assistente-\B{}invisivel/} &
@@ -287,8 +289,9 @@ preparo cai no banco padrão (\adrr{ADR-157}). A suíte de ponta a ponta
 \subsection{O preparo do Enigma da Capa da Rádio: texto, panorâmica e os alvos do professor}
 \label{sec:ia-preparo-exp02ef1b}
 
-A única superfície de IA da exp02ef1b é o \enquote{Gerar com IA} do
-professor, antes da aula (\arq{enigma-capa/\B{}preparo.\B{}service.ts},
+A superfície de IA da exp02ef1b é o \enquote{Gerar com IA} do
+professor, antes da aula --- e, sobre a cena que ele gerou, as falas do
+podcast (ver adiante) (\arq{enigma-capa/\B{}preparo.\B{}service.ts},
 \adrr{ADR-184}). O professor dá o componente curricular (um dos do 2º ano na BNCC, mais
 Computação e \enquote{Outro componente}), o tema (até 60 caracteres), de 3
 a 6 palavras e uma nota opcional (até 200), e \rota{POST
@@ -347,7 +350,21 @@ ao log: é texto do professor. \textbf{A posição não é garantida}: medido, o
 modelo põe um dos objetos fora da faixa do meio em cerca de metade das
 imagens, com qualquer redação. Quem detecta é o desenho do professor --- a
 caixa arrastada com mais de um quarto fora da faixa não vira área, e a
-curadoria oferece outra imagem (\adrr{ADR-188}).
+curadoria oferece outra imagem (\adrr{ADR-188}). O pedido que o professor
+editou fica na sessão do navegador, por turma, e sobrevive ao GERAR NOVAMENTE
+(\adrr{ADR-204}): a cena nova traz o pedido dela, e o professor escolhe entre
+os dois (\enquote{Usar o pedido desta imagem}); o servidor só recebe o pedido
+que gera a imagem.
+
+\textbf{As falas do podcast contam a cena} (\adrr{ADR-204}). O roteiro tem
+sete vagas (o espaço, a primeira impressão, as duas fotos, os selos, a
+visitante, os dois objetos e o lugar inteiro). Na cena da IA, a curadoria pede
+as sete à rota única \rota{falas-do-tema} da plataforma (\adrr{ADR-150}),
+com a quota do professor; a IA lê o espaço, as ações das duas fotos, os selos,
+as falas da visitante, os nomes dos dois objetos e o que pode ficar fora
+(\cd{materialDoPodcast}). O professor as revisa, e o \enquote{Aprovar
+atividade} as grava. A Biblioteca intocada usa as falas do PO e a Horta e o
+Museu intocados as escritas para eles, sem IA (o gancho \cd{falasProntas}).
 
 \textbf{A cobrança} é o que o \emph{vendor} disse que cobrou, nas duas
 chamadas (\cd{aoUsarTokens}); a imagem sem contagem vale
