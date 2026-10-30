@@ -53,7 +53,8 @@ export function CartoesDosProjetos({ projetos }: { projetos: ProjetoNaTela[] }) 
 function ChipDeAnexo({ arquivo, onAbrir }: { arquivo: string; onAbrir: (arquivo: string) => void }) {
   return (
     <Tag className="uai-anexo" onClick={() => onAbrir(arquivo)} aria-label={`Abrir ${arquivo}`}>
-      <Icon name="chatText" size={14} />
+      {/* Anotação do card (29/10): o selo de PDF, para parecer que o assistente analisa um PDF. A `unooriaai` não tem glifo de PDF: o selo é o `Badge` do DS. */}
+      {/\.pdf$/i.test(arquivo) ? <Badge variant="error">PDF</Badge> : <Icon name="chatText" size={14} />}
       <span>{arquivo}</span>
     </Tag>
   );
@@ -70,7 +71,9 @@ export function Thread({
   digitando,
   onAnexo,
   marcar,
+  nomes = [],
 }: {
+  nomes?: readonly string[];
   mensagens: Mensagem[];
   pendente?: string | null;
   digitando?: string;
@@ -96,7 +99,7 @@ export function Thread({
         return (
           <div key={m.id} className={`uai-mensagem${marcada ? " uai-mensagem--marcada" : ""}`} data-ancora={m.ancora ?? undefined}>
             <ChatBubble role={m.autor === "estudante" ? "user" : "assistant"}>
-              {m.texto}
+              {m.autor === "estudante" ? m.texto : <ComNomesEmNegrito texto={m.texto} nomes={nomes} />}
               {m.anexos.length > 0 && (
                 <span className="uai-anexos">
                   <span className="uai-anexos__rotulo">{TEXTOS.anexos}</span>
@@ -125,6 +128,15 @@ export function Thread({
       <div ref={fim} />
     </>
   );
+}
+
+/** Os nomes dos projetos em negrito na fala do assistente (anotação do card, 29/10). */
+function ComNomesEmNegrito({ texto, nomes }: { texto: string; nomes: readonly string[] }) {
+  const validos = nomes.filter(Boolean).sort((a, b) => b.length - a.length);
+  if (validos.length === 0) return <>{texto}</>;
+  const escapar = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const partes = texto.split(new RegExp(`(${validos.map(escapar).join("|")})`, "g"));
+  return <>{partes.map((p, i) => (validos.includes(p) ? <strong key={i}>{p}</strong> : p))}</>;
 }
 
 /** Uma fala solta do assistente (a oferta dos cadernos na E4, o contrafactual): o mesmo balão da thread. */

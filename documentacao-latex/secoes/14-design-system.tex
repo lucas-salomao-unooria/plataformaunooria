@@ -1387,12 +1387,17 @@ Por que não só o \cd{unooriaai}: a seção do clone não tem lista reordenáve
 arrasto, tabela, barra de progresso nem lixeira, e compor as seis peças com
 primitivas do clone seriam seis componentes silenciosos. A \cd{unooria} as
 tem, e a mecânica não finge ser o aplicativo: é a plataforma conduzindo a
-aula. Sobraram duas compensações, marcadas no código e listadas no
-\arq{AGENTS.md} da experiência: o arrasto nativo em volta do
-\cd{PuzzleBlock}, que não aceita \cd{draggable} (pedido ao DS; a mesma ação
-existe em botões --- Subir, Descer, Mover para Lixeira --- e no toque); e o
-\cd{Card} da \cd{unooria} sem o teto de largura de celular dentro da coluna
-do chat.
+aula. Na 0.1.0 sobraram duas compensações; a primeira, o arrasto nativo em
+volta do \cd{PuzzleBlock}, morreu na 0.1.1: o arrastar e soltar entrou no DS
+na 0.2.26 (\cd{storybook-unooria}, PR \#29), com \cd{dragData} no
+\cd{PuzzleBlock} e \cd{onSlotDrop} na \cd{PuzzleTrack} --- o tipo do
+\cd{dataTransfer} é do DS, então um texto arrastado de fora não entra; o
+toque e os botões (Subir, Descer, Mover para Lixeira) continuam sendo a
+mesma ação. O ranking virou uma calha de três vagas; o banco, as três
+verificações e o descarte, calhas que recebem. Fica só o \cd{Card} da
+\cd{unooria} sem o teto de largura de celular dentro da coluna do chat.
+Pela \adrr{ADR-187}, subir o DS para a 0.2.26 subiu o patch de todas as
+experiências publicáveis (menos a exp03em1b, já à frente do \cd{dev}).
 
 \subsection{Avisos que ficaram obsoletos}
 

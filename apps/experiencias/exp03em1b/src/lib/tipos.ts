@@ -15,7 +15,7 @@ export const EXP_ID = "exp03em1b";
  * A versão vive em TRÊS lugares: aqui, no `package.json` e no
  * `public/experiencia.json` (`versao.test.ts`). A 1.0.0 é a primeira (ADR-198).
  */
-export const EXP_VERSION = "1.0.1";
+export const EXP_VERSION = "1.0.2";
 
 /** O passo é DERIVADO no servidor (`regras/passos.ts` da api). */
 export type Passo = "abertura" | "dados" | "compositor" | "feed" | "errata" | "laudo" | "pericia" | "concluida";

@@ -284,7 +284,7 @@ export const FALAS_DO_ASSISTENTE = {
   parecerInicial: "Com base nas métricas digitais, recomendo o {nuvem} por menor risco documental e maior governança técnica. Os autos estão prontos para sua deliberação formal.",
   parecerInvertido:
     "Após leitura óptica de 180 registros diários de campo, o projeto {papel} atinge a pontuação máxima de mérito por custo-efetividade e urgência comunitária comprovada. Compare os dados na tabela.",
-  limiar: "Limiar de 3 consultas atingido. Você já pode deliberar sobre os R$ 12.000 da comissão.",
+  limiar: "Limite de 3 consultas atingido. Você já pode deliberar sobre os R$ 12.000 da comissão.",
   foraDoTema:
     "Esta consulta não corresponde às diretrizes orçamentárias da Comissão de Recursos Comunitários. Por favor, formule perguntas sobre as metas, custos, relatórios ou comprovações dos projetos sociais sob auditoria.",
   limite:
