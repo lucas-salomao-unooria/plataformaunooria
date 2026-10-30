@@ -299,6 +299,12 @@ model Turma {
   portaVozHistorico  Exp03em1bGateHistorico[]
   portaVozSessoes    Exp03em1bSessao[]
   portaVozPosts      Exp03em1bPublicacao[]
+  /// O Dossiê Invisível (exp09ef1b, ADR-202): o pacote é POR TURMA (a
+  /// atividade da evidência), o gate é da turma, e a sessão carrega a turma.
+  dossiePacotes      Exp09ef1bPacote[]
+  dossieGates        Exp09ef1bGateTurma[]
+  dossieHistorico    Exp09ef1bGateHistorico[]
+  dossieSessoes      Exp09ef1bSessao[]
 
   @@unique([escolaId, periodoLetivoId, nome])
   @@index([escolaId])
@@ -533,6 +539,10 @@ model User {
   portaVozSessoes            Exp03em1bSessao[]           @relation("Exp03em1bEstudante")
   /// O "Pausar Telas" e o "Liberar Retomada" de O Porta-Voz dos Dados (o histórico).
   portaVozGatesApertados     Exp03em1bGateHistorico[]    @relation("Exp03em1bGateProfessor")
+  /// Lista: a sessão da exp09ef1b é por (pacote, rodada), não por estudante.
+  dossieSessoes              Exp09ef1bSessao[]           @relation("Exp09ef1bEstudante")
+  /// As três travas de O Dossiê Invisível (o histórico).
+  dossieGatesApertados       Exp09ef1bGateHistorico[]    @relation("Exp09ef1bGateProfessor")
   /// As conversas deste professor com o agente de IA — a POSSE da sessão do
   /// Agent Engine mora aqui, não no engine.
   agenteProfessorConversas   AgenteProfessorConversa[]   @relation("AgenteProfessorConversaUsuario")
@@ -4401,13 +4411,13 @@ model Exp03ef1bPacote {
 /// O RELÓGIO DA TURMA — os dois portões da professora ("Liberar Filtro",
 /// "Liberar Inspeção") e a pausa. Lido por polling de 3 s.
 model Exp03ef1bGateTurma {
-  escolaId String @map("escola_id")
-  turmaId  String @map("turma_id") @db.Uuid
-  pacoteId String @map("pacote_id") @db.Uuid
+  escolaId String  @map("escola_id")
+  turmaId  String  @map("turma_id") @db.Uuid
+  pacoteId String  @map("pacote_id") @db.Uuid
   /// ≥ 1 (CHECK). "Zerar Turma" soma um; pacote novo abre a seguinte à última.
-  rodada   Int    @default(1)
+  rodada   Int     @default(1)
   /// aposta | filtro | inspecao (CHECK; a ordem é `regras/passos.ts`). Só avança.
-  etapa    String @default("aposta")
+  etapa    String  @default("aposta")
   /// "Pausar Turma": congela todas as telas. Par com `pausada_em` (CHECK).
   pausada  Boolean @default(false)
 
@@ -4672,4 +4682,139 @@ model Exp03em1bPublicacao {
   @@unique([escolaId, estudanteId, pacoteId, rodada, tipo])
   @@index([escolaId, turmaId, pacoteId, rodada])
   @@map("exp03em1b_publicacoes")
+}
+
+// ---------------------------------------------------------------------------
+// O DOSSIÊ INVISÍVEL — exp09ef1b, 9º ano EF, unidade 1 (ADR-202).
+// CHECKs, índices parciais, RLS e GRANT estão no bloco MANUAL da migração
+// `20261029200000_exp09ef1b_dossie_invisivel`.
+// ---------------------------------------------------------------------------
+
+model Exp09ef1bPacote {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  /// O componente curricular do recorte (CHECK, `conteudo.ts#DISCIPLINAS`).
+  disciplina String
+  tema       String
+  assuntos   String[]
+  contexto   String?
+
+  /// A roupagem (`contrato-de-rotas.ts#ConteudoBaseSchema`): os três projetos e
+  /// os cadernos. O mecanismo (papéis, volumes, falas, régua) é FIXO no servidor.
+  conteudoJson Json @map("conteudo_json")
+
+  /// ia | padrao (CHECK).
+  origem String
+
+  ativo       Boolean   @default(false)
+  rodadaAtual Int       @default(1) @map("rodada_atual") @db.SmallInt
+  aprovadoEm  DateTime? @map("aprovado_em") @db.Timestamptz(6)
+  aprovadoPor String?   @map("aprovado_por") @db.Uuid
+
+  preparoIniciadoEm DateTime  @default(now()) @map("preparo_iniciado_em") @db.Timestamptz(6)
+  iaGeracoes        Int       @default(0) @map("ia_geracoes")
+  iaTokens          Int       @default(0) @map("ia_tokens")
+  painelVistoEm     DateTime? @map("painel_visto_em") @db.Timestamptz(6)
+  painelVistas      Int       @default(0) @map("painel_vistas")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma   Turma             @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  sessoes Exp09ef1bSessao[]
+
+  @@unique([escolaId, id])
+  @@index([escolaId, turmaId])
+  @@map("exp09ef1b_pacotes")
+}
+
+model Exp09ef1bGateTurma {
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  etapa String @default("exploracao")
+
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, turmaId])
+  @@map("exp09ef1b_gates_turma")
+}
+
+model Exp09ef1bGateHistorico {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String   @map("escola_id")
+  turmaId     String   @map("turma_id") @db.Uuid
+  pacoteId    String   @map("pacote_id") @db.Uuid
+  rodada      Int      @db.SmallInt
+  etapa       String
+  professorId String?  @map("professor_id") @db.Uuid
+  em          DateTime @default(now()) @db.Timestamptz(6)
+
+  turma     Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  professor User? @relation("Exp09ef1bGateProfessor", fields: [professorId], references: [id], onDelete: SetNull)
+
+  @@index([escolaId, turmaId])
+  @@map("exp09ef1b_gates_historico")
+}
+
+model Exp09ef1bSessao {
+  escolaId    String @map("escola_id")
+  estudanteId String @map("estudante_id") @db.Uuid
+  pacoteId    String @map("pacote_id") @db.Uuid
+  rodada      Int    @db.SmallInt
+  turmaId     String @map("turma_id") @db.Uuid
+
+  criadoEm DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  /// "Começar Análise" (E1 → E2).
+  entrouEm DateTime? @map("entrou_em") @db.Timestamptz(6)
+
+  /// A thread do chat (texto livre de MENOR na fala do estudante): fica para o
+  /// F5 e para as âncoras da E5; nunca vai a painel, telemetria nem log.
+  conversa  Json @default("[]")
+  /// As consultas que contaram (fora do tema não conta) e as mensagens enviadas (o teto de 5).
+  consultas Int  @default(0) @db.SmallInt
+  enviadas  Int  @default(0) @db.SmallInt
+
+  cadernosOferecidosEm DateTime? @map("cadernos_oferecidos_em") @db.Timestamptz(6)
+  /// A digitalização dos cadernos, e em que etapa (E2 = caminho A1; E4 = depois da escolha).
+  cadernosEm           DateTime? @map("cadernos_em") @db.Timestamptz(6)
+  cadernosNaEtapa      String?   @map("cadernos_na_etapa")
+  verProjetosEm        DateTime? @map("ver_projetos_em") @db.Timestamptz(6)
+
+  /// O LATCH 1 ("Registrar Decisão"): o projeto, o ranking e o caminho congelados.
+  decisaoEm      DateTime? @map("decisao_em") @db.Timestamptz(6)
+  projetoInicial String?   @map("projeto_inicial")
+  rankingInicial String[]  @map("ranking_inicial")
+  caminho        String?
+
+  /// As pílulas dirigidas da E4 (custo | assinaturas).
+  pilulas String[]
+
+  /// O LATCH 2 ("Confirmar Decisão Final").
+  revotoEm     DateTime? @map("revoto_em") @db.Timestamptz(6)
+  projetoFinal String?   @map("projeto_final")
+  rankingFinal String[]  @map("ranking_final")
+
+  /// As âncoras marcadas na E5 (não é evidência).
+  ancoras String[]
+
+  /// O "Enviar Proposta" — as três verificações e o descarte —, que CONCLUI.
+  protocoloJson Json?     @map("protocolo_json")
+  concluidoEm   DateTime? @map("concluido_em") @db.Timestamptz(6)
+
+  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  estudante User            @relation("Exp09ef1bEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  turma     Turma           @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  pacote    Exp09ef1bPacote @relation(fields: [escolaId, pacoteId], references: [escolaId, id], onDelete: Cascade)
+
+  @@id([escolaId, estudanteId, pacoteId, rodada])
+  @@index([escolaId, turmaId, pacoteId, rodada])
+  @@map("exp09ef1b_sessoes")
 }
