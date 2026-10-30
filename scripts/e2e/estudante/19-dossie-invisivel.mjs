@@ -377,7 +377,7 @@ await suite(
     });
 
     /** “Ver Projetos” (se a escolha ainda não abriu) → “Escolher Projeto” → o painel: marca o projeto, mexe um critério e registra. */
-    async function deliberar(rotulo, nomeDoProjeto, { verProjetos }) {
+    async function deliberar(rotulo, nomeDoProjeto, { verProjetos, arrastar = false }) {
       const { pg, q } = estudantes[rotulo];
       if (verProjetos) {
         const viu = await comResposta(pg, /sessao\/ver-projetos$/, () => q.getByRole("button", { name: COPY.verProjetos, exact: true }).click());
@@ -390,8 +390,30 @@ await suite(
       r.exigir(await registrar.isDisabled(), `${rotulo}: sem projeto marcado, “Registrar Decisão” fica desabilitado`);
       await painel.getByRole("radio", { name: new RegExp(`^${nomeDoProjeto}`) }).click();
       r.exigir(await registrar.isDisabled(), `${rotulo}: com o projeto marcado e o ranking intocado, ainda desabilitado`);
-      await painel.locator("li[data-criterio]").first().getByRole("button", { name: /^Descer critério/ }).click();
-      const ranking = await painel.locator("li[data-criterio]").evaluateAll((lis) => lis.map((li) => li.getAttribute("data-criterio")));
+      const itens = painel.locator(".ranking__item[data-criterio]");
+      const ordemAntes = await itens.evaluateAll((els) => els.map((el) => el.getAttribute("data-criterio")));
+      if (arrastar) {
+        /* O ARRASTO de verdade, pelo DS 0.2.26 (`dragData` no PuzzleBlock, `onSlotDrop` na PuzzleTrack):
+           o 3º critério vai para a 1ª posição. O toque (Subir/Descer) é provado pelos outros dois. */
+        const origem = itens.nth(2).locator('[draggable="true"]').first();
+        const destino = painel.locator(".ranking .unooria-puzzle-track__slot").first();
+        await origem.dragTo(destino);
+        await painel
+          .locator(".ranking__item[data-criterio]")
+          .first()
+          .and(painel.locator(`[data-criterio="${ordemAntes[2]}"]`))
+          .waitFor({ timeout: 5_000 })
+          .catch(() => {});
+      } else {
+        await itens.first().getByRole("button", { name: /^Descer critério/ }).click();
+      }
+      const ranking = await itens.evaluateAll((els) => els.map((el) => el.getAttribute("data-criterio")));
+      if (arrastar) {
+        r.exigir(
+          JSON.stringify(ranking) === JSON.stringify([ordemAntes[2], ordemAntes[0], ordemAntes[1]]),
+          `${rotulo}: ARRASTAR o 3º critério até a 1ª posição reordena o ranking pelo DS (${ordemAntes.join(" > ")} → ${ranking.join(" > ")})`,
+        );
+      }
       r.exigir(!(await registrar.isDisabled()), `${rotulo}: projeto marcado e um critério movido, “Registrar Decisão” acende`);
       return { painel, registrar, ranking };
     }
@@ -408,10 +430,10 @@ await suite(
       return decidiu.corpo;
     }
 
-    const delA1 = await deliberar("A1", "Mesa Aberta", { verProjetos: true });
+    const delA1 = await deliberar("A1", "Mesa Aberta", { verProjetos: true, arrastar: true });
     await r.registrar(a1, "a1-painel-de-deliberacao", {
       titulo: "O Painel de Deliberação Orçamentária",
-      mostra: "Mesa Aberta selecionado, os outros dois na “Fila de espera”, e o ranking dos três critérios com um deles movido.",
+      mostra: "Mesa Aberta selecionado, os outros dois na “Fila de espera”, e o ranking dos três critérios com o 3º ARRASTADO para o topo.",
       prova: "A verba é indivisível; o “Registrar Decisão” só acende com o projeto marcado e o ranking tocado (o ranking nasce embaralhado).",
     });
     const decisaoA1 = await registrarDecisao("A1", delA1);
@@ -453,7 +475,7 @@ await suite(
       terceira.status === 200 && terceira.corpo?.chat?.consultas === 3 && terceira.corpo?.chat?.podeEscolher === true && terceira.corpo?.chat?.cadernosOferecidos === false,
       `B: três consultas pelas sugestões liberam a escolha sem a oferta dos cadernos (consultas ${terceira.corpo?.chat?.consultas}, ${segunda.status}/${terceira.status})`,
     );
-    await qb.getByText("Limiar de 3 consultas atingido.", { exact: false }).first().waitFor({ timeout: 15_000 });
+    await qb.getByText("Limite de 3 consultas atingido.", { exact: false }).first().waitFor({ timeout: 15_000 });
     await qb.getByText(/possui apenas a ficha cadastral de abertura no sistema digital/).first().waitFor({ timeout: 10_000 });
     await r.registrar(b, "b-tres-sugestoes", {
       titulo: "B segue as três sugestões",
@@ -576,11 +598,11 @@ await suite(
     await revisaoDe(qb).waitFor({ timeout: 30_000 });
     await revisaoDe(qb).getByRole("button", { name: COPY.revisar, exact: true }).click();
     await revisaoDe(qb).getByRole("radio", { name: /^Mesa Aberta/ }).click();
-    const ordemB = () => revisaoDe(qb).locator("li[data-criterio]").evaluateAll((lis) => lis.map((li) => li.getAttribute("data-criterio")));
+    const ordemB = () => revisaoDe(qb).locator(".ranking__item[data-criterio]").evaluateAll((lis) => lis.map((li) => li.getAttribute("data-criterio")));
     for (let i = 0; i < 2; i++) {
       const ordem = await ordemB();
       if (ordem.indexOf("urgencia") > ordem.indexOf("regularidade")) break;
-      await revisaoDe(qb).locator('li[data-criterio="urgencia"]').getByRole("button", { name: /^Descer critério/ }).click();
+      await revisaoDe(qb).locator('.ranking__item[data-criterio="urgencia"]').getByRole("button", { name: /^Descer critério/ }).click();
     }
     const rankingFinalB = await ordemB();
     r.exigir(rankingFinalB.indexOf("urgencia") > rankingFinalB.indexOf("regularidade"), `B: a urgência fica abaixo da regularidade (${rankingFinalB.join(" > ")})`);
@@ -638,7 +660,7 @@ await suite(
      * “Mover para Lixeira” pelo botão do bloco. `slots` = os blocos por
      * verificação (null = vazia).
      */
-    async function protocolo(rotulo, slots, lixeira) {
+    async function protocolo(rotulo, slots, lixeira, { arrastarPrimeiro = false } = {}) {
       const { pg, q } = estudantes[rotulo];
       await q.getByRole("button", { name: COPY.abrirEditor, exact: true }).click();
       const editor = q.locator('[data-tela="E5-ALU-02"]');
@@ -647,12 +669,34 @@ await suite(
       r.exigir(await enviar.isDisabled(), `${rotulo}: o editor abre limpo, com “Enviar Proposta” desabilitado`);
       for (const [vaga, bloco] of slots.entries()) {
         if (!bloco) continue;
-        await editor.locator(`.editor__banco li[data-bloco="${bloco}"] > *`).first().click();
+        if (arrastarPrimeiro && vaga === 0) {
+          /* O ARRASTO pelo DS: o bloco do banco solto na 1ª verificação (o resto vai por toque).
+             A janela cresce durante o gesto para a origem e o destino caberem SEM rolar: se a página
+             rola entre o mousedown e o 1º movimento, o Chromium começa o arrasto no elemento que
+             passou a estar sob o ponteiro — e o bloco errado cai na vaga (visto em 2026-10-29). */
+          const janela = pg.viewportSize();
+          await pg.setViewportSize({ width: janela.width, height: 2400 });
+          await editor.scrollIntoViewIfNeeded();
+          await editor
+            .locator(`.editor__banco [data-bloco="${bloco}"] [draggable="true"]`)
+            .first()
+            .dragTo(editor.locator(`.editor__vaga[data-vaga="0"] .unooria-puzzle-track__slot`).first());
+          await pg.setViewportSize(janela);
+          const encaixou = await editor
+            .locator(`.editor__vaga[data-vaga="0"] [data-bloco="${bloco}"]`)
+            .waitFor({ timeout: 5_000 })
+            .then(() => true)
+            .catch(() => false);
+          r.exigir(encaixou, `${rotulo}: ARRASTAR “${bloco}” do banco para a 1ª verificação encaixa o bloco (onSlotDrop do DS)`);
+          if (!encaixou) throw new Error(`${rotulo}: o arrasto do bloco para a 1ª verificação não encaixou`);
+          continue;
+        }
+        await editor.locator(`.editor__banco [data-bloco="${bloco}"] button`).first().click();
         await editor.locator(`.editor__vaga[data-vaga="${vaga}"] button[data-slot-index="0"]`).click();
         await editor.locator(`.editor__vaga[data-vaga="${vaga}"] [data-bloco="${bloco}"]`).waitFor({ timeout: 5_000 });
       }
       for (const bloco of lixeira) {
-        await editor.locator(`.editor__banco li[data-bloco="${bloco}"]`).getByRole("button", { name: /^Mover para Lixeira/ }).click();
+        await editor.locator(`.editor__banco [data-bloco="${bloco}"]`).getByRole("button", { name: /^Mover para Lixeira/ }).click();
       }
       r.exigir(!(await enviar.isDisabled()), `${rotulo}: com um bloco na esteira, “Enviar Proposta” acende (sem trava no cliente)`);
       return { editor, enviar, enviarAgora: () => comResposta(pg, /sessao\/protocolo$/, () => enviar.click()) };
@@ -670,7 +714,7 @@ await suite(
       mostra: "Amara pergunta se o assistente avaliava o resultado ou os rastros digitais; os quatro conceitos; e a âncora marcada na inversão do parecer.",
       prova: "A fala de Amara afirma a indução só porque ≥ 50% da turma votou na nuvem na E3; as âncoras não são evidência.",
     });
-    const ed1 = await protocolo("A1", GABARITO, [DANOSO]);
+    const ed1 = await protocolo("A1", GABARITO, [DANOSO], { arrastarPrimeiro: true });
     await ed1.editor.scrollIntoViewIfNeeded();
     await r.registrar(a1, "a1-editor-de-protocolo", {
       titulo: "O Editor de Protocolo",

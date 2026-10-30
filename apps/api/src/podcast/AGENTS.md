@@ -57,6 +57,11 @@ O molde é o par de arquivos do Jornal (`jornal-escola/podcast.ts`, puro, e
   `podcast` opcional), não numa homologação: a missão não tem tela de criação
   que termine numa. Opcional porque o "pôr no ar" da sala reativa sem passar
   pela revisão — e aí valem as falas gravadas.
+- **Pronto que não é o banco padrão** (a Horta e o Museu da exp02ef1b,
+  ADR-204): `escrita.falasProntas(conteudo)` devolve as falas que a missão já
+  tem para aquele conteúdo, sem IA nem quota; `null` manda para a IA. Na
+  atividade, a missão as entrega como `falasProprias` só quando NÃO há linha
+  na tabela — a revisão do professor vence o pronto.
 - **A A Seleção não usa a tabela**: as falas dela nascem no lote do preparo e
   moram na cobertura (`exp07ef1b_coberturas.podcast`); a fonte as entrega como
   `falasProprias` e não tem `escrita`.

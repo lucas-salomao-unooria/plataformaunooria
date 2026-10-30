@@ -139,7 +139,7 @@ export function TelaConversa({ s, semRede, executar }: Props) {
       }
     >
       <Amara>{s.textos.amara}</Amara>
-      <Thread mensagens={c.mensagens} pendente={pendente} digitando={s.textos.tela.digitando} onAnexo={anexo.abrir} />
+      <Thread nomes={s.conteudo?.projetos.map((p) => p.nome) ?? []} mensagens={c.mensagens} pendente={pendente} digitando={s.textos.tela.digitando} onAnexo={anexo.abrir} />
       {ofertaAberta && !ocr && (
         <div className="uai-acoes" data-tela="oferta-dos-cadernos">
           <AcaoDoApp onClick={() => setOcr(true)}>{s.textos.tela.digitalizar}</AcaoDoApp>
@@ -173,7 +173,7 @@ export function TelaEspera({ s, semRede }: { s: Sessao; semRede: boolean }) {
   return (
     <Workspace tela={s.textos.tela} semRede={semRede}>
       <div className="trava" inert>
-        <Thread mensagens={s.chat.mensagens} onAnexo={anexo.abrir} />
+        <Thread nomes={s.conteudo?.projetos.map((p) => p.nome) ?? []} mensagens={s.chat.mensagens} onAnexo={anexo.abrir} />
       </div>
       {s.revoto && <DecisaoHomologada projeto={nome(s.revoto.projeto)} criterio={s.textos.criterios[primeiroCriterio(s.revoto.ranking) ?? "urgencia"]} />}
       <Espera texto={s.textos.tela.espera} detalhe={TEXTOS.emEspera} />
@@ -213,7 +213,7 @@ export function TelaRevelacao({ s, semRede, executar }: Props) {
 
   return (
     <Workspace tela={s.textos.tela} semRede={semRede}>
-      <Thread mensagens={s.chat.mensagens} onAnexo={anexo.abrir} />
+      <Thread nomes={s.conteudo?.projetos.map((p) => p.nome) ?? []} mensagens={s.chat.mensagens} onAnexo={anexo.abrir} />
       {!digitalizou && !ocr && (
         <div data-tela="E4-ALU-01">
           <FalaDoAssistente>{s.textos.tela.aviso}</FalaDoAssistente>
@@ -269,7 +269,7 @@ export function TelaExplicar({ s, semRede, executar }: Props) {
       {s.explicar && <Amara>{s.explicar.falaDeAmara}</Amara>}
       <Conceitos resumo={s.textos.conceitosResumo} conceitos={s.textos.conceitos} />
       <p className="uai-nota uai-nota--instrucao">{s.textos.tela.instrucaoAncoras}</p>
-      <Thread mensagens={s.chat.mensagens} onAnexo={anexo.abrir} marcar={editor ? null : { marcadas, alternar }} />
+      <Thread nomes={s.conteudo?.projetos.map((p) => p.nome) ?? []} mensagens={s.chat.mensagens} onAnexo={anexo.abrir} marcar={editor ? null : { marcadas, alternar }} />
       {!editor && (
         <div className="uai-acoes">
           <AcaoDoApp grande onClick={() => setEditor(true)}>
@@ -312,7 +312,7 @@ export function TelaConcluida({ s, semRede }: { s: Sessao; semRede: boolean }) {
       </div>
       {historico && (
         <div className="trava" inert>
-          <Thread mensagens={s.chat.mensagens} onAnexo={anexo.abrir} />
+          <Thread nomes={s.conteudo?.projetos.map((p) => p.nome) ?? []} mensagens={s.chat.mensagens} onAnexo={anexo.abrir} />
         </div>
       )}
       {anexo.modal}

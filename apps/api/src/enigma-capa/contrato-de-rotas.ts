@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { falasDoTemaSchema } from "../podcast/roteiro";
+import { VAGAS_DO_PODCAST } from "./podcast";
 import {
   CHAVES_DE_CENA,
   CHAVES_PRONTAS,
@@ -369,6 +371,8 @@ export const HomologarSchema = z.object({
   rascunhoId: z.string().uuid(),
   selos: z.array(z.object({ id: SeloIdSchema, texto: texto(40), emoji: texto(16) })).length(2).optional(),
   falas: z.array(z.object({ fotoId: FotoIdSchema, visitante: texto(80) })).length(2).optional(),
+  /** As sete falas do podcast que o professor revisou na curadoria (ADR-150, ADR-204). */
+  podcast: falasDoTemaSchema(VAGAS_DO_PODCAST),
 });
 
 export const BancoPadraoSchema = z.object({ chave: z.enum(CHAVES_PRONTAS) });

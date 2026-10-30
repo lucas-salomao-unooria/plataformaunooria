@@ -70,6 +70,12 @@ export interface EscritaDasFalas {
   /** O conteúdo é o banco padrão, intocado? Então valem as falas do sheet, sem IA. */
   ehPadrao(conteudo: unknown): boolean;
   /**
+   * As falas que a MISSÃO já tem para este conteúdo, sem IA — um pacote pronto
+   * que não é o banco padrão (a Horta e o Museu da exp02ef1b, ADR-204). `null`
+   * = escreva com a IA. Ausente = só o banco padrão tem falas prontas.
+   */
+  falasProntas?(conteudo: unknown): FalasDoTema | null;
+  /**
    * O que a IA lê para escrever as falas: o conteúdo em texto, com o papel de
    * cada peça na missão. O gabarito vai junto: quem lê é o professor, e é ele
    * que diz qual notícia é a antiga (a regra 3 protege o ESTUDANTE).

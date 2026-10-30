@@ -19,7 +19,7 @@ do Lucas, 2026-10-29): a Etapa 6 (Lia, Davi, transporte) e o Canal B.
 | Pasta | Ponte | O que mora lá |
 |---|---|---|
 | `src/app/clone/` | SÓ `@edu/ui/ds-unooriaai` | o cromo do workspace, a thread (`ChatBubble`), o composer e as sugestões (`PromptSuggestion`), os cartões da abertura (`AssistantCard`), os chips de anexo (`Tag`) e o modal de metadados (`Modal`), as pílulas dirigidas, os botões do app |
-| `src/app/mecanica/` | SÓ `@edu/ui/ds` | Amara (`SpeechBubble`), o painel de deliberação e o ranking (`Card`, `PuzzleBlock`), o OCR (`ProgressBar`), a tabela de confronto (`Table`), a revisão do voto, a espera (`AlertBox`), os conceitos, o Editor de Protocolo (`PuzzleTrack` de uma vaga por verificação) e o fim |
+| `src/app/mecanica/` | SÓ `@edu/ui/ds` | Amara (`SpeechBubble`), o painel de deliberação e o ranking (`Card`, `PuzzleTrack` + `PuzzleBlock` arrastáveis), o OCR (`ProgressBar`), a tabela de confronto (`Table`), a revisão do voto, a espera (`AlertBox`), os conceitos, o Editor de Protocolo (`PuzzleTrack` de uma vaga por verificação) e o fim |
 | `src/app/telas/` | NENHUMA | compõe as duas |
 
 `src/contrato.test.ts` cobra a separação. Tokens: `--uai-*` no clone,
@@ -30,11 +30,12 @@ do Lucas, 2026-10-29): a Etapa 6 (Lia, Davi, transporte) e o Canal B.
 - **O passo é do servidor** (`abertura → conversa → espera1 → revelacao →
   espera2 → explicar → concluida`). O polling de 3 s só corre nas esperas (as
   travas do professor) e sem pacote no ar.
-- **Arrastar é o gesto do PO**, com a mesma ação em botões (Subir/Descer,
-  Mover para Lixeira) e no toque (toca o bloco, toca a vaga). (b) COMPENSAÇÃO —
-  sem par no DS: o arrasto nativo em volta do `PuzzleBlock` (pedido:
-  `draggable` no PuzzleBlock); e o `Card` da `unooria` sem o `max-width` de
-  celular dentro da coluna do chat.
+- **Arrastar é o gesto do PO, e é do DS desde a 0.2.26**: `dragData` no
+  `PuzzleBlock` e `onSlotDrop` na `PuzzleTrack` (o ranking é uma calha de três
+  vagas; o banco, as três verificações e o descarte são calhas que recebem).
+  A mesma ação existe em botões (Subir/Descer, Mover para Lixeira) e no toque
+  (toca o bloco, toca a vaga). (b) COMPENSAÇÃO — sem par no DS: só o `Card` da
+  `unooria` sem o `max-width` de celular dentro da coluna do chat.
 - **O ranking da E3 nasce na ordem do servidor** (embaralhada por sessão) e o
   "Registrar Decisão" só acende com o projeto marcado e o ranking tocado. No 2º
   voto o ranking vem com a ordem da E3 e mexer é opcional.

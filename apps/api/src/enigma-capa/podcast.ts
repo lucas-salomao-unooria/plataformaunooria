@@ -1,5 +1,6 @@
 import type { AiFalante } from "../ai/provider";
 import type { FalaDoPodcast, FalasDoTema, PedidoDeVoz, TrechoDoRoteiro, VagaDoTema } from "../podcast/roteiro";
+import { conteudoPronto, type ChavePronta, type ConteudoDoPacote } from "./conteudo";
 
 /**
  * O PODCAST DE RECAPITULAÇÃO de O Enigma da Capa da Rádio (ADR-150, ADR-184)
@@ -12,10 +13,14 @@ import type { FalaDoPodcast, FalasDoTema, PedidoDeVoz, TrechoDoRoteiro, VagaDoTe
  * (vinheta, fita sintonizando, assinatura que esmaece) não são fala: vão na
  * DIREÇÃO de atuação.
  *
- * FIXO, como o da exp02em1b (ADR-156): sem vaga, sem IA, sem edição do
- * professor — o mesmo áudio em toda turma, sintetizado uma vez por contrato.
- * O roteiro fala da biblioteca (o banco padrão do PO) em qualquer cena; a
- * descoberta é a mesma.
+ * Desde a ADR-204 o podcast CONTA A CENA DA ATIVIDADE: as sete falas que
+ * citam o espaço, as duas fotos, os selos, a visitante, os dois objetos do
+ * fundo e o lugar inteiro são VAGAS do tema (`VAGAS_DO_PODCAST`). Na
+ * Biblioteca valem as do PO (`FALAS_DO_TEMA_PADRAO`, o texto de antes, letra a
+ * letra — o áudio já sintetizado não muda); na Horta e no Museu, as escritas
+ * para eles (`FALAS_DOS_PRONTOS`); na cena da IA, as que a IA escreve e o
+ * professor revisa na curadoria. Até a 2.2.2 era fixo e falava da biblioteca
+ * em qualquer cena — o professor ouvia relógio e cartaz amarelo numa horta.
  *
  * Puro — sem Nest e sem Prisma. Quem liga a missão ao módulo `podcast` é
  * `podcast-fonte.ts`.
@@ -31,41 +36,25 @@ const TITULOS: Record<(typeof BLOCOS_DO_PODCAST)[number], string> = {
   encerramento: "Encerramento",
 };
 
-const FALAS: Record<(typeof BLOCOS_DO_PODCAST)[number], readonly FalaDoPodcast[]> = {
+/** Uma fala que muda com a cena: o texto é o da vaga, preenchido por `roteiroDoPodcast`. */
+type FalaDoRoteiro = FalaDoPodcast | { falante: string; vaga: string };
+const vaga = (falante: string, id: string): FalaDoRoteiro => ({ falante, vaga: id });
+
+const FALAS: Record<(typeof BLOCOS_DO_PODCAST)[number], readonly FalaDoRoteiro[]> = {
   abertura: [
     {
       falante: "Bento",
       texto:
         "Alô, você que está ouvindo a Rádio Escola! Aqui é o Bento! Você não imagina o sufoco que eu passei essa semana com a capa do nosso programa!",
     },
-    {
-      falante: "Iara",
-      texto:
-        "Olá, detetive! Eu sou a Iara. E o Bento ficou de cabelo em pé porque achou que a nossa biblioteca tinha virado um mistério sem solução!",
-    },
-    {
-      falante: "Bento",
-      texto:
-        "Eu tirei uma foto e todo mundo achou que a escola estava em silêncio absoluto feito um museu antigo! Mas eu estava lá e não era só isso!",
-    },
+    vaga("Iara", "espaco"),
+    vaga("Bento", "impressao"),
   ],
   recapitulacao: [
     { falante: "Iara", texto: "Foi aí que você entrou em ação no Unoovista como detetive da imagem!" },
-    {
-      falante: "Bento",
-      texto:
-        "Você pegou a lupa digital e começou a vasculhar as fotos com muita atenção. Tinha a Foto 1, com as crianças compenetradas nos livros, e a Foto 2, com uma contação de histórias cheia de fantoches e risadas!",
-    },
-    {
-      falante: "Iara",
-      texto:
-        "Você fez sua aposta: escolheu uma foto, arrastou para colocar o pedaço desejado na moldura, sem mudar o tamanho, e carimbou um selo com a legenda. Podia escolher “SILÊNCIO PARA LER” ou “CONTAÇÃO DE HISTÓRIAS”.",
-    },
-    {
-      falante: "Bento",
-      texto:
-        "E o que a visitante conseguiu ver? Em uma foto, viu crianças lendo. Na outra, viu crianças contando histórias. Ela ainda não conhecia o que estava fora daquelas fotos!",
-    },
+    vaga("Bento", "fotos"),
+    vaga("Iara", "selos"),
+    vaga("Bento", "visitante"),
   ],
   revelacao: [
     {
@@ -74,12 +63,8 @@ const FALAS: Record<(typeof BLOCOS_DO_PODCAST)[number], readonly FalaDoPodcast[]
     },
     { falante: "Bento", texto: "Eu quase não acreditei quando vi as duas fotos juntas! Pareciam duas escolas de planetas diferentes!" },
     { falante: "Iara", texto: "Mas você olhou com atenção para o fundo das fotos. E o que estava lá atrás, Bento?" },
-    { falante: "Bento", texto: "O mesmo relógio de parede marcando duas e quinze da tarde! E o mesmo cartaz amarelo da Semana do Livro!" },
-    {
-      falante: "Iara",
-      texto:
-        "E quando você deslizou o botão mágico do slider... Ploft! A parede do meio sumiu! A mesa de leitura e o tapete de brincadeiras estavam na mesma sala, no mesmo minuto, a dois passos de distância!",
-    },
+    vaga("Bento", "objetos"),
+    vaga("Iara", "lugar"),
   ],
   provocacao: [
     { falante: "Bento", texto: "Caramba, Iara! Então nenhuma das fotos era mentirosa?" },
@@ -99,12 +84,140 @@ const FALAS: Record<(typeof BLOCOS_DO_PODCAST)[number], readonly FalaDoPodcast[]
   ],
 };
 
-/** A missão tem cena, mas o PODCAST é fixo: o roteiro não tem vaga. */
-export const VAGAS_DO_PODCAST: readonly VagaDoTema[] = [];
-export const FALAS_DO_TEMA_PADRAO: FalasDoTema = {};
+// ──────────────────────────────────────────── as vagas do tema (ADR-204)
 
-export function roteiroDoPodcast(): TrechoDoRoteiro[] {
-  return BLOCOS_DO_PODCAST.map((bloco) => ({ bloco, titulo: TITULOS[bloco], falas: FALAS[bloco].map((f) => ({ ...f })) }));
+/** As sete falas que contam a cena, na ordem em que se ouvem. */
+export const VAGAS_DO_PODCAST: readonly VagaDoTema[] = [
+  {
+    id: "espaco",
+    falante: "Iara",
+    sobre: "o espaço da escola",
+    instrucao:
+      "Iara se apresenta e diz que o Bento ficou de cabelo em pé porque achou que o espaço da cena (diga o nome dele, com artigo: a nossa horta, o nosso museu) tinha virado um mistério sem solução. Comece com \"Olá, detetive! Eu sou a Iara.\"",
+  },
+  {
+    id: "impressao",
+    falante: "Bento",
+    sobre: "a primeira impressão da foto",
+    instrucao:
+      "Bento conta que tirou uma foto e todo mundo achou que o espaço era só UMA das duas atividades (diga qual, de um jeito divertido). Termine com \"Mas eu estava lá e não era só isso!\"",
+  },
+  {
+    id: "fotos",
+    falante: "Bento",
+    sobre: "as duas fotos",
+    instrucao:
+      "Bento lembra que a turma pegou a lupa digital e vasculhou as duas fotos, e descreve a Foto 1 e a Foto 2: o que as crianças fazem em cada uma, com as palavras da cena.",
+  },
+  {
+    id: "selos",
+    falante: "Iara",
+    sobre: "a aposta e os dois selos",
+    instrucao:
+      "Iara conta a aposta: escolher uma foto, arrastar para pôr o pedaço desejado na moldura, sem mudar o tamanho, e carimbar um selo com a legenda. Termine com \"Podia escolher “SELO 1” ou “SELO 2”.\", com os dois selos da cena em caixa alta, entre aspas curvas.",
+  },
+  {
+    id: "visitante",
+    falante: "Bento",
+    sobre: "o que a visitante viu",
+    instrucao:
+      "Bento pergunta o que a visitante conseguiu ver e responde com o que ela disse de cada foto. Termine com \"Ela ainda não conhecia o que estava fora daquelas fotos!\"",
+  },
+  {
+    id: "objetos",
+    falante: "Bento",
+    sobre: "os dois objetos iguais do fundo",
+    instrucao:
+      "Bento responde à Iara, com espanto, quais eram os dois objetos iguais que estavam no fundo das duas fotos: o mesmo primeiro objeto e o mesmo segundo objeto, com um detalhe de cada um que a criança reconhece.",
+  },
+  {
+    id: "lugar",
+    falante: "Iara",
+    sobre: "o lugar inteiro",
+    instrucao:
+      "Iara conta que, quando a criança deslizou o botão mágico do slider, a divisão do meio sumiu (\"Ploft!\") e as duas atividades estavam no mesmo espaço, no mesmo minuto, a dois passos de distância. Diga as duas atividades e o espaço.",
+  },
+];
+
+/** As falas da Biblioteca, o banco padrão: o §11 do PO, LITERAL (era o roteiro fixo até a 2.2.2). */
+export const FALAS_DO_TEMA_PADRAO: FalasDoTema = {
+  espaco: "Olá, detetive! Eu sou a Iara. E o Bento ficou de cabelo em pé porque achou que a nossa biblioteca tinha virado um mistério sem solução!",
+  impressao:
+    "Eu tirei uma foto e todo mundo achou que a escola estava em silêncio absoluto feito um museu antigo! Mas eu estava lá e não era só isso!",
+  fotos:
+    "Você pegou a lupa digital e começou a vasculhar as fotos com muita atenção. Tinha a Foto 1, com as crianças compenetradas nos livros, e a Foto 2, com uma contação de histórias cheia de fantoches e risadas!",
+  selos:
+    "Você fez sua aposta: escolheu uma foto, arrastou para colocar o pedaço desejado na moldura, sem mudar o tamanho, e carimbou um selo com a legenda. Podia escolher “SILÊNCIO PARA LER” ou “CONTAÇÃO DE HISTÓRIAS”.",
+  visitante:
+    "E o que a visitante conseguiu ver? Em uma foto, viu crianças lendo. Na outra, viu crianças contando histórias. Ela ainda não conhecia o que estava fora daquelas fotos!",
+  objetos: "O mesmo relógio de parede marcando duas e quinze da tarde! E o mesmo cartaz amarelo da Semana do Livro!",
+  lugar:
+    "E quando você deslizou o botão mágico do slider... Ploft! A parede do meio sumiu! A mesa de leitura e o tapete de brincadeiras estavam na mesma sala, no mesmo minuto, a dois passos de distância!",
+};
+
+/**
+ * As falas da Horta e do Museu, os outros dois prontos — escritas no molde das
+ * do PO, com a cena de cada um (`conteudo.ts#PACOTES_PRONTOS`). A Biblioteca é
+ * `FALAS_DO_TEMA_PADRAO`.
+ */
+export const FALAS_DOS_PRONTOS: Readonly<Record<Exclude<ChavePronta, "biblioteca">, FalasDoTema>> = {
+  horta: {
+    espaco: "Olá, detetive! Eu sou a Iara. E o Bento ficou de cabelo em pé porque achou que a nossa horta tinha virado um mistério sem solução!",
+    impressao:
+      "Eu tirei uma foto e todo mundo achou que na horta só tinha alface e regador! Mas eu estava lá e não era só isso!",
+    fotos:
+      "Você pegou a lupa digital e começou a vasculhar as fotos com muita atenção. Tinha a Foto 1, com crianças regando o canteiro de alfaces, e a Foto 2, com crianças mexendo na terra escura cheia de minhocas!",
+    selos:
+      "Você fez sua aposta: escolheu uma foto, arrastou para colocar o pedaço desejado na moldura, sem mudar o tamanho, e carimbou um selo com a legenda. Podia escolher “PLANTA CRESCENDO” ou “TERRA ADUBADA”.",
+    visitante:
+      "E o que a visitante conseguiu ver? Em uma foto, viu alfaces. Na outra, viu minhocas. Ela ainda não conhecia o que estava fora daquelas fotos!",
+    objetos: "O mesmo espantalho de chapéu no muro! E o mesmo regador vermelho pendurado bem ao lado dele!",
+    lugar:
+      "E quando você deslizou o botão mágico do slider... Ploft! O muro do meio sumiu! O canteiro de alfaces e o canteiro das minhocas estavam na mesma horta, no mesmo minuto, a dois passos de distância!",
+  },
+  museu: {
+    espaco: "Olá, detetive! Eu sou a Iara. E o Bento ficou de cabelo em pé porque achou que o nosso museu tinha virado um mistério sem solução!",
+    impressao:
+      "Eu tirei uma foto e todo mundo achou que o museu da escola só guardava coisas de antigamente! Mas eu estava lá e não era só isso!",
+    fotos:
+      "Você pegou a lupa digital e começou a vasculhar as fotos com muita atenção. Tinha a Foto 1, com crianças olhando uma vitrine de tinteiros e penas antigas, e a Foto 2, com crianças desenhando numa bancada cheia de canetas coloridas!",
+    selos:
+      "Você fez sua aposta: escolheu uma foto, arrastou para colocar o pedaço desejado na moldura, sem mudar o tamanho, e carimbou um selo com a legenda. Podia escolher “TEMPO ANTIGO” ou “TEMPO DE HOJE”.",
+    visitante:
+      "E o que a visitante conseguiu ver? Em uma foto, viu tinteiros. Na outra, viu canetas. Ela ainda não conhecia o que estava fora daquelas fotos!",
+    objetos: "A mesma placa dourada na parede! E a mesma janela de madeira bem ao lado dela!",
+    lugar:
+      "E quando você deslizou o botão mágico do slider... Ploft! A parede do meio sumiu! A vitrine antiga e a bancada de desenho estavam no mesmo museu, no mesmo minuto, a dois passos de distância!",
+  },
+};
+
+/** O roteiro inteiro, com as falas do tema no lugar das vagas. */
+export function roteiroDoPodcast(tema: FalasDoTema): TrechoDoRoteiro[] {
+  return BLOCOS_DO_PODCAST.map((bloco) => ({
+    bloco,
+    titulo: TITULOS[bloco],
+    falas: FALAS[bloco].map((f) => ("vaga" in f ? { falante: f.falante, texto: tema[f.vaga] ?? "" } : { ...f })),
+  }));
+}
+
+/**
+ * Qual pronto este conteúdo é, INTOCADO — a cena de um pronto com os selos e as
+ * falas da visitante como o catálogo os tem. A curadoria do pronto da
+ * disciplina (o rascunho sem IA) deixa editar os selos e as falas: editado, o
+ * podcast precisa contar o que a turma vai ver, e deixa de ser o do pronto.
+ */
+export function prontoIntocado(conteudo: Pick<ConteudoDoPacote, "cena">): ChavePronta | null {
+  const chave = conteudo.cena.chave;
+  if (chave !== "biblioteca" && chave !== "horta" && chave !== "museu") return null;
+  const pronto = conteudoPronto(chave).cena;
+  const selos = (c: Pick<ConteudoDoPacote["cena"], "selos" | "fotos">) => c.selos.map((s) => `${s.id}=${s.texto.trim()}`).join("|");
+  const falas = (c: Pick<ConteudoDoPacote["cena"], "selos" | "fotos">) => c.fotos.map((f) => `${f.id}=${f.visitante.trim()}`).join("|");
+  return selos(conteudo.cena) === selos(pronto) && falas(conteudo.cena) === falas(pronto) ? chave : null;
+}
+
+/** As falas do pronto intocado: as do PO na Biblioteca, as escritas para a Horta e o Museu. */
+export function falasDoPronto(chave: ChavePronta): FalasDoTema {
+  return { ...(chave === "biblioteca" ? FALAS_DO_TEMA_PADRAO : FALAS_DOS_PRONTOS[chave]) };
 }
 
 // ──────────────────────────────────────────── a voz

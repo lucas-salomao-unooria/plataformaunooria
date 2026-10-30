@@ -24,7 +24,9 @@ import {
 } from "../src/enigma-capa/conteudo";
 import { componentesDoAno } from "../src/curriculo/componentes";
 import { ConteudoBaseSchema, ForaSchema, IniciarSchema, LupaSchema, MaterialSchema, PainelSchema, SessaoSchema } from "../src/enigma-capa/contrato-de-rotas";
-import { roteiroDoPodcast } from "../src/enigma-capa/podcast";
+import { FALAS_DOS_PRONTOS, FALAS_DO_TEMA_PADRAO, VAGAS_DO_PODCAST, falasDoPronto, prontoIntocado, roteiroDoPodcast } from "../src/enigma-capa/podcast";
+import { fonteDoPodcastDaExp02ef1b } from "../src/enigma-capa/podcast-fonte";
+import { BYTES_DO_TRECHO, problemasDasFalasDoTema } from "../src/podcast/roteiro";
 import { SYSTEM_DO_PREPARO, conteudoDaCenaGerada, pedidoDaCena, pedidoDeImagem, regrasDaImagem, validarSaidaDoPreparo, type CenaGerada } from "../src/enigma-capa/prompts";
 import {
   MARCADOR_CO01,
@@ -525,13 +527,60 @@ describe("a saída do estudante não tem lugar para o gabarito", () => {
   });
 });
 
-describe("o podcast é o roteiro do PO, com Iara e Bento", () => {
+describe("o podcast é o roteiro do PO, com Iara e Bento, e as vagas contam a cena (ADR-204)", () => {
   test("só os dois falam, e o app é o Unoovista", () => {
-    const r = roteiroDoPodcast();
+    const r = roteiroDoPodcast(FALAS_DO_TEMA_PADRAO);
     expect(new Set(r.flatMap((b) => b.falas.map((f) => f.falante)))).toEqual(new Set(["Bento", "Iara"]));
     const texto = JSON.stringify(r);
     expect(texto).toContain("no Unoovista como detetive da imagem");
     expect(texto).not.toContain("Instanooria");
+  });
+
+  test("a Biblioteca é o §11 literal de antes: as vagas no lugar das falas que eram fixas", () => {
+    const texto = JSON.stringify(roteiroDoPodcast(FALAS_DO_TEMA_PADRAO));
+    expect(texto).toContain("achou que a nossa biblioteca tinha virado um mistério");
+    expect(texto).toContain("O mesmo relógio de parede marcando duas e quinze da tarde!");
+    expect(texto).toContain("Podia escolher “SILÊNCIO PARA LER” ou “CONTAÇÃO DE HISTÓRIAS”.");
+  });
+
+  test.each(["horta", "museu"] as const)("o pronto %s tem as falas dele, na régua, sem nada da biblioteca", (chave) => {
+    const falas = FALAS_DOS_PRONTOS[chave];
+    expect(problemasDasFalasDoTema(VAGAS_DO_PODCAST, falas)).toEqual([]);
+    const texto = JSON.stringify(roteiroDoPodcast(falas));
+    expect(texto).not.toMatch(/biblioteca|relógio|cartaz amarelo|fantoche/i);
+    const cena = conteudoPronto(chave).cena;
+    for (const s of cena.selos) expect(falas.selos).toContain(`“${s.texto}”`);
+    expect(texto.toLocaleLowerCase("pt-BR")).toContain(cena.invariantes[0]!.nome.toLocaleLowerCase("pt-BR"));
+  });
+
+  test("a Biblioteca também passa na régua das vagas, e cada trecho cabe no teto da síntese", () => {
+    expect(problemasDasFalasDoTema(VAGAS_DO_PODCAST, FALAS_DO_TEMA_PADRAO)).toEqual([]);
+    for (const t of roteiroDoPodcast(FALAS_DO_TEMA_PADRAO)) {
+      expect(Buffer.byteLength(t.falas.map((f) => `${f.falante}: ${f.texto}`).join("\n"))).toBeLessThan(BYTES_DO_TRECHO);
+    }
+  });
+
+  test("o pronto intocado é reconhecido; com um selo editado na curadoria, não é mais", () => {
+    expect(prontoIntocado(conteudoPronto("biblioteca"))).toBe("biblioteca");
+    expect(prontoIntocado(conteudoPronto("museu"))).toBe("museu");
+    const editado = conteudoPronto("horta");
+    editado.cena.selos[0]!.texto = "HORTA VIVA";
+    expect(prontoIntocado(editado)).toBeNull();
+    expect(falasDoPronto("biblioteca")).toEqual(FALAS_DO_TEMA_PADRAO);
+  });
+
+  test("a fonte: o banco padrão sem IA, Horta e Museu com as falas deles, a cena da IA vai para a IA", () => {
+    const fonte = fonteDoPodcastDaExp02ef1b({ pacoteParaPodcast: jest.fn(), exigirTurmaVisivel: jest.fn() });
+    const escrita = fonte.escrita!;
+    expect(escrita.ehPadrao(conteudoPronto("biblioteca"))).toBe(true);
+    expect(escrita.ehPadrao(conteudoPronto("horta"))).toBe(false);
+    expect(escrita.falasProntas?.(conteudoPronto("horta"))).toEqual(FALAS_DOS_PRONTOS.horta);
+    const ia = { ...conteudoPronto("museu"), cena: { ...conteudoPronto("museu").cena, chave: "ia" as const } };
+    expect(escrita.falasProntas?.(ia)).toBeNull();
+    const material = escrita.material(conteudoPronto("horta"));
+    expect(material).toContain("Horta Escolar");
+    expect(material).toContain("PLANTA CRESCENDO");
+    expect(material).toContain("espantalho");
   });
 });
 

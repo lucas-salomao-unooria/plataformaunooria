@@ -128,8 +128,12 @@ E5 — os pares e a segunda foto, que **conclui**. Quatro tabelas:
   `banco-padrao` faz os dois num toque (e reusa o mesmo pronto já aprovado na
   turma, sem tocar no rascunho da IA); `zerar` apaga a evidência do pacote,
   guarda as sessões e devolve a fase à `aberta`.
-- **O podcast é FIXO** (`podcast.ts`): o §11 literal (Iara e Bento), com a
-  troca do app; os efeitos sonoros vão na direção de atuação.
+- **O podcast conta a CENA** (ADR-204; fixo até a 2.2.2): o §11 do PO com
+  sete vagas. `pacoteParaPodcast` escolhe: a linha de `podcast_roteiros`
+  vence; sem ela, o pronto INTOCADO (`prontoIntocado`) — Biblioteca = `padrao`
+  (o texto de antes, letra a letra), Horta e Museu = `falasProprias`. A cena
+  da IA e o pronto editado vão à escrita (`falasProntas` para Horta/Museu) e à
+  revisão na curadoria; o `homologar` EXIGE `podcast`. IA aprovada antes: 409.
 - **Vocabulário em dois lugares**: disciplina, origem, cena, fase, foto, selo,
   motivo, elemento e as cartas estão em `conteudo.ts` e nos CHECKs (a
   disciplina, recriada na migração da 2.0.0); `tests/enigma-capa-regras.spec.ts`
