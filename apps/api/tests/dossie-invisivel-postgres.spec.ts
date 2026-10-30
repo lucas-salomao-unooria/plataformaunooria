@@ -269,7 +269,7 @@ describe("as três travas, a revelação e o segundo voto", () => {
     const s = SessaoSchema.parse(await service.sessao(ESCOLA, ids.ana));
     expect(s.passo).toBe("explicar");
     /* A turma votou 2 de 3 na nuvem: a fala afirma a indução. */
-    expect(s.explicar?.falaDeAmara).toContain("Você escolheu o repasse para o projeto Mesa Aberta, enquanto parte significativa da turma");
+    expect(s.explicar?.falaDeAmara).toContain("Você escolheu o projeto Mesa Aberta, enquanto boa parte da turma");
     expect([...(s.protocolo?.banco ?? [])].sort()).toEqual([...GABARITO_DO_PROTOCOLO, "desclassificar-sem-pdf"].sort());
     expect(JSON.stringify(s)).not.toContain("gabarito");
   });

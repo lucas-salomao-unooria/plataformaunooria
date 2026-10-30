@@ -18,7 +18,7 @@ do Lucas, 2026-10-29): a Etapa 6 (Lia, Davi, transporte) e o Canal B.
 
 | Pasta | Ponte | O que mora lá |
 |---|---|---|
-| `src/app/clone/` | SÓ `@edu/ui/ds-unooriaai` | o cromo do workspace, a thread (`ChatBubble`), o composer e as sugestões (`PromptSuggestion`), os cartões da abertura (`AssistantCard`), os chips de anexo (`Tag`) e o modal de metadados (`Modal`), as pílulas dirigidas, os botões do app |
+| `src/app/clone/` | SÓ `@edu/ui/ds-unooriaai` | o cromo do workspace, a thread (`ChatBubble` e o `TypingIndicator`), o composer e as sugestões (`PromptSuggestion`), os cartões da abertura (`AssistantCard`), os chips de anexo (`Tag`) e o modal de metadados (`Modal`), as pílulas dirigidas, os botões do app |
 | `src/app/mecanica/` | SÓ `@edu/ui/ds` | Amara (`SpeechBubble`), o painel de deliberação e o ranking (`Card`, `PuzzleTrack` + `PuzzleBlock` arrastáveis), o OCR (`ProgressBar`), a tabela de confronto (`Table`), a revisão do voto, a espera (`AlertBox`), os conceitos, o Editor de Protocolo (`PuzzleTrack` de uma vaga por verificação) e o fim |
 | `src/app/telas/` | NENHUMA | compõe as duas |
 
@@ -52,6 +52,17 @@ do Lucas, 2026-10-29): a Etapa 6 (Lia, Davi, transporte) e o Canal B.
   do servidor (correção do PO de 29/10). O banco desce embaralhado.
 - **O gabarito não desce** (`contrato.test.ts`): o certo do protocolo, a régua
   e os cadernos antes da digitalização são da api.
+- **As falas do assistente entram uma de cada vez** (ADR-206, ajuste do PO de
+  30/10), com o `TypingIndicator` do `unooriaai` (DS 0.2.27) antes de cada uma
+  (`lib/falas.ts`, 0,6 a 1,5 s pelo tamanho). A memória do que já foi visto é do
+  MÓDULO, semeada pelo `App` com a sessão do handshake: o F5 mostra o histórico
+  inteiro, e a tela que remonta ao trocar de passo não anima de novo. A tabela,
+  as pílulas e os botões esperam a última fala. Com a oferta aberta,
+  "Digitalizar cadernos" vem ANTES de "Ver Projetos", no rodapé.
+- **Os textos são curtos de propósito** (ADR-206): o nome do projeto entra
+  sempre como "o projeto {nome}" — o tema gerado por IA traz nomes femininos,
+  e "do {papel}" virou "do Rede Crítica". As três âncoras da E5 (contraste,
+  parecer inicial, inversão) continuam falas SEPARADAS.
 - **O OCR são 2 s** (0,8 + 1,2) na tela; o servidor grava ao fim.
 - **A IA da aula** (o classificador do chat) corre no servidor contra 5 s; a
   tela usa o timeout padrão do SDK.

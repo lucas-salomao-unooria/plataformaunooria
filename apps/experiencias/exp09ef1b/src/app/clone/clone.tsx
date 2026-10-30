@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AssistantCard, Badge, Button, ChatBubble, Composer, Icon, Modal, PromptSuggestion, Tag } from "@edu/ui/ds-unooriaai";
+import { AssistantCard, Badge, Button, ChatBubble, Composer, Icon, Modal, PromptSuggestion, Tag, TypingIndicator } from "@edu/ui/ds-unooriaai";
 import { TEXTOS } from "../../lib/textos";
 import type { AncoraId, Documento, Mensagem, ProjetoNaTela, Sessao } from "../../lib/tipos";
 
@@ -64,11 +64,16 @@ function ChipDeAnexo({ arquivo, onAbrir }: { arquivo: string; onAbrir: (arquivo:
  * A thread. O balão do sistema (o limiar, os projetos inscritos) vai como nota
  * centrada; o do assistente pode trazer chips de anexo. Na E5 (`marcar`), as
  * mensagens-âncora ganham o "Marcar no histórico" (message highlight).
+ *
+ * O "digitando" é o `TypingIndicator` do DS (0.2.27): enquanto a rota responde
+ * (`pendente`) e na vez de cada fala nova do assistente (`assistenteDigitando`,
+ * de `lib/falas.ts`). O texto de `digitando` é o nome dele para o leitor de tela.
  */
 export function Thread({
   mensagens,
   pendente,
   digitando,
+  assistenteDigitando = false,
   onAnexo,
   marcar,
   nomes = [],
@@ -77,13 +82,14 @@ export function Thread({
   mensagens: Mensagem[];
   pendente?: string | null;
   digitando?: string;
+  assistenteDigitando?: boolean;
   onAnexo: (arquivo: string) => void;
   marcar?: { marcadas: AncoraId[]; alternar: (a: AncoraId) => void } | null;
 }) {
   const fim = useRef<HTMLDivElement>(null);
   useEffect(() => {
     fim.current?.scrollIntoView({ block: "end" });
-  }, [mensagens.length, pendente]);
+  }, [mensagens.length, pendente, assistenteDigitando]);
   return (
     <>
       {mensagens.map((m) => {
@@ -117,14 +123,8 @@ export function Thread({
           </div>
         );
       })}
-      {pendente && (
-        <>
-          <ChatBubble role="user">{pendente}</ChatBubble>
-          <ChatBubble role="assistant" aria-busy="true">
-            {digitando}
-          </ChatBubble>
-        </>
-      )}
+      {pendente && <ChatBubble role="user">{pendente}</ChatBubble>}
+      {(pendente || assistenteDigitando) && <TypingIndicator aria-label={digitando ?? TEXTOS.digitando} />}
       <div ref={fim} />
     </>
   );
