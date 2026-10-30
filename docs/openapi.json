@@ -85980,6 +85980,10 @@
                             "contexto": {
                               "type": "boolean"
                             },
+                            "projecao": {
+                              "type": "boolean",
+                              "default": false
+                            },
                             "publicadaEm": {
                               "type": "string"
                             }
@@ -86021,6 +86025,10 @@
                             },
                             "contexto": {
                               "type": "boolean"
+                            },
+                            "projecao": {
+                              "type": "boolean",
+                              "default": false
                             },
                             "publicadaEm": {
                               "type": "string"
@@ -86358,12 +86366,31 @@
                             },
                             "contexto": {
                               "type": "string"
+                            },
+                            "projecao": {
+                              "type": "string"
+                            },
+                            "ordem": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "explicacao",
+                                  "fonte",
+                                  "contexto",
+                                  "projecao"
+                                ]
+                              },
+                              "minItems": 4,
+                              "maxItems": 4
                             }
                           },
                           "required": [
                             "explicacao",
                             "fonte",
-                            "contexto"
+                            "contexto",
+                            "projecao",
+                            "ordem"
                           ],
                           "additionalProperties": false
                         }
@@ -86407,7 +86434,13 @@
                             "perguntaDaPrevia": {
                               "type": "string"
                             },
+                            "nudgeE2SemPrevias": {
+                              "type": "string"
+                            },
                             "nudgeE2": {
+                              "type": "string"
+                            },
+                            "nudgeE2ComPrevia": {
                               "type": "string"
                             },
                             "escalas": {
@@ -86454,7 +86487,9 @@
                             "nudgeE1",
                             "introDaTabela",
                             "perguntaDaPrevia",
+                            "nudgeE2SemPrevias",
                             "nudgeE2",
+                            "nudgeE2ComPrevia",
                             "escalas",
                             "errata",
                             "publicarErrata",
@@ -86909,6 +86944,10 @@
                             "contexto": {
                               "type": "boolean"
                             },
+                            "projecao": {
+                              "type": "boolean",
+                              "default": false
+                            },
                             "publicadaEm": {
                               "type": "string"
                             }
@@ -86950,6 +86989,10 @@
                             },
                             "contexto": {
                               "type": "boolean"
+                            },
+                            "projecao": {
+                              "type": "boolean",
+                              "default": false
                             },
                             "publicadaEm": {
                               "type": "string"
@@ -87287,12 +87330,31 @@
                             },
                             "contexto": {
                               "type": "string"
+                            },
+                            "projecao": {
+                              "type": "string"
+                            },
+                            "ordem": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "explicacao",
+                                  "fonte",
+                                  "contexto",
+                                  "projecao"
+                                ]
+                              },
+                              "minItems": 4,
+                              "maxItems": 4
                             }
                           },
                           "required": [
                             "explicacao",
                             "fonte",
-                            "contexto"
+                            "contexto",
+                            "projecao",
+                            "ordem"
                           ],
                           "additionalProperties": false
                         }
@@ -87336,7 +87398,13 @@
                             "perguntaDaPrevia": {
                               "type": "string"
                             },
+                            "nudgeE2SemPrevias": {
+                              "type": "string"
+                            },
                             "nudgeE2": {
+                              "type": "string"
+                            },
+                            "nudgeE2ComPrevia": {
                               "type": "string"
                             },
                             "escalas": {
@@ -87383,7 +87451,9 @@
                             "nudgeE1",
                             "introDaTabela",
                             "perguntaDaPrevia",
+                            "nudgeE2SemPrevias",
                             "nudgeE2",
+                            "nudgeE2ComPrevia",
                             "escalas",
                             "errata",
                             "publicarErrata",
@@ -87864,6 +87934,10 @@
                             "contexto": {
                               "type": "boolean"
                             },
+                            "projecao": {
+                              "type": "boolean",
+                              "default": false
+                            },
                             "publicadaEm": {
                               "type": "string"
                             }
@@ -87905,6 +87979,10 @@
                             },
                             "contexto": {
                               "type": "boolean"
+                            },
+                            "projecao": {
+                              "type": "boolean",
+                              "default": false
                             },
                             "publicadaEm": {
                               "type": "string"
@@ -88242,12 +88320,31 @@
                             },
                             "contexto": {
                               "type": "string"
+                            },
+                            "projecao": {
+                              "type": "string"
+                            },
+                            "ordem": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "explicacao",
+                                  "fonte",
+                                  "contexto",
+                                  "projecao"
+                                ]
+                              },
+                              "minItems": 4,
+                              "maxItems": 4
                             }
                           },
                           "required": [
                             "explicacao",
                             "fonte",
-                            "contexto"
+                            "contexto",
+                            "projecao",
+                            "ordem"
                           ],
                           "additionalProperties": false
                         }
@@ -88291,7 +88388,13 @@
                             "perguntaDaPrevia": {
                               "type": "string"
                             },
+                            "nudgeE2SemPrevias": {
+                              "type": "string"
+                            },
                             "nudgeE2": {
+                              "type": "string"
+                            },
+                            "nudgeE2ComPrevia": {
                               "type": "string"
                             },
                             "escalas": {
@@ -88338,7 +88441,9 @@
                             "nudgeE1",
                             "introDaTabela",
                             "perguntaDaPrevia",
+                            "nudgeE2SemPrevias",
                             "nudgeE2",
+                            "nudgeE2ComPrevia",
                             "escalas",
                             "errata",
                             "publicarErrata",
@@ -88701,6 +88806,10 @@
                   },
                   "contexto": {
                     "type": "boolean"
+                  },
+                  "projecao": {
+                    "type": "boolean",
+                    "default": false
                   }
                 },
                 "required": [
@@ -88837,6 +88946,10 @@
                             "contexto": {
                               "type": "boolean"
                             },
+                            "projecao": {
+                              "type": "boolean",
+                              "default": false
+                            },
                             "publicadaEm": {
                               "type": "string"
                             }
@@ -88878,6 +88991,10 @@
                             },
                             "contexto": {
                               "type": "boolean"
+                            },
+                            "projecao": {
+                              "type": "boolean",
+                              "default": false
                             },
                             "publicadaEm": {
                               "type": "string"
@@ -89215,12 +89332,31 @@
                             },
                             "contexto": {
                               "type": "string"
+                            },
+                            "projecao": {
+                              "type": "string"
+                            },
+                            "ordem": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "explicacao",
+                                  "fonte",
+                                  "contexto",
+                                  "projecao"
+                                ]
+                              },
+                              "minItems": 4,
+                              "maxItems": 4
                             }
                           },
                           "required": [
                             "explicacao",
                             "fonte",
-                            "contexto"
+                            "contexto",
+                            "projecao",
+                            "ordem"
                           ],
                           "additionalProperties": false
                         }
@@ -89264,7 +89400,13 @@
                             "perguntaDaPrevia": {
                               "type": "string"
                             },
+                            "nudgeE2SemPrevias": {
+                              "type": "string"
+                            },
                             "nudgeE2": {
+                              "type": "string"
+                            },
+                            "nudgeE2ComPrevia": {
                               "type": "string"
                             },
                             "escalas": {
@@ -89311,7 +89453,9 @@
                             "nudgeE1",
                             "introDaTabela",
                             "perguntaDaPrevia",
+                            "nudgeE2SemPrevias",
                             "nudgeE2",
+                            "nudgeE2ComPrevia",
                             "escalas",
                             "errata",
                             "publicarErrata",
@@ -89674,6 +89818,10 @@
                   },
                   "contexto": {
                     "type": "boolean"
+                  },
+                  "projecao": {
+                    "type": "boolean",
+                    "default": false
                   }
                 },
                 "required": [
@@ -89810,6 +89958,10 @@
                             "contexto": {
                               "type": "boolean"
                             },
+                            "projecao": {
+                              "type": "boolean",
+                              "default": false
+                            },
                             "publicadaEm": {
                               "type": "string"
                             }
@@ -89851,6 +90003,10 @@
                             },
                             "contexto": {
                               "type": "boolean"
+                            },
+                            "projecao": {
+                              "type": "boolean",
+                              "default": false
                             },
                             "publicadaEm": {
                               "type": "string"
@@ -90188,12 +90344,31 @@
                             },
                             "contexto": {
                               "type": "string"
+                            },
+                            "projecao": {
+                              "type": "string"
+                            },
+                            "ordem": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "explicacao",
+                                  "fonte",
+                                  "contexto",
+                                  "projecao"
+                                ]
+                              },
+                              "minItems": 4,
+                              "maxItems": 4
                             }
                           },
                           "required": [
                             "explicacao",
                             "fonte",
-                            "contexto"
+                            "contexto",
+                            "projecao",
+                            "ordem"
                           ],
                           "additionalProperties": false
                         }
@@ -90237,7 +90412,13 @@
                             "perguntaDaPrevia": {
                               "type": "string"
                             },
+                            "nudgeE2SemPrevias": {
+                              "type": "string"
+                            },
                             "nudgeE2": {
+                              "type": "string"
+                            },
+                            "nudgeE2ComPrevia": {
                               "type": "string"
                             },
                             "escalas": {
@@ -90284,7 +90465,9 @@
                             "nudgeE1",
                             "introDaTabela",
                             "perguntaDaPrevia",
+                            "nudgeE2SemPrevias",
                             "nudgeE2",
+                            "nudgeE2ComPrevia",
                             "escalas",
                             "errata",
                             "publicarErrata",
@@ -90739,6 +90922,10 @@
                             "contexto": {
                               "type": "boolean"
                             },
+                            "projecao": {
+                              "type": "boolean",
+                              "default": false
+                            },
                             "publicadaEm": {
                               "type": "string"
                             }
@@ -90780,6 +90967,10 @@
                             },
                             "contexto": {
                               "type": "boolean"
+                            },
+                            "projecao": {
+                              "type": "boolean",
+                              "default": false
                             },
                             "publicadaEm": {
                               "type": "string"
@@ -91117,12 +91308,31 @@
                             },
                             "contexto": {
                               "type": "string"
+                            },
+                            "projecao": {
+                              "type": "string"
+                            },
+                            "ordem": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "explicacao",
+                                  "fonte",
+                                  "contexto",
+                                  "projecao"
+                                ]
+                              },
+                              "minItems": 4,
+                              "maxItems": 4
                             }
                           },
                           "required": [
                             "explicacao",
                             "fonte",
-                            "contexto"
+                            "contexto",
+                            "projecao",
+                            "ordem"
                           ],
                           "additionalProperties": false
                         }
@@ -91166,7 +91376,13 @@
                             "perguntaDaPrevia": {
                               "type": "string"
                             },
+                            "nudgeE2SemPrevias": {
+                              "type": "string"
+                            },
                             "nudgeE2": {
+                              "type": "string"
+                            },
+                            "nudgeE2ComPrevia": {
                               "type": "string"
                             },
                             "escalas": {
@@ -91213,7 +91429,9 @@
                             "nudgeE1",
                             "introDaTabela",
                             "perguntaDaPrevia",
+                            "nudgeE2SemPrevias",
                             "nudgeE2",
+                            "nudgeE2ComPrevia",
                             "escalas",
                             "errata",
                             "publicarErrata",
@@ -91709,6 +91927,10 @@
                             "contexto": {
                               "type": "boolean"
                             },
+                            "projecao": {
+                              "type": "boolean",
+                              "default": false
+                            },
                             "publicadaEm": {
                               "type": "string"
                             }
@@ -91750,6 +91972,10 @@
                             },
                             "contexto": {
                               "type": "boolean"
+                            },
+                            "projecao": {
+                              "type": "boolean",
+                              "default": false
                             },
                             "publicadaEm": {
                               "type": "string"
@@ -92087,12 +92313,31 @@
                             },
                             "contexto": {
                               "type": "string"
+                            },
+                            "projecao": {
+                              "type": "string"
+                            },
+                            "ordem": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "explicacao",
+                                  "fonte",
+                                  "contexto",
+                                  "projecao"
+                                ]
+                              },
+                              "minItems": 4,
+                              "maxItems": 4
                             }
                           },
                           "required": [
                             "explicacao",
                             "fonte",
-                            "contexto"
+                            "contexto",
+                            "projecao",
+                            "ordem"
                           ],
                           "additionalProperties": false
                         }
@@ -92136,7 +92381,13 @@
                             "perguntaDaPrevia": {
                               "type": "string"
                             },
+                            "nudgeE2SemPrevias": {
+                              "type": "string"
+                            },
                             "nudgeE2": {
+                              "type": "string"
+                            },
+                            "nudgeE2ComPrevia": {
                               "type": "string"
                             },
                             "escalas": {
@@ -92183,7 +92434,9 @@
                             "nudgeE1",
                             "introDaTabela",
                             "perguntaDaPrevia",
+                            "nudgeE2SemPrevias",
                             "nudgeE2",
+                            "nudgeE2ComPrevia",
                             "escalas",
                             "errata",
                             "publicarErrata",

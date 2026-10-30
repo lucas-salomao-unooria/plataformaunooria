@@ -2320,7 +2320,8 @@ Assistente de Dados (um bot DETERMINÍSTICO sobre o pacote homologado, sem IA
 na aula) entrega a tabela de um serviço público --- 95\% \seta{} 94\% \seta{}
 92\% \seta{} 88\% em quatro períodos --- e a nota técnica da subprefeitura,
 que localiza a queda em obras pontuais. Ele escolhe onde o eixo começa (0\%
-ou recortado em 80\%), liga ou não três camadas de texto fixo e publica no
+ou recortado em 80\%), liga ou não quatro camadas de texto fixo --- três
+corretas e uma projeção que a nota técnica desmente (\adrr{ADR-203}) --- e publica no
 grupo da cidade (\enquote{Comitê Municipal de Políticas Públicas ---} e o
 recorte do professor). O grupo reage pelo ramo da escala DELE (indiferença com
 o eixo em 0, pânico com o eixo em 80); cerca de 10\,s depois, a Escola
@@ -2350,11 +2351,15 @@ atividade (o pacote).
   anexo e do nudge são marcos do SERVIDOR. O eixo X do gráfico encurta o
   rótulo que não cabe no vão (\enquote{1º Quadrimestre} vira \enquote{Q1},
   como o \enquote{M1} do protótipo); o nome inteiro segue na tabela e na
-  descrição do gráfico.\\
+  descrição do gráfico. Nenhum texto MANDA abrir o anexo (\adrr{ADR-203}): a
+  fala do Assistente diz que a nota técnica \enquote{segue em anexo, caso
+  queira consultá-la}, porque abrir por conta própria é a evidência da
+  EM13CO13, e o imperativo induzia o gesto.\\
 \textbf{E3} Compositor & A folha sobre o chat: a origem do eixo (dois
   \cd{Radio}, sem pré-seleção; o publicar fica desabilitado até a escolha) e
-  três \cd{Switch} opcionais --- a explicação da escala (o texto acompanha 0
-  ou 80), a fonte e o contexto ---, com a prévia ao vivo, que é o MESMO
+  quatro \cd{Switch} opcionais, na ordem que o servidor manda --- a
+  explicação da escala (o texto acompanha 0 ou 80), a fonte, o contexto e a
+  projeção, incorreta de propósito (\adrr{ADR-203}) ---, com a prévia ao vivo, que é o MESMO
   gráfico do post. A confirmação (\cd{Dialog}) é que publica: o
   \textbf{LATCH 1}, a cota de 3 para 2.\\
 \zebra \textbf{E4} Grupo & O post, as três reações do ramo da escala, o
@@ -2415,7 +2420,10 @@ Assistente de Dados}).
 
 Cada publicação confirmada é uma LINHA de \cd{exp03em1b\_\B{}publicacoes}
 (\cd{inicial} $|$ \cd{errata}, única por sessão e tipo): a escala (0 $|$ 80) e
-as três camadas. A 1ª fica no histórico quando a errata sai, e não há
+as quatro camadas. A 4ª, a \cd{projecao} (\enquote{o índice fica abaixo de
+80\% no próximo período}), é INCORRETA de propósito (\adrr{ADR-203}): o texto
+é do servidor, igual em toda turma, e a ordem das quatro no compositor é
+embaralhada por estudante e atividade --- a tela não sabe qual é a errada. A 1ª fica no histórico quando a errata sai, e não há
 terceira (\adrr{ADR-198}). Publicar de novo a mesma escolha é idempotente;
 outra, 409 \cd{ja-\B{}publicado}. O que é fixo mora em \arq{conteudo.ts} e nunca
 no pacote: os números da série, o laudo, a escola rival, os cartões da
@@ -2466,10 +2474,12 @@ avaliado}.
   outro motivo, e/ou A também & não sinalizou o B, ou pulou a perícia\\
 \zebra \textbf{EM13CO21} & explicação da escala ligada já na 1ª (e mantida
   na errata) & só na errata, ou ligada na 1ª e desligada na errata & nunca\\
-\textbf{EM13CO22} & publicação final com 2 ou 3 camadas & com 1 & com
-  nenhuma\\
+\textbf{EM13CO22} & publicação final com 2 ou 3 camadas corretas, sem a
+  projeção & com 1 correta; ou a projeção ligada junto de alguma correta
+  (\adrr{ADR-203}) & com nenhuma correta\\
 \zebra \textbf{EM13CO26} & 1ª adequada (0 e fonte) sem regressão; ou errata
-  que corrige (80 \seta{} 0, mais fonte ou mais contexto) & errata sem
+  que corrige (80 \seta{} 0, mais fonte, mais contexto ou a projeção
+  desligada) & errata sem
   correção real & 1ª inadequada sem errata; ou errata de 0 para 80\\
 \bottomrule
 \end{tabularx}

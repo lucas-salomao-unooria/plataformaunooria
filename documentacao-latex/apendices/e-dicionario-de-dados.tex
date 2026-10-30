@@ -113,7 +113,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp03em1b\_\B{}gates\_\B{}turma} & Tenant & O gate da turma (\cd{exploracao}, \cd{pausa}, \cd{liberada})\\
 \cd{exp03em1b\_\B{}gates\_\B{}historico} & Tenant & Cada botão do professor, com o pacote, a rodada, a etapa de destino e o professor\\
 \zebra \cd{exp03em1b\_\B{}sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: os marcos do servidor, a cota, a errata e o parecer da perícia --- sem texto livre\\
-\cd{exp03em1b\_\B{}publicacoes} & Tenant & Uma linha por publicação (a 1ª e a errata): a escala e as três camadas\\
+\cd{exp03em1b\_\B{}publicacoes} & Tenant & Uma linha por publicação (a 1ª e a errata): a escala e as quatro camadas (a 4ª, \cd{projecao}, incorreta de propósito; \adrr{ADR-203})\\
 \zebra \cd{exp09ef1b\_\B{}pacotes} & Tenant & O Dossiê Invisível: a roupagem do tema (os três projetos e a transcrição dos cadernos); é a atividade da evidência\\
 \cd{exp09ef1b\_\B{}gates\_\B{}turma} & Tenant & O gate da turma (\cd{exploracao}, \cd{revelacao}, \cd{revoto}, \cd{explicar})\\
 \zebra \cd{exp09ef1b\_\B{}gates\_\B{}historico} & Tenant & Cada trava do professor, com o pacote, a rodada, a etapa de destino e o professor\\
@@ -2140,7 +2140,9 @@ Nenhuma coluna guarda texto escrito pelo estudante, e o gabarito da perícia
     (\cd{estudante\_id}, \cd{pacote\_id}, \cd{rodada}, com FK composta para
     \cd{exp03em1b\_sessoes}, cascata), \cd{turma\_id}, \cd{tipo}
     (\cd{inicial} $|$ \cd{errata}), \cd{escala} (0 $|$ 80), \cd{explicacao},
-    \cd{fonte}, \cd{contexto} (\cd{BOOLEAN}) e \cd{publicada\_em}. Única por
+    \cd{fonte}, \cd{contexto}, \cd{projecao} (\cd{BOOLEAN}; a \cd{projecao}
+    é a camada incorreta, \cd{DEFAULT false}, migração
+    \cd{20261029200000}, \adrr{ADR-203}) e \cd{publicada\_em}. Única por
     (escola, estudante, pacote, rodada, tipo).
 \end{itemize}
 

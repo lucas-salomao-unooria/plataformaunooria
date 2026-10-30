@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { BottomSheet, Button, Dialog, MessageTag, Radio, Switch, TextButton } from "@edu/ui/ds-unoochat";
-import { corpoDaPublicacao, escolhaInicial, textoDaExplicacao, type Escolha } from "../lib/regras";
+import { corpoDaPublicacao, escolhaInicial, textoDaCamada, type Escolha } from "../lib/regras";
 import { telemetria } from "../lib/telemetria";
 import { TEXTOS } from "../lib/textos";
-import type { Escala, Publicar, SessaoPreparada } from "../lib/tipos";
+import type { Camada, Escala, Publicar, SessaoPreparada } from "../lib/tipos";
 import { PostDoBoletim } from "./Pecas";
 
 /**
  * E3-ALU-01/02 e E4-ALU-05 — o compositor do boletim, numa `BottomSheet` sobre
  * o chat do Assistente. A origem do eixo é `Radio` SEM pré-seleção (decisão
- * 5): o botão de publicar fica desabilitado até a escolha; as três camadas
+ * 5): o botão de publicar fica desabilitado até a escolha; as QUATRO camadas
  * (`Switch`, decisão 3) são opcionais, com o texto FIXO do pacote — a
- * anotação de escala acompanha a origem marcada. A prévia ao vivo é o MESMO
+ * anotação de escala acompanha a origem marcada. A 4ª é a projeção, incorreta
+ * de propósito (ADR-203), e a ordem das quatro vem do servidor, embaralhada
+ * por estudante: a tela não sabe qual é a errada. A prévia ao vivo é o MESMO
  * `PostDoBoletim` que o grupo mostra depois.
  *
  * Na errata, o compositor volta com a 1ª publicação INTEIRA (escala e
@@ -57,7 +59,7 @@ export function Compositor({
     if (ok) setConfirmando(false);
   };
 
-  const camada = (chave: "explicacao" | "fonte" | "contexto", descricao: string) => (
+  const camada = (chave: Camada, descricao: string) => (
     <Switch
       key={chave}
       checked={escolha[chave]}
@@ -105,12 +107,14 @@ export function Compositor({
           </fieldset>
 
           <div className="compositor__camadas">
-            {camada(
-              "explicacao",
-              escolha.escala === null ? TEXTOS.compositor.explicacaoSemEscala : textoDaExplicacao(conteudo.camadas, escolha.escala),
+            {conteudo.camadas.ordem.map((c) =>
+              camada(
+                c,
+                c === "explicacao" && escolha.escala === null
+                  ? TEXTOS.compositor.explicacaoSemEscala
+                  : textoDaCamada(conteudo.camadas, c, escolha.escala ?? 0),
+              ),
             )}
-            {camada("fonte", conteudo.camadas.fonte)}
-            {camada("contexto", conteudo.camadas.contexto)}
           </div>
 
           <p className="compositor__rotulo">{TEXTOS.compositor.previa}</p>

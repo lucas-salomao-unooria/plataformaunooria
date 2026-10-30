@@ -69,6 +69,7 @@ export const TEXTOS = {
       explicacao: "Anotação de escala", // e3.toggle.rotulo_escala
       fonte: "Fonte dos dados", // e3.toggle.rotulo_fonte
       contexto: "Contexto da oscilação", // e3.toggle.rotulo_contexto
+      projecao: "Projeção da tendência", // [PROPOSTA] a 4ª camada, a incorreta (v2 do PO, ADR-203)
     },
     explicacaoSemEscala: "Anota a origem do eixo escolhida acima.", // [PROPOSTA] antes de escolher a escala
     previa: "Prévia ao vivo do boletim oficial:", // e3.rotulo.previa_ao_vivo
@@ -129,27 +130,30 @@ export const TEXTOS = {
     texto: "Suas decisões como Porta-Voz e Auditor foram registradas no sistema municipal com sucesso.", // [PROTÓTIPO]
   },
 
-  // ── a instrução ao lado do aparelho (hub, fora do clone) — [PROPOSTA] todas
+  // ── a instrução ao lado do aparelho (hub, fora do clone) — [PROPOSTA] todas.
+  // SEM imperativo onde a missão mede a iniciativa (v2 do PO, ADR-203): o anexo
+  // (EM13CO13), as camadas (CO21/22/12), a errata (CO26) e a perícia (CO14). A
+  // instrução diz o que existe e deixa a decisão com o estudante.
   instrucao: {
     abertura: { antes: "Você é Porta-Voz Oficial de Dados da escola. Abra a conversa com o ", destaque: "Assistente de Dados", depois: "." },
     dados: {
-      antes: "Inspecione a tabela e, se quiser, a nota técnica anexada. Depois, ",
-      destaque: "gere as prévias das escalas",
-      depois: " e abra o compositor.",
+      antes: "A tabela da subprefeitura chegou na conversa, com uma nota técnica em anexo. ",
+      destaque: "As prévias das escalas",
+      depois: " ajudam a comparar as duas representações, e o compositor monta o boletim quando você decidir.",
     },
     compositor: {
-      antes: "No compositor, escolha a ",
+      antes: "No compositor, a ",
       destaque: "origem do eixo vertical",
-      depois: " e as camadas que acompanham o boletim. O envio ao grupo é irreversível.",
+      depois: " e as camadas que acompanham o boletim ficam a seu critério. O envio ao grupo é irreversível.",
     },
     feed: { antes: "Acompanhe a reação do ", destaque: "grupo da cidade", depois: " ao seu boletim." },
     errata: {
-      antes: "O Assistente de Dados liberou o ",
+      antes: "O Assistente de Dados liberou a ",
       destaque: "2ª publicação",
-      depois: ": publique uma errata ou avance sem publicar.",
+      depois: ": a errata é opcional, e dá para avançar sem publicar.",
     },
     laudo: { antes: "Arraste a régua e veja o ", destaque: "Fator de Mentira", depois: " mudar com a origem do eixo." },
-    pericia: { antes: "Inspecione os dois cartões eleitorais e ", destaque: "emita seu parecer técnico", depois: "." },
+    pericia: { antes: "Os dois cartões eleitorais aguardam o seu ", destaque: "parecer técnico", depois: "." },
     pausa: { antes: "", destaque: "Sessão pausada pela Coordenação", depois: ": acompanhe o debate em sala." },
   },
 } as const;
