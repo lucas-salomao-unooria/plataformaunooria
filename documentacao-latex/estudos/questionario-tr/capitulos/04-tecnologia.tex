@@ -1,0 +1,487 @@
+% ===========================================================================
+%  CAPITULO 4 — Tecnologia, IA, Segurança e Operação (T01–T11)
+% ===========================================================================
+\chapter{Tecnologia, IA, Segurança e Operação}
+\label{cap:tecnologia}
+
+% ---------------------------------------------------------------------------
+\section{T01 · Navegador, dispositivo e conectividade}
+\label{sec:t01}
+
+\begin{resposta}{T01}{Combinações suportadas}{\parcial}
+\begin{campos}
+  \item[Hoje] A plataforma é 100\% web: o hub é uma aplicação Next.js e cada
+    missão é um pacote estático servido por CDN, sem instalador. As suítes
+    automatizadas de ponta a ponta rodam no \textbf{Chromium} (Playwright
+    1.62), em 1280$\times$950 (estudante) e 1440$\times$1000 (professor). A
+    responsividade do hub foi medida nos seis papéis em \textbf{375, 768 e
+    1280\,px}, em cerca de 80 rotas, e as telas que rolavam de lado foram
+    corrigidas (\adrr{ADR-159}). Missões desenhadas para celular declaram
+    \cd{viewport} no manifesto e rodam numa moldura de 375$\times$812 dentro do
+    hub. Os arquivos das missões têm caminho imutável por versão e ficam em
+    cache na CDN; só a página de entrada expira em 60\,s.
+  \item[Limitações] Não há matriz formal de compatibilidade: Firefox, Safari
+    (WebKit) e Edge não são testados automaticamente, e não há versão mínima
+    declarada nem sistema operacional homologado. Não há orçamento de tamanho
+    de pacote nem teste sob banda reduzida. A medição de responsividade não
+    cobriu modais nem telas com dados reais de aula, e o script dela não está
+    versionado. Algumas missões foram desenhadas para computador (o Jornal da
+    Escola, por exemplo, não declara \cd{viewport}). A Vila do Lume (jogo 3D)
+    exige WebGL, teclado e mouse e não tem controle por toque.
+  \item[Planejado] Nada registrado além do gatilho da \adrr{ADR-159} (tela nova
+    que role de lado em 375\,px).
+  \item[Evidência] \adrr{ADR-159}; \arq{scripts/e2e/lib/roteiro.mjs};
+    \arq{scripts/\B{}e2e/\B{}estudante/\B{}16-assistente-invisivel.mjs} (emulação de
+    celular 412$\times$915); RNF-03 em \cd{PU-DOC-001}, Cap. 3.
+  \item[Lacuna] Engenharia precisa executar e anexar a matriz (Chrome, Edge,
+    Firefox e Safari recentes; Android e iOS; Chromebook) antes de o TR fixar
+    versões mínimas.
+\end{campos}
+\end{resposta}
+
+\begin{paraotr}
+A solução deve funcionar, sem instalação de software, nas duas últimas versões
+estáveis de Chrome, Edge, Firefox e Safari, em telas a partir de 360\,px de
+largura para as funções do estudante e a partir de 1280\,px para a condução da
+aula. Aceite: roteiro de homologação executado pela contratada em cada
+combinação, com registro de tela e lista de restrições por missão.
+\end{paraotr}
+
+% ---------------------------------------------------------------------------
+\section{T02 · Autenticação e identidade da rede}
+\label{sec:t02}
+
+\begin{resposta}{T02}{Login, vínculo e revogação}{\parcial}
+\begin{campos}
+  \item[Hoje] O login em produção é por \textbf{usuário e senha próprios} da
+    plataforma: senha guardada com \emph{hash} bcrypt, limite de 8 tentativas
+    por minuto por usuário, mensagem de recusa genérica (\adrr{ADR-97}) e troca
+    obrigatória da senha provisória. Depois do login, a plataforma emite
+    \emph{tokens} assinados (RS256, validade de 15 minutos) com usuário,
+    escola, turma principal e papel, e publica a chave pública num endereço
+    JWKS padrão; a API valida emissor, audiência e assinatura. Esse desenho
+    segue o padrão \textbf{OpenID Connect}, de modo que trocar o emissor por um
+    provedor de identidade da rede é troca de configuração. Escola, turma e
+    papel vêm das lotações e matrículas cadastradas pela importação (T03);
+    quem trabalha em mais de uma escola escolhe a escola ativa no cabeçalho,
+    validada contra as lotações. A sessão expira após 2 horas sem uso.
+  \item[Limitações] A federação com o provedor da rede (WSO2 Identity Server,
+    via OIDC) está \textbf{preparada mas não operacional}: o conector existe e
+    liga por configuração, mas o mapeamento dos atributos da rede ainda não
+    foi feito. \textbf{SAML não existe atualmente.} Desativar uma conta
+    impede novos logins na hora, mas uma sessão já aberta continua válida até
+    expirar (até 2 horas de inatividade); não há revogação ativa nem
+    desconexão global. Perder uma turma vale na hora (cada pedido confere a
+    matrícula); perder a escola ou mudar de papel vale no próximo login.
+  \item[Planejado] Ligar o WSO2 por contrato (\arq{docs/INFRA-IDENTITY.md}:
+    um \emph{tenant} por contrato, emissor e JWKS próprios). Decisões
+    abertas: base de usuários mestre ou federação com criação na primeira
+    entrada (Google Workspace, Gov.br), formato do usuário e tela de login.
+  \item[Evidência] \cd{PU-DOC-001}, Cap. 5, diagramas \emph{Três relógios:
+    token, renovação e sessão} e \emph{A jornada do estudante, do login à
+    missão}; \arq{apps/\B{}api/\B{}tests/\B{}senha-provisoria.spec.ts};
+    \arq{scripts/\B{}e2e/\B{}publico/\B{}02-login-e-papeis.mjs}; \adrr{ADR-95},
+    \adrr{ADR-96}.
+  \item[Lacuna] Decidir se encerrar lotação ou desativar conta deve derrubar a
+    sessão aberta (hoje não derruba).
+\end{campos}
+\end{resposta}
+
+\begin{paraotr}
+A solução deve oferecer autenticação própria e federação com o provedor de
+identidade da contratante por OpenID Connect; SAML 2.0, quando exigido,
+deve ser declarado como item opcional. A desativação de um usuário deve
+impedir o acesso a dados em até \textit{[prazo a definir]} minutos, inclusive
+em sessão já aberta. Aceite: demonstração do login federado com usuário de
+teste da rede e da revogação dentro do prazo.
+\end{paraotr}
+
+% ---------------------------------------------------------------------------
+\section{T03 · Cadastro de escolas, turmas e pessoas}
+\label{sec:t03}
+
+\begin{resposta}{T03}{OneRoster e importação}{\implementado}
+\begin{campos}
+  \item[Hoje] \textbf{OneRoster 1.2, formato CSV}: os sete arquivos do padrão
+    (\cd{manifest}, \cd{orgs}, \cd{academicSessions}, \cd{classes},
+    \cd{users}, \cd{enrollments}, \cd{roles}), um por envio, em modo
+    \cd{bulk} ou \cd{delta}, pela tela do gestor ou por chamada autenticada à
+    API. Aceita a extensão brasileira de CPF. Há também uma planilha
+    simplificada (matrícula, nome, usuário, e-mail, papel, turma, série,
+    turno; até 50 mil linhas). Modelos e exemplos de cada arquivo são
+    baixáveis pela própria plataforma. Regras de carga: reimportar o mesmo
+    lote não muda nada (idempotente, pela chave da rede e pelo CPF); troca de
+    turma encerra a matrícula anterior sem apagá-la; CPF já existente em outra
+    escola vira transferência (estudante) ou lotação adicional (professor);
+    \cd{tobedeleted} desativa a pessoa sem apagar; uma carga completa
+    \textbf{não} desativa quem ficou de fora, só os lista como candidatos;
+    CPF repetido ou inválido é erro de linha; linhas válidas entram e as
+    inválidas voltam com o motivo; um arquivo fora de ordem informa qual
+    arquivo falta. O retorno traz contadores de criados, atualizados,
+    transferidos, desativados e erros.
+  \item[Limitações] \textbf{A plataforma não busca mudanças}: é a Secretaria
+    (ou o gestor) quem envia as atualizações. Não existe a API REST do
+    OneRoster nem sincronização agendada, e o pacote zip do padrão não é
+    aceito (um arquivo por envio). Limites: 20 envios por minuto (OneRoster)
+    e 5 por minuto (planilha). A senha do arquivo é ignorada.
+  \item[Planejado] Nada registrado.
+  \item[Evidência] \arq{apps/\B{}api/\B{}tests/\B{}oneroster-import.spec.ts} (cerca de 25
+    casos, entre eles ``carga completa incompleta não desativa ninguém'' e
+    ``reaplicar o mesmo lote não muda nada''),
+    \arq{rostering-import.spec.ts}, \arq{rede-cpf-transferencia.spec.ts};
+    suíte \arq{scripts/\B{}e2e/\B{}gestor\_contrato/\B{}02-oneroster.mjs};
+    \arq{apps/\B{}api/\B{}src/\B{}rostering/\B{}AGENTS.md}.
+\end{campos}
+\end{resposta}
+
+\begin{paraotr}
+A contratada deve aceitar a carga de escolas, turmas, pessoas e vínculos no
+padrão OneRoster 1.2 (CSV), por interface e por API autenticada, com
+importação parcial, relatório de erros por linha e carga idempotente. A
+atualização é de iniciativa da contratante, salvo integração adicional
+pactuada. Aceite: carga de teste sintética com inclusão, troca de turma,
+transferência, desligamento e linhas inválidas, conferida contra o relatório.
+\end{paraotr}
+
+% ---------------------------------------------------------------------------
+\section{T04 · Cada usuário vê só o que lhe compete}
+\label{sec:t04}
+
+\begin{resposta}{T04}{Perfis e segregação de dados}{\implementado}
+\begin{campos}
+  \item[Hoje] Seis perfis: \textbf{estudante} (a própria matrícula, nunca
+    gabarito nem dados de colega); \textbf{professor} (só as turmas em que
+    leciona); \textbf{gestor da escola} (a própria escola);
+    \textbf{gestor regional} (as escolas da regional, uma por vez, e o
+    panorama somado); \textbf{gestor do contrato} (a rede inteira);
+    \textbf{administração Unooria} (o anterior, mais disponibilidade de
+    recursos, quotas e custos de IA). Ninguém cria o próprio nível nem um
+    acima (\adrr{ADR-80}). A autorização é aplicada \textbf{na API, em toda
+    chamada}, em três travas: o papel exigido pela rota; o isolamento por
+    escola no próprio banco (\emph{Row-Level Security}), com o escopo tirado
+    do \emph{token} assinado e não do parâmetro; e, para o professor, a
+    conferência da matrícula na turma a cada pedido. Um identificador de
+    outra escola manipulado na chamada cai no isolamento do banco ou volta
+    403. Exportações e painéis usam as mesmas rotas protegidas. Cada contrato
+    tem a própria infraestrutura (isolamento físico entre redes). Quem
+    trabalha em várias escolas acumula lotações e troca a escola ativa;
+    transferência de estudante encerra lotação e matrícula de origem, e o
+    professor de origem deixa de vê-lo.
+  \item[Limitações] Três tabelas de cadastro (pessoas, turmas e lotações)
+    ficam fora do isolamento do banco: nelas, a trava é só o filtro por escola
+    na consulta, e uma falha dessas já foi encontrada e corrigida
+    (\adrr{ADR-49}). A revogação de sessão tem o atraso descrito em T02.
+  \item[Evidência] Matriz papel $\times$ rota $\times$ tela em \cd{PU-DOC-001},
+    Cap. 7 (``Nível 3''); testes \arq{tenancy.spec.ts} (``escola A não alcança
+    linha da escola B nem por chave direta''), \arq{matriculas-tenancy.spec.ts},
+    \arq{professor-por-matricula-tenancy.spec.ts}, \arq{planos-tenancy.spec.ts},
+    \arq{rede-cpf-transferencia.spec.ts}, além de 32 especificações que
+    provam respostas 403; suítes e2e de gestor de escola (quem trabalha em
+    duas escolas) e de contrato (transferência e perfil portátil).
+\end{campos}
+\end{resposta}
+
+\begin{paraotr}
+A solução deve aplicar a autorização no servidor, em toda requisição,
+impedindo que um usuário acesse dados de escola, turma ou estudante fora do
+seu vínculo, inclusive por manipulação de identificadores. Aceite: roteiro de
+teste de segregação executado pela contratada com dois usuários de escolas
+diferentes, incluindo chamadas diretas à API com identificadores alheios, e
+relatório de teste de intrusão independente antes da produção.
+\end{paraotr}
+
+% ---------------------------------------------------------------------------
+\section{T05 · Conteúdo inadequado nas duas modalidades de IA}
+\label{sec:t05}
+
+\begin{resposta}{T05}{Guardrails}{\parcial}
+\begin{campos}
+  \item[Hoje] Toda chamada de IA passa por uma camada única no servidor;
+    nenhuma instrução de sistema chega ao navegador. \textbf{Geração que o
+    professor revisa}: toda instrução de geração carrega um bloco de regras
+    invioláveis (pessoas fictícias; sem sexo, violência gráfica, ódio,
+    drogas, automutilação ou palavrões; sem estudante ou escola reais); o
+    resultado passa por validação automática com listas de termos e perfis
+    proibidos; o texto do professor entra como dado delimitado e com tamanho
+    máximo, uma barreira contra instruções injetadas; e o professor aprova
+    antes de a turma ver (P04). \textbf{Estudante falando com a IA}: nas
+    missões em que há texto livre, a IA \emph{classifica} a mensagem numa
+    lista fechada de intenções e a fala devolvida vem de um catálogo escrito
+    pela equipe; com confiança abaixo de 0,7, lentidão, falta de saldo ou
+    recusa, vale uma árvore de regras determinística. Pedidos como ``ignore as
+    instruções'' são detectados e tratados como fora do tema sem chegar à IA.
+    A série é tirada da turma do estudante, nunca do pedido. Há quota diária
+    por perfil e limite de chamadas. \textbf{Temas sensíveis}: o check-in de
+    bem-estar é o caso mais cercado (itens fixos, bloqueio de vocabulário
+    clínico e de links, sinal de risco pula a IA e mostra texto fixo com CVV
+    188 e SAMU 192). \textbf{Dados pessoais}: na missão Manifesto, CPF,
+    telefone, e-mail, CEP, cartão e @perfil são detectados e o texto é
+    recusado sem ser gravado. Golpes, \emph{fake news} e \emph{cyberbullying}
+    são tratados como objeto de estudo dentro do roteiro da missão.
+  \item[Limitações] \textbf{Não há configuração própria dos filtros de
+    segurança do provedor}: valem os padrões do Gemini, e a recusa por
+    segurança é só contada nas métricas, sem tratamento específico. Não há
+    moderação dedicada de entrada e saída. O tutor genérico devolve o texto do
+    modelo sem validação de saída. O filtro de dados pessoais existe só numa
+    missão e não detecta nomes próprios. \textbf{Não há registro formal de
+    incidentes de IA.}
+  \item[Provedor $\times$ Unooria] Do provedor: os filtros padrão do modelo. Da
+    Unooria: instruções de sistema, regras invioláveis, classificação fechada,
+    validação da saída, detecção de dados pessoais, quotas e a aprovação
+    humana.
+  \item[Evidência] \arq{apps/\B{}api/\B{}src/\B{}geracao/\B{}prompts/\B{}guardrails.ts};
+    \arq{apps/\B{}api/\B{}src/\B{}manifesto-ia/\B{}regras/\B{}moderacao.ts};
+    \adrr{ADR-191}--\adrr{ADR-193}; \cd{PU-DOC-001}, Cap. 11 (guardrails do
+    check-in); testes \arq{ai-tutor-prompt.spec.ts},
+    \arq{manifesto-ia-regras.spec.ts}, \arq{bemestar-regras.spec.ts}; conjunto
+    de referência do classificador da 2ª série (88/89 e 89/89 acertos, zero
+    crédito indevido).
+  \item[Lacuna] Configurar e versionar os filtros do provedor; estender a
+    detecção de dados pessoais a toda entrada livre de estudante; criar
+    registro e rito de incidentes.
+\end{campos}
+\end{resposta}
+
+% ---------------------------------------------------------------------------
+\section{T06 · Dados pessoais e fluxos para a IA}
+\label{sec:t06}
+
+\begin{resposta}{T06}{Mapa de dados}{\parcial}
+\begin{campos}
+  \item[Hoje] A rede é \textbf{controladora} e a Unooria \textbf{operadora};
+    a base legal é a execução de política pública, não o consentimento
+    (página \rota{/privacidade}, \adrr{ADR-70}). Categorias tratadas:
+    cadastro (nome, usuário, e-mail, CPF, matrícula, escola, turma),
+    atividade nas missões, evidências por habilidade, textos escritos nas
+    missões e, em missões específicas, conversa com a IA. Infraestrutura:
+    Google Cloud em \textbf{\cd{us-east1}} (EUA), com banco gerenciado de alta
+    disponibilidade e recuperação a um ponto no tempo; IA no Vertex AI
+    (endpoint global) e voz ao vivo da Ajuda em \cd{us-central1}; avatar da
+    Ajuda (LiveAvatar/HeyGen, EUA) só para profissionais. A transferência
+    internacional é declarada na página de privacidade com as cláusulas-padrão
+    da Resolução CD/ANPD 19/2024. \textbf{Para a IA vão textos sem
+    identificação}: a série e o conteúdo, nunca nome, escola ou identificador
+    do estudante. Os registros técnicos mascaram CPF, e-mail, nome e textos
+    livres; a telemetria usa identificador opaco.
+  \item[Limitações] \textbf{Não há prazo nem rotina de retenção}, de exclusão
+    ou de anonimização: desligar alguém o desativa, sem apagar (questão aberta
+    no Cap. 7 da \cd{PU-DOC-001}, ``decisão de produto e de contrato''). O CPF é
+    guardado sem cifra adicional (\adrr{ADR-33}). O avatar da Ajuda não está
+    listado entre os suboperadores da página de privacidade. A afirmação de
+    que o provedor não treina modelos com os dados não cita a cláusula
+    contratual correspondente. Só há diagrama de fluxo de dados do
+    check-in de bem-estar; não há um diagrama geral.
+  \item[Evidência] \arq{apps/\B{}hub/\B{}app/\B{}privacidade/\B{}page.tsx};
+    \arq{apps/\B{}api/\B{}src/\B{}observabilidade/\B{}redaction.ts}; \arq{docs/INFRA.md};
+    \cd{PU-DOC-001}, Cap. 7 (região e transferência) e Cap. 11.
+  \item[Lacuna] Jurídico/DPO: definir retenção e exclusão; incluir o avatar
+    entre os suboperadores; anexar os termos do Google Cloud sobre uso de
+    dados (o serviço Vertex AI, por contrato, não usa dados do cliente para
+    treinar modelos, mas a cláusula deve ser citada, não presumida).
+    Engenharia: desenhar o diagrama geral de fluxo de dados.
+\end{campos}
+\end{resposta}
+
+\begin{atencao}
+\textbf{Ponto sensível para o TR}: os dados ficam fora do Brasil
+(\cd{us-east1}) e a IA roda em endpoint global. Se a contratante exigir
+residência no país, isso é uma mudança de infraestrutura, e o modelo de IA
+usado hoje não está disponível na região de São Paulo. O TR deve dizer se
+admite transferência internacional com as salvaguardas da ANPD ou se exige
+residência, porque a resposta muda custo e prazo.
+\end{atencao}
+
+% ---------------------------------------------------------------------------
+\section{T07 · Trilha de auditoria}
+\label{sec:t07}
+
+\begin{resposta}{T07}{Eventos auditáveis}{\parcial}
+\begin{campos}
+  \item[Hoje] Três mecanismos. (1) \textbf{Auditoria de recursos}: ligar ou
+    desligar produto e missão, ativar ou fixar versão, alterar quota e
+    configuração de IA. Cada registro guarda recurso, escola, ação, versão,
+    motivo, valor anterior e novo, autor (com o nome congelado) e data/hora;
+    alteração é recusada pelo banco. (2) \textbf{Histórico da evidência
+    pedagógica}: cada marca, recálculo, confirmação e ajuste do professor
+    gera um evento com valor anterior, valor novo, autor e data; o banco só
+    aceita inclusão (alteração recusada, e o serviço não tem permissão de
+    apagar). (3) \textbf{Registros técnicos} estruturados com código estável,
+    identificador de correlação da requisição, escola e perfil, retidos por 30
+    dias. Algumas missões guardam ainda o histórico de comandos do professor
+    (quem pausou ou liberou e quando).
+  \item[Limitações] \textbf{Não há auditoria de}: login e acesso (só registro
+    técnico), criação, edição ou publicação de missão, aprovação de conteúdo,
+    ações administrativas sobre usuários e leitura de dados sensíveis. A
+    auditoria de recursos permite exclusão no banco. Nenhuma tela ou rota
+    consulta o histórico da evidência; ele só é lido direto no banco.
+  \item[Planejado] Destino de registros de auditoria por contrato com
+    \textbf{400 dias} de retenção, reunindo eventos de autenticação,
+    importação, publicação e atividade administrativa da nuvem
+    (\adrr{ADR-57}/\adrr{ADR-58}, risco R-05, meta antes de nov./2026). Hoje
+    está pendente.
+  \item[Evidência] \arq{apps/\B{}api/\B{}src/\B{}recursos/\B{}auditoria.ts}; tabelas
+    \cd{recursos\_auditoria} e \cd{evidencias\_eventos} (\cd{PU-DOC-001},
+    Cap. 8); \cd{PU-DOC-001}, Cap. 17.
+\end{campos}
+\end{resposta}
+
+\begin{paraotr}
+A solução deve registrar, de forma não alterável pelo usuário e consultável
+pela contratante, no mínimo: autenticação, alterações de cadastro e de
+vínculo, publicação de atividade, aprovação de conteúdo gerado por IA e
+revisão de avaliação, com ator, data/hora, objeto, valor anterior, valor novo,
+justificativa (quando houver) e identificador de correlação, retidos por pelo
+menos \textit{[prazo a definir]}. Aceite: exportação da trilha de um roteiro
+de homologação executado com dados sintéticos.
+\end{paraotr}
+
+% ---------------------------------------------------------------------------
+\section{T08 · Falha de conexão ou de dispositivo}
+\label{sec:t08}
+
+\begin{resposta}{T08}{Progresso, retomada e perda}{\parcial}
+\begin{campos}
+  \item[Hoje] \textbf{O estado da missão vive no servidor.} Cada jogada que
+    vale é uma chamada à API, gravada na hora na sessão do estudante; não se
+    espera o fim da missão para salvar. Recarregar a página, fechar o
+    navegador ou trocar de computador retoma no passo salvo, comportamento
+    registrado nas missões do catálogo (\cd{PU-DOC-001}, Cap. 12). A conclusão
+    é gravada uma única vez por estudante e missão: repetir não cria registro
+    novo. As rotas do estudante são idempotentes (repetir uma jogada devolve o
+    estado atual), e algumas missões mantêm uma fila de reenvio para quedas
+    curtas de rede. Os eventos de telemetria têm identificador gerado no
+    navegador e são gravados sem duplicar; ficam num \emph{buffer} de até 500
+    eventos, enviados em lotes a cada 10 segundos, com novas tentativas
+    espaçadas até 60 segundos e envio de emergência ao fechar a aba.
+  \item[Limitações] \textbf{Exige conexão contínua}: não há modo
+    \emph{offline}, por desenho, porque a correção é feita no servidor e o
+    gabarito nunca vai ao navegador. Uma jogada feita sem rede não é aceita
+    até reconectar; o reenvio automático só existe nas missões que o
+    implementaram. A fila de telemetria fica em memória e se perde se a aba
+    for fechada à força ou faltar energia antes do envio; isso afeta só
+    telemetria, não o progresso nem as evidências, que já foram gravados na
+    jogada.
+  \item[Planejado] Guardar a fila de telemetria no armazenamento do navegador
+    (IndexedDB), sem prazo.
+  \item[Evidência] \arq{packages/\B{}sdk/\B{}src/\B{}telemetry.ts} e
+    \arq{telemetry.test.ts}; \arq{apps/\B{}api/\B{}src/\B{}progress/\B{}progresso.controller.ts};
+    \cd{PU-DOC-001}, Cap. 10 (onde pode haver perda) e Cap. 12 (retomada por
+    missão).
+\end{campos}
+\end{resposta}
+
+\begin{paraotr}
+A solução deve preservar o progresso e as respostas já enviadas pelo
+estudante em caso de queda de conexão, fechamento do navegador ou troca de
+equipamento, permitindo retomar do último passo registrado, sem duplicar
+participação nem evidência. Aceite: roteiro em homologação com interrupção de
+rede e reabertura em outro equipamento, por missão.
+\end{paraotr}
+
+% ---------------------------------------------------------------------------
+\section{T09 · Escala, disponibilidade, monitoramento e suporte}
+\label{sec:t09}
+
+\begin{resposta}{T09}{O que pode ser comprovado}{\parcial}
+\begin{campos}
+  \item[Hoje] \textbf{Monitoramento}: registros estruturados, rastreamento
+    distribuído, métricas e erros de navegador estão ativos no ambiente de
+    desenvolvimento (\cd{PU-DOC-001}, Cap. 17). Lá estão no ar 4 sondas de
+    disponibilidade a partir de 3 regiões, 12 alertas, 2 objetivos de nível de
+    serviço (API e hub, 99,5\% sem erro de servidor em 30 dias), fila de
+    mensagens mortas da telemetria e painel de operação. Objetivos definidos
+    para produção: disponibilidade de hub e API de 99,5\%; 99\% das
+    requisições abaixo de 800\,ms (p95); 98\% das chamadas de IA concluídas;
+    99\% da telemetria ingerida em menos de 5 minutos. \textbf{Contingência}:
+    banco com alta disponibilidade e recuperação a um ponto no tempo; hub e
+    API voltam à revisão anterior em segundos; uma missão volta à versão
+    anterior sem novo \emph{build}; versão nova pode ser testada numa escola
+    antes da rede (Mapa de Produto, H10.3.1 e H10.3.2).
+  \item[Limitações] \textbf{Nenhum teste de carga foi executado}. O
+    \cd{PU-EST-001} é um plano (versão 0.1, 23/09/2026) com sete testes,
+    critérios de aprovação e roteiro, e o risco R-01 o classifica como ``o
+    maior risco técnico aberto''. A arquitetura foi dimensionada para cerca de
+    10 mil estudantes e 2 a 4 mil simultâneos por contrato. Homologação e
+    produção ainda não têm os alertas aplicados. \textbf{Não existe
+    compromisso de suporte} (canais, horários, severidades, prazos de resposta
+    e de restabelecimento) nem janela de manutenção formal. RPO, RTO e
+    retenção de cópias de segurança não estão documentados.
+  \item[Planejado] Executar os testes do \cd{PU-EST-001}; aplicar alertas em
+    homologação e produção; alerta por consumo do orçamento de erro.
+  \item[Evidência] \cd{PU-EST-001}; \cd{PU-DOC-001}, Cap. 6 (reversões), 17
+    (SLOs e alertas) e 19 (R-01).
+  \item[Lacuna] Comercial/Operação: definir o modelo de suporte. Engenharia:
+    executar o teste de carga e declarar RPO/RTO.
+\end{campos}
+\end{resposta}
+
+\begin{paraotr}
+Disponibilidade mensal mínima de 99,5\% para as funções de estudante e
+professor, medida por sonda externa e relatada mensalmente; tempo de resposta
+p95 abaixo de 800\,ms em carga equivalente ao pico declarado pela contratante
+(\textit{[número]} estudantes simultâneos); RPO e RTO declarados pela
+contratada e comprovados em exercício de recuperação. Aceite: relatório de
+teste de carga com metodologia e resultados antes da produção, e relatório
+mensal de disponibilidade e incidentes.
+\end{paraotr}
+
+% ---------------------------------------------------------------------------
+\section{T10 · Indicadores de adoção}
+\label{sec:t10}
+
+\begin{resposta}{T10}{Eventos e painéis de uso}{\parcial}
+\begin{campos}
+  \item[Hoje] \textbf{Relatório da diretoria} (Mapa de Produto, H07.2.1 e
+    H07.2.2, \adrr{ADR-82}): por missão e por escola, ``turmas abertas'',
+    ``turmas encerradas'' e ``estudantes com registro'', com exportação em
+    planilha; o gestor regional vê a própria regional e o gestor do contrato
+    escolhe a regional. \textbf{Cadastro de usuários}: filtro ``ativos /
+    inativos / sem primeiro acesso''. \textbf{Análise de produto}: sessões,
+    envolvimento e tempo de uso por atividade, só para uma missão
+    (Unoovista). \textbf{Uso de IA}: custo e consumo por produto, modelo e
+    escola, em vários períodos, mas só para a administração Unooria. Os
+    números são lidos na hora da consulta. Eventos coletados: liberação e
+    encerramento da missão na turma, sessões e jogadas por estudante,
+    conclusão, telemetria das missões, primeiro acesso.
+  \item[Limitações] O relatório filtra só por regional: \textbf{não há filtro
+    por período, bimestre, ano/série ou turma}. \textbf{Não existe registro de
+    último acesso}, nem contagem de professores que acessaram, de missões
+    configuradas, iniciadas e concluídas por período, de participação ao
+    longo do tempo, nem lista de pendências ou de baixa participação. Os
+    períodos letivos existem no cadastro (importados do OneRoster), mas não
+    são usados nos relatórios. Cadastrados e ativos se distinguem só no
+    filtro de usuários, não num indicador.
+  \item[Tratamento] Duplicidade: um registro de progresso por estudante e
+    missão, e reimportação idempotente. Transferência: a identidade acompanha
+    o estudante, o que ele produziu fica na escola de origem, e a escola nova
+    vê o histórico.
+  \item[Planejado] H07.3.2 ``Ver os números do dia'' (a fazer): turmas com
+    missão aberta, estudantes que entraram e missões concluídas no dia, por
+    regional. É o compromisso V1-01 (Capítulo~\ref{cap:v1}).
+  \item[Evidência] \arq{apps/\B{}hub/\B{}app/\B{}(plataforma)/\B{}admin/\B{}relatorios/\B{}};
+    \arq{apps/\B{}api/\B{}src/\B{}rostering/\B{}escolas.controller.ts}; Mapa de Produto,
+    épicos E07 e E03.
+\end{campos}
+\end{resposta}
+
+% ---------------------------------------------------------------------------
+\section{T11 · Pré-visualização integral pelo professor}
+\label{sec:t11}
+
+\begin{resposta}{T11}{Preview da missão contextualizada}{\naoexiste}
+\begin{campos}
+  \item[Hoje] \textbf{Não existe atualmente.} A missão só abre para o perfil
+    estudante: professor e gestor são levados de volta à própria área. O
+    professor conta com a ficha da missão, o guia da aula e a revisão item a
+    item do conteúdo gerado (P04), além de ``zerar a turma'' para reiniciar
+    uma rodada. Algumas telas de preparo mostram prévia de textos e
+    legendas, mas nenhuma permite jogar a missão.
+  \item[Limitações] Como o recurso não existe, não há garantia a descrever
+    sobre participação ou evidência geradas no preview.
+  \item[Planejado] Não há história no Mapa de Produto nem item no
+    \emph{backlog}. É o compromisso V1-02 (Capítulo~\ref{cap:v1}), onde está a
+    proposta de implementação.
+  \item[Evidência] \arq{apps/\B{}hub/\B{}app/\B{}exp/\B{}[expId]/\B{}page.tsx} (restrição ao
+    estudante).
+\end{campos}
+\end{resposta}

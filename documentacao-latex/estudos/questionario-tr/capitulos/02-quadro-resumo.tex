@@ -1,0 +1,88 @@
+% ===========================================================================
+%  CAPITULO 2 — Quadro-resumo
+% ===========================================================================
+\chapter{Quadro-resumo}
+\label{cap:resumo}
+
+Uma linha por item do questionário, com o status e a resposta em uma frase.
+O detalhe e as evidências estão na seção indicada.
+
+\begin{center}
+\footnotesize\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{@{}L{11mm}L{36mm}X@{}}
+\caption{Status de cada item do questionário}\label{tab:resumo}\\
+\toprule
+\textbf{Item} & \textbf{Status} & \textbf{Resposta curta}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Item} & \textbf{Status} & \textbf{Resposta curta}\\
+\midrule
+\endhead
+\multicolumn{3}{@{}l}{\textbf{\sffamily\color{unooNavy}A. Produto e Pedagogia}}\\
+P01 & \implementado & Ficha e guia da aula por missão, com objetivos, BNCC,
+  duração, roteiro e rubrica; sem campo de bimestre nem de livro.\\
+P02 & \variapormissao & Assistente em 4 passos; texto livre e componente
+  curricular; \textbf{não aceita anexo}; a IA nunca muda mecânica nem
+  rubrica.\\
+P03 & \parcial & Atividade salva e reaproveitável na mesma turma;
+  \textbf{não duplica nem compartilha} entre turmas ou professores.\\
+P04 & \variapormissao & Nada vai à turma sem aprovação; edição, nova geração
+  por item e aprovação item a item ou em lote, conforme a missão.\\
+P05 & \variapormissao & Liberar, pôr no ar, encerrar e as etapas de cada
+  missão; atualização a cada 2 a 5\,s; as etapas só avançam.\\
+P06 & \implementado & Missão-base, atividade e rodada; o histórico fica e
+  vale a melhor rodada; unicidade no banco evita duplicidade.\\
+P07 & \implementado & Avalia ações estruturadas, nunca o texto da conversa;
+  IA só classifica intenção em lista fechada, com conjunto de referência.\\
+P08 & \naoexiste & Não há recomendação por IA; o painel ordena por regra e o
+  agente do professor não lê resultados.\\
+P09 & \parcial & Alvo WCAG 2.2 AA; zero violação automática; falta avaliação
+  manual, locuções e controle de áudio.\\
+P10 & \foradorepo & Nada da PoC no repositório; o time precisa anexar o
+  relatório.\\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{\sffamily\color{unooNavy}B. Tecnologia, IA, Segurança e Operação}}\\
+T01 & \parcial & Web sem instalador, responsivo medido; testado só no
+  Chromium; sem matriz de compatibilidade.\\
+T02 & \parcial & Login próprio com tokens no padrão OIDC; federação WSO2
+  preparada e não operacional; sem SAML; revogação espera a sessão vencer.\\
+T03 & \implementado & OneRoster 1.2 CSV e planilha, por tela e API;
+  idempotente, parcial, com erros por linha; a Secretaria envia, não há
+  busca.\\
+T04 & \implementado & Seis perfis; autorização na API e isolamento por escola
+  no banco; testes de segregação.\\
+T05 & \parcial & Regras invioláveis, classificação fechada, aprovação humana;
+  sem configuração própria dos filtros do provedor nem registro de
+  incidentes.\\
+T06 & \parcial & IA recebe texto sem identificação; dados nos EUA com
+  salvaguardas da ANPD; \textbf{sem política de retenção}.\\
+T07 & \parcial & Auditoria de recursos e de evidência; sem auditoria de login,
+  publicação e aprovação de conteúdo.\\
+T08 & \parcial & Progresso gravado a cada jogada e retomado; exige conexão
+  contínua; sem modo offline.\\
+T09 & \parcial & SLOs e alertas definidos; \textbf{teste de carga não
+  executado}; sem compromisso de suporte.\\
+T10 & \parcial & Relatório por missão e escola; sem filtro de período, turma
+  ou bimestre, sem último acesso.\\
+T11 & \naoexiste & Professor não consegue jogar a missão; é o V1-02.\\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{\sffamily\color{unooNavy}C. Editorial, Formação e Implantação}}\\
+E01 & \foradorepo & 14 missões em 12 séries; a matriz com o livro é do
+  editorial.\\
+E02 & \parcial & Ficha, guia imprimível, Ajuda e agente na plataforma; falta
+  o recorte do livro.\\
+E03 & \foradorepo & A plataforma tem as ferramentas de implantação; o serviço
+  não está descrito no repositório.\\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{\sffamily\color{unooNavy}Compromissos da V1}}\\
+V1-01 & \parcial & Faltam filtros, último acesso e baixa participação.\\
+V1-02 & \naoimpl & Recurso inteiro a construir, missão por missão.\\
+V1-03 & \naoimpl & Entradas prontas; falta a geração e o processo pedagógico.\\
+V1-04 & \naoimpl & O tema já está gravado na atividade; depende de V1-03.\\
+V1-05 & \implementado & Ajuste do professor prevalece; falta um teste e2e.\\
+V1-06 & \parcial & Trilha permanente existe; justificativa opcional e sem
+  tela de consulta.\\
+\bottomrule
+\end{tabularx}
+\end{center}

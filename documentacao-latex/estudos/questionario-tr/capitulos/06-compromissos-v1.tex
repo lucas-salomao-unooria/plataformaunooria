@@ -1,0 +1,201 @@
+% ===========================================================================
+%  CAPITULO 6 — Compromissos obrigatórios da V1
+% ===========================================================================
+\chapter{Compromissos obrigatórios da V1}
+\label{cap:v1}
+
+Os seis requisitos abaixo já foram decididos como obrigatórios para a primeira
+versão, independentemente do estado atual. Para cada um: status, diferença
+para o comportamento esperado, proposta de entrega e plano de aceite.
+\textbf{Responsável e data de homologação não foram fixados no repositório}
+e ficam marcados como \textit{[a definir]} para o time completar; este
+documento não inventa prazo.
+
+\begin{center}
+\footnotesize\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\linewidth}{@{}L{14mm}L{50mm}L{36mm}Y@{}}
+\toprule
+\textbf{Item} & \textbf{Compromisso} & \textbf{Status} & \textbf{Maior lacuna}\\
+\midrule
+V1-01 & Indicadores de adoção e uso & \parcial & filtros por período,
+  bimestre e turma; último acesso; baixa participação\\
+V1-02 & Pré-visualização completa & \naoimpl & o recurso inteiro\\
+V1-03 & Recomendações por IA & \naoimpl & o recurso inteiro\\
+V1-04 & Recomendação com o tema do setup & \naoimpl & depende de V1-03; o
+  tema já está gravado\\
+V1-05 & Revisão docente da avaliação & \implementado & teste e2e de ajuste em
+  lote\\
+V1-06 & Justificativa e auditoria & \parcial & justificativa opcional;
+  histórico sem tela\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ---------------------------------------------------------------------------
+\section{V1-01 · Indicadores de adoção e uso}
+
+\begin{resposta}{V1-01}{Adoção por rede, escola, turma e bimestre}{\parcial}
+\begin{campos}
+  \item[Existe] Relatório da diretoria por missão e escola (turmas abertas,
+    turmas encerradas, estudantes com registro), recortado por regional e
+    exportável; filtro de usuários ``ativos / inativos / sem primeiro
+    acesso''; períodos letivos já importados do OneRoster (T03, T10).
+  \item[Diferença] Faltam: filtros por \textbf{período e bimestre}, por
+    \textbf{ano/série} e por \textbf{turma}; o registro de \textbf{último
+    acesso} de professores e estudantes; a contagem de atividades
+    configuradas, iniciadas e concluídas; a \textbf{taxa de participação}
+    (estudantes que entraram sobre matriculados na turma com missão liberada)
+    e a lista das turmas e escolas com participação abaixo de um limiar; a
+    série no tempo. A história H07.3.2 (``números do dia'') cobre parte disso
+    e está a fazer.
+  \item[Proposta] (1) Gravar data e hora do último acesso por usuário a cada
+    login. (2) Um painel de adoção para os três níveis de gestão, com os
+    filtros acima, usando os dados que já existem: liberações, atividades
+    postas no ar, progresso e conclusão por estudante. (3) Denominador
+    explícito: matriculados ativos na data, de modo que transferência e
+    desligamento não inflem nem zerem a taxa. (4) Indicador ``cadastrados
+    $\times$ com primeiro acesso $\times$ ativos no período''.
+  \item[Responsável] Produto + Engenharia \textit{[a definir]}.
+  \item[Homologação] \textit{[a definir]}.
+  \item[Aceite] Rede sintética com escolas de alta e baixa participação; o
+    painel deve mostrar os números esperados, por filtro, e apontar as de
+    baixa participação. Suíte e2e nova por papel de gestão.
+\end{campos}
+\end{resposta}
+
+% ---------------------------------------------------------------------------
+\section{V1-02 · Pré-visualização completa do professor}
+
+\begin{resposta}{V1-02}{Experimentar a missão antes da turma}{\naoimpl}
+\begin{campos}
+  \item[Existe] Nada que permita jogar a missão: hoje ela só abre para o
+    perfil estudante (T11). Existem a ficha, o guia e a revisão item a item
+    dos conteúdos gerados (P01, P04).
+  \item[Diferença] O recurso inteiro. Pontos que a implementação precisa
+    resolver: percorrer todas as etapas e ramificações com o conteúdo
+    aprovado; permitir avançar as etapas que, na aula, dependem de comando do
+    professor; voltar ao preparo para corrigir um item; e não gerar
+    participação, conclusão nem evidência.
+  \item[Proposta] Um modo \emph{Experimentar como estudante}, aberto a partir
+    da atividade, que roda a mesma missão com uma sessão marcada como
+    prévia, pertencente ao professor e fora da turma. As rotas de estudante
+    reconhecem a marca e não gravam progresso, conclusão, telemetria
+    pedagógica nem evidência (ou gravam num espaço separado que nenhum painel
+    lê). As etapas comandadas pelo professor ficam disponíveis num controle
+    da própria prévia. Um botão leva de volta ao preparo da atividade.
+  \item[Limitações] As 14 missões têm rotas próprias de estudante: o custo é
+    por missão, e a entrega pode ser escalonada pelas missões do primeiro
+    bimestre.
+  \item[Responsável] Produto + Engenharia \textit{[a definir]}.
+  \item[Homologação] \textit{[a definir]}.
+  \item[Aceite] Por missão: o professor percorre a prévia até o fim; depois,
+    painel da aula, painel de habilidades, relatórios e exportações da turma
+    continuam idênticos ao estado anterior (teste automatizado que compara os
+    números antes e depois).
+\end{campos}
+\end{resposta}
+
+% ---------------------------------------------------------------------------
+\section{V1-03 · Recomendações pedagógicas por IA}
+
+\begin{resposta}{V1-03}{Sugestões de intervenção}{\naoimpl}
+\begin{campos}
+  \item[Existe] As entradas já existem: resultado por habilidade na turma
+    (atingiu, em processo, não atingiu, não avaliado), os critérios por nível
+    de cada habilidade, o guia da aula (objetivos, rubricas, desdobramentos)
+    e a infraestrutura de IA com quota, guardrails e medição de custo. Não há
+    geração de recomendação (P08).
+  \item[Diferença] O recurso inteiro e o processo pedagógico em volta dele:
+    autoria e versionamento dos prompts pela Pedagogia, conjunto de
+    avaliação com casos aprovados por pedagogos, e regra de apresentação que
+    separe dado observado de sugestão.
+  \item[Proposta] Gerar, sob demanda do professor no painel de habilidades,
+    uma recomendação em formato fechado: \emph{o que os dados mostram}
+    (somente contagens e critérios, copiados do painel, nunca escritos pela
+    IA) e \emph{o que sugerimos} (intervenções ligadas a cada habilidade em
+    dificuldade, citando o código). Prompt e diretrizes ficam no servidor,
+    com versão gravada junto de cada recomendação. Nenhum dado nominal de
+    estudante vai ao modelo. Consome a quota do professor.
+  \item[Responsável] Pedagogia (prompts e casos de avaliação) + IA
+    \textit{[a definir]}.
+  \item[Homologação] \textit{[a definir]}.
+  \item[Aceite] Conjunto de casos de turma sintética revisado por pedagogos,
+    com critérios de aprovação (pertinência, ausência de afirmação sem
+    suporte nos dados, adequação à série) e taxa mínima acordada; a
+    recomendação nunca afirma número que não esteja no painel.
+\end{campos}
+\end{resposta}
+
+% ---------------------------------------------------------------------------
+\section{V1-04 · Recomendações considerando a contextualização}
+
+\begin{resposta}{V1-04}{Tema do setup na recomendação}{\naoimpl}
+\begin{campos}
+  \item[Existe] O tema, os tópicos e o componente curricular informados pelo
+    professor ao criar a atividade já ficam gravados nela (P02), assim como
+    a atividade de onde veio cada resultado.
+  \item[Diferença] Depende de V1-03. Falta levar esses campos à geração da
+    recomendação, por atividade.
+  \item[Proposta] A recomendação de V1-03 recebe, além dos resultados, o
+    componente, o tema e os tópicos da atividade, e propõe intervenções no
+    contexto escolhido (no exemplo, desinformação aplicada a ``vacinas'' em
+    Ciências), sem alterar habilidade nem critério.
+  \item[Responsável] Pedagogia + IA \textit{[a definir]}.
+  \item[Homologação] \textit{[a definir]}, junto de V1-03.
+  \item[Aceite] Para a mesma turma sintética com dois temas diferentes, as
+    recomendações mudam de contexto e mantêm as mesmas habilidades e os
+    mesmos números.
+\end{campos}
+\end{resposta}
+
+% ---------------------------------------------------------------------------
+\section{V1-05 · Revisão docente da avaliação}
+
+\begin{resposta}{V1-05}{O professor tem a decisão final}{\implementado}
+\begin{campos}
+  \item[Existe] O professor que leciona na turma ajusta o nível de qualquer
+    habilidade de um ou de vários estudantes, por atividade e rodada, a
+    qualquer momento, inclusive com a missão encerrada, e pode marcar ``não
+    participou''. O ajuste passa a ser a origem ``professor'' e nada o
+    sobrescreve depois. Também confirma, para a turma, níveis projetados.
+    Gestores só leem.
+  \item[Diferença] O Mapa de Produto marca a história como parcial porque
+    falta o teste e2e do ajuste em lote e do histórico (H14.4.2). Ressalva:
+    \emph{zerar a turma} apaga também o ajuste vigente (\adrr{ADR-155});
+    o evento do ajuste continua no histórico (V1-06).
+  \item[Responsável] Produto + Pedagogia \textit{[a definir]}.
+  \item[Homologação] Pronto para demonstração; falta o teste citado.
+  \item[Aceite] Em homologação: o professor ajusta um nível; o painel de
+    habilidades, o perfil do estudante e os relatórios passam a mostrar o
+    nível do professor.
+  \item[Evidência] \arq{apps/\B{}api/\B{}src/\B{}evidencias/\B{}evidencias-professor.controller.ts};
+    \arq{apps/\B{}hub/\B{}components/\B{}evidencias/\B{}ajustar-selecionados.tsx}.
+\end{campos}
+\end{resposta}
+
+% ---------------------------------------------------------------------------
+\section{V1-06 · Justificativa e auditoria obrigatórias}
+
+\begin{resposta}{V1-06}{Trilha da revisão}{\parcial}
+\begin{campos}
+  \item[Existe] Cada ajuste gera um evento permanente com o valor original,
+    o valor novo, o autor e a data e hora; o banco só aceita inclusão (a
+    alteração é recusada e o serviço não tem permissão de apagar), e o
+    histórico sobrevive a \emph{zerar a turma}. Há um motivo por lista
+    (presente sem participar, problema técnico, legenda revisada, outro).
+  \item[Diferença] (1) O motivo é \textbf{opcional} (a tela oferece ``sem
+    motivo'') e não há texto livre de justificativa. (2) \textbf{Nenhuma tela
+    ou rota consulta o histórico}: hoje ele só é lido no banco. (3) Não há
+    exportação da trilha.
+  \item[Proposta] Tornar o motivo obrigatório, com texto livre obrigatório
+    quando ``outro''; mostrar, por estudante e habilidade, o histórico
+    completo (original, cada alteração, autor, data e justificativa) ao
+    professor e à coordenação; exportação da trilha para a gestão.
+  \item[Responsável] Produto + Engenharia/Segurança \textit{[a definir]}.
+  \item[Homologação] \textit{[a definir]}.
+  \item[Aceite] Ajuste sem justificativa é recusado; após três ajustes
+    sucessivos, o histórico mostra o resultado original e as três alterações
+    com autor, data e motivo; tentativa de alterar ou apagar o histórico
+    direto no banco com o usuário da aplicação é recusada.
+\end{campos}
+\end{resposta}
