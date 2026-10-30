@@ -2,7 +2,7 @@
  * O ESQUELETO fixo da exp03ef1b — o que não é gerado pela IA nem editado pela
  * professora (spec §0.5): a ESTRUTURA das três reportagens (suportes, fichas,
  * lugar), os cartões K1–K6 com o gabarito, as fichas-teste da rotina (E5), o
- * caso Festival de Ciências (E6), o Desafio Extra, o roteiro de mediação e os
+ * caso Festival de Ciências (E6), o roteiro de mediação e os
  * PROMPTS das imagens. O texto das três reportagens do banco padrão mora em
  * `banco-padrao.ts`.
  *
@@ -198,35 +198,6 @@ export const FERRAMENTAS: readonly { id: FerramentaDoCaso; rotulo: string; retor
     { id: "fontes", rotulo: "Comparar fontes", retorno: "Nenhuma outra fonte encontrada na redação.", aviso: null },
   ];
 
-// --------------------------------------------- o Desafio Extra
-
-export type FichaExtra = { chave: ChaveDaCenaFixa; manchete: string; ficha: Ficha; imagem: ImagemDescrita };
-
-/**
- * As duas fichas do Desafio Extra (01e §5), SÓ LEITURA no fim (E6-ALU-03):
- * nada se grava. A 1 tem o lugar inconsistente com a foto; a 2, o Quando vazio.
- */
-export const DESAFIO_EXTRA: readonly FichaExtra[] = [
-  {
-    chave: "extra-1",
-    manchete: "Campeonato de Pira",
-    ficha: { quem: "estudantes", onde: "biblioteca", quando: "quarta" },
-    imagem: {
-      descricao: "Crianças brincando de pega-pega no gramado ensolarado do pátio escolar.",
-      alt: "Crianças brincam de pega-pega no gramado do pátio.",
-    },
-  },
-  {
-    chave: "extra-2",
-    manchete: "Teatro de Fantoches",
-    ficha: { quem: "estudantes", onde: "biblioteca", quando: null },
-    imagem: {
-      descricao: "Fantoches de meia num pequeno palco montado na biblioteca da escola, com um cartaz de terça-feira ao lado.",
-      alt: "Fantoches de meia num palco da biblioteca; ao lado, um cartaz de terça-feira.",
-    },
-  },
-];
-
 // --------------------------------------------- a mediação (professora)
 
 /** O roteiro de debate (sheet, "Strings do professor" §3), na íntegra, com o cuidado de cada pergunta. */
@@ -253,7 +224,7 @@ export const ROTEIRO_DE_MEDIACAO: readonly { pergunta: string; cuidado: string }
 
 /** Os gatilhos de condução, um por momento (sheet §2), com "escolha" no lugar de "aposta" (spec §7.1). */
 export const GATILHOS_DE_CONDUCAO: readonly string[] = [
-  "Verifique se todas as duplas clicaram no cadeado 'Travar Escolha' antes de autorizar o uso do filtro.",
+  "Verifique se todas as telas mostram a escolha travada no cadeado 'Travar Escolha' antes de autorizar o uso do filtro.",
   "A notícia do telão desapareceu: congele a sala no botão 'Pausar Turma' e faça a provocação coletiva antes de liberar a Etapa 4.",
   "Clique em 'Liberar Inspeção' para abrir as fichas técnicas nas telas dos estudantes.",
 ];
@@ -304,12 +275,10 @@ export function promptDaImagem(chave: ChaveDaImagem, conteudo: ConteudoDoPacote)
     .join(" ");
 }
 
-/** As cenas FIXAS do banco (o caso novo e o Desafio Extra), geradas uma vez pelo `admin`. */
+/** As cenas FIXAS do banco (o caso novo), geradas uma vez pelo `admin`. O Desafio Extra saiu (ADR-201). */
 export const DESCRICAO_DA_CENA_FIXA: Readonly<Record<ChaveDaCenaFixa, ImagemDescrita>> = {
   "caso-a": MATERIAS_DO_CASO[0]!.imagem,
   "caso-b": MATERIAS_DO_CASO[1]!.imagem,
-  "extra-1": DESAFIO_EXTRA[0]!.imagem,
-  "extra-2": DESAFIO_EXTRA[1]!.imagem,
 };
 
 export function promptDaCenaFixa(chave: ChaveDaCenaFixa): string {

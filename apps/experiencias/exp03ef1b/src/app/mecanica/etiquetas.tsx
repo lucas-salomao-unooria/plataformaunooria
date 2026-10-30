@@ -2,6 +2,7 @@ import { Card, PuzzleBlock } from "@edu/ui/ds";
 import type { ReactNode } from "react";
 import type { Campo } from "../../lib/tipos";
 import { E4 } from "../../lib/textos";
+import type { Arrastavel } from "../comum/arrastar";
 import { Icone } from "../comum/icone";
 
 export interface EtiquetaNaBandeja {
@@ -14,7 +15,8 @@ export interface EtiquetaNaBandeja {
 /**
  * A bandeja de etiquetas do reparo (E4-ALU-03): 📍 Pátio, 👤 estudantes,
  * 📅 sexta. TOQUE SEQUENCIAL: tocar a etiqueta a ESCOLHE (`selected` do
- * `PuzzleBlock`), tocar um campo da ficha a solta lá. A posicionada fica na
+ * `PuzzleBlock`), tocar um campo da ficha a solta lá — ou ARRASTE até o campo
+ * (ADR-201). A posicionada fica na
  * bandeja apagada ("Pátio (posicionada)") e ainda pode ser escolhida de novo
  * para trocar de campo. Só `@edu/ui/ds`.
  */
@@ -22,17 +24,19 @@ export function BandejaDeEtiquetas({
   etiquetas,
   escolhida,
   aoEscolher,
+  arrastavel,
   status,
   acoes,
 }: {
   etiquetas: readonly EtiquetaNaBandeja[];
   escolhida: string | null;
   aoEscolher: (id: string) => void;
+  arrastavel?: Arrastavel;
   status: string;
   acoes: ReactNode;
 }) {
   return (
-    <Card variant="outlined" className="etiquetas">
+    <Card variant="outlined" className="etiquetas" data-soltar="bandeja">
       <h2 className="rotulo-de-secao">{E4.etiquetas}</h2>
       <ul className="etiquetas__lista">
         {etiquetas.map((e) => (
@@ -47,6 +51,7 @@ export function BandejaDeEtiquetas({
               state="idle"
               selected={escolhida === e.id}
               onClick={() => aoEscolher(e.id)}
+              {...arrastavel?.(e.id)}
             />
           </li>
         ))}

@@ -207,7 +207,7 @@ const NOS: Record<string, NoDaTrilha> = {
   "/unooria/recursos": { rotulo: "Recursos" },
   // As imagens do banco padrão do Júri Estadual (exp06ef1b): gerar as que faltam.
   "/unooria/recursos/imagens-do-juri": { rotulo: "Imagens do banco padrão do Júri" },
-  // As imagens do banco padrão da Nina (exp03ef1b, ADR-199): as quatro da feira e as quatro cenas fixas.
+  // As imagens do banco padrão da Nina (exp03ef1b, ADR-199): as quatro da feira e as duas cenas fixas.
   "/unooria/recursos/imagens-da-nina": { rotulo: "Imagens do banco padrão da Nina" },
   // A quota diária de IA por perfil (ADR-105).
   "/unooria/uso-de-ia": { rotulo: "Uso de IA" },

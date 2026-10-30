@@ -57,6 +57,7 @@ import {
   textoDaFicha,
   textoDoProgressoDoBanco,
   textosDasEscolhas,
+  progressoDaAula,
   todosConcluiram,
   type ConteudoDoPacote,
   type LinhaDoPainel,
@@ -173,7 +174,7 @@ describe("as imagens do banco padrão (a tela do admin)", () => {
   test("o progresso em frase, e as falhas que ainda não saíram", () => {
     expect(textoDoProgressoDoBanco({ total: 8, prontas: 3 })).toBe("3 de 8 imagens do banco prontas.");
     expect(textoDoProgressoDoBanco({ total: 8, prontas: 8 })).toBe("As 8 imagens do banco estão prontas.");
-    expect(falhasAcumuladas(["telao"], { falharam: ["extra-2", "mural"], imagens: { telao: "u" } })).toEqual(["mural", "extra-2"]);
+    expect(falhasAcumuladas(["telao"], { falharam: ["caso-b", "mural"], imagens: { telao: "u" } })).toEqual(["mural", "caso-b"]);
   });
 });
 
@@ -379,20 +380,31 @@ describe("o painel", () => {
   });
 
   test("as escolhas da Etapa 2, só agregadas", () => {
-    expect(textosDasEscolhas({ travadas: 0, uma: 0, duas: 0, tres: 0, deFora: {} }, true).valor).toBe(
-      "Nenhuma escolha travada",
-    );
+    /* O valor é curto: a frase no corpo grande do MetricCard estourava o cartão. */
+    expect(textosDasEscolhas({ travadas: 0, uma: 0, duas: 0, tres: 0, deFora: {} }, true).valor).toBe("—");
     const t = textosDasEscolhas({ travadas: 4, uma: 1, duas: 1, tres: 2, deFora: { telao: 2 } }, true);
-    expect(t.valor).toBe("50% escolheram as 3 (4 travadas)");
-    expect(t.linhas[0]).toBe("2 equipes escolheram 3 notícias; 1 equipe, 2 notícias; 1 equipe, 1 notícia.");
-    expect(t.linhas[1]).toBe("Ficou de fora da caixa: Telão do Corredor (2).");
+    expect(t.valor).toBe("50%");
+    expect(t.linhas[0]).toBe("escolheram as 3 notícias, de 4 escolhas travadas.");
+    expect(t.linhas[1]).toBe("2 equipes escolheram 3 notícias; 1 equipe, 2 notícias; 1 equipe, 1 notícia.");
+    expect(t.linhas[2]).toBe("Ficou de fora da caixa: Telão do Corredor (2).");
+  });
+
+  test("o progresso da aula: quatro números, na ordem dos portões", () => {
+    const p = painel([linha("Ana", "galeria"), linha("Bia", "filtro"), linha("Caio", "omissao"), linha("Duda", "fim")], {});
+    p.resumo.escolhas.travadas = 3;
+    expect(progressoDaAula(p).map((c) => [c.titulo, c.valor])).toEqual([
+      ["Entraram", "4/4"],
+      ["Travaram a escolha", "3/4"],
+      ["Viram a notícia sumir", "2/4"],
+      ["Concluíram", "1/4"],
+    ]);
   });
 
   test("os alertas da sala", () => {
     expect(alertasDaSala({ semParada: 0, uniformes: 0 })).toEqual([]);
     expect(alertasDaSala({ semParada: 2, uniformes: 1 })).toEqual([
-      "Alerta: equipe em repetição sem parada. (2)",
-      "Alerta: carimbos uniformes na equipe. (1)",
+      "Alerta: rotina em repetição sem parada. (2)",
+      "Alerta: carimbos todos iguais. (1)",
     ]);
   });
 

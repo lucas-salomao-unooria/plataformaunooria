@@ -11,6 +11,11 @@ import type { FalaDoPodcast, FalasDoTema, PedidoDeVoz, TrechoDoRoteiro, VagaDoTe
  * "que vocês tiveram que redigir": o compositor tem três interruptores e
  * ninguém redige texto). As rubricas de trilha não são fala: vão na DIREÇÃO.
  *
+ * Na 1.0.1 (29/10, pedido do Lucas) saíram os termos em inglês ("bot",
+ * "feed", "posts") e os meses: o período é do pacote (a IA escreve semanas,
+ * bimestres…), e o podcast fixo que dizia "quarto mês" desmentia a tabela.
+ * O nome do trecho é o hash do texto: o áudio novo é gerado na próxima vez.
+ *
  * FIXO (sem vaga, sem IA, sem edição do professor) e SÓ DO PROFESSOR
  * (decisão 1 do Lucas, como a exp02em1b, ADR-194/196): a tela do estudante
  * não menciona o podcast; o episódio é tocado em aula.
@@ -46,17 +51,17 @@ const FALAS: Record<(typeof BLOCOS_DO_PODCAST)[number], readonly FalaDoPodcast[]
     {
       falante: "Alex",
       texto:
-        "Exatamente, Sam. Vocês assumiram a missão como Porta-Vozes de Dados da escola. No chat privado, o Assistente de Dados entregou aquela tabela: o indicador começou em noventa e cinco por cento no primeiro mês e caiu para oitenta e oito por cento no quarto mês. Sete pontos percentuais de queda.",
+        "Exatamente, Sam. Vocês assumiram a missão como Porta-Vozes de Dados da escola. No chat privado, o Assistente de Dados entregou aquela tabela: o indicador começou em noventa e cinco por cento no primeiro período e caiu para oitenta e oito por cento no quarto período. Sete pontos percentuais de queda.",
     },
     {
       falante: "Sam",
       texto:
-        "E aí bateu a primeira grande escolha. O bot te dava duas opções de visualização para gerar. Na primeira opção, o eixo vertical começava no zero. As colunas ficavam altas, quase idênticas, e aquela queda de sete pontos parecia um detalhe insignificante na tela. Na segunda opção, o eixo começava cortado lá em cima, nos oitenta por cento. E aí, de repente, a coluna encolheu quase pela metade!",
+        "E aí bateu a primeira grande escolha. O assistente te dava duas opções de visualização para gerar. Na primeira opção, o eixo vertical começava no zero. As colunas ficavam altas, quase idênticas, e aquela queda de sete pontos parecia um detalhe insignificante na tela. Na segunda opção, o eixo começava cortado lá em cima, nos oitenta por cento. E aí, de repente, a coluna encolheu quase pela metade!",
     },
     {
       falante: "Alex",
       texto:
-        "E o mais louco foi ver o grupo da cidade pegando fogo depois que você apertou encaminhar. Só que logo em seguida veio o choque: a Escola Santos Dumont postou no mesmo feed o gráfico com a escala inversa à sua. Quem olhava os dois posts ficava tonto: afinal, o serviço público estava seguro ou em crise terminal?",
+        "E o mais louco foi ver o grupo da cidade pegando fogo depois que você apertou encaminhar. Só que logo em seguida veio o choque: a Escola Santos Dumont publicou no mesmo grupo o gráfico com a escala inversa à sua. Quem olhava as duas publicações ficava tonto: afinal, o serviço público estava seguro ou em crise terminal?",
     },
   ],
   revelacao: [
@@ -89,7 +94,7 @@ const FALAS: Record<(typeof BLOCOS_DO_PODCAST)[number], readonly FalaDoPodcast[]
     },
     {
       falante: "Alex",
-      texto: "O que você faz a partir de hoje quando abrir um feed e vir um gráfico mostrando uma curva subindo ou descendo como uma montanha-russa?",
+      texto: "O que você faz a partir de hoje quando abrir uma rede social e vir um gráfico mostrando uma curva subindo ou descendo como uma montanha-russa?",
     },
     {
       falante: "Sam",

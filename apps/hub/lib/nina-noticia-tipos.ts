@@ -149,23 +149,22 @@ export const ROTULO_DA_IMAGEM: Record<ChaveDaImagem, string> = {
 };
 
 /**
- * As CENAS FIXAS do banco (o caso novo e o Desafio Extra): iguais para todas
+ * As CENAS FIXAS do banco (as duas do caso novo; o Desafio Extra saiu na
+ * ADR-201): iguais para todas
  * as turmas, geradas na conta da plataforma — na tela do `admin`
  * (`/unooria/recursos/imagens-da-nina`) ou, a que faltar, no preparo da
  * primeira professora (ADR-199). A professora não as vê nem as refaz.
  */
-export const CHAVES_DAS_CENAS_FIXAS = ["caso-a", "caso-b", "extra-1", "extra-2"] as const;
+export const CHAVES_DAS_CENAS_FIXAS = ["caso-a", "caso-b"] as const;
 export type ChaveDaCenaFixa = (typeof CHAVES_DAS_CENAS_FIXAS)[number];
 
 /** O rótulo de cada cena fixa — pela POSIÇÃO na missão, sem o conteúdo do banco (que mora só na api). */
 export const ROTULO_DA_CENA_FIXA: Record<ChaveDaCenaFixa, string> = {
   "caso-a": "Caso novo · 1ª matéria",
   "caso-b": "Caso novo · 2ª matéria",
-  "extra-1": "Desafio Extra · 1ª ficha",
-  "extra-2": "Desafio Extra · 2ª ficha",
 };
 
-/** As oito do banco padrão, na ordem da api (`banco-padrao-imagens.service.ts#itensDoBanco`). */
+/** As seis do banco padrão, na ordem da api (`banco-padrao-imagens.service.ts#itensDoBanco`). */
 export const CHAVES_DO_BANCO = [...CHAVES_DAS_IMAGENS, ...CHAVES_DAS_CENAS_FIXAS] as const;
 export type ChaveDoBanco = (typeof CHAVES_DO_BANCO)[number];
 
@@ -213,7 +212,7 @@ export const ROTEIRO_DE_MEDIACAO: readonly { pergunta: string; cuidado: string }
 
 /** Os gatilhos de condução, um por momento (sheet §2, com "escolha" no lugar de "aposta"). */
 export const GATILHOS_DE_CONDUCAO = [
-  "Verifique se todas as duplas clicaram no cadeado 'Travar Escolha' antes de autorizar o uso do filtro.",
+  "Verifique se todas as telas mostram a escolha travada no cadeado 'Travar Escolha' antes de autorizar o uso do filtro.",
   "A notícia do telão desapareceu: congele a sala no botão 'Pausar Turma' e faça a provocação coletiva antes de liberar a Etapa 4.",
   "Clique em 'Liberar Inspeção' para abrir as fichas técnicas nas telas dos estudantes.",
 ] as const;
@@ -524,8 +523,8 @@ export const COPY_DO_PREPARO = {
 /** As dicas do carrossel de espera (E0-PROF-03), com "escolha" no lugar de "aposta". */
 export const DICAS_DA_ESPERA = [
   "No 3º ano, a mediação oral é fundamental: leia em voz alta as instruções e acompanhe o momento da omissão no filtro.",
-  "Atenção ao momento da descoberta: certifique-se de que as equipes travaram o cadeado antes de verem a barra de busca.",
-  "Na etapa da rotina, incentive as duplas a pensarem em quando o computador deve parar de conferir as fichas.",
+  "Atenção ao momento da descoberta: certifique-se de que todas as telas travaram o cadeado antes de verem a barra de busca.",
+  "Na etapa da rotina, incentive a turma a pensar em quando o computador deve parar de conferir as fichas.",
 ] as const;
 
 /** Os parâmetros como a tela os segura: tudo texto, `disciplina` vazia até escolher. */
@@ -608,7 +607,7 @@ export function continuarGerando(p: { completo: boolean; geradas: readonly strin
 /** `GET`/`POST /nina-noticia/banco-padrao/imagens` — só `admin` (a tela `/unooria/recursos/imagens-da-nina`). */
 export const CAMINHO_DAS_IMAGENS_DO_BANCO = "/nina-noticia/banco-padrao/imagens";
 
-/** As oito imagens do banco: quantas existem, quais faltam e as URLs. O storage é o registro. */
+/** As seis imagens do banco: quantas existem, quais faltam e as URLs. O storage é o registro. */
 export interface ImagensDoBancoPadrao {
   total: number;
   prontas: number;
@@ -653,9 +652,9 @@ export function rotuloDoBotao(proxima: EtapaDaTurma | null): string | null {
 
 /** Onde a turma está, em uma linha. Nenhum diz "aposta". */
 export const ROTULO_DA_ETAPA: Record<EtapaDaTurma, string> = {
-  aposta: "Etapas 1 e 2 — cada equipe olha as fotos da feira e trava a sua escolha",
+  aposta: "Etapas 1 e 2 — a turma olha as fotos da feira e trava a escolha",
   filtro: "Filtro liberado — a busca da Etapa 3 e a notícia que desaparece",
-  inspecao: "Inspeção liberada — da ficha ao fim, cada equipe no próprio ritmo",
+  inspecao: "Inspeção liberada — da ficha ao fim, cada computador no próprio ritmo",
 };
 
 /** O que o computador está vendo agora, em uma linha. Nunca diz se acertou. */
@@ -685,8 +684,8 @@ export const COPY_DO_PAINEL = {
   aproveite: "Aproveite este momento para conduzir o debate oral e ouvir as hipóteses das crianças.",
   escolhas: "Escolhas da Etapa 2",
   alertas: "Alertas da sala",
-  alertaSemParada: "Alerta: equipe em repetição sem parada.",
-  alertaUniformes: "Alerta: carimbos uniformes na equipe.",
+  alertaSemParada: "Alerta: rotina em repetição sem parada.",
+  alertaUniformes: "Alerta: carimbos todos iguais.",
   semAlertas: "Nenhum alerta crítico ativo",
   roteiro: "Roteiro de Mediação Oral da Professora",
   semConexao:
@@ -716,17 +715,43 @@ export function textosDasEscolhas(
   e: PainelDaTurma["resumo"]["escolhas"],
   porComputador: boolean,
 ): { valor: string; linhas: string[] } {
+  /* O valor é CURTO (um número): é ele que o `MetricCard` desenha em corpo
+     grande, e a frase inteira ali estourava o cartão. A frase vai na descrição. */
   if (e.travadas === 0) {
-    return { valor: "Nenhuma escolha travada", linhas: [] };
+    return { valor: "—", linhas: ["Nenhuma escolha travada ainda. Os números aparecem com a primeira."] };
   }
   const quantos = (n: number) => `${n} ${sujeito(porComputador, n)}`;
   const noticia = (n: number) => (n === 1 ? "1 notícia" : `${n} notícias`);
   const linhas = [
+    `escolheram as 3 notícias, de ${e.travadas} ${e.travadas === 1 ? "escolha travada" : "escolhas travadas"}.`,
     `${quantos(e.tres)} ${e.tres === 1 ? "escolheu" : "escolheram"} ${noticia(3)}; ${quantos(e.duas)}, ${noticia(2)}; ${quantos(e.uma)}, ${noticia(1)}.`,
   ];
   const fora = SUPORTES.filter((s) => (e.deFora[s] ?? 0) > 0).map((s) => `${ROTULO_DO_SUPORTE[s]} (${e.deFora[s]})`);
   if (fora.length > 0) linhas.push(`Ficou de fora da caixa: ${fora.join(", ")}.`);
-  return { valor: `${percentual(e.tres, e.travadas)}% escolheram as 3 (${e.travadas} travadas)`, linhas };
+  return { valor: `${percentual(e.tres, e.travadas)}%`, linhas };
+}
+
+/**
+ * Os quatro números da aula ao vivo, na ordem dos portões (o pedido do Lucas,
+ * 2026-10-29: seis cartões, um por etapa, espremiam o painel e não diziam o
+ * que o portão espera). Quantos ENTRARAM; quantos TRAVARAM a escolha — o que
+ * o "Liberar Filtro" espera; quantos já VIRAM A NOTÍCIA SUMIR — a conversa
+ * antes do "Liberar Inspeção"; e quantos CONCLUÍRAM. Onde cada um está, etapa
+ * a etapa, é a folha da turma.
+ */
+export function progressoDaAula(p: Pick<PainelDaTurma, "resumo" | "linhas">): { titulo: string; valor: string; descricao: string }[] {
+  const { total } = p.resumo;
+  const de = (n: number) => `${n}/${total}`;
+  return [
+    { titulo: "Entraram", valor: de(p.resumo.entraram), descricao: "Já abriram a missão." },
+    { titulo: "Travaram a escolha", valor: de(p.resumo.escolhas.travadas), descricao: "O que o Liberar Filtro espera." },
+    {
+      titulo: "Viram a notícia sumir",
+      valor: de(passaramDe(p.linhas, "filtro")),
+      descricao: "O momento de pausar e conversar, antes de Liberar Inspeção.",
+    },
+    { titulo: "Concluíram", valor: de(p.resumo.concluiram), descricao: "Chegaram ao Painel da Investigação." },
+  ];
 }
 
 /** Os alertas da sala, já em frase; vazio = "Nenhum alerta crítico ativo". */

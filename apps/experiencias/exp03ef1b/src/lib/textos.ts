@@ -233,11 +233,6 @@ export const E6 = {
     `Rotina condicional testada com parada exata (${testes === 1 ? "1 teste" : `${testes} testes`}).`,
   /** spec §1, literal */
   somenteLeitura: "Modo somente-leitura. Os dados foram salvos e travados para a professora.",
-  /** e6.botao.desafio_extra */
-  desafioExtra: "Desafio Extra",
-  /** ESCRITA AQUI */
-  desafioApoio: "Duas fichas para olhar com calma. Nada aqui é gravado.",
-  fechar: "Fechar",
 } as const;
 
 /** Os cartões-afirmação (perguntas da spec §1; a figura do `conteudo.ts` da api). Sem o certo. */

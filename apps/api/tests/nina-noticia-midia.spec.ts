@@ -314,7 +314,7 @@ describe("as imagens do pacote (a professora)", () => {
     expect(r).toMatchObject({ total: 4, prontas: 4, faltam: 0, completo: true, falharam: [] });
     expect(r.geradas.sort()).toEqual(["cartaz", "mural", "portal", "telao"]);
     expect(m.consumido()).toBe(4 * CUSTO_ESTIMADO_POR_IMAGEM);
-    expect(m.registradas.map(([c]) => c)).toEqual(expect.arrayContaining(["caso-a", "caso-b", "extra-1", "extra-2"]));
+    expect(m.registradas.map(([c]) => c)).toEqual(expect.arrayContaining(["caso-a", "caso-b"]));
     /* As cenas já estavam no storage: só os quatro pedidos do pacote foram ao provedor. */
     expect(m.prompts).toHaveLength(4);
     /* A resposta é só das quatro do pacote: o contrato da professora recusa outra chave. */
@@ -328,18 +328,18 @@ describe("as imagens do pacote (a professora)", () => {
     const [casoA] = itensDasCenasFixas();
     const m = montarMidia({ noStorage: new Set([casoA!.nome]) });
     await m.gerar();
-    expect(m.pedidosDeCena()).toHaveLength(3);
+    expect(m.pedidosDeCena()).toHaveLength(1);
     for (const pedido of m.pedidosDeCena()) expect(m.atribuicoes.get(pedido)).toEqual(ATRIBUICAO_DAS_IMAGENS_DO_BANCO);
     /* As quatro do pacote são da turma (o contexto da requisição), não da plataforma. */
     for (const item of itensDoPacote(m.conteudo)) expect(m.atribuicoes.get(item.prompt)).toBeUndefined();
     expect(m.consumido()).toBe(4 * CUSTO_ESTIMADO_POR_IMAGEM);
     const cenas = new Map(m.registradas.filter(([c]) => !["mural", "portal", "telao", "cartaz"].includes(c)));
-    expect([...cenas.keys()].sort()).toEqual(["caso-a", "caso-b", "extra-1", "extra-2"]);
+    expect([...cenas.keys()].sort()).toEqual(["caso-a", "caso-b"]);
     /* O arquivo é o do hash do pedido: o mesmo que o `admin` geraria. */
     for (const item of itensDasCenasFixas()) expect(cenas.get(item.chave)).toBe(`https://cdn/${item.nome}`);
     /* De novo: o pacote já as tem, nada vai ao provedor. */
     await m.gerar();
-    expect(m.pedidosDeCena()).toHaveLength(3);
+    expect(m.pedidosDeCena()).toHaveLength(1);
   });
 
   test("ADR-199: duas turmas no preparo ao mesmo tempo pagam CADA cena fixa uma vez; a próxima turma reaproveita pelo hash", async () => {
@@ -347,24 +347,24 @@ describe("as imagens do pacote (a professora)", () => {
     const a = montarMidia({ storage, pacoteId: PACOTE });
     const b = montarMidia({ storage, pacoteId: "1c2d3e4f-5061-4b7c-9d8e-0f1a2b3c4d5e" });
     await Promise.all([a.gerar(), b.gerar()]);
-    expect(a.pedidosDeCena().length + b.pedidosDeCena().length).toBe(4);
+    expect(a.pedidosDeCena().length + b.pedidosDeCena().length).toBe(2);
     const c = montarMidia({ storage, pacoteId: "2d3e4f50-6172-4c8d-8e9f-1a2b3c4d5e6f" });
     await c.gerar();
     expect(c.prompts).toHaveLength(0);
-    expect(c.registradas).toHaveLength(8);
+    expect(c.registradas).toHaveLength(6);
   });
 
   test("ADR-199: a professora SEM saldo recebe 429, e as cenas fixas (da plataforma) saem assim mesmo; a que falha não entra em `falharam`", async () => {
     const semSaldo = montarMidia({ saldo: false });
     expect(await codigoDe(semSaldo.gerar())).toBe("sem-saldo-de-ia");
-    expect(semSaldo.pedidosDeCena()).toHaveLength(4);
-    expect(semSaldo.registradas.map(([c]) => c).sort()).toEqual(["caso-a", "caso-b", "extra-1", "extra-2"]);
+    expect(semSaldo.pedidosDeCena()).toHaveLength(2);
+    expect(semSaldo.registradas.map(([c]) => c).sort()).toEqual(["caso-a", "caso-b"]);
     expect(semSaldo.consumido()).toBe(0);
 
-    const falha = montarMidia({ falhaEm: "Fantoches", noStorage: new Set(itensDoPacote(conteudoDoBancoPadrao()).map((i) => i.nome)) });
+    const falha = montarMidia({ falhaEm: "Outros alunos no mesmo pátio", noStorage: new Set(itensDoPacote(conteudoDoBancoPadrao()).map((i) => i.nome)) });
     const r = await falha.gerar();
     expect(r).toMatchObject({ completo: true, falharam: [] });
-    expect(falha.registradas.map(([c]) => c)).not.toContain("extra-2");
+    expect(falha.registradas.map(([c]) => c)).not.toContain("caso-b");
     /* A próxima chamada tenta de novo a que falhou — e só ela. */
     const antes = falha.pedidosDeCena().length;
     await falha.gerar();
@@ -449,18 +449,18 @@ describe("as imagens do banco padrão (só o admin)", () => {
     }
   });
 
-  test("as oito (pacote + cenas fixas), só as que faltam, idempotente — com o MESMO nome da customização", async () => {
+  test("as seis (pacote + cenas fixas), só as que faltam, idempotente — com o MESMO nome da customização", async () => {
     const [mural] = itensDoPacote(conteudoDoBancoPadrao());
     const m = montarBanco({ jaExistem: new Set([mural!.nome]) });
     const antes = ImagensDoBancoPadraoSchema.parse(await m.servico.progresso());
-    expect(antes).toMatchObject({ total: 8, prontas: 1, completo: false });
+    expect(antes).toMatchObject({ total: 6, prontas: 1, completo: false });
     expect(antes.faltam).not.toContain("mural");
     const r = GeracaoDoBancoPadraoSchema.parse(await m.servico.gerar());
-    expect(r).toMatchObject({ total: 8, prontas: 8, completo: true, falharam: [] });
-    expect(r.geradas).toEqual(["portal", "telao", "cartaz", "caso-a", "caso-b", "extra-1", "extra-2"]);
-    expect(m.pedidos).toHaveLength(7);
+    expect(r).toMatchObject({ total: 6, prontas: 6, completo: true, falharam: [] });
+    expect(r.geradas).toEqual(["portal", "telao", "cartaz", "caso-a", "caso-b"]);
+    expect(m.pedidos).toHaveLength(5);
     expect((await m.servico.gerar()).geradas).toEqual([]);
-    expect(m.pedidos).toHaveLength(7);
+    expect(m.pedidos).toHaveLength(5);
     expect(itensDoBanco().map((i) => i.nome)).toEqual(
       [...itensDoPacote(conteudoDoBancoPadrao()), ...itensDasCenasFixas()].map((i) => i.nome),
     );
@@ -468,10 +468,10 @@ describe("as imagens do banco padrão (só o admin)", () => {
   });
 
   test("medida no painel de custos com ATRIBUIÇÃO explícita (plataforma, admin, recurso do banco); a que falha é medida e volta em `falharam`", async () => {
-    const m = montarBanco({ falhaEm: "Fantoches" });
+    const m = montarBanco({ falhaEm: "Outros alunos no mesmo pátio" });
     const r = await m.servico.gerar();
-    expect(r.falharam).toEqual(["extra-2"]);
-    expect(m.consumos).toHaveLength(8);
+    expect(r.falharam).toEqual(["caso-b"]);
+    expect(m.consumos).toHaveLength(6);
     for (const uso of m.consumos) {
       expect(uso).toMatchObject({ operacao: "generateImage", modalidade: "imagem", imagens: uso.ok ? 1 : 0 });
       expect(uso.atribuicao).toEqual({ escolaId: null, perfil: "admin", recurso: RECURSO_DAS_IMAGENS_DO_BANCO });

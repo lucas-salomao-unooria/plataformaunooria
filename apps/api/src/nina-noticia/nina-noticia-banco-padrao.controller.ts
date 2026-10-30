@@ -23,7 +23,7 @@ export class NinaNoticiaBancoPadraoController {
   @Contrato({
     resumo: "As imagens do banco padrão: quantas existem, quais faltam e as URLs.",
     descricao:
-      "**Só `admin`.** Oito: as quatro do pacote da Feira de Troca de Livros (`mural`, `portal`, `telao`, `cartaz`) e as quatro cenas fixas (`caso-a`, `caso-b`, `extra-1`, `extra-2`). O nome do arquivo é o hash do pedido — o mesmo da customização. O storage é o registro.",
+      "**Só `admin`.** Seis: as quatro do pacote da Feira de Troca de Livros (`mural`, `portal`, `telao`, `cartaz`) e as duas cenas fixas do caso novo (`caso-a`, `caso-b`). O nome do arquivo é o hash do pedido — o mesmo da customização. O storage é o registro.",
     resposta: ImagensDoBancoPadraoSchema,
     notas: ["Professora e gestores respondem **403**."],
   })
@@ -36,7 +36,7 @@ export class NinaNoticiaBancoPadraoController {
   @Contrato({
     resumo: "Gera as imagens que faltam no banco padrão — incremental e idempotente.",
     descricao:
-      "**Só `admin`.** Até oito por chamada, quatro de cada vez. O que já existe não é gerado de novo; duas chamadas simultâneas recebem o mesmo trabalho. **Custo da plataforma**: sem quota de professor, medido no painel de custos no recurso `nina-noticia-banco-padrao`, perfil `admin`, sem escola.",
+      "**Só `admin`.** Até seis por chamada, quatro de cada vez. O que já existe não é gerado de novo; duas chamadas simultâneas recebem o mesmo trabalho. **Custo da plataforma**: sem quota de professor, medido no painel de custos no recurso `nina-noticia-banco-padrao`, perfil `admin`, sem escola.",
     resposta: GeracaoDoBancoPadraoSchema,
     notas: ["Professora e gestores respondem **403**.", "Rate limit: 20 chamadas por minuto, depois **429** `muitas-requisicoes`."],
   })

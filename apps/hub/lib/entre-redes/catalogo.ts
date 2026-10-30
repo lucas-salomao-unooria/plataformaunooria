@@ -254,7 +254,7 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
     "O Bento, que cuida do jornal da escola, recebe oito notícias de meios diferentes para uma " +
     "capa de três vagas. Cada computador escolhe as suas e publica a 1ª edição; quando você libera " +
     "o resultado, os leitores reagem ao que foi publicado. Depois da conversa com a turma, você " +
-    "libera a revisão: cada dupla monta a sua Chave do Editor, revisa a capa, publica a 2ª edição, " +
+    "libera a revisão: cada computador monta a sua Chave do Editor, revisa a capa, publica a 2ª edição, " +
     "testa a Chave em duas matérias novas e decide o que fazer com uma mensagem urgente.",
   status: "disponivel",
   // Sem spoiler: é o desafio do PDF (§4), palavra por palavra. A missão mede o
@@ -312,7 +312,7 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
         rotulo: "5 — A Chave e a revisão (o seu segundo botão)",
         texto:
           "Liberar revisão — na mesma aula ou no começo da segunda — traz o Bento de volta com seis " +
-          "blocos: fonte, data, autoria e três armadilhas. Cada dupla monta a sua Chave do Editor, uma " +
+          "blocos: fonte, data, autoria e três armadilhas. Cada computador monta a sua Chave do Editor, uma " +
           "vez só e sem correção: três blocos, quando cada pista passa ou falha, Não publico ou Olho a " +
           "próxima pista, e se vale para todas as notícias ou só para a primeira. Depois, cada vaga da " +
           "1ª edição ganha um marcador, a turma troca o que não tinha evidência, publica a 2ª edição e " +
@@ -321,7 +321,7 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
       {
         rotulo: "6 — O teste da Chave e a mensagem nova",
         texto:
-          "A dupla aplica a própria Chave a duas matérias novas, sem imagem, e depois todos recebem a " +
+          "Cada computador aplica a própria Chave a duas matérias novas, sem imagem, e depois todos recebem a " +
           "mesma regra de referência. Por fim, numa tela limpa, chega uma mensagem urgente sobre um " +
           "corte de água, com Repassar à mão desde o começo. A tela não diz a ninguém se acertou: o " +
           "nível de cada um fica no painel de habilidades, só para você.",
@@ -338,8 +338,8 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
         "artificial chega à turma sem o seu clique em Aprovar Pacote.",
       "Depois de aprovar, gere as imagens no mesmo lugar: elas saem duas por vez. Notícia sem " +
         "imagem aparece desenhada pelo meio, e a missão roda igual.",
-      "Se a turma divide computadores, monte as equipes aqui na ficha, em Equipes desta turma — " +
-        "duplas é o arranjo recomendado. O painel conta por computador.",
+      "Se a turma divide computadores, monte as equipes aqui na ficha, em Equipes desta turma " +
+        "(de 1 a 4 crianças por computador). O painel conta por computador.",
       "Durante a aula são dois botões, na ordem — Liberar resultado e Liberar revisão —, e " +
         "nenhum volta. Em duas aulas, a pausa é entre os dois. Deixe o projetor pronto para o " +
         "gráfico da turma.",
@@ -1299,7 +1299,7 @@ export const MISSAO_ASSISTENTE_INVISIVEL: Missao = {
  *
  * Do one-pager pedagógico aprovado e da spec da frente, com os ajustes do PO de
  * 27 e 28/10 ("escolha" no lugar de "aposta" em toda tela; o reparo monta a
- * ficha inteira). A dupla olha três reportagens da mesma feira no Unoojornal,
+ * ficha inteira). A turma olha três reportagens da mesma feira no Unoojornal,
  * trava a escolha das que a busca pelo pátio vai achar, vê a do telão sumir e
  * descobre, na ficha, o campo Onde vazio. Dois portões da professora (Liberar
  * Filtro, Liberar Inspeção), Pausar/Retomar e Zerar; sem Canal B e sem podcast.
@@ -1312,9 +1312,9 @@ export const MISSAO_NINA_NOTICIA: Missao = {
   titulo: "Nina e a Notícia que Desapareceu",
   resumo:
     "A feira de livros da escola saiu em três suportes do Unoojornal — o mural impresso, o portal e o telão do " +
-    "corredor —, e as três fotos mostram o pátio. A dupla trava a escolha das notícias que a busca pelo pátio vai " +
+    "corredor —, e as três fotos mostram o pátio. A turma trava a escolha das notícias que a busca pelo pátio vai " +
     "encontrar, aplica o filtro e vê a do telão sumir. Na ficha da reportagem, o campo Onde está vazio: a busca " +
-    "consulta a ficha, não a foto. A dupla carimba afirmações (é verdade, não é verdade, não dá para saber), monta " +
+    "consulta a ficha, não a foto. A turma carimba afirmações (é verdade, não é verdade, não dá para saber), monta " +
     "a ficha do telão, organiza a rotina que confere uma pilha de fichas e investiga um caso novo.",
   status: "disponivel",
   // Sem spoiler: a criança não pode saber antes que uma notícia vai sumir da busca.
@@ -1329,46 +1329,46 @@ export const MISSAO_NINA_NOTICIA: Missao = {
       "EF03CO02 (a rotina com repetição e condição de parada) e EF03CO03 (decompor a ficha campo a campo).",
     duracao: "1 aula de 50 min (22 min em tela) — ou 2 aulas, com a pausa depois do filtro",
     formato:
-      "Em duplas, um computador para cada duas crianças (de 1 a 4), no Unoojornal, o jornal escolar digital da " +
+      "Individual, em duplas ou em equipes (de 1 a 4 crianças por computador), no Unoojornal, o jornal escolar digital da " +
       "Unooria. Sem texto para escrever: tudo é toque nas fotos, nas pastilhas do filtro, nos carimbos e nas " +
       "etiquetas.",
     atos: [
       {
         rotulo: "1 — Desafiar: as três fotos da feira",
         texto:
-          "A Nina pede ajuda para encontrar as notícias da feira. A dupla abre as três fotos — mural, portal e telão — " +
+          "A Nina pede ajuda para encontrar as notícias da feira. A turma abre as três fotos — mural, portal e telão — " +
           "e toca no cartaz da feira, que se repete em todas: cada cartão ganha o selo Mesma feira.",
       },
       {
         rotulo: "2 — Navegar: a escolha travada",
         texto:
-          "A dupla põe na Caixa de resultados esperados as notícias que acha que a busca pelo pátio vai encontrar e " +
+          "Cada computador põe na Caixa de resultados esperados as notícias que acha que a busca pelo pátio vai encontrar e " +
           "toca em Travar Escolha. A escolha não volta, e a tela espera o seu Liberar Filtro.",
       },
       {
         rotulo: "3 — Decidir: o filtro e a notícia que some (o seu primeiro portão)",
         texto:
-          "Com o filtro liberado, a dupla escolhe Onde: Pátio e busca. Aparecem só 2 notícias; a do telão deixa a " +
+          "Com o filtro liberado, a turma escolhe Onde: Pátio e busca. Aparecem só 2 notícias; a do telão deixa a " +
           "moldura vazia. Quem confrontou espera com a tela Momento de conversar com a turma! — a hora de Pausar " +
           "Turma e perguntar por que a foto não apareceu, se todo mundo viu o pátio nela.",
       },
       {
         rotulo: "4 — Resultado: a ficha (o seu segundo portão)",
         texto:
-          "Depois de Liberar Inspeção, a dupla abre a ficha do telão e vê o campo Onde vazio. Carimba três cartões, " +
+          "Depois de Liberar Inspeção, a turma abre a ficha do telão e vê o campo Onde vazio. Carimba três cartões, " +
           "monta a ficha com as três etiquetas e toca em Concluir: com o Pátio no Onde, a busca refeita traz as 3 " +
           "notícias; em outro campo, a tela explica como ficariam as 3. Nunca há tentar de novo.",
       },
       {
         rotulo: "5 — Explicar: a rotina da pilha de fichas",
         texto:
-          "Chega uma pilha de fichas novas. A dupla organiza os blocos embaralhados — ENQUANTO houver ficha, pegar, " +
+          "Chega uma pilha de fichas novas. A turma organiza os blocos embaralhados — ENQUANTO houver ficha, pegar, " +
           "SE o Onde tem ícone marcar ok, SENÃO marcar revisar — e testa: a pilha vai de 3 a 0 e a máquina para.",
       },
       {
         rotulo: "6 — Refletir: o caso do Festival de Ciências",
         texto:
-          "Duas fotos do Festival com uma ficha sem o dia: a dupla investiga com três ferramentas, carimba três " +
+          "Duas fotos do Festival com uma ficha sem o dia: a turma investiga com três ferramentas, carimba três " +
           "afirmações e chega ao Painel da Investigação, que fica congelado para você.",
       },
     ],
@@ -1377,7 +1377,7 @@ export const MISSAO_NINA_NOTICIA: Missao = {
       "Libere a atividade para a turma: ela entra em andamento e a missão fica liberada na sala de aula.",
       "Deixe a página da atividade aberta na aba Aula ao vivo: Liberar Filtro, Liberar Inspeção, Pausar Turma e Retomar Turma são seus.",
       "Não conte que uma notícia vai sumir da busca: a força da descoberta vem da escolha travada antes do filtro.",
-      "Combine as duplas: uma criança toca na tela e a outra aponta as pistas nas fotos.",
+      "Se houver equipes, combine os papéis: uma criança toca na tela e as outras apontam as pistas nas fotos.",
     ],
   },
 };

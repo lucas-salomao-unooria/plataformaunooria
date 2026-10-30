@@ -8,6 +8,9 @@ import { GraficoDoBoletim } from "./GraficoDoBoletim";
 import { BarraDoAparelho, ChipDaCota, GuardaDoGrafico, useHoraDeAgora } from "./Pecas";
 import { TabelaDoBoletim, descricaoDaTabela } from "./TabelaDoBoletim";
 
+/** O que já estava na conversa quando o lembrete chegou: sem prévias, com as escalas sem escolha, ou com uma prévia aberta. */
+type MomentoDoNudgeE2 = "semPrevias" | "escalas" | "comPrevia";
+
 /** O nudge de inatividade (TC-04 e o da E2): 90 s sem gesto, e o "digitando" antes. */
 export const NUDGE_MS =
   import.meta.env.DEV && typeof location !== "undefined" && new URLSearchParams(location.search).get("nudge")
@@ -56,6 +59,11 @@ export function Assistente({
   const [notaAberta, setNotaAberta] = useState(false);
   const [nudgeE1, setNudgeE1] = useState<"nao" | "digitando" | "sim">("nao");
   const [digitandoE2, setDigitandoE2] = useState(false);
+  /* Em que ponto a conversa estava quando o lembrete da E2 chegou: decide o
+     texto e o LUGAR dele (antes das prévias, se elas ainda não existiam). */
+  const [momentoDoNudgeE2, setMomentoDoNudgeE2] = useState<MomentoDoNudgeE2 | null>(null);
+  const momentoAgora = useRef<MomentoDoNudgeE2>("semPrevias");
+  momentoAgora.current = !previas ? "semPrevias" : escalaDaPrevia === null ? "escalas" : "comPrevia";
   const fim = useRef<HTMLDivElement>(null);
 
   /* TC-04: 90 s na posse sem tocar em "Iniciar". */
@@ -77,6 +85,7 @@ export function Assistente({
       telemetria.inatividade("E2");
       window.setTimeout(() => {
         setDigitandoE2(false);
+        setMomentoDoNudgeE2(momentoAgora.current);
         aoMarcar("nudge_e2");
       }, DIGITANDO_MS);
     }, NUDGE_MS);
@@ -98,6 +107,13 @@ export function Assistente({
 
   const serie = conteudo.servico.serie;
   const barras = serie.map((p) => ({ rotulo: p.periodo, valor: p.valor }));
+  /* Sem o momento (F5 com o marco já gravado), vale o que está na tela agora. */
+  const momentoDoNudge = momentoDoNudgeE2 ?? momentoAgora.current;
+  const nudgeE2 = marcos.nudgeE2 && (passo === "dados" || passo === "compositor") && (
+    <MessageBubble direction="in" time={agora}>
+      {momentoDoNudge === "semPrevias" ? textos.chat.nudgeE2SemPrevias : momentoDoNudge === "escalas" ? textos.chat.nudgeE2 : textos.chat.nudgeE2ComPrevia}
+    </MessageBubble>
+  );
   const rotuloDaEscala = (e: Escala) => (e === 0 ? textos.chat.escalas.zero : textos.chat.escalas.oitenta);
 
   let rodape: React.ReactNode = null;
@@ -182,6 +198,8 @@ export function Assistente({
             </>
           )}
 
+          {momentoDoNudge === "semPrevias" && nudgeE2}
+
           {previas && (
             <>
               <MessageBubble direction="in" time={agora}>
@@ -210,12 +228,8 @@ export function Assistente({
             </>
           )}
 
+          {momentoDoNudge !== "semPrevias" && nudgeE2}
           {digitandoE2 && <TypingIndicator aria-label={TEXTOS.assistente.nudgeDigitando} />}
-          {marcos.nudgeE2 && (passo === "dados" || passo === "compositor") && (
-            <MessageBubble direction="in" time={agora}>
-              {textos.chat.nudgeE2}
-            </MessageBubble>
-          )}
 
           {(passo === "errata" || sessao.publicacoes.errata || sessao.publicacoes.errataPulada) && (
             <MessageBubble direction="in" time={agora} data-mensagem="errata">

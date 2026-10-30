@@ -378,7 +378,7 @@ export class NinaNoticiaTurmasController {
   @Contrato({
     resumo: "Gera as imagens que faltam no pacote: as três cenas e o cartaz.",
     descricao:
-      "Até quatro novas por chamada, em paralelo. Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma; `falharam` diz o que não saiu (segue a ilustração local). O que já está no bucket (o mesmo pedido) entra sem custo.\n\n**As cenas fixas** do caso novo e do Desafio Extra (iguais para todas as turmas) entram junto: a que já existe, de graça; a que falta é gerada nesta chamada, uma vez só, na conta da PLATAFORMA (recurso `nina-noticia-banco-padrao` no painel de custos, perfil `admin`, sem escola) — nunca na quota da professora. Não aparecem na resposta, que traz só as quatro do pacote (ADR-199).",
+      "Até quatro novas por chamada, em paralelo. Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma; `falharam` diz o que não saiu (segue a ilustração local). O que já está no bucket (o mesmo pedido) entra sem custo.\n\n**As cenas fixas** do caso novo (iguais para todas as turmas) entram junto: a que já existe, de graça; a que falta é gerada nesta chamada, uma vez só, na conta da PLATAFORMA (recurso `nina-noticia-banco-padrao` no painel de custos, perfil `admin`, sem escola) — nunca na quota da professora. Não aparecem na resposta, que traz só as quatro do pacote (ADR-199).",
     params: PARAMS_DO_PACOTE,
     query: QUERY,
     resposta: ProgressoDaMidiaSchema,

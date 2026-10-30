@@ -17,7 +17,6 @@ import {
 import { AVISO_POR_COMPUTADOR, chaveDaLinha, type MembroNoPainel } from "@/lib/equipe-no-painel";
 import {
   COPY_DO_PAINEL,
-  ETAPAS_VISIVEIS,
   POLLING_DO_PAINEL_MS,
   ROTEIRO_DE_MEDIACAO,
   ROTULO_DA_ETAPA,
@@ -28,8 +27,8 @@ import {
   gatilhosDaEtapa,
   mudouAEvidencia,
   ordenarLinhas,
+  progressoDaAula,
   rotuloDoBotao,
-  sujeito,
   textosDasEscolhas,
   todosConcluiram,
   type AcaoDoGate,
@@ -55,6 +54,12 @@ type Conexao = "ok" | "caiu";
  * **"Pausar Turma" congela TODAS as telas** com o "Momento de conversar com a
  * turma!" (a flag `pausada`), e o painel vira o quadro "Sala pausada" do print 24
  * até "Retomar Turma". O roteiro de mediação continua à vista: é a hora dele.
+ *
+ * **Quatro números, não seis** (2026-10-29): Entraram, Travaram a escolha
+ * (o que o "Liberar Filtro" espera), Viram a notícia sumir (a conversa antes
+ * do "Liberar Inspeção") e Concluíram — `progressoDaAula`. Um cartão por
+ * etapa espremia o painel e não dizia o que o portão espera; onde cada um
+ * está, etapa a etapa, é a folha.
  *
  * **A linha diz progresso e alerta, NUNCA acerto** (`PROIBIDO_NA_LINHA_DO_PAINEL`,
  * na api). As "Escolhas da Etapa 2" e os alertas vivem só no agregado, sem nome:
@@ -148,7 +153,7 @@ export function PainelDaAulaNinaNoticia({
   const escolhas = textosDasEscolhas(resumo.escolhas, resumo.porComputador);
   const alertas = alertasDaSala(resumo.alertas);
   const gatilhos = gatilhosDaEtapa(painel.etapa);
-  const unidade = (n: number) => `${n} ${sujeito(resumo.porComputador, n)}`;
+  const progresso = progressoDaAula(painel);
 
   const colunas: TableColumn<LinhaDoPainel>[] = [
     {
@@ -301,17 +306,13 @@ export function PainelDaAulaNinaNoticia({
         </Card>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6" data-equipes-por-etapa>
-            {ETAPAS_VISIVEIS.map((n) => (
-              <MetricCard key={n} title={`${resumo.porComputador ? "Equipes" : "Estudantes"} na etapa ${n}`} value={`${resumo.porEtapa[n]} / ${resumo.total}`} />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-progresso-da-aula>
+            {progresso.map((c) => (
+              <MetricCard key={c.titulo} title={c.titulo} value={c.valor} description={c.descricao} />
             ))}
           </div>
           <div className="grid gap-3 lg:grid-cols-2">
-            <MetricCard
-              title={COPY_DO_PAINEL.escolhas}
-              value={escolhas.valor}
-              description={escolhas.linhas.join(" ") || "Os números aparecem com a primeira escolha travada."}
-            />
+            <MetricCard title={COPY_DO_PAINEL.escolhas} value={escolhas.valor} description={escolhas.linhas.join(" ")} />
             <Card variant="outlined">
               <div className="flex flex-col gap-2" data-alertas-da-sala>
                 <p className="text-[12px] font-semibold uppercase tracking-wide text-unooria-neutral-600">{COPY_DO_PAINEL.alertas}</p>
@@ -329,11 +330,9 @@ export function PainelDaAulaNinaNoticia({
               </div>
             </Card>
           </div>
-          <p className="-mt-2 text-[12px] leading-snug text-unooria-neutral-600">
-            {unidade(resumo.entraram)} de {resumo.total} {resumo.entraram === 1 ? "entrou" : "entraram"} ·{" "}
-            {resumo.concluiram} {resumo.concluiram === 1 ? "concluiu" : "concluíram"}.{" "}
-            {resumo.porComputador ? AVISO_POR_COMPUTADOR : null}
-          </p>
+          {resumo.porComputador ? (
+            <p className="-mt-2 text-[12px] leading-snug text-unooria-neutral-600">{AVISO_POR_COMPUTADOR}</p>
+          ) : null}
         </>
       )}
 

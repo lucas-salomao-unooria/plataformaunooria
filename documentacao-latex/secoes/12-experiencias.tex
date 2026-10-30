@@ -1881,7 +1881,9 @@ a api no teste. O preparo é \arq{atividades/nova/criar-nina-noticia.tsx}.
 O jornal (cabeçalho, cartões, foto ampliada, filtro, selos, aviso sem sinal,
 erro de mídia) é \cd{unoojornal}, pela ponte \cd{@edu/ui/ds-unoojornal}; a
 mecânica (a Nina, a caixa da escolha, os carimbos, as etiquetas, a esteira de
-blocos por toque e a pausa) é \cd{unooria}. É a única missão com essa mistura,
+blocos e a pausa) é \cd{unooria}. As peças se movem por toque em dois tempos
+OU por arraste (\adrr{ADR-201}): o arraste é compensação de comportamento por
+cima do \cd{PuzzleBlock}, em Pointer Events, porque o DS decidiu só tocar. É a única missão com essa mistura,
 por exceção registrada (\adrr{ADR-197}, Seção~\ref{sec:ds-hibrido-exp03ef1b});
 o que nenhuma das duas seções tem é compensação local marcada, só com os
 tokens delas.
@@ -2330,8 +2332,13 @@ atividade (o pacote).
 \zebra \textbf{E2} Dados & A tabela como mídia desenhada (com ampliação), o
   anexo da nota técnica (o \cd{MessageBubble.Document} tocável abre a folha
   com o resumo e as seções) e as prévias das duas escalas. Se nada acontece
-  em 90\,s, o Assistente cutuca (o nudge da E2); os horários do chat, do
-  anexo e do nudge são marcos do SERVIDOR.\\
+  em 90\,s, o Assistente cutuca (o nudge da E2), em três textos pelo que já
+  está na conversa (sem prévias, com as escalas, com uma prévia aberta), e
+  entra antes das prévias se elas ainda não existiam; os horários do chat, do
+  anexo e do nudge são marcos do SERVIDOR. O eixo X do gráfico encurta o
+  rótulo que não cabe no vão (\enquote{1º Quadrimestre} vira \enquote{Q1},
+  como o \enquote{M1} do protótipo); o nome inteiro segue na tabela e na
+  descrição do gráfico.\\
 \textbf{E3} Compositor & A folha sobre o chat: a origem do eixo (dois
   \cd{Radio}, sem pré-seleção; o publicar fica desabilitado até a escolha) e
   três \cd{Switch} opcionais --- a explicação da escala (o texto acompanha 0
@@ -2354,8 +2361,10 @@ atividade (o pacote).
   Técnica}.\\
 \textbf{E6} Perícia & No canal \enquote{Notícias da Cidade --- Eleições
   Municipais}: os cartões A e B (com gráfico e título, sem rótulo de
-  gabarito), \enquote{Ver dados e fonte} (a folha com os dados da
-  Secretaria), \enquote{Sinalizar para revisão} (\cd{Switch}) com o motivo
+  gabarito), \enquote{Ver dados e fonte} (a folha com a TABELA da
+  Secretaria --- período, ocorrências, taxa por 100 mil hab. ---, como no
+  protótipo; a lista de \cd{ListItem} da 1.0.0 quebrava cada dado em três
+  linhas), \enquote{Sinalizar para revisão} (\cd{Switch}) com o motivo
   (escala, fonte ou título); \enquote{Emitir parecer} ou \enquote{Avançar sem
   emitir parecer}, que concluem. A conclusão (\cd{unooria}) é o selo, o
   texto e o modo somente leitura --- sem podcast.\\
