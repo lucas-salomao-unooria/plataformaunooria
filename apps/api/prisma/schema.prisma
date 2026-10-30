@@ -4674,6 +4674,8 @@ model Exp03em1bPublicacao {
   explicacao  Boolean
   fonte       Boolean
   contexto    Boolean
+  /// A 4ª camada, INCORRETA de propósito (ADR-203): a projeção que a nota técnica desmente.
+  projecao    Boolean  @default(false)
   publicadaEm DateTime @default(now()) @map("publicada_em") @db.Timestamptz(6)
 
   turma  Turma           @relation(fields: [turmaId], references: [id], onDelete: Cascade)

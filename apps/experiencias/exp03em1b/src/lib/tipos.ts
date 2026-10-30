@@ -15,7 +15,7 @@ export const EXP_ID = "exp03em1b";
  * A versão vive em TRÊS lugares: aqui, no `package.json` e no
  * `public/experiencia.json` (`versao.test.ts`). A 1.0.0 é a primeira (ADR-198).
  */
-export const EXP_VERSION = "1.0.2";
+export const EXP_VERSION = "1.1.0";
 
 /** O passo é DERIVADO no servidor (`regras/passos.ts` da api). */
 export type Passo = "abertura" | "dados" | "compositor" | "feed" | "errata" | "laudo" | "pericia" | "concluida";
@@ -25,12 +25,16 @@ export type Motivo = "escala" | "fonte" | "titulo";
 export type Marco = "chat_aberto" | "anexo_aberto" | "nudge_e2" | "compositor_aberto" | "pericia_aberta";
 export type IdDoCartao = "A" | "B";
 
-/** O corpo do publicar (1ª e errata): a escala e as três camadas. */
+/** As quatro camadas do compositor; a ordem em que aparecem vem do servidor (`conteudo.camadas.ordem`). */
+export type Camada = "explicacao" | "fonte" | "contexto" | "projecao";
+
+/** O corpo do publicar (1ª e errata): a escala e as quatro camadas. */
 export interface Publicar {
   escala: Escala;
   explicacao: boolean;
   fonte: boolean;
   contexto: boolean;
+  projecao: boolean;
 }
 
 export interface Publicacao extends Publicar {
@@ -110,7 +114,13 @@ export interface Sessao {
       resumo: string;
       secoes: { titulo: string; texto: string }[];
     };
-    camadas: { explicacao: { zero: string; oitenta: string }; fonte: string; contexto: string };
+    camadas: {
+      explicacao: { zero: string; oitenta: string };
+      fonte: string;
+      contexto: string;
+      projecao: string;
+      ordem: Camada[];
+    };
   } | null;
   textos: {
     chat: {

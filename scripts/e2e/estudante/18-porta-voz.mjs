@@ -51,6 +51,8 @@ const COPY = {
   confirmarTitulo: "Confirmar Envio Oficial Irreversível",
   confirmar: "Confirmar Envio",
   camadas: { explicacao: "Anotação de escala", fonte: "Fonte dos dados", contexto: "Contexto da oscilação" },
+  /* A 4ª camada, a incorreta (ADR-203): fora de `camadas`, que o B liga inteira. */
+  projecao: "Projeção da tendência",
   rival: "Escola Estadual Santos Dumont",
   autenticacao: "Planilha Municipal Oficial · Autenticação Criptográfica Idêntica",
   pausa: "Sessão pausada pela Coordenação para mediação técnica em sala.",
@@ -78,23 +80,27 @@ const RECORTE = {
   topicos: ["pontualidade dos ônibus escolares", "lotação dos veículos por rota", "comunicação de indicadores públicos"],
 };
 
+/** O texto da 4ª camada (ADR-203): é do servidor, igual em toda turma — `conteudo.ts#TEXTO_DA_PROJECAO`. */
+const TEXTO_DA_PROJECAO = "Projeção: mantida a tendência, o índice fica abaixo de 80% no próximo período.";
+
 /**
  * O QUE A RÉGUA DEVE DAR — calculado da ficha (`evidencias/fichas/exp03em1b.ts`)
  * e de `porta-voz-dos-dados/regras/evidencia.ts`, não chutado:
  *
- * A — 1ª: 80, sem camadas, SEM abrir o anexo; errata: 0 + fonte; perícia só B / escala.
+ * A — 1ª: 80, sem camadas, SEM abrir o anexo; errata: 0 + fonte + contexto + a PROJEÇÃO
+ *     (a 4ª camada, incorreta — ADR-203); perícia só B / escala.
  *   CO12 (final 0 + fonte) ............................... atingiu
  *   CO13 (não abriu o anexo antes do compositor) ......... nao_atingiu
  *   CO14 (só B, motivo escala) ........................... atingiu
  *   CO21 (explicação nem na 1ª nem na errata) ............ nao_atingiu
- *   CO22 (final com 1 camada: a fonte) ................... em_processo
+ *   CO22 (final com 2 corretas, MAS a projeção ligada) ... em_processo
  *   CO26 (1ª inadequada, errata 80 → 0 corrige) .......... atingiu
  * B — anexo antes do compositor e do nudge; 1ª: 0 + as três camadas; pula errata e perícia.
  *   CO12 (final 0 + fonte) ............................... atingiu
  *   CO13 (anexo antes do compositor e do nudge de 90 s) .. atingiu
  *   CO14 (pulou a perícia) ............................... nao_atingiu
  *   CO21 (explicação ligada na 1ª, sem errata) ........... atingiu
- *   CO22 (final com 3 camadas) ........................... atingiu
+ *   CO22 (final com as 3 corretas, sem a projeção) ....... atingiu
  *   CO26 (1ª adequada, sem regressão) .................... atingiu
  */
 const ESPERADO = {
@@ -356,11 +362,16 @@ await suite(
       "o compositor começa sem escala marcada e com o envio desabilitado (decisão 5)",
     );
     r.exigir(await compositorA.getByText(COPY.previaSemEscala, { exact: true }).isVisible(), "sem escala, a prévia pede a escolha da origem do eixo");
+    r.exigir(
+      (await compositorA.getByRole("switch").count()) === 4 &&
+        (await compositorA.getByRole("switch", { name: new RegExp(`^${COPY.projecao}`) }).count()) === 1,
+      "o compositor tem QUATRO camadas: as três corretas e a projeção, embaralhada entre elas (ADR-203)",
+    );
     await asideA.waitFor({ timeout: 15_000 });
     r.exigir(/origem do eixo vertical/.test(await asideA.innerText()), "a instrução do hub muda para o compositor (origem do eixo vertical)");
     await r.registrar(a, "compositor-sem-escala", {
       titulo: "O compositor, sem escala marcada",
-      mostra: "A origem do eixo (0–100% e 80–100%) sem nada marcado, as três informações desligadas e o envio desabilitado.",
+      mostra: "A origem do eixo (0–100% e 80–100%) sem nada marcado, as quatro informações desligadas e o envio desabilitado.",
       prova: "Escolher o eixo é parte da ação, não uma camada: o envio só acende com a escala; as camadas são opcionais.",
     });
 
@@ -468,15 +479,20 @@ await suite(
     await errataA.waitFor({ timeout: 10_000 });
     r.exigir(await errataA.getByRole("radio", { name: COPY.oitenta, exact: true }).isChecked(), "o compositor da errata recarrega a 1ª publicação (80%)");
     await errataA.getByRole("radio", { name: COPY.zero, exact: true }).check({ force: true });
-    await errataA.getByRole("switch", { name: new RegExp(`^${COPY.camadas.fonte}`) }).click();
+    /* A cai na pegadinha (ADR-203): liga a fonte, o contexto E a projeção — "para ficar completo". */
+    for (const nome of [COPY.camadas.fonte, COPY.camadas.contexto, COPY.projecao]) {
+      await errataA.getByRole("switch", { name: new RegExp(`^${nome}`) }).click();
+    }
     r.exigir(
-      (await errataA.getByRole("switch", { name: new RegExp(`^${COPY.camadas.fonte}`) }).getAttribute("aria-checked")) === "true",
-      "a fonte dos dados fica ligada na errata",
+      (await errataA.getByRole("switch", { name: new RegExp(`^${COPY.camadas.fonte}`) }).getAttribute("aria-checked")) === "true" &&
+        (await errataA.getByRole("switch", { name: new RegExp(`^${COPY.projecao}`) }).getAttribute("aria-checked")) === "true",
+      "na errata, a fonte, o contexto e a projeção ficam ligados",
     );
     await r.registrar(a, "errata-0-com-fonte", {
-      titulo: "A errata: 0–100% com a fonte",
-      mostra: "O compositor da errata (publicação 2 de 3) com a etiqueta Errata, a escala trocada para 0–100% e a fonte dos dados ligada.",
-      prova: "A errata parte da 1ª publicação INTEIRA: o estudante muda só o que quer corrigir.",
+      titulo: "A errata: 0–100% com tudo ligado",
+      mostra:
+        "O compositor da errata (publicação 2 de 3) com a etiqueta Errata, a escala trocada para 0–100%, e a fonte, o contexto e a projeção da tendência ligados.",
+      prova: "A errata parte da 1ª publicação INTEIRA. Ligar a projeção, que a nota técnica desmente, é a pegadinha da EM13CO22: fica em processo.",
     });
     await errataA.getByRole("button", { name: COPY.publicarErrata, exact: true }).click();
     const confirmacaoErrata = qa.getByRole("dialog", { name: COPY.confirmarTitulo, exact: true });
@@ -497,6 +513,7 @@ await suite(
       });
     r.exigir(errataAbaixo, "no grupo, a errata entra ABAIXO do boletim original");
     r.exigir((await postErrata.innerText()).includes(k.camadas.fonte), "a errata traz a linha da fonte dos dados");
+    r.exigir((await postErrata.innerText()).includes(TEXTO_DA_PROJECAO), "a errata traz a linha da projeção, que ele ligou");
     await postErrata.scrollIntoViewIfNeeded();
     await r.registrar(a, "errata-no-grupo", {
       titulo: "A errata abaixo do original",
@@ -603,10 +620,14 @@ await suite(
     await compositorB.waitFor({ timeout: 10_000 });
     await compositorB.getByRole("radio", { name: COPY.zero, exact: true }).check({ force: true });
     for (const camada of Object.values(COPY.camadas)) await compositorB.getByRole("switch", { name: new RegExp(`^${camada}`) }).click();
-    r.exigir((await compositorB.getByRole("switch", { checked: true }).count()) === 3, "B liga as três informações (explicação, fonte e contexto)");
+    r.exigir(
+      (await compositorB.getByRole("switch", { checked: true }).count()) === 3 &&
+        (await compositorB.getByRole("switch", { name: new RegExp(`^${COPY.projecao}`) }).getAttribute("aria-checked")) === "false",
+      "B liga as três informações corretas (explicação, fonte e contexto) e deixa a projeção de fora",
+    );
     await r.registrar(b, "b-compositor-completo", {
-      titulo: "B: 0–100% com as três informações",
-      mostra: "O eixo em 0% e a explicação da escala, a fonte e o contexto da oscilação ligados, na prévia ao vivo.",
+      titulo: "B: 0–100% com as três informações corretas",
+      mostra: "O eixo em 0% e a explicação da escala, a fonte e o contexto da oscilação ligados, a projeção desligada, na prévia ao vivo.",
       prova: "A explicação da escala acompanha a origem marcada: o texto é o do ramo 0 do pacote.",
     });
     await compositorB.getByRole("button", { name: COPY.encaminhar, exact: true }).click();

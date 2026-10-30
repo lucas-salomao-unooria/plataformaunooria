@@ -39,7 +39,10 @@ escala oposta, o professor pausa as telas e libera a retomada; vêm a errata
   Dados" — e é o mesmo caminho de quem publica DEPOIS da retomada (decisão 7):
   vê a sequência do conflito e segue para a oferta da errata.
 - **O compositor começa SEM escala** (decisão 5): publicar fica desabilitado
-  até a origem do eixo; as camadas são opcionais. A errata recarrega a 1ª
+  até a origem do eixo; as camadas são opcionais. São QUATRO desde a 1.1.0
+  (ADR-203): as três corretas e a projeção, incorreta de propósito, na ordem
+  que o servidor manda (`conteudo.camadas.ordem`, embaralhada por estudante).
+  A tela não sabe qual é a errada — não escreva nada que a distinga. A errata recarrega a 1ª
   publicação INTEIRA. A confirmação (`Dialog`) é que chama a api.
 - **O feed chega em sequência só na aba que publicou** (`Grupo#animar`): as
   reações com "digitando…", o post espelho ~10 s depois da publicação
@@ -91,6 +94,11 @@ build troca `import.meta.env.DEV` por `false` e nada disso entra no `dist/`
 | `ChatHeader` com `trailing` longo encurta o nome ("Assiste…") | chat e grupo | o chip mostra a forma curta do protótipo ("Publicações: 3/3"); a longa (TC-03/TC-09) vai no `aria-label` |
 
 ## Textos fora do 06
+
+**A instrução ao lado do aparelho não manda** (ADR-203): onde a missão mede a
+iniciativa (o anexo, as camadas, a errata, a perícia) o texto diz o que existe
+e deixa a decisão com o estudante — "Inspecione a nota técnica" fazia o gesto
+que a EM13CO13 queria observar.
 
 `lib/textos.ts` marca `[PROTÓTIPO]` (do protótipo aprovado) e `[PROPOSTA]`
 (validar com o PO): a confirmação do slot 2, os botões de navegação do grupo

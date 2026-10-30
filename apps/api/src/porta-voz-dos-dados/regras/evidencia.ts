@@ -72,9 +72,16 @@ export function nivelCO21(inicial: Publicacao, errata: Publicacao | null): Nivel
   return "nao_atingiu";
 }
 
-/** EM13CO22 — as camadas da publicação FINAL: ≥ 2 atingiu, 1 em processo, 0 não atingiu. */
+/**
+ * EM13CO22 — as camadas da publicação FINAL: ≥ 2 corretas atingiu, 1 em
+ * processo, 0 não atingiu. Com a PROJEÇÃO incorreta ligada (ADR-203, v2 do
+ * PO), o teto é "em processo": quem liga tudo para "ficar completo" sem ler
+ * cada camada não atinge, e sem nenhuma correta fica em não atingiu.
+ */
 export function nivelCO22(inicial: Publicacao, errata: Publicacao | null): Nivel {
-  const n = camadasAtivas(publicacaoFinal(inicial, errata));
+  const final = publicacaoFinal(inicial, errata);
+  const n = camadasAtivas(final);
+  if (final.projecao) return n >= 1 ? "em_processo" : "nao_atingiu";
   if (n >= 2) return "atingiu";
   if (n === 1) return "em_processo";
   return "nao_atingiu";
@@ -85,7 +92,7 @@ export function nivelCO22(inicial: Publicacao, errata: Publicacao | null): Nivel
  *   - errata que leva o eixo de 0 para 80 (regressão) — não atingiu;
  *   - 1ª adequada (0 + fonte), sem regressão — atingiu, com ou sem errata;
  *   - 1ª inadequada e errata que corrige (80 → 0, ou + fonte, ou + contexto
- *     ausentes) — atingiu (80 → 0 tirando a fonte conta: o eixo é o centro);
+ *     ausentes, ou a projeção incorreta desligada — ADR-203) — atingiu (80 → 0 tirando a fonte conta: o eixo é o centro);
  *   - 1ª inadequada e errata sem correção real — em processo;
  *   - 1ª inadequada e pulou a errata — não atingiu.
  */

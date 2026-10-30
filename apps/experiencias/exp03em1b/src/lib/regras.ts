@@ -1,4 +1,4 @@
-import type { Escala, Motivo, Parecer, Passo, Publicacao, Publicar, Sessao } from "./tipos";
+import type { Camada, Escala, Motivo, Parecer, Passo, Publicacao, Publicar, Sessao } from "./tipos";
 import { TEXTOS } from "./textos";
 
 /**
@@ -52,9 +52,10 @@ export interface Escolha {
   explicacao: boolean;
   fonte: boolean;
   contexto: boolean;
+  projecao: boolean;
 }
 
-export const ESCOLHA_VAZIA: Escolha = { escala: null, explicacao: false, fonte: false, contexto: false };
+export const ESCOLHA_VAZIA: Escolha = { escala: null, explicacao: false, fonte: false, contexto: false, projecao: false };
 
 /**
  * Onde o compositor começa. A 1ª publicação: SEM escala marcada e sem camada
@@ -63,7 +64,13 @@ export const ESCOLHA_VAZIA: Escolha = { escala: null, explicacao: false, fonte: 
  */
 export function escolhaInicial(modo: "inicial" | "errata", primeira: Publicacao | null): Escolha {
   if (modo === "errata" && primeira) {
-    return { escala: primeira.escala, explicacao: primeira.explicacao, fonte: primeira.fonte, contexto: primeira.contexto };
+    return {
+      escala: primeira.escala,
+      explicacao: primeira.explicacao,
+      fonte: primeira.fonte,
+      contexto: primeira.contexto,
+      projecao: primeira.projecao ?? false,
+    };
   }
   return { ...ESCOLHA_VAZIA };
 }
@@ -74,13 +81,26 @@ export function escolhaInicial(modo: "inicial" | "errata", primeira: Publicacao 
  */
 export function corpoDaPublicacao(escolha: Escolha): Publicar | null {
   if (escolha.escala === null) return null;
-  return { escala: escolha.escala, explicacao: escolha.explicacao, fonte: escolha.fonte, contexto: escolha.contexto };
+  return {
+    escala: escolha.escala,
+    explicacao: escolha.explicacao,
+    fonte: escolha.fonte,
+    contexto: escolha.contexto,
+    projecao: escolha.projecao,
+  };
 }
 
+/**
+ * Os textos das quatro camadas e a ORDEM em que o compositor as mostra — a do
+ * servidor, embaralhada por estudante (ADR-203). A tela não sabe qual das
+ * quatro é a incorreta: quem sabe é a régua, na api (regra 3).
+ */
 export interface TextosDasCamadas {
   explicacao: { zero: string; oitenta: string };
   fonte: string;
   contexto: string;
+  projecao: string;
+  ordem: readonly Camada[];
 }
 
 /** O texto da anotação de escala acompanha a origem escolhida (0 ou 80). */
@@ -93,11 +113,12 @@ export function textoDaExplicacao(camadas: TextosDasCamadas, escala: Escala): st
  * prévia e no post publicado: o que se vê é o que sai.
  */
 export function linhasDoPost(p: Publicar, camadas: TextosDasCamadas): string[] {
-  const linhas: string[] = [];
-  if (p.explicacao) linhas.push(textoDaExplicacao(camadas, p.escala));
-  if (p.fonte) linhas.push(camadas.fonte);
-  if (p.contexto) linhas.push(camadas.contexto);
-  return linhas;
+  return camadas.ordem.filter((c) => p[c]).map((c) => textoDaCamada(camadas, c, p.escala));
+}
+
+/** O texto de UMA camada; a anotação de escala depende da origem do eixo. */
+export function textoDaCamada(camadas: TextosDasCamadas, c: Camada, escala: Escala): string {
+  return c === "explicacao" ? textoDaExplicacao(camadas, escala) : camadas[c];
 }
 
 // ─────────────────────────────────────────────────────────── o grupo (E4)

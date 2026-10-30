@@ -86,9 +86,24 @@ export type EtapaDoGate = (typeof ETAPAS_DO_GATE)[number];
 export const ESCALAS = [0, 80] as const;
 export type Escala = (typeof ESCALAS)[number];
 
-/** As três camadas do compositor (interruptores, decisão 3). */
+/** As três camadas CORRETAS do compositor (interruptores, decisão 3). */
 export const CAMADAS = ["explicacao", "fonte", "contexto"] as const;
 export type Camada = (typeof CAMADAS)[number];
+
+/**
+ * A 4ª camada, INCORRETA de propósito (v2 do PO, ADR-203): uma projeção que a
+ * nota técnica desmente — a queda foi pontual, em duas vias, e as obras já
+ * terminaram. Quem liga tudo "para ficar completo" sem ler cai nela. O texto é
+ * do SERVIDOR (a série é fixa em toda turma: 95 → 88), igual para o banco
+ * padrão e para o pacote da IA, sem mexer no prompt nem na curadoria. O NOME
+ * da chave não diz que é a errada — o gabarito fica na régua (regra 3).
+ */
+export const CAMADA_INCORRETA = "projecao" as const;
+export const TEXTO_DA_PROJECAO = "Projeção: mantida a tendência, o índice fica abaixo de 80% no próximo período.";
+
+/** As quatro camadas como o compositor as mostra: a ordem é EMBARALHADA por estudante (`regras/publicacao.ts#ordemDasCamadas`). */
+export const CAMADAS_DO_COMPOSITOR = [...CAMADAS, CAMADA_INCORRETA] as const;
+export type CamadaDoCompositor = (typeof CAMADAS_DO_COMPOSITOR)[number];
 
 /** As duas publicações do V1: a 1ª (slot 1) e a errata (slot 2). Não há 3ª publicação. */
 export const TIPOS_DE_PUBLICACAO = ["inicial", "errata"] as const;
@@ -156,8 +171,11 @@ export const TEXTOS_DO_CHAT = {
   nudgeE1: "Ainda por aí? Clique abaixo para iniciar a estruturação dos dados.",
   /* "Quatro períodos", não "quatro meses": o período é do pacote (semana,
      mês, quadrimestre…), e o bot que dizia "meses" desmentia a tabela. */
+  /* Sem verbo no imperativo (v2 do PO, ADR-203): abrir o anexo é a evidência da
+     EM13CO13, e "consulte os anexos" mandava fazer o que se queria observar. A
+     fala diz que o anexo EXISTE e deixa a iniciativa com o estudante. */
   introDaTabela:
-    "Recebemos os registros consolidados da subprefeitura referentes aos quatro últimos períodos de apuração. Inspecione os percentuais tabulados e consulte os anexos metodológicos antes de selecionar a representação gráfica do boletim.",
+    "Recebemos os registros consolidados da subprefeitura referentes aos quatro últimos períodos de apuração. Os percentuais estão tabulados abaixo, e a nota metodológica da subprefeitura segue em anexo, caso queira consultá-la. A representação gráfica do boletim fica a seu critério.",
   perguntaDaPrevia: "Qual visualização você deseja gerar para o relatório?",
   /* O lembrete de 90 s da E2 em três versões, pelo que JÁ está na tela: o
      texto único mandava tocar "na escala acima" antes de as escalas existirem. */
@@ -199,7 +217,7 @@ export function nomeDoGrupo(recorte: string): string {
 export const PERICIA = {
   canal: "Notícias da Cidade — Eleições Municipais",
   chamado:
-    "Você foi convocado como perito independente de dados. Use a ferramenta de perícia abaixo para inspecionar os gráficos e emitir seu parecer técnico oficial.",
+    "Você foi convocado como perito independente de dados. A ferramenta de perícia abaixo traz os dois gráficos e os dados de origem; o parecer técnico oficial é seu.",
   dados: {
     titulo: "Relatório Técnico Oficial de Ocorrências Policiais",
     origem: "Origem: Secretaria de Segurança Pública · Base Consolidada Anual",
