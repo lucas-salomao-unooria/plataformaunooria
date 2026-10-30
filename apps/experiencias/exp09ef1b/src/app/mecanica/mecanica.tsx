@@ -29,17 +29,23 @@ export function Amara({ children }: { children: ReactNode }) {
   );
 }
 
-/** O ranking de três critérios: arrastar, ou Subir/Descer. */
+/**
+ * O ranking de três critérios: arrastar, ou Subir/Descer. Uma faixa por
+ * critério, de cima para baixo (E3-ALU-01 do protótipo); o `label` é o título
+ * da calha — e é o único título do ranking na tela.
+ */
 export function Ranking({
   ranking,
   rotulos,
   tela,
+  label,
   onMudar,
   travado,
 }: {
   ranking: Criterio[];
   rotulos: Record<Criterio, string>;
   tela: Tela;
+  label: ReactNode;
   onMudar?: (novo: Criterio[]) => void;
   travado?: boolean;
 }) {
@@ -49,7 +55,7 @@ export function Ranking({
   };
   return (
     <PuzzleTrack
-      label={tela.ordeneCriterios}
+      label={label}
       className="ranking"
       onSlotDrop={travado ? undefined : soltar}
       slots={ranking.map((c, i) => (
@@ -71,8 +77,23 @@ export function Ranking({
   );
 }
 
-/** Os três projetos como rádio: marcar um põe os outros dois na "Fila de espera" (a verba é indivisível). */
-function EscolhaDoProjeto({ projetos, projeto, tela, onEscolher }: { projetos: ProjetoNaTela[]; projeto: ProjetoId | null; tela: Tela; onEscolher: (p: ProjetoId) => void }) {
+/**
+ * Os três projetos como rádio: marcar um põe os outros dois na "Fila de espera" (a verba é indivisível).
+ * `compacto` é o do 2º voto (E4-ALU-03 do protótipo): só o nome, e a marca é o contorno.
+ */
+function EscolhaDoProjeto({
+  projetos,
+  projeto,
+  tela,
+  compacto,
+  onEscolher,
+}: {
+  projetos: ProjetoNaTela[];
+  projeto: ProjetoId | null;
+  tela: Tela;
+  compacto?: boolean;
+  onEscolher: (p: ProjetoId) => void;
+}) {
   return (
     <div className="projetos" role="radiogroup" aria-label={tela.deliberacao}>
       {projetos.map((p) => {
@@ -95,11 +116,15 @@ function EscolhaDoProjeto({ projetos, projeto, tela, onEscolher }: { projetos: P
             data-projeto={p.id}
           >
             <strong className="projeto__nome">{p.nome}</strong>
-            <span className="projeto__meta">
-              {p.vagas} vagas · {p.coordenador}
-            </span>
-            {marcado && <Tag variant="brand">{tela.selecionado}</Tag>}
-            {projeto && !marcado && <Tag variant="neutral">{tela.filaDeEspera}</Tag>}
+            {!compacto && (
+              <>
+                <span className="projeto__meta">
+                  {p.vagas} vagas · {p.coordenador}
+                </span>
+                {marcado && <Tag variant="brand">{tela.selecionado}</Tag>}
+                {projeto && !marcado && <Tag variant="neutral">{tela.filaDeEspera}</Tag>}
+              </>
+            )}
           </Card>
         );
       })}
@@ -128,19 +153,25 @@ export function PainelDeDeliberacao({
   const [tocado, setTocado] = useState(false);
   return (
     <Card variant="outlined" className="deliberacao" data-tela="E3-ALU-01">
-      <p className="deliberacao__painel">{tela.painelTitulo}</p>
       <h2 className="deliberacao__titulo">{tela.deliberacao}</h2>
+      <p className="deliberacao__painel">{tela.painelTitulo}</p>
       <EscolhaDoProjeto projetos={projetos} projeto={projeto} tela={tela} onEscolher={setProjeto} />
-      <p className="deliberacao__guia">{projeto && !tocado ? TEXTOS.reorganize : tela.ordeneCriterios}</p>
       <Ranking
         ranking={ranking}
         rotulos={rotulos}
         tela={tela}
+        label={projeto && !tocado ? TEXTOS.reorganize : tela.ordeneCriterios}
         onMudar={(n) => {
           setRanking(n);
           setTocado(true);
         }}
       />
+      {/* A ordem sorteada pode já ser a do estudante: confirmá-la é o gesto que conta, sem o subir-e-descer de mentira. */}
+      <div className="ranking__confirmar">
+        <Button variant="outline" size="sm" disabled={tocado} onClick={() => setTocado(true)} aria-pressed={tocado}>
+          {tocado ? TEXTOS.ordemConfirmada : TEXTOS.confirmarOrdem}
+        </Button>
+      </div>
       <Button fullWidth size="lg" disabled={!podeRegistrar(projeto, tocado) || ocupado} onClick={() => projeto && onRegistrar(projeto, ranking)}>
         {tela.registrar}
       </Button>
@@ -168,6 +199,18 @@ export function LeituraOptica({ tela, onFim }: { tela: Tela; onFim: () => void }
   );
 }
 
+/** "Constatação de Auditoria: …" — só o rótulo em negrito, numa caixa (E4-ALU-02 do protótipo). */
+function ConstatacaoDeAuditoria({ texto }: { texto: string }) {
+  const corte = texto.indexOf(":");
+  const rotulo = corte > 0 && corte < 40 ? texto.slice(0, corte + 1) : "";
+  return (
+    <p className="confronto__constatacao">
+      {rotulo && <strong>{rotulo}</strong>}
+      {rotulo ? texto.slice(corte + 1) : texto}
+    </p>
+  );
+}
+
 /** O confronto tabular (E4-ALU-02, o AHA): o projeto escolhido × o projeto em papel depois do OCR. */
 export function TabelaDeConfronto({ linhas, tela, constatacao }: { linhas: LinhaDaTabela[]; tela: Tela; constatacao: string }) {
   type Linha = LinhaDaTabela & { projetoRotulo: string };
@@ -180,7 +223,7 @@ export function TabelaDeConfronto({ linhas, tela, constatacao }: { linhas: Linha
   return (
     <Card variant="outlined" className="confronto" data-tela="E4-ALU-02">
       <Table<Linha> columns={colunas} data={linhas.map((l) => ({ ...l, projetoRotulo: `${l.nome} (${l.rotulo})` }))} keyExtractor={(l) => l.projeto} />
-      <p className="confronto__constatacao">{constatacao}</p>
+      <ConstatacaoDeAuditoria texto={constatacao} />
     </Card>
   );
 }
@@ -233,13 +276,12 @@ export function RevisaoDoVoto({
           {modo === "revisar" && (
             <>
               <p className="deliberacao__guia">{TEXTOS.selecioneFinal}</p>
-              <EscolhaDoProjeto projetos={projetos} projeto={projeto} tela={tela} onEscolher={setProjeto} />
+              <EscolhaDoProjeto projetos={projetos} projeto={projeto} tela={tela} compacto onEscolher={setProjeto} />
             </>
           )}
           {modo && (
             <>
-              <p className="deliberacao__guia">{tela.ordeneCriterios}</p>
-              <Ranking ranking={ranking} rotulos={rotulos} tela={tela} onMudar={setRanking} />
+              <Ranking ranking={ranking} rotulos={rotulos} tela={tela} label={tela.ordeneCriterios} onMudar={setRanking} />
               <Button fullWidth size="lg" disabled={!escolhido || ocupado} onClick={() => escolhido && onConfirmar(escolhido, ranking)}>
                 {tela.confirmarFinal}
               </Button>

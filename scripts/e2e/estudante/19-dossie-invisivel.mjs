@@ -53,6 +53,8 @@ const COPY = {
   escolher: "Escolher Projeto",
   digitalizar: "Digitalizar cadernos",
   registrar: "Registrar Decisão",
+  confirmarOrdem: "Confirmar esta ordem",
+  ordemConfirmada: "Ordem confirmada",
   manter: "Manter Decisão Original",
   revisar: "Revisar Decisão",
   confirmarFinal: "Confirmar Decisão Final",
@@ -173,7 +175,7 @@ await suite(
       "“Usar banco padrão” põe o banco curado no ar e libera a missão na sala; o assistente fecha em “Liberar para a Turma”",
       "A pergunta pela falta de registros do Mesa Aberta recebe a oferta dos cadernos; a sugestão nunca a recebe",
       "Digitalizar na E2 é o caminho A1 (o parecer se inverte antes da escolha); a oferta sem digitalizar é o A2; só as sugestões, o B",
-      "“Registrar Decisão” só acende com o projeto marcado e o ranking tocado; registrar leva à espera da presidência da mesa",
+      "“Registrar Decisão” só acende com o projeto marcado e o ranking tocado (mover OU “Confirmar esta ordem”); registrar leva à espera da presidência da mesa",
       "As três travas andam só para a frente, com confirmação, e só a próxima fica habilitada",
       "Na E4, quem não digitalizou digitaliza; a tabela de confronto e a pílula dirigida; o 2º voto só abre depois da trava do debate",
       "Na E5, Amara afirma a indução da turma (2 de 3 votaram na nuvem), as âncoras se marcam no histórico e o editor aceita qualquer composição",
@@ -377,7 +379,7 @@ await suite(
     });
 
     /** “Ver Projetos” (se a escolha ainda não abriu) → “Escolher Projeto” → o painel: marca o projeto, mexe um critério e registra. */
-    async function deliberar(rotulo, nomeDoProjeto, { verProjetos, arrastar = false }) {
+    async function deliberar(rotulo, nomeDoProjeto, { verProjetos, arrastar = false, confirmar = false }) {
       const { pg, q } = estudantes[rotulo];
       if (verProjetos) {
         const viu = await comResposta(pg, /sessao\/ver-projetos$/, () => q.getByRole("button", { name: COPY.verProjetos, exact: true }).click());
@@ -404,6 +406,14 @@ await suite(
           .and(painel.locator(`[data-criterio="${ordemAntes[2]}"]`))
           .waitFor({ timeout: 5_000 })
           .catch(() => {});
+      } else if (confirmar) {
+        /* A ordem sorteada já pode ser a do estudante: "Confirmar esta ordem" é o gesto que conta, sem mexer. */
+        r.exigir(
+          (await painel.locator(".unooria-puzzle-track__label").first().innerText()).startsWith("Reorganize"),
+          `${rotulo}: com o projeto marcado e o ranking intocado, o título da calha pede o gesto (“Reorganize…”)`,
+        );
+        await painel.getByRole("button", { name: COPY.confirmarOrdem, exact: true }).click();
+        await painel.getByRole("button", { name: COPY.ordemConfirmada, exact: true }).waitFor({ timeout: 5_000 });
       } else {
         await itens.first().getByRole("button", { name: /^Descer critério/ }).click();
       }
@@ -414,7 +424,13 @@ await suite(
           `${rotulo}: ARRASTAR o 3º critério até a 1ª posição reordena o ranking pelo DS (${ordemAntes.join(" > ")} → ${ranking.join(" > ")})`,
         );
       }
-      r.exigir(!(await registrar.isDisabled()), `${rotulo}: projeto marcado e um critério movido, “Registrar Decisão” acende`);
+      if (confirmar) {
+        r.exigir(JSON.stringify(ranking) === JSON.stringify(ordemAntes), `${rotulo}: confirmar a ordem não a muda (${ranking.join(" > ")})`);
+      }
+      r.exigir(
+        !(await registrar.isDisabled()),
+        `${rotulo}: projeto marcado e o ranking ${confirmar ? "confirmado como veio" : "com um critério movido"}, “Registrar Decisão” acende`,
+      );
       return { painel, registrar, ranking };
     }
 
@@ -453,7 +469,7 @@ await suite(
       `A2: a mesma pergunta recebe a oferta dos cadernos (HTTP ${lacunaA2.status})`,
     );
     await q2.locator('[data-tela="oferta-dos-cadernos"]').waitFor({ timeout: 15_000 });
-    const delA2 = await deliberar("A2", "Conexão para Continuar", { verProjetos: true });
+    const delA2 = await deliberar("A2", "Conexão para Continuar", { verProjetos: true, confirmar: true });
     await q2.getByText(COPY.parecerInicial, { exact: false }).first().waitFor({ timeout: 10_000 });
     await r.registrar(a2, "a2-ver-projetos", {
       titulo: "A2 recusa a oferta e vê os projetos",

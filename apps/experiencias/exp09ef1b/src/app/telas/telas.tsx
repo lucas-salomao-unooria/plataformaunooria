@@ -59,7 +59,7 @@ export function TelaAbertura({ s, semRede, executar }: Props) {
       semRede={semRede}
       rodape={
         <>
-          <Entrada tela={s.textos.tela} sugestoes={s.textos.sugestoes} ativo={false} enviando={ocupado} onEnviar={(t) => void comecar(t)} />
+          <Entrada tela={s.textos.tela} sugestoes={s.textos.sugestoes} ativo={false} sugestoesLivres enviando={ocupado} onEnviar={(t) => void comecar(t)} />
           <AcaoDoApp grande onClick={() => void comecar()} disabled={ocupado}>
             {s.textos.tela.comecar}
           </AcaoDoApp>

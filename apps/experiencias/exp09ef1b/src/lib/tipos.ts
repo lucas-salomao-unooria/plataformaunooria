@@ -10,7 +10,7 @@
 export const EXP_ID = "exp09ef1b";
 
 /** A versão vive em TRÊS lugares: aqui, no `package.json` e no `public/experiencia.json` (`versao.test.ts`). */
-export const EXP_VERSION = "0.1.1";
+export const EXP_VERSION = "0.1.2";
 
 export const PASSOS = ["abertura", "conversa", "espera1", "revelacao", "espera2", "explicar", "concluida"] as const;
 export type Passo = (typeof PASSOS)[number];
