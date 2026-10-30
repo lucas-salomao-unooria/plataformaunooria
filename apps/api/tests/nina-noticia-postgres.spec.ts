@@ -415,7 +415,7 @@ describe("E5 e E6: a rotina, o caso novo e o fim", () => {
     expect((await linha(ids.ana)).rotinaTentativas).toBe(2);
   });
 
-  test("o caso novo: concluir sem carimbos é 409; os seis carimbos marcam a EF03CO01; o fim traz o painel e o Desafio Extra", async () => {
+  test("o caso novo: concluir sem carimbos é 409; os seis carimbos marcam a EF03CO01; o fim traz o painel, sem o Desafio Extra (ADR-201)", async () => {
     const s = await sessao(ids.ana);
     expect(s.caso?.materias.map((m) => m.ficha.quando)).toEqual([null, null]);
     expect(await codigo(service.concluir(ESCOLA, ids.ana, ids.turma))).toBe("carimbos-pendentes");
@@ -429,7 +429,7 @@ describe("E5 e E6: a rotina, o caso novo e o fim", () => {
     expect((await service.concluir(ESCOLA, ids.ana, ids.turma)).passo).toBe("fim");
     const final = await sessao(ids.ana);
     expect(final.concluida).toBe(true);
-    expect(final.fim?.desafioExtra.map((d) => d.manchete)).toEqual(["Campeonato de Pira", "Teatro de Fantoches"]);
+    expect(final.fim).toEqual({ resumo: expect.any(Object) });
   });
 
   test("carimbos uniformes NÃO atingem; mais de três testes sem parar acendem o alerta", async () => {

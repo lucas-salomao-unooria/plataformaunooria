@@ -242,26 +242,51 @@ body {
   font-weight: 700;
 }
 
-/* (b) COMPENSAÇÃO — o `ListItem` do Unoochat tem título e subtítulo em
-   `nowrap` com reticência (a linha de conversa do app). Na folha dos dados da
-   perícia, o que some na reticência é justamente o dado ("Ano Anterior
-   (P…", "601.…"): aqui eles quebram linha. Só medida e quebra; a aparência é
-   a do pacote. Some quando o `ListItem` aceitar texto longo (mesma lacuna do
-   `.unv-item-longo` da exp02em1b). O vão lateral já é o da folha. */
-.folha .unc-listitem {
-  padding: 8px 0;
+/* O relatório da Secretaria na folha da perícia: a tabela do protótipo
+   (E6-ALU-02), com os tokens do Unoochat. É conteúdo (o documento), não
+   controle — como a planilha da E2. */
+.dados {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  color: var(--unc-color-text-primary);
 }
 
-.folha .unc-sectionlabel {
-  padding-right: 0;
-  padding-left: 0;
+.dados__titulo {
+  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
 }
 
-.folha .unc-listitem__title,
-.folha .unc-listitem__subtitle,
-.folha .unc-listitem__meta {
-  white-space: normal;
-  overflow: visible;
+.dados th,
+.dados td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--unc-color-border-divider);
+  text-align: left;
+  vertical-align: top;
+}
+
+.dados thead th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--unc-color-text-secondary);
+  background: var(--unc-color-surface-canvas);
+}
+
+.dados tbody th {
+  font-weight: 600;
+}
+
+.dados td,
+.dados thead th:not(:first-child) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dados__valor {
+  font-weight: 700;
 }
 
 .legenda-da-tabela {

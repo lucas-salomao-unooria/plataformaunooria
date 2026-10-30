@@ -112,7 +112,7 @@ export const GUIA_EXP04EF1B: GuiaDaAula = {
         "Construir e simular algoritmos, de forma independente ou em colaboração, que resolvam problemas simples e do cotidiano com uso de sequências, seleções condicionais e repetições de instruções.",
       eixo: "Pensamento Computacional",
       ondeAcontece:
-        "Na Chave do Editor, a dupla monta o próprio algoritmo de checagem, uma vez só e sem correção: escolhe três blocos entre seis — fonte, data, autoria e três armadilhas (foto, urgência, compartilhamento) —, decide em cada um quando a pista passa ou falha (a condição), o que fazer quando ela falha (Não publico ou Olho a próxima pista) e se a Chave vale para todas as notícias ou só para a primeira (a repetição). Depois da 2ª edição, aplica a Chave a duas matérias novas: conta seguir a própria regra sem se contradizer. Vale o melhor entre a montagem e o teste.",
+        "Na Chave do Editor, cada computador monta o próprio algoritmo de checagem, uma vez só e sem correção: escolhe três blocos entre seis — fonte, data, autoria e três armadilhas (foto, urgência, compartilhamento) —, decide em cada um quando a pista passa ou falha (a condição), o que fazer quando ela falha (Não publico ou Olho a próxima pista) e se a Chave vale para todas as notícias ou só para a primeira (a repetição). Depois da 2ª edição, aplica a Chave a duas matérias novas: conta seguir a própria regra sem se contradizer. Vale o melhor entre a montagem e o teste.",
     },
   ],
 
@@ -141,7 +141,7 @@ export const GUIA_EXP04EF1B: GuiaDaAula = {
       {
         titulo: "Monte as equipes se faltar aparelho",
         texto:
-          "Na ficha da missão, em Equipes desta turma. Duplas é o arranjo recomendado: o painel conta por computador. Veja “Menos aparelhos que estudantes”, em Adaptações.",
+          "Na ficha da missão, em Equipes desta turma, se a turma dividir computadores (de 1 a 4 crianças por computador): o painel conta por computador. Veja “Menos aparelhos que estudantes”, em Adaptações.",
       },
       {
         titulo: "Deixe o painel aberto e o projetor pronto",
@@ -156,14 +156,14 @@ export const GUIA_EXP04EF1B: GuiaDaAula = {
           "Estão no bloco logo abaixo, com a reação de cada leitor, a Chave de referência e as duas matérias do teste. Saber qual notícia é antiga, qual não tem confirmação e qual não tem assinatura é o que permite conduzir a conversa do resultado sem entregar a resposta.",
       },
       {
-        titulo: "Combine como a dupla decide",
+        titulo: "Combine como a equipe decide",
         texto:
-          "Na 1ª edição, a dupla conversa e decide quem está no toque. Na revisão vale o veto: qualquer um pode tirar uma notícia da capa se apontar na tela a pista que falta — a fonte, a data ou a assinatura —, e quem estava no toque passa a vez. Não explique o veto antes do resultado: ele diria à turma o que procurar.",
+          "Se houver equipes: na 1ª edição, a equipe conversa e decide quem está no toque. Na revisão vale o veto: qualquer um pode tirar uma notícia da capa se apontar na tela a pista que falta — a fonte, a data ou a assinatura —, e quem estava no toque passa a vez. Não explique o veto antes do resultado: ele diria à turma o que procurar.",
       },
       {
         titulo: "Prepare a conversa entre os dois botões",
         texto:
-          "São cerca de dez minutos, com o gráfico projetado e as três perguntas do bloco da seção do debate. É ali que a turma dá nome ao que viu nos balões dos leitores, antes de a Chave do Editor aparecer. Não diga quais blocos vão na Chave: cada dupla monta a sua, e é essa montagem que o painel de habilidades lê.",
+          "São cerca de dez minutos, com o gráfico projetado e as três perguntas do bloco da seção do debate. É ali que a turma dá nome ao que viu nos balões dos leitores, antes de a Chave do Editor aparecer. Não diga quais blocos vão na Chave: cada computador monta a sua, e é essa montagem que o painel de habilidades lê.",
       },
     ],
     naoDiga: [
@@ -181,7 +181,7 @@ export const GUIA_EXP04EF1B: GuiaDaAula = {
         tempo: "0–5",
         momento: "Apresentação: o Bento e as três vagas",
         professor:
-          "Forme as duplas e leia o desafio em voz alta: “Você é o editor do jornal da escola. Escolha três notícias para informar seus leitores e monte a edição de hoje.” O Bento não tem áudio — se a turma precisar, leia a fala dele também.",
+          "Organize a turma nos computadores (individual ou em equipes) e leia o desafio em voz alta: “Você é o editor do jornal da escola. Escolha três notícias para informar seus leitores e monte a edição de hoje.” O Bento não tem áudio — se a turma precisar, leia a fala dele também.",
       },
       {
         tempo: "5–17",
@@ -206,7 +206,7 @@ export const GUIA_EXP04EF1B: GuiaDaAula = {
         tempo: "30–40",
         momento: "A Chave do Editor e a revisão",
         professor:
-          "Aperte depois da conversa — ou no começo da segunda aula. O Bento volta com a Chave do Editor: cada dupla escolhe três blocos entre seis, decide quando cada pista passa ou falha, o que fazer quando ela falha e se vale para todas as notícias. Peça que combinem antes de tocar: é um envio só, sem correção. Com a Chave montada, a dupla revisa a capa, publica a 2ª edição e compara as duas. Vale o veto na dupla.",
+          "Aperte depois da conversa — ou no começo da segunda aula. O Bento volta com a Chave do Editor: cada computador escolhe três blocos entre seis, decide quando cada pista passa ou falha, o que fazer quando ela falha e se vale para todas as notícias. Peça que combinem antes de tocar: é um envio só, sem correção. Com a Chave montada, revisa a capa, publica a 2ª edição e compara as duas. Nas equipes, vale o veto.",
         botao: "Liberar revisão",
       },
       {
@@ -261,10 +261,10 @@ export const GUIA_EXP04EF1B: GuiaDaAula = {
 
   observacao: {
     intro:
-      "Anote ao lado do nome (ou da dupla) durante a mesa, a conversa e a revisão. Nada disso é nota — e nada disso é “quantas verificadas”, que a plataforma já mostra sem nome.",
+      "Anote ao lado do nome (ou da equipe) durante a mesa, a conversa e a revisão. Nada disso é nota — e nada disso é “quantas verificadas”, que a plataforma já mostra sem nome.",
     marcas: [
       { letra: "P", texto: "Abriu as pistas antes de escolher, sem ninguém pedir." },
-      { letra: "C", texto: "Na Chave, a dupla combinou em voz alta antes de tocar, e explicou por que deixou uma armadilha de fora." },
+      { letra: "C", texto: "Na Chave, combinou (ou a equipe combinou) em voz alta antes de tocar, e explicou por que deixou uma armadilha de fora." },
       { letra: "V", texto: "Usou o veto na revisão: apontou na tela a pista que faltava." },
       { letra: "D", texto: "Distinguiu notícia antiga de notícia inventada, com as próprias palavras." },
       { letra: "E", texto: "Explicou a troca pela evidência (o campo), não pela aparência da notícia." },
@@ -294,7 +294,7 @@ export const GUIA_EXP04EF1B: GuiaDaAula = {
       naoFaca: "Ler em voz alta quem teve 0 de 3. Não há ranking nem exposição de quem errou (PDF §7).",
     },
     {
-      quando: "Uma dupla acertou as três na 1ª edição",
+      quando: "Um computador acertou as três na 1ª edição",
       faca:
         "Na revisão ela confirma e explica as escolhas, sem precisar trocar nada. Peça que aponte a pista que sustenta cada notícia (PDF §9).",
     },
@@ -304,7 +304,7 @@ export const GUIA_EXP04EF1B: GuiaDaAula = {
         "Veja no radar qual notícia sem evidência continua nas capas e retome com a turma o critério que ainda falta — sem apontar o computador.",
     },
     {
-      quando: "Uma dupla pergunta se a Chave dela está certa",
+      quando: "Alguém pergunta se a Chave está certa",
       faca:
         "Devolva a pergunta: “o que essa Chave faz com uma notícia de 2018?”. A tela não corrige de propósito, e depois do teste todos recebem a mesma regra de referência.",
       naoFaca: "Dizer quais blocos vão na Chave. A montagem é o que o painel de habilidades lê.",
@@ -321,7 +321,7 @@ export const GUIA_EXP04EF1B: GuiaDaAula = {
         "Ele continua montando a página e vê o resultado assim que publicar e disser por que escolheu. Não espere todo mundo — espere a maioria.",
     },
     {
-      quando: "A dupla não chega a um acordo sobre uma notícia",
+      quando: "A equipe não chega a um acordo sobre uma notícia",
       faca:
         "Na 1ª edição decide quem está no toque, e o toque inverte na revisão. Na revisão vale o veto: quem apontar na tela a pista que falta tira a notícia.",
     },
@@ -412,7 +412,7 @@ export const GUIA_EXP04EF1B: GuiaDaAula = {
     {
       contexto: "Sobrou tempo",
       comoAdaptar:
-        "Peça que cada dupla escolha uma notícia que não foi para a capa e diga o que precisaria aparecer na pista para ela poder ir. É a checagem do avesso.",
+        "Peça que cada estudante ou equipe escolha uma notícia que não foi para a capa e diga o que precisaria aparecer na pista para ela poder ir. É a checagem do avesso.",
     },
   ],
 

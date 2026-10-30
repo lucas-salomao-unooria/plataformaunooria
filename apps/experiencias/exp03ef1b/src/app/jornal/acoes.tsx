@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 /**
  * Os botões e selos do JORNAL (Avançar da galeria, Buscar, Inspecionar Ficha,
- * Continuar do desfecho, Desafio Extra). O `ButtonUjn` para em `lg` = 52px; a
+ * Continuar do desfecho). O `ButtonUjn` para em `lg` = 52px; a
  * classe `.alvo-64` leva o alvo a 64px (a compensação está em `globals.css`).
  */
 export function AcaoDoJornal({

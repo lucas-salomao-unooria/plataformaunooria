@@ -741,7 +741,7 @@ export class PortaVozDosDadosService {
               unidade: c.servico.unidade,
               abrangencia: c.servico.abrangencia,
               periodicidade: c.servico.periodicidade,
-              serie: SERIE_HISTORICA.map((v, i) => ({ periodo: c.servico.periodos[i] ?? `Mês ${i + 1}`, ...v, situacao: c.servico.situacoes[i] ?? "" })),
+              serie: SERIE_HISTORICA.map((v, i) => ({ periodo: c.servico.periodos[i] ?? `Período ${i + 1}`, ...v, situacao: c.servico.situacoes[i] ?? "" })),
             },
             notaTecnica: { ...c.notaTecnica, secoes: c.notaTecnica.secoes.map((x) => ({ ...x })) },
             camadas: { explicacao: { ...c.camadas.explicacao }, fonte: c.camadas.fonte, contexto: c.camadas.contexto },

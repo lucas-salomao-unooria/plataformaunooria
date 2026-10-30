@@ -2,6 +2,7 @@ import { Card, PuzzleBlock, PuzzleTrack } from "@edu/ui/ds";
 import type { ReactNode } from "react";
 import type { Bloco, BlocoPublico } from "../../lib/tipos";
 import { E5 } from "../../lib/textos";
+import type { Arrastavel } from "../comum/arrastar";
 import { Icone } from "../comum/icone";
 
 function RotuloDoBloco({ bloco, rotulo }: { bloco: Bloco; rotulo: string }) {
@@ -15,25 +16,28 @@ function RotuloDoBloco({ bloco, rotulo }: { bloco: Bloco; rotulo: string }) {
 
 /**
  * A bandeja dos blocos da rotina (E5-ALU-01), na ordem EMBARALHADA que o
- * servidor mandou — a tela nunca reordena. Toque sequencial: toca o bloco
- * (fica `selected`), toca a vaga da esteira. Só `@edu/ui/ds`.
+ * servidor mandou — a tela nunca reordena. Toque sequencial (toca o bloco,
+ * que fica `selected`, e toca a vaga da esteira) OU arraste até a vaga
+ * (ADR-201). Só `@edu/ui/ds`.
  */
 export function BandejaDeBlocos({
   blocos,
   naEsteira,
   escolhido,
   aoEscolher,
+  arrastavel,
   status,
 }: {
   blocos: readonly BlocoPublico[];
   naEsteira: readonly (string | null)[];
   escolhido: string | null;
   aoEscolher: (id: string) => void;
+  arrastavel?: Arrastavel;
   status: string;
 }) {
   const livres = blocos.filter((b) => !naEsteira.includes(b.id));
   return (
-    <Card variant="outlined" className="blocos">
+    <Card variant="outlined" className="blocos" data-soltar="bandeja">
       <h2 className="rotulo-de-secao">{E5.bandeja}</h2>
       <ul className="blocos__lista">
         {livres.map((b) => (
@@ -43,6 +47,7 @@ export function BandejaDeBlocos({
               state="idle"
               selected={escolhido === b.id}
               onClick={() => aoEscolher(b.id)}
+              {...arrastavel?.(b.id)}
             />
           </li>
         ))}
@@ -70,6 +75,7 @@ export function EsteiraDaRotina({
   temEscolhido,
   aoSoltar,
   aoTirar,
+  arrastavel,
   acoes,
 }: {
   blocos: readonly BlocoPublico[];
@@ -79,6 +85,7 @@ export function EsteiraDaRotina({
   temEscolhido: boolean;
   aoSoltar: (vaga: number) => void;
   aoTirar: (vaga: number) => void;
+  arrastavel?: Arrastavel;
   acoes: ReactNode;
 }) {
   return (
@@ -86,6 +93,7 @@ export function EsteiraDaRotina({
       <PuzzleTrack
         label={executando ? E5.esteiraExecutando : E5.esteira}
         className="esteira__trilho"
+        data-soltar="esteira"
         showEmptySlotLabel
         emptySlotLabel={(i) => E5.vagaVazia(i)}
         onSlotActivate={executando ? undefined : aoSoltar}
@@ -99,6 +107,7 @@ export function EsteiraDaRotina({
               state={executando ? "locked" : "placed"}
               selected={executando ? ativo === b.id : undefined}
               onClick={executando ? undefined : () => aoTirar(vaga)}
+              {...(executando ? {} : arrastavel?.(b.id))}
             />
           );
         })}

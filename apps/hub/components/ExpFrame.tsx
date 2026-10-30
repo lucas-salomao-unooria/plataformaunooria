@@ -307,9 +307,12 @@ export function ExpFrame(props: {
     <iframe
       ref={frame}
       src={props.src}
-      title={props.titulo || "Conteúdo da missão"}
-      /* O gancho da automação é ESTE atributo, nunca o `title`: o título é o
-         nome que o leitor de tela anuncia e muda por missão (ADR-162). */
+      /* O nome que o leitor de tela anuncia (ADR-162) vai em `aria-label`, e
+         NÃO em `title`: o `title` do iframe vira o balão nativo do navegador
+         por cima da tela da criança, e cortado na borda ("Nina e a Notíci…",
+         ADR-201). O gancho da automação é o `data-experiencia`, nunca o nome,
+         que muda por missão. */
+      aria-label={props.titulo || "Conteúdo da missão"}
       data-experiencia=""
       style={{ border: 0, width: "100%", height: "100%", display: "block" }}
       sandbox={sandbox}

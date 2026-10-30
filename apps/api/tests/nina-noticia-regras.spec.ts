@@ -14,7 +14,6 @@ import {
 } from "../src/nina-noticia/banco-padrao";
 import {
   CARTOES_DA_MISSAO,
-  DESAFIO_EXTRA,
   DESCRICAO_DA_CENA_FIXA,
   FICHAS_TESTE,
   MATERIAS_DO_CASO,
@@ -167,13 +166,13 @@ describe("o banco padrão e as invariantes do pacote", () => {
     expect(promptDaImagem("cartaz", conteudoDoBancoPadrao())).toContain("Feira de Troca de Livros");
   });
 
-  test("toda cena fixa tem descrição, e o caso e o Desafio Extra são os do 01e", () => {
+  test("toda cena fixa tem descrição, e o caso é o do 01e (o Desafio Extra saiu, ADR-201)", () => {
     expect(Object.keys(DESCRICAO_DA_CENA_FIXA).sort()).toEqual([...CHAVES_DAS_CENAS_FIXAS].sort());
     expect(MATERIAS_DO_CASO.map((m) => [m.diaNoCartaz, m.ficha.quando])).toEqual([
       ["sexta", null],
       ["sabado", null],
     ]);
-    expect(DESAFIO_EXTRA.map((f) => f.manchete)).toEqual(["Campeonato de Pira", "Teatro de Fantoches"]);
+    expect(CHAVES_DAS_CENAS_FIXAS).toEqual(["caso-a", "caso-b"]);
     expect(FICHAS_TESTE.map((f) => f.manchete)).toEqual(["Oficina de Pipas", "Clube de Xadrez", "Horta da Escola"]);
   });
 });

@@ -140,7 +140,7 @@ export function MesaDoJornal({ dados }: { dados: MaterialDoJornal | null }) {
           A Chave do Editor: seis blocos, três que valem e três armadilhas
         </p>
         <p className="mt-1 text-[12px] leading-relaxed text-unooria-neutral-600">
-          Cada dupla monta a sua Chave, uma vez só e sem correção na tela: escolhe três blocos para as três vagas,
+          Cada computador monta a sua Chave, uma vez só e sem correção na tela: escolhe três blocos para as três vagas,
           diz de que lado fica cada cartão (a pista passa ou falha), o que fazer quando uma pista falha (“Não
           publico” ou “Olho a próxima pista”) e se a Chave vale para todas as notícias ou só para a primeira. A
           Chave de referência é fonte, data e autoria, com os cartões do lado abaixo, “Não publico” em todas as vagas
@@ -181,7 +181,7 @@ export function MesaDoJornal({ dados }: { dados: MaterialDoJornal | null }) {
             </p>
             <p className="mt-1 text-[12px] leading-relaxed text-unooria-neutral-600">
               Cada computador abre as pistas na ordem da própria Chave e decide se publica. Sem imagem e sem capa: elas
-              só testam se a dupla segue a regra que montou. Depois, todos recebem na tela a mesma regra de referência.
+              só testam se a regra montada é seguida. Depois, todos recebem na tela a mesma regra de referência.
             </p>
             <ul className="mt-2 grid gap-3 lg:grid-cols-2">
               {dados.simulacao.map((m) => {
