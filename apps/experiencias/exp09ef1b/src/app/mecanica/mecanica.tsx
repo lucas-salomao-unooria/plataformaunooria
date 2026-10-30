@@ -1,4 +1,4 @@
-import { useEffect, useState, type DragEvent, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { AlertBox, Button, Card, ProgressBar, PuzzleBlock, PuzzleTrack, SpeechBubble, Table, Tag, type TableColumn } from "@edu/ui/ds";
 import { OCR_MS, descartar, devolver, mover, moverNaEsteira, noBanco, podeEnviar, podeRegistrar, porNaVerificacao, type Editor } from "../../lib/regras";
 import { TEXTOS } from "../../lib/textos";
@@ -11,10 +11,11 @@ import type { BlocoId, Criterio, LinhaDaTabela, ProjetoId, ProjetoNaTela, Sessao
  * arrastáveis), Amara, o OCR e a tabela. Este arquivo importa SÓ a ponte
  * `@edu/ui/ds` (seção `unooria`; DS híbrido, ADR-202). Tokens `--unooria-*`.
  *
- * Arrastar é o gesto do PO; os botões (Subir/Descer, Mover para Lixeira) e o
- * toque (toca o bloco, toca a vaga) são a mesma ação para teclado e tablet.
- * (b) COMPENSAÇÃO — sem par no DS: o arrasto nativo (HTML5 drag) em volta do
- * `PuzzleBlock`, que só conhece toque (pedido: `draggable` no PuzzleBlock).
+ * Arrastar é o gesto do PO, e é do DS desde a 0.2.26: `dragData` no
+ * `PuzzleBlock` e `onSlotDrop` na `PuzzleTrack` (o tipo do `dataTransfer` é o
+ * do DS — um texto arrastado de fora não entra). Os botões (Subir/Descer,
+ * Mover para Lixeira) e o toque (toca o bloco, toca a vaga) são a mesma ação
+ * para teclado e tablet.
  */
 
 type Tela = Sessao["textos"]["tela"];
@@ -42,26 +43,18 @@ export function Ranking({
   onMudar?: (novo: Criterio[]) => void;
   travado?: boolean;
 }) {
-  const [arrastando, setArrastando] = useState<number | null>(null);
-  const soltar = (para: number) => (e: DragEvent) => {
-    e.preventDefault();
-    if (arrastando !== null && onMudar) onMudar(mover(ranking, arrastando, para));
-    setArrastando(null);
+  const soltar = (para: number, id: string) => {
+    const de = ranking.indexOf(id as Criterio);
+    if (de >= 0 && onMudar) onMudar(mover(ranking, de, para));
   };
   return (
-    <ol className="ranking" aria-label={tela.ordeneCriterios}>
-      {ranking.map((c, i) => (
-        <li
-          key={c}
-          className={`ranking__item${arrastando === i ? " ranking__item--arrastando" : ""}`}
-          draggable={!travado}
-          onDragStart={() => setArrastando(i)}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={soltar(i)}
-          onDragEnd={() => setArrastando(null)}
-          data-criterio={c}
-        >
-          <PuzzleBlock label={`${i + 1}º ${rotulos[c]}`} state={travado ? "locked" : "placed"} className="ranking__bloco" tabIndex={-1} />
+    <PuzzleTrack
+      label={tela.ordeneCriterios}
+      className="ranking"
+      onSlotDrop={travado ? undefined : soltar}
+      slots={ranking.map((c, i) => (
+        <span key={c} className="ranking__item" data-criterio={c}>
+          <PuzzleBlock label={`${i + 1}º ${rotulos[c]}`} state={travado ? "locked" : "placed"} dragData={travado ? undefined : c} className="ranking__bloco" tabIndex={-1} />
           {!travado && onMudar && (
             <span className="ranking__botoes">
               <Button variant="ghost" size="sm" disabled={i === 0} onClick={() => onMudar(mover(ranking, i, i - 1))} aria-label={`${tela.subirCriterio}: ${rotulos[c]}`}>
@@ -72,9 +65,9 @@ export function Ranking({
               </Button>
             </span>
           )}
-        </li>
+        </span>
       ))}
-    </ol>
+    />
   );
 }
 
@@ -307,63 +300,58 @@ export function EditorDeProtocolo({
 }) {
   const [editor, setEditor] = useState<Editor>({ slots: [null, null, null], descarte: [] });
   const [escolhido, setEscolhido] = useState<BlocoId | null>(null);
-  const [arrastando, setArrastando] = useState<BlocoId | null>(null);
   const livres = noBanco(banco, editor);
   const vagas = [tela.slot1, tela.slot2, tela.slot3] as string[];
 
-  const naVaga = (vaga: number) => {
-    const bloco = arrastando ?? escolhido;
+  const ehBloco = (id: string): id is BlocoId => banco.includes(id as BlocoId);
+  const naVaga = (vaga: number, bloco: BlocoId | null = escolhido) => {
     if (!bloco) return;
     setEditor((e) => porNaVerificacao(e, bloco, vaga));
     setEscolhido(null);
-    setArrastando(null);
   };
   const naLixeira = (bloco: BlocoId | null) => {
     if (!bloco) return;
     setEditor((e) => descartar(e, bloco));
     setEscolhido(null);
-    setArrastando(null);
   };
-  const largavel = (aoSoltar: () => void) => ({
-    onDragOver: (e: DragEvent) => e.preventDefault(),
-    onDrop: (e: DragEvent) => {
-      e.preventDefault();
-      aoSoltar();
-    },
-  });
 
   return (
     <Card variant="outlined" className="editor" data-tela="E5-ALU-02">
       <h2 className="deliberacao__titulo">{tela.editorTitulo}</h2>
       <p className="deliberacao__guia">{tela.editorOrientacao}</p>
       <div className="editor__colunas">
-        <section className="editor__banco" aria-label={TEXTOS.bancoDeRegras} {...largavel(() => arrastando && setEditor((e) => devolver(e, arrastando)))}>
-          <h3 className="editor__rotulo">{TEXTOS.bancoDeRegras}</h3>
-          <ul className="editor__lista">
-            {livres.map((b) => (
-              <li key={b} draggable onDragStart={() => setArrastando(b)} onDragEnd={() => setArrastando(null)} data-bloco={b}>
-                <PuzzleBlock label={rotulos[b]} state="idle" selected={escolhido === b} onClick={() => setEscolhido(escolhido === b ? null : b)} className="editor__bloco" />
-                <Button variant="ghost" size="sm" onClick={() => naLixeira(b)} aria-label={`${tela.moverParaLixeira}: ${rotulos[b]}`}>
-                  {tela.moverParaLixeira}
-                </Button>
-              </li>
-            ))}
-          </ul>
+        <section className="editor__banco" aria-label={TEXTOS.bancoDeRegras}>
+          <PuzzleTrack
+            label={TEXTOS.bancoDeRegras}
+            onSlotDrop={(_, id) => ehBloco(id) && setEditor((e) => devolver(e, id))}
+            slots={[
+              ...livres.map((b) => (
+                <span key={b} className="editor__item" data-bloco={b}>
+                  <PuzzleBlock label={rotulos[b]} state="idle" dragData={b} selected={escolhido === b} onClick={() => setEscolhido(escolhido === b ? null : b)} className="editor__bloco" />
+                  <Button variant="ghost" size="sm" onClick={() => naLixeira(b)} aria-label={`${tela.moverParaLixeira}: ${rotulos[b]}`}>
+                    {tela.moverParaLixeira}
+                  </Button>
+                </span>
+              )),
+              null,
+            ]}
+          />
         </section>
         <section className="editor__esteira" aria-label={TEXTOS.esteira}>
           <h3 className="editor__rotulo">{TEXTOS.esteira}</h3>
           {editor.slots.map((b, vaga) => (
-            <div key={vaga} className="editor__vaga" data-vaga={vaga} {...largavel(() => naVaga(vaga))}>
+            <div key={vaga} className="editor__vaga" data-vaga={vaga}>
               <PuzzleTrack
                 label={vagas[vaga] ?? ""}
                 showEmptySlotLabel
                 emptySlotLabel={() => vagas[vaga] ?? ""}
                 onSlotActivate={() => naVaga(vaga)}
-                slotsDisabled={!escolhido && !arrastando && b === null}
+                onSlotDrop={(_, id) => ehBloco(id) && naVaga(vaga, id)}
+                slotsDisabled={!escolhido && b === null}
                 slots={[
                   b ? (
-                    <span key={b} className="editor__encaixado" draggable onDragStart={() => setArrastando(b)} onDragEnd={() => setArrastando(null)} data-bloco={b}>
-                      <PuzzleBlock label={rotulos[b]} state="placed" onClick={() => setEditor((e) => devolver(e, b))} />
+                    <span key={b} className="editor__encaixado" data-bloco={b}>
+                      <PuzzleBlock label={rotulos[b]} state="placed" dragData={b} onClick={() => setEditor((e) => devolver(e, b))} />
                     </span>
                   ) : null,
                 ]}
@@ -383,16 +371,17 @@ export function EditorDeProtocolo({
               )}
             </div>
           ))}
-          <div className="editor__descarte" data-descarte {...largavel(() => naLixeira(arrastando))}>
+          <div className="editor__descarte" data-descarte>
             <PuzzleTrack
               label={tela.descarte}
               showEmptySlotLabel
               emptySlotLabel={() => tela.descarte}
               onSlotActivate={() => naLixeira(escolhido)}
+              onSlotDrop={(_, id) => ehBloco(id) && naLixeira(id)}
               slotsDisabled={!escolhido}
               slots={
                 editor.descarte.length > 0
-                  ? editor.descarte.map((d) => <PuzzleBlock key={d} label={rotulos[d]} state="returned" onClick={() => setEditor((e) => devolver(e, d))} />)
+                  ? [...editor.descarte.map((d) => <PuzzleBlock key={d} label={rotulos[d]} state="returned" dragData={d} onClick={() => setEditor((e) => devolver(e, d))} />), null]
                   : [null]
               }
             />

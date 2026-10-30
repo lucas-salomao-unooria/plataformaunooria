@@ -262,16 +262,13 @@ body,
   list-style: none;
 }
 
-/* (b) COMPENSAÇÃO — o arrasto nativo em volta do `PuzzleBlock` (que só conhece toque): o item e o cursor. */
-.ranking__item {
+/* O item do ranking: o bloco e os botões lado a lado (o arrasto e o cursor são do DS desde a 0.2.26). */
+.ranking__item,
+.editor__item {
   display: flex;
   align-items: center;
   gap: 8px;
-  cursor: grab;
-}
-
-.ranking__item--arrastando {
-  opacity: 0.5;
+  width: 100%;
 }
 
 .ranking__bloco {
@@ -371,10 +368,6 @@ body,
   gap: 12px;
 }
 
-.editor__lista li[draggable="true"],
-.editor__encaixado {
-  cursor: grab;
-}
 
 .conclusao__selo {
   margin: 0;

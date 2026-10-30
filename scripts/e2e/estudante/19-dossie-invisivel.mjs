@@ -647,12 +647,12 @@ await suite(
       r.exigir(await enviar.isDisabled(), `${rotulo}: o editor abre limpo, com “Enviar Proposta” desabilitado`);
       for (const [vaga, bloco] of slots.entries()) {
         if (!bloco) continue;
-        await editor.locator(`.editor__banco li[data-bloco="${bloco}"] > *`).first().click();
+        await editor.locator(`.editor__banco [data-bloco="${bloco}"] button`).first().click();
         await editor.locator(`.editor__vaga[data-vaga="${vaga}"] button[data-slot-index="0"]`).click();
         await editor.locator(`.editor__vaga[data-vaga="${vaga}"] [data-bloco="${bloco}"]`).waitFor({ timeout: 5_000 });
       }
       for (const bloco of lixeira) {
-        await editor.locator(`.editor__banco li[data-bloco="${bloco}"]`).getByRole("button", { name: /^Mover para Lixeira/ }).click();
+        await editor.locator(`.editor__banco [data-bloco="${bloco}"]`).getByRole("button", { name: /^Mover para Lixeira/ }).click();
       }
       r.exigir(!(await enviar.isDisabled()), `${rotulo}: com um bloco na esteira, “Enviar Proposta” acende (sem trava no cliente)`);
       return { editor, enviar, enviarAgora: () => comResposta(pg, /sessao\/protocolo$/, () => enviar.click()) };

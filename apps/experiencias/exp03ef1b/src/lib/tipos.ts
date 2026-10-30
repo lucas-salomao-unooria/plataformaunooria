@@ -17,7 +17,7 @@ export const EXP_ID = "exp03ef1b";
  * A versão vive em TRÊS lugares: aqui, no `package.json` e no
  * `public/experiencia.json`. O `versao.test.ts` compara os três (ADR-84).
  */
-export const EXP_VERSION = "0.1.1";
+export const EXP_VERSION = "0.1.2";
 
 /** O prefixo das rotas do módulo da api (`apps/api/src/nina-noticia`). */
 export const ROTA = "/nina-noticia";

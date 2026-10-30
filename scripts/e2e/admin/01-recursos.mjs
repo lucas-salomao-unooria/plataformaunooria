@@ -421,9 +421,14 @@ await suite(
     await linhaDoDossie.getByText(/desligad/i).waitFor({ state: "detached", timeout: 30_000 });
     const dossieReligado = await sessaoDoDossie();
     r.exigir(
-      dossieReligado.status === dossieAntes.status && dossieAntes.status === 200,
-      `herdando de novo, a rota do estudante da 9A volta a responder 200 (${dossieAntes.status} → ${dossieReligado.status})`,
+      dossieReligado.status === dossieAntes.status,
+      `herdando de novo, a rota do estudante da 9A volta ao que respondia antes de desligar (${dossieAntes.status} → ${dossieReligado.status})`,
     );
+    /* A pré-condição do "volta a 200" é a missão LIBERADA na 9A deste banco (ADR-69): sem a liberação, a
+       rota já responde 403 missao-nao-liberada antes de desligar — o estado do banco, não um defeito. */
+    if (dossieAntes.status !== 200) {
+      r.ressalva(`a exp09ef1b não está liberada na 9A deste banco (${dossieAntes.status} ${dossieAntes.codigo ?? ""}): o "volta a responder 200" não foi exercido`);
+    }
 
     // ── o mesmo histórico, do lado da REDE ──────────────────────────────
     /* A assimetria da ADR-88 medida nas duas direções, com a conta do
