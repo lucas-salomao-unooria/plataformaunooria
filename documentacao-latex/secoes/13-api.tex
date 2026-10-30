@@ -951,7 +951,10 @@ TODA missão que o tem --- hoje a A Seleção (\cd{exp07ef1b}), o Jornal da Esco
 (\cd{exp04ef1b}), Quem Mandou Isso? (\cd{exp05ef1b}) e O Júri Estadual de
 Projetos (\cd{exp06ef1b}, \adrr{ADR-151} e \adrr{ADR-157}: o banco padrão
 tem o roteiro literal, \cd{padrao: true}; a mostra da IA tem as falas da IA, e a atividade é \cd{pacoteParaPodcast}, que aceita a de imagens
-já aprovadas), o Unoovista (\cd{exp08ef1b}, \adrr{ADR-156}: as falas vão no
+já aprovadas), O Enigma da Capa da Rádio (\cd{exp02ef1b}, \adrr{ADR-204}:
+sete vagas; a Biblioteca intocada é o \cd{padrao}, a Horta e o Museu
+intocados entregam \cd{falasProprias}, e a cena da IA tem as falas revisadas
+na curadoria, gravadas pelo \rota{homologar}), o Unoovista (\cd{exp08ef1b}, \adrr{ADR-156}: as falas vão no
 corpo do \rota{POST /atividades/:id/ativar}) e a Missão Tempestade
 (\cd{exp02em1b}, \adrr{ADR-156}: o podcast FIXO, sem vaga e sem
 \rota{falas-do-tema}, com a atividade \cd{"turma"}) ---, com rotas únicas e
@@ -986,7 +989,9 @@ para a missão sem atividade; sem ele, a em andamento.
   tem (\cd{\{conteudo\}}, na forma da missão; fora dela, 400
   \cd{payload-invalido}). \textbf{Rascunho: não grava} --- quem grava é a
   homologação da missão. O banco padrão intocado volta com as falas do sheet,
-  sem IA; sem saldo ou com a IA fora do ar, 200 com as do sheet e o
+  sem IA, e o conteúdo pronto para o qual a missão já tem falas também (o
+  gancho opcional \cd{falasProntas} da \cd{EscritaDasFalas}: a Horta e o
+  Museu da exp02ef1b, \adrr{ADR-204}); sem saldo ou com a IA fora do ar, 200 com as do sheet e o
   \cd{motivo}. Cada fala tem de 12 a 60 palavras, até 400 bytes, sem link,
   e-mail nem \enquote{@}. Quota do professor pelo que o \emph{vendor} cobrou
   (\adrr{ADR-105}, \adrr{ADR-74}) e 10 chamadas por minuto.\\
@@ -1325,7 +1330,9 @@ hub espelham os tipos dele. Sem atividade no ar, as jogadas respondem 409
 estendem). A turma do estudante sai do \emph{token}, nunca do corpo. Nenhuma
 rota recebe texto da criança, e a ficha não tem pergunta: a evidência é 100\%
 ação em tela. O podcast é do módulo da plataforma
-(\rota{/podcast/\B{}exp02ef1b/\B{}turmas/:t/*}, \adrr{ADR-150}).
+(\rota{/podcast/\B{}exp02ef1b/\B{}turmas/:t/*}, \adrr{ADR-150}) e conta a cena da
+atividade (\adrr{ADR-204}): a cena da IA aprovada antes dele responde 409
+\cd{roteiro-\B{}indisponivel}.
 
 \begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
 \toprule
@@ -1387,7 +1394,10 @@ ação em tela. O podcast é do módulo da plataforma
 \zebra \rota{POST .../turmas/:turmaId/\B{}homologar} & \textbf{só professor} &
   \enquote{Aprovar}: o rascunho que o professor VIU (\cd{rascunhoId}; outra
   aba que gerou de novo dá 409) vira atividade pronta, com a edição opcional
-  dos selos e das falas, pela mesma régua.\\
+  dos selos e das falas, pela mesma régua. Desde a \adrr{ADR-204} EXIGE
+  \cd{podcast} (as sete falas do roteiro, revisadas na curadoria) e as grava
+  em \cd{podcast\_\B{}roteiros} na mesma transação --- também no segundo
+  clique, sobre o pacote já aprovado.\\
 \rota{POST .../turmas/:turmaId/\B{}banco-padrao} & \textbf{só
   professor} & Um toque: aprova e põe no ar a Biblioteca, a Horta ou o Museu
   (reusando o mesmo pronto já aprovado na turma, sem tocar no rascunho).\\
