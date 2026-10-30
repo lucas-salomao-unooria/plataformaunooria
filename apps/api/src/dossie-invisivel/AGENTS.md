@@ -52,9 +52,10 @@ citar o caso que saiu (`podcast.ts`).
   banco desce embaralhado por sessão (`embaralhar`). O ranking da E3 também
   nasce embaralhado (G7).
 - **A fala de Amara** afirma a indução da turma só se ≥ 50% votou na nuvem na
-  E3; senão, a variante neutra [PROPOSTA] (G9).
-- **Os textos `[PROPOSTA]`** em `conteudo.ts` são lacunas da copy (as pílulas,
-  "Ver Projetos", a espera do debate, o botão da 3ª trava): vão ao PO.
+  E3; senão, a variante neutra (G9).
+- **As lacunas da copy** (as pílulas, "Ver Projetos", a espera do debate, o
+  botão da 3ª trava, a fala neutra de Amara) foram escritas pela implementação
+  e aceitas pelo Lucas em 30/10 — sem marcação no texto, que o estudante lê.
 - **O preparo, o zerar e o podcast** seguem a exp03em1b: `pacotes/padrao` é o
   banco curado já aprovado e no ar; `gerar-conteudo` → rascunho →
   `regenerar` → `homologar` → `em-andamento`; zerar = ADR-155; podcast fixo,
