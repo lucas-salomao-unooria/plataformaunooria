@@ -1158,7 +1158,12 @@ o que já SUBIU} &
   falha de código, teste ou \emph{migration} exige correção em \cd{dev} e
   promoção nova --- re-rodar só repete. Se nem isso resolver, o \emph{rollback}
   é por CAMADA: revisão anterior no Cloud Run e \cd{versao\_ativa} das
-  experiências pelo painel da Unooria.\\
+  experiências pelo painel da Unooria. Um \cd{smoke} vermelho SÓ por
+  \cd{page.screenshot: Timeout} (o rodapé de \cd{publico/01-site}, quatro
+  \emph{reruns} seguidos em 2026-10-30, com o \cd{deploy-hub} pulado) não era
+  produto: o Playwright espera as fontes antes de capturar. Hoje o
+  \cd{registrar} cai para a captura direta pelo protocolo e escreve no log o
+  estado das fontes --- leia essa linha antes de procurar regressão.\\
 \textbf{\cd{error getting credentials} no \emph{push} da imagem} &
   Parece permissão e NÃO é: é o \emph{credential helper} do Docker falhando
   sozinho. O CI autenticava com \cd{gcloud auth configure-docker}, que registra
