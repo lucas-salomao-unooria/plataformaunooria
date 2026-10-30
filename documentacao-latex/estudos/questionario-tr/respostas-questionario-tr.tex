@@ -1,0 +1,148 @@
+% ===========================================================================
+%  PLATAFORMA UNOORIA — Respostas ao questionário de validação do TR
+%  (Liga Digital, versão 1 do questionário, 30/10/2026) — PU-EST-003
+%  Documento autonomo. Compilar a partir desta pasta:
+%      tectonic -k respostas-questionario-tr.tex
+% ===========================================================================
+\documentclass[11pt, a4paper, oneside, openany]{report}
+
+\input{../../preambulo/estilo}
+\input{../../preambulo/diagramas}
+\graphicspath{{../../}}
+
+% Rodape com o codigo deste documento, nao o da PU-DOC-001
+\renewcommand{\docid}{PU-EST-003}
+\renewcommand{\docversao}{1.0}
+
+% --- Selos de status (somente tokens unoo*) ---------------------------------
+\newcommand{\selo}[3]{%
+  \tikz[baseline=-0.55ex]\node[
+    fill=#1, draw=#2, text=#2, line width=0.5pt, rounded corners=2pt,
+    inner xsep=4.5pt, inner ysep=1.6pt,
+    font=\sffamily\bfseries\fontsize{6.8}{8}\selectfont
+  ]{#3};%
+}
+\newcommand{\implementado}{\selo{unooGreenWash}{unooGreen!75!black}{IMPLEMENTADO}}
+\newcommand{\parcial}{\selo{unooOrangeWash}{unooOrange!85!black}{PARCIAL}}
+\newcommand{\naoimpl}{\selo{unooRedWash}{unooRed}{NÃO IMPLEMENTADO}}
+\newcommand{\naoexiste}{\selo{unooRedWash}{unooRed}{NÃO EXISTE ATUALMENTE}}
+\newcommand{\foradorepo}{\selo{unooLavenderWash}{unooNavy}{FORA DO REPOSITÓRIO}}
+\newcommand{\variapormissao}{\selo{unooBlueWash}{unooBlue!60!black}{VARIA POR MISSÃO}}
+
+% --- Caixa de resposta de uma pergunta (estilo da historia do mapa) ---------
+%  #1 codigo (P01), #2 titulo curto, #3 selo de status
+\newtcolorbox{resposta}[3]{
+  enhanced, breakable,
+  colback=white, colframe=unooGrid,
+  borderline west={3pt}{0pt}{unooNavy},
+  boxrule=0.5pt, arc=2pt,
+  left=10pt, right=10pt, top=6pt, bottom=6pt,
+  before skip=10pt, after skip=10pt,
+  colbacktitle=unooLavenderWash, coltitle=unooNavy,
+  fonttitle=\sffamily\bfseries\small,
+  toptitle=4pt, bottomtitle=4pt, lefttitle=10pt,
+  title={\texttt{#1}\hspace{6pt}#2\hfill#3}
+}
+
+% Campos da resposta: Hoje / Limitações / Planejado / Evidência
+\newlist{campos}{description}{1}
+\setlist[campos]{
+  font=\sffamily\bfseries\footnotesize\color{unooNavy},
+  leftmargin=27mm, labelwidth=24mm, labelsep=3mm,
+  align=left, itemsep=3pt, topsep=3pt, parsep=1pt
+}
+
+% Sugestao de redacao para o TR (requisito observavel + criterio de aceite)
+\newtcolorbox{paraotr}[1][]{unoobase, colback=unooBlueWash, colframe=unooBlue,
+  title={Proposta de redação para o TR}, #1}
+
+\begin{document}
+
+% ===========================================================================
+%  CAPA
+% ===========================================================================
+\begin{titlepage}
+\begin{tikzpicture}[remember picture, overlay]
+  \fill[unooNavy] (current page.north west) rectangle ([yshift=-26mm]current page.north east);
+  \fill[unooBlue] ([yshift=-26mm]current page.north west) rectangle ([yshift=-28.5mm]current page.north east);
+  \fill[unooLavenderWash] (current page.south west) rectangle ([yshift=22mm]current page.south east);
+  \draw[unooLavender, line width=0.6pt]
+    ([yshift=22mm]current page.south west) -- ([yshift=22mm]current page.south east);
+  \node[anchor=west, text=white, font=\sffamily\bfseries\small]
+    at ([xshift=22mm, yshift=-13mm]current page.north west)
+    {UNOORIA \enspace\textperiodcentered\enspace PRODUTO, ENGENHARIA E LICITAÇÃO};
+  \node[anchor=east, text=unooLavenderSoft, font=\sffamily\footnotesize]
+    at ([xshift=-22mm, yshift=-13mm]current page.north east)
+    {CÓDIGO: PU-EST-003 \enspace|\enspace VERSÃO 1.0};
+\end{tikzpicture}
+
+\vspace*{28mm}
+\begin{flushleft}
+  \includegraphics[width=50mm]{figuras/marca/logo_azul_profundo.png}\\[14mm]
+  {\sffamily\bfseries\fontsize{10}{12}\selectfont\color{unooBlue}
+    SUBSÍDIO AO TERMO DE REFERÊNCIA}\\[4mm]
+  {\sffamily\bfseries\fontsize{25}{30}\selectfont\color{unooNavy}
+    Liga Digital}\\[3mm]
+  {\sffamily\fontsize{14}{19}\selectfont\color{unooInkSoft}
+    Respostas ao questionário de validação para os times: o que a plataforma
+    faz hoje, o que falta, o que a V1 promete e a evidência de cada
+    afirmação}\\[10mm]
+  {\color{unooBlue}\rule{36mm}{2pt}}\\[10mm]
+\end{flushleft}
+
+\begin{tcolorbox}[
+  enhanced, colback=unooSurface, colframe=unooGrid,
+  boxrule=0.5pt, arc=2pt, left=10pt, right=10pt, top=8pt, bottom=8pt
+]
+\footnotesize\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+  \textbf{\sffamily\color{unooNavy}Questionário respondido} &
+    \emph{Liga Digital --- Questionário de validação para os times},
+    versão 1, de 30/10/2026: dez perguntas de Produto e Pedagogia
+    (P01--P10), onze de Tecnologia, IA, Segurança e Operação (T01--T11), três
+    de Editorial, Formação e Implantação (E01--E03) e os seis compromissos
+    obrigatórios da V1 (V1-01 a V1-06).\\
+  \textbf{\sffamily\color{unooNavy}Base das respostas} &
+    O monorepo da Plataforma Unooria na branch \cd{dev-local}: código,
+    testes, suítes e2e, a Documentação Técnica (\cd{PU-DOC-001}), o Mapa de
+    Produto (\cd{PU-PRD-001}) e o estudo de carga (\cd{PU-EST-001}).\\
+  \textbf{\sffamily\color{unooNavy}Regra de leitura} &
+    Cada afirmação aponta a evidência de onde saiu. O que só existe em
+    desenvolvimento não é tratado como implementado, e o que o repositório não
+    responde (PoC, coleção didática, formação, SLA comercial) está marcado como
+    \foradorepo, para o time responsável completar.\\
+  \textbf{\sffamily\color{unooNavy}Data de referência} &
+    30 de outubro de 2026\\
+\end{tabularx}
+\end{tcolorbox}
+
+\vfill
+\begin{flushleft}
+  \footnotesize\sffamily\color{unooMuted}
+  Documento complementar à Documentação Técnica da Plataforma Unooria
+  (\arq{documentacao-latex/main.pdf}) e ao Mapa de Produto (\cd{PU-PRD-001}).
+  Destina-se às equipes que consolidam o Termo de Referência; não é peça do
+  edital.
+\end{flushleft}
+\vspace*{10mm}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\cleardoublepage
+\pagenumbering{arabic}
+\pagestyle{unoomain}
+
+\input{capitulos/01-como-ler}
+\input{capitulos/02-quadro-resumo}
+\input{capitulos/03-produto-e-pedagogia}
+\input{capitulos/04-tecnologia}
+\input{capitulos/05-editorial-e-implantacao}
+\input{capitulos/06-compromissos-v1}
+\input{capitulos/07-consolidacao}
+
+\appendix
+\renewcommand{\thechapter}{\Alph{chapter}}
+\input{capitulos/99-catalogo}
+
+\end{document}

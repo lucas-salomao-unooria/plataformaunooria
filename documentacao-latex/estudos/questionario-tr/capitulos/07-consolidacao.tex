@@ -1,0 +1,106 @@
+% ===========================================================================
+%  CAPITULO 7 — Consolidação para o Termo de Referência
+% ===========================================================================
+\chapter{Consolidação para o Termo de Referência}
+\label{cap:consolidacao}
+
+\section{O que o TR pode afirmar com segurança}
+
+Itens com evidência no código e em testes, que podem ser exigidos como
+requisito sem risco de a solução atual não atender:
+
+\begin{itemize}
+  \item Acesso 100\% web, sem instalação, com interface responsiva.
+  \item Carga cadastral no padrão OneRoster 1.2 (CSV), por interface e API,
+    com importação parcial, relatório de erros e carga idempotente.
+  \item Seis perfis com autorização aplicada no servidor e isolamento lógico
+    por escola; isolamento físico por contrato.
+  \item Ficha e guia de aula por missão, com objetivos, habilidades BNCC,
+    roteiro e rubrica.
+  \item Personalização por IA com aprovação obrigatória do professor antes do
+    uso, sem alterar a estrutura pedagógica nem os critérios de avaliação.
+  \item Avaliação por habilidade com regras no servidor, histórico de rodadas
+    e revisão pelo professor, que prevalece sobre a classificação
+    automática.
+  \item Proteção do texto do estudante: nada de identificação enviada à IA;
+    textos livres fora de painéis e registros técnicos.
+  \item Progresso salvo no servidor a cada interação, com retomada.
+\end{itemize}
+
+\section{O que o TR não deve afirmar ainda}
+
+\begin{limitacao}
+\begin{itemize}
+  \item Ganhos de aprendizagem, engajamento ou aceitação (P10 sem relatório).
+  \item Capacidade comprovada de carga (nenhum teste executado, T09).
+  \item Conformidade declarada com WCAG AA (falta a avaliação manual, P09).
+  \item Login federado por OIDC ou SAML em operação (T02).
+  \item Duplicação ou compartilhamento de missões personalizadas (P03).
+  \item Anexar documentos para orientar a IA (P02).
+  \item Funcionamento \emph{offline} (T08).
+  \item Recomendações pedagógicas por IA e pré-visualização (V1-02 a V1-04:
+    são compromissos, não funções existentes).
+\end{itemize}
+\end{limitacao}
+
+\section{Decisões que o TR precisa tomar}
+
+\begin{decisao}
+\begin{enumerate}
+  \item \textbf{Residência de dados}: admitir transferência internacional com
+    as salvaguardas da ANPD ou exigir dados no Brasil (T06). A segunda opção
+    muda infraestrutura, custo e o modelo de IA disponível.
+  \item \textbf{Retenção e exclusão}: prazos por categoria de dado e o
+    destino ao fim do contrato (T06).
+  \item \textbf{Revogação de acesso}: prazo máximo entre desligar uma pessoa e
+    ela perder acesso, inclusive em sessão aberta (T02).
+  \item \textbf{Integração cadastral}: se basta a rede enviar as cargas ou se
+    será exigida sincronização automática (T03).
+  \item \textbf{Nível de serviço e suporte}: disponibilidade, horários,
+    severidades e prazos (T09, E03).
+  \item \textbf{Equipamento de referência}: navegadores, telas e banda mínimos
+    a declarar no edital (T01).
+\end{enumerate}
+\end{decisao}
+
+\section{Pendências por time}
+
+\begin{center}
+\footnotesize\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\textbf{Time} & \textbf{O que precisa entregar para fechar o TR}\\
+\midrule
+\endhead
+Produto / Pedagogia & Relatório da PoC (P10); capturas de ficha e guia (P01);
+  par entrada/saída de personalização (P02); prompts e casos de avaliação
+  das recomendações (V1-03, V1-04); responsáveis e datas da V1.\\
+Editorial & Matriz ano $\times$ bimestre com livro e missão; componentes
+  entregues; o que está no livro e o que está na plataforma (E01, E02).\\
+Engenharia & Matriz de compatibilidade (T01); teste de carga do
+  \cd{PU-EST-001} (T09); RPO e RTO; diagrama geral de fluxo de dados (T06);
+  relatório atualizado de acessibilidade e avaliação manual (P09);
+  configuração dos filtros do provedor de IA (T05); auditoria de
+  autenticação e publicação (T07); V1-01, V1-02 e V1-06.\\
+Jurídico / DPO & Retenção e exclusão; suboperadores (incluir o avatar da
+  Ajuda); cláusula do provedor de IA sobre uso de dados (T06).\\
+Implantação / Comercial & Plano de implantação, formação e suporte (E03,
+  T09).\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Recomendações de forma para o TR}
+
+\begin{itemize}
+  \item Escrever cada requisito como resultado observável com critério de
+    aceite, como nas caixas ``Proposta de redação'' deste documento, sem
+    nomear tecnologia, nuvem ou marca.
+  \item Exigir demonstração em homologação com dados sintéticos para todo
+    requisito declarado como atendido.
+  \item Tratar acessibilidade e proteção de dados como exigência legal, não
+    como item de \emph{roadmap}.
+  \item Manter fora do escopo mínimo as ideias que não são compromisso da V1
+    (duplicação e compartilhamento, anexos, modo \emph{offline}, SAML) ou
+    marcá-las como opcionais pontuáveis.
+\end{itemize}
