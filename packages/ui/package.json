@@ -11,6 +11,7 @@
     "./ds-insta": "./src/ds-insta.ts",
     "./ds-unoovista": "./src/ds-unoovista.ts",
     "./ds-unoojornal": "./src/ds-unoojornal.ts",
+    "./ds-unoogaleria": "./src/ds-unoogaleria.ts",
     "./ds-unootube": "./src/ds-unootube.ts",
     "./ds-chatgpt": "./src/ds-chatgpt.ts",
     "./ds-whatsapp": "./src/ds-whatsapp.ts",
